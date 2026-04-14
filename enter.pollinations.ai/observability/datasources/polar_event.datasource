@@ -1,4 +1,4 @@
-TOKEN polar_event_append APPEND
+TOKEN tinybird_ingest APPEND
 
 DESCRIPTION >
 Polar webhook events (payments, subscriptions, benefits) with full JSON payload

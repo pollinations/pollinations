@@ -12,8 +12,8 @@ body:
         - Account under review
         - Spore (0.01 pollen/hour)
         - Seed (0.15 pollen/hour)
-        - Flower (10 pollen/day)
-        - Nectar (20 pollen/day)
+        - Flower (0.4 pollen/hour)
+        - Nectar (0.8 pollen/hour)
 
   - type: textarea
     id: description

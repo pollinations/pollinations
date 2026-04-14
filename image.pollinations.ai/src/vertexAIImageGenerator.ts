@@ -239,7 +239,11 @@ export async function callVertexAIGemini(
             height: processedParams.height,
             referenceImages: processedImages,
             model: vertexModel,
-            safe: safeParams.safe,
+            safe: safeParams.safe as boolean,
+            reasoning: safeParams.reasoning as boolean,
+            ...(processedParams.seed !== undefined && {
+                seed: processedParams.seed as number,
+            }),
         };
 
         // Generate image using Vertex AI

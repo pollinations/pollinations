@@ -15,31 +15,46 @@ import { Header } from "../components/layout/header.tsx";
 import { NewsBanner } from "../components/layout/news-banner.tsx";
 import { User } from "../components/layout/user.tsx";
 import { Pricing } from "../components/pricing";
-import { UsageGraph } from "../components/usage-analytics";
+import {
+    TIME_RANGE_DAYS,
+    type TimeRange,
+    UsageGraph,
+} from "../components/usage-analytics";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
+const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [tierData, apiKeysResult, d1BalanceResult] = await Promise.all([
-            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
-            apiClient["api-keys"]
-                .$get()
-                .then((r) => (r.ok ? r.json() : { data: [] })),
-            apiClient.customer.balance
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-        ]);
+        const [tierData, apiKeysResult, d1BalanceResult, profileResult] =
+            await Promise.all([
+                apiClient.tiers.view
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient["api-keys"]
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : { data: [] })),
+                apiClient.customer.balance
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient.account.profile
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+            ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
         const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
+        // Prefer D1 — session (KV-cached) may hold a stale username after relog.
+        const githubUsername =
+            profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
 
         return {
             user: context.user,
+            githubUsername,
             apiKeys,
             tierData,
             tierBalance,
@@ -51,14 +66,22 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
     const router = useRouter();
-    const { user, apiKeys, tierData, tierBalance, packBalance, cryptoBalance } =
-        Route.useLoaderData();
+    const {
+        user,
+        githubUsername,
+        apiKeys,
+        tierData,
+        tierBalance,
+        packBalance,
+        cryptoBalance,
+    } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
+    const [usageTimeRange, setUsageTimeRange] = useState<TimeRange>("7d");
     const [downloadOpen, setDownloadOpen] = useState(false);
-    const [downloadingDetailed, setDownloadingDetailed] = useState(false);
     const downloadRef = useRef<HTMLDivElement>(null);
+    const usageDays = TIME_RANGE_DAYS[usageTimeRange];
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -206,8 +229,13 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    function handleBuyPollen(amount: number): void {
-        window.location.href = `/api/stripe/checkout/${amount}`;
+    function triggerUsageDownload(path: string, params: URLSearchParams): void {
+        const anchor = document.createElement("a");
+        anchor.href = `${path}?${params.toString()}`;
+        anchor.rel = "noopener";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
     }
 
     return (
@@ -215,7 +243,7 @@ function RouteComponent() {
             <div className="flex flex-col gap-20">
                 <Header>
                     <User
-                        githubUsername={user?.githubUsername || ""}
+                        githubUsername={githubUsername}
                         githubAvatarUrl={user?.image || ""}
                         onSignOut={handleSignOut}
                     />
@@ -236,7 +264,7 @@ function RouteComponent() {
                                 onClick={() => setActiveTab("balance")}
                                 className={`font-bold ${
                                     activeTab === "balance"
-                                        ? "text-green-950"
+                                        ? "text-amber-900"
                                         : "text-gray-400 hover:text-gray-600 cursor-pointer"
                                 }`}
                             >
@@ -248,7 +276,7 @@ function RouteComponent() {
                                 onClick={() => setActiveTab("usage")}
                                 className={`font-bold ${
                                     activeTab === "usage"
-                                        ? "text-green-950"
+                                        ? "text-amber-900"
                                         : "text-gray-400 hover:text-gray-600 cursor-pointer"
                                 }`}
                             >
@@ -262,190 +290,102 @@ function RouteComponent() {
                                 )}
                             </button>
                         </h2>
-                        {activeTab === "balance" && (
-                            <div
-                                id="buy-pollen"
-                                className="flex flex-wrap gap-2"
-                            >
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() => handleBuyPollen(5)}
-                                    className="btn-shimmer"
-                                >
-                                    💎 $5
-                                </Button>
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() => handleBuyPollen(10)}
-                                    className="btn-shimmer"
-                                >
-                                    💎 $10
-                                </Button>
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() => handleBuyPollen(20)}
-                                    className="btn-shimmer"
-                                >
-                                    💎 $20
-                                </Button>
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() => handleBuyPollen(50)}
-                                    className="btn-shimmer"
-                                >
-                                    💎 $50
-                                </Button>
-                            </div>
-                        )}
-                        {activeTab === "usage" && (
-                            <div ref={downloadRef} className="relative">
-                                <Button
-                                    as="button"
-                                    color="violet"
-                                    weight="light"
-                                    onClick={() =>
-                                        setDownloadOpen(!downloadOpen)
-                                    }
-                                    className="flex items-center gap-1.5"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
+                        <div className="flex flex-wrap items-center gap-2">
+                            {activeTab === "usage" && (
+                                <div ref={downloadRef} className="relative">
+                                    <Button
+                                        as="button"
+                                        color="amber"
+                                        weight="light"
+                                        onClick={() =>
+                                            setDownloadOpen(!downloadOpen)
+                                        }
+                                        className="flex items-center gap-1.5"
                                     >
-                                        <title>Download</title>
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    Download
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`}
-                                    >
-                                        <title>Toggle</title>
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                </Button>
-                                {downloadOpen && (
-                                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                                        <button
-                                            type="button"
-                                            onClick={async () => {
-                                                try {
-                                                    const res = await fetch(
-                                                        "/api/account/usage/daily?format=csv",
-                                                    );
-                                                    if (!res.ok)
-                                                        throw new Error(
-                                                            "Failed to fetch",
-                                                        );
-                                                    const blob =
-                                                        await res.blob();
-                                                    const url =
-                                                        URL.createObjectURL(
-                                                            blob,
-                                                        );
-                                                    const a =
-                                                        document.createElement(
-                                                            "a",
-                                                        );
-                                                    a.href = url;
-                                                    a.download =
-                                                        "usage-daily.csv";
-                                                    a.click();
-                                                    URL.revokeObjectURL(url);
-                                                } catch (e) {
-                                                    console.error(
-                                                        "Download failed:",
-                                                        e,
-                                                    );
-                                                } finally {
-                                                    setDownloadOpen(false);
-                                                }
-                                            }}
-                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
                                         >
-                                            Daily Summary
-                                            <span className="block text-xs text-gray-400">
-                                                Aggregated by day
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={async () => {
-                                                setDownloadingDetailed(true);
-                                                try {
-                                                    const res = await fetch(
-                                                        "/api/account/usage?format=csv&limit=50000",
-                                                    );
-                                                    if (!res.ok)
-                                                        throw new Error(
-                                                            "Failed to fetch",
-                                                        );
-                                                    const blob =
-                                                        await res.blob();
-                                                    const url =
-                                                        URL.createObjectURL(
-                                                            blob,
-                                                        );
-                                                    const a =
-                                                        document.createElement(
-                                                            "a",
-                                                        );
-                                                    a.href = url;
-                                                    a.download =
-                                                        "usage-detailed.csv";
-                                                    a.click();
-                                                    URL.revokeObjectURL(url);
-                                                } catch (e) {
-                                                    console.error(
-                                                        "Download failed:",
-                                                        e,
-                                                    );
-                                                } finally {
-                                                    setDownloadingDetailed(
-                                                        false,
+                                            <title>Download</title>
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="7 10 12 15 17 10" />
+                                            <line
+                                                x1="12"
+                                                y1="15"
+                                                x2="12"
+                                                y2="3"
+                                            />
+                                        </svg>
+                                        Download
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`}
+                                        >
+                                            <title>Toggle</title>
+                                            <polyline points="6 9 12 15 18 9" />
+                                        </svg>
+                                    </Button>
+                                    {downloadOpen && (
+                                        <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 rounded-lg border border-amber-200 bg-white shadow-lg py-1 z-10">
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    triggerUsageDownload(
+                                                        "/api/account/usage/daily",
+                                                        new URLSearchParams({
+                                                            format: "csv",
+                                                            days: usageDays.toString(),
+                                                        }),
                                                     );
                                                     setDownloadOpen(false);
-                                                }
-                                            }}
-                                            disabled={downloadingDetailed}
-                                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                                        >
-                                            {downloadingDetailed
-                                                ? "Downloading..."
-                                                : "Detailed Usage"}
-                                            <span className="block text-xs text-gray-400">
-                                                Per-request data
-                                            </span>
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50"
+                                            >
+                                                Daily Summary
+                                                <span className="block text-xs text-amber-500">
+                                                    Selected period
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    triggerUsageDownload(
+                                                        "/api/account/usage",
+                                                        new URLSearchParams({
+                                                            format: "csv",
+                                                            days: usageDays.toString(),
+                                                            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
+                                                        }),
+                                                    );
+                                                    setDownloadOpen(false);
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50"
+                                            >
+                                                Detailed Usage
+                                                <span className="block text-xs text-amber-500">
+                                                    Latest 50k requests
+                                                </span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     {activeTab === "balance" && (
                         <PollenBalance
@@ -456,7 +396,11 @@ function RouteComponent() {
                         />
                     )}
                     {activeTab === "usage" && (
-                        <UsageGraph tier={tierData?.active?.tier} />
+                        <UsageGraph
+                            tier={tierData?.active?.tier}
+                            timeRange={usageTimeRange}
+                            onTimeRangeChange={setUsageTimeRange}
+                        />
                     )}
                 </div>
                 {tierData && (
@@ -471,7 +415,11 @@ function RouteComponent() {
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
-                <Pricing packBalance={packBalance} />
+                <Pricing
+                    tierBalance={tierBalance}
+                    packBalance={packBalance}
+                    cryptoBalance={cryptoBalance}
+                />
                 <FAQ />
                 <Footer />
             </div>

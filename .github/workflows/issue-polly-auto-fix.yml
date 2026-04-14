@@ -7,6 +7,10 @@ on:
   issues:
     types: [labeled]
 
+concurrency:
+  group: polly-auto-fix-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   auto-fix:
     if: github.event.label.name == 'polly'
@@ -18,7 +22,7 @@ jobs:
       id-token: write
       actions: read
     env:
-      POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+      POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLY_KEY }}
     steps:
       - uses: actions/create-github-app-token@v1
         id: token
@@ -73,7 +77,7 @@ jobs:
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
-          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["claude-large","perplexity-reasoning"]}],"Router":{"default":"pollinations,claude-large","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["claude-large","perplexity-reasoning","glm","kimi"]}],"Router":{"default":"pollinations,glm","thinking":"pollinations,kimi","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
 
           # Start router with Bun
           bunx @musistudio/claude-code-router start &

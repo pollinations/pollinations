@@ -3,7 +3,11 @@ import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 
-import { calculatePerPollen } from "./calculations.ts";
+import {
+    calculateForBalance,
+    calculatePerPollen,
+    TOP_UP_TOOLTIP,
+} from "./calculations.ts";
 import {
     getModelDisplayName,
     hasAudioInput,
@@ -27,7 +31,9 @@ type UnifiedModelTableProps = {
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -79,10 +85,18 @@ type PriceBadgeEntry = {
 type TabContentProps = {
     type: "text" | "image" | "video" | "audio";
     models: ModelPrice[];
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
-const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
+const TabContent: FC<TabContentProps> = ({
+    type,
+    models,
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
     const sorted = sortModels(models);
     const regularModels =
         type === "text" ? sorted.filter((m) => !isPersona(m.name)) : sorted;
@@ -97,7 +111,9 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
                     <ModelRow
                         key={model.name}
                         model={model}
+                        tierBalance={tierBalance}
                         packBalance={packBalance}
+                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -111,7 +127,9 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
                             <ModelRow
                                 key={model.name}
                                 model={model}
+                                tierBalance={tierBalance}
                                 packBalance={packBalance}
+                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -124,7 +142,9 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
                     <MobileModelRow
                         key={model.name}
                         model={model}
+                        tierBalance={tierBalance}
                         packBalance={packBalance}
+                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -138,7 +158,9 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
                             <MobileModelRow
                                 key={model.name}
                                 model={model}
+                                tierBalance={tierBalance}
                                 packBalance={packBalance}
+                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -152,19 +174,34 @@ const TabContent: FC<TabContentProps> = ({ type, models, packBalance }) => {
 
 type MobileModelRowProps = {
     model: ModelPrice;
+    tierBalance?: number;
     packBalance?: number;
+    cryptoBalance?: number;
 };
 
-const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
+const MobileModelRow: FC<MobileModelRowProps> = ({
+    model,
+    tierBalance,
+    packBalance,
+    cryptoBalance,
+}) => {
     const [expanded, setExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
     const displayName = getModelDisplayName(model.name);
-    const perPollen = calculatePerPollen(model);
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
-    const isDisabled =
-        showPaidOnly && packBalance !== undefined && packBalance <= 0;
+
+    const isSignedIn = packBalance !== undefined;
+    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
+    const totalBalance = (tierBalance ?? 0) + paidBalance;
+    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+
+    const perPollen = calculatePerPollen(model);
+    const balanceRequests = isSignedIn
+        ? calculateForBalance(model, effectiveBalance)
+        : null;
+    const isDisabled = isSignedIn && balanceRequests === "0";
     const capabilities = [
         hasVision(model.name) && "👁️",
         hasAudioInput(model.name) && "🎙️",
@@ -218,7 +255,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                         />
                     </svg>
                     {isDisabled ? (
-                        <Tooltip content="Top up your pollen balance to unlock this model.">
+                        <Tooltip content={TOP_UP_TOOLTIP}>
                             <span className="text-sm font-medium opacity-75">
                                 {displayName || model.name}
                             </span>
@@ -270,13 +307,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
 
             {/* Expanded: model ID + capabilities + full pricing */}
             {expanded && (
-                <div
-                    className={cn(
-                        "px-4 pb-4 pt-0 space-y-2",
-                        isDisabled && "opacity-50",
-                    )}
-                >
-                    <div className="flex items-center gap-2">
+                <div className="px-4 pb-4 pt-0 space-y-2">
+                    <div
+                        className={cn(
+                            "flex items-center gap-2",
+                            isDisabled && "opacity-50",
+                        )}
+                    >
                         <button
                             type="button"
                             className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer"
@@ -292,17 +329,29 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model, packBalance }) => {
                             ))}
                     </div>
 
-                    <MobilePriceGroup
-                        label="In"
-                        model={model}
-                        direction="input"
-                    />
+                    {balanceRequests !== null && (
+                        <div className="text-xs text-teal-700">
+                            {isDisabled
+                                ? TOP_UP_TOOLTIP
+                                : `≈ ${balanceRequests} with current balance`}
+                        </div>
+                    )}
 
-                    <MobilePriceGroup
-                        label="Out"
-                        model={model}
-                        direction="output"
-                    />
+                    <div
+                        className={cn("space-y-2", isDisabled && "opacity-50")}
+                    >
+                        <MobilePriceGroup
+                            label="In"
+                            model={model}
+                            direction="input"
+                        />
+
+                        <MobilePriceGroup
+                            label="Out"
+                            model={model}
+                            direction="output"
+                        />
+                    </div>
                 </div>
             )}
         </div>
@@ -420,7 +469,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     videoModels,
     textModels,
     audioModels,
+    tierBalance,
     packBalance,
+    cryptoBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
@@ -459,11 +510,12 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 </div>
                 <div className="flex-1 min-w-6" />
                 <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
-                    <div className="cursor-help text-right min-[500px]:text-center shrink-0">
+                    <div className="cursor-help text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px]">
                         <div className="text-sm font-bold text-gray-900">
-                            1 pollen ≈
+                            1 pollen
                         </div>
                         <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                            ≈{" "}
                             {activeSection
                                 ? unitLabels[activeSection.type]
                                 : ""}
@@ -491,7 +543,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <TabContent
                     type={activeSection.type}
                     models={activeSection.models}
+                    tierBalance={tierBalance}
                     packBalance={packBalance}
+                    cryptoBalance={cryptoBalance}
                 />
             )}
         </div>

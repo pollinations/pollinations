@@ -640,8 +640,8 @@ https://myapp.com/callback#api_key=sk_xxxxx
 | microbe| 🦠    | 0        | none    | Entry tier (auto-upgrades once verified) |
 | spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
 | seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
-| flower | 🌸    | 10       | daily   | Contributor              |
-| nectar | 🍯    | 20       | daily   | Coming soon              |
+| flower | 🌸    | 0.4      | hourly  | Contributor              |
+| nectar | 🍯    | 0.8      | hourly  | Coming soon              |
 
 ### Quick Tier Update
 
@@ -656,9 +656,6 @@ npx wrangler d1 execute DB --remote --env production \
 npx wrangler d1 execute DB --remote --env production \
   --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
 
-# 3. Update Polar subscription
-export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
-npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier flower
 ```
 
 ### Evaluate User for Upgrade

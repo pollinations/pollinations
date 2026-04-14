@@ -13,7 +13,7 @@ App submissions use a **two-phase review** via `app-review-submission.yml`: AI r
 3. Bot posts preview comment with `APP_REVIEW_DATA` JSON block, labels `TIER-APP-REVIEW`
 4. Maintainer reviews preview, adds `TIER-APP-APPROVED` label
 5. Workflow creates branch, prepends row to `apps/APPS.md`, creates PR with auto-merge
-6. After checks pass, PR merges automatically, issue closed with `TIER-APP-COMPLETE`
+6. After checks pass, PR merges automatically, issue auto-closed via `Fixes #NNN`
 
 **Label state machine:**
 
@@ -22,8 +22,7 @@ TIER-APP (new issue)
   → TIER-APP-REJECTED (validation failed: duplicate/spore)
   → TIER-APP-INCOMPLETE (not registered, user needs to fix)
   → TIER-APP-REVIEW (AI review passed, preview posted, awaiting human)
-    → TIER-APP-APPROVED (maintainer approves → PR created + auto-merged)
-      → TIER-APP-COMPLETE (PR merged, tier upgraded, issue closed)
+    → TIER-APP-APPROVED (maintainer approves → PR created + auto-merged → issue closed)
     → TIER-APP-REJECTED (maintainer closes issue)
 ```
 
@@ -148,8 +147,8 @@ curl "http://localhost:3000/api/generate/v1/chat/completions" -H "Authorization:
 To test enter.pollinations.ai with local text/image services, edit `enter.pollinations.ai/wrangler.toml`:
 ```toml
 # Default (remote EC2):
-IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
-TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
 
 # For local testing (env.local):
 IMAGE_SERVICE_URL = "http://localhost:16384"

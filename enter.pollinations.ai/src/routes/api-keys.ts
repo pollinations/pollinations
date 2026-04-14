@@ -10,6 +10,13 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
+function setPrivateNoStoreHeaders(c: {
+    header: (name: string, value: string) => void;
+}): void {
+    c.header("Cache-Control", "private, no-store, max-age=0");
+    c.header("Pragma", "no-cache");
+}
+
 /**
  * Build updated permissions object based on changes.
  * Returns undefined if no permission fields were provided.
@@ -163,6 +170,7 @@ export const apiKeysRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
+            setPrivateNoStoreHeaders(c);
 
             const keys = await db.query.apikey.findMany({
                 where: eq(schema.apikey.userId, user.id),
@@ -246,23 +254,16 @@ export const apiKeysRoutes = new Hono<Env>()
                     .where(eq(schema.apikey.id, id));
             }
 
-            // Always invalidate KV cache on any update
-            const keyForCache = await db.query.apikey.findFirst({
+            const updated = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
 
-            await c.env.KV.delete(`auth:api-key:${id}`);
-
-            if (keyForCache?.key) {
-                await c.env.KV.delete(`auth:api-key:${keyForCache.key}`);
-            }
-
             return c.json({
-                id: keyForCache?.id ?? id,
-                name: keyForCache?.name,
-                permissions: keyForCache?.permissions,
-                pollenBalance: keyForCache?.pollenBalance ?? null,
-                expiresAt: keyForCache?.expiresAt ?? null,
+                id: updated?.id ?? id,
+                name: updated?.name,
+                permissions: updated?.permissions,
+                pollenBalance: updated?.pollenBalance ?? null,
+                expiresAt: updated?.expiresAt ?? null,
             });
         },
     )
@@ -306,7 +307,6 @@ export const apiKeysRoutes = new Hono<Env>()
                 metadataUpdate,
                 existingKey.metadata,
             );
-
             return c.json({ id, metadata });
         },
     );

@@ -13,7 +13,7 @@ const DATA_START_TIMESTAMP_SEC = Math.floor(DATA_START_TIMESTAMP_MS / 1000);
 const MAX_WEEKS_BACK = 20;
 
 type Env = {
-    TINYBIRD_TOKEN: string;
+    TINYBIRD_READ_TOKEN: string;
     TINYBIRD_API: string;
     POLAR_ACCESS_TOKEN: string;
     POLAR_API: string;
@@ -55,7 +55,7 @@ async function fetchTinybird(
         return { data: json.data };
     }
 
-    const headers = { Authorization: `Bearer ${env.TINYBIRD_TOKEN}` };
+    const headers = { Authorization: `Bearer ${env.TINYBIRD_READ_TOKEN}` };
 
     for (let attempt = 0; attempt < 2; attempt++) {
         try {
@@ -444,7 +444,15 @@ app.get("/api/kpi/churn", async (c) => {
     const result = await fetchTinybird(c.env, "weekly_retention", {
         weeks_back: weeksBack,
     });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    if (result.error) {
+        if (result.status === 408) {
+            console.warn(
+                `[Tinybird] Soft-failing churn timeout: ${result.error}`,
+            );
+            return c.json({ data: [], warning: result.error });
+        }
+        return c.json({ error: result.error, data: [] }, 500);
+    }
     const data = { data: result.data } as {
         data: Array<{
             cohort: string;

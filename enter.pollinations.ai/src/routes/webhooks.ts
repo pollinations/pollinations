@@ -22,7 +22,7 @@ async function sendPolarEventToTinybird(
 ): Promise<void> {
     const e = env as unknown as Record<string, string>;
     const tinybirdUrl = e.TINYBIRD_POLAR_INGEST_URL;
-    const tinybirdToken = e.TINYBIRD_POLAR_INGEST_TOKEN;
+    const tinybirdToken = e.TINYBIRD_INGEST_TOKEN;
 
     if (!tinybirdUrl || !tinybirdToken) {
         log.debug("Tinybird Polar ingest not configured, skipping");
@@ -130,7 +130,7 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
         switch (payload.type) {
             // Tier subscription events - DEPRECATED
-            // Tier is now managed via D1 + cron refill (hourly/daily), not Polar webhooks
+            // Tier is now managed via D1 + cron refill (hourly), not Polar webhooks
             case "subscription.canceled":
             case "subscription.revoked":
             case "subscription.updated":

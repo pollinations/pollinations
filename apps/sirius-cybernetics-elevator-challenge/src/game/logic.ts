@@ -110,12 +110,23 @@ export const fetchPersonaMessage = async (
         );
 
     try {
+        // Filter conversation history to only include relevant messages for this persona
+        // Guide gets a summary, elevator/marvin get user + their own messages
+        const relevantMessages = existingMessages.filter((msg) => {
+            if (msg.persona === "user") return true;
+            if (msg.persona === persona) return true;
+            // For elevator/marvin, include the other's messages during autonomous mode
+            if (persona === "elevator" && msg.persona === "marvin") return true;
+            if (persona === "marvin" && msg.persona === "elevator") return true;
+            return false;
+        });
+
         const messages: PollingsMessage[] = [
             {
                 role: "system",
                 content: getPersonaPrompt(persona, gameState),
             },
-            ...existingMessages.map((msg) => ({
+            ...relevantMessages.map((msg) => ({
                 role:
                     msg.persona === "user"
                         ? ("user" as const)
@@ -166,14 +177,16 @@ export const useGuideMessages = (
         }
     }, [lastMessage, addMessage, gameState.marvinJoined]);
 
-    // floor changed
+    // floor changed — intentionally only depend on currentFloor to avoid
+    // firing on every gameState change (which caused repeated "Now arriving" spam)
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
     useEffect(() => {
         addMessage({
             persona: "guide",
             message: getFloorMessage(gameState),
             action: gameState.currentFloor === 1 ? "show_instructions" : "none",
         });
-    }, [gameState.currentFloor, addMessage, gameState]);
+    }, [gameState.currentFloor, addMessage]);
 };
 
 // Autonomous conversation hook
@@ -263,10 +276,35 @@ const createMessage = (
 });
 
 const safeJsonParse = (data: string): { message: string; action?: Action } => {
+    // First try direct parse
     try {
         return JSON.parse(data);
-    } catch (error) {
-        console.error("JSON parse error:", error);
-        return { message: data };
+    } catch {
+        // ignore
     }
+
+    // Strip markdown code fences and try to extract JSON
+    const jsonMatch = data.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+        try {
+            return JSON.parse(jsonMatch[1].trim());
+        } catch {
+            // ignore
+        }
+    }
+
+    // Try to find a JSON object in the string
+    const braceMatch = data.match(
+        /\{[\s\S]*"message"\s*:\s*"[\s\S]*?"\s*[\s\S]*?\}/,
+    );
+    if (braceMatch) {
+        try {
+            return JSON.parse(braceMatch[0]);
+        } catch {
+            // ignore
+        }
+    }
+
+    console.error("JSON parse error, raw content:", data.slice(0, 200));
+    return { message: "Something went wrong in the circuitry... Don't Panic!" };
 };

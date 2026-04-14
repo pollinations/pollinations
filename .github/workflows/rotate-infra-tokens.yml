@@ -1,0 +1,316 @@
+name: Rotate Infra Tokens
+
+on:
+  workflow_dispatch:
+    inputs:
+      token:
+        description: "Which token to rotate"
+        required: true
+        type: choice
+        options:
+          - enter
+          - gpu
+          - both
+      dry_run:
+        description: "Dry run (preview without changes)"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    env:
+      DRY_RUN: ${{ inputs.dry_run }}
+      TOKEN_TARGET: ${{ inputs.token }}
+    steps:
+      - name: Require main branch
+        run: |
+          if [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "This workflow must be dispatched from main, not $GITHUB_REF_NAME."
+            echo "Production secrets must stay in sync with the repo's source of truth."
+            exit 1
+          fi
+
+      - name: Verify actor is authorized
+        env:
+          ACTOR: ${{ github.actor }}
+        run: |
+          ALLOWED="voodoohop ElliotEtag"
+          if echo "$ALLOWED" | grep -qw "$ACTOR"; then
+            echo "Actor $ACTOR is authorized"
+          else
+            echo "Actor $ACTOR is not in the rotation allowlist ($ALLOWED)."
+            echo "Add to the ALLOWED list in this workflow, or configure"
+            echo "production environment required reviewers in GitHub settings."
+            exit 1
+          fi
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install tools
+        run: |
+          npm install -g wrangler
+          echo "sops $(sops --version)"
+          echo "wrangler $(wrangler --version)"
+          echo "jq $(jq --version)"
+
+      # --- Pre-flight: verify SSH connectivity before rotating ---
+
+      - name: Verify EC2 SSH connectivity
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            echo "EC2 reachable"
+            sudo systemctl is-active text-pollinations.service || echo "text service not running"
+            sudo systemctl is-active image-pollinations.service || echo "image service not running"
+
+      - name: Verify GPU worker SSH connectivity
+        if: inputs.token == 'gpu' || inputs.token == 'both'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          SOPS_SECRETS="enter.pollinations.ai/secrets/prod.vars.json"
+          TEMP_DIR=$(mktemp -d)
+          trap 'rm -rf "$TEMP_DIR"' EXIT
+          SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes"
+
+          extract_key() {
+            local out="$TEMP_DIR/$1"
+            sops -d "$SOPS_SECRETS" | jq -r ".$1" > "$out"
+            chmod 600 "$out"
+            echo "$out"
+          }
+
+          FLUX_KEY=$(extract_key SSH_RUNPOD_FLUX_ZIMAGE)
+          KLEIN_KEY=$(extract_key SSH_RUNPOD_KLEIN)
+          LAMBDA_KEY=$(extract_key SSH_LAMBDA_SANA_LTX2_ACESTEP)
+
+          FAILED=0
+
+          echo "Checking RunPod Flux+Z-Image (38.65.239.17:19489)..."
+          if ssh $SSH_OPTS -p 19489 -i "$FLUX_KEY" root@38.65.239.17 "echo ok" 2>/dev/null; then
+            echo "  OK"
+          else
+            echo "  FAIL — port may have changed. Check RunPod dashboard."
+            FAILED=1
+          fi
+
+          echo "Checking RunPod Klein (213.144.200.243:10207)..."
+          if ssh $SSH_OPTS -p 10207 -i "$KLEIN_KEY" root@213.144.200.243 "echo ok" 2>/dev/null; then
+            echo "  OK"
+          else
+            echo "  FAIL — port may have changed. Check RunPod dashboard."
+            FAILED=1
+          fi
+
+          echo "Checking Lambda GH200 (192.222.51.105)..."
+          if ssh $SSH_OPTS -i "$LAMBDA_KEY" ubuntu@192.222.51.105 "echo ok" 2>/dev/null; then
+            echo "  OK"
+          else
+            echo "  FAIL — instance may be down."
+            FAILED=1
+          fi
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "SSH pre-flight failed. Fix connectivity before rotating GPU tokens."
+            echo "If a RunPod port changed, update the SSH target in SOPS and in rotate-infra-gpu-token.sh."
+            exit 1
+          fi
+
+          echo "All GPU workers reachable"
+
+      # --- Rotate tokens ---
+
+      - name: Rotate PLN_ENTER_TOKEN
+        if: inputs.token == 'enter' || inputs.token == 'both'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          cd tools/scripts/rotation
+          if [ "$DRY_RUN" = "true" ]; then
+            bash rotate-infra-enter-token.sh --dry-run
+          else
+            bash rotate-infra-enter-token.sh
+          fi
+
+      - name: Rotate PLN_GPU_TOKEN
+        if: inputs.token == 'gpu' || inputs.token == 'both'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          cd tools/scripts/rotation
+          if [ "$DRY_RUN" = "true" ]; then
+            bash rotate-infra-gpu-token.sh --dry-run
+          else
+            bash rotate-infra-gpu-token.sh
+          fi
+
+      # --- Deploy EC2 services to pick up new SOPS values ---
+
+      - name: Decrypt .env files
+        if: inputs.dry_run == false
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > text.pollinations.ai/.env
+          sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > image.pollinations.ai/.env
+          echo "Decrypted .env files with new token values"
+
+      - name: Copy .env files to EC2
+        if: inputs.dry_run == false
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          target: "/home/ubuntu/pollinations/"
+          strip_components: 0
+
+      - name: Restart EC2 services
+        if: inputs.dry_run == false
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            set -e
+            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env
+            chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env
+            sudo systemctl restart text-pollinations.service image-pollinations.service
+            sleep 10
+            sudo systemctl is-active text-pollinations.service || exit 1
+            sudo systemctl is-active image-pollinations.service || exit 1
+            echo "EC2 services restarted with new tokens"
+
+      # --- Health checks: verify rotated token paths from inside EC2 ---
+
+      - name: Verify PLN_ENTER_TOKEN path
+        if: inputs.dry_run == false && (inputs.token == 'enter' || inputs.token == 'both')
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            set -e
+            sleep 5
+
+            # Read the new token from the deployed .env
+            NEW_TOKEN=$(grep PLN_ENTER_TOKEN /home/ubuntu/pollinations/text.pollinations.ai/.env | cut -d= -f2-)
+
+            # Hit the text service with the new token — this is the same check
+            # enter.pollinations.ai performs on every proxied request
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              -H "x-enter-token: $NEW_TOKEN" \
+              http://localhost:16385/)
+            echo "Text service with new PLN_ENTER_TOKEN: HTTP $STATUS"
+
+            # 401/403 = token rejected, 000 = service down
+            if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ] || [ "$STATUS" = "000" ]; then
+              echo "FAIL: text service rejected the new PLN_ENTER_TOKEN"
+              exit 1
+            fi
+
+            # Same for image service
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              -H "x-enter-token: $NEW_TOKEN" \
+              http://localhost:16384/)
+            echo "Image service with new PLN_ENTER_TOKEN: HTTP $STATUS"
+
+            if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ] || [ "$STATUS" = "000" ]; then
+              echo "FAIL: image service rejected the new PLN_ENTER_TOKEN"
+              exit 1
+            fi
+
+            echo "PLN_ENTER_TOKEN accepted by both EC2 services"
+
+      - name: Verify PLN_GPU_TOKEN path
+        if: inputs.dry_run == false && (inputs.token == 'gpu' || inputs.token == 'both')
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          script: |
+            set -e
+            sleep 5
+
+            # Read the new GPU token from the deployed .env
+            NEW_TOKEN=$(grep PLN_GPU_TOKEN /home/ubuntu/pollinations/image.pollinations.ai/.env | cut -d= -f2-)
+
+            # Hit a GPU worker through the image service's internal path
+            # The image service forwards requests to GPU workers with x-backend-token
+            # Test by hitting the registry endpoint (lightweight, no GPU needed)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              http://localhost:16384/register)
+            echo "Image service registry: HTTP $STATUS"
+
+            if [ "$STATUS" = "000" ]; then
+              echo "FAIL: image service not responding"
+              exit 1
+            fi
+
+            # Verify a Flux worker accepts the new token directly
+            FLUX_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -H "x-backend-token: $NEW_TOKEN" \
+              -d '{"prompts":["test"],"width":256,"height":256,"steps":1}' \
+              https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate)
+            echo "Flux GPU worker with new PLN_GPU_TOKEN: HTTP $FLUX_STATUS"
+
+            if [ "$FLUX_STATUS" = "403" ]; then
+              echo "FAIL: GPU worker rejected the new PLN_GPU_TOKEN"
+              exit 1
+            fi
+
+            echo "PLN_GPU_TOKEN path verified"
+
+      # --- Commit SOPS changes ---
+
+      - name: Commit and push SOPS changes
+        if: inputs.dry_run == false
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A '*.json'
+          if git diff --cached --quiet; then
+            echo "No SOPS changes to commit"
+          else
+            git commit -m "rotate infra tokens ($TOKEN_TARGET)"
+            git push origin HEAD:main
+          fi

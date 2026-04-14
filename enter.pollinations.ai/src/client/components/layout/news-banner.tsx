@@ -1,4 +1,4 @@
-import { type FC, useEffect, useState } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
 import { Panel } from "../ui/panel.tsx";
 
 const HIGHLIGHTS_RAW_URL =
@@ -22,18 +22,48 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-03-13",
+        date: "2026-03-26",
         emoji: "⏱️",
-        title: "Hourly Pollen Refills",
+        title: "Flower & Nectar: Daily → Hourly Refills",
         description:
-            "Starting March 16 - Spore: 0.01p/hr, Seed: 0.15p/hr. Need more? Grab a Pollen Pack below!",
+            "Starting Thursday, March 26 — Flower 0.4p/hr, Nectar 0.8p/hr. Need more? Grab a Pollen Pack below!",
     },
 ];
+
+/** Render markdown links [text](url) as clickable <a> tags, preserving surrounding text. */
+function renderWithLinks(text: string): ReactNode[] {
+    const parts: ReactNode[] = [];
+    const matches = [...text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
+    let lastIndex = 0;
+    for (const match of matches) {
+        const idx = match.index ?? 0;
+        if (idx > lastIndex) {
+            parts.push(text.slice(lastIndex, idx));
+        }
+        parts.push(
+            <a
+                key={idx}
+                href={match[2]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-violet-600 hover:text-violet-800 hover:underline font-medium"
+            >
+                {match[1]}
+            </a>,
+        );
+        lastIndex = idx + match[0].length;
+    }
+    if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
+    }
+    return parts;
+}
 
 function parseHighlights(md: string): Highlight[] {
     return md
         .split("\n")
         .filter((line) => line.startsWith("- **"))
+        .filter((line) => !line.includes("<!-- app -->"))
         .map((line) => {
             const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
             const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
@@ -72,7 +102,7 @@ export const NewsBanner: FC = () => {
             <div className="flex flex-col gap-2">
                 <span className="text-xs text-gray-500">What's new</span>
                 {PINNED_NEWS.length > 0 && (
-                    <div className="bg-amber-50 rounded-md px-3 py-2">
+                    <div className="bg-white/80 rounded-xl px-3 py-2">
                         <ul className="text-xs space-y-1.5">
                             {PINNED_NEWS.map((h) => (
                                 <li
@@ -80,11 +110,7 @@ export const NewsBanner: FC = () => {
                                     className="text-gray-900"
                                 >
                                     {h.emoji} <strong>{h.title}:</strong>{" "}
-                                    <span
-                                        dangerouslySetInnerHTML={{
-                                            __html: h.description,
-                                        }}
-                                    />
+                                    {renderWithLinks(h.description)}
                                 </li>
                             ))}
                         </ul>
@@ -98,7 +124,7 @@ export const NewsBanner: FC = () => {
                                 className="text-gray-600"
                             >
                                 {h.emoji} <strong>{h.title}:</strong>{" "}
-                                {h.description}
+                                {renderWithLinks(h.description)}
                             </li>
                         ))}
                     </ul>

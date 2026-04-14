@@ -1,17 +1,13 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
-    createAirforceModelConfig,
-    createAnthropicConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
+    createDashScopeModelConfig,
     createFireworksModelConfig,
-    createMyceliGrok4FastConfig,
-    createNomNomConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
     createPollyConfig,
-    createSeraphynModelConfig,
 } from "./providerConfigs.js";
 
 // =============================================================================
@@ -36,78 +32,103 @@ function createVertexGeminiConfig(
     });
 }
 
-/** Creates an Azure config with a max-completion-tokens limit. */
-function createAzureWithMaxTokens(
-    apiKeyEnv: string | undefined,
-    endpointEnv: string | undefined,
-    modelName: string,
-    maxTokens: number,
-): PortkeyConfigFactory {
-    return () => ({
-        ...createAzureModelConfig(apiKeyEnv, endpointEnv, modelName),
-        "max-completion-tokens": maxTokens,
-    });
-}
-
 // =============================================================================
 // Portkey Configuration Map
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
-    // -- Azure (Myceli) -------------------------------------------------------
-    "gpt-5-mini": createAzureWithMaxTokens(
-        process.env.AZURE_PF_GPT5MINI_API_KEY,
-        process.env.AZURE_PF_GPT5MINI_ENDPOINT,
-        "gpt-5-mini",
-        16384,
-    ),
-    "gpt-5.2-2025-12-11": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT52_API_KEY,
-        process.env.AZURE_MYCELI_GPT52_ENDPOINT,
-        "gpt-5.2-2025-12-11",
-        16384,
-    ),
-    "gpt-4o-mini-audio-preview-2024-12-17": createAzureWithMaxTokens(
-        process.env.AZURE_MYCELI_GPT4O_AUDIO_API_KEY,
-        process.env.AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT,
-        "gpt-4o-mini-audio-preview-2024-12-17",
-        2048,
-    ),
-    "myceli-grok-4-fast": createMyceliGrok4FastConfig,
+    // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
+    "gpt-5.4-nano": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-nano/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.4-nano",
+        ),
+    "gpt-5-nano-2025-08-07": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5-nano-2025-08-07",
+        ),
+    "gpt-5.4": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.4",
+        ),
 
-    // -- Azure (PointsFlyer) --------------------------------------------------
-    "gpt-5-nano-2025-08-07": createAzureWithMaxTokens(
-        process.env.AZURE_PF_GPT5NANO_API_KEY,
-        process.env.AZURE_PF_GPT5NANO_ENDPOINT,
-        "gpt-5-nano-2025-08-07",
-        512,
-    ),
+    // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
+    "gpt-audio-mini-2025-12-15": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-audio-mini/chat/completions?api-version=2025-01-01-preview",
+            "gpt-audio-mini-2025-12-15",
+        ),
+    // -- Azure (Myceli Prod — swedencentral, audio) ---------------------------
+    "gpt-audio-1.5": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-audio-1.5/chat/completions?api-version=2025-01-01-preview",
+            "gpt-audio-1.5",
+        ),
 
-    // -- OVHcloud Mistral -----------------------------------------------------
+    // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
+    "grok-4-1-fast-non-reasoning": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-1-fast-non-reasoning/chat/completions?api-version=2024-12-01-preview",
+            "grok-4-1-fast-non-reasoning",
+        ),
+    "grok-4-20-reasoning": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
+            "grok-4-20-reasoning",
+        ),
+
+    // -- Fireworks AI (DeepSeek, Kimi, GLM, Qwen) --------------------------------
+    "accounts/fireworks/models/deepseek-v3p2": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v3p2",
+        }),
+    "accounts/fireworks/models/kimi-k2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
+
+    // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
     "mistral-small-3.2-24b-instruct-2506": () =>
         createOVHcloudMistralConfig({
             model: "Mistral-Small-3.2-24B-Instruct-2506",
         }),
 
-    // -- Claude Direct Anthropic API ------------------------------------------
+    // -- Azure (Myceli Prod — eastus, Mistral Large) --------------------------
+    "Mistral-Large-3": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
+            "Mistral-Large-3",
+        ),
+
+    // -- Claude via AWS Bedrock -----------------------------------------------
     "claude-sonnet-4-6": () =>
-        createAnthropicConfig({
-            model: "claude-sonnet-4-6",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "claude-opus-4-6": () =>
-        createAnthropicConfig({
-            model: "claude-opus-4-6",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-4-5": () =>
-        createAnthropicConfig({
-            model: "claude-opus-4-5-20251101",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-opus-4-5-20251101-v1:0",
             defaultOptions: { max_tokens: 64000 },
         }),
     "claude-haiku-4-5": () =>
-        createAnthropicConfig({
-            model: "claude-haiku-4-5-20251001",
+        createBedrockNativeConfig({
+            model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
             defaultOptions: { max_tokens: 64000 },
         }),
 
@@ -131,6 +152,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         ],
     }),
+    "nova-2-lite": () =>
+        createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
     // -- Google Vertex AI (Gemini) --------------------------------------------
     "gemini-3-flash-preview": createVertexGeminiConfig(
@@ -143,10 +166,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "gemini-2.5-flash-lite": createVertexGeminiConfig(
         "gemini-2.5-flash-lite",
-        "us-central1",
+        "global",
     ),
-    "gemini-3-pro-legacy": createVertexGeminiConfig(
-        "gemini-3-pro-preview",
+    "gemini-3.1-flash-lite-preview": createVertexGeminiConfig(
+        "gemini-3.1-flash-lite-preview",
         "global",
     ),
     "gemini-2.5-pro": createVertexGeminiConfig("gemini-2.5-pro", "us-central1"),
@@ -156,48 +179,35 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
+    // -- Fireworks AI (Qwen) -----------------------------------------------------
+    "accounts/fireworks/models/qwen3p6-plus": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3p6-plus",
+        }),
+    "accounts/fireworks/models/glm-5p1": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p1",
+        }),
+    "accounts/fireworks/models/minimax-m2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m2p5",
+        }),
+
+    // -- Alibaba DashScope (Qwen) ---------------------------------------------
+    "qwen3-coder-next": () =>
+        createDashScopeModelConfig({ model: "qwen3-coder-next" }),
+    "qwen3-vl-plus": () =>
+        createDashScopeModelConfig({ model: "qwen3-vl-plus" }),
+
     // -- OVHcloud (Qwen) ------------------------------------------------------
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
 
-    // -- Fireworks AI ---------------------------------------------------------
-    "accounts/fireworks/models/kimi-k2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p5",
-        }),
-    "accounts/fireworks/models/glm-5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5",
-        }),
-    "accounts/fireworks/models/minimax-m2p5": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p5",
-        }),
-    "accounts/fireworks/models/deepseek-v3p2": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v3p2",
-        }),
-
     // -- Community Models -----------------------------------------------------
-    "nomnom": () =>
-        createNomNomConfig({
-            model: "nomnom",
-        }),
     "polly": () =>
         createPollyConfig({
             model: "polly",
         }),
-
-    // -- api.airforce ---------------------------------------------------------
-    "step-3.5-flash:free": () =>
-        createAirforceModelConfig({ model: "step-3.5-flash:free" }),
-    "qwen-character": () =>
-        createAirforceModelConfig({ model: "qwen-character" }),
-    "claude-sonnet-4.6": () =>
-        createAirforceModelConfig({ model: "claude-sonnet-4.6" }),
-
-    // -- seraphyn.ai ------------------------------------------------------
-    "seraphyn-gpt-5.4": () => createSeraphynModelConfig({ model: "gpt-5.4" }),
 };

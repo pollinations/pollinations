@@ -1,4 +1,4 @@
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
+import { type ModelId, resolveModelName } from "../shared/registry/registry.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -20,7 +20,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-mini"],
+        config: portkeyConfig["gpt-5.4-nano"],
     },
     {
         name: "openai-fast",
@@ -28,12 +28,25 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-5.2-2025-12-11"],
+        config: portkeyConfig["gpt-5.4"],
     },
     {
         name: "qwen-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
+    },
+    {
+        name: "qwen-coder-large",
+        config: portkeyConfig["qwen3-coder-next"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.coding),
+    },
+    {
+        name: "qwen-large",
+        config: portkeyConfig["accounts/fireworks/models/qwen3p6-plus"],
+    },
+    {
+        name: "qwen-vision",
+        config: portkeyConfig["qwen3-vl-plus"],
     },
     {
         name: "mistral",
@@ -45,11 +58,19 @@ const models: ModelDefinition[] = [
     },
     {
         name: "grok",
-        config: portkeyConfig["myceli-grok-4-fast"],
+        config: portkeyConfig["grok-4-1-fast-non-reasoning"],
+    },
+    {
+        name: "grok-large",
+        config: portkeyConfig["grok-4-20-reasoning"],
     },
     {
         name: "openai-audio",
-        config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],
+        config: portkeyConfig["gpt-audio-mini-2025-12-15"],
+    },
+    {
+        name: "openai-audio-large",
+        config: portkeyConfig["gpt-audio-1.5"],
     },
     {
         name: "claude-fast",
@@ -78,6 +99,14 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-flash-lite-3.1",
+        config: portkeyConfig["gemini-3.1-flash-lite-preview"],
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
         name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
@@ -96,7 +125,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-5.2-2025-12-11"],
+        config: portkeyConfig["claude-haiku-4-5"],
+        transform: createMessageTransform(midijourneyPrompt),
+    },
+    {
+        name: "midijourney-large",
+        config: portkeyConfig["claude-opus-4-6"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
@@ -122,16 +156,6 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-3-pro-legacy",
-        config: portkeyConfig["gemini-3-pro-legacy"],
-        transform: pipe(
-            sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
-            removeToolsForJsonResponse,
-            createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
         name: "gemini-legacy",
         config: portkeyConfig["gemini-2.5-pro"],
         transform: pipe(
@@ -146,16 +170,20 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["nova-micro-fallback"],
     },
     {
+        name: "nova",
+        config: portkeyConfig["nova-2-lite"],
+    },
+    {
         name: "glm",
-        config: portkeyConfig["accounts/fireworks/models/glm-5"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5p1"],
     },
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
     },
     {
-        name: "nomnom",
-        config: portkeyConfig["nomnom"],
+        name: "mistral-large",
+        config: portkeyConfig["Mistral-Large-3"],
     },
     {
         name: "polly",
@@ -164,23 +192,6 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
-    },
-    {
-        name: "qwen-character",
-        config: portkeyConfig["qwen-character"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.character),
-    },
-    {
-        name: "step-3.5-flash",
-        config: portkeyConfig["step-3.5-flash:free"],
-    },
-    {
-        name: "claude-airforce",
-        config: portkeyConfig["claude-sonnet-4.6"],
-    },
-    {
-        name: "openai-seraphyn",
-        config: portkeyConfig["seraphyn-gpt-5.4"],
     },
 ];
 
@@ -193,9 +204,9 @@ export function findModelByName(modelName: string): ModelDefinition | null {
     if (directMatch) return directMatch;
 
     try {
-        const resolvedServiceId = resolveServiceId(modelName);
+        const resolvedModelName = resolveModelName(modelName);
         return (
-            availableModels.find((model) => model.name === resolvedServiceId) ||
+            availableModels.find((model) => model.name === resolvedModelName) ||
             null
         );
     } catch {

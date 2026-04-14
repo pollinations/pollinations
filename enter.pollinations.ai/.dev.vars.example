@@ -10,10 +10,9 @@ POLAR_ACCESS_TOKEN=your_polar_sandbox_access_token
 POLAR_WEBHOOK_SECRET=your_polar_webhook_secret
 
 # Tinybird (analytics)
-TINYBIRD_GENERATION_INGEST_TOKEN=your_tinybird_generation_ingest_token
-TINYBIRD_TIER_INGEST_TOKEN=your_tinybird_tier_ingest_token
-TINYBIRD_POLAR_INGEST_TOKEN=your_tinybird_polar_ingest_token
-TINYBIRD_CRYPTO_INGEST_TOKEN=your_tinybird_crypto_ingest_token
+TINYBIRD_INGEST_TOKEN=your_tinybird_ingest_token
+TINYBIRD_READ_TOKEN=your_tinybird_read_token
+TINYBIRD_SYNC_TOKEN=your_tinybird_sync_token
 
 # NOWPayments Crypto Payments (https://nowpayments.io)
 # Get keys from: https://account.nowpayments.io (production) or https://account-sandbox.nowpayments.io (sandbox)
@@ -23,7 +22,6 @@ NOWPAYMENTS_IPN_SECRET=your_nowpayments_ipn_secret
 NOWPAYMENTS_ENV=sandbox
 
 # Testing
-TESTING_REFERRER=optional_testing_referrer
 PLN_ENTER_TOKEN=optional_pln_enter_token
 
 # ElevenLabs (text-to-speech)

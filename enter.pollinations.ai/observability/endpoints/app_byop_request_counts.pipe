@@ -3,8 +3,7 @@ DESCRIPTION >
     Priority: api_key_created_for_app (explicit) > api_key_name (hostname heuristic).
     Counts ALL requests through a BYOP app's API key, regardless of end user.
 
-TOKEN app_metrics READ
-TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE app_byop_request_counts_node
 SQL >

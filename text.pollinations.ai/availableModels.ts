@@ -1,4 +1,4 @@
-import { type ModelId, resolveServiceId } from "../shared/registry/registry.ts";
+import { type ModelId, resolveModelName } from "../shared/registry/registry.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -42,7 +42,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-large",
-        config: portkeyConfig["qwen3.5-plus"],
+        config: portkeyConfig["accounts/fireworks/models/qwen3p6-plus"],
     },
     {
         name: "qwen-vision",
@@ -59,7 +59,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["DeepSeek-V3.2"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
     },
     {
         name: "grok",
@@ -148,7 +148,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["Kimi-K2.5"],
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
     },
     {
         name: "gemini-large",
@@ -180,11 +180,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm",
-        config: portkeyConfig["glm-5"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5p1"],
     },
     {
         name: "minimax",
-        config: portkeyConfig["minimax-m2.5"],
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
     },
     {
         name: "mistral-large",
@@ -209,9 +209,9 @@ export function findModelByName(modelName: string): ModelDefinition | null {
     if (directMatch) return directMatch;
 
     try {
-        const resolvedServiceId = resolveServiceId(modelName);
+        const resolvedModelName = resolveModelName(modelName);
         return (
-            availableModels.find((model) => model.name === resolvedServiceId) ||
+            availableModels.find((model) => model.name === resolvedModelName) ||
             null
         );
     } catch {

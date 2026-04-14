@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🧑‍🎨 Pollinations Avatar Gen - Reforged](21169748) | Extends the local LLM frontend SillyTavern with Pollinations Avatar Gen - Reforged, an upgraded Reforged extension that builds on Nidelon pollinations-avatar-gen. | [@browser-ext](https://github.com/browser-ext) |
-| [🤖 AI LOGS](60020024) | Track work habits, productivity, and wellbeing with AI LOGS, a privacy-first AI-powered desktop tool that records local activity and provides performance observability and usage insights. | [@desktop](https://github.com/desktop) |
-| [👁️ AI Vision](89507317) | Analyze images with AI Vision using multiple AI models via the Pollinations.ai API. | [@android](https://github.com/android) |
-| [🎨 Splash Tool](https://n8n-image-generator.vercel.app) | Convert screenshots into editable layers with Splash Tool, extracting assets, colors, and layout details for design workflows. | [@web](https://github.com/web) |
-| [🎨 polimage](https://polimage.enjoyow.com) | Generate AI images in the browser with polimage, a lightweight image-generation workbench that supports Pollinations OAuth and one-click account connection. | [@web](https://github.com/web) |
-| [💬 T-Buddy CHAT](https://tbuddy-taupe.vercel.app/) | Suggests context and phrasing for complex social or professional chats using T-Buddy CHAT by analyzing chat text or screenshots. | [@web](https://github.com/web) |
-| [🌸 Guess the Flower](https://guess-the-flower.netlify.app/) | Identify flowers from photos using Guess the Flower, an AI-powered quiz that asks players to name flower species. | [@web](https://github.com/web) |
-| [🎬 Oasis AI](https://oasis-demo-brown.vercel.app/) | Convert long-form LinkedIn or Twitter posts into short vertical Instagram Reels with Oasis AI. | [@web](https://github.com/web) |
-| [🦸‍♂️ Isekai Character Generator](https://isekai-character-generator.pages.dev) | Generate fully realized multiversal heroes with Isekai Character Generator using Seeded Entropy Logic Mulberry32 PRNG to produce identity, stats, backstory, and visual appearance. | [@web](https://github.com/web) |
-| [🎛️ Dreamframe](https://funniman23.github.io/Dreamframe/) | Run Dreamframe as a zero-dependency single-HTML-file playground for the pollinations.ai API, accessing images, video, voice, TTS, and music from one interface. | [@web](https://github.com/web) |
+| [🎨 Polli-com](https://polli-com.vercel.app/) | Generate images on mobile with Polli-com, a client-side PWA built on Pollinations.ai with a Prompt Builder, optional local ComfyUI bridge, and role-based access control. | [@abhi5hek1979](https://github.com/abhi5hek1979) |
+| [🎬 AI video generator](https://www.tomdacat.com/ai-video-generator/) | Generate videos using the free Seedance model on Pollinations.ai with AI video generator. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎨 Pigment](https://pigment-web.vercel.app/) | Create AI-generated art in the browser with Pigment, a Flask + vanilla JS web app that wraps the Pollinations API with hundreds of art styles and a self-hostable option. | [@SmokePigDad](https://github.com/SmokePigDad) |
+| ✍️ PseudoWrite | Replicate a slice of SudoWrite with PseudoWrite, an open source AI story writer that builds a Story Bible and generates long-form fiction through the Pollinations text API. | [@SmokePigDad](https://github.com/SmokePigDad) |
+| [🤖 Tawer_bot](https://t.me/tawer_vivybot) | Run a multifunction Telegram bot with AI chat and image generation used by 5000+ people, backed by Pollinations text and image endpoints. | [@tawerrd](https://github.com/tawerrd) |
+| [💬 JFOAC](https://github.com/tawerrd/JFOAC) | Chat with AI virtual characters in the browser using JFOAC, a frontend that routes requests through the Pollinations text and image APIs. | [@tawerrd](https://github.com/tawerrd) |
+| [🏛️ The Institute of Everything](https://rizperdana.github.io/institute-ai/) | Generate a complete fake museum exhibit from any concept, absurd, niche, or mundane, presented with straight-faced academic seriousness using The Institute of Everything. | [@rizperdana](https://github.com/rizperdana) |
+| [🎨 StyleOps](https://styleops.co) | Generate cohesive brand assets from detailed style guides using StyleOps, an AI-powered brand visual generator powered by Pollinations.ai (Flux model). | [@soyoxymor0n](https://github.com/soyoxymor0n) |
+| 🤖 Overtli Studio Suite | OVERTLI STUDIO Suite is a collection of nodes for Comfy UI that makes local and cloud AI generation easier through a unified advanced router and specialized media nodes. It uses Pollinations.ai as its | [@OvertliDS](https://github.com/OvertliDS) |
+| 🧑‍🎨 Pollinations Avatar Gen - Reforged | Extends the local LLM frontend SillyTavern with Pollinations Avatar Gen - Reforged, an upgraded Reforged extension that builds on Nidelon pollinations-avatar-gen. | [@sunjichaocom](https://github.com/sunjichaocom) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -47,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-04-05** – **🚀 Sana Sprint 1.6B** We've swapped out SDXL Turbo for Sana Sprint 1.6B on our workers, bringing you faster and more reliable [image generation](https://gen.pollinations.ai/image/models).
-- **2026-04-05** – **✨ URV AI Chat** A new community app just dropped in the showcase, featuring diverse LLM access, character creation, and image generation. [Try it](https://urv-ai.vercel.app) <!-- app -->
-- **2026-04-05** – **🤖 Smarter llm.txt** We've expanded our `llm.txt` endpoint so your AI agents can now automatically discover and use our complete set of account management and media storage APIs.
-- **2026-04-03** – **🚀 Gemini 3.1 Flash Lite** Google's lightweight multimodal model is now live on the [text API](https://gen.pollinations.ai/v1/models). Fast processing and a 1M token context window for when you have entirely too much to say.
-- **2026-04-03** – **🔗 Programmatic API Keys** You can now create, list, and revoke API keys directly via endpoints. Automate your access management instead of clicking around the [dashboard](https://enter.pollinations.ai).
-- **2026-04-03** – **🎨 SDK gets a paintbrush and a voice** The [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk) now features dedicated methods for text-to-speech, music generation, and OpenAI-compatible image editing.
-- **2026-04-03** – **📱 Genie AI** A massive new community app featuring live web search, document analysis, and multimodal generation just dropped in the showcase. [Try it](https://cantalopapps.com/genie-ai) <!-- app -->
-- **2026-04-03** – **🤖 Discord bot family** We added a functional multi-model bot framework to the apps directory, complete with per-channel routing. Deploy your own AI staff. [View repos](https://github.com/pollinations/pollinations) <!-- app -->
-- **2026-04-02** – **🎵 The hive drops a beat** ACE-Step 1.5 Turbo is now live on the [Audio API](https://gen.pollinations.ai/audio/{text}). Generate 15-30 second stereo music tracks from text prompts in under 12 seconds.
-- **2026-04-02** – **🖼️ Wan 2.7 enters the studio** Added `wan-image` and `wan-image-pro` to the [Image API](https://gen.pollinations.ai/image/models), bringing up to 4K resolution and thinking mode capabilities.
+- **2026-04-12** – **🧠 Kimi gets a brain upgrade** The `kimi` text model now runs Moonshot's K2-thinking model under the hood. You get reasoning blocks and a massive 128K context window for your largest prompts.
+- **2026-04-12** – **⚡ 50x faster text generation** We migrated `deepseek`, `glm`, `minimax`, and `qwen-large` to Fireworks AI. Latency dropped off a cliff, and Qwen got bumped to its 396B flagship version. Try them in the [Unified API](https://gen.pollinations.ai).
+- **2026-04-12** – **🖼️ Sana hits 0.165s per image** The default Sana [image model](https://gen.pollinations.ai/image/models) was upgraded to 1.6B and moved to GH200 instances. Better pixels, delivered in a fraction of a second.
+- **2026-04-12** – **🌐 Client-side OpenAI SDK support** We adjusted our CORS headers so standard OpenAI SDKs now work directly from the browser. Build your frontend apps without fighting preflight errors.
+- **2026-04-10** – **⚡ DeepSeek & Kimi Upgrades** Migrated DeepSeek and Kimi to new infrastructure. Expect significantly fewer dropped connections and faster response times when chatting in the [Playground](https://pollinations.ai/play).
+- **2026-04-10** – **🌍 Gemini Flash Lite Routing** Rerouted Gemini 2.5 Flash Lite to global endpoints to pool quota. It should now actually survive when everyone tries to hit the [Text API](https://gen.pollinations.ai/v1/chat/completions) at the exact same time.
+- **2026-04-09** – **🚀 Heavyweight models hit the free tier** GPT-5.4, Grok, and Qwen Coder are now free to use. We also wired up Mistral-Large-3 and Grok-4-20 to the [text endpoint](https://gen.pollinations.ai/v1/models).
+- **2026-04-09** – **🎨 Premium pixels, zero cost** `gptimage-large` and `FLUX.1 Kontext` have been moved off the paid tier. Send a prompt, get high-quality pixels back.
+- **2026-04-09** – **🛠️ Dreamframe** A zero-dependency, single-HTML-file playground for testing image, video, voice, and music generation. View source, learn, steal. [Try it](https://funniman23.github.io/Dreamframe/) <!-- app -->
+- **2026-04-09** – **🎭 SillyTavern avatar generation** A new extension lets you generate and update character avatars via our image API directly inside your local LLM frontend. [View repo](https://github.com/sunjichaocom/pollinations-avatar-gen-reforged) <!-- app -->
 ---
 
 ## 🌱 Introduction

@@ -3,13 +3,13 @@
  */
 
 import {
-    getServiceDefinition,
-    type ServiceId,
+    getModelDefinition,
+    type ModelName,
 } from "@shared/registry/registry.ts";
 import type { Modalities } from "./types.ts";
 
 export const getModalities = (modelName: string): Modalities => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return {
         input: service?.inputModalities || ["text"],
         output: service?.outputModalities || ["text"],
@@ -17,7 +17,7 @@ export const getModalities = (modelName: string): Modalities => {
 };
 
 export const getModelDescription = (modelName: string): string | undefined => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.description;
 };
 
@@ -26,7 +26,7 @@ export const getModelDescription = (modelName: string): string | undefined => {
  * Extracts the first part of the description before " - "
  */
 export const getModelDisplayName = (modelName: string): string | undefined => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     const description = service?.description;
     if (!description) return undefined;
     // Extract first part before " - " (e.g., "OpenAI GPT-5 Mini" from "OpenAI GPT-5 Mini - Fast & Balanced")
@@ -34,17 +34,17 @@ export const getModelDisplayName = (modelName: string): string | undefined => {
 };
 
 export const hasReasoning = (modelName: string): boolean => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.reasoning === true;
 };
 
 export const hasSearch = (modelName: string): boolean => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.search === true;
 };
 
 export const hasCodeExecution = (modelName: string): boolean => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.codeExecution === true;
 };
 
@@ -64,7 +64,7 @@ export const hasAudioOutput = (modelName: string): boolean => {
 };
 
 export const isPersona = (modelName: string): boolean => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.persona === true;
 };
 
@@ -72,19 +72,19 @@ export const isPersona = (modelName: string): boolean => {
  * Check if a model is "new" (added within the last 30 days)
  */
 export const isNewModel = (modelName: string): boolean => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     if (!service?.cost?.[0]?.date) return false;
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
     return service.cost[0].date > thirtyDaysAgo;
 };
 
 export const getTextModelId = (modelName: string): string | undefined => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.modelId as string | undefined;
 };
 
 export const getImageModelId = (modelName: string): string | undefined => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.modelId as string | undefined;
 };
 
@@ -92,7 +92,7 @@ export const getImageModelId = (modelName: string): string | undefined => {
  * Check if a model requires paid balance only (no tier balance)
  */
 export const isPaidOnly = (modelName: string): boolean => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.paidOnly === true;
 };
 
@@ -100,6 +100,6 @@ export const isPaidOnly = (modelName: string): boolean => {
  * Check if a model is marked as alpha (experimental, potentially unstable)
  */
 export const isAlpha = (modelName: string): boolean => {
-    const service = getServiceDefinition(modelName as ServiceId);
+    const service = getModelDefinition(modelName as ModelName);
     return service?.alpha === true;
 };

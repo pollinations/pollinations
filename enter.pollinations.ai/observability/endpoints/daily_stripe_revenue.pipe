@@ -1,7 +1,7 @@
 DESCRIPTION >
     Daily revenue from Stripe payments (checkout.session.completed events)
 
-TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE daily_stripe_revenue_node
 SQL >

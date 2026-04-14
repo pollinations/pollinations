@@ -1,5 +1,5 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
-import type { ServiceDefinition } from "./registry";
+import type { ModelDefinition } from "./registry";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -21,8 +21,8 @@ export const AUDIO_VOICES = [
 export type AudioVoice = (typeof AUDIO_VOICES)[number];
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
-export type TextServiceId = keyof typeof TEXT_SERVICES;
-export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
+export type TextModelName = keyof typeof TEXT_SERVICES;
+export type TextModelId = (typeof TEXT_SERVICES)[TextModelName]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
@@ -271,13 +271,13 @@ export const TEXT_SERVICES = {
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
-        modelId: "DeepSeek-V3.2",
-        provider: "azure",
+        modelId: "accounts/fireworks/models/deepseek-v3p2",
+        provider: "fireworks",
         cost: [
             {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.58),
-                promptCachedTokens: perMillion(0.29),
+                date: new Date("2026-04-12").getTime(),
+                promptTextTokens: perMillion(0.56),
+                promptCachedTokens: perMillion(0.28),
                 completionTextTokens: perMillion(1.68),
             },
         ],
@@ -368,9 +368,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.0),
-                promptCachedTokens: perMillion(0.1),
-                completionTextTokens: perMillion(5.0),
+                promptTextTokens: perMillion(1.1),
+                promptCachedTokens: perMillion(0.11),
+                completionTextTokens: perMillion(5.5),
             },
         ],
         description: "MIDIjourney - AI Music Composition Assistant",
@@ -387,9 +387,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(5.0),
-                promptCachedTokens: perMillion(0.5),
-                completionTextTokens: perMillion(25.0),
+                promptTextTokens: perMillion(5.5),
+                promptCachedTokens: perMillion(0.55),
+                completionTextTokens: perMillion(27.5),
             },
         ],
         description: "MIDIjourney Large - Premium AI Music Composition",
@@ -405,9 +405,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.0),
-                promptCachedTokens: perMillion(0.1),
-                completionTextTokens: perMillion(5.0),
+                promptTextTokens: perMillion(1.1),
+                promptCachedTokens: perMillion(0.11),
+                completionTextTokens: perMillion(5.5),
             },
         ],
         description: "Anthropic Claude Haiku 4.5 - Fast & Intelligent",
@@ -425,9 +425,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(3.0),
-                promptCachedTokens: perMillion(0.3),
-                completionTextTokens: perMillion(15.0),
+                promptTextTokens: perMillion(3.3),
+                promptCachedTokens: perMillion(0.33),
+                completionTextTokens: perMillion(16.5),
             },
         ],
         description: "Anthropic Claude Sonnet 4.6 - Most Capable & Balanced",
@@ -445,9 +445,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(5.0),
-                promptCachedTokens: perMillion(0.5),
-                completionTextTokens: perMillion(25.0),
+                promptTextTokens: perMillion(5.5),
+                promptCachedTokens: perMillion(0.55),
+                completionTextTokens: perMillion(27.5),
             },
         ],
         description: "Anthropic Claude Opus 4.6 - Most Intelligent Model",
@@ -466,9 +466,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(5.0),
-                promptCachedTokens: perMillion(0.5),
-                completionTextTokens: perMillion(25.0),
+                promptTextTokens: perMillion(5.5),
+                promptCachedTokens: perMillion(0.55),
+                completionTextTokens: perMillion(27.5),
             },
         ],
         description: "Anthropic Claude Opus 4.5 - Legacy",
@@ -519,24 +519,31 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi": {
-        aliases: ["kimi-k2.5", "kimi-k2p5", "kimi-reasoning", "kimi-large"],
-        modelId: "Kimi-K2.5",
-        provider: "azure",
+        aliases: [
+            "kimi-k2.5",
+            "kimi-k2p5",
+            "kimi-reasoning",
+            "kimi-large",
+            "kimi-k2-thinking",
+            "kimi-thinking",
+        ],
+        modelId: "accounts/fireworks/models/kimi-k2p5",
+        provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-01-28").getTime(),
+                date: new Date("2026-04-12").getTime(),
                 promptTextTokens: perMillion(0.6),
                 promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(3.0),
             },
         ],
         description:
-            "Moonshot Kimi K2.5 - Flagship Agentic Model with Vision & Multi-Agent",
+            "Moonshot Kimi K2.5 - Flagship Agentic Model with CoT Reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 256000,
+        contextLength: 262000,
         isSpecialized: false,
     },
     "gemini-large": {
@@ -613,8 +620,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3),
-                completionTextTokens: perMillion(2.5),
+                promptTextTokens: perMillion(0.33),
+                completionTextTokens: perMillion(2.75),
             },
         ],
         description: "Amazon Nova 2 Lite - 1M Context with Reasoning",
@@ -626,19 +633,19 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-5", "glm-4.7", "glm-4p7"],
-        modelId: "zai.glm-5",
-        provider: "bedrock",
+        aliases: ["glm-5", "glm-5.1", "glm-5p1", "glm-4.7", "glm-4p7"],
+        modelId: "accounts/fireworks/models/glm-5p1",
+        provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-02-13").getTime(),
-                promptTextTokens: perMillion(0.6),
-                promptCachedTokens: perMillion(0.3),
-                completionTextTokens: perMillion(2.2),
+                date: new Date("2026-04-12").getTime(),
+                promptTextTokens: perMillion(1.0),
+                promptCachedTokens: perMillion(0.2),
+                completionTextTokens: perMillion(3.2),
             },
         ],
         description:
-            "Z.ai GLM-5 - 744B MoE, Long Context Reasoning & Agentic Workflows",
+            "Z.ai GLM-5.1 - 744B MoE, Long Context Reasoning & Agentic Workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -648,11 +655,11 @@ export const TEXT_SERVICES = {
     },
     "minimax": {
         aliases: ["minimax-m2.5", "minimax-m2p5"],
-        modelId: "minimax.minimax-m2.5",
-        provider: "bedrock",
+        modelId: "accounts/fireworks/models/minimax-m2p5",
+        provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-01-05").getTime(),
+                date: new Date("2026-04-12").getTime(),
                 promptTextTokens: perMillion(0.3),
                 promptCachedTokens: perMillion(0.03),
                 completionTextTokens: perMillion(1.2),
@@ -726,19 +733,20 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-large": {
-        aliases: ["qwen3.5", "qwen3.5-plus"],
-        modelId: "qwen3.5-plus",
-        provider: "alibaba",
+        aliases: ["qwen3.6", "qwen3.6-plus", "qwen3p6-plus"],
+        modelId: "accounts/fireworks/models/qwen3p6-plus",
+        provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.4),
-                completionTextTokens: perMillion(2.4),
+                date: new Date("2026-04-12").getTime(),
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(3.0),
             },
         ],
         description:
-            "Qwen3.5 Plus - Alibaba Frontier MoE Model with Reasoning via DashScope",
-        inputModalities: ["text"],
+            "Qwen3.6 Plus - 396B MoE Flagship with Reasoning (Fireworks)",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -781,4 +789,4 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         isSpecialized: true,
     },
-} as const satisfies Record<string, ServiceDefinition<string>>;
+} as const satisfies Record<string, ModelDefinition<string>>;

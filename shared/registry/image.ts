@@ -1,17 +1,16 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
-import type { ServiceDefinition } from "./registry";
+import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 
-export type ImageServiceId = keyof typeof IMAGE_SERVICES;
-export type ImageModelId = (typeof IMAGE_SERVICES)[ImageServiceId]["modelId"];
+export type ImageModelName = keyof typeof IMAGE_SERVICES;
+export type ImageModelId = (typeof IMAGE_SERVICES)[ImageModelName]["modelId"];
 
 export const IMAGE_SERVICES = {
     "kontext": {
         aliases: [],
         modelId: "kontext",
         provider: "azure",
-        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -149,7 +148,6 @@ export const IMAGE_SERVICES = {
         aliases: ["gpt-image-1.5", "gpt-image-large"],
         modelId: "gptimage-large",
         provider: "azure",
-        paidOnly: true,
         cost: [
             // Azure GPT Image 1.5 (via AI Foundry)
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
@@ -168,7 +166,7 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        provider: "vast.ai",
+        provider: "runpod",
         cost: [
             {
                 date: COST_START_DATE,
@@ -182,7 +180,7 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "vast.ai",
+        provider: "runpod",
         cost: [
             {
                 date: COST_START_DATE,
@@ -488,4 +486,4 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
-} as const satisfies Record<string, ServiceDefinition<string>>;
+} as const satisfies Record<string, ModelDefinition<string>>;

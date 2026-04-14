@@ -1,4 +1,4 @@
-import type { ServiceDefinition } from "./registry";
+import type { ModelDefinition } from "./registry";
 
 // Voice name to ElevenLabs voice ID mapping
 export const VOICE_MAPPING: Record<string, string> = {
@@ -46,8 +46,8 @@ export const VOICE_MAPPING: Record<string, string> = {
 export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
-export type AudioServiceId = keyof typeof AUDIO_SERVICES;
-export type AudioModelId = (typeof AUDIO_SERVICES)[AudioServiceId]["modelId"];
+export type AudioModelName = keyof typeof AUDIO_SERVICES;
+export type AudioModelId = (typeof AUDIO_SERVICES)[AudioModelName]["modelId"];
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
@@ -121,7 +121,7 @@ export const AUDIO_SERVICES = {
     acestep: {
         aliases: ["ace-step", "acestep-music"],
         modelId: "acestep_v15_turbo",
-        provider: "self-hosted",
+        provider: "lambda",
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),
@@ -134,7 +134,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         alpha: true,
     },
-} satisfies Record<string, ServiceDefinition<string>>;
+} satisfies Record<string, ModelDefinition<string>>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {
     return VOICE_MAPPING[voice] ?? voice;

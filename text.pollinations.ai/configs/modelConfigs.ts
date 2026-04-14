@@ -3,6 +3,7 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
+    createFireworksModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -56,11 +57,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             "gpt-5.4",
         ),
 
-    // -- Azure (old oai-models-resource — keep until follow-up PR) -------------
+    // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
-            process.env.AZURE_MYCELI_GPT_AUDIO_MINI_API_KEY,
-            process.env.AZURE_MYCELI_GPT_AUDIO_MINI_ENDPOINT,
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-audio-mini/chat/completions?api-version=2025-01-01-preview",
             "gpt-audio-mini-2025-12-15",
         ),
     // -- Azure (Myceli Prod — swedencentral, audio) ---------------------------
@@ -85,20 +86,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4-20-reasoning",
         ),
 
-    // -- Azure (Myceli Prod — eastus, DeepSeek) -------------------------------
-    "DeepSeek-V3.2": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/DeepSeek-V3.2/chat/completions?api-version=2024-12-01-preview",
-            "DeepSeek-V3.2",
-        ),
-    // -- Azure (Myceli Prod — eastus, Kimi) -----------------------------------
-    "Kimi-K2.5": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K2.5/chat/completions?api-version=2024-12-01-preview",
-            "Kimi-K2.5",
-        ),
+    // -- Fireworks AI (DeepSeek, Kimi, GLM, Qwen) --------------------------------
+    "accounts/fireworks/models/deepseek-v3p2": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v3p2",
+        }),
+    "accounts/fireworks/models/kimi-k2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
 
     // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
     "mistral-small-3.2-24b-instruct-2506": () =>
@@ -170,7 +166,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "gemini-2.5-flash-lite": createVertexGeminiConfig(
         "gemini-2.5-flash-lite",
-        "us-central1",
+        "global",
     ),
     "gemini-3.1-flash-lite-preview": createVertexGeminiConfig(
         "gemini-3.1-flash-lite-preview",
@@ -183,10 +179,23 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
 
+    // -- Fireworks AI (Qwen) -----------------------------------------------------
+    "accounts/fireworks/models/qwen3p6-plus": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3p6-plus",
+        }),
+    "accounts/fireworks/models/glm-5p1": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p1",
+        }),
+    "accounts/fireworks/models/minimax-m2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m2p5",
+        }),
+
     // -- Alibaba DashScope (Qwen) ---------------------------------------------
     "qwen3-coder-next": () =>
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-    "qwen3.5-plus": () => createDashScopeModelConfig({ model: "qwen3.5-plus" }),
     "qwen3-vl-plus": () =>
         createDashScopeModelConfig({ model: "qwen3-vl-plus" }),
 
@@ -195,11 +204,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudMistralConfig({ model: "Qwen3Guard-Gen-8B" }),
-
-    // -- AWS Bedrock (GLM & MiniMax) ---------------------------------------------
-    "glm-5": () => createBedrockNativeConfig({ model: "zai.glm-5" }),
-    "minimax-m2.5": () =>
-        createBedrockNativeConfig({ model: "minimax.minimax-m2.5" }),
 
     // -- Community Models -----------------------------------------------------
     "polly": () =>

@@ -2,24 +2,6 @@ server {
 
     server_name image.pollinations.ai;
 
-    # Configuration for SSE under /feed
-    location /feed {
-        proxy_pass http://localhost:16384;
-        proxy_http_version 1.1;
-        proxy_set_header Connection '';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # SSE-specific settings
-        proxy_buffering off;
-        proxy_cache off;
-        proxy_read_timeout 12h;
-        add_header Cache-Control no-cache;
-        add_header 'Access-Control-Allow-Origin' '*' always;
-    }
-
     # Configuration for other paths
     location / {
         proxy_pass http://localhost:16384;

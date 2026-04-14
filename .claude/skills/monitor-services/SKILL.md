@@ -1,6 +1,6 @@
 ---
 name: monitor-services
-description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Vast.ai). Use with /loop for recurring checks."
+description: "Health check and auto-restart all Pollinations GPU services (Flux/Z-Image on RunPod, LTX-2 on GH200, Klein on RunPod, legacy image on OVH, Sana on Oracle Cloud). Use with /loop for recurring checks."
 ---
 
 # Monitor Services
@@ -26,7 +26,7 @@ Or run once: `/monitor-services`
 | **Host** | `192.222.51.105` |
 | **Port** | `8765` |
 | **Provider** | Lambda Labs (NVIDIA GH200) |
-| **SSH** | `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105` |
+| **SSH** | `ssh -i <SSH_LAMBDA_SANA_LTX2_ACESTEP from SOPS> ubuntu@192.222.51.105` |
 
 **Health check:**
 ```bash
@@ -45,7 +45,7 @@ Expected: HTTP 200, ~500-800KB, ~11-13s
 
 **Restart:**
 ```bash
-ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105 "bash /home/ubuntu/start_ltx2.sh"
+ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105 "bash /home/ubuntu/start_ltx2.sh"
 ```
 Wait ~60s after restart, then re-check health.
 
@@ -57,7 +57,7 @@ Wait ~60s after restart, then re-check health.
 |----------|-------|
 | **Host** | `192.222.51.105` |
 | **Port** | `8189` |
-| **SSH** | `ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105` |
+| **SSH** | `ssh -i <SSH_LAMBDA_SANA_LTX2_ACESTEP from SOPS> ubuntu@192.222.51.105` |
 | **Systemd** | `acestep.service` |
 | **Auth** | `ACESTEP_API_KEY` env var (Bearer token) |
 
@@ -69,12 +69,12 @@ Expected: `{"status":"ok","models_initialized":true}`
 
 **Restart:**
 ```bash
-ssh -i ~/.ssh/thomashkey ubuntu@192.222.51.105 "sudo systemctl restart acestep"
+ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105 "sudo systemctl restart acestep"
 ```
 Wait ~50s for model initialization, then re-check health.
 
 **Notes:**
-- Token auth via `Authorization: Bearer <token>` — token stored in encrypted secrets as `MUSIC_SERVICE_TOKEN`
+- Token auth via `Authorization: Bearer <token>` — token stored in encrypted secrets as `PLN_GPU_TOKEN`
 - Server-side token set via `ACESTEP_API_KEY` env var in systemd unit
 - Runs on port 8189 (port 8188 is ComfyUI/LTX-2)
 
@@ -109,8 +109,8 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo systemctl restart image-polli
 | **Host** | `pi90tfk3sa9t12-8000.proxy.runpod.net` |
 | **Port** | `8000` |
 | **Provider** | RunPod (RTX 3090, community cloud) |
-| **SSH** | `ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207` |
-| **Auth** | `x-backend-token` header with `PLN_IMAGE_BACKEND_TOKEN` |
+| **SSH** | `ssh -i <SOPS:SSH_RUNPOD_KLEIN> root@213.144.200.243 -p 10207` |
+| **Auth** | `x-backend-token` header with `PLN_GPU_TOKEN` |
 
 **Health check:**
 ```bash
@@ -120,7 +120,7 @@ Expected: `{"status":"ok","model":"black-forest-labs/FLUX.2-klein-4B"}`
 
 **Restart:**
 ```bash
-ssh -i ~/.runpod/ssh/RunPod-Key-Go root@213.144.200.243 -p 10207 "/workspace/restart.sh"
+ssh -i <SOPS:SSH_RUNPOD_KLEIN> root@213.144.200.243 -p 10207 "/workspace/restart.sh"
 ```
 Wait ~30s for model load, then re-check health.
 
@@ -132,7 +132,7 @@ Wait ~30s for model load, then re-check health.
 |----------|-------|
 | **Pod** | `hsl3ksl31lvrcc` |
 | **Provider** | RunPod (4x RTX 4090, community cloud) |
-| **SSH** | `ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17` |
+| **SSH** | `ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p 19489 root@38.65.239.17` |
 
 **Workers:**
 
@@ -159,7 +159,7 @@ Expected: 4 workers with 0% error rate, all `hsl3ksl31lvrcc-*.proxy.runpod.net`
 
 **Restart a worker:**
 ```bash
-ssh -i ~/.ssh/thomashkey -p 28895 root@38.65.239.17
+ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p 19489 root@38.65.239.17
 screen -S flux-gpu0 -X quit
 screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate && \
   CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
@@ -168,19 +168,17 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 
 ---
 
-### 6. Sana Sprint 1.6B Workers (Lambda Labs)
+### 6. Sana Sprint 1.6B Worker (GH200 - same host as LTX-2)
 
-Two workers registered as `sana` type with OVH legacy service via heartbeat (no SSH tunnels).
+One worker registered as `sana` type with OVH legacy service via heartbeat.
 
 | Instance | GPU | Host | Port | SSH |
 |----------|-----|------|------|-----|
-| Lambda A10 | A10 (24GB) | `150.136.85.48` | `8765` | `ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48` |
-| Lambda A100 | A100 (40GB) | `150.136.209.134` | `8765` | `ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134` |
+| Lambda GH200 | GH200 (96GB) | `192.222.51.105` | `8766` | `ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105` |
 
 **Health check:**
 ```bash
-curl -s --connect-timeout 5 --max-time 10 http://150.136.85.48:8765/health
-curl -s --connect-timeout 5 --max-time 10 http://150.136.209.134:8765/health
+curl -s --connect-timeout 5 --max-time 10 http://192.222.51.105:8766/health
 ```
 Expected: `{"status":"healthy","model":"Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers"}`
 
@@ -188,18 +186,19 @@ Expected: `{"status":"healthy","model":"Efficient-Large-Model/Sana_Sprint_1.6B_1
 ```bash
 ssh -i ~/.ssh/id_rsa_ovh -o ConnectTimeout=5 ubuntu@57.130.31.42 "curl -s http://localhost:16384/register"
 ```
-Expected: 2 workers with 0% error rate
+Expected: 1 worker with 0% error rate
 
 **Restart:**
 ```bash
-ssh -i ~/.ssh/thomashkey ubuntu@150.136.85.48 "sudo systemctl restart sana"
-ssh -i ~/.ssh/thomashkey ubuntu@150.136.209.134 "sudo systemctl restart sana"
+ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105 "sudo systemctl restart sana"
 ```
 
 **Notes:**
-- A10 generates at ~0.60s/img, A100 at ~0.25s/img
-- Replaced SDXL Turbo on Vast.ai (instance 34086100, now STOPPED)
+- GH200 generates at ~0.165s/img
+- Runs alongside LTX-2 (port 8765) and ACE-Step (port 8189) on the same host
+- Oracle A10/A100 instances decommissioned on 2026-04-12
 - Server code: `image.pollinations.ai/sana/server.py` (MAX_DIM=768, MAX_PIXELS=512*512)
+- Systemd service: `sana.service`
 
 ---
 
@@ -229,8 +228,8 @@ When invoked, run checks in this order:
 5. **ACE-Step health** - curl health endpoint on port 8189
 6. **Klein health** - curl RunPod proxy health endpoint
 7. **Legacy image service** - check systemctl status on OVH
-8. **Sana workers** - curl health on both Lambda instances (A10 + A100)
-9. **Sana registry** - check OVH legacy registry for 2 workers with 0% errors
+8. **Sana worker** - curl health on GH200 port 8766
+9. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
 10. **Disk space** - check OVH disk usage
 
 For each:
@@ -240,7 +239,12 @@ For each:
 ## Auth
 
 - **Test token**: Read from `enter.pollinations.ai/.testingtokens` (ENTER_API_TOKEN_REMOTE)
-- **SSH keys**: `~/.ssh/thomashkey` (GH200), `~/.ssh/id_rsa_ovh` (OVH)
+- **SSH keys**: Stored in SOPS (`enter.pollinations.ai/secrets/prod.vars.json`):
+  - `SSH_RUNPOD_FLUX_ZIMAGE` — RunPod Flux+Z-Image pod
+  - `SSH_RUNPOD_KLEIN` — RunPod Klein pod
+  - `SSH_LAMBDA_SANA_LTX2_ACESTEP` — Lambda GH200 (LTX-2, ACE-Step, Sana)
+  - Extract: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.KEY_NAME' > /tmp/key && chmod 600 /tmp/key`
+- **OVH**: `~/.ssh/id_rsa_ovh` (not in SOPS)
 
 ## Output
 
@@ -259,8 +263,7 @@ Report a brief status table:
 | ACE-Step | OK | 0.1s | |
 | Klein 4B | OK | 0.3s | RunPod |
 | Legacy image | OK | - | active |
-| Sana (Lambda A10) | OK | 0.2s | 1.6B, ~0.60s/img |
-| Sana (Lambda A100) | OK | 0.2s | 1.6B, ~0.25s/img |
-| Sana registry | OK | - | 2 workers, 0% errors |
+| Sana (GH200) | OK | 0.2s | 1.6B, ~0.165s/img |
+| Sana registry | OK | - | 1 worker, 0% errors |
 | OVH disk | OK | - | 45% used |
 ```

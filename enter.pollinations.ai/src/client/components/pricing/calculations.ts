@@ -8,6 +8,8 @@
 import millify from "millify";
 import type { ModelPrice } from "./types.ts";
 
+export const TOP_UP_TOOLTIP = "🔒 Top up to use this model";
+
 /** Format number as coarse estimate (not precise - it's an average) */
 function formatCount(num: number): string {
     if (num < 1) return "1";
@@ -29,4 +31,22 @@ export function calculatePerPollen(model: ModelPrice): string {
     }
 
     return "—";
+}
+
+/**
+ * Calculate how many requests the user can afford with their current balance.
+ * For paid-only models: only packBalance + cryptoBalance.
+ * For free models: tierBalance + packBalance + cryptoBalance.
+ * Returns "0" when balance is insufficient, "—" when no cost data.
+ */
+export function calculateForBalance(
+    model: ModelPrice,
+    effectiveBalance: number,
+): string {
+    if (!model.realAvgCost || model.realAvgCost <= 0) return "—";
+
+    const requests = effectiveBalance / model.realAvgCost;
+    if (requests < 1) return "0";
+
+    return formatCount(requests);
 }

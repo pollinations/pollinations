@@ -9,6 +9,36 @@
 - **pr-issue-assistant.yml** - AI assistant (Polly) via pollinations.ai, triggered by `polly` in issues/PRs. Whitelisted users only.
 - **issue-pr-review-changes.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
 
+## Issue Automation Pipeline
+
+- **issue-automation.yml** - Automated triage on every new issue. Calls Polly API to detect duplicates, already-resolved issues, and minor auto-fixable problems.
+
+### Flow
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[Issue Opened] --> B{Bot or TIER?}
+    B -->|Yes| C[Skip]
+    B -->|No| D[Call Polly API]
+    D -->|3 retries| E{Parse JSON verdict}
+    E -->|Parse fail| C
+    E -->|Success| F{Check action + confidence}
+    F -->|duplicate >= 0.85| G[Comment + Close as not_planned]
+    F -->|resolved >= 0.85| H[Comment + Close as completed]
+    F -->|auto_fix >= 0.70| I[Comment + Add polly label]
+    F -->|skip / below threshold| C
+    I --> J[issue-polly-auto-fix.yml triggered]
+```
+
+### Model Routing (Auto-Fix)
+
+| Role | Model | Purpose |
+|------|-------|---------|
+| Default | GLM | Code generation and fixes |
+| Thinking | Kimi K2.5 | Reasoning and planning |
+| Web Search | Perplexity Reasoning | Web lookups |
+
 ## Project Management
 
 - **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/News/Tier projects with priority.

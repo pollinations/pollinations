@@ -2,7 +2,7 @@ DESCRIPTION >
     Weekly cohort retention - tracks user retention week over week.
     Shows what percentage of users from each cohort returned in subsequent weeks.
 
-TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE cohort_base
 SQL >

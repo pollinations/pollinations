@@ -2,7 +2,7 @@ DESCRIPTION >
     Get daily aggregated usage data for a user. Groups by date and model.
     Returns all historical data (no time limit). Use 'since' and 'until' for date range filtering.
 
-TOKEN model_usage READ
+TOKEN tinybird_read READ
 
 NODE user_usage_daily_node
 SQL >

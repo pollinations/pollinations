@@ -234,19 +234,19 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                promptAudioTokens: perMillion(0.3),
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.1), // per 1M tokens
+                promptCachedTokens: perMillion(0.01), // per 1M tokens
+                promptAudioTokens: perMillion(0.3), // per 1M tokens
+                completionTextTokens: perMillion(0.4), // per 1M tokens
             },
         ],
         price: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3),
-                promptCachedTokens: perMillion(0.03),
-                promptAudioTokens: perMillion(0.3),
-                completionTextTokens: perMillion(1.2),
+                promptTextTokens: perMillion(0.3), // per 1M tokens
+                promptCachedTokens: perMillion(0.03), // per 1M tokens
+                promptAudioTokens: perMillion(0.3), // per 1M tokens
+                completionTextTokens: perMillion(1.2), // per 1M tokens
             },
         ],
         description:
@@ -293,7 +293,7 @@ export const TEXT_SERVICES = {
             {
                 date: new Date("2026-03-22").getTime(),
                 promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
+                promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(0.5),
             },
         ],
@@ -336,10 +336,19 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.02),
-                promptAudioTokens: perMillion(0.2), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.8),
+                promptTextTokens: perMillion(0.2), // per 1M tokens
+                promptCachedTokens: perMillion(0.02), // per 1M tokens
+                promptAudioTokens: perMillion(0.2), // per 1M tokens (audio billed at same rate as text)
+                completionTextTokens: perMillion(0.8), // per 1M tokens
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.3), // per 1M tokens, matches gemini-fast
+                promptCachedTokens: perMillion(0.03), // per 1M tokens, matches gemini-fast
+                promptAudioTokens: perMillion(0.3), // per 1M tokens, matches gemini-fast
+                completionTextTokens: perMillion(1.2), // per 1M tokens, matches gemini-fast
             },
         ],
         description: "Google Gemini 2.5 Flash Lite - With Google Search",
@@ -710,8 +719,15 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.3),
-                completionTextTokens: perMillion(1.5),
+                promptTextTokens: perMillion(0.3), // per 1M tokens
+                completionTextTokens: perMillion(1.5), // per 1M tokens
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.45), // per 1M tokens
+                completionTextTokens: perMillion(2.25), // per 1M tokens
             },
         ],
         description:
@@ -750,8 +766,15 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.2),
-                completionTextTokens: perMillion(1.6),
+                promptTextTokens: perMillion(0.2), // per 1M tokens
+                completionTextTokens: perMillion(1.6), // per 1M tokens
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.3), // per 1M tokens
+                completionTextTokens: perMillion(2.4), // per 1M tokens
             },
         ],
         description:

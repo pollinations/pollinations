@@ -119,7 +119,9 @@ const MODEL_REGISTRY = Object.fromEntries(
         {
             ...service,
             cost: sortDefinitions([...service.cost]),
-            price: sortDefinitions([...(service.price ?? service.cost)]),
+            price: sortDefinitions([
+                ...((service as ModelDefinition).price ?? service.cost),
+            ]),
         } as ModelRegistryEntry,
     ]),
 ) as Record<ModelName, ModelRegistryEntry>;

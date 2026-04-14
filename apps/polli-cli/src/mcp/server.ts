@@ -1,7 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { POLLINATIONS_KNOWLEDGE } from "./knowledge.js";
-import { pollyTools } from "./tools.js";
+import { fetchKnowledge, pollyTools } from "./tools.js";
 
 const SERVER_INSTRUCTIONS = `# Polly — Pollinations AI Assistant (MCP)
 
@@ -67,7 +66,7 @@ export async function startPollyMcp() {
                 {
                     uri: "pollinations://knowledge",
                     mimeType: "text/markdown",
-                    text: POLLINATIONS_KNOWLEDGE,
+                    text: await fetchKnowledge(),
                 },
             ],
         }),

@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { BASE_URL, ENTER_URL, resolveApiKey } from "../lib/config.js";
-import { POLLINATIONS_KNOWLEDGE } from "./knowledge.js";
+
+let knowledgeCache: string | null = null;
+export const fetchKnowledge = async (): Promise<string> => {
+    if (knowledgeCache) return knowledgeCache;
+    const res = await fetch(`${ENTER_URL}/api/docs/llm.txt`, {
+        signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    knowledgeCache = await res.text();
+    return knowledgeCache;
+};
 
 type McpContent = { type: "text"; text: string };
 type McpResult = { content: McpContent[] };
@@ -22,23 +32,25 @@ const authFetch = async (url: string, init?: RequestInit) => {
 const platformKnowledge = {
     name: "pollinations_knowledge",
     description:
-        "Get comprehensive knowledge about the Pollinations.AI platform — architecture, API, models, tiers, pricing, auth, SDK, and more. Call this first to understand how Pollinations works.",
+        "Get comprehensive knowledge about the Pollinations.AI platform — architecture, API, models, tiers, pricing, auth, SDK, BYOP, and more. Call this first to understand how Pollinations works. Source: enter.pollinations.ai/api/docs/llm.txt (fetched live, cached per process).",
     schema: {
         topic: z
             .string()
             .optional()
             .describe(
-                "Optional topic filter: api, models, tiers, auth, pricing, sdk, byop, image-params, architecture",
+                "Optional topic filter — any word matching an H2 heading (e.g. text, image, audio, models, auth, byop, errors).",
             ),
     },
     handler: async (params: { topic?: string }) => {
-        if (!params.topic) return textResult(POLLINATIONS_KNOWLEDGE);
+        const doc = await fetchKnowledge();
+        if (!params.topic) return textResult(doc);
 
-        const sections = POLLINATIONS_KNOWLEDGE.split("\n## ");
+        const needle = params.topic.toLowerCase();
+        const sections = doc.split("\n## ");
         const match = sections.find((s) =>
-            s.toLowerCase().includes(params.topic?.toLowerCase()),
+            s.split("\n")[0].toLowerCase().includes(needle),
         );
-        return textResult(match ? `## ${match}` : POLLINATIONS_KNOWLEDGE);
+        return textResult(match ? `## ${match}` : doc);
     },
 };
 

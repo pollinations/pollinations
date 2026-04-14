@@ -61,7 +61,7 @@ export type TransformFn = (
 
 /** OpenAI-style chat completion choice. */
 export interface CompletionChoice {
-    message?: Record<string, unknown>;
+    message?: ChatMessage;
     delta?: Record<string, unknown>;
     finish_reason?: string | null;
     index?: number;
@@ -132,7 +132,7 @@ export interface RequestData {
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
     authHeaderName?: string;
-    authHeaderValue: () => string;
+    authHeaderValue?: () => string | undefined;
     defaultOptions?: Record<string, unknown>;
     formatResponse?: ((...args: unknown[]) => unknown) | null;
     additionalHeaders?: Record<string, string>;

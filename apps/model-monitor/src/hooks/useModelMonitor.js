@@ -6,7 +6,7 @@ import { TEXT_SERVICES } from "../../../../shared/registry/text.ts";
 // Tinybird config
 // Note: This is a READ-ONLY public token, safe to expose in client code
 const TINYBIRD_HOST = "https://api.europe-west2.gcp.tinybird.co";
-const TINYBIRD_TOKEN =
+const TINYBIRD_PUBLIC_READ_TOKEN =
     "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
 // Model list endpoints
@@ -183,7 +183,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         text: null,
         audio: null,
     });
-    const tinybirdConfigured = !!TINYBIRD_TOKEN;
+    const tinybirdConfigured = !!TINYBIRD_PUBLIC_READ_TOKEN;
     const intervalRef = useRef(null);
 
     // History for trends and sparklines
@@ -244,7 +244,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
     // Fetch health stats from Tinybird
     const fetchHealthStats = useCallback(async () => {
-        if (!TINYBIRD_TOKEN) {
+        if (!TINYBIRD_PUBLIC_READ_TOKEN) {
             // Use mock data when Tinybird not configured
             setHealthStats([]);
             return;
@@ -253,7 +253,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         try {
             const pipeName =
                 TINYBIRD_PIPES[aggregationWindow] || TINYBIRD_PIPES["60m"];
-            const url = `${TINYBIRD_HOST}/v0/pipes/${pipeName}.json?token=${TINYBIRD_TOKEN}`;
+            const url = `${TINYBIRD_HOST}/v0/pipes/${pipeName}.json?token=${TINYBIRD_PUBLIC_READ_TOKEN}`;
             const response = await fetch(url);
 
             if (!response.ok) {

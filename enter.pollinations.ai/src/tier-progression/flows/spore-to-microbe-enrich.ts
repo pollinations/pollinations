@@ -11,7 +11,7 @@
  *   npx tsx src/tier-progression/flows/spore-to-microbe-enrich.ts
  *
  * ENVIRONMENT:
- *   TINYBIRD_TOKEN - Admin token for Tinybird SQL API (defaults to .tinyb config)
+ *   TINYBIRD_ADMIN_TOKEN - Admin token for Tinybird SQL API (defaults to .tinyb config)
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -44,8 +44,9 @@ const EMPTY_CONSUMPTION: ConsumptionData = {
     error_rate_pct: 0,
 };
 
-function loadTinybirdToken(): string {
-    if (process.env.TINYBIRD_TOKEN) return process.env.TINYBIRD_TOKEN;
+function loadTinybirdAdminToken(): string {
+    if (process.env.TINYBIRD_ADMIN_TOKEN)
+        return process.env.TINYBIRD_ADMIN_TOKEN;
 
     const tinybPath = resolve("observability/.tinyb");
     if (existsSync(tinybPath)) {
@@ -53,9 +54,9 @@ function loadTinybirdToken(): string {
         if (config.token) return config.token;
     }
 
-    console.error("❌ No Tinybird token found");
+    console.error("❌ No Tinybird admin token found");
     console.error(
-        "   Set TINYBIRD_TOKEN or ensure observability/.tinyb exists",
+        "   Set TINYBIRD_ADMIN_TOKEN or ensure observability/.tinyb exists",
     );
     process.exit(1);
 }
@@ -163,7 +164,7 @@ async function main(): Promise<void> {
         process.exit(1);
     }
 
-    const token = loadTinybirdToken();
+    const token = loadTinybirdAdminToken();
     const host = loadTinybirdHost();
     const content = readFileSync(INPUT_CSV, "utf-8");
     const { headers, rows } = parseCsv(content);

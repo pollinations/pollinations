@@ -1,5 +1,5 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
-import type { ServiceDefinition } from "./registry";
+import type { ModelDefinition } from "./registry";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -21,8 +21,8 @@ export const AUDIO_VOICES = [
 export type AudioVoice = (typeof AUDIO_VOICES)[number];
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
-export type TextServiceId = keyof typeof TEXT_SERVICES;
-export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
+export type TextModelName = keyof typeof TEXT_SERVICES;
+export type TextModelId = (typeof TEXT_SERVICES)[TextModelName]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
@@ -770,4 +770,4 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         isSpecialized: true,
     },
-} as const satisfies Record<string, ServiceDefinition<string>>;
+} as const satisfies Record<string, ModelDefinition<string>>;

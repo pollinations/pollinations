@@ -22,7 +22,7 @@ async function sendPolarEventToTinybird(
 ): Promise<void> {
     const e = env as unknown as Record<string, string>;
     const tinybirdUrl = e.TINYBIRD_POLAR_INGEST_URL;
-    const tinybirdToken = e.TINYBIRD_POLAR_INGEST_TOKEN;
+    const tinybirdToken = e.TINYBIRD_INGEST_TOKEN;
 
     if (!tinybirdUrl || !tinybirdToken) {
         log.debug("Tinybird Polar ingest not configured, skipping");

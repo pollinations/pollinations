@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { statSync } from "node:fs";
 
 /**
  * GCP provider — fetches MTD spend from the BigQuery billing export table.
@@ -47,8 +48,19 @@ function bqQuery(sql) {
             `--project_id=${PROJECT}`,
             sql,
         ];
+        // Use service account key if available (allows unattended cron).
+        // Falls back to default gcloud user auth otherwise.
+        const saKey = new URL("../../secrets/gcp-sa-key.json", import.meta.url).pathname;
+        const env = { ...process.env };
+        try {
+            if (statSync(saKey).isFile()) {
+                env.GOOGLE_APPLICATION_CREDENTIALS = saKey;
+            }
+        } catch {}
+
         const child = spawn("bq", args, {
             stdio: ["ignore", "pipe", "pipe"],
+            env,
         });
         let stdout = "";
         let stderr = "";
@@ -92,7 +104,7 @@ WITH mtd AS (
     ROUND(SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS net_cost,
     COUNT(*) AS record_count
   FROM \`${TABLE}\`
-  WHERE _PARTITIONTIME >= TIMESTAMP('${startPartition}')
+  WHERE DATE(usage_start_time) >= '${startPartition}'
 ),
 latest AS (
   SELECT MAX(DATE(usage_start_time)) AS max_usage_date

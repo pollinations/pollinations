@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 MODEL_CACHE = "model-cache"
-QUANT_MODEL_PATH = "mit-han-lab/svdq-fp4-flux.1-schnell"
+QUANT_MODEL_PATH = "mit-han-lab/svdq-int4-flux.1-schnell"
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
@@ -196,11 +196,11 @@ def verify_backend_token(
 ):
     """Verify backend authentication token.
     
-    Requires x-backend-token header validated against PLN_IMAGE_BACKEND_TOKEN env var.
+    Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
     """
-    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
+    expected_token = os.getenv("PLN_GPU_TOKEN")
     if not expected_token:
-        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
+        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
         return True
     
     if x_backend_token != expected_token:

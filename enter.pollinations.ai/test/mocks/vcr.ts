@@ -2,8 +2,8 @@ import { env } from "cloudflare:test";
 import crypto from "node:crypto";
 import { getLogger } from "@logtape/logtape";
 import {
-    getServiceDefinition,
-    resolveServiceId,
+    getModelDefinition,
+    resolveModelName,
 } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { expect, inject } from "vitest";
@@ -67,8 +67,8 @@ async function getSnapshotHash(request: Request): Promise<string> {
         // Include provider + modelId so snapshots auto-invalidate when a model
         // migrates to a different backend (e.g. fireworks → azure).
         try {
-            const serviceId = resolveServiceId(body.model);
-            const def = getServiceDefinition(serviceId);
+            const modelName = resolveModelName(body.model);
+            const def = getModelDefinition(modelName);
             hash.update(`${def.provider}:${def.modelId}`);
         } catch {
             // Unknown model — hash stays request-only

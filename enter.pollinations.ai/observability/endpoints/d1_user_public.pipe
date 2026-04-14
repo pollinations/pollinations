@@ -1,7 +1,7 @@
 DESCRIPTION >
     Restricted public view of D1 user table (no emails, no balances).
 
-TOKEN d1_user_public_read READ
+TOKEN tinybird_read_public READ
 
 NODE d1_user_public_node
 SQL >

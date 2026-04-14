@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { Command } from "commander";
 
 import { authCommand } from "./commands/auth.js";
@@ -12,6 +13,15 @@ import { setOutputMode } from "./lib/output.js";
 import { flavor } from "./lib/quotes.js";
 
 const program = new Command();
+
+program.configureHelp({
+    styleTitle: (s) => chalk.hex("#a78bfa").bold(s),
+    styleCommandText: (s) => chalk.bold(s),
+    styleSubcommandText: (s) => chalk.bold(s),
+    styleOptionText: (s) => chalk.cyan(s),
+    styleArgumentText: (s) => chalk.yellow(s),
+    styleDescriptionText: (s) => chalk.dim(s),
+});
 
 program
     .name("polli")

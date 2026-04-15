@@ -180,7 +180,7 @@ function generateLLMDoc(): string {
         "- transparent (boolean, default: false): gptimage, gptimage-large",
     );
     lines.push(
-        "- reasoning (boolean, default: false): Enable thinking for improved text/layout. nanobanana, nanobanana-2, nanobanana-pro",
+        '- reasoning (fast|balanced|pro, default: "balanced"): CoT depth for nanobanana models. Also accepts true (-> pro) / false (-> balanced)',
     );
     lines.push("- duration (int, 1-10): Video duration in seconds");
     lines.push('- aspectRatio ("16:9"|"9:16"): Video only');

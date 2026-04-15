@@ -583,13 +583,8 @@ export interface AuthorizeOptions {
 
 /** User profile information */
 export interface AccountProfile {
-    name: string;
-    email: string;
-    githubUsername?: string;
-    image?: string;
-    tier: string;
-    createdAt: string;
-    nextResetAt?: string;
+    githubUsername: string | null;
+    image: string | null;
 }
 
 /** Account balance */

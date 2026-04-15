@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { UserBalance, UserProfile } from "@/hooks/ui";
 
-const TIER_EMOJI: Record<string, string> = {
-    seed: "\u{1F331}",
-    flower: "\u{1F338}",
-    nectar: "\u{1F36F}",
-};
-
 interface UserMenuProps {
     profile: UserProfile | null;
     balance: UserBalance | null;
@@ -32,8 +26,7 @@ export function UserMenu({ profile, balance, apiKey, logout }: UserMenuProps) {
         return () => document.removeEventListener("mousedown", handleClick);
     }, [isOpen]);
 
-    const displayName = profile?.githubUsername || profile?.name || "User";
-    const tierEmoji = profile?.tier ? TIER_EMOJI[profile.tier] : null;
+    const displayName = profile?.githubUsername || "User";
 
     return (
         <div ref={menuRef} className="relative">
@@ -83,27 +76,8 @@ export function UserMenu({ profile, balance, apiKey, logout }: UserMenuProps) {
                                 <div className="text-green-400 font-bold truncate">
                                     {displayName}
                                 </div>
-                                {profile?.email && (
-                                    <div className="text-green-600 truncate text-[10px]">
-                                        {profile.email}
-                                    </div>
-                                )}
                             </div>
                         </div>
-
-                        {/* Tier */}
-                        {tierEmoji && profile?.tier && (
-                            <div className="mb-1">
-                                <span className="text-green-600 uppercase tracking-wider">
-                                    Tier:{" "}
-                                </span>
-                                <span className="text-yellow-400 font-bold">
-                                    {tierEmoji}{" "}
-                                    {profile.tier.charAt(0).toUpperCase() +
-                                        profile.tier.slice(1)}
-                                </span>
-                            </div>
-                        )}
 
                         {/* Balance */}
                         {balance !== null && (

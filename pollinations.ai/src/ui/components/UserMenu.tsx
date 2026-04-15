@@ -5,12 +5,6 @@ import { useAuth } from "../../hooks/useAuth";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { Button } from "./ui/button";
 
-const TIER_EMOJI: Record<string, string> = {
-    seed: "🌱",
-    flower: "🌸",
-    nectar: "🍯",
-};
-
 export function UserMenu() {
     const { apiKey, isLoggedIn, profile, balance, login, logout } = useAuth();
     const { copy } = usePageCopy(AUTH_COPY);
@@ -45,10 +39,7 @@ export function UserMenu() {
         );
     }
 
-    const tierEmoji = profile?.tier ? TIER_EMOJI[profile.tier] : null;
-    const displayName = profile?.githubUsername
-        ? profile.githubUsername
-        : profile?.name || copy.defaultUsername;
+    const displayName = profile?.githubUsername || copy.defaultUsername;
 
     return (
         <div ref={menuRef} className="relative">
@@ -103,20 +94,6 @@ export function UserMenu() {
                             </span>
                             <span className="font-headline text-xs font-black text-dark">
                                 {balance.balance.toFixed(2)} {copy.pollenUnit}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Tier (creator tiers only) */}
-                    {tierEmoji && profile?.tier && (
-                        <div className="mb-3">
-                            <span className="text-xs uppercase tracking-wider text-subtle font-medium block">
-                                {copy.tierLabel}
-                            </span>
-                            <span className="font-headline text-xs font-black text-dark">
-                                {tierEmoji}{" "}
-                                {profile.tier.charAt(0).toUpperCase() +
-                                    profile.tier.slice(1)}
                             </span>
                         </div>
                     )}

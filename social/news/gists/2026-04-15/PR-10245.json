@@ -1,0 +1,34 @@
+{
+  "pr_number": 10245,
+  "title": "fix: update veo 3.1 fast model id to GA version",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10245",
+  "merged_at": "2026-04-15T11:15:49Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Un-breaking the video machine",
+    "blurb": "Google graduated Veo 3.1 Fast out of preview, which temporarily confused our video pipeline. We've updated the model ID, so your video generations are back online and ready to roll!",
+    "summary": "Updated the Google Veo 3.1 Fast model ID to its General Availability version to resolve 404 errors caused by the retired preview alias.",
+    "impact": "Video generation using the Veo 3.1 Fast model is fully restored and functional again.",
+    "keywords": [
+      "veo",
+      "video",
+      "bugfix",
+      "models",
+      "api"
+    ],
+    "visual_concept": "The PR fixes a broken video generation model (Veo). Visual symbols: film reels, video cameras, fixing broken equipment. Characters: Polly the bee and the Monitor Robot. Scene: Polly fixing a retro video camera with a wrench, while the Monitor Robot looks excited.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a wrench to fix a glowing retro video camera. The chunky Monitor Robot stands nearby holding a strip of film, its square pixel eyes looking excited. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-15/PR-10245.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, using a wrench to fix a glowing retro video camera. The chunky Monitor Robot stands nearby holding a strip of film, its square pixel eyes looking excited. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes."
+  },
+  "generated_at": "2026-04-15T11:16:55.929712+00:00"
+}

@@ -4,6 +4,7 @@ import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { createImageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
+import { normalizeContent } from "./transforms/normalizeContent.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import type {
     ChatCompletion,
@@ -50,6 +51,7 @@ export async function generateTextPortkey(
             state.options,
         );
         state = await sanitizeMessages(state.messages, state.options);
+        state = await normalizeContent(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }
 

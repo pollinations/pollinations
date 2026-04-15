@@ -28,7 +28,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         }
     }
 
-    const sortedKeys = [...apiKeys].sort(
+    const now = Date.now();
+    const visibleKeys = apiKeys.filter(
+        (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
+    );
+    const sortedKeys = [...visibleKeys].sort(
         (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
@@ -56,7 +60,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 <Panel color="blue">
                     <div className="flex flex-col gap-3">
-                        {!apiKeys.length && (
+                        {!visibleKeys.length && (
                             <div className="rounded-xl bg-white/80 p-6 text-center">
                                 <p className="text-2xl mb-2">🔑</p>
                                 <p className="font-semibold text-gray-900 text-lg mb-2">
@@ -72,7 +76,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 </p>
                             </div>
                         )}
-                        {apiKeys.length > 0 && (
+                        {visibleKeys.length > 0 && (
                             <div className="rounded-xl bg-amber-50/80 p-4">
                                 <p className="font-semibold text-amber-900 mb-1">
                                     🪷 Let your users bring their own Pollen

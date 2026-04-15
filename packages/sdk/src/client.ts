@@ -1641,6 +1641,8 @@ export class Pollinations {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
+        if (options.api_key_name)
+            params.set("api_key_name", options.api_key_name);
 
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;

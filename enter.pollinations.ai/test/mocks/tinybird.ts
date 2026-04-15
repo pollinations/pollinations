@@ -89,23 +89,13 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
 
             return c.json({ data: rows }, 200);
         })
-        .get("/v0/pipes/user_usage_daily.json", async (c) => {
+        .get("/v0/pipes/user_usage_daily_filtered.json", async (c) => {
             const rows = aggregateDailyUsage(
                 state.events,
                 c.req.query("user_id") || "",
                 c.req.query("since"),
                 c.req.query("until"),
-                false,
-            );
-            return c.json({ data: rows }, 200);
-        })
-        .get("/v0/pipes/user_usage_daily_by_api_key.json", async (c) => {
-            const rows = aggregateDailyUsage(
-                state.events,
-                c.req.query("user_id") || "",
-                c.req.query("since"),
-                c.req.query("until"),
-                true,
+                c.req.query("api_key_name"),
             );
             return c.json({ data: rows }, 200);
         });
@@ -202,7 +192,7 @@ function aggregateDailyUsage(
     userId: string,
     since?: string | null,
     until?: string | null,
-    byApiKey = false,
+    apiKeyName?: string | null,
 ) {
     const buckets = new Map<
         string,
@@ -212,8 +202,6 @@ function aggregateDailyUsage(
             meter_source: string | null;
             requests: number;
             cost_usd: number;
-            api_key_names: Set<string>;
-            api_key_name?: string | null;
         }
     >();
 
@@ -224,17 +212,14 @@ function aggregateDailyUsage(
         ) {
             continue;
         }
+        if (apiKeyName && event.apiKeyName !== apiKeyName) {
+            continue;
+        }
 
         const date = new Date(event.startTime).toISOString().slice(0, 10);
         const model = event.resolvedModelRequested ?? null;
         const meterSource = getMeterSource(event.selectedMeterSlug);
-        const apiKeyName =
-            event.apiKeyName && event.apiKeyName !== "undefined"
-                ? event.apiKeyName
-                : null;
-        const key = byApiKey
-            ? [date, model ?? "", meterSource ?? "", apiKeyName ?? ""].join("|")
-            : [date, model ?? "", meterSource ?? ""].join("|");
+        const key = [date, model ?? "", meterSource ?? ""].join("|");
 
         const current = buckets.get(key) || {
             date,
@@ -242,34 +227,16 @@ function aggregateDailyUsage(
             meter_source: meterSource,
             requests: 0,
             cost_usd: 0,
-            api_key_names: new Set<string>(),
-            ...(byApiKey ? { api_key_name: apiKeyName } : {}),
         };
         current.requests += 1;
         current.cost_usd += Number(event.totalPrice ?? 0);
-        if (apiKeyName) {
-            current.api_key_names.add(apiKeyName);
-        }
         buckets.set(key, current);
     }
 
-    return Array.from(buckets.values())
-        .map((value) => ({
-            date: value.date,
-            model: value.model,
-            meter_source: value.meter_source,
-            requests: value.requests,
-            cost_usd: value.cost_usd,
-            ...(byApiKey
-                ? { api_key_name: value.api_key_name ?? null }
-                : {
-                      api_key_names: Array.from(value.api_key_names).sort(),
-                  }),
-        }))
-        .sort((left, right) => {
-            if (left.date !== right.date) {
-                return right.date.localeCompare(left.date);
-            }
-            return right.requests - left.requests;
-        });
+    return Array.from(buckets.values()).sort((left, right) => {
+        if (left.date !== right.date) {
+            return right.date.localeCompare(left.date);
+        }
+        return right.requests - left.requests;
+    });
 }

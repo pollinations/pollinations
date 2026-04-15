@@ -35,81 +35,32 @@ function createUsageEvent(
     const meterSource = options.meterSource ?? "tier";
     const totalPrice = options.totalPrice ?? 1;
 
+    // only fields the mock reads — cast to satisfy type
     return {
         id: options.id,
-        requestId: `request-${options.id}`,
-        requestPath: "/api/generate/v1/chat/completions",
         startTime: options.startTime,
         endTime: options.startTime,
         responseTime: 123,
-        responseStatus: 200,
-        environment: "test",
         eventType: "generate.text",
         userId,
-        userTier: "seed",
-        userGithubId: "12345",
-        userGithubUsername: "test-user",
-        apiKeyId: `key-${options.apiKeyName}`,
         apiKeyName: options.apiKeyName,
         apiKeyType: "secret",
-        apiKeyCreatedVia: "dashboard",
-        apiKeyCreatedForApp: "",
-        apiKeyCreatedForUserId: userId,
-        selectedMeterId: meterSource,
         selectedMeterSlug: `user:${meterSource}`,
-        balances: {},
-        referrerUrl: "https://example.com",
-        referrerDomain: "example.com",
-        modelRequested: model,
-        resolvedModelRequested: model,
         modelUsed: model,
-        modelProviderUsed: "openai",
-        isBilledUsage: true,
-        tokenPricePromptText: 0,
-        tokenPricePromptCached: 0,
-        tokenPricePromptAudio: 0,
-        tokenPricePromptImage: 0,
-        tokenPriceCompletionText: 0,
-        tokenPriceCompletionReasoning: 0,
-        tokenPriceCompletionAudio: 0,
-        tokenPriceCompletionImage: 0,
+        resolvedModelRequested: model,
         tokenCountPromptText: 10,
-        tokenCountPromptAudio: 0,
         tokenCountPromptCached: 0,
+        tokenCountPromptAudio: 0,
         tokenCountPromptImage: 0,
         tokenCountCompletionText: 20,
         tokenCountCompletionReasoning: 0,
         tokenCountCompletionAudio: 0,
         tokenCountCompletionImage: 0,
-        totalCost: totalPrice,
         totalPrice,
-        moderationPromptHateSeverity: "safe",
-        moderationPromptSelfHarmSeverity: "safe",
-        moderationPromptSexualSeverity: "safe",
-        moderationPromptViolenceSeverity: "safe",
-        moderationPromptJailbreakDetected: false,
-        moderationCompletionHateSeverity: "safe",
-        moderationCompletionSelfHarmSeverity: "safe",
-        moderationCompletionSexualSeverity: "safe",
-        moderationCompletionViolenceSeverity: "safe",
-        moderationCompletionProtectedMaterialCodeDetected: false,
-        moderationCompletionProtectedMaterialTextDetected: false,
-        cacheHit: false,
-        cacheType: "none",
-        cacheSemanticSimilarity: null,
-        cacheSemanticThreshold: null,
-        cacheKey: "",
-        errorResponseCode: "undefined",
-        errorSource: "undefined",
-        errorMessage: "",
-        errorStack: "",
-        errorDetails: "",
-        ipSubnet: "127.0.0.0/24",
-        ipHash: "hash",
-    } as MockTinybirdEvent;
+    } as unknown as MockTinybirdEvent;
 }
 
-test("GET /api/account/usage/daily uses exact API key granularity and respects days", async ({
+test("GET /api/account/usage/daily filters by api_key_name and respects days", async ({
     sessionToken,
     mocks,
 }) => {
@@ -143,38 +94,51 @@ test("GET /api/account/usage/daily uses exact API key granularity and respects d
         }),
     );
 
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/account/usage/daily?days=30&granularity=api_key",
+    const unfiltered = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?days=30",
         {
             headers: {
                 Cookie: `better-auth.session_token=${sessionToken}`,
             },
         },
     );
-
-    expect(response.status).toBe(200);
-    const data = (await response.json()) as {
+    expect(unfiltered.status).toBe(200);
+    const unfilteredData = (await unfiltered.json()) as {
         usage: Array<{
             date: string;
             requests: number;
             cost_usd: number;
-            api_key_names?: string[];
         }>;
     };
+    expect(unfilteredData.usage).toEqual([
+        expect.objectContaining({
+            date: "2026-04-14",
+            requests: 3,
+            cost_usd: 10,
+        }),
+    ]);
 
-    expect(data.usage).toHaveLength(2);
-    expect(data.usage).toEqual([
+    const filtered = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?days=30&api_key_name=alpha",
+        {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    expect(filtered.status).toBe(200);
+    const filteredData = (await filtered.json()) as {
+        usage: Array<{
+            date: string;
+            requests: number;
+            cost_usd: number;
+        }>;
+    };
+    expect(filteredData.usage).toEqual([
         expect.objectContaining({
             date: "2026-04-14",
             requests: 2,
             cost_usd: 5,
-            api_key_names: ["alpha"],
-        }),
-        expect.objectContaining({
-            date: "2026-04-14",
-            requests: 1,
-            cost_usd: 5,
-            api_key_names: ["beta"],
         }),
     ]);
 });

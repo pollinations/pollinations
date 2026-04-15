@@ -253,7 +253,7 @@ const usageDailyQuerySchema = z.object({
         .max(MAX_USAGE_DAYS)
         .optional()
         .default(DEFAULT_DAILY_USAGE_DAYS),
-    granularity: z.enum(["summary", "api_key"]).optional().default("summary"),
+    api_key_name: z.string().optional(),
 });
 
 type DailyUsageRecord = {
@@ -262,11 +262,6 @@ type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     cost_usd: number;
-    api_key_names?: string[];
-};
-
-type KeyedDailyUsageRecord = Omit<DailyUsageRecord, "api_key_names"> & {
-    api_key_name: string | null;
 };
 
 type UsageRecord = {
@@ -302,12 +297,6 @@ const dailyUsageRecordSchema = z.object({
         .describe("Billing source ('tier', 'pack', 'crypto')"),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
-    api_key_names: z
-        .array(z.string())
-        .optional()
-        .describe(
-            "API key names included in this bucket. Present for dashboard usage data.",
-        ),
 });
 
 const dailyUsageResponseSchema = z.object({
@@ -317,26 +306,7 @@ const dailyUsageResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
-function normalizeKeyedDailyUsage(
-    usage: KeyedDailyUsageRecord[],
-): DailyUsageRecord[] {
-    return usage.map((row) => ({
-        date: row.date,
-        model: row.model,
-        meter_source: row.meter_source,
-        requests: row.requests,
-        cost_usd: row.cost_usd,
-        api_key_names:
-            row.api_key_name && row.api_key_name !== "undefined"
-                ? [row.api_key_name]
-                : [],
-    }));
-}
-
-function sortDailyUsageRecords(
-    usage: DailyUsageRecord[],
-    granularity: "summary" | "api_key",
-): DailyUsageRecord[] {
+function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
     return usage.toSorted((left, right) => {
         if (left.date !== right.date) {
             return right.date.localeCompare(left.date);
@@ -347,17 +317,9 @@ function sortDailyUsageRecords(
         if ((left.model || "") !== (right.model || "")) {
             return (left.model || "").localeCompare(right.model || "");
         }
-        if ((left.meter_source || "") !== (right.meter_source || "")) {
-            return (left.meter_source || "").localeCompare(
-                right.meter_source || "",
-            );
-        }
-        if (granularity === "api_key") {
-            return (left.api_key_names?.[0] || "").localeCompare(
-                right.api_key_names?.[0] || "",
-            );
-        }
-        return 0;
+        return (left.meter_source || "").localeCompare(
+            right.meter_source || "",
+        );
     });
 }
 
@@ -761,7 +723,11 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const { format, days, granularity } = c.req.valid("query");
+            const {
+                format,
+                days,
+                api_key_name: apiKeyName,
+            } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -770,7 +736,7 @@ export const accountRoutes = new Hono<Env>()
             const cacheKeyPrefix = usageUserOverridden
                 ? `usage:daily:debug:${usageUserId}`
                 : `usage:daily:${usageUserId}`;
-            const cacheKey = `${cacheKeyPrefix}:${granularity}:${days}`;
+            const cacheKey = `${cacheKeyPrefix}:${days}:${apiKeyName ?? "all"}`;
             const windows = buildUsageWindows(days);
 
             try {
@@ -788,29 +754,22 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 if (!usage) {
-                    const endpointPath =
-                        granularity === "api_key"
-                            ? "/v0/pipes/user_usage_daily_by_api_key.json"
-                            : "/v0/pipes/user_usage_daily.json";
                     const chunkResults = await Promise.all(
                         windows.map((window) =>
-                            fetchTinybirdRows<
-                                DailyUsageRecord | KeyedDailyUsageRecord
-                            >(tinybirdOrigin, endpointPath, tinybirdToken, {
-                                user_id: usageUserId,
-                                since: window.since,
-                                until: window.until,
-                            }),
+                            fetchTinybirdRows<DailyUsageRecord>(
+                                tinybirdOrigin,
+                                "/v0/pipes/user_usage_daily_filtered.json",
+                                tinybirdToken,
+                                {
+                                    user_id: usageUserId,
+                                    since: window.since,
+                                    until: window.until,
+                                    api_key_name: apiKeyName,
+                                },
+                            ),
                         ),
                     );
-                    const rows = chunkResults.flat();
-                    usage =
-                        granularity === "api_key"
-                            ? normalizeKeyedDailyUsage(
-                                  rows as KeyedDailyUsageRecord[],
-                              )
-                            : (rows as DailyUsageRecord[]);
-                    usage = sortDailyUsageRecords(usage, granularity);
+                    usage = sortDailyUsageRecords(chunkResults.flat());
 
                     try {
                         await kv.put(cacheKey, JSON.stringify(usage), {
@@ -822,28 +781,21 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 log.debug(
-                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} granularity={granularity} count={count} cached={cached}",
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyName={apiKeyName} count={count} cached={cached}",
                     {
                         requesterUserId: user.id,
                         targetUserId: usageUserId,
                         override: usageUserOverridden,
                         days,
-                        granularity,
+                        apiKeyName: apiKeyName ?? null,
                         count: usage.length,
                         cached,
                     },
                 );
 
                 if (format === "csv") {
-                    const header =
-                        granularity === "api_key"
-                            ? "date,model,meter_source,api_key_names,requests,cost_usd"
-                            : "date,model,meter_source,requests,cost_usd";
-                    const rows = usage.map((row) =>
-                        granularity === "api_key"
-                            ? `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${escapeCSV(row.api_key_names?.join("|") || "")},${row.requests},${row.cost_usd}`
-                            : dailyUsageRecordToCsvRow(row),
-                    );
+                    const header = "date,model,meter_source,requests,cost_usd";
+                    const rows = usage.map(dailyUsageRecordToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
                     return new Response(csv, {

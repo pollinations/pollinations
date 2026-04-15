@@ -7,6 +7,7 @@ on:
       - "packages/sdk/**"
       - "packages/mcp/**"
       - "packages/ompc/**"
+      - "packages/polli-cli/**"
 
 jobs:
   detect-changes:

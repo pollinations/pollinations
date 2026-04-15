@@ -536,18 +536,27 @@ function AuthorizeComponent() {
                             </>
                         )}
 
-                        <Button
-                            as="button"
-                            onClick={handleSignIn}
-                            disabled={isSigningIn || !!error}
-                            color="amber"
-                            weight="light"
-                            className="w-full"
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
+                        <div className="flex gap-2 justify-end">
+                            <Button
+                                as="button"
+                                onClick={handleDeny}
+                                weight="outline"
+                                color="dark"
+                                disabled={isSigningIn}
+                            >
+                                {isDeviceMode ? "Deny" : "Cancel"}
+                            </Button>
+                            <Button
+                                as="button"
+                                onClick={handleSignIn}
+                                disabled={isSigningIn || !!error}
+                                color="dark"
+                            >
+                                {isSigningIn
+                                    ? "Signing in..."
+                                    : "Continue with GitHub"}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

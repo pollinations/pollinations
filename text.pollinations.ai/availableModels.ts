@@ -1,4 +1,5 @@
 import { type ModelId, resolveModelName } from "../shared/registry/registry.ts";
+import { OPENCLAW_BACKING_MODEL_ID } from "../shared/registry/text.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -50,7 +51,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openclaw",
-        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
+        config: portkeyConfig[OPENCLAW_BACKING_MODEL_ID],
         transform: createSystemPromptTransform(BASE_PROMPTS.openclaw),
     },
     {

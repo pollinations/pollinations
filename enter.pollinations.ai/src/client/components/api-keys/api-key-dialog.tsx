@@ -193,9 +193,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 >
                     <div className="shrink-0 p-6 pb-4">
                         <Dialog.Title className="text-lg font-semibold">
-                            {simplified
-                                ? "Create New App Key"
-                                : "Create API Key"}
+                            {simplified ? "Create App Key" : "Create API Key"}
                         </Dialog.Title>
                         <p className="text-sm text-gray-500 mt-1">
                             {simplified ? (

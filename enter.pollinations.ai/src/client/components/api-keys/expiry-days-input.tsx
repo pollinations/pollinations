@@ -30,7 +30,10 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     inline = false,
     theme = "green",
 }) => {
-    const { inputClasses, tipTone } = getPermissionUiTheme(theme);
+    const {
+        input: { classes: inputClasses },
+        accent: { tipTone },
+    } = getPermissionUiTheme(theme);
 
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>

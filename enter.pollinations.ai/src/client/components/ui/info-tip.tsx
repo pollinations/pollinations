@@ -14,7 +14,7 @@ const TONES = {
     },
     amber: {
         badge: "bg-amber-200 border-amber-400 text-amber-800 hover:bg-amber-300 hover:border-amber-500",
-        popup: "bg-amber-50 border-amber-300",
+        popup: "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300",
     },
     blue: {
         badge: "bg-blue-100 border-blue-300 text-blue-600 hover:bg-blue-200 hover:border-blue-400",

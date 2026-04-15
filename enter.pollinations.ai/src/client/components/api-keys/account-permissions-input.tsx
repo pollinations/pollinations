@@ -95,6 +95,20 @@ const MODEL_CATEGORIES = [
     { label: "Audio", models: audioModels },
 ] as const;
 
+const MODEL_CATEGORY_TEXT_CLASSES = {
+    Text: "text-blue-800",
+    Image: "text-rose-800",
+    Video: "text-teal-800",
+    Audio: "text-violet-800",
+} as const;
+
+const MODEL_CATEGORY_HOVER_CLASSES = {
+    Text: "hover:bg-blue-50 hover:text-blue-900 hover:border-blue-300",
+    Image: "hover:bg-rose-50 hover:text-rose-900 hover:border-rose-300",
+    Video: "hover:bg-teal-50 hover:text-teal-900 hover:border-teal-300",
+    Audio: "hover:bg-violet-50 hover:text-violet-900 hover:border-violet-300",
+} as const;
+
 /**
  * Unified permissions input for API keys.
  * Includes model restrictions and account permissions (profile, balance, usage).
@@ -110,6 +124,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     showApiName = true,
 }) => {
     const themeConfig = getPermissionUiTheme(theme);
+    const { row: rowTheme, accent: accentTheme } = themeConfig;
     const permissionOptions = visiblePermissions?.length
         ? ACCOUNT_PERMISSIONS.filter((permission) =>
               visiblePermissions.includes(permission.id),
@@ -126,6 +141,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     const selectedCount = isUnrestricted
         ? totalModels
         : (allowedModels ?? []).length;
+    const hasSelectedModels = selectedCount > 0;
 
     const handleToggle = (permissionId: string) => {
         if (disabled) return;
@@ -212,43 +228,49 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 <div
                     className={cn(
                         "relative rounded-lg border transition-all",
-                        isUnrestricted
-                            ? themeConfig.selectedClasses
-                            : "border-gray-200",
+                        "border-gray-200",
                         disabled && "opacity-50 cursor-not-allowed",
                     )}
                 >
+                    {/* biome-ignore lint/a11y/useSemanticElements: full-row toggle with separate InfoTip keeps the whole row clickable without nesting interactive elements */}
                     <div
+                        role="button"
+                        tabIndex={disabled ? -1 : 0}
+                        aria-expanded={isExpanded}
+                        aria-label="Toggle model permissions"
+                        onClick={handleHeaderClick}
+                        onKeyDown={(event) => {
+                            if (disabled) return;
+                            if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                handleHeaderClick();
+                            }
+                        }}
                         className={cn(
                             "relative flex items-center gap-3 px-3 py-2 text-left transition-all",
-                            !disabled && "cursor-pointer",
+                            rowTheme.focusRingClasses,
+                            hasSelectedModels && rowTheme.selectedClasses,
                             !disabled &&
-                                (isUnrestricted
-                                    ? themeConfig.selectedHoverClasses
-                                    : themeConfig.rowHoverClasses),
+                                (hasSelectedModels
+                                    ? rowTheme.selectedHoverClasses
+                                    : rowTheme.rowHoverClasses),
+                            !disabled && "cursor-pointer",
                         )}
                     >
-                        <button
-                            type="button"
-                            onClick={handleHeaderClick}
-                            disabled={disabled}
-                            aria-expanded={isExpanded}
-                            aria-label="Toggle model permissions"
-                            className={cn(
-                                "flex flex-1 items-center gap-3 text-left",
-                                themeConfig.focusRingClasses,
-                            )}
-                        >
-                            <div className="flex-1 flex items-center gap-2 min-w-0">
-                                <span className="text-sm font-medium">
-                                    Model
-                                </span>
-                            </div>
+                        <div className="flex flex-1 items-center gap-1.5 min-w-0">
+                            <span className="text-sm font-medium">Model</span>
+                            <InfoTip
+                                text="Choose which models this key can use. By default, all models are allowed."
+                                label="Model access information"
+                                tone={accentTheme.tipTone}
+                            />
+                        </div>
+                        <div className="flex items-center gap-3 text-left">
                             <Badge
                                 color={
                                     selectedCount === 0
                                         ? "gray"
-                                        : themeConfig.badgeColor
+                                        : accentTheme.badgeColor
                                 }
                             >
                                 {isUnrestricted
@@ -263,12 +285,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                             >
                                 ▾
                             </span>
-                        </button>
-                        <InfoTip
-                            text="Choose which models this key can use. By default, all models are allowed."
-                            label="Model access information"
-                            tone={themeConfig.tipTone}
-                        />
+                        </div>
                     </div>
 
                     {/* Expandable model panel */}
@@ -292,7 +309,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                     disabled={disabled}
                                     className={cn(
                                         "text-xs font-medium cursor-pointer disabled:opacity-50",
-                                        themeConfig.actionTextClasses,
+                                        accentTheme.actionTextClasses,
                                     )}
                                 >
                                     {isUnrestricted
@@ -324,47 +341,50 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 {permissionOptions.map((permission) => {
                     const isChecked = value?.includes(permission.id) ?? false;
                     return (
-                        <div
-                            key={permission.id}
-                            className={cn(
-                                "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
-                                isChecked
-                                    ? themeConfig.selectedClasses
-                                    : "border-gray-200",
-                                !disabled &&
-                                    (isChecked
-                                        ? themeConfig.selectedHoverClasses
-                                        : themeConfig.rowHoverClasses),
-                                !disabled && "cursor-pointer",
-                                disabled && "opacity-50 cursor-not-allowed",
-                            )}
-                        >
-                            <button
-                                type="button"
-                                onClick={() => handleToggle(permission.id)}
-                                disabled={disabled}
+                        <div key={permission.id}>
+                            {/* biome-ignore lint/a11y/useSemanticElements: full-row toggle with separate InfoTip keeps the whole row clickable without nesting interactive elements */}
+                            <div
+                                role="button"
+                                tabIndex={disabled ? -1 : 0}
                                 aria-pressed={isChecked}
                                 aria-label={`Toggle ${permission.label} permission`}
+                                onClick={() => handleToggle(permission.id)}
+                                onKeyDown={(event) => {
+                                    if (disabled) return;
+                                    if (
+                                        event.key === "Enter" ||
+                                        event.key === " "
+                                    ) {
+                                        event.preventDefault();
+                                        handleToggle(permission.id);
+                                    }
+                                }}
                                 className={cn(
-                                    "flex flex-1 items-center gap-3 text-left",
-                                    themeConfig.focusRingClasses,
+                                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
+                                    isChecked
+                                        ? rowTheme.selectedClasses
+                                        : "border-gray-200",
+                                    rowTheme.focusRingClasses,
+                                    !disabled &&
+                                        (isChecked
+                                            ? rowTheme.selectedHoverClasses
+                                            : rowTheme.rowHoverClasses),
+                                    !disabled && "cursor-pointer",
+                                    disabled && "opacity-50 cursor-not-allowed",
                                 )}
                             >
                                 <div className="flex flex-1 items-center gap-1.5">
                                     <span className="text-sm font-medium">
                                         {permission.label}
                                     </span>
+                                    <InfoTip
+                                        text={permission.tooltip}
+                                        label={`${permission.label} information`}
+                                        tone={accentTheme.tipTone}
+                                        placement="top"
+                                    />
                                 </div>
-                                <span className="text-gray-400 text-lg leading-none">
-                                    {isChecked ? "✕" : "+"}
-                                </span>
-                            </button>
-                            <InfoTip
-                                text={permission.tooltip}
-                                label={`${permission.label} information`}
-                                tone={themeConfig.tipTone}
-                                placement="top"
-                            />
+                            </div>
                         </div>
                     );
                 })}
@@ -398,7 +418,12 @@ const ModelCategory: FC<{
     <div>
         <div className="flex items-center justify-between mb-1">
             <span
-                className={`px-2 py-0.5 rounded-full text-xs border ${getPermissionPillClasses(label)}`}
+                className={cn(
+                    "text-sm font-semibold",
+                    MODEL_CATEGORY_TEXT_CLASSES[
+                        label as keyof typeof MODEL_CATEGORY_TEXT_CLASSES
+                    ],
+                )}
             >
                 {label}
             </span>
@@ -408,7 +433,7 @@ const ModelCategory: FC<{
                 disabled={disabled}
                 className={cn(
                     "text-[10px] disabled:opacity-50 cursor-pointer",
-                    getPermissionUiTheme(theme).actionTextClasses,
+                    getPermissionUiTheme(theme).accent.actionTextClasses,
                 )}
             >
                 {isCategoryAllSelected(models) ? "Deselect all" : "Select all"}
@@ -451,8 +476,6 @@ const ModelChip: FC<{
     theme = "green",
     category,
 }) => {
-    const themeConfig = getPermissionUiTheme(theme);
-
     return (
         <button
             type="button"
@@ -464,12 +487,16 @@ const ModelChip: FC<{
                     ? getPermissionPillClasses(category ?? "") ||
                           "bg-gray-100 text-gray-800 border-gray-400"
                     : "bg-transparent text-gray-600 border-gray-300",
-                !disabled && !selected && themeConfig.modelHoverClasses,
+                !disabled &&
+                    !selected &&
+                    MODEL_CATEGORY_HOVER_CLASSES[
+                        (category ??
+                            "Text") as keyof typeof MODEL_CATEGORY_HOVER_CLASSES
+                    ],
                 !disabled && "cursor-pointer",
                 disabled && "opacity-50 cursor-not-allowed",
             )}
         >
-            {selected && "✓ "}
             {officialName}
             {showApiName && (
                 <span className="font-mono opacity-70"> - {apiName}</span>

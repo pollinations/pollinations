@@ -25,6 +25,14 @@ describe("normalizeAllowedModelSelection", () => {
             ["a", "b"],
         );
     });
+
+    it("does not collapse to null when selections include stale model ids", () => {
+        const allModelIds = ["a", "b", "c"];
+
+        expect(
+            normalizeAllowedModelSelection(["a", "b", "x"], allModelIds),
+        ).toEqual(["a", "b", "x"]);
+    });
 });
 
 describe("getAuthorizeInitialPermissions", () => {

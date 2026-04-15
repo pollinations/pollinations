@@ -15,7 +15,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "SKILL.md"
   ],
   "keywords": [
     "pollinations",

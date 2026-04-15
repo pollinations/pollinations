@@ -1,0 +1,34 @@
+{
+  "pr_number": 10244,
+  "title": "[codex] fix finance gcp headless billing auth",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10244",
+  "merged_at": "2026-04-15T11:04:15Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Counting the pollen",
+    "blurb": "Fixed a sneaky authentication bug that was keeping our internal GCP billing scripts from reading the latest data. The hive's accounting is back on track!",
+    "summary": "Resolved an authentication issue in the internal finance scripts where headless GCP billing exports were failing to read data.",
+    "impact": "Internal billing and cash flow metrics for GCP will now update correctly during automated runs.",
+    "keywords": [
+      "finance",
+      "gcp",
+      "billing",
+      "bug-fix",
+      "internal"
+    ],
+    "visual_concept": "Polly the bee acting as an accountant, fixing a machine that counts coins or data. A retro terminal showing charts or coins, representing the GCP billing export fix.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny green accountant's visor, inspecting a glowing retro terminal that displays a rising bar chart and pixelated gold coins. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-15/PR-10244.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny green accountant's visor, inspecting a glowing retro terminal that displays a rising bar chart and pixelated gold coins. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-15T11:05:05.591557+00:00"
+}

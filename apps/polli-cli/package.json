@@ -24,7 +24,20 @@
     "image-generation",
     "text-generation"
   ],
+  "author": "pollinations.ai <hello@pollinations.ai>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pollinations/pollinations.git",
+    "directory": "apps/polli-cli"
+  },
+  "homepage": "https://pollinations.ai",
+  "bugs": {
+    "url": "https://github.com/pollinations/pollinations/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "chalk": "^5.4.1",
     "commander": "^13.1.0",

@@ -88,9 +88,9 @@ polli gen audio "lofi hip-hop beat" --model elevenmusic --duration 30 --instrume
 ```bash
 polli gen video "a spacecraft landing on mars" --model wan-fast --duration 5 --output mars.mp4
 ```
-Cheapest path: `--model wan-fast` at ~$0.01/sec. For image-to-video, pass `--image <url>` with a **public HTTPS URL** (local file paths and 404/rate-limited hosts will fail with a server error).
+Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any `--duration` value is ignored — you always pay for and receive 5 sec). For image-to-video, pass `--image <url>` with a **public HTTPS URL** (local file paths and 404/rate-limited hosts will fail with a server error).
 
-**Flag support varies per model and is not enforced client-side.** `--aspect-ratio`, `--audio`, `--negative`, and `--enhance` are forwarded to the server but may be silently ignored — verified on `wan-fast` where `--aspect-ratio 9:16` still returns 16:9 and `--audio` produces no audio track. Always inspect the output (`file`, `ffprobe`) before trusting a flag worked. Check `polli models --type video --json` for per-model capabilities.
+**Flag support varies per model and is not enforced client-side.** `--duration`, `--aspect-ratio`, `--audio`, `--negative`, and `--enhance` are forwarded to the server but may be silently ignored — verified on `wan-fast` where duration is locked to 5s, `--aspect-ratio 9:16` still returns 16:9, and `--audio` produces no audio track. Always inspect the output (`file`, `ffprobe`) before trusting a flag worked. Check `polli models --type video --json` for per-model capabilities.
 
 **Video is not tracked by `--stats`.** `polli models --type video --stats` returns empty — the stats pipe only records text/image/audio events. To compare video models, fall back to `polli models --type video --json` and look at price/description fields.
 

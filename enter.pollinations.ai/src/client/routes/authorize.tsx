@@ -3,6 +3,7 @@ import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
@@ -21,6 +22,8 @@ import {
 } from "../lib/authorize-config.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
+const formatPollen = (value: number) =>
+    value.toFixed(value > 0 && value < 1 ? 3 : 2);
 
 type Attribution = {
     found: boolean;
@@ -151,6 +154,7 @@ function AuthorizeComponent() {
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
+    const [totalBalance, setTotalBalance] = useState<number | null>(null);
 
     const [deviceScopes, setDeviceScopes] = useState<string[]>([]);
 
@@ -240,6 +244,23 @@ function AuthorizeComponent() {
                 .catch(() => {});
         }
     }, [isDeviceMode, user_code, device_scope, app_key, redirect_url]);
+
+    useEffect(() => {
+        if (!user) return;
+
+        apiClient.customer.balance
+            .$get()
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                if (!data) return;
+                setTotalBalance(
+                    (data.tierBalance ?? 0) +
+                        (data.packBalance ?? 0) +
+                        (data.cryptoBalance ?? 0),
+                );
+            })
+            .catch(() => {});
+    }, [user]);
 
     async function handleSignIn(): Promise<void> {
         setIsSigningIn(true);
@@ -418,10 +439,10 @@ function AuthorizeComponent() {
     if (!user) {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full">
+                <div className="bg-white border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full">
                     <div className="shrink-0 p-6 pb-4 flex items-center justify-between">
                         <h2 className="text-lg font-semibold">
-                            Connect to pollinations.ai
+                            Sign in to Authorize
                         </h2>
                         <img
                             src="/logo_text_black.svg"
@@ -437,21 +458,21 @@ function AuthorizeComponent() {
                             </div>
                         ) : (
                             <>
-                                <div className="bg-green-200 rounded-lg p-4">
+                                <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-4">
                                     {isDeviceMode ? (
                                         attribution?.appName ? (
                                             <>
-                                                <p className="font-bold text-green-950 text-lg">
+                                                <p className="font-bold text-gray-900 text-lg">
                                                     {attribution.appName}
                                                 </p>
                                                 {attribution.githubUsername && (
-                                                    <p className="text-sm text-green-700 mt-0.5">
+                                                    <p className="text-sm text-amber-900 mt-0.5">
                                                         by{" "}
                                                         <a
                                                             href={`https://github.com/${attribution.githubUsername}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="font-medium underline hover:text-green-950"
+                                                            className="font-medium underline hover:text-gray-900"
                                                         >
                                                             @
                                                             {
@@ -469,17 +490,17 @@ function AuthorizeComponent() {
                                         )
                                     ) : attribution?.appName ? (
                                         <>
-                                            <p className="font-bold text-green-950 text-lg">
+                                            <p className="font-bold text-gray-900 text-lg">
                                                 {attribution.appName}
                                             </p>
                                             {attribution.githubUsername && (
-                                                <p className="text-sm text-green-700 mt-0.5">
+                                                <p className="text-sm text-amber-900 mt-0.5">
                                                     by{" "}
                                                     <a
                                                         href={`https://github.com/${attribution.githubUsername}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="font-medium underline hover:text-green-950"
+                                                        className="font-medium underline hover:text-gray-900"
                                                     >
                                                         @
                                                         {
@@ -488,22 +509,29 @@ function AuthorizeComponent() {
                                                     </a>
                                                 </p>
                                             )}
-                                            <p className="text-xs text-green-800 font-mono mt-1">
+                                            <p className="text-xs text-amber-900 font-mono mt-1">
                                                 {redirectHostname}
                                             </p>
                                         </>
                                     ) : (
-                                        <p className="font-semibold text-green-950">
+                                        <p className="font-semibold text-gray-900">
                                             {redirectHostname}
                                         </p>
                                     )}
-                                    <p className="text-xs text-green-800 mt-1">
-                                        wants to connect to your account
-                                    </p>
                                 </div>
 
-                                <p className="text-green-800 text-sm">
-                                    Sign in to continue
+                                <p className="text-amber-900 text-sm">
+                                    Sign in to let{" "}
+                                    <span className="font-semibold">
+                                        {attribution?.appName ||
+                                            redirectHostname ||
+                                            "this app"}
+                                    </span>{" "}
+                                    access your{" "}
+                                    <span className="font-semibold">
+                                        Pollinations
+                                    </span>{" "}
+                                    account.
                                 </p>
                             </>
                         )}
@@ -512,12 +540,13 @@ function AuthorizeComponent() {
                             as="button"
                             onClick={handleSignIn}
                             disabled={isSigningIn || !!error}
-                            color="dark"
+                            color="amber"
+                            weight="light"
                             className="w-full"
                         >
                             {isSigningIn
                                 ? "Signing in..."
-                                : "Sign in with GitHub"}
+                                : "Continue with GitHub"}
                         </Button>
                     </div>
                 </div>
@@ -646,17 +675,40 @@ function AuthorizeComponent() {
                                 ref={scrollAreaRef}
                                 className="bg-amber-50 border-2 border-amber-300 rounded-lg flex-1 min-h-0 overflow-y-auto scrollbar-subtle scrollbar-theme-amber"
                             >
-                                <div className="p-4 flex items-center gap-2">
-                                    {user.image && (
-                                        <img
-                                            src={user.image}
-                                            alt=""
-                                            className="w-6 h-6 rounded-full"
-                                        />
-                                    )}
-                                    <span className="text-sm font-medium text-gray-900">
-                                        {user.githubUsername || user.email}
-                                    </span>
+                                <div className="p-4 flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        {user.image && (
+                                            <img
+                                                src={user.image}
+                                                alt=""
+                                                className="w-6 h-6 rounded-full shrink-0"
+                                            />
+                                        )}
+                                        <span className="text-sm font-medium text-gray-900 truncate">
+                                            {user.githubUsername || user.email}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {totalBalance !== null && (
+                                            <span className="text-sm text-amber-900 whitespace-nowrap">
+                                                balance:{" "}
+                                                {formatPollen(totalBalance)}{" "}
+                                                pollen
+                                            </span>
+                                        )}
+                                        <Button
+                                            as="a"
+                                            href="https://enter.pollinations.ai/#buy-pollen"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            color="amber"
+                                            weight="light"
+                                            size="small"
+                                            className="px-3"
+                                        >
+                                            Top up
+                                        </Button>
+                                    </div>
                                 </div>
 
                                 <div className="border-t border-amber-300 p-4">

@@ -25,6 +25,23 @@
     "text-generation"
   ],
   "author": "pollinations.ai <hello@pollinations.ai>",
+  "contributors": [
+    {
+      "name": "Thomas Haferlach",
+      "email": "thomash@myceli.ai",
+      "url": "https://github.com/voodoohop"
+    },
+    {
+      "name": "Ayushman",
+      "email": "ayushman@myceli.ai",
+      "url": "https://github.com/Circuit-Overtime"
+    },
+    {
+      "name": "Itachi",
+      "email": "itachi@myceli.ai",
+      "url": "https://github.com/Itachi-1824"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -19,7 +19,7 @@ import {
     isPaidOnly,
     MODEL_COPY_CURSOR,
 } from "./model-info.ts";
-import { PriceBadge } from "./price-badge.tsx";
+import { groupPriceBadges, PriceBadge } from "./price-badge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
@@ -59,6 +59,82 @@ export const ModelRow: FC<ModelRowProps> = ({
         ? calculateForBalance(model, effectiveBalance)
         : null;
     const isDisabled = isSignedIn && balanceRequests === "0";
+    const inputPriceBadges = groupPriceBadges([
+        {
+            prices: [model.promptTextPrice],
+            emoji: "💬",
+            subEmojis: ["💬"],
+            perToken: model.perToken,
+        },
+        {
+            prices: [model.promptCachedPrice],
+            emoji: "💾",
+            subEmojis: ["💾"],
+            perToken: model.perToken,
+        },
+        {
+            prices: [model.promptAudioPrice],
+            emoji: "🎙️",
+            subEmojis: ["🎙️"],
+            perToken: model.perToken,
+        },
+        {
+            prices: [model.promptImagePrice],
+            emoji: "🖼️",
+            subEmojis: ["🖼️"],
+            perToken: model.perToken,
+        },
+    ]);
+    const outputPriceBadges = groupPriceBadges([
+        {
+            prices: [model.completionTextPrice],
+            emoji: "💬",
+            subEmojis: ["💬"],
+            perToken: model.perToken,
+        },
+        {
+            prices: [model.completionAudioPrice],
+            emoji: "🔊",
+            subEmojis: ["🔊"],
+            perToken: model.perToken,
+        },
+        {
+            prices: [model.perCharPrice],
+            emoji: "🔊",
+            subEmojis: ["🔊"],
+            perKChar: true,
+        },
+        {
+            prices: [model.perSecondPrice],
+            emoji: model.type === "audio" ? "🔊" : "🎬",
+            subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
+            perSecond: true,
+        },
+        {
+            prices: [model.perAudioSecondPrice],
+            emoji: "🔊",
+            subEmojis: ["🔊"],
+            perSecond: true,
+        },
+        {
+            prices: [model.perTokenPrice],
+            emoji: "🎬",
+            subEmojis: ["🎬"],
+            perToken: true,
+        },
+        {
+            prices: [model.perImagePrice],
+            emoji: "🖼️",
+            subEmojis: ["🖼️"],
+            perImage: true,
+        },
+        {
+            prices: [model.completionImagePrice],
+            emoji: "🖼️",
+            subEmojis: ["🖼️"],
+            perToken: model.perToken,
+        },
+    ]);
 
     const copyModelName = async () => {
         await navigator.clipboard.writeText(publicModelName);
@@ -85,7 +161,6 @@ export const ModelRow: FC<ModelRowProps> = ({
                             "inline-flex shrink-0 items-center gap-2 text-sm text-left transition-colors",
                             showNew ? "font-bold" : "font-medium",
                             copied ? "text-gray-500" : "hover:text-gray-700",
-                            isDisabled && "opacity-75",
                         )}
                         aria-label={`Copy model name ${publicModelName}`}
                         style={{ cursor: MODEL_COPY_CURSOR }}
@@ -109,18 +184,13 @@ export const ModelRow: FC<ModelRowProps> = ({
                         <span>{publicModelName}</span>
                     </button>
                     <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-                        <div
-                            className={cn(
-                                "flex min-w-0 flex-wrap items-center gap-2 min-h-6",
-                                isDisabled && "opacity-50",
-                            )}
-                        >
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 min-h-6">
                             {modalityIcons.length > 0 && (
                                 <Tooltip content={modalityLabel}>
                                     <Badge
                                         color="gray"
                                         size="sm"
-                                        className="border border-gray-900 bg-transparent text-gray-900"
+                                        className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
                                     >
                                         {modalityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
@@ -133,7 +203,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     <Badge
                                         color="gray"
                                         size="sm"
-                                        className="border border-gray-900 bg-transparent text-gray-900"
+                                        className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
                                     >
                                         {capabilityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
@@ -142,12 +212,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Tooltip>
                             )}
                         </div>
-                        <div
-                            className={cn(
-                                "flex min-w-0 flex-wrap items-center gap-2 min-h-6",
-                                isDisabled && "opacity-50",
-                            )}
-                        >
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 min-h-6">
                             {modelProfile && (
                                 <Badge
                                     color={
@@ -206,7 +271,6 @@ export const ModelRow: FC<ModelRowProps> = ({
                         <span
                             className={cn(
                                 "inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full cursor-help",
-                                isDisabled && "opacity-50",
                             )}
                         >
                             {genPerPollen}
@@ -220,90 +284,26 @@ export const ModelRow: FC<ModelRowProps> = ({
             </div>
 
             {/* Input prices — fixed width */}
-            <div
-                className={cn("w-[100px] shrink-0", isDisabled && "opacity-50")}
-            >
+            <div className="w-[100px] shrink-0">
                 <div className="flex flex-col gap-1 items-center">
-                    <PriceBadge
-                        prices={[model.promptTextPrice]}
-                        emoji="💬"
-                        subEmojis={["💬"]}
-                        perToken={model.perToken}
-                    />
-                    <PriceBadge
-                        prices={[model.promptCachedPrice]}
-                        emoji="💾"
-                        subEmojis={["💾"]}
-                        perToken={model.perToken}
-                    />
-                    <PriceBadge
-                        prices={[model.promptAudioPrice]}
-                        emoji="🎙️"
-                        subEmojis={["🎙️"]}
-                        perToken={model.perToken}
-                    />
-                    <PriceBadge
-                        prices={[model.promptImagePrice]}
-                        emoji="🖼️"
-                        subEmojis={["🖼️"]}
-                        perToken={model.perToken}
-                    />
+                    {inputPriceBadges.map((badge) => (
+                        <PriceBadge
+                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}-${badge.perKChar ? "kchar" : ""}`}
+                            {...badge}
+                        />
+                    ))}
                 </div>
             </div>
 
             {/* Output prices — fixed width */}
-            <div
-                className={cn("w-[100px] shrink-0", isDisabled && "opacity-50")}
-            >
+            <div className="w-[100px] shrink-0">
                 <div className="flex flex-col gap-1 items-center">
-                    <PriceBadge
-                        prices={[model.completionTextPrice]}
-                        emoji="💬"
-                        subEmojis={["💬"]}
-                        perToken={model.perToken}
-                    />
-                    <PriceBadge
-                        prices={[model.completionAudioPrice]}
-                        emoji="🔊"
-                        subEmojis={["🔊"]}
-                        perToken={model.perToken}
-                    />
-                    <PriceBadge
-                        prices={[model.perCharPrice]}
-                        emoji="🔊"
-                        subEmojis={["🔊"]}
-                        perKChar
-                    />
-                    <PriceBadge
-                        prices={[model.perSecondPrice]}
-                        emoji={model.type === "audio" ? "🔊" : "🎬"}
-                        subEmojis={[model.type === "audio" ? "🔊" : "🎬"]}
-                        perSecond
-                    />
-                    <PriceBadge
-                        prices={[model.perAudioSecondPrice]}
-                        emoji="🔊"
-                        subEmojis={["🔊"]}
-                        perSecond
-                    />
-                    <PriceBadge
-                        prices={[model.perTokenPrice]}
-                        emoji="🎬"
-                        subEmojis={["🎬"]}
-                        perToken
-                    />
-                    <PriceBadge
-                        prices={[model.perImagePrice]}
-                        emoji="🖼️"
-                        subEmojis={["🖼️"]}
-                        perImage
-                    />
-                    <PriceBadge
-                        prices={[model.completionImagePrice]}
-                        emoji="🖼️"
-                        subEmojis={["🖼️"]}
-                        perToken={model.perToken}
-                    />
+                    {outputPriceBadges.map((badge) => (
+                        <PriceBadge
+                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}-${badge.perKChar ? "kchar" : ""}`}
+                            {...badge}
+                        />
+                    ))}
                 </div>
             </div>
         </div>

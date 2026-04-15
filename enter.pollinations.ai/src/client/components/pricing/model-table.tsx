@@ -21,7 +21,11 @@ import {
     MODEL_COPY_CURSOR,
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
-import { PriceBadge } from "./price-badge.tsx";
+import {
+    groupPriceBadges,
+    PriceBadge,
+    type PriceBadgeConfig,
+} from "./price-badge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
@@ -66,17 +70,6 @@ const sectionLabels: Record<string, string> = {
     video: "Video",
     audio: "Audio",
     text: "Text",
-};
-
-// --- Badge type for mobile price groups ---
-
-type PriceBadgeEntry = {
-    price: string | undefined;
-    emoji: string;
-    perToken?: boolean;
-    perImage?: boolean;
-    perSecond?: boolean;
-    perKChar?: boolean;
 };
 
 // --- Tab content ---
@@ -267,7 +260,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 copied
                                     ? "text-gray-500"
                                     : "hover:text-gray-700",
-                                isDisabled && "opacity-75",
                             )}
                             aria-label={`Copy model name ${publicModelName}`}
                             style={{ cursor: MODEL_COPY_CURSOR }}
@@ -290,12 +282,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             )}
                             <span>{publicModelName}</span>
                         </button>
-                        <div
-                            className={cn(
-                                "flex min-w-0 flex-1 flex-wrap items-center gap-1.5 content-center",
-                                isDisabled && "opacity-50",
-                            )}
-                        >
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 content-center">
                             {modelProfile && (
                                 <Badge
                                     color={
@@ -329,7 +316,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     <span
                         className={cn(
                             "text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full shrink-0",
-                            isDisabled && "opacity-50",
                         )}
                     >
                         {perPollen}
@@ -349,12 +335,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     )}
 
                     <div className="flex items-start justify-between gap-3">
-                        <div
-                            className={cn(
-                                "min-w-0 flex-1 space-y-2",
-                                isDisabled && "opacity-50",
-                            )}
-                        >
+                        <div className="min-w-0 flex-1 space-y-2">
                             <MobilePriceGroup
                                 label="In"
                                 model={model}
@@ -370,17 +351,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
                         {(modalityIcons.length > 0 ||
                             capabilityIcons.length > 0) && (
-                            <div
-                                className={cn(
-                                    "flex shrink-0 flex-col items-end gap-1",
-                                    isDisabled && "opacity-50",
-                                )}
-                            >
+                            <div className="flex shrink-0 flex-col items-end gap-1">
                                 {modalityIcons.length > 0 && (
                                     <Badge
                                         color="gray"
                                         size="sm"
-                                        className="border border-gray-900 bg-transparent text-gray-900"
+                                        className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
                                     >
                                         {modalityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
@@ -391,7 +367,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                     <Badge
                                         color="gray"
                                         size="sm"
-                                        className="border border-gray-900 bg-transparent text-gray-900"
+                                        className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
                                     >
                                         {capabilityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
@@ -420,71 +396,87 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     model,
     direction,
 }) => {
-    const badges: PriceBadgeEntry[] =
+    const badges: PriceBadgeConfig[] = groupPriceBadges(
         direction === "input"
             ? [
                   {
-                      price: model.promptTextPrice,
+                      prices: [model.promptTextPrice],
                       emoji: "💬",
+                      subEmojis: ["💬"],
                       perToken: model.perToken,
                   },
                   {
-                      price: model.promptCachedPrice,
+                      prices: [model.promptCachedPrice],
                       emoji: "💾",
+                      subEmojis: ["💾"],
                       perToken: model.perToken,
                   },
                   {
-                      price: model.promptAudioPrice,
+                      prices: [model.promptAudioPrice],
                       emoji: "🎙️",
+                      subEmojis: ["🎙️"],
                       perToken: model.perToken,
                   },
                   {
-                      price: model.promptImagePrice,
+                      prices: [model.promptImagePrice],
                       emoji: "🖼️",
+                      subEmojis: ["🖼️"],
                       perToken: model.perToken,
                   },
               ]
             : [
                   {
-                      price: model.completionTextPrice,
+                      prices: [model.completionTextPrice],
                       emoji: "💬",
+                      subEmojis: ["💬"],
                       perToken: model.perToken,
                   },
                   {
-                      price: model.completionAudioPrice,
+                      prices: [model.completionAudioPrice],
                       emoji: "🔊",
+                      subEmojis: ["🔊"],
                       perToken: model.perToken,
                   },
-                  { price: model.perCharPrice, emoji: "🔊", perKChar: true },
                   {
-                      price: model.perSecondPrice,
+                      prices: [model.perCharPrice],
+                      emoji: "🔊",
+                      subEmojis: ["🔊"],
+                      perKChar: true,
+                  },
+                  {
+                      prices: [model.perSecondPrice],
                       emoji: model.type === "audio" ? "🔊" : "🎬",
+                      subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
                       perSecond: true,
                   },
                   {
-                      price: model.perAudioSecondPrice,
+                      prices: [model.perAudioSecondPrice],
                       emoji: "🔊",
+                      subEmojis: ["🔊"],
                       perSecond: true,
                   },
                   {
-                      price: model.perTokenPrice,
+                      prices: [model.perTokenPrice],
                       emoji: "🎬",
+                      subEmojis: ["🎬"],
                       perToken: true,
                   },
                   {
-                      price: model.perImagePrice,
+                      prices: [model.perImagePrice],
                       emoji: "🖼️",
+                      subEmojis: ["🖼️"],
                       perImage: true,
                   },
                   {
-                      price: model.completionImagePrice,
+                      prices: [model.completionImagePrice],
                       emoji: "🖼️",
+                      subEmojis: ["🖼️"],
                       perToken: model.perToken,
                   },
-              ];
+              ],
+    );
 
-    const validBadges = badges.filter((b) => b.price && b.price !== "—");
-    if (validBadges.length === 0) return null;
+    if (badges.length === 0) return null;
 
     return (
         <div className="flex items-center gap-2">
@@ -492,16 +484,10 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                 {label}
             </span>
             <div className="flex flex-wrap gap-1.5">
-                {validBadges.map((b, i) => (
+                {badges.map((badge) => (
                     <PriceBadge
-                        key={`${b.emoji}-${b.price}-${i}`}
-                        prices={[b.price]}
-                        emoji={b.emoji}
-                        subEmojis={[b.emoji]}
-                        perToken={b.perToken}
-                        perImage={b.perImage}
-                        perSecond={b.perSecond}
-                        perKChar={b.perKChar}
+                        key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}-${badge.perKChar ? "kchar" : ""}`}
+                        {...badge}
                     />
                 ))}
             </div>

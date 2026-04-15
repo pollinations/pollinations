@@ -1,0 +1,33 @@
+{
+  "pr_number": 10227,
+  "title": "refactor: simplify model_health pipe. one pipe for all time ranges, only 4xx/5xx groups",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10227",
+  "merged_at": "2026-04-15T11:20:53Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One pipe to rule them all",
+    "blurb": "We've streamlined our internal model health monitoring, merging multiple time-window pipes into a single, elegant query. Less code, cleaner dashboards, and happier bees!",
+    "summary": "Refactored the model health observability pipeline to use a single parameterized query instead of multiple time-based endpoints.",
+    "impact": "This reduces technical debt and simplifies the internal model monitoring dashboard by grouping error codes more efficiently.",
+    "keywords": [
+      "observability",
+      "monitoring",
+      "refactor",
+      "technical-debt"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny toolbelt, organizing glowing data pipes. The Nomnom creature eating old, deprecated code files. A clean, organized retro server room.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny toolbelt, organizing glowing lime green (#ecf874) data pipes in a retro server room. The round Nomnom creature happily eats a stack of deprecated code files nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-15/PR-10227.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny toolbelt, organizing glowing lime green (#ecf874) data pipes in a retro server room. The round Nomnom creature happily eats a stack of deprecated code files nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-15T11:21:54.760027+00:00"
+}

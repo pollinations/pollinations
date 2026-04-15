@@ -31,7 +31,7 @@ export const COMMUNITY_PAGE = {
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
     contributeNotePre: "All activity feeds your tier: ",
-    contributeNoteLink: "Seed → Flower → Nectar",
+    contributeNoteLink: "Seed → Flower",
     contributeNotePost: ". More you do, more compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 

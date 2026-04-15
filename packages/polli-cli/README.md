@@ -83,7 +83,7 @@ Driving this CLI from an AI coding agent (Claude Code, Cursor, Windsurf, etc.)? 
 
 > Read https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md and follow the instructions to generate media with the `polli` CLI.
 
-The skill is also bundled with the npm package at `node_modules/@pollinations_ai/cli/SKILL.md`, so `npx @pollinations_ai/cli` installs it alongside the binary.
+The skill ships inside the npm package. With a local install (`npm install @pollinations_ai/cli`) you'll find it at `node_modules/@pollinations_ai/cli/SKILL.md`.
 
 Every command is designed to be agent-friendly:
 

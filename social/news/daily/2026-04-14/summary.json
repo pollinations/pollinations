@@ -1,0 +1,19 @@
+{
+  "date": "2026-04-14",
+  "period_start": "2026-04-14",
+  "period_end": "2026-04-14",
+  "title": "Gemini gets a thinking mode for images",
+  "summary": "A focused day bringing native reasoning to Gemini image models and fixing dashboard timeouts for heavy API users.\n\nAdded a `?reasoning=true` flag to the image API. Appending this to Gemini requests activates native thinking modes via Vertex AI for complex prompts, leaving the rest of the models untouched.\n\nOptimized the usage dashboard and Tinybird data pipes so they stop timing out on heavy API users. Power users can now reliably export detailed logs and daily summaries without silent truncations.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 10196,
+      "date": "2026-04-14"
+    },
+    {
+      "number": 10222,
+      "date": "2026-04-14"
+    }
+  ],
+  "generated_at": "2026-04-15T06:34:15.194090+00:00"
+}

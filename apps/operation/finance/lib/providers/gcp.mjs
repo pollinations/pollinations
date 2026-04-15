@@ -1,5 +1,7 @@
 import { spawn } from "node:child_process";
-import { statSync } from "node:fs";
+import { mkdirSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 /**
  * GCP provider — fetches MTD spend from the BigQuery billing export table.
@@ -37,28 +39,26 @@ import { statSync } from "node:fs";
 const PROJECT = "stellar-verve-465920-b7";
 const BILLING_ACCOUNT = "0180E5_574541_B8F8FD";
 const TABLE = `${PROJECT}.billing_export.gcp_billing_export_resource_v1_${BILLING_ACCOUNT}`;
+const SA_KEY = new URL("../../secrets/gcp-sa-key.json", import.meta.url)
+    .pathname;
+const CLOUDSDK_CONFIG_DIR = join(tmpdir(), "pollinations-finance-gcloud");
 
-function bqQuery(sql) {
+let serviceAccountReadyPromise = null;
+
+function buildCliEnv() {
+    const env = { ...process.env };
+    try {
+        if (statSync(SA_KEY).isFile()) {
+            env.CLOUDSDK_CONFIG = CLOUDSDK_CONFIG_DIR;
+            env.GOOGLE_APPLICATION_CREDENTIALS = SA_KEY;
+        }
+    } catch {}
+    return env;
+}
+
+function runCli(command, args, env) {
     return new Promise((resolve, reject) => {
-        const args = [
-            "query",
-            "--use_legacy_sql=false",
-            "--format=json",
-            "--quiet",
-            `--project_id=${PROJECT}`,
-            sql,
-        ];
-        // Use service account key if available (allows unattended cron).
-        // Falls back to default gcloud user auth otherwise.
-        const saKey = new URL("../../secrets/gcp-sa-key.json", import.meta.url).pathname;
-        const env = { ...process.env };
-        try {
-            if (statSync(saKey).isFile()) {
-                env.GOOGLE_APPLICATION_CREDENTIALS = saKey;
-            }
-        } catch {}
-
-        const child = spawn("bq", args, {
+        const child = spawn(command, args, {
             stdio: ["ignore", "pipe", "pipe"],
             env,
         });
@@ -73,16 +73,60 @@ function bqQuery(sql) {
         child.on("error", reject);
         child.on("close", (code) => {
             if (code !== 0) {
-                reject(new Error(`bq query failed (${code}): ${stderr}`));
+                reject(
+                    new Error(
+                        `${command} ${args[0] ?? ""} failed (${code}): ${stderr}`,
+                    ),
+                );
                 return;
             }
-            try {
-                resolve(JSON.parse(stdout || "[]"));
-            } catch (e) {
-                reject(new Error(`bq returned invalid JSON: ${e.message}`));
-            }
+            resolve(stdout);
         });
     });
+}
+
+async function ensureServiceAccountAuth(env) {
+    if (!env.GOOGLE_APPLICATION_CREDENTIALS) return;
+    if (!serviceAccountReadyPromise) {
+        mkdirSync(env.CLOUDSDK_CONFIG, { recursive: true });
+        // `bq` still expects an active gcloud account in headless runs, even
+        // when GOOGLE_APPLICATION_CREDENTIALS points at a valid key file.
+        serviceAccountReadyPromise = runCli(
+            "gcloud",
+            [
+                "auth",
+                "activate-service-account",
+                `--key-file=${SA_KEY}`,
+                `--project=${PROJECT}`,
+            ],
+            env,
+        ).catch((error) => {
+            serviceAccountReadyPromise = null;
+            throw error;
+        });
+    }
+    await serviceAccountReadyPromise;
+}
+
+async function bqQuery(sql) {
+    const args = [
+        "query",
+        "--use_legacy_sql=false",
+        "--format=json",
+        "--quiet",
+        `--project_id=${PROJECT}`,
+        sql,
+    ];
+    const env = buildCliEnv();
+
+    await ensureServiceAccountAuth(env);
+    const stdout = await runCli("bq", args, env);
+
+    try {
+        return JSON.parse(stdout || "[]");
+    } catch (e) {
+        throw new Error(`bq returned invalid JSON: ${e.message}`);
+    }
 }
 
 /**

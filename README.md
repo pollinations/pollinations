@@ -379,6 +379,8 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
 
+- [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.
+
 - [`packages/sdk/`](./packages/sdk/): SDK NPM library with pollinations ready functions for Pollinations.ai.
 
 - [`packages/ompc/`](./packages/ompc/): Oh My Polli Code is a ready Open code Router mechanism built on top of the open code framework but wiith the pollinations models.

@@ -295,13 +295,8 @@ function App() {
         { key: "60m", label: "1h" },
         { key: "5m", label: "5m" },
     ];
-    const {
-        models,
-        lastUpdated,
-        error,
-        tinybirdConfigured,
-        endpointStatus,
-    } = useModelMonitor(aggregationWindow);
+    const { models, lastUpdated, error, tinybirdConfigured, endpointStatus } =
+        useModelMonitor(aggregationWindow);
 
     const [sort, setSort] = useState({ key: "requests", asc: false });
     const [typeFilter, setTypeFilter] = useState(null);

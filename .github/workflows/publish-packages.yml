@@ -1,0 +1,198 @@
+name: Publish Packages to NPM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/sdk/**"
+      - "packages/mcp/**"
+      - "packages/ompc/**"
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      sdk: ${{ steps.changes.outputs.sdk }}
+      mcp: ${{ steps.changes.outputs.mcp }}
+      ompc: ${{ steps.changes.outputs.ompc }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed packages
+        id: changes
+        run: |
+          changed=$(git diff --name-only HEAD~1 HEAD)
+          echo "sdk=$(echo "$changed" | grep -q '^packages/sdk/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "mcp=$(echo "$changed" | grep -q '^packages/mcp/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "ompc=$(echo "$changed" | grep -q '^packages/ompc/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "Changed files:"
+          echo "$changed" | grep '^packages/' || true
+
+  publish-sdk:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.sdk == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies & build
+        working-directory: packages/sdk
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check if version exists on NPM
+        id: check
+        working-directory: packages/sdk
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published — skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "📦 Will publish ${PACKAGE_NAME}@${PACKAGE_VERSION}"
+          fi
+
+      - name: Publish to NPM
+        if: steps.check.outputs.exists == 'false'
+        working-directory: packages/sdk
+        run: npm publish --access public --registry https://registry.npmjs.org/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.exists == 'false'
+        working-directory: packages/sdk
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG="${PACKAGE_NAME}@${PACKAGE_VERSION}"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            --title "${PACKAGE_NAME} v${PACKAGE_VERSION}" \
+            --notes "Published ${PACKAGE_NAME}@${PACKAGE_VERSION} to [npm](https://www.npmjs.com/package/${PACKAGE_NAME}/v/${PACKAGE_VERSION})" \
+            --latest=false
+
+  publish-mcp:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.mcp == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        working-directory: packages/mcp
+        run: npm ci --ignore-scripts
+
+      - name: Check if version exists on NPM
+        id: check
+        working-directory: packages/mcp
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published — skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "📦 Will publish ${PACKAGE_NAME}@${PACKAGE_VERSION}"
+          fi
+
+      - name: Publish to NPM
+        if: steps.check.outputs.exists == 'false'
+        working-directory: packages/mcp
+        run: npm publish --access public --registry https://registry.npmjs.org/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.exists == 'false'
+        working-directory: packages/mcp
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG="${PACKAGE_NAME}@${PACKAGE_VERSION}"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            --title "${PACKAGE_NAME} v${PACKAGE_VERSION}" \
+            --notes "Published ${PACKAGE_NAME}@${PACKAGE_VERSION} to [npm](https://www.npmjs.com/package/${PACKAGE_NAME}/v/${PACKAGE_VERSION})" \
+            --latest=false
+
+  publish-ompc:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.ompc == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        working-directory: packages/ompc
+        run: npm ci --ignore-scripts
+
+      - name: Check if version exists on NPM
+        id: check
+        working-directory: packages/ompc
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published — skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "📦 Will publish ${PACKAGE_NAME}@${PACKAGE_VERSION}"
+          fi
+
+      - name: Publish to NPM
+        if: steps.check.outputs.exists == 'false'
+        working-directory: packages/ompc
+        run: npm publish --access public --registry https://registry.npmjs.org/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.exists == 'false'
+        working-directory: packages/ompc
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG="${PACKAGE_NAME}@${PACKAGE_VERSION}"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            --title "${PACKAGE_NAME} v${PACKAGE_VERSION}" \
+            --notes "Published ${PACKAGE_NAME}@${PACKAGE_VERSION} to [npm](https://www.npmjs.com/package/${PACKAGE_NAME}/v/${PACKAGE_VERSION})" \
+            --latest=false

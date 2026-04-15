@@ -69,7 +69,7 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Default voice is `alloy`. List all available voices with `polli gen audio --list-voices` (fetched live from `/audio/models`). Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`).
+Default voice is `alloy`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`).
 
 ### Generate music (elevenmusic)
 ```bash

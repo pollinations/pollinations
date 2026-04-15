@@ -1,11 +1,9 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Badge } from "../ui/badge.tsx";
-import { getModelDisplayName } from "./model-utils.ts";
+import { getVisibleModelsByCategory } from "./model-utils.ts";
 
 type AccountPermissionsInputProps = {
     value: string[] | null;
@@ -38,39 +36,12 @@ const ACCOUNT_PERMISSIONS = [
     },
 ] as const;
 
-const textModels = Object.keys(TEXT_SERVICES)
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const imageModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("image"),
-    )
-    .map(([id]) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const videoModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("video"),
-    )
-    .map(([id]) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const audioModels = Object.keys(AUDIO_SERVICES)
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+const {
+    text: textModels,
+    image: imageModels,
+    video: videoModels,
+    audio: audioModels,
+} = getVisibleModelsByCategory();
 
 /**
  * Unified permissions input for API keys.
@@ -91,9 +62,20 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         imageModels.length +
         videoModels.length +
         audioModels.length;
+    const normalizedAllowedModels = Array.from(
+        new Set(
+            (allowedModels ?? []).map((modelId) => {
+                try {
+                    return resolveModelName(modelId);
+                } catch {
+                    return modelId;
+                }
+            }),
+        ),
+    );
     const selectedCount = isUnrestricted
         ? totalModels
-        : (allowedModels ?? []).length;
+        : normalizedAllowedModels.length;
 
     const handleToggle = (permissionId: string) => {
         const currentPermissions = value ?? [];
@@ -111,7 +93,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
 
     const toggleModel = (modelId: string) => {
         if (disabled || isUnrestricted) return;
-        const currentModels = allowedModels ?? [];
+        const currentModels = normalizedAllowedModels;
         if (currentModels.includes(modelId)) {
             onModelsChange(currentModels.filter((id) => id !== modelId));
         } else {
@@ -120,12 +102,12 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     };
 
     const isModelSelected = (modelId: string) =>
-        (allowedModels ?? []).includes(modelId);
+        normalizedAllowedModels.includes(modelId);
 
     const toggleCategory = (categoryModels: { id: string }[]) => {
         if (disabled || isUnrestricted) return;
         const categoryIds = categoryModels.map((m) => m.id);
-        const currentModels = allowedModels ?? [];
+        const currentModels = normalizedAllowedModels;
         const allSelected = categoryIds.every((id) =>
             currentModels.includes(id),
         );
@@ -143,7 +125,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     };
 
     const isCategoryAllSelected = (categoryModels: { id: string }[]) =>
-        categoryModels.every((m) => (allowedModels ?? []).includes(m.id));
+        categoryModels.every((m) => normalizedAllowedModels.includes(m.id));
 
     const handleHeaderClick = () => {
         if (disabled) return;

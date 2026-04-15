@@ -1,4 +1,4 @@
-import { type ModelId, resolveModelName } from "../shared/registry/registry.ts";
+import { resolveModelName } from "../shared/registry/registry.ts";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -13,21 +13,21 @@ import type { TransformFn } from "./types.js";
 
 interface ModelDefinition {
     name: string;
-    config: (typeof portkeyConfig)[ModelId];
+    config: (typeof portkeyConfig)[keyof typeof portkeyConfig];
     transform?: TransformFn;
 }
 
 const models: ModelDefinition[] = [
     {
-        name: "openai",
+        name: "gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
     },
     {
-        name: "openai-fast",
+        name: "gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
     },
     {
-        name: "openai-large",
+        name: "gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
     },
     {
@@ -65,11 +65,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4-20-reasoning"],
     },
     {
-        name: "openai-audio",
+        name: "gpt-audio-mini",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
     },
     {
-        name: "openai-audio-large",
+        name: "gpt-audio-1.5",
         config: portkeyConfig["gpt-audio-1.5"],
     },
     {

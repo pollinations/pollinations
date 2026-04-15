@@ -1,7 +1,10 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    hasCapability,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
@@ -246,13 +249,13 @@ function generateLLMDoc(): string {
     lines.push("## Text Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(TEXT_SERVICES)) {
-        const svc = rawSvc as ModelDefinition<string>;
+        const svc = rawSvc as ModelDefinition;
         if (svc.hidden) continue;
         const caps: string[] = [];
-        if (svc.tools) caps.push("tools");
-        if (svc.reasoning) caps.push("reasoning");
-        if (svc.search) caps.push("search");
-        if (svc.codeExecution) caps.push("code-exec");
+        if (hasCapability(svc, "tools")) caps.push("tools");
+        if (hasCapability(svc, "reasoning")) caps.push("reasoning");
+        if (hasCapability(svc, "search")) caps.push("search");
+        if (hasCapability(svc, "codeExecution")) caps.push("code-exec");
         const capsStr = caps.length ? ` [${caps.join(", ")}]` : "";
         const flags: string[] = [];
         if (svc.alpha) flags.push("alpha");
@@ -265,7 +268,7 @@ function generateLLMDoc(): string {
     lines.push("## Image Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ModelDefinition<string>;
+        const svc = rawSvc as ModelDefinition;
         if (svc.hidden) continue;
         if (svc.outputModalities?.includes("video")) continue;
         const flags: string[] = [];
@@ -279,7 +282,7 @@ function generateLLMDoc(): string {
     lines.push("## Video Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ModelDefinition<string>;
+        const svc = rawSvc as ModelDefinition;
         if (svc.hidden) continue;
         if (!svc.outputModalities?.includes("video")) continue;
         const flags: string[] = [];
@@ -292,7 +295,7 @@ function generateLLMDoc(): string {
     lines.push("## Audio Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(AUDIO_SERVICES)) {
-        const svc = rawSvc as ModelDefinition<string>;
+        const svc = rawSvc as ModelDefinition;
         if (svc.hidden) continue;
         const flags: string[] = [];
         if (svc.alpha) flags.push("alpha");

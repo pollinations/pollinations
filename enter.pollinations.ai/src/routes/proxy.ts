@@ -25,6 +25,7 @@ import {
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -218,8 +219,21 @@ function filterModelsByPermissions<
     allowedModels: string[] | undefined,
     hasPaidBalance?: boolean,
 ): T[] {
+    const normalizedAllowedModels = new Set(
+        (allowedModels ?? []).map((allowedModel) => {
+            try {
+                return resolveModelName(allowedModel);
+            } catch {
+                return allowedModel;
+            }
+        }),
+    );
+
     return models.filter((m) => {
-        if (allowedModels?.length && !allowedModels.includes(m.name))
+        if (
+            normalizedAllowedModels.size > 0 &&
+            !normalizedAllowedModels.has(m.name)
+        )
             return false;
         if (m.paid_only && hasPaidBalance === false) return false;
         return true;

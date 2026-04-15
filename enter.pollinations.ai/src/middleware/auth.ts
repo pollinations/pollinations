@@ -1,3 +1,4 @@
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -174,7 +175,17 @@ export const auth = (options: AuthOptions) =>
             const model = c.var.model;
             if (!model) return;
 
-            if (!apiKey.permissions.models.includes(model.resolved)) {
+            const allowedModels = new Set(
+                apiKey.permissions.models.map((allowedModel) => {
+                    try {
+                        return resolveModelName(allowedModel);
+                    } catch {
+                        return allowedModel;
+                    }
+                }),
+            );
+
+            if (!allowedModels.has(model.resolved)) {
                 throw new HTTPException(403, {
                     message: `Model '${model.requested}' is not allowed for this API key`,
                 });

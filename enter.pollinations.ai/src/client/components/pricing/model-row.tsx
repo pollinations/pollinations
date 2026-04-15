@@ -7,16 +7,17 @@ import {
     TOP_UP_TOOLTIP,
 } from "./calculations.ts";
 import {
+    getModelBrandLogoPath,
+    getModelCapabilityIcons,
+    getModelCapabilityLabel,
     getModelDisplayName,
-    hasAudioInput,
-    hasAudioOutput,
-    hasCodeExecution,
-    hasReasoning,
-    hasSearch,
-    hasVision,
+    getModelModalityIcons,
+    getModelModalityLabel,
+    getModelProfile,
     isAlpha,
     isNewModel,
     isPaidOnly,
+    MODEL_COPY_CURSOR,
 } from "./model-info.ts";
 import { PriceBadge } from "./price-badge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
@@ -36,20 +37,14 @@ export const ModelRow: FC<ModelRowProps> = ({
     cryptoBalance,
 }) => {
     const modelDisplayName = getModelDisplayName(model.name);
+    const brandLogoPath = getModelBrandLogoPath(model.name);
+    const modelProfile = getModelProfile(model.name);
+    const modalityIcons = getModelModalityIcons(model.name);
+    const modalityLabel = getModelModalityLabel(model.name);
+    const capabilityIcons = getModelCapabilityIcons(model.name);
+    const capabilityLabel = getModelCapabilityLabel(model.name);
+    const publicModelName = modelDisplayName || model.name;
     const [copied, setCopied] = useState(false);
-
-    const copyModelName = async () => {
-        await navigator.clipboard.writeText(model.name);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-    };
-
-    const showReasoning = hasReasoning(model.name);
-    const showVision = hasVision(model.name);
-    const showAudioInput = hasAudioInput(model.name);
-    const showAudioOutput = hasAudioOutput(model.name);
-    const showSearch = hasSearch(model.name);
-    const showCodeExecution = hasCodeExecution(model.name);
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
@@ -65,6 +60,12 @@ export const ModelRow: FC<ModelRowProps> = ({
         : null;
     const isDisabled = isSignedIn && balanceRequests === "0";
 
+    const copyModelName = async () => {
+        await navigator.clipboard.writeText(publicModelName);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 900);
+    };
+
     return (
         <div
             className={cn(
@@ -76,23 +77,78 @@ export const ModelRow: FC<ModelRowProps> = ({
         >
             {/* Model info — flexible width */}
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 whitespace-nowrap">
-                    {isDisabled ? (
-                        <Tooltip content={TOP_UP_TOOLTIP}>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                        type="button"
+                        onClick={copyModelName}
+                        className={cn(
+                            "inline-flex items-center gap-2 text-sm text-left transition-colors",
+                            showNew ? "font-bold" : "font-medium",
+                            copied ? "text-gray-500" : "hover:text-gray-700",
+                            isDisabled && "opacity-75",
+                        )}
+                        aria-label={`Copy model name ${publicModelName}`}
+                        style={{ cursor: MODEL_COPY_CURSOR }}
+                    >
+                        {brandLogoPath && (
                             <span
-                                className={cn("text-sm font-medium opacity-75")}
+                                aria-hidden="true"
+                                className="h-3.5 w-3.5 shrink-0 bg-current opacity-55"
+                                style={{
+                                    maskImage: `url(${brandLogoPath})`,
+                                    WebkitMaskImage: `url(${brandLogoPath})`,
+                                    maskRepeat: "no-repeat",
+                                    WebkitMaskRepeat: "no-repeat",
+                                    maskPosition: "center",
+                                    WebkitMaskPosition: "center",
+                                    maskSize: "contain",
+                                    WebkitMaskSize: "contain",
+                                }}
+                            />
+                        )}
+                        <span>{publicModelName}</span>
+                    </button>
+                    {modalityIcons.length > 0 && (
+                        <span className={cn(isDisabled && "opacity-50")}>
+                            <Tooltip content={modalityLabel}>
+                                <Badge
+                                    color="gray"
+                                    size="sm"
+                                    className="border border-gray-900 bg-transparent text-gray-900"
+                                >
+                                    {modalityIcons.map((emoji) => (
+                                        <span key={emoji}>{emoji}</span>
+                                    ))}
+                                </Badge>
+                            </Tooltip>
+                        </span>
+                    )}
+                    {capabilityIcons.length > 0 && (
+                        <span className={cn(isDisabled && "opacity-50")}>
+                            <Tooltip content={capabilityLabel}>
+                                <Badge
+                                    color="gray"
+                                    size="sm"
+                                    className="border border-gray-900 bg-transparent text-gray-900"
+                                >
+                                    {capabilityIcons.map((emoji) => (
+                                        <span key={emoji}>{emoji}</span>
+                                    ))}
+                                </Badge>
+                            </Tooltip>
+                        </span>
+                    )}
+                    {modelProfile && (
+                        <span className={cn(isDisabled && "opacity-50")}>
+                            <Badge
+                                color={
+                                    modelProfile === "fast" ? "blue" : "pink"
+                                }
+                                size="sm"
+                                className="font-semibold tracking-[0.04em]"
                             >
-                                {modelDisplayName || model.name}
-                            </span>
-                        </Tooltip>
-                    ) : (
-                        <span
-                            className={cn(
-                                "text-sm",
-                                showNew ? "font-bold" : "font-medium",
-                            )}
-                        >
-                            {modelDisplayName || model.name}
+                                {modelProfile.toUpperCase()}
+                            </Badge>
                         </span>
                     )}
                     {showNew && (
@@ -125,57 +181,6 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Badge>
                             </Tooltip>
                         </span>
-                    )}
-                </div>
-                <div
-                    className={cn(
-                        "flex items-center gap-2 whitespace-nowrap",
-                        isDisabled && "opacity-50",
-                    )}
-                >
-                    <button
-                        type="button"
-                        onClick={copyModelName}
-                        className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left"
-                        title="Click to copy"
-                    >
-                        {copied ? "✓ copied" : model.name}
-                    </button>
-                    {showVision && (
-                        <Tooltip
-                            content={
-                                model.type === "image"
-                                    ? "Vision (image-to-image)"
-                                    : "Vision input"
-                            }
-                        >
-                            <span className="text-sm">👁️</span>
-                        </Tooltip>
-                    )}
-                    {showAudioInput && (
-                        <Tooltip content="Audio input">
-                            <span className="text-sm">🎙️</span>
-                        </Tooltip>
-                    )}
-                    {showAudioOutput && (
-                        <Tooltip content="Audio output">
-                            <span className="text-sm">🔊</span>
-                        </Tooltip>
-                    )}
-                    {showReasoning && (
-                        <Tooltip content="Reasoning">
-                            <span className="text-sm">🧠</span>
-                        </Tooltip>
-                    )}
-                    {showSearch && (
-                        <Tooltip content="Web search">
-                            <span className="text-sm">🔍</span>
-                        </Tooltip>
-                    )}
-                    {showCodeExecution && (
-                        <Tooltip content="Code execution">
-                            <span className="text-sm">💻</span>
-                        </Tooltip>
                     )}
                 </div>
             </div>
@@ -227,8 +232,8 @@ export const ModelRow: FC<ModelRowProps> = ({
                     />
                     <PriceBadge
                         prices={[model.promptAudioPrice]}
-                        emoji="🔊"
-                        subEmojis={["🔊"]}
+                        emoji="🎙️"
+                        subEmojis={["🎙️"]}
                         perToken={model.perToken}
                     />
                     <PriceBadge

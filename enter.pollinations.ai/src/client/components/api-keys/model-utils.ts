@@ -1,19 +1,51 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import {
+    type Category,
+    getModelDefinition,
+    getModels,
+    type ModelName,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 
 export const getModelDisplayName = (modelId: string): string => {
-    const textService = TEXT_SERVICES[modelId as keyof typeof TEXT_SERVICES];
-    if (textService) {
-        return textService.description?.split(" - ")[0] || modelId;
+    try {
+        const service = getModelDefinition(
+            resolveModelName(modelId) as ModelName,
+        );
+        return [service.model, service.version].filter(Boolean).join(" ");
+    } catch {
+        return modelId;
     }
-    const imageService = IMAGE_SERVICES[modelId as keyof typeof IMAGE_SERVICES];
-    if (imageService) {
-        return imageService.description?.split(" - ")[0] || modelId;
+};
+
+export type CategorizedModelOption = {
+    id: string;
+    label: string;
+};
+
+export const getVisibleModelsByCategory = (): Record<
+    Category,
+    CategorizedModelOption[]
+> => {
+    const grouped: Record<Category, CategorizedModelOption[]> = {
+        text: [],
+        image: [],
+        video: [],
+        audio: [],
+    };
+
+    for (const id of getModels()) {
+        const service = getModelDefinition(id as ModelName);
+        if (service.hidden) continue;
+
+        grouped[service.category].push({
+            id,
+            label: getModelDisplayName(id),
+        });
     }
-    const audioService = AUDIO_SERVICES[modelId as keyof typeof AUDIO_SERVICES];
-    if (audioService) {
-        return audioService.description?.split(" - ")[0] || modelId;
+
+    for (const category of Object.keys(grouped) as Category[]) {
+        grouped[category].sort((a, b) => a.label.localeCompare(b.label));
     }
-    return modelId;
+
+    return grouped;
 };

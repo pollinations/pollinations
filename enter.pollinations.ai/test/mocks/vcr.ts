@@ -1,10 +1,7 @@
 import { env } from "cloudflare:test";
 import crypto from "node:crypto";
 import { getLogger } from "@logtape/logtape";
-import {
-    getModelDefinition,
-    resolveModelName,
-} from "@shared/registry/registry.ts";
+import { getModelKey, resolveModelName } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { expect, inject } from "vitest";
 import { createHonoMockHandler, type MockAPI } from "./fetch";
@@ -64,12 +61,11 @@ async function getSnapshotHash(request: Request): Promise<string> {
         hash.update(`${body.model}` || "");
         hash.update(`${body.stream}` || "");
         hash.update(`${body.tool_choice}` || "");
-        // Include provider + modelId so snapshots auto-invalidate when a model
-        // migrates to a different backend (e.g. fireworks → azure).
+        // Include provider/model/version so snapshots auto-invalidate when a
+        // model migrates to a different backend or version.
         try {
             const modelName = resolveModelName(body.model);
-            const def = getModelDefinition(modelName);
-            hash.update(`${def.provider}:${def.modelId}`);
+            hash.update(getModelKey(modelName));
         } catch {
             // Unknown model — hash stays request-only
         }
@@ -138,7 +134,7 @@ export function createMockVcr(originalFetch: typeof fetch): MockAPI<{}> {
                 try {
                     const snapshot = await getSnapshot(snapshotFilename);
                     return replaySnapshotResponse(snapshot);
-                } catch (error: any) {
+                } catch (_error: unknown) {
                     log.warn(`Missing snapshot: ${snapshotFilename}`);
                 }
             }

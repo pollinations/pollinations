@@ -45,9 +45,10 @@ function serviceToModel(
     type: "image" | "text" | "audio",
 ): Model {
     const def = getModelDefinition(serviceId);
+    const label = [def.brand, def.model, def.version].filter(Boolean).join(" ");
     return {
         id: serviceId as string,
-        name: serviceId as string,
+        name: label,
         description: def.description,
         type,
         hasImageInput: def.inputModalities?.includes("image") || false,

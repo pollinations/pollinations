@@ -20,7 +20,7 @@ const clientConfig = {
         `${process.env.PORTKEY_GATEWAY_URL || "https://portkey.pollinations.ai"}/v1/chat/completions`,
     additionalHeaders: {},
     defaultOptions: {
-        model: "openai-fast",
+        model: "gpt-5-nano",
         jsonMode: false,
     },
 };

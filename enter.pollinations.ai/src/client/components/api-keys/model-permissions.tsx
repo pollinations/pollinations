@@ -1,49 +1,15 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
 import { cn } from "@/util.ts";
 import { Badge } from "../ui/badge.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
-import { getModelDisplayName } from "./model-utils.ts";
+import { getVisibleModelsByCategory } from "./model-utils.ts";
 
-// Build model lists from the shared registry (same source as pricing table)
-const textModels = Object.keys(TEXT_SERVICES)
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-// Image models - filter by outputModalities
-const imageModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("image"),
-    )
-    .map(([id]) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-// Video models - filter by outputModalities
-const videoModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("video"),
-    )
-    .map(([id]) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-// Audio models
-const audioModels = Object.keys(AUDIO_SERVICES)
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+const {
+    text: textModels,
+    image: imageModels,
+    video: videoModels,
+    audio: audioModels,
+} = getVisibleModelsByCategory();
 
 type ModelPermissionsProps = {
     /** Selected model IDs. null = all models allowed, [] = restricted but none selected */

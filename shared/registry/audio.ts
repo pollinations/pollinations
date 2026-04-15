@@ -47,94 +47,83 @@ export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
-export type AudioModelId = (typeof AUDIO_SERVICES)[AudioModelName]["modelId"];
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
-        aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
-        modelId: "eleven_v3",
+        brand: "ElevenLabs",
         provider: "elevenlabs",
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                // ElevenLabs pricing: 1 credit = 1 character, ~$0.18 per 1000 chars
-                completionAudioTokens: 0.18 / 1000,
-            },
-        ],
-        description:
-            "ElevenLabs v3 TTS - Expressive voices with emotions & audio tags",
+        model: "eleven-v3",
+        aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
+        description: "Text-to-speech generation.",
+        category: "audio",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        introducedAt: new Date("2026-02-07").getTime(),
         voices: ELEVENLABS_VOICES as string[],
+        cost: {
+            completionAudioTokens: 0.18 / 1000,
+        },
     },
     elevenmusic: {
-        aliases: ["music"],
-        modelId: "music_v1",
+        brand: "ElevenLabs",
         provider: "elevenlabs",
-        paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                // ElevenLabs Music: billed by output audio duration
-                // ~$0.30 per minute ≈ $0.005 per second (Scale plan pricing)
-                completionAudioSeconds: 0.005,
-            },
-        ],
-        description:
-            "ElevenLabs Music - Generate studio-grade music from text prompts",
+        model: "music-v1",
+        aliases: ["music"],
+        description: "Music generation from text prompts.",
+        category: "audio",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        paidOnly: true,
+        introducedAt: new Date("2026-02-07").getTime(),
+        cost: {
+            completionAudioSeconds: 0.005,
+        },
     },
     whisper: {
-        aliases: ["whisper-1", "whisper-large-v3"],
-        modelId: "whisper-large-v3",
+        brand: "OpenAI",
         provider: "ovhcloud",
-        cost: [
-            {
-                date: new Date("2026-02-08").getTime(),
-                // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
-                promptAudioSeconds: 0.0000445,
-            },
-        ],
-        description:
-            "Whisper Large V3 - Speech to Text Transcription (OVHcloud)",
+        model: "whisper-large-v3",
+        aliases: ["whisper-1", "whisper-large-v3"],
+        description: "Speech transcription to text.",
+        category: "audio",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         alpha: true,
+        introducedAt: new Date("2026-02-08").getTime(),
+        cost: {
+            promptAudioSeconds: 0.0000445,
+        },
     },
     scribe: {
-        aliases: ["scribe_v2", "scribe-v2"],
-        modelId: "scribe_v2",
+        brand: "ElevenLabs",
         provider: "elevenlabs",
-        cost: [
-            {
-                date: new Date("2026-02-13").getTime(),
-                // ElevenLabs Scribe: $0.40/hour = $0.0001111/sec
-                promptAudioSeconds: 0.0001111,
-            },
-        ],
-        description:
-            "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
+        model: "scribe-v2",
+        aliases: ["scribe_v2", "scribe-v2"],
+        description: "Speech transcription to text.",
+        category: "audio",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        introducedAt: new Date("2026-02-13").getTime(),
+        cost: {
+            promptAudioSeconds: 0.0001111,
+        },
     },
     acestep: {
-        aliases: ["ace-step", "acestep-music"],
-        modelId: "acestep_v15_turbo",
+        brand: "ACE-Step",
         provider: "lambda",
-        cost: [
-            {
-                date: new Date("2026-04-02").getTime(),
-                completionAudioSeconds: 0.0005,
-            },
-        ],
-        description:
-            "ACE-Step 1.5 Turbo - Fast open-source music generation with lyrics support",
+        model: "acestep-1.5-turbo",
+        aliases: ["ace-step", "acestep-music"],
+        description: "Music generation from text prompts.",
+        category: "audio",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         alpha: true,
+        introducedAt: new Date("2026-04-02").getTime(),
+        cost: {
+            completionAudioSeconds: 0.0005,
+        },
     },
-} satisfies Record<string, ModelDefinition<string>>;
+} satisfies Record<string, ModelDefinition>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {
     return VOICE_MAPPING[voice] ?? voice;

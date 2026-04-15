@@ -6,7 +6,19 @@ import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Badge } from "../ui/badge.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
+import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import { getModelDisplayName } from "./model-utils.ts";
+import {
+    getPermissionPillClasses,
+    getPermissionUiTheme,
+    type PermissionUiTheme,
+} from "./permission-ui.ts";
+
+type AccountPermissionOption = {
+    id: "profile" | "balance" | "usage" | "keys";
+    label: string;
+    tooltip: string;
+};
 
 type AccountPermissionsInputProps = {
     value: string[] | null;
@@ -14,21 +26,9 @@ type AccountPermissionsInputProps = {
     disabled?: boolean;
     allowedModels: string[] | null;
     onModelsChange: (models: string[] | null) => void;
-    hiddenPermissions?: readonly string[];
-    theme?: "green" | "amber";
+    visiblePermissions?: readonly AccountPermissionOption["id"][];
+    theme?: PermissionUiTheme;
     showApiName?: boolean;
-};
-
-const THEME_SELECTED = {
-    green: "border-green-400 bg-green-50",
-    amber: "border-amber-400 bg-amber-100",
-} as const;
-
-const CATEGORY_PILL: Record<string, string> = {
-    Text: "bg-blue-100 text-blue-800 border-blue-300",
-    Image: "bg-pink-100 text-pink-800 border-pink-300",
-    Video: "bg-teal-100 text-teal-800 border-teal-300",
-    Audio: "bg-violet-100 text-violet-800 border-violet-300",
 };
 
 const ACCOUNT_PERMISSIONS = [
@@ -55,7 +55,7 @@ const ACCOUNT_PERMISSIONS = [
         tooltip:
             "Create, list, and revoke API keys on your account via the API.",
     },
-] as const;
+] as const satisfies readonly AccountPermissionOption[];
 
 const textModels = Object.keys(TEXT_SERVICES)
     .map((id) => ({
@@ -101,15 +101,16 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     disabled = false,
     allowedModels,
     onModelsChange,
-    hiddenPermissions,
+    visiblePermissions,
     theme = "green",
     showApiName = true,
 }) => {
-    const visiblePermissions = hiddenPermissions?.length
-        ? ACCOUNT_PERMISSIONS.filter((p) => !hiddenPermissions.includes(p.id))
+    const themeConfig = getPermissionUiTheme(theme);
+    const permissionOptions = visiblePermissions?.length
+        ? ACCOUNT_PERMISSIONS.filter((permission) =>
+              visiblePermissions.includes(permission.id),
+          )
         : ACCOUNT_PERMISSIONS;
-    const selectedClasses = THEME_SELECTED[theme];
-    const tipTone = theme === "amber" ? "amber" : "pink";
     const isUnrestricted = allowedModels === null;
     const [isExpanded, setIsExpanded] = useState(!isUnrestricted);
 
@@ -123,6 +124,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         : (allowedModels ?? []).length;
 
     const handleToggle = (permissionId: string) => {
+        if (disabled) return;
         const currentPermissions = value ?? [];
         const hasPermission = currentPermissions.includes(permissionId);
 
@@ -144,11 +146,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     ].map((m) => m.id);
 
     const commitSelection = (next: string[]) => {
-        if (next.length === allModelIds.length) {
-            onModelsChange(null);
-        } else {
-            onModelsChange(next);
-        }
+        onModelsChange(normalizeAllowedModelSelection(next, allModelIds));
     };
 
     const toggleModel = (modelId: string) => {
@@ -209,56 +207,51 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 {/* Model Permission */}
                 <div
                     className={cn(
-                        "rounded-lg border transition-all",
+                        "relative rounded-lg border transition-all",
                         isUnrestricted
-                            ? selectedClasses
-                            : "border-gray-200 hover:border-gray-300",
+                            ? themeConfig.selectedClasses
+                            : "border-gray-200",
                         disabled && "opacity-50 cursor-not-allowed",
                     )}
                 >
-                    <button
-                        type="button"
-                        onClick={handleHeaderClick}
-                        disabled={disabled}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-left cursor-pointer"
+                    <div
+                        className={cn(
+                            "relative flex items-center gap-3 px-3 py-2 text-left transition-all",
+                            !disabled && "cursor-pointer",
+                            !disabled &&
+                                (isUnrestricted
+                                    ? themeConfig.selectedHoverClasses
+                                    : themeConfig.rowHoverClasses),
+                        )}
                     >
-                        <div className="flex-1 flex items-center gap-2">
-                            <span className="text-sm font-medium">Model</span>
-                            <InfoTip
-                                text="Choose which models this key can use. By default, all models are allowed."
-                                label="Model access information"
-                                tone={tipTone}
-                            />
-                            {isExpanded && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onModelsChange(
-                                            isUnrestricted ? [] : null,
-                                        );
-                                    }}
-                                    disabled={disabled}
-                                    className={cn(
-                                        "text-xs font-medium cursor-pointer disabled:opacity-50 ml-1",
-                                        theme === "amber"
-                                            ? "text-amber-800 hover:text-amber-950"
-                                            : "text-green-800 hover:text-green-950",
-                                    )}
-                                >
-                                    {isUnrestricted
-                                        ? "Deselect all"
-                                        : "Select all"}
-                                </button>
+                        <button
+                            type="button"
+                            onClick={handleHeaderClick}
+                            disabled={disabled}
+                            aria-expanded={isExpanded}
+                            aria-label="Toggle model permissions"
+                            className={cn(
+                                "absolute inset-0",
+                                isExpanded ? "rounded-t-lg" : "rounded-lg",
+                                themeConfig.focusRingClasses,
                             )}
+                        />
+                        <div className="relative z-10 flex-1 flex items-center gap-2 pointer-events-none">
+                            <span className="text-sm font-medium">Model</span>
+                            <span className="pointer-events-auto">
+                                <InfoTip
+                                    text="Choose which models this key can use. By default, all models are allowed."
+                                    label="Model access information"
+                                    tone={themeConfig.tipTone}
+                                />
+                            </span>
                         </div>
                         <Badge
+                            className="relative z-10"
                             color={
                                 selectedCount === 0
                                     ? "gray"
-                                    : theme === "amber"
-                                      ? "amber"
-                                      : "green"
+                                    : themeConfig.badgeColor
                             }
                         >
                             {isUnrestricted
@@ -267,13 +260,13 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         </Badge>
                         <span
                             className={cn(
-                                "text-gray-400 text-sm leading-none transition-transform duration-200",
+                                "relative z-10 text-gray-400 text-sm leading-none transition-transform duration-200",
                                 isExpanded && "rotate-180",
                             )}
                         >
                             ▾
                         </span>
-                    </button>
+                    </div>
 
                     {/* Expandable model panel */}
                     <div
@@ -285,6 +278,25 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         )}
                     >
                         <div className="px-3 pb-4 space-y-3 border-t border-gray-200 pt-3">
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        onModelsChange(
+                                            isUnrestricted ? [] : null,
+                                        )
+                                    }
+                                    disabled={disabled}
+                                    className={cn(
+                                        "text-xs font-medium cursor-pointer disabled:opacity-50",
+                                        themeConfig.actionTextClasses,
+                                    )}
+                                >
+                                    {isUnrestricted
+                                        ? "Deselect all"
+                                        : "Select all"}
+                                </button>
+                            </div>
                             <ModelCategory
                                 label="Text"
                                 models={textModels}
@@ -334,38 +346,53 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 </div>
 
                 {/* Other Permissions - Profile, Balance, Usage */}
-                {visiblePermissions.map((permission) => {
+                {permissionOptions.map((permission) => {
                     const isChecked = value?.includes(permission.id) ?? false;
                     return (
-                        <button
+                        <div
                             key={permission.id}
-                            type="button"
-                            onClick={() => handleToggle(permission.id)}
-                            disabled={disabled}
                             className={cn(
+                                "relative",
                                 "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
                                 isChecked
-                                    ? selectedClasses
-                                    : "border-gray-200 hover:border-gray-300",
+                                    ? themeConfig.selectedClasses
+                                    : "border-gray-200",
+                                !disabled &&
+                                    (isChecked
+                                        ? themeConfig.selectedHoverClasses
+                                        : themeConfig.rowHoverClasses),
                                 !disabled && "cursor-pointer",
                                 disabled && "opacity-50 cursor-not-allowed",
                             )}
                         >
-                            <div className="flex-1 flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => handleToggle(permission.id)}
+                                disabled={disabled}
+                                aria-pressed={isChecked}
+                                aria-label={`Toggle ${permission.label} permission`}
+                                className={cn(
+                                    "absolute inset-0 rounded-lg",
+                                    themeConfig.focusRingClasses,
+                                )}
+                            />
+                            <div className="relative flex flex-1 items-center gap-1.5 pointer-events-none">
                                 <span className="text-sm font-medium">
                                     {permission.label}
                                 </span>
-                                <InfoTip
-                                    text={permission.tooltip}
-                                    label={`${permission.label} information`}
-                                    tone={tipTone}
-                                    placement="top"
-                                />
+                                <span className="pointer-events-auto">
+                                    <InfoTip
+                                        text={permission.tooltip}
+                                        label={`${permission.label} information`}
+                                        tone={themeConfig.tipTone}
+                                        placement="top"
+                                    />
+                                </span>
                             </div>
                             <span className="text-gray-400 text-lg leading-none">
                                 {isChecked ? "✕" : "+"}
                             </span>
-                        </button>
+                        </div>
                     );
                 })}
             </div>
@@ -383,7 +410,7 @@ const ModelCategory: FC<{
     toggleCategory: (models: { id: string }[]) => void;
     isCategoryAllSelected: (models: { id: string }[]) => boolean;
     showApiName?: boolean;
-    theme?: "green" | "amber";
+    theme?: PermissionUiTheme;
 }> = ({
     label,
     models,
@@ -398,7 +425,7 @@ const ModelCategory: FC<{
     <div>
         <div className="flex items-center justify-between mb-1">
             <span
-                className={`px-2 py-0.5 rounded-full text-xs border ${CATEGORY_PILL[label] ?? ""}`}
+                className={`px-2 py-0.5 rounded-full text-xs border ${getPermissionPillClasses(label)}`}
             >
                 {label}
             </span>
@@ -408,9 +435,7 @@ const ModelCategory: FC<{
                 disabled={disabled}
                 className={cn(
                     "text-[10px] disabled:opacity-50 cursor-pointer",
-                    theme === "amber"
-                        ? "text-amber-700 hover:text-amber-900"
-                        : "text-green-700 hover:text-green-900",
+                    getPermissionUiTheme(theme).actionTextClasses,
                 )}
             >
                 {isCategoryAllSelected(models) ? "Deselect all" : "Select all"}
@@ -441,7 +466,7 @@ const ModelChip: FC<{
     onClick: () => void;
     disabled?: boolean;
     showApiName?: boolean;
-    theme?: "green" | "amber";
+    theme?: PermissionUiTheme;
     category?: string;
 }> = ({
     apiName,
@@ -452,30 +477,30 @@ const ModelChip: FC<{
     showApiName = true,
     theme = "green",
     category,
-}) => (
-    <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className={cn(
-            "px-2.5 py-1 rounded-lg text-xs transition-colors text-left border",
-            selected
-                ? (CATEGORY_PILL[category ?? ""] ??
-                      "bg-gray-100 text-gray-800 border-gray-400")
-                : "bg-transparent text-gray-600 border-gray-300",
-            !disabled &&
-                !selected &&
-                (theme === "amber"
-                    ? "hover:bg-amber-50 hover:text-gray-800 hover:border-amber-300"
-                    : "hover:bg-green-50 hover:text-gray-800 hover:border-green-300"),
-            !disabled && "cursor-pointer",
-            disabled && "opacity-50 cursor-not-allowed",
-        )}
-    >
-        {selected && "✓ "}
-        {officialName}
-        {showApiName && (
-            <span className="font-mono opacity-70"> - {apiName}</span>
-        )}
-    </button>
-);
+}) => {
+    const themeConfig = getPermissionUiTheme(theme);
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                "px-2.5 py-1 rounded-lg text-xs transition-colors text-left border",
+                selected
+                    ? getPermissionPillClasses(category ?? "") ||
+                          "bg-gray-100 text-gray-800 border-gray-400"
+                    : "bg-transparent text-gray-600 border-gray-300",
+                !disabled && !selected && themeConfig.modelHoverClasses,
+                !disabled && "cursor-pointer",
+                disabled && "opacity-50 cursor-not-allowed",
+            )}
+        >
+            {selected && "✓ "}
+            {officialName}
+            {showApiName && (
+                <span className="font-mono opacity-70"> - {apiName}</span>
+            )}
+        </button>
+    );
+};

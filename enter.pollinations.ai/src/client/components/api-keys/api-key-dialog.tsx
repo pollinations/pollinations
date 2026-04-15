@@ -8,9 +8,11 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
+import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import type { PermissionUiTheme } from "./permission-ui.ts";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
 
@@ -64,6 +66,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>(isOpen);
 
     useScrollLock(isOpen);
 
@@ -126,6 +129,26 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         allowedModels.length === 0;
     const isCreateDisabled =
         !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
+    const keyTypeTheme: PermissionUiTheme =
+        keyType === "publishable" ? "blue" : "violet";
+    const keyTypeStyles =
+        keyType === "publishable"
+            ? {
+                  panelClasses: "bg-white border-blue-300 scrollbar-theme-blue",
+                  editableInputClasses:
+                      "border-blue-300 focus:outline-none focus-visible:border-blue-500 focus-visible:ring-1 focus-visible:ring-blue-500/60",
+                  readOnlyInputClasses: "border-blue-300 bg-blue-100",
+                  selectedKeyCardClasses: "bg-blue-100 ring-2 ring-blue-300",
+              }
+            : {
+                  panelClasses:
+                      "bg-white border-violet-300 scrollbar-theme-violet",
+                  editableInputClasses:
+                      "border-violet-300 focus:outline-none focus-visible:border-violet-500 focus-visible:ring-1 focus-visible:ring-violet-500/60",
+                  readOnlyInputClasses: "border-violet-300 bg-violet-100",
+                  selectedKeyCardClasses:
+                      "bg-violet-100 ring-2 ring-violet-300",
+              };
 
     function getButtonText(): string {
         if (copied) return "Copied! Closing...";
@@ -164,15 +187,15 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
                 <Dialog.Content
                     className={cn(
-                        "border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col",
-                        "bg-green-100 border-green-950",
+                        "border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden",
+                        "bg-white border-green-950",
                     )}
                 >
                     <div className="shrink-0 p-6 pb-4">
                         <Dialog.Title className="text-lg font-semibold">
                             {simplified
                                 ? "Create New App Key"
-                                : "Create New API Key"}
+                                : "Create API Key"}
                         </Dialog.Title>
                         <p className="text-sm text-gray-500 mt-1">
                             {simplified ? (
@@ -197,29 +220,24 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                     <form
                         onSubmit={handleSubmit}
-                        className="flex flex-col flex-1 min-h-0"
+                        className="flex flex-col flex-1 min-h-0 overflow-hidden"
                     >
-                        <div
-                            className="flex-1 overflow-y-auto px-6 py-2 space-y-4 scrollbar-subtle"
-                            style={{
-                                scrollbarWidth: "thin",
-                                overscrollBehavior: "contain",
-                            }}
-                        >
+                        <div className="px-6 pt-2 pb-4 space-y-4 shrink-0">
                             {error && (
                                 <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                                     {error}
                                 </p>
                             )}
+
                             {!simplified && (
                                 <Field.Root>
                                     <div className="grid grid-cols-2 gap-3">
                                         <label
                                             className={cn(
-                                                "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
+                                                "relative flex flex-col p-4 rounded-lg cursor-pointer transition-all",
                                                 keyType === "publishable"
-                                                    ? "bg-blue-100 ring-2 ring-blue-500"
-                                                    : "bg-gray-50 hover:bg-gray-100",
+                                                    ? keyTypeStyles.selectedKeyCardClasses
+                                                    : "bg-white hover:bg-gray-50",
                                                 createdKey &&
                                                     keyType !== "publishable" &&
                                                     "opacity-40",
@@ -264,10 +282,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                         </label>
                                         <label
                                             className={cn(
-                                                "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
+                                                "relative flex flex-col p-4 rounded-lg cursor-pointer transition-all",
                                                 keyType === "secret"
-                                                    ? "bg-purple-100 ring-2 ring-purple-500"
-                                                    : "bg-gray-50 hover:bg-gray-100",
+                                                    ? keyTypeStyles.selectedKeyCardClasses
+                                                    : "bg-white hover:bg-gray-50",
                                                 createdKey &&
                                                     keyType !== "secret" &&
                                                     "opacity-40",
@@ -309,49 +327,75 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     </div>
                                 </Field.Root>
                             )}
+                        </div>
 
-                            <Field.Root className="flex items-center gap-3">
-                                <Field.Label className="text-sm font-semibold shrink-0">
-                                    {createdKey
-                                        ? simplified
-                                            ? "Your App Key"
-                                            : "Your API Key"
-                                        : "Name"}
-                                </Field.Label>
-                                <Field.Input
-                                    type="text"
-                                    value={createdKey ? createdKey.key : name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className={cn(
-                                        "flex-1 px-3 py-2 border rounded-lg",
-                                        createdKey
-                                            ? "border-green-300 bg-green-200 font-mono text-xs"
-                                            : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-600",
+                        <div className="px-6 pb-2 flex flex-1 min-h-0 overflow-hidden">
+                            <div
+                                ref={scrollAreaRef}
+                                className={cn(
+                                    "border-2 rounded-lg flex-1 min-h-0 overflow-y-auto scrollbar-subtle",
+                                    keyTypeStyles.panelClasses,
+                                )}
+                                style={{
+                                    overscrollBehavior: "contain",
+                                }}
+                            >
+                                <div className="p-4 space-y-4">
+                                    <Field.Root className="flex items-center gap-3">
+                                        <Field.Label className="text-sm font-semibold shrink-0">
+                                            {createdKey
+                                                ? simplified
+                                                    ? "Your App Key"
+                                                    : "Your API Key"
+                                                : "Name"}
+                                        </Field.Label>
+                                        <Field.Input
+                                            type="text"
+                                            value={
+                                                createdKey
+                                                    ? createdKey.key
+                                                    : name
+                                            }
+                                            onChange={(e) =>
+                                                setName(e.target.value)
+                                            }
+                                            className={cn(
+                                                "flex-1 px-3 py-2 border rounded-lg",
+                                                createdKey
+                                                    ? `${keyTypeStyles.readOnlyInputClasses} font-mono text-xs`
+                                                    : keyTypeStyles.editableInputClasses,
+                                            )}
+                                            placeholder={
+                                                createdKey
+                                                    ? ""
+                                                    : "Enter API key name"
+                                            }
+                                            required={!createdKey}
+                                            disabled={
+                                                isSubmitting || !!createdKey
+                                            }
+                                            readOnly={!!createdKey}
+                                        />
+                                    </Field.Root>
+
+                                    {simplified && !createdKey && (
+                                        <PublishableKeySettings
+                                            appUrl={appUrl}
+                                            onAppUrlChange={setAppUrl}
+                                            disabled={isSubmitting}
+                                        />
                                     )}
-                                    placeholder={
-                                        createdKey ? "" : "Enter API key name"
-                                    }
-                                    required={!createdKey}
-                                    disabled={isSubmitting || !!createdKey}
-                                    readOnly={!!createdKey}
-                                />
-                            </Field.Root>
 
-                            {simplified && !createdKey && (
-                                <PublishableKeySettings
-                                    appUrl={appUrl}
-                                    onAppUrlChange={setAppUrl}
-                                    disabled={isSubmitting}
-                                />
-                            )}
-
-                            {!simplified && !createdKey && (
-                                <KeyPermissionsInputs
-                                    value={keyPermissions}
-                                    disabled={isSubmitting}
-                                    inline
-                                />
-                            )}
+                                    {!simplified && !createdKey && (
+                                        <KeyPermissionsInputs
+                                            value={keyPermissions}
+                                            disabled={isSubmitting}
+                                            inline
+                                            theme={keyTypeTheme}
+                                        />
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">

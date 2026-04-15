@@ -3,7 +3,7 @@ import { type FC, useState } from "react";
 type InfoTipProps = {
     text: string;
     label?: string;
-    tone?: "pink" | "amber";
+    tone?: "pink" | "amber" | "blue" | "violet";
     placement?: "top" | "bottom";
 };
 
@@ -15,6 +15,14 @@ const TONES = {
     amber: {
         badge: "bg-amber-200 border-amber-400 text-amber-800 hover:bg-amber-300 hover:border-amber-500",
         popup: "bg-amber-50 border-amber-300",
+    },
+    blue: {
+        badge: "bg-blue-100 border-blue-300 text-blue-600 hover:bg-blue-200 hover:border-blue-400",
+        popup: "bg-gradient-to-r from-blue-50 to-sky-50 border-blue-200",
+    },
+    violet: {
+        badge: "bg-violet-100 border-violet-300 text-violet-600 hover:bg-violet-200 hover:border-violet-400",
+        popup: "bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200",
     },
 } as const;
 

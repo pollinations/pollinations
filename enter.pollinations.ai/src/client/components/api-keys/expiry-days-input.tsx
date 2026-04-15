@@ -1,7 +1,12 @@
 import { Field } from "@ark-ui/react";
 import type { FC } from "react";
+import { cn } from "@/util.ts";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Input } from "../ui/input.tsx";
+import {
+    getPermissionUiTheme,
+    type PermissionUiTheme,
+} from "./permission-ui.ts";
 
 type ExpiryDaysInputProps = {
     value: number | null;
@@ -9,7 +14,7 @@ type ExpiryDaysInputProps = {
     disabled?: boolean;
     compact?: boolean;
     inline?: boolean;
-    tone?: "pink" | "amber";
+    theme?: PermissionUiTheme;
 };
 
 /**
@@ -23,8 +28,10 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     disabled = false,
     compact = false,
     inline = false,
-    tone,
+    theme = "green",
 }) => {
+    const { inputClasses, tipTone } = getPermissionUiTheme(theme);
+
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>
             {!compact && (
@@ -35,7 +42,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                     <InfoTip
                         text="Key expires after this many days. Leave empty for no expiry."
                         label="Expiry information"
-                        tone={tone}
+                        tone={tipTone}
                     />
                 </Field.Label>
             )}
@@ -51,7 +58,11 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={`w-[4.5rem] ${compact ? "text-sm" : ""}`}
+                    className={cn(
+                        "input-number-clean w-20",
+                        compact && "text-sm",
+                        inputClasses,
+                    )}
                     placeholder="Never"
                     disabled={disabled}
                 />

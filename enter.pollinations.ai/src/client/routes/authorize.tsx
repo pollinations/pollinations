@@ -7,12 +7,18 @@ import { authClient } from "../auth.ts";
 import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
+import { getPermissionPillClasses } from "../components/api-keys/permission-ui.ts";
 import { PollenBudgetInput } from "../components/api-keys/pollen-budget-input.tsx";
 import { SCOPE_LABELS } from "../components/auth/scope-labels.ts";
 import { Button } from "../components/button.tsx";
 import { InfoTip } from "../components/ui/info-tip.tsx";
 import { config } from "../config.ts";
+import { useAutoHideScrollbar } from "../hooks/use-auto-hide-scrollbar.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
+import {
+    AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
+    getAuthorizeInitialPermissions,
+} from "../lib/authorize-config.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -49,29 +55,32 @@ function safeParseUrl(url: string): URL | null {
 }
 
 const ALL_MODALITIES = ["text", "images", "audio", "video"] as const;
+const SERVICE_MODALITY_SOURCES: Record<
+    string,
+    { outputModalities?: readonly string[] }
+> = {
+    ...TEXT_SERVICES,
+    ...IMAGE_SERVICES,
+    ...AUDIO_SERVICES,
+};
 
 function computeModalities(allowedModels: string[] | null): string[] {
     if (allowedModels === null) return [...ALL_MODALITIES];
-    const has = { text: false, images: false, audio: false, video: false };
+    const present = new Set<(typeof ALL_MODALITIES)[number]>();
     for (const id of allowedModels) {
-        if (id in TEXT_SERVICES) has.text = true;
-        const img = IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES];
-        if (img) {
-            const outputs = img.outputModalities as readonly string[];
-            if (outputs.includes("image")) has.images = true;
-            if (outputs.includes("video")) has.video = true;
+        for (const output of SERVICE_MODALITY_SOURCES[id]?.outputModalities ??
+            []) {
+            if (output === "image") {
+                present.add("images");
+                continue;
+            }
+            if (output === "text" || output === "audio" || output === "video") {
+                present.add(output);
+            }
         }
-        if (id in AUDIO_SERVICES) has.audio = true;
     }
-    return ALL_MODALITIES.filter((m) => has[m]);
+    return ALL_MODALITIES.filter((modality) => present.has(modality));
 }
-
-const MODALITY_PILL = {
-    text: "bg-blue-100 text-blue-800 border-blue-300",
-    images: "bg-pink-100 text-pink-800 border-pink-300",
-    audio: "bg-violet-100 text-violet-800 border-violet-300",
-    video: "bg-teal-100 text-teal-800 border-teal-300",
-} as const;
 
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
@@ -148,17 +157,20 @@ function AuthorizeComponent() {
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
 
-    const keyPermissions = useKeyPermissions({
-        allowedModels: models,
-        pollenBudget: budget ?? 5,
-        expiryDays: expiry ?? 7,
-        accountPermissions: urlPermissions ?? ["profile", "balance"],
-    });
+    const keyPermissions = useKeyPermissions(
+        getAuthorizeInitialPermissions({
+            models,
+            budget,
+            expiry,
+            permissions: urlPermissions,
+        }),
+    );
 
     const hasBudget = keyPermissions.permissions.pollenBudget !== null;
     const modalities = computeModalities(
         keyPermissions.permissions.allowedModels,
     );
+    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>();
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) &&
         hasBudget &&
@@ -339,7 +351,10 @@ function AuthorizeComponent() {
                 }
                 setDeviceOutcome("approved");
             } else {
-                const url = new URL(redirect_url!);
+                if (!parsedRedirectUrl) {
+                    throw new Error("Invalid redirect URL format");
+                }
+                const url = new URL(parsedRedirectUrl.toString());
                 url.hash = `api_key=${key}`;
                 window.location.href = url.toString();
             }
@@ -365,7 +380,7 @@ function AuthorizeComponent() {
             }
             setDeviceOutcome("denied");
         } else if (parsedRedirectUrl) {
-            window.location.href = redirect_url!;
+            window.location.href = parsedRedirectUrl.toString();
         } else {
             navigate({ to: "/" });
         }
@@ -627,7 +642,10 @@ function AuthorizeComponent() {
                                 </div>
                             )}
 
-                            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg flex-1 min-h-0 overflow-y-auto [&_input]:!bg-amber-100 [&_input]:!border-amber-400 [&_input:focus]:!ring-amber-500">
+                            <div
+                                ref={scrollAreaRef}
+                                className="bg-amber-50 border-2 border-amber-300 rounded-lg flex-1 min-h-0 overflow-y-auto scrollbar-subtle scrollbar-theme-amber"
+                            >
                                 <div className="p-4 flex items-center gap-2">
                                     {user.image && (
                                         <img
@@ -659,7 +677,8 @@ function AuthorizeComponent() {
                                             onChange={
                                                 keyPermissions.setPollenBudget
                                             }
-                                            compact
+                                            hideLabel
+                                            theme="amber"
                                         />
                                     </div>
                                 </div>
@@ -690,7 +709,7 @@ function AuthorizeComponent() {
                                                         {modalities.map((m) => (
                                                             <span
                                                                 key={m}
-                                                                className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${MODALITY_PILL[m as keyof typeof MODALITY_PILL]}`}
+                                                                className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${getPermissionPillClasses(m)}`}
                                                             >
                                                                 {m}
                                                             </span>
@@ -723,11 +742,9 @@ function AuthorizeComponent() {
                                 )}
 
                                 <details className="group border-t border-amber-300">
-                                    <summary className="cursor-pointer list-none px-3 py-3 group-open:py-1 text-sm font-medium text-gray-900 flex items-center justify-between select-none transition-all">
-                                        <span className="group-open:hidden">
-                                            Advanced
-                                        </span>
-                                        <span className="text-amber-700 transition-transform group-open:rotate-180 ml-auto">
+                                    <summary className="cursor-pointer list-none px-3 py-3 text-xs font-medium text-amber-800 flex items-center justify-end gap-1 select-none transition-all hover:bg-amber-100 hover:text-amber-950">
+                                        <span>Advanced</span>
+                                        <span className="text-amber-700 transition-transform group-open:rotate-180">
                                             &#x25BE;
                                         </span>
                                     </summary>
@@ -741,7 +758,7 @@ function AuthorizeComponent() {
                                                 keyPermissions.setExpiryDays
                                             }
                                             inline
-                                            tone="amber"
+                                            theme="amber"
                                         />
                                         <AccountPermissionsInput
                                             value={
@@ -758,11 +775,9 @@ function AuthorizeComponent() {
                                             onModelsChange={
                                                 keyPermissions.setAllowedModels
                                             }
-                                            hiddenPermissions={[
-                                                "profile",
-                                                "balance",
-                                                "keys",
-                                            ]}
+                                            visiblePermissions={
+                                                AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS
+                                            }
                                             theme="amber"
                                             showApiName={false}
                                         />

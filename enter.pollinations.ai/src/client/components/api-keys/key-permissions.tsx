@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useState } from "react";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
+import type { PermissionUiTheme } from "./permission-ui.ts";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
 
 export interface KeyPermissions {
@@ -48,6 +49,7 @@ interface KeyPermissionsInputsProps {
     value: ReturnType<typeof useKeyPermissions>;
     disabled?: boolean;
     inline?: boolean;
+    theme?: PermissionUiTheme;
 }
 
 /**
@@ -57,6 +59,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     value,
     disabled = false,
     inline = false,
+    theme = "green",
 }) => {
     const {
         permissions,
@@ -73,12 +76,14 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 onChange={setPollenBudget}
                 disabled={disabled}
                 inline={inline}
+                theme={theme}
             />
             <ExpiryDaysInput
                 value={permissions.expiryDays}
                 onChange={setExpiryDays}
                 disabled={disabled}
                 inline={inline}
+                theme={theme}
             />
             <AccountPermissionsInput
                 value={permissions.accountPermissions}
@@ -86,6 +91,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 disabled={disabled}
                 allowedModels={permissions.allowedModels}
                 onModelsChange={setAllowedModels}
+                theme={theme}
             />
         </div>
     );

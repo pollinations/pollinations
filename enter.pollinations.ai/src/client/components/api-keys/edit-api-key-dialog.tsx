@@ -3,6 +3,7 @@ import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
+import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
@@ -34,6 +35,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
     const isAppKey = isPublishable && !!initialAppUrl;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
+    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>();
 
     useScrollLock();
 
@@ -164,9 +166,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     </div>
 
                     <div
-                        className="flex-1 overflow-y-auto p-6 py-4 scrollbar-subtle"
+                        ref={scrollAreaRef}
+                        className="flex-1 overflow-y-auto p-6 py-4 scrollbar-subtle scrollbar-theme-green"
                         style={{
-                            scrollbarWidth: "thin",
                             overscrollBehavior: "contain",
                         }}
                     >

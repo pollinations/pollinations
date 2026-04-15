@@ -64,7 +64,7 @@ Non-streaming: `--no-stream`. Save full output: `--output summary.txt`. Use `--s
 ```bash
 cat README.md | polli gen text "what does this project do?"
 ```
-stdin becomes context; the positional argument is the question. When chaining `gen text` into another command (e.g. `| polli gen audio`), pass `--no-stream` so the downstream consumer gets the full response as a single clean chunk instead of incremental deltas.
+stdin becomes context; the positional argument is the question. When chaining `gen text` into another command (e.g. `| polli gen audio`), **always pass `--no-stream`** — otherwise the downstream consumer may see only the first few tokens before the stream ends and act on a truncated response. Verified: a 500-word essay request streams ~113 words through a pipe in the first read, while `--no-stream` delivers all 480 words as a single chunk.
 
 ### Interactive chat session
 ```bash

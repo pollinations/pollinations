@@ -32,7 +32,7 @@ async function processImageForVeo(
 
 // Veo API constants
 const LOCATION = "us-central1"; // Veo is only available in us-central1
-const MODEL_ID = "veo-3.1-fast-generate-preview";
+const MODEL_ID = "veo-3.1-fast-generate-001";
 
 /**
  * Result of video generation

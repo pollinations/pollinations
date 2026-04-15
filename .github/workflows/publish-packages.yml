@@ -1,4 +1,4 @@
-name: Publish Packages to NPM
+name: Publish Packages
 
 on:
   push:
@@ -35,7 +35,8 @@ jobs:
     if: needs.detect-changes.outputs.sdk == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -71,28 +72,31 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
 
-      - name: Create GitHub Release
+      - name: Publish to GitHub Packages
         if: steps.check.outputs.exists == 'false'
         working-directory: packages/sdk
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG="${PACKAGE_NAME}@${PACKAGE_VERSION}"
-          git tag "$TAG"
-          git push origin "$TAG"
-          gh release create "$TAG" \
-            --title "${PACKAGE_NAME} v${PACKAGE_VERSION}" \
-            --notes "Published ${PACKAGE_NAME}@${PACKAGE_VERSION} to [npm](https://www.npmjs.com/package/${PACKAGE_NAME}/v/${PACKAGE_VERSION})" \
-            --latest=false
+          # GitHub Packages requires scope matching the repo owner
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@pollinations/sdk';
+            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/sdk' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-mcp:
     needs: detect-changes
     if: needs.detect-changes.outputs.mcp == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -126,28 +130,29 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
 
-      - name: Create GitHub Release
+      - name: Publish to GitHub Packages
         if: steps.check.outputs.exists == 'false'
         working-directory: packages/mcp
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG="${PACKAGE_NAME}@${PACKAGE_VERSION}"
-          git tag "$TAG"
-          git push origin "$TAG"
-          gh release create "$TAG" \
-            --title "${PACKAGE_NAME} v${PACKAGE_VERSION}" \
-            --notes "Published ${PACKAGE_NAME}@${PACKAGE_VERSION} to [npm](https://www.npmjs.com/package/${PACKAGE_NAME}/v/${PACKAGE_VERSION})" \
-            --latest=false
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@pollinations/mcp';
+            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/mcp' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-ompc:
     needs: detect-changes
     if: needs.detect-changes.outputs.ompc == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -181,18 +186,18 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
 
-      - name: Create GitHub Release
+      - name: Publish to GitHub Packages
         if: steps.check.outputs.exists == 'false'
         working-directory: packages/ompc
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG="${PACKAGE_NAME}@${PACKAGE_VERSION}"
-          git tag "$TAG"
-          git push origin "$TAG"
-          gh release create "$TAG" \
-            --title "${PACKAGE_NAME} v${PACKAGE_VERSION}" \
-            --notes "Published ${PACKAGE_NAME}@${PACKAGE_VERSION} to [npm](https://www.npmjs.com/package/${PACKAGE_NAME}/v/${PACKAGE_VERSION})" \
-            --latest=false
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@pollinations/ompc';
+            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/ompc' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

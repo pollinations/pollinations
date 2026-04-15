@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| ❓  | No description provided. | [@ShayNeeo](https://github.com/ShayNeeo) |
 | [🎨 Polli-com](https://polli-com.vercel.app/) | Generate images on mobile with Polli-com, a client-side PWA built on Pollinations.ai with a Prompt Builder, optional local ComfyUI bridge, and role-based access control. | [@abhi5hek1979](https://github.com/abhi5hek1979) |
 | [🎬 AI video generator](https://www.tomdacat.com/ai-video-generator/) | Generate videos using the free Seedance model on Pollinations.ai with AI video generator. | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎨 Pigment](https://pigment-web.vercel.app/) | Create AI-generated art in the browser with Pigment, a Flask + vanilla JS web app that wraps the Pollinations API with hundreds of art styles and a self-hostable option. | [@SmokePigDad](https://github.com/SmokePigDad) |
@@ -29,7 +30,6 @@
 | [🏛️ The Institute of Everything](https://rizperdana.github.io/institute-ai/) | Generate a complete fake museum exhibit from any concept, absurd, niche, or mundane, presented with straight-faced academic seriousness using The Institute of Everything. | [@rizperdana](https://github.com/rizperdana) |
 | [🎨 StyleOps](https://styleops.co) | Generate cohesive brand assets from detailed style guides using StyleOps, an AI-powered brand visual generator powered by Pollinations.ai (Flux model). | [@soyoxymor0n](https://github.com/soyoxymor0n) |
 | 🤖 Overtli Studio Suite | OVERTLI STUDIO Suite is a collection of nodes for Comfy UI that makes local and cloud AI generation easier through a unified advanced router and specialized media nodes. It uses Pollinations.ai as its | [@OvertliDS](https://github.com/OvertliDS) |
-| 🧑‍🎨 Pollinations Avatar Gen - Reforged | Extends the local LLM frontend SillyTavern with Pollinations Avatar Gen - Reforged, an upgraded Reforged extension that builds on Nidelon pollinations-avatar-gen. | [@sunjichaocom](https://github.com/sunjichaocom) |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
@@ -47,16 +47,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-04-14** – **🧠 Gemini Image Reasoning** Gemini can now think before it draws. Append `?reasoning=true` to your [image requests](https://gen.pollinations.ai/image/{prompt}) to enable native reasoning modes for complex prompts.
+- **2026-04-13** – **🔗 ComfyUI Nodes** Overtli Studio Suite built custom nodes to route generations through our API directly inside your local ComfyUI workflows. [View repo](https://github.com/OvertliDS/overtli-studio-suite) <!-- app -->
+- **2026-04-13** – **🎨 Brand Generation** StyleOps joined the showcase, wrapping our image models into a dedicated tool for spitting out cohesive brand assets. [Try it](https://styleops.co) <!-- app -->
+- **2026-04-13** – **💡 The Institute of Everything** A new community app that generates highly detailed, deadpan academic museum exhibits for completely absurd concepts. [Try it](https://rizperdana.github.io/institute-ai/) <!-- app -->
+- **2026-04-13** – **🌟 Showcase Expansion** Four new community tools just dropped: Pigment, PseudoWrite, Tawer_bot, and JFOAC. The ecosystem grows. [View repos](https://hello.pollinations.ai) <!-- app -->
 - **2026-04-12** – **🧠 Kimi gets a brain upgrade** The `kimi` text model now runs Moonshot's K2-thinking model under the hood. You get reasoning blocks and a massive 128K context window for your largest prompts.
 - **2026-04-12** – **⚡ 50x faster text generation** We migrated `deepseek`, `glm`, `minimax`, and `qwen-large` to Fireworks AI. Latency dropped off a cliff, and Qwen got bumped to its 396B flagship version. Try them in the [Unified API](https://gen.pollinations.ai).
 - **2026-04-12** – **🖼️ Sana hits 0.165s per image** The default Sana [image model](https://gen.pollinations.ai/image/models) was upgraded to 1.6B and moved to GH200 instances. Better pixels, delivered in a fraction of a second.
 - **2026-04-12** – **🌐 Client-side OpenAI SDK support** We adjusted our CORS headers so standard OpenAI SDKs now work directly from the browser. Build your frontend apps without fighting preflight errors.
 - **2026-04-10** – **⚡ DeepSeek & Kimi Upgrades** Migrated DeepSeek and Kimi to new infrastructure. Expect significantly fewer dropped connections and faster response times when chatting in the [Playground](https://pollinations.ai/play).
-- **2026-04-10** – **🌍 Gemini Flash Lite Routing** Rerouted Gemini 2.5 Flash Lite to global endpoints to pool quota. It should now actually survive when everyone tries to hit the [Text API](https://gen.pollinations.ai/v1/chat/completions) at the exact same time.
-- **2026-04-09** – **🚀 Heavyweight models hit the free tier** GPT-5.4, Grok, and Qwen Coder are now free to use. We also wired up Mistral-Large-3 and Grok-4-20 to the [text endpoint](https://gen.pollinations.ai/v1/models).
-- **2026-04-09** – **🎨 Premium pixels, zero cost** `gptimage-large` and `FLUX.1 Kontext` have been moved off the paid tier. Send a prompt, get high-quality pixels back.
-- **2026-04-09** – **🛠️ Dreamframe** A zero-dependency, single-HTML-file playground for testing image, video, voice, and music generation. View source, learn, steal. [Try it](https://funniman23.github.io/Dreamframe/) <!-- app -->
-- **2026-04-09** – **🎭 SillyTavern avatar generation** A new extension lets you generate and update character avatars via our image API directly inside your local LLM frontend. [View repo](https://github.com/sunjichaocom/pollinations-avatar-gen-reforged) <!-- app -->
 ---
 
 ## 🌱 Introduction

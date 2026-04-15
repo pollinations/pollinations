@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const outputPath = resolve(root, ".dev.vars");
-const overridePath = resolve(root, ".dev.vars.local");
+const overridePath = resolve(root, ".dev.vars.override");
 
 const parseEnv = (text) => {
     const vars = new Map();

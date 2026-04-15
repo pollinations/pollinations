@@ -374,7 +374,7 @@ function AuthorizeComponent() {
                 if (!parsedRedirectUrl) {
                     throw new Error("Invalid redirect URL format");
                 }
-                const url = new URL(parsedRedirectUrl.toString());
+                const url = new URL(parsedRedirectUrl.href);
                 url.hash = `api_key=${key}`;
                 window.location.href = url.toString();
             }
@@ -410,14 +410,14 @@ function AuthorizeComponent() {
         const denied = deviceOutcome === "denied";
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
+                <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
                     <div className="text-4xl mb-4">
                         {denied ? "\u{1F6AB}" : "\u{2705}"}
                     </div>
-                    <h2 className="text-lg font-semibold text-green-950 mb-2">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
                         {denied ? "Access Denied" : "Device Authorized"}
                     </h2>
-                    <p className="text-sm text-green-800">
+                    <p className="text-sm text-amber-900">
                         You can close this tab and return to your device.
                     </p>
                 </div>
@@ -428,8 +428,8 @@ function AuthorizeComponent() {
     if (isPending) {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
-                    <p className="text-green-950">Loading...</p>
+                <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
+                    <p className="text-gray-900">Loading...</p>
                 </div>
             </div>
         );
@@ -442,7 +442,7 @@ function AuthorizeComponent() {
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="authorize-sign-in-title"
-                    className="bg-white border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full"
+                    className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full"
                 >
                     <div className="shrink-0 p-6 pb-4 flex items-center justify-between">
                         <h2
@@ -490,7 +490,7 @@ function AuthorizeComponent() {
                                                 )}
                                             </>
                                         ) : (
-                                            <p className="font-semibold text-green-950">
+                                            <p className="font-semibold text-gray-900">
                                                 A device is requesting access to
                                                 your account
                                             </p>
@@ -674,16 +674,16 @@ function AuthorizeComponent() {
 
                             {deviceScopes.length > 0 && (
                                 <div>
-                                    <p className="text-sm font-medium text-green-950 mb-2">
+                                    <p className="text-sm font-medium text-gray-900 mb-2">
                                         This will allow the device to:
                                     </p>
-                                    <ul className="text-sm text-green-900 space-y-2">
+                                    <ul className="text-sm text-amber-900 space-y-2">
                                         {deviceScopes.map((s) => (
                                             <li
                                                 key={s}
                                                 className="flex items-start gap-2"
                                             >
-                                                <span className="text-green-600">
+                                                <span className="text-amber-700">
                                                     &#x2713;
                                                 </span>
                                                 <span>

@@ -212,7 +212,7 @@
     }
 }
 
-    .emoji-pulse {
-        filter: grayscale(1) opacity(0.6);
-        animation: emoji-pulse 1.5s ease-in-out infinite;
-    }
+.emoji-pulse {
+    filter: grayscale(1) opacity(0.6);
+    animation: emoji-pulse 1.5s ease-in-out infinite;
+}

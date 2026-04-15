@@ -88,6 +88,13 @@ const audioModels = audioModelIds
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
+const MODEL_CATEGORIES = [
+    { label: "Text", models: textModels },
+    { label: "Image", models: imageModels },
+    { label: "Video", models: videoModels },
+    { label: "Audio", models: audioModels },
+] as const;
+
 /**
  * Unified permissions input for API keys.
  * Includes model restrictions and account permissions (profile, balance, usage).
@@ -228,41 +235,40 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                             aria-expanded={isExpanded}
                             aria-label="Toggle model permissions"
                             className={cn(
-                                "absolute inset-0",
-                                isExpanded ? "rounded-t-lg" : "rounded-lg",
+                                "flex flex-1 items-center gap-3 text-left",
                                 themeConfig.focusRingClasses,
                             )}
-                        />
-                        <div className="relative z-10 flex-1 flex items-center gap-2 pointer-events-none">
-                            <span className="text-sm font-medium">Model</span>
-                            <span className="pointer-events-auto">
-                                <InfoTip
-                                    text="Choose which models this key can use. By default, all models are allowed."
-                                    label="Model access information"
-                                    tone={themeConfig.tipTone}
-                                />
+                        >
+                            <div className="flex-1 flex items-center gap-2 min-w-0">
+                                <span className="text-sm font-medium">
+                                    Model
+                                </span>
+                            </div>
+                            <Badge
+                                color={
+                                    selectedCount === 0
+                                        ? "gray"
+                                        : themeConfig.badgeColor
+                                }
+                            >
+                                {isUnrestricted
+                                    ? "All selected"
+                                    : `${selectedCount} selected`}
+                            </Badge>
+                            <span
+                                className={cn(
+                                    "text-gray-400 text-sm leading-none transition-transform duration-200",
+                                    isExpanded && "rotate-180",
+                                )}
+                            >
+                                ▾
                             </span>
-                        </div>
-                        <Badge
-                            className="relative z-10"
-                            color={
-                                selectedCount === 0
-                                    ? "gray"
-                                    : themeConfig.badgeColor
-                            }
-                        >
-                            {isUnrestricted
-                                ? "All selected"
-                                : `${selectedCount} selected`}
-                        </Badge>
-                        <span
-                            className={cn(
-                                "relative z-10 text-gray-400 text-sm leading-none transition-transform duration-200",
-                                isExpanded && "rotate-180",
-                            )}
-                        >
-                            ▾
-                        </span>
+                        </button>
+                        <InfoTip
+                            text="Choose which models this key can use. By default, all models are allowed."
+                            label="Model access information"
+                            tone={themeConfig.tipTone}
+                        />
                     </div>
 
                     {/* Expandable model panel */}
@@ -294,50 +300,22 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                         : "Select all"}
                                 </button>
                             </div>
-                            <ModelCategory
-                                label="Text"
-                                models={textModels}
-                                disabled={disabled}
-                                isModelSelected={isModelSelected}
-                                toggleModel={toggleModel}
-                                toggleCategory={toggleCategory}
-                                isCategoryAllSelected={isCategoryAllSelected}
-                                showApiName={showApiName}
-                                theme={theme}
-                            />
-                            <ModelCategory
-                                label="Image"
-                                models={imageModels}
-                                disabled={disabled}
-                                isModelSelected={isModelSelected}
-                                toggleModel={toggleModel}
-                                toggleCategory={toggleCategory}
-                                isCategoryAllSelected={isCategoryAllSelected}
-                                showApiName={showApiName}
-                                theme={theme}
-                            />
-                            <ModelCategory
-                                label="Video"
-                                models={videoModels}
-                                disabled={disabled}
-                                isModelSelected={isModelSelected}
-                                toggleModel={toggleModel}
-                                toggleCategory={toggleCategory}
-                                isCategoryAllSelected={isCategoryAllSelected}
-                                showApiName={showApiName}
-                                theme={theme}
-                            />
-                            <ModelCategory
-                                label="Audio"
-                                models={audioModels}
-                                disabled={disabled}
-                                isModelSelected={isModelSelected}
-                                toggleModel={toggleModel}
-                                toggleCategory={toggleCategory}
-                                isCategoryAllSelected={isCategoryAllSelected}
-                                showApiName={showApiName}
-                                theme={theme}
-                            />
+                            {MODEL_CATEGORIES.map(({ label, models }) => (
+                                <ModelCategory
+                                    key={label}
+                                    label={label}
+                                    models={models}
+                                    disabled={disabled}
+                                    isModelSelected={isModelSelected}
+                                    toggleModel={toggleModel}
+                                    toggleCategory={toggleCategory}
+                                    isCategoryAllSelected={
+                                        isCategoryAllSelected
+                                    }
+                                    showApiName={showApiName}
+                                    theme={theme}
+                                />
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -349,7 +327,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         <div
                             key={permission.id}
                             className={cn(
-                                "relative",
                                 "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
                                 isChecked
                                     ? themeConfig.selectedClasses
@@ -369,26 +346,25 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                 aria-pressed={isChecked}
                                 aria-label={`Toggle ${permission.label} permission`}
                                 className={cn(
-                                    "absolute inset-0 rounded-lg",
+                                    "flex flex-1 items-center gap-3 text-left",
                                     themeConfig.focusRingClasses,
                                 )}
+                            >
+                                <div className="flex flex-1 items-center gap-1.5">
+                                    <span className="text-sm font-medium">
+                                        {permission.label}
+                                    </span>
+                                </div>
+                                <span className="text-gray-400 text-lg leading-none">
+                                    {isChecked ? "✕" : "+"}
+                                </span>
+                            </button>
+                            <InfoTip
+                                text={permission.tooltip}
+                                label={`${permission.label} information`}
+                                tone={themeConfig.tipTone}
+                                placement="top"
                             />
-                            <div className="relative flex flex-1 items-center gap-1.5 pointer-events-none">
-                                <span className="text-sm font-medium">
-                                    {permission.label}
-                                </span>
-                                <span className="pointer-events-auto">
-                                    <InfoTip
-                                        text={permission.tooltip}
-                                        label={`${permission.label} information`}
-                                        tone={themeConfig.tipTone}
-                                        placement="top"
-                                    />
-                                </span>
-                            </div>
-                            <span className="text-gray-400 text-lg leading-none">
-                                {isChecked ? "✕" : "+"}
-                            </span>
                         </div>
                     );
                 })}

@@ -12,7 +12,7 @@ type ExpiryDaysInputProps = {
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
-    compact?: boolean;
+    hideLabel?: boolean;
     inline?: boolean;
     theme?: PermissionUiTheme;
 };
@@ -26,7 +26,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     value,
     onChange,
     disabled = false,
-    compact = false,
+    hideLabel = false,
     inline = false,
     theme = "green",
 }) => {
@@ -34,7 +34,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
 
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>
-            {!compact && (
+            {!hideLabel && (
                 <Field.Label
                     className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
                 >
@@ -60,7 +60,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                     }}
                     className={cn(
                         "input-number-clean w-20",
-                        compact && "text-sm",
+                        hideLabel && "text-sm",
                         inputClasses,
                     )}
                     placeholder="Never"

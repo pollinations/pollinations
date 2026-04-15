@@ -56,32 +56,15 @@ jobs:
           npm ci
           npm run build
 
-      - name: Check if version exists on NPM
-        id: check
-        working-directory: packages/sdk
-        run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "⚠️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published — skipping"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "📦 Will publish ${PACKAGE_NAME}@${PACKAGE_VERSION}"
-          fi
-
       - name: Publish to NPM
-        if: steps.check.outputs.exists == 'false'
         working-directory: packages/sdk
-        run: npm publish --access public --registry https://registry.npmjs.org/
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
-        if: steps.check.outputs.exists == 'false'
         working-directory: packages/sdk
         run: |
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
           # GitHub Packages requires scope matching the repo owner
           node -e "
             const pkg = require('./package.json');
@@ -114,29 +97,13 @@ jobs:
         working-directory: packages/mcp
         run: npm ci --ignore-scripts
 
-      - name: Check if version exists on NPM
-        id: check
-        working-directory: packages/mcp
-        run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "⚠️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published — skipping"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "📦 Will publish ${PACKAGE_NAME}@${PACKAGE_VERSION}"
-          fi
-
       - name: Publish to NPM
-        if: steps.check.outputs.exists == 'false'
         working-directory: packages/mcp
-        run: npm publish --access public --registry https://registry.npmjs.org/
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
-        if: steps.check.outputs.exists == 'false'
         working-directory: packages/mcp
         run: |
           node -e "
@@ -170,29 +137,13 @@ jobs:
         working-directory: packages/ompc
         run: npm ci --ignore-scripts
 
-      - name: Check if version exists on NPM
-        id: check
-        working-directory: packages/ompc
-        run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "⚠️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published — skipping"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "📦 Will publish ${PACKAGE_NAME}@${PACKAGE_VERSION}"
-          fi
-
       - name: Publish to NPM
-        if: steps.check.outputs.exists == 'false'
         working-directory: packages/ompc
-        run: npm publish --access public --registry https://registry.npmjs.org/
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
-        if: steps.check.outputs.exists == 'false'
         working-directory: packages/ompc
         run: |
           node -e "
@@ -228,29 +179,13 @@ jobs:
           npm ci
           npm run build
 
-      - name: Check if version exists on NPM
-        id: check
-        working-directory: packages/polli-cli
-        run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "⚠️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published — skipping"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "📦 Will publish ${PACKAGE_NAME}@${PACKAGE_VERSION}"
-          fi
-
       - name: Publish to NPM (alpha)
-        if: steps.check.outputs.exists == 'false'
         working-directory: packages/polli-cli
-        run: npm publish --access public --tag alpha --registry https://registry.npmjs.org/
+        run: npm publish --access public --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages (alpha)
-        if: steps.check.outputs.exists == 'false'
         working-directory: packages/polli-cli
         run: |
           node -e "

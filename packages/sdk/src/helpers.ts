@@ -36,6 +36,7 @@ import type {
     AudioGenerateOptions,
     AuthorizeOptions,
     ChatOptions,
+    DailyUsageOptions,
     DailyUsageResponse,
     ImageEditOptions,
     ImageGenerateOptions,
@@ -546,9 +547,9 @@ export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
 /**
  * Get daily usage summary
  */
-export async function getDailyUsage(options?: {
-    format?: "json" | "csv";
-}): Promise<DailyUsageResponse> {
+export async function getDailyUsage(
+    options?: DailyUsageOptions,
+): Promise<DailyUsageResponse> {
     return getClient().accountUsageDaily(options);
 }
 

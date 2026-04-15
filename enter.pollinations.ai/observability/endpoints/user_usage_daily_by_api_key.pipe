@@ -1,0 +1,29 @@
+DESCRIPTION >
+    Get daily aggregated billed usage data for a user, grouped by date, model, meter source, and API key.
+    Use for exact API key filtering in the dashboard. Use 'since' and 'until' for date range filtering.
+
+TOKEN tinybird_read READ
+
+NODE user_usage_daily_by_api_key_node
+SQL >
+    %
+    SELECT
+        toDate(start_time) as date,
+        resolved_model_requested as model,
+        splitByChar(':', selected_meter_slug)[-1] as meter_source,
+        api_key_name,
+        count() as requests,
+        sum(total_price) as cost_usd
+    FROM generation_event
+    WHERE user_id = {{String(user_id, '')}}
+    AND total_price > 0
+    {% if defined(since) %}
+    AND start_time >= {{DateTime(since)}}
+    {% end %}
+    {% if defined(until) %}
+    AND start_time < {{DateTime(until)}}
+    {% end %}
+    GROUP BY date, model, meter_source, api_key_name
+    ORDER BY date DESC, requests DESC
+
+TYPE endpoint

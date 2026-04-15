@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-14",
+  "period_start": "2026-04-14",
+  "period_end": "2026-04-14",
+  "generated_at": "2026-04-15T06:34:15.194090+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-14/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-14/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-14/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Pushed a couple updates to make things smarter and smoother. First up: Gemini models now have a reasoning flag for images. Basically, it thinks a bit harder before it generates your pixels. \n\nSecond: fixed the usage exports for the power users. If you're running massive batches, your data logs will actually export neatly now without throwing a fit.\n\nCode is open, as always. Keep building. 🐝🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #developerlife #generativeai #retroaesthetic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -77,12 +77,12 @@ export const ModelRow: FC<ModelRowProps> = ({
         >
             {/* Model info — flexible width */}
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
                     <button
                         type="button"
                         onClick={copyModelName}
                         className={cn(
-                            "inline-flex items-center gap-2 text-sm text-left transition-colors",
+                            "inline-flex shrink-0 items-center gap-2 text-sm text-left transition-colors",
                             showNew ? "font-bold" : "font-medium",
                             copied ? "text-gray-500" : "hover:text-gray-700",
                             isDisabled && "opacity-75",
@@ -93,7 +93,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                         {brandLogoPath && (
                             <span
                                 aria-hidden="true"
-                                className="h-3.5 w-3.5 shrink-0 bg-current opacity-55"
+                                className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
                                 style={{
                                     maskImage: `url(${brandLogoPath})`,
                                     WebkitMaskImage: `url(${brandLogoPath})`,
@@ -108,80 +108,86 @@ export const ModelRow: FC<ModelRowProps> = ({
                         )}
                         <span>{publicModelName}</span>
                     </button>
-                    {modalityIcons.length > 0 && (
-                        <span className={cn(isDisabled && "opacity-50")}>
-                            <Tooltip content={modalityLabel}>
+                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+                        <div
+                            className={cn(
+                                "flex min-w-0 flex-wrap items-center gap-2 min-h-6",
+                                isDisabled && "opacity-50",
+                            )}
+                        >
+                            {modalityIcons.length > 0 && (
+                                <Tooltip content={modalityLabel}>
+                                    <Badge
+                                        color="gray"
+                                        size="sm"
+                                        className="border border-gray-900 bg-transparent text-gray-900"
+                                    >
+                                        {modalityIcons.map((emoji) => (
+                                            <span key={emoji}>{emoji}</span>
+                                        ))}
+                                    </Badge>
+                                </Tooltip>
+                            )}
+                            {capabilityIcons.length > 0 && (
+                                <Tooltip content={capabilityLabel}>
+                                    <Badge
+                                        color="gray"
+                                        size="sm"
+                                        className="border border-gray-900 bg-transparent text-gray-900"
+                                    >
+                                        {capabilityIcons.map((emoji) => (
+                                            <span key={emoji}>{emoji}</span>
+                                        ))}
+                                    </Badge>
+                                </Tooltip>
+                            )}
+                        </div>
+                        <div
+                            className={cn(
+                                "flex min-w-0 flex-wrap items-center gap-2 min-h-6",
+                                isDisabled && "opacity-50",
+                            )}
+                        >
+                            {modelProfile && (
                                 <Badge
-                                    color="gray"
+                                    color={
+                                        modelProfile === "fast"
+                                            ? "blue"
+                                            : "pink"
+                                    }
                                     size="sm"
-                                    className="border border-gray-900 bg-transparent text-gray-900"
+                                    className="font-semibold tracking-[0.04em]"
                                 >
-                                    {modalityIcons.map((emoji) => (
-                                        <span key={emoji}>{emoji}</span>
-                                    ))}
+                                    {modelProfile.toUpperCase()}
                                 </Badge>
-                            </Tooltip>
-                        </span>
-                    )}
-                    {capabilityIcons.length > 0 && (
-                        <span className={cn(isDisabled && "opacity-50")}>
-                            <Tooltip content={capabilityLabel}>
-                                <Badge
-                                    color="gray"
-                                    size="sm"
-                                    className="border border-gray-900 bg-transparent text-gray-900"
+                            )}
+                            {showNew && (
+                                <Badge color="green" size="sm">
+                                    NEW
+                                </Badge>
+                            )}
+                            {showAlpha && (
+                                <Tooltip content="Alpha model — experimental, may be unstable">
+                                    <Badge color="amber" size="sm">
+                                        ALPHA
+                                    </Badge>
+                                </Tooltip>
+                            )}
+                            {showPaidOnly && (
+                                <Tooltip
+                                    content={
+                                        isDisabled
+                                            ? TOP_UP_TOOLTIP
+                                            : "This model uses purchased pollen only."
+                                    }
                                 >
-                                    {capabilityIcons.map((emoji) => (
-                                        <span key={emoji}>{emoji}</span>
-                                    ))}
-                                </Badge>
-                            </Tooltip>
-                        </span>
-                    )}
-                    {modelProfile && (
-                        <span className={cn(isDisabled && "opacity-50")}>
-                            <Badge
-                                color={
-                                    modelProfile === "fast" ? "blue" : "pink"
-                                }
-                                size="sm"
-                                className="font-semibold tracking-[0.04em]"
-                            >
-                                {modelProfile.toUpperCase()}
-                            </Badge>
-                        </span>
-                    )}
-                    {showNew && (
-                        <span className={cn(isDisabled && "opacity-50")}>
-                            <Badge color="green" size="sm">
-                                NEW
-                            </Badge>
-                        </span>
-                    )}
-                    {showAlpha && (
-                        <span className={cn(isDisabled && "opacity-50")}>
-                            <Tooltip content="Alpha model — experimental, may be unstable">
-                                <Badge color="amber" size="sm">
-                                    ALPHA
-                                </Badge>
-                            </Tooltip>
-                        </span>
-                    )}
-                    {showPaidOnly && (
-                        <span className={cn(isDisabled && "opacity-50")}>
-                            <Tooltip
-                                content={
-                                    isDisabled
-                                        ? TOP_UP_TOOLTIP
-                                        : "This model uses purchased pollen only."
-                                }
-                            >
-                                <Badge color="purple" size="sm">
-                                    PAID
-                                </Badge>
-                            </Tooltip>
-                        </span>
-                    )}
+                                    <Badge color="purple" size="sm">
+                                        PAID
+                                    </Badge>
+                                </Tooltip>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 

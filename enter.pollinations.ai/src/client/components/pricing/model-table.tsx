@@ -239,7 +239,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     onClick={() => setExpanded(!expanded)}
                 />
                 <div className="relative z-10 pointer-events-none flex items-start justify-between gap-2 p-4">
-                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <svg
                             className={cn(
                                 "w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
@@ -262,7 +262,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             type="button"
                             onClick={copyModelName}
                             className={cn(
-                                "pointer-events-auto inline-flex items-center gap-2 text-sm transition-colors",
+                                "pointer-events-auto inline-flex shrink-0 items-center gap-2 text-sm transition-colors",
                                 showNew ? "font-bold" : "font-medium",
                                 copied
                                     ? "text-gray-500"
@@ -275,7 +275,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             {brandLogoPath && (
                                 <span
                                     aria-hidden="true"
-                                    className="h-3.5 w-3.5 shrink-0 bg-current opacity-55"
+                                    className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
                                     style={{
                                         maskImage: `url(${brandLogoPath})`,
                                         WebkitMaskImage: `url(${brandLogoPath})`,
@@ -290,34 +290,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             )}
                             <span>{publicModelName}</span>
                         </button>
-                        {modalityIcons.length > 0 && (
-                            <span className={cn(isDisabled && "opacity-50")}>
-                                <Badge
-                                    color="gray"
-                                    size="sm"
-                                    className="border border-gray-900 bg-transparent text-gray-900"
-                                >
-                                    {modalityIcons.map((emoji) => (
-                                        <span key={emoji}>{emoji}</span>
-                                    ))}
-                                </Badge>
-                            </span>
-                        )}
-                        {capabilityIcons.length > 0 && (
-                            <span className={cn(isDisabled && "opacity-50")}>
-                                <Badge
-                                    color="gray"
-                                    size="sm"
-                                    className="border border-gray-900 bg-transparent text-gray-900"
-                                >
-                                    {capabilityIcons.map((emoji) => (
-                                        <span key={emoji}>{emoji}</span>
-                                    ))}
-                                </Badge>
-                            </span>
-                        )}
-                        {modelProfile && (
-                            <span className={cn(isDisabled && "opacity-50")}>
+                        <div
+                            className={cn(
+                                "flex min-w-0 flex-1 flex-wrap items-center gap-1.5 content-center",
+                                isDisabled && "opacity-50",
+                            )}
+                        >
+                            {modelProfile && (
                                 <Badge
                                     color={
                                         modelProfile === "fast"
@@ -329,32 +308,23 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 >
                                     {modelProfile.toUpperCase()}
                                 </Badge>
-                            </span>
-                        )}
-                        {(showNew || showAlpha || showPaidOnly) && (
-                            <span
-                                className={cn(
-                                    "flex items-center gap-1.5 basis-full min-[500px]:basis-auto",
-                                    isDisabled && "opacity-50",
-                                )}
-                            >
-                                {showNew && (
-                                    <Badge color="green" size="sm">
-                                        NEW
-                                    </Badge>
-                                )}
-                                {showAlpha && (
-                                    <Badge color="amber" size="sm">
-                                        ALPHA
-                                    </Badge>
-                                )}
-                                {showPaidOnly && (
-                                    <Badge color="purple" size="sm">
-                                        PAID
-                                    </Badge>
-                                )}
-                            </span>
-                        )}
+                            )}
+                            {showNew && (
+                                <Badge color="green" size="sm">
+                                    NEW
+                                </Badge>
+                            )}
+                            {showAlpha && (
+                                <Badge color="amber" size="sm">
+                                    ALPHA
+                                </Badge>
+                            )}
+                            {showPaidOnly && (
+                                <Badge color="purple" size="sm">
+                                    PAID
+                                </Badge>
+                            )}
+                        </div>
                     </div>
                     <span
                         className={cn(
@@ -378,20 +348,58 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                         </div>
                     )}
 
-                    <div
-                        className={cn("space-y-2", isDisabled && "opacity-50")}
-                    >
-                        <MobilePriceGroup
-                            label="In"
-                            model={model}
-                            direction="input"
-                        />
+                    <div className="flex items-start justify-between gap-3">
+                        <div
+                            className={cn(
+                                "min-w-0 flex-1 space-y-2",
+                                isDisabled && "opacity-50",
+                            )}
+                        >
+                            <MobilePriceGroup
+                                label="In"
+                                model={model}
+                                direction="input"
+                            />
 
-                        <MobilePriceGroup
-                            label="Out"
-                            model={model}
-                            direction="output"
-                        />
+                            <MobilePriceGroup
+                                label="Out"
+                                model={model}
+                                direction="output"
+                            />
+                        </div>
+
+                        {(modalityIcons.length > 0 ||
+                            capabilityIcons.length > 0) && (
+                            <div
+                                className={cn(
+                                    "flex shrink-0 flex-col items-end gap-1",
+                                    isDisabled && "opacity-50",
+                                )}
+                            >
+                                {modalityIcons.length > 0 && (
+                                    <Badge
+                                        color="gray"
+                                        size="sm"
+                                        className="border border-gray-900 bg-transparent text-gray-900"
+                                    >
+                                        {modalityIcons.map((emoji) => (
+                                            <span key={emoji}>{emoji}</span>
+                                        ))}
+                                    </Badge>
+                                )}
+                                {capabilityIcons.length > 0 && (
+                                    <Badge
+                                        color="gray"
+                                        size="sm"
+                                        className="border border-gray-900 bg-transparent text-gray-900"
+                                    >
+                                        {capabilityIcons.map((emoji) => (
+                                            <span key={emoji}>{emoji}</span>
+                                        ))}
+                                    </Badge>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

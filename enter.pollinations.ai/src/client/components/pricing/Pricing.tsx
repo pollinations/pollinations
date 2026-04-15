@@ -74,27 +74,12 @@ export const Pricing: FC<PricingProps> = ({
 
                 <div className="pt-2 space-y-3">
                     <Card color="teal" className="text-xs !border-transparent">
-                        <div className="flex flex-col min-[500px]:flex-row gap-4 min-[500px]:gap-0">
-                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
-                                <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
-                                    Model Capabilities
-                                </div>
-                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-gray-500 text-left">
-                                    <div>👁️ vision</div>
-                                    <div>🧠 reasoning</div>
-                                    <div>🎙️ audio in</div>
-                                    <div>🔍 search</div>
-                                    <div>🔊 audio out</div>
-                                    <div>💻 code exec</div>
-                                </div>
-                            </div>
-                            <div className="hidden min-[500px]:block w-px bg-teal-300 mx-4 self-stretch" />
-                            <div className="min-[500px]:hidden h-px bg-teal-300" />
-                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
+                        <div className="grid gap-4 min-[700px]:grid-cols-[minmax(0,2.2fr)_minmax(0,3fr)] min-[700px]:items-start">
+                            <div className="flex flex-col items-start text-left">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                     Token Types
                                 </div>
-                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-gray-500 text-left">
+                                <div className="grid grid-cols-2 min-[500px]:grid-cols-3 gap-x-4 gap-y-1.5 text-gray-500 text-left">
                                     <div>💬 text</div>
                                     <div>🖼️ image</div>
                                     <div>💾 cached</div>
@@ -102,13 +87,11 @@ export const Pricing: FC<PricingProps> = ({
                                     <div>🔊 audio</div>
                                 </div>
                             </div>
-                            <div className="hidden min-[500px]:block w-px bg-teal-300 mx-4 self-stretch" />
-                            <div className="min-[500px]:hidden h-px bg-teal-300" />
-                            <div className="flex-1 flex flex-col items-start min-[500px]:items-center text-left min-[500px]:text-center">
+                            <div className="flex flex-col items-start text-left">
                                 <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                     Pricing Metrics
                                 </div>
-                                <div className="space-y-1 text-gray-500 text-left">
+                                <div className="grid gap-x-6 gap-y-1.5 text-gray-500 text-left min-[500px]:grid-cols-2">
                                     <div>
                                         <strong>/img</strong> = flat rate per
                                         image

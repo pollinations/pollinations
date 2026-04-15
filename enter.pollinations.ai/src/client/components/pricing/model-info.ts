@@ -39,7 +39,7 @@ const BRAND_LOGOS: Record<string, string> = {
 const MODEL_LOGOS: Record<string, string> = {
     midijourney: "pollinations",
     "midijourney-large": "pollinations",
-    zimage: "pollinations",
+    zimage: "alibaba",
 };
 
 export const getModalities = (modelName: string): Modalities => {
@@ -94,12 +94,12 @@ export const getModelModalityLabel = (modelName: string): string => {
     const modalities = getModalities(modelName);
     const labels: string[] = [];
 
-    if (modalities.input.includes("text")) labels.push("Text input");
-    if (modalities.input.includes("image")) labels.push("Image input");
-    if (modalities.input.includes("video")) labels.push("Video input");
-    if (modalities.input.includes("audio")) labels.push("Audio input");
+    if (modalities.input.includes("text")) labels.push("text");
+    if (modalities.input.includes("image")) labels.push("image");
+    if (modalities.input.includes("video")) labels.push("video");
+    if (modalities.input.includes("audio")) labels.push("audio");
 
-    return labels.join(", ");
+    return labels.length > 0 ? `Input: ${labels.join(", ")}` : "Input";
 };
 
 export const getModelCapabilityIcons = (modelName: string): string[] => {

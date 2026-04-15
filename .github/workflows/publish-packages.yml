@@ -70,7 +70,7 @@ jobs:
         working-directory: packages/sdk
         run: npm publish --access public --registry https://registry.npmjs.org/
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
         if: steps.check.outputs.exists == 'false'
@@ -128,7 +128,7 @@ jobs:
         working-directory: packages/mcp
         run: npm publish --access public --registry https://registry.npmjs.org/
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
         if: steps.check.outputs.exists == 'false'
@@ -184,7 +184,7 @@ jobs:
         working-directory: packages/ompc
         run: npm publish --access public --registry https://registry.npmjs.org/
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
         if: steps.check.outputs.exists == 'false'

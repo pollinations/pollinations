@@ -24,6 +24,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Generate image | `polli gen image "<prompt>" --output out.png` |
 | Generate text | `polli gen text "<prompt>"` |
 | Text with stdin as context | `echo "<ctx>" \| polli gen text "<question>"` |
+| Describe an image (vision) | `polli gen text "what is this?" --image <url>` |
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
@@ -59,6 +60,13 @@ polli gen image "make the cat purple" --image "$URL" --output purple.png
 polli gen text "summarize the three laws of robotics"
 ```
 Save to file: `--output summary.txt`. Use `--system "<msg>"` to set system prompt. For reasoning models, pass `--reasoning low|medium|high` to control reasoning effort. **Only send `--reasoning` to models where `reasoning: true`** in `polli models --type text --json` — the flag is not validated client-side, and non-reasoning models may silently accept it (openai), ignore it, or return a 400 (mistral).
+
+### Describe an image with a vision model
+```bash
+URL=$(polli upload selfie.jpg)
+polli gen text "turn this person into a cartoon pet in one playful sentence" --image "$URL"
+```
+`gen text --image <url...>` attaches one or more **public https URLs** as an OpenAI-style multimodal message — repeatable for multi-image prompts. Local paths aren't supported; run them through `polli upload` first (see the upload recipe above). **Only text models with `"image"` in `input_modalities` actually read the image** — filter with `polli models --type text --json | jq -r '.[] | select(.input_modalities | index("image")) | .name'`. Non-vision models silently ignore the attachment. Good defaults: `openai`, `gemini`, `claude`.
 
 ### Pipe stdin as context into text generation
 ```bash

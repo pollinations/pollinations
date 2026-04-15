@@ -11,8 +11,12 @@ export async function budgetHint(
     })
         .then((r) => r.balance)
         .catch(() => null);
-    const lines = [`402 Insufficient balance: ${bodyText}`, ""];
-    if (balance != null) lines.push(`Account balance: ${balance} pollen`, "");
-    lines.push("Fix: top up at https://enter.pollinations.ai");
+    const lines = [
+        "Insufficient pollen balance.",
+        "Top up: https://enter.pollinations.ai",
+        "",
+    ];
+    if (balance != null) lines.push(`Account balance: ${balance} pollen`);
+    lines.push(`Server said: ${bodyText}`);
     return lines.join("\n");
 }

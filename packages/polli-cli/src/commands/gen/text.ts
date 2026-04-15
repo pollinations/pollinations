@@ -38,6 +38,10 @@ export function createTextCommand() {
             "--reasoning <effort>",
             "Reasoning effort for reasoning models: low|medium|high",
         )
+        .option(
+            "--image <url...>",
+            "Attach image URL(s) for vision models (repeatable)",
+        )
         .option("--output <path>", "Save to file instead of stdout")
         .option("--stream", "Stream tokens as they arrive (interactive use)")
         .action(async (promptArg, opts) => {
@@ -62,10 +66,28 @@ export function createTextCommand() {
             const isHuman = getOutputMode() === "human";
             const useStream = Boolean(opts.stream) && !opts.output && isHuman;
 
-            const messages: Array<{ role: string; content: string }> = [];
+            type ContentPart =
+                | { type: "text"; text: string }
+                | { type: "image_url"; image_url: { url: string } };
+            const messages: Array<{
+                role: string;
+                content: string | ContentPart[];
+            }> = [];
             if (opts.system)
                 messages.push({ role: "system", content: opts.system });
-            messages.push({ role: "user", content: prompt });
+
+            const images: string[] = Array.isArray(opts.image)
+                ? opts.image
+                : [];
+            if (images.length > 0) {
+                const parts: ContentPart[] = [{ type: "text", text: prompt }];
+                for (const url of images) {
+                    parts.push({ type: "image_url", image_url: { url } });
+                }
+                messages.push({ role: "user", content: parts });
+            } else {
+                messages.push({ role: "user", content: prompt });
+            }
 
             const body: Record<string, unknown> = { messages };
             if (opts.model) body.model = opts.model;

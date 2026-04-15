@@ -20,15 +20,7 @@ interface Highlight {
  * Edit this array to add/remove pinned announcements.
  * When empty, the full TOTAL_NEWS_COUNT dynamic highlights are shown.
  */
-const PINNED_NEWS: Highlight[] = [
-    {
-        date: "2026-03-26",
-        emoji: "⏱️",
-        title: "Flower & Nectar: Daily → Hourly Refills",
-        description:
-            "Starting Thursday, March 26 — Flower 0.4p/hr, Nectar 0.8p/hr. Need more? Grab a Pollen Pack below!",
-    },
-];
+const PINNED_NEWS: Highlight[] = [];
 
 /** Render markdown links [text](url) as clickable <a> tags, preserving surrounding text. */
 function renderWithLinks(text: string): ReactNode[] {

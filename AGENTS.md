@@ -127,7 +127,7 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 - **Image**: Flux, Turbo, and other models on EC2/Vast.ai/io.net GPU instances
 - **Video**: Wan (via Airforce/Alibaba), Veo, LTX on GPU instances
 - **Audio**: ElevenLabs TTS/STT, text-to-music
-- **Tier system**: microbe → spore → seed → flower → nectar → router (see `enter.pollinations.ai/src/tier-config.ts`)
+- **Tier system**: microbe → spore → seed → flower → router (nectar is a legacy tier, still supported for existing users but no longer granted; see `enter.pollinations.ai/src/tier-config.ts`)
 
 ### Local Development
 

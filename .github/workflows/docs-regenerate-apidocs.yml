@@ -31,6 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     # Skip if the deploy workflow failed
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    # Serialize runs so two back-to-back production deploys (or manual dispatches)
+    # cannot race on the `docs/apidocs-sync` branch tip. The second run waits
+    # for the first to finish rather than being cancelled, so the final state
+    # always reflects the latest deploy.
+    concurrency:
+      group: docs-apidocs-sync
+      cancel-in-progress: false
     permissions:
       contents: write
       pull-requests: write
@@ -84,8 +91,17 @@ jobs:
       # commits to the same branch (updating the existing PR in place) rather
       # than stacking new PRs. APIDOCS.md is only ever modified by this
       # workflow, so the sync branch can be fast-forwarded without rebasing.
+      # PR creation gating:
+      # - workflow_run (post-deploy): always create/update the PR on diff
+      # - workflow_dispatch: only when `create_pr` input is true
+      # - repository_dispatch: only when `client_payload.create_pr` is truthy
       - name: Create or update docs PR
-        if: ${{ steps.changes.outputs.changed == 'true' && (github.event_name != 'workflow_dispatch' || inputs.create_pr) }}
+        if: >-
+          ${{ steps.changes.outputs.changed == 'true' && (
+            github.event_name == 'workflow_run' ||
+            (github.event_name == 'workflow_dispatch' && inputs.create_pr) ||
+            (github.event_name == 'repository_dispatch' && (github.event.client_payload.create_pr == true || github.event.client_payload.create_pr == 'true'))
+          ) }}
         run: |
           BRANCH="docs/apidocs-sync"
           git config user.name "pollinations-ai[bot]"

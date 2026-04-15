@@ -1,24 +1,30 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { getModelDefinition, resolveModelName } from "../../shared/registry/registry.ts";
+import { describe, expect, it } from "vitest";
+import {
+    getModelDefinition,
+    resolveModelName,
+} from "../../shared/registry/registry.ts";
 import { findModelByName } from "../availableModels.js";
 import { BASE_PROMPTS } from "../prompts/systemPrompts.js";
 
-test("openclaw registry identity matches runtime backing model key", () => {
-    const openclawRegistry = getModelDefinition(resolveModelName("openclaw"));
-    assert.equal(openclawRegistry.modelId, "qwen3-coder-30b-a3b-instruct");
-});
+describe("openclaw regression checks", () => {
+    it("keeps registry identity aligned with runtime backing model key", () => {
+        const openclawRegistry = getModelDefinition(
+            resolveModelName("openclaw"),
+        );
+        expect(openclawRegistry.modelId).toBe("qwen3-coder-30b-a3b-instruct");
+    });
 
-test("openclaw runtime model exists and uses a transform", () => {
-    const modelDef = findModelByName("openclaw");
-    assert.ok(modelDef);
-    assert.equal(typeof modelDef.transform, "function");
-});
+    it("keeps runtime openclaw model registered with a transform", () => {
+        const modelDef = findModelByName("openclaw");
+        expect(modelDef).toBeTruthy();
+        expect(typeof modelDef?.transform).toBe("function");
+    });
 
-test("openclaw prompt includes tool sequencing and failure recovery constraints", () => {
-    const prompt = BASE_PROMPTS.openclaw;
-    assert.match(prompt, /Tool-call sequencing/i);
-    assert.match(prompt, /Patch\/edit discipline/i);
-    assert.match(prompt, /Failure recovery/i);
-    assert.match(prompt, /Escalation/i);
+    it("keeps prompt operational constraints for tools/patches/retries", () => {
+        const prompt = BASE_PROMPTS.openclaw;
+        expect(prompt).toMatch(/Tool-call sequencing/i);
+        expect(prompt).toMatch(/Patch\/edit discipline/i);
+        expect(prompt).toMatch(/Failure recovery/i);
+        expect(prompt).toMatch(/Escalation/i);
+    });
 });

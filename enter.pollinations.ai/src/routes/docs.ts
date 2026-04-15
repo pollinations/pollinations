@@ -70,7 +70,7 @@ function generateLLMDoc(): string {
     lines.push("API Keys: https://enter.pollinations.ai");
     lines.push("Docs: https://gen.pollinations.ai/api/docs");
     lines.push(
-        "CLI: `npx @pollinations/cli` (binary: `polli`) — agent-friendly, `--json` everywhere",
+        "CLI: `npx @pollinations_ai/cli` (binary: `polli`) — agent-friendly, `--json` everywhere",
     );
     lines.push("");
 
@@ -125,11 +125,11 @@ function generateLLMDoc(): string {
     lines.push("## CLI");
     lines.push("");
     lines.push(
-        "`@pollinations/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+        "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
     );
     lines.push("");
     lines.push("```bash");
-    lines.push("npm install -g @pollinations/cli");
+    lines.push("npm install -g @pollinations_ai/cli");
     lines.push("polli auth login");
     lines.push(
         'polli gen image "a cat in space" --model flux --output cat.png',
@@ -1298,10 +1298,10 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "",
                             "## 🖥️ CLI",
                             "",
-                            "`@pollinations/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+                            "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
                             "",
                             "```bash",
-                            "npm install -g @pollinations/cli",
+                            "npm install -g @pollinations_ai/cli",
                             "polli auth login",
                             'polli gen image "a cat in space" --model flux --output cat.png',
                             'polli gen text "summarize this" < notes.md',

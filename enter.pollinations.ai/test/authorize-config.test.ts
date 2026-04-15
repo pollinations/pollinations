@@ -5,6 +5,7 @@ import {
     DEFAULT_CONSENT_ACCOUNT_PERMISSIONS,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
+    getAuthorizeDevicePermissions,
     getAuthorizeInitialPermissions,
     sanitizeAuthorizeAccountPermissions,
 } from "@/client/lib/authorize-config.ts";
@@ -123,5 +124,26 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
         expect(
             sanitizeAuthorizeAccountPermissions(["keys", "offline_access"]),
         ).toBeNull();
+    });
+});
+
+describe("getAuthorizeDevicePermissions", () => {
+    it("always includes profile for device flows", () => {
+        expect(getAuthorizeDevicePermissions(["usage"])).toEqual([
+            "profile",
+            "usage",
+        ]);
+    });
+
+    it("strips hidden or invalid device scopes", () => {
+        expect(
+            getAuthorizeDevicePermissions(["keys", "offline_access", "usage"]),
+        ).toEqual(["profile", "usage"]);
+    });
+
+    it("falls back to profile when no safe device scopes remain", () => {
+        expect(
+            getAuthorizeDevicePermissions(["keys", "offline_access"]),
+        ).toEqual(["profile"]);
     });
 });

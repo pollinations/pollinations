@@ -30,7 +30,8 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
         green: {
             row: {
                 selectedClasses: "border-green-400 bg-green-50",
-                selectedHoverClasses: "hover:bg-green-100",
+                selectedHoverClasses:
+                    "hover:bg-green-100 hover:border-green-500",
                 rowHoverClasses: "hover:bg-green-50 hover:border-green-300",
                 focusRingClasses:
                     "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500/60",
@@ -49,7 +50,8 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
         amber: {
             row: {
                 selectedClasses: "border-amber-400 bg-amber-100",
-                selectedHoverClasses: "hover:bg-amber-200",
+                selectedHoverClasses:
+                    "hover:bg-amber-200 hover:border-amber-500",
                 rowHoverClasses: "hover:bg-amber-50 hover:border-amber-300",
                 focusRingClasses:
                     "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/60",
@@ -69,7 +71,7 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
         blue: {
             row: {
                 selectedClasses: "border-blue-300 bg-blue-100",
-                selectedHoverClasses: "hover:bg-blue-200",
+                selectedHoverClasses: "hover:bg-blue-200 hover:border-blue-400",
                 rowHoverClasses: "hover:bg-blue-50 hover:border-blue-300",
                 focusRingClasses:
                     "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/60",
@@ -89,7 +91,8 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
         violet: {
             row: {
                 selectedClasses: "border-violet-300 bg-violet-100",
-                selectedHoverClasses: "hover:bg-violet-200",
+                selectedHoverClasses:
+                    "hover:bg-violet-200 hover:border-violet-400",
                 rowHoverClasses: "hover:bg-violet-50 hover:border-violet-300",
                 focusRingClasses:
                     "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/60",

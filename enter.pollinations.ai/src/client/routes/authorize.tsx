@@ -17,6 +17,7 @@ import { useAutoHideScrollbar } from "../hooks/use-auto-hide-scrollbar.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 import {
     AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
+    getAuthorizeDevicePermissions,
     getAuthorizeInitialPermissions,
     sanitizeAuthorizeAccountPermissions,
 } from "../lib/authorize-config.ts";
@@ -155,12 +156,7 @@ function AuthorizeComponent() {
     // Sync device scopes into key permissions when they arrive
     useEffect(() => {
         if (deviceScopes.length > 0) {
-            // Always include "profile", merge with device-requested scopes
-            const perms = sanitizeAuthorizeAccountPermissions([
-                "profile",
-                ...deviceScopes,
-            ]);
-            setAccountPermissions(perms);
+            setAccountPermissions(getAuthorizeDevicePermissions(deviceScopes));
         }
     }, [deviceScopes, setAccountPermissions]);
 

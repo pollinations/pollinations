@@ -35,6 +35,17 @@ export function sanitizeAuthorizeAccountPermissions(
     return filtered.length ? filtered : null;
 }
 
+export function getAuthorizeDevicePermissions(
+    deviceScopes: string[] | null | undefined,
+): string[] {
+    return (
+        sanitizeAuthorizeAccountPermissions([
+            "profile",
+            ...(deviceScopes ?? []),
+        ]) ?? ["profile"]
+    );
+}
+
 export function getAuthorizeInitialPermissions({
     models,
     budget,

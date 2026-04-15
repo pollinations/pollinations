@@ -59,3 +59,6 @@ export const BASE_URL =
 
 export const ENTER_URL =
     process.env.POLLINATIONS_ENTER_URL ?? "https://enter.pollinations.ai";
+
+export const MEDIA_URL =
+    process.env.POLLINATIONS_MEDIA_URL ?? "https://media.pollinations.ai";

@@ -27,6 +27,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
+| Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
@@ -44,7 +45,14 @@ Override the stored key for a single command with `--key <key>`.
 ```bash
 polli gen image "a fox reading a book, studio ghibli style" --output fox.png
 ```
-Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags.
+Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. To use a local file, upload it first with `polli upload` (see next recipe).
+
+### Upload a local file to get a public URL
+```bash
+URL=$(polli upload cat.png)
+polli gen image "make the cat purple" --image "$URL" --output purple.png
+```
+`polli upload <file>` posts to `media.pollinations.ai` (10MB max, 14-day TTL, content-addressed so duplicates dedupe). Human mode: URL on stdout, id/size/contentType/duplicate on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
 
 ### Generate text (streaming by default)
 ```bash

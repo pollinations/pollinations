@@ -7,6 +7,7 @@ import { docsCommand } from "./commands/docs.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { keysCommand } from "./commands/keys.js";
 import { modelsCommand } from "./commands/models.js";
+import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
@@ -56,6 +57,7 @@ program.addCommand(usageCommand);
 
 // Generation
 program.addCommand(createGenCommand());
+program.addCommand(uploadCommand);
 
 // Discovery
 program.addCommand(modelsCommand);

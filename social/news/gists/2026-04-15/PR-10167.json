@@ -1,0 +1,33 @@
+{
+  "pr_number": 10167,
+  "title": "fix: hide nectar tier from user-facing displays",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10167",
+  "merged_at": "2026-04-15T23:42:29Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A simpler garden path",
+    "blurb": "We've streamlined our dashboard and docs to focus on the core community journey: Spore, Seed, and Flower. A cleaner layout means an easier path to growing your ideas!",
+    "summary": "Streamlined the user-facing tier displays across the dashboard, website, and documentation to focus exclusively on the core Spore, Seed, and Flower tiers.",
+    "impact": "Users will experience a cleaner, three-column layout on the balance page and simplified documentation that highlights the primary community progression path.",
+    "keywords": [
+      "ui",
+      "dashboard",
+      "tiers",
+      "documentation"
+    ],
+    "visual_concept": "The bee mascot and the monitor robot tending to a garden with exactly three distinct, beautiful flowers (representing Spore, Seed, and Flower) in lime green pots, symbolizing the streamlined three-tier system.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot tending to a digital garden with exactly three distinct, beautiful pixel flowers in lime green (#ecf874) pots. Soft pastel peach and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-15/PR-10167.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot tending to a digital garden with exactly three distinct, beautiful pixel flowers in lime green (#ecf874) pots. Soft pastel peach and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-15T23:43:48.083482+00:00"
+}

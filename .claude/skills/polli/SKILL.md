@@ -56,7 +56,7 @@ Non-streaming: `--no-stream`. Save full output: `--output summary.txt`. Use `--s
 ```bash
 cat README.md | polli gen text "what does this project do?"
 ```
-stdin becomes context; the positional argument is the question.
+stdin becomes context; the positional argument is the question. When chaining `gen text` into another command (e.g. `| polli gen audio`), pass `--no-stream` so the downstream consumer gets the full response as a single clean chunk instead of incremental deltas.
 
 ### Interactive chat session
 ```bash

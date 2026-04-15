@@ -11,6 +11,8 @@ on:
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       sdk: ${{ steps.changes.outputs.sdk }}
       mcp: ${{ steps.changes.outputs.mcp }}

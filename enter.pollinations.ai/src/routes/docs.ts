@@ -140,7 +140,7 @@ function generateLLMDoc(): string {
     lines.push("```");
     lines.push("");
     lines.push(
-        "Source: https://github.com/pollinations/pollinations/tree/main/apps/polli-cli",
+        "Source: https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
     );
     lines.push("");
 
@@ -1308,7 +1308,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "polli models --type image",
                             "```",
                             "",
-                            "Source: [github.com/pollinations/pollinations/tree/main/apps/polli-cli](https://github.com/pollinations/pollinations/tree/main/apps/polli-cli)",
+                            "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
                             "",
                             "## 🔐 Authentication",
                             "",

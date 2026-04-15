@@ -174,9 +174,11 @@ const create = new Command("create")
                 name: opts.name,
                 type: opts.type,
             };
-            if (opts.expiresIn) body.expiresIn = Number(opts.expiresIn);
+            if (opts.expiresIn !== undefined)
+                body.expiresIn = Number(opts.expiresIn);
             if (opts.models) body.allowedModels = opts.models;
-            if (opts.budget) body.pollenBudget = Number(opts.budget);
+            if (opts.budget !== undefined)
+                body.pollenBudget = Number(opts.budget);
             if (opts.permissions) body.accountPermissions = opts.permissions;
 
             const created = await enter<CreateKeyResponse>(
@@ -191,7 +193,7 @@ const create = new Command("create")
             if (getOutputMode() === "human") {
                 printSuccess(`Key created: ${created.name}`);
                 printInfo("Save this key — it won't be shown again:\n");
-                console.log(`  ${created.key}\n`);
+                process.stdout.write(`  ${created.key}\n\n`);
             }
 
             printResult({

@@ -48,7 +48,7 @@ export const docsCommand = new Command("docs")
 
                 let content = doc;
                 if (endpoint) {
-                    const sections = doc.split(/^(?=###? )/m);
+                    const sections = doc.split(/^(?=#{1,6} )/m);
                     const needle = endpoint.replace(/^\//, "").toLowerCase();
                     const matches = sections.filter((s) =>
                         s.split("\n")[0].toLowerCase().includes(needle),

@@ -1,5 +1,4 @@
 import { Command } from "commander";
-import ora from "ora";
 import { enter } from "../lib/api.js";
 import {
     clearCredentials,
@@ -8,7 +7,6 @@ import {
     saveCredentials,
 } from "../lib/config.js";
 import {
-    getOutputMode,
     printError,
     printInfo,
     printResult,
@@ -92,8 +90,6 @@ const login = new Command("login")
     .option("--token <key>", "API key (pk_ or sk_) for direct auth")
     .option("--no-browser", "Print URL instead of opening browser")
     .action(async (opts) => {
-        const isHuman = getOutputMode() === "human";
-
         if (opts.token) {
             const key = opts.token as string;
             if (!key.startsWith("pk_") && !key.startsWith("sk_")) {
@@ -104,22 +100,19 @@ const login = new Command("login")
             storeKey(key);
             printSuccess("Authenticated. Key stored.");
 
-            const spinner = isHuman ? ora("Verifying key...").start() : null;
             const label = await fetchProfileLabel(key);
             if (label) {
-                spinner?.succeed(label) ?? printSuccess(label);
+                printSuccess(label);
             } else {
-                const msg =
-                    "Key stored but could not verify. It may still be valid.";
-                spinner?.warn(msg) ?? printInfo(msg);
+                printInfo(
+                    "Key stored but could not verify. It may still be valid.",
+                );
             }
             printInfo(flavor.login);
             return;
         }
 
-        const spinner = isHuman
-            ? ora("Requesting device code...").start()
-            : null;
+        printInfo("Requesting device code...");
 
         const res = await fetch(`${ENTER_URL}/api/device/code`, {
             method: "POST",
@@ -129,21 +122,22 @@ const login = new Command("login")
                 scope: "generate keys balance usage",
             }),
         }).catch((err) => {
-            const msg = `Failed to start device flow: ${err instanceof Error ? err.message : err}`;
-            spinner?.fail(msg) ?? printError(msg);
+            printError(
+                `Failed to start device flow: ${err instanceof Error ? err.message : err}`,
+            );
             printInfo("Fallback: polli auth login --token <your-key>");
             printInfo("Get your key at: https://enter.pollinations.ai");
             process.exit(1);
         });
 
         if (!res.ok) {
-            const msg = `Failed to start device flow: ${res.status} ${await res.text()}`;
-            spinner?.fail(msg) ?? printError(msg);
+            printError(
+                `Failed to start device flow: ${res.status} ${await res.text()}`,
+            );
             process.exit(1);
         }
 
         const deviceResp = (await res.json()) as DeviceCodeResponse;
-        spinner?.stop();
 
         printInfo(`\nYour code: ${deviceResp.user_code}\n`);
 
@@ -161,9 +155,7 @@ const login = new Command("login")
             printInfo(`Open this URL in your browser:\n  ${url}`);
         }
 
-        const pollSpinner = isHuman
-            ? ora("Waiting for approval...").start()
-            : null;
+        printInfo("Waiting for approval...");
         const tokenResp = await pollForToken(
             deviceResp.device_code,
             deviceResp.interval,
@@ -183,14 +175,13 @@ const login = new Command("login")
                 default:
                     errMsg = `Login failed: ${tokenResp.error_description ?? tokenResp.error}`;
             }
-            pollSpinner?.fail(errMsg) ?? printError(errMsg);
+            printError(errMsg);
             process.exit(1);
         }
 
         const key = tokenResp.access_token;
         storeKey(key);
-        pollSpinner?.succeed("Authenticated!") ??
-            printSuccess("Authenticated!");
+        printSuccess("Authenticated!");
 
         const label = await fetchProfileLabel(key);
         if (label) {

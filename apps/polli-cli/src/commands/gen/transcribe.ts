@@ -1,11 +1,15 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { Command } from "commander";
-import ora from "ora";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
-import { getOutputMode, printError, printResult } from "../../lib/output.js";
+import {
+    getOutputMode,
+    printError,
+    printInfo,
+    printResult,
+} from "../../lib/output.js";
 
 export function createTranscribeCommand() {
     return new Command("transcribe")
@@ -16,7 +20,7 @@ export function createTranscribeCommand() {
         .action(async (file, opts) => {
             const key = requireKey();
             const isHuman = getOutputMode() === "human";
-            const spinner = isHuman ? ora("Transcribing...").start() : null;
+            if (isHuman) printInfo("Transcribing...");
 
             try {
                 const buffer = readFileSync(file);
@@ -37,7 +41,6 @@ export function createTranscribeCommand() {
                     const text = await res.text().catch(() => "");
                     const hint = await budgetHint(res.status, text);
                     if (hint) {
-                        spinner?.fail("Transcription failed");
                         printError(hint);
                         process.exit(1);
                     }
@@ -45,7 +48,6 @@ export function createTranscribeCommand() {
                 }
 
                 const data = (await res.json()) as { text: string };
-                spinner?.stop();
 
                 if (getOutputMode() === "json") {
                     printResult(data);
@@ -53,7 +55,6 @@ export function createTranscribeCommand() {
                     process.stdout.write(`${data.text}\n`);
                 }
             } catch (err) {
-                spinner?.fail("Transcription failed");
                 printError(
                     err instanceof Error ? err.message : "unknown error",
                 );

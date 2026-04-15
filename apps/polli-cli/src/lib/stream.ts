@@ -24,13 +24,22 @@ export async function* streamSSE(
             const data = line.slice(6).trim();
             if (data === "[DONE]") return;
 
+            let parsed: {
+                error?: { message?: string };
+                choices?: { delta?: { content?: string } }[];
+            };
             try {
-                const parsed = JSON.parse(data);
-                const delta = parsed.choices?.[0]?.delta?.content;
-                if (delta) yield delta;
+                parsed = JSON.parse(data);
             } catch {
-                // skip malformed chunks
+                continue;
             }
+            if (parsed.error) {
+                throw new Error(
+                    parsed.error.message ?? JSON.stringify(parsed.error),
+                );
+            }
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) yield delta;
         }
     }
 }

@@ -1,10 +1,14 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
-import ora from "ora";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
-import { getOutputMode, printError, printResult } from "../../lib/output.js";
+import {
+    getOutputMode,
+    printError,
+    printInfo,
+    printResult,
+} from "../../lib/output.js";
 
 export function createVideoCommand() {
     return new Command("video")
@@ -29,10 +33,10 @@ export function createVideoCommand() {
             const isHuman = getOutputMode() === "human";
 
             const params = new URLSearchParams({
-                model: opts.model,
                 width: opts.width,
                 height: opts.height,
             });
+            if (opts.model) params.set("model", opts.model);
             if (opts.duration) params.set("duration", opts.duration);
             if (opts.aspectRatio) params.set("aspectRatio", opts.aspectRatio);
             if (opts.audio) params.set("audio", "true");
@@ -44,7 +48,8 @@ export function createVideoCommand() {
             const encodedPrompt = encodeURIComponent(prompt);
             const url = `${BASE_URL}/video/${encodedPrompt}?${params}`;
 
-            const spinner = isHuman ? ora("Generating video...").start() : null;
+            if (isHuman)
+                printInfo("Generating video (this can take up to 60s)...");
 
             try {
                 const res = await fetch(url, {
@@ -54,7 +59,6 @@ export function createVideoCommand() {
                     const text = await res.text().catch(() => "");
                     const hint = await budgetHint(res.status, text);
                     if (hint) {
-                        spinner?.fail("Generation failed");
                         printError(hint);
                         process.exit(1);
                     }
@@ -63,14 +67,12 @@ export function createVideoCommand() {
 
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(opts.output, buffer);
-                spinner?.succeed(`Saved to ${opts.output}`);
                 printResult({
                     path: opts.output,
                     size: buffer.length,
                     model: opts.model,
                 });
             } catch (err) {
-                spinner?.fail("Generation failed");
                 printError(
                     err instanceof Error ? err.message : "unknown error",
                 );

@@ -66,9 +66,10 @@ export function createChatCommand() {
                     stream: !isJson,
                 };
                 if (opts.model) body.model = opts.model;
-                if (opts.temperature)
+                if (opts.temperature !== undefined)
                     body.temperature = Number(opts.temperature);
-                if (opts.maxTokens) body.max_tokens = Number(opts.maxTokens);
+                if (opts.maxTokens !== undefined)
+                    body.max_tokens = Number(opts.maxTokens);
 
                 try {
                     const res = await fetch(`${BASE_URL}/v1/chat/completions`, {

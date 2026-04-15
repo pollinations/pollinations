@@ -1,10 +1,14 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
-import ora from "ora";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
-import { getOutputMode, printError, printResult } from "../../lib/output.js";
+import {
+    getOutputMode,
+    printError,
+    printInfo,
+    printResult,
+} from "../../lib/output.js";
 
 export function createImageCommand() {
     return new Command("image")
@@ -42,7 +46,7 @@ export function createImageCommand() {
             const encodedPrompt = encodeURIComponent(prompt);
             const url = `${BASE_URL}/image/${encodedPrompt}?${params}`;
 
-            const spinner = isHuman ? ora("Generating image...").start() : null;
+            if (isHuman) printInfo("Generating image...");
 
             try {
                 const res = await fetch(url, {
@@ -52,7 +56,6 @@ export function createImageCommand() {
                     const text = await res.text().catch(() => "");
                     const hint = await budgetHint(res.status, text);
                     if (hint) {
-                        spinner?.fail("Generation failed");
                         printError(hint);
                         process.exit(1);
                     }
@@ -61,7 +64,6 @@ export function createImageCommand() {
 
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(opts.output, buffer);
-                spinner?.succeed(`Saved to ${opts.output}`);
 
                 printResult({
                     path: opts.output,
@@ -69,7 +71,6 @@ export function createImageCommand() {
                     model: opts.model,
                 });
             } catch (err) {
-                spinner?.fail("Generation failed");
                 printError(
                     err instanceof Error ? err.message : "unknown error",
                 );

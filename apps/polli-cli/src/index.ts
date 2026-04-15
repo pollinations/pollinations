@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 
@@ -11,6 +12,10 @@ import { usageCommand } from "./commands/usage.js";
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
 import { flavor } from "./lib/quotes.js";
+
+const pkg = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf-8"),
+) as { version: string };
 
 const program = new Command();
 
@@ -28,7 +33,7 @@ program
     .description(
         "The Pollinations CLI — for humans, AI agents, and everything in between",
     )
-    .version(`0.1.0-alpha.1 — ${flavor.version}`)
+    .version(`${pkg.version} — ${flavor.version}`)
     .option("--json", "Output as JSON")
     .option("--key <key>", "Override stored API key for this command")
     .hook("preAction", () => {

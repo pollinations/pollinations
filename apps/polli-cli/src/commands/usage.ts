@@ -87,8 +87,8 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            const limit = Number.parseInt(opts.limit, 10);
-            if (Number.isNaN(limit) || limit < 1) {
+            const limit = Number(opts.limit);
+            if (!Number.isInteger(limit) || limit < 1) {
                 printError("--limit must be a positive integer");
                 process.exit(1);
             }

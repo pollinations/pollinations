@@ -94,8 +94,6 @@ polli gen image "$PROMPT" --model flux --json --output out.png \
   || { echo "Generation failed, check polli usage"; exit 1; }
 ```
 
-For agent-facing command reference, see [AGENTS.md](./AGENTS.md) in this folder.
-
 ## Global Flags
 
 | Flag            | Meaning                                          |

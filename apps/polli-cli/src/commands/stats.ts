@@ -1,3 +1,5 @@
+// Public read-only Tinybird token, scoped to the model_health_v2 pipe.
+// Same token is embedded in enter.pollinations.ai/src/utils/model-stats.ts.
 const TOKEN =
     "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 

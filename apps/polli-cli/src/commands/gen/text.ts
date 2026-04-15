@@ -1,30 +1,22 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
-import ora from "ora";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
 import {
     getOutputMode,
     printError,
+    printInfo,
     printResult,
     printSuccess,
 } from "../../lib/output.js";
+import { readStdin } from "../../lib/stdin.js";
 import { streamSSE } from "../../lib/stream.js";
 
 interface ChatResponse {
     choices: Array<{ message: { content: string } }>;
     model: string;
     usage?: { total_tokens: number };
-}
-
-async function readStdin(): Promise<string> {
-    if (process.stdin.isTTY) return "";
-    const chunks: Buffer[] = [];
-    for await (const chunk of process.stdin) {
-        chunks.push(chunk as Buffer);
-    }
-    return Buffer.concat(chunks).toString("utf-8").trim();
 }
 
 export function createTextCommand() {
@@ -41,8 +33,11 @@ export function createTextCommand() {
         .option("--frequency-penalty <n>", "Repetition penalty (-2 to 2)")
         .option("--presence-penalty <n>", "Topic penalty (-2 to 2)")
         .option("--seed <n>", "Reproducibility seed")
-        .option("--json", "Force JSON output")
-        .option("--thinking", "Enable extended thinking (reasoning models)")
+        .option("--json-response", "Force model to return JSON object")
+        .option(
+            "--reasoning <effort>",
+            "Reasoning effort for reasoning models: low|medium|high",
+        )
         .option("--output <path>", "Save to file instead of stdout")
         .option("--no-stream", "Disable streaming (wait for full response)")
         .action(async (promptArg, opts) => {
@@ -74,20 +69,22 @@ export function createTextCommand() {
 
             const body: Record<string, unknown> = { messages };
             if (opts.model) body.model = opts.model;
-            if (opts.temperature) body.temperature = Number(opts.temperature);
-            if (opts.maxTokens) body.max_tokens = Number(opts.maxTokens);
-            if (opts.topP) body.top_p = Number(opts.topP);
-            if (opts.frequencyPenalty)
+            if (opts.temperature !== undefined)
+                body.temperature = Number(opts.temperature);
+            if (opts.maxTokens !== undefined)
+                body.max_tokens = Number(opts.maxTokens);
+            if (opts.topP !== undefined) body.top_p = Number(opts.topP);
+            if (opts.frequencyPenalty !== undefined)
                 body.frequency_penalty = Number(opts.frequencyPenalty);
-            if (opts.presencePenalty)
+            if (opts.presencePenalty !== undefined)
                 body.presence_penalty = Number(opts.presencePenalty);
-            if (opts.seed) body.seed = Number(opts.seed);
-            if (opts.json) body.response_format = { type: "json_object" };
-            if (opts.thinking) body.thinking = true;
+            if (opts.seed !== undefined) body.seed = Number(opts.seed);
+            if (opts.jsonResponse)
+                body.response_format = { type: "json_object" };
+            if (opts.reasoning) body.reasoning_effort = opts.reasoning;
             if (useStream) body.stream = true;
 
-            const spinner =
-                isHuman && !useStream ? ora("Generating...").start() : null;
+            if (isHuman && !useStream) printInfo("Generating...");
 
             try {
                 const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
@@ -103,7 +100,6 @@ export function createTextCommand() {
                     const errText = await res.text().catch(() => "");
                     const hint = await budgetHint(res.status, errText);
                     if (hint) {
-                        spinner?.stop();
                         printError(hint);
                         process.exit(1);
                     }
@@ -127,7 +123,6 @@ export function createTextCommand() {
 
                 const data = (await res.json()) as ChatResponse;
                 const content = data.choices[0]?.message?.content ?? "";
-                spinner?.stop();
 
                 if (opts.output) {
                     writeFileSync(opts.output, content, "utf-8");
@@ -142,7 +137,6 @@ export function createTextCommand() {
                     process.stdout.write(`${content}\n`);
                 }
             } catch (err) {
-                spinner?.stop();
                 printError(
                     err instanceof Error ? err.message : "unknown error",
                 );

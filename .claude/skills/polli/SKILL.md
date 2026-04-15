@@ -90,7 +90,7 @@ Cheapest path: `--model wan-fast` at ~$0.01/sec. For image-to-video, pass `--ima
 ```bash
 polli gen transcribe recording.mp3 --language en
 ```
-Models: `whisper` (default), `scribe`.
+Models: `whisper` (default), `scribe`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input returns an opaque 500 — verify with `file <path>` first. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` to get word-level timestamps, segments, and duration. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
 
 ### Discover models
 ```bash

@@ -22,7 +22,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 |---|---|
 | Log in once | `polli auth login` |
 | Generate image | `polli gen image "<prompt>" --output out.png` |
-| Generate text (stream) | `polli gen text "<prompt>"` |
+| Generate text | `polli gen text "<prompt>"` |
 | Text with stdin as context | `echo "<ctx>" \| polli gen text "<question>"` |
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
@@ -54,17 +54,17 @@ polli gen image "make the cat purple" --image "$URL" --output purple.png
 ```
 `polli upload <file>` posts to `media.pollinations.ai` (10MB max, 14-day TTL, content-addressed so duplicates dedupe). Human mode: URL on stdout, id/size/contentType/duplicate on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
 
-### Generate text (streaming by default)
+### Generate text
 ```bash
 polli gen text "summarize the three laws of robotics"
 ```
-Non-streaming: `--no-stream`. Save full output: `--output summary.txt`. Use `--system "<msg>"` to set system prompt. For reasoning models, pass `--reasoning low|medium|high` to control reasoning effort.
+Save to file: `--output summary.txt`. Use `--system "<msg>"` to set system prompt. For reasoning models, pass `--reasoning low|medium|high` to control reasoning effort.
 
 ### Pipe stdin as context into text generation
 ```bash
 cat README.md | polli gen text "what does this project do?"
 ```
-stdin becomes context; the positional argument is the question. When chaining `gen text` into another command (e.g. `| polli gen audio`), **always pass `--no-stream`** — otherwise the downstream consumer may see only the first few tokens before the stream ends and act on a truncated response. Verified: a 500-word essay request streams ~113 words through a pipe in the first read, while `--no-stream` delivers all 480 words as a single chunk.
+stdin becomes context; the positional argument is the question.
 
 ### Interactive chat session
 ```bash
@@ -137,7 +137,7 @@ polli docs --open                   # open in browser
 
 ## Output contract
 
-- **Default (human mode):** varies by command — most emit `key: value` pairs or tab-separated tables with a header row. Exceptions: `gen text` streams raw text to stdout; `gen transcribe` prints the transcript as plain text; `gen chat` runs an interactive REPL. Status/progress messages go to stderr, so pipes stay clean.
+- **Default (human mode):** varies by command — most emit `key: value` pairs or tab-separated tables with a header row. Exceptions: `gen text` prints the full response to stdout; `gen transcribe` prints the transcript as plain text; `gen chat` runs an interactive REPL. Status/progress messages go to stderr, so pipes stay clean.
 - **`--json`:** every command emits machine-parseable JSON to stdout; all human messages go to stderr. **Always prefer `--json` when piping into `jq` or parsing** — it's the only shape with a stable contract.
 - **Exit codes:** 0 on success, non-zero on auth failure, rate limit, network error, or invalid args. Error messages go to stderr.
 
@@ -155,6 +155,5 @@ polli docs --open                   # open in browser
 ## Common pitfalls
 
 - Forgetting `--output` on binary generators (image/audio/video) — the file goes to a default path, which may not be what the user wants.
-- Parsing streaming text output — use `--no-stream` or `--output <file>` when you need the full response in one piece.
 - Using `polli gen text --json` expecting OpenAI chat-completions shape — the CLI's `--json` wraps its own structure. Use `polli docs /v1/chat/completions` to see the raw API shape if you need it.
 - Running commands without auth — `polli auth status` tells you the tier and balance in one call.

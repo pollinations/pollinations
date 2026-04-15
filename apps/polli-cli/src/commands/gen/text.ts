@@ -39,7 +39,7 @@ export function createTextCommand() {
             "Reasoning effort for reasoning models: low|medium|high",
         )
         .option("--output <path>", "Save to file instead of stdout")
-        .option("--no-stream", "Disable streaming (wait for full response)")
+        .option("--stream", "Stream tokens as they arrive (interactive use)")
         .action(async (promptArg, opts) => {
             const key = requireKey();
             const stdinText = await readStdin();
@@ -60,7 +60,7 @@ export function createTextCommand() {
             }
 
             const isHuman = getOutputMode() === "human";
-            const useStream = opts.stream !== false && !opts.output;
+            const useStream = Boolean(opts.stream) && !opts.output && isHuman;
 
             const messages: Array<{ role: string; content: string }> = [];
             if (opts.system)

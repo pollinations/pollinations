@@ -72,11 +72,17 @@ export const modelsCommand = new Command("models")
         if (opts.stats) {
             try {
                 const rows = await fetchModelStats(Number(opts.window));
-                const valid = rows.filter(
-                    (r) =>
-                        r.model !== "undefined" &&
-                        Number(r.total_requests ?? 0) > 1,
-                );
+                const wantType = opts.type as string;
+                const valid = rows.filter((r) => {
+                    if (r.model === "undefined") return false;
+                    if (Number(r.total_requests ?? 0) <= 1) return false;
+                    if (wantType === "all") return true;
+                    const t = String(r.event_type ?? "").replace(
+                        "generate.",
+                        "",
+                    );
+                    return t === wantType;
+                });
                 if (getOutputMode() === "json") {
                     printResult(valid);
                 } else {

@@ -1,24 +1,24 @@
-# @pollinations/cli
+# @pollinations_ai/cli
 
 The Pollinations CLI — for humans, AI agents, and everything in between.
 
 A thin, scriptable wrapper around the [Pollinations API](https://gen.pollinations.ai). Generate text, images, audio, and video from the terminal or from an agent loop.
 
 ```bash
-npx @pollinations/cli auth login
-npx @pollinations/cli gen image "a cat in space" --output cat.png
+npx @pollinations_ai/cli auth login
+npx @pollinations_ai/cli gen image "a cat in space" --output cat.png
 ```
 
 ## Install
 
 ```bash
-npm install -g @pollinations/cli
+npm install -g @pollinations_ai/cli
 ```
 
 Or run without installing:
 
 ```bash
-npx @pollinations/cli <command>
+npx @pollinations_ai/cli <command>
 ```
 
 The binary is called `polli`.

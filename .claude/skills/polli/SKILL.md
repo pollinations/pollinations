@@ -121,8 +121,8 @@ polli docs --open                   # open in browser
 
 ## Output contract
 
-- **Default:** human-readable `key: value` pairs and tab-separated tables with a header row. Streaming text goes straight to stdout.
-- **`--json`:** every command emits machine-parseable JSON to stdout; all human messages/spinners go to stderr. Always prefer `--json` when piping into `jq` or further processing.
+- **Default (human mode):** varies by command — most emit `key: value` pairs or tab-separated tables with a header row. Exceptions: `gen text` streams raw text to stdout; `gen transcribe` prints the transcript as plain text; `gen chat` runs an interactive REPL. Status/progress messages go to stderr, so pipes stay clean.
+- **`--json`:** every command emits machine-parseable JSON to stdout; all human messages go to stderr. **Always prefer `--json` when piping into `jq` or parsing** — it's the only shape with a stable contract.
 - **Exit codes:** 0 on success, non-zero on auth failure, rate limit, network error, or invalid args. Error messages go to stderr.
 
 ## Agent operating rules

@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -81,15 +81,15 @@ function RouteComponent() {
     const [usageTimeRange, setUsageTimeRange] = useState<TimeRange>("7d");
     const usageDays = TIME_RANGE_DAYS[usageTimeRange];
 
-    const nonExpiredKeyNames = (() => {
+    const nonExpiredKeys = useMemo(() => {
         const now = Date.now();
         return apiKeys
             .filter(
                 (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
             )
-            .map((k) => k.name)
-            .filter((name): name is string => !!name);
-    })();
+            .filter((k): k is typeof k & { name: string } => !!k.name)
+            .map((k) => ({ id: k.id, name: k.name }));
+    }, [apiKeys]);
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -330,7 +330,7 @@ function RouteComponent() {
                             tier={tierData?.active?.tier}
                             timeRange={usageTimeRange}
                             onTimeRangeChange={setUsageTimeRange}
-                            apiKeyNames={nonExpiredKeyNames}
+                            apiKeys={nonExpiredKeys}
                         />
                     )}
                 </div>

@@ -24,20 +24,29 @@ type UsageGraphProps = {
     tier?: TierStatus;
     timeRange: TimeRange;
     onTimeRangeChange: (timeRange: TimeRange) => void;
-    apiKeyNames: string[];
+    apiKeys: Array<{ id: string; name: string }>;
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
     tier,
     timeRange,
     onTimeRangeChange,
-    apiKeyNames,
+    apiKeys,
 }) => {
     const [filters, setFilters] = useState<Omit<FilterState, "timeRange">>({
         metric: "pollen",
-        selectedKey: null,
+        selectedKeyId: null,
         selectedModels: [],
     });
+
+    useEffect(() => {
+        if (
+            filters.selectedKeyId &&
+            !apiKeys.some((k) => k.id === filters.selectedKeyId)
+        ) {
+            setFilters((f) => ({ ...f, selectedKeyId: null }));
+        }
+    }, [apiKeys, filters.selectedKeyId]);
 
     const { loading, error, fetchUsage, usedModels, chartData, stats } =
         useUsageData({
@@ -179,20 +188,21 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             <label className="flex items-center gap-2 text-xs font-medium text-gray-500">
                                 API Key
                                 <select
-                                    value={filters.selectedKey ?? ""}
+                                    value={filters.selectedKeyId ?? ""}
                                     onChange={(e) =>
                                         setFilters((f) => ({
                                             ...f,
-                                            selectedKey: e.target.value || null,
+                                            selectedKeyId:
+                                                e.target.value || null,
                                         }))
                                     }
-                                    disabled={apiKeyNames.length === 0}
+                                    disabled={apiKeys.length === 0}
                                     className="rounded-md border border-amber-200 bg-white px-2 py-1 text-sm text-amber-900 disabled:opacity-50"
                                 >
                                     <option value="">All</option>
-                                    {apiKeyNames.map((name) => (
-                                        <option key={name} value={name}>
-                                            {name}
+                                    {apiKeys.map((k) => (
+                                        <option key={k.id} value={k.id}>
+                                            {k.name}
                                         </option>
                                     ))}
                                 </select>

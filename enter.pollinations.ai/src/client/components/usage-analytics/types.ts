@@ -17,7 +17,7 @@ export type Metric = "requests" | "pollen";
 export type FilterState = {
     timeRange: TimeRange;
     metric: Metric;
-    selectedKey: string | null;
+    selectedKeyId: string | null;
     selectedModels: string[];
 };
 

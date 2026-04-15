@@ -6,7 +6,7 @@ const authHeaders = (sessionToken: string) => ({
     Cookie: `better-auth.session_token=${sessionToken}`,
 });
 
-test("GET /api/account/usage/daily forwards api_key_name filter to the pipe", async ({
+test("GET /api/account/usage/daily forwards api_key_id filter to the pipe", async ({
     sessionToken,
     mocks,
 }) => {
@@ -31,7 +31,7 @@ test("GET /api/account/usage/daily forwards api_key_name filter to the pipe", as
     expect(unfilteredBody.usage).toHaveLength(1);
 
     const filtered = await SELF.fetch(
-        "http://localhost:3000/api/account/usage/daily?days=30&api_key_name=alpha",
+        "http://localhost:3000/api/account/usage/daily?days=30&api_key_id=key_abc123",
         { headers: authHeaders(sessionToken) },
     );
     expect(filtered.status).toBe(200);
@@ -40,8 +40,8 @@ test("GET /api/account/usage/daily forwards api_key_name filter to the pipe", as
         call.url.includes("user_usage_daily_filtered.json"),
     );
     expect(dailyCalls).toHaveLength(2);
-    expect(dailyCalls[0].query.api_key_name).toBeUndefined();
-    expect(dailyCalls[1].query.api_key_name).toBe("alpha");
+    expect(dailyCalls[0].query.api_key_id).toBeUndefined();
+    expect(dailyCalls[1].query.api_key_id).toBe("key_abc123");
     expect(dailyCalls[0].query.since).toMatch(/^\d{4}-\d{2}-\d{2}/);
     expect(dailyCalls[0].query.until).toMatch(/^\d{4}-\d{2}-\d{2}/);
 });
@@ -58,6 +58,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             timestamp: "2026-04-14 12:10:00",
             type: "generate.text",
             model: "openai-fast",
+            api_key_id: "key_abc123",
             api_key: "alpha",
             api_key_type: "secret",
             meter_source: "tier",

@@ -253,7 +253,7 @@ const usageDailyQuerySchema = z.object({
         .max(MAX_USAGE_DAYS)
         .optional()
         .default(DEFAULT_DAILY_USAGE_DAYS),
-    api_key_name: z.string().optional(),
+    api_key_id: z.string().optional(),
 });
 
 type DailyUsageRecord = {
@@ -268,6 +268,7 @@ type UsageRecord = {
     timestamp: string;
     type: string;
     model: string | null;
+    api_key_id: string | null;
     api_key: string | null;
     api_key_type: string | null;
     meter_source: string | null;
@@ -723,11 +724,7 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const {
-                format,
-                days,
-                api_key_name: apiKeyName,
-            } = c.req.valid("query");
+            const { format, days, api_key_id: apiKeyId } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -736,7 +733,7 @@ export const accountRoutes = new Hono<Env>()
             const cacheKeyPrefix = usageUserOverridden
                 ? `usage:daily:debug:${usageUserId}`
                 : `usage:daily:${usageUserId}`;
-            const cacheKey = `${cacheKeyPrefix}:${days}:${apiKeyName ?? "all"}`;
+            const cacheKey = `${cacheKeyPrefix}:${days}:${apiKeyId ? `key:${apiKeyId}` : "all"}`;
             const windows = buildUsageWindows(days);
 
             try {
@@ -764,7 +761,7 @@ export const accountRoutes = new Hono<Env>()
                                     user_id: usageUserId,
                                     since: window.since,
                                     until: window.until,
-                                    api_key_name: apiKeyName,
+                                    api_key_id: apiKeyId,
                                 },
                             ),
                         ),
@@ -781,13 +778,13 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 log.debug(
-                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyName={apiKeyName} count={count} cached={cached}",
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyId={apiKeyId} count={count} cached={cached}",
                     {
                         requesterUserId: user.id,
                         targetUserId: usageUserId,
                         override: usageUserOverridden,
                         days,
-                        apiKeyName: apiKeyName ?? null,
+                        apiKeyId: apiKeyId ?? null,
                         count: usage.length,
                         cached,
                     },

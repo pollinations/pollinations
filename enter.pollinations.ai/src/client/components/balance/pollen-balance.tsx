@@ -1,4 +1,5 @@
 import { type FC, useState } from "react";
+import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { getTierColor, getTierEmoji } from "@/tier-config.ts";
 import { Button } from "../button.tsx";
@@ -6,9 +7,6 @@ import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-
-const isFractional = (v: number) => v > 0 && v < 1;
-const formatPollen = (v: number) => v.toFixed(isFractional(v) ? 3 : 2);
 
 type PollenBalanceProps = {
     tierBalance: number;

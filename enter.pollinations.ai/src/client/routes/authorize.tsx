@@ -3,6 +3,7 @@ import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { cn } from "../../util.ts";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
@@ -20,10 +21,9 @@ import {
     AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
     getAuthorizeInitialPermissions,
 } from "../lib/authorize-config.ts";
+import { formatPollen } from "../lib/format-pollen.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
-const formatPollen = (value: number) =>
-    value.toFixed(value > 0 && value < 1 ? 3 : 2);
 
 type Attribution = {
     found: boolean;
@@ -169,16 +169,14 @@ function AuthorizeComponent() {
             permissions: urlPermissions,
         }),
     );
+    const { setAccountPermissions } = keyPermissions;
 
-    const hasBudget = keyPermissions.permissions.pollenBudget !== null;
     const modalities = computeModalities(
         keyPermissions.permissions.allowedModels,
     );
     const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>();
     const canAuthorize =
-        (isDeviceMode || parsedRedirectUrl !== null) &&
-        hasBudget &&
-        modalities.length > 0;
+        (isDeviceMode || parsedRedirectUrl !== null) && modalities.length > 0;
 
     useScrollLock();
 
@@ -187,9 +185,9 @@ function AuthorizeComponent() {
         if (deviceScopes.length > 0) {
             // Always include "profile", merge with device-requested scopes
             const perms = Array.from(new Set(["profile", ...deviceScopes]));
-            keyPermissions.setAccountPermissions(perms);
+            setAccountPermissions(perms);
         }
-    }, [deviceScopes, keyPermissions.setAccountPermissions]);
+    }, [deviceScopes, setAccountPermissions]);
 
     useEffect(() => {
         if (isDeviceMode) {
@@ -279,64 +277,77 @@ function AuthorizeComponent() {
         id: string;
         expiresIn: number | null;
     }> {
+        let createdKeyId: string | null = null;
         const displayName = isDeviceMode
             ? `Device ${user_code}`
             : attribution?.appName || redirectHostname;
 
         const expiryDays = keyPermissions.permissions.expiryDays;
-        const result = await authClient.apiKey.create({
-            name: displayName,
-            ...(expiryDays !== null && {
-                expiresIn: expiryDays * SECONDS_PER_DAY,
-            }),
-            prefix: "sk",
-            metadata: {
-                keyType: "secret",
-                createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
-                ...(isDeviceMode && { deviceUserCode: user_code }),
-                ...(attribution?.found && {
-                    createdForUserId: attribution.userId,
-                    createdForApp: attribution.appName,
+        try {
+            const result = await authClient.apiKey.create({
+                name: displayName,
+                ...(expiryDays !== null && {
+                    expiresIn: expiryDays * SECONDS_PER_DAY,
                 }),
-            },
-        });
-
-        if (result.error || !result.data?.key) {
-            throw new Error(
-                result.error?.message || "Failed to create API key",
-            );
-        }
-
-        const { key, id } = result.data;
-
-        const { allowedModels, pollenBudget, accountPermissions } =
-            keyPermissions.permissions;
-        const updates = {
-            ...(allowedModels !== null && { allowedModels }),
-            ...(pollenBudget !== null && { pollenBudget }),
-            ...(accountPermissions?.length && { accountPermissions }),
-        };
-        if (Object.keys(updates).length > 0) {
-            const response = await fetch(`/api/api-keys/${id}/update`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(updates),
+                prefix: "sk",
+                metadata: {
+                    keyType: "secret",
+                    createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
+                    ...(isDeviceMode && { deviceUserCode: user_code }),
+                    ...(attribution?.found && {
+                        createdForUserId: attribution.userId,
+                        createdForApp: attribution.appName,
+                    }),
+                },
             });
-            if (!response.ok) {
-                const errBody = await response.json();
+
+            if (result.error || !result.data?.key) {
                 throw new Error(
-                    `Key created but failed to set permissions: ${(errBody as { message?: string }).message || "Unknown error"}`,
+                    result.error?.message || "Failed to create API key",
                 );
             }
-        }
 
-        return {
-            key,
-            id,
-            expiresIn:
-                expiryDays !== null ? expiryDays * SECONDS_PER_DAY : null,
-        };
+            const { key, id } = result.data;
+            createdKeyId = id;
+
+            const { allowedModels, pollenBudget, accountPermissions } =
+                keyPermissions.permissions;
+            const updates = {
+                ...(allowedModels !== null && { allowedModels }),
+                ...(pollenBudget !== null && { pollenBudget }),
+                ...(accountPermissions?.length && { accountPermissions }),
+            };
+            if (Object.keys(updates).length > 0) {
+                const response = await fetch(`/api/api-keys/${id}/update`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(updates),
+                });
+                if (!response.ok) {
+                    const errBody = await response.json().catch(() => null);
+                    throw new Error(
+                        `Key created but failed to set permissions: ${(errBody as { message?: string }).message || "Unknown error"}`,
+                    );
+                }
+            }
+
+            return {
+                key,
+                id,
+                expiresIn:
+                    expiryDays !== null ? expiryDays * SECONDS_PER_DAY : null,
+            };
+        } catch (error) {
+            if (createdKeyId) {
+                try {
+                    await authClient.apiKey.delete({ keyId: createdKeyId });
+                } catch {
+                    // Best-effort rollback; preserve the original error.
+                }
+            }
+            throw error;
+        }
     }
 
     async function handleAuthorize(): Promise<void> {
@@ -349,26 +360,35 @@ function AuthorizeComponent() {
             const { key, id, expiresIn } = await createKeyAndSetPermissions();
 
             if (isDeviceMode) {
-                const res = await fetch(
-                    `${config.baseUrl}/api/device/approve`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify({
-                            userCode: user_code,
-                            apiKey: key,
-                            apiKeyId: id,
-                            expiresIn,
-                        }),
-                    },
-                );
-                if (!res.ok) {
-                    const data = await res.json().catch(() => null);
-                    throw new Error(
-                        (data as { message?: string })?.message ||
-                            "Failed to approve device",
+                try {
+                    const res = await fetch(
+                        `${config.baseUrl}/api/device/approve`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({
+                                userCode: user_code,
+                                apiKey: key,
+                                apiKeyId: id,
+                                expiresIn,
+                            }),
+                        },
                     );
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => null);
+                        throw new Error(
+                            (data as { message?: string })?.message ||
+                                "Failed to approve device",
+                        );
+                    }
+                } catch (error) {
+                    try {
+                        await authClient.apiKey.delete({ keyId: id });
+                    } catch {
+                        // Best-effort rollback; preserve the original error.
+                    }
+                    throw error;
                 }
                 setDeviceOutcome("approved");
             } else {
@@ -439,9 +459,17 @@ function AuthorizeComponent() {
     if (!user) {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-white border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full">
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="authorize-sign-in-title"
+                    className="bg-white border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full"
+                >
                     <div className="shrink-0 p-6 pb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">
+                        <h2
+                            id="authorize-sign-in-title"
+                            className="text-lg font-semibold"
+                        >
                             Sign in to Authorize
                         </h2>
                         <img
@@ -565,10 +593,18 @@ function AuthorizeComponent() {
 
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-            <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col">
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="authorize-dialog-title"
+                className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col"
+            >
                 <div className="shrink-0 px-6 pt-6 pb-2">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">
+                        <h2
+                            id="authorize-dialog-title"
+                            className="text-lg font-semibold"
+                        >
                             {isDeviceMode
                                 ? "Authorize Device"
                                 : "Authorize App"}
@@ -697,26 +733,27 @@ function AuthorizeComponent() {
                                             {user.githubUsername || user.email}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        {totalBalance !== null && (
-                                            <span className="text-sm text-amber-900 whitespace-nowrap">
-                                                balance:{" "}
-                                                {formatPollen(totalBalance)}{" "}
-                                                pollen
-                                            </span>
-                                        )}
-                                        <Button
-                                            as="a"
-                                            href="https://enter.pollinations.ai/#buy-pollen"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            color="amber"
-                                            weight="light"
-                                            size="small"
-                                            className="px-3"
-                                        >
-                                            Top up
-                                        </Button>
+                                    <div className="shrink-0">
+                                        <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden">
+                                            {totalBalance !== null && (
+                                                <span className="flex items-center px-3 text-amber-900 whitespace-nowrap">
+                                                    {formatPollen(totalBalance)}{" "}
+                                                    pollen
+                                                </span>
+                                            )}
+                                            <a
+                                                href="https://enter.pollinations.ai/#buy-pollen"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={cn(
+                                                    "flex items-center px-3 py-1 font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 transition-colors cursor-pointer",
+                                                    totalBalance !== null &&
+                                                        "border-l border-amber-300",
+                                                )}
+                                            >
+                                                Top up
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -797,6 +834,15 @@ function AuthorizeComponent() {
                                                 >
                                                     enter.pollinations.ai
                                                 </a>
+                                            </span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span className="w-4 shrink-0 text-amber-800">
+                                                &#x1F464;
+                                            </span>
+                                            <span>
+                                                Shares your GitHub username and
+                                                profile picture.
                                             </span>
                                         </li>
                                     </ul>

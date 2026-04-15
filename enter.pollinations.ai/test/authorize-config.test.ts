@@ -50,4 +50,30 @@ describe("getAuthorizeInitialPermissions", () => {
             accountPermissions: ["usage"],
         });
     });
+
+    it("preserves an explicit unrestricted model selection", () => {
+        expect(
+            getAuthorizeInitialPermissions({
+                models: null,
+            }),
+        ).toEqual({
+            allowedModels: null,
+            pollenBudget: DEFAULT_CONSENT_BUDGET,
+            expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
+            accountPermissions: [...DEFAULT_CONSENT_ACCOUNT_PERMISSIONS],
+        });
+    });
+
+    it("preserves a zero budget instead of falling back to the default", () => {
+        expect(
+            getAuthorizeInitialPermissions({
+                budget: 0,
+            }),
+        ).toEqual({
+            allowedModels: undefined,
+            pollenBudget: 0,
+            expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
+            accountPermissions: [...DEFAULT_CONSENT_ACCOUNT_PERMISSIONS],
+        });
+    });
 });

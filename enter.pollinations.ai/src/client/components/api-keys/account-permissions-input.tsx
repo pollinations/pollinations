@@ -35,7 +35,7 @@ const ACCOUNT_PERMISSIONS = [
     {
         id: "profile",
         label: "Profile",
-        tooltip: "Read your name, email, profile image, and account tier.",
+        tooltip: "Read your GitHub username and profile image.",
     },
     {
         id: "balance",

@@ -1,4 +1,4 @@
-import { type FC, useState } from "react";
+import { type FC, useId, useState } from "react";
 
 type InfoTipProps = {
     text: string;
@@ -37,6 +37,7 @@ export const InfoTip: FC<InfoTipProps> = ({
     placement = "bottom",
 }) => {
     const [show, setShow] = useState(false);
+    const tooltipId = useId();
     const classes = TONES[tone];
     const placementClasses =
         placement === "top" ? "bottom-full mb-1" : "top-full mt-1";
@@ -52,7 +53,11 @@ export const InfoTip: FC<InfoTipProps> = ({
             }}
             onMouseEnter={() => setShow(true)}
             onMouseLeave={() => setShow(false)}
+            onFocus={() => setShow(true)}
+            onBlur={() => setShow(false)}
             aria-label={label}
+            aria-expanded={show}
+            aria-describedby={show ? tooltipId : undefined}
         >
             <span
                 className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border transition-colors text-[10px] font-bold cursor-pointer ${classes.badge}`}
@@ -60,6 +65,8 @@ export const InfoTip: FC<InfoTipProps> = ({
                 i
             </span>
             <span
+                id={tooltipId}
+                role="tooltip"
                 className={`${show ? "visible" : "invisible"} absolute right-0 sm:left-0 sm:right-auto ${placementClasses} px-3 py-2 text-gray-800 text-xs font-normal rounded-lg shadow-lg border w-[200px] sm:w-[280px] z-50 pointer-events-none ${classes.popup}`}
             >
                 {text}

@@ -9,19 +9,7 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { getTierCadence, tierNames } from "@/tier-config.ts";
 import type { Env } from "../env.ts";
-
-// Calculate next tier refill time (null for tiers with no refill)
-function getNextRefillAt(tier?: string | null): string | null {
-    const cadence = tier ? getTierCadence(tier) : "none";
-    if (cadence === "none") return null;
-    const now = new Date();
-    const nextHour = new Date(now);
-    nextHour.setUTCMinutes(0, 0, 0);
-    nextHour.setUTCHours(nextHour.getUTCHours() + 1);
-    return nextHour.toISOString();
-}
 
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
@@ -403,23 +391,11 @@ function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
 
 // Response schemas for OpenAPI documentation
 const profileResponseSchema = z.object({
-    name: z.string().nullable().describe("User's display name"),
-    email: z.email().nullable().describe("User's email address"),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
     image: z
         .string()
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
-    tier: z
-        .enum(["anonymous", ...tierNames])
-        .describe("User's current tier level"),
-    createdAt: z.iso
-        .datetime()
-        .describe("Account creation timestamp (ISO 8601)"),
-    nextResetAt: z.iso
-        .datetime()
-        .nullable()
-        .describe("Next pollen refill timestamp (ISO 8601)"),
 });
 
 const balanceResponseSchema = z.object({
@@ -485,7 +461,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile including name, email, tier level, and account creation date. Requires `account:profile` permission when using API keys.",
+                "Returns your account profile including GitHub username and profile image. Requires `account:profile` permission when using API keys.",
             responses: {
                 200: {
                     description: "User profile",
@@ -519,13 +495,8 @@ export const accountRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
-                    name: userTable.name,
-                    email: userTable.email,
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
-                    tier: userTable.tier,
-                    createdAt: userTable.createdAt,
-                    lastTierGrant: userTable.lastTierGrant,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -536,16 +507,9 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            const nextResetAt = getNextRefillAt(profile.tier);
-
             return c.json({
-                name: profile.name,
-                email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
-                tier: profile.tier,
-                createdAt: profile.createdAt,
-                nextResetAt,
             });
         },
     )

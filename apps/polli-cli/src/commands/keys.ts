@@ -125,7 +125,9 @@ const list = new Command("list")
     });
 
 const info = new Command("info")
-    .description("Show details about the current API key")
+    .description(
+        "Show details about the currently authenticated key (no args). To inspect another key by id, use `polli keys list --json`.",
+    )
     .action(async () => {
         const key = requireKey();
 
@@ -177,8 +179,14 @@ const create = new Command("create")
             if (opts.expiresIn !== undefined)
                 body.expiresIn = Number(opts.expiresIn);
             if (opts.models) body.allowedModels = opts.models;
-            if (opts.budget !== undefined)
-                body.pollenBudget = Number(opts.budget);
+            if (opts.budget !== undefined) {
+                const budget = Number(opts.budget);
+                if (!Number.isFinite(budget) || budget < 0) {
+                    printError("--budget must be a non-negative number");
+                    process.exit(1);
+                }
+                body.pollenBudget = budget;
+            }
             if (opts.permissions) body.accountPermissions = opts.permissions;
 
             const created = await enter<CreateKeyResponse>(

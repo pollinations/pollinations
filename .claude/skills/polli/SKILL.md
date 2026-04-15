@@ -107,11 +107,12 @@ polli usage --daily      # daily cost summary
 
 ### Manage API keys
 ```bash
-polli keys list
-polli keys info
-polli keys create --name "my-bot" --type secret --budget 1000
-polli keys revoke <id>
+polli keys list                                                    # list all keys on the account
+polli keys info                                                    # details about the CURRENTLY AUTHENTICATED key only (takes no id)
+polli keys create --name "my-bot" --type secret --budget 1000      # returns the secret — save it, shown only once
+polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
+To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Read API docs
 ```bash

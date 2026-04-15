@@ -98,7 +98,7 @@ Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any 
 ```bash
 polli gen transcribe recording.mp3 --language en
 ```
-Models: `whisper` (default), `scribe`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** returns word-level timestamps, segments, and duration; **scribe** returns only `{text: "..."}` — use whisper if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
+Models: `whisper` (default), `scribe`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** returns word-level timestamps, segments, and duration; **scribe** returns only `{text: "..."}` — use whisper if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech — **whisper honors it and echoes the value in the JSON response; scribe silently ignores it** (no error, no effect).
 
 ### Discover models
 ```bash

@@ -120,7 +120,7 @@ polli gen image "$PROMPT" --model flux --json --output out.png \
 - **Pollinations API**: https://gen.pollinations.ai
 - **Dashboard / API keys**: https://enter.pollinations.ai
 - **API docs**: https://gen.pollinations.ai/api/docs
-- **Source**: https://github.com/pollinations/pollinations/tree/main/apps/polli-cli
+- **Source**: https://github.com/pollinations/pollinations/tree/main/packages/polli-cli
 - **Discord**: https://discord.gg/pollinations-ai-885844321461485618
 
 ## License

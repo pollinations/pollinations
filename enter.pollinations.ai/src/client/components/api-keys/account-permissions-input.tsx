@@ -1,11 +1,14 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Badge } from "../ui/badge.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
+import {
+    audioModelIds,
+    imageModelIds,
+    textModelIds,
+    videoModelIds,
+} from "./model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import { getModelDisplayName } from "./model-utils.ts";
 import {
@@ -57,34 +60,28 @@ const ACCOUNT_PERMISSIONS = [
     },
 ] as const satisfies readonly AccountPermissionOption[];
 
-const textModels = Object.keys(TEXT_SERVICES)
+const textModels = textModelIds
     .map((id) => ({
         id,
         label: getModelDisplayName(id),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
-const imageModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("image"),
-    )
-    .map(([id]) => ({
+const imageModels = imageModelIds
+    .map((id) => ({
         id,
         label: getModelDisplayName(id),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
-const videoModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("video"),
-    )
-    .map(([id]) => ({
+const videoModels = videoModelIds
+    .map((id) => ({
         id,
         label: getModelDisplayName(id),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
-const audioModels = Object.keys(AUDIO_SERVICES)
+const audioModels = audioModelIds
     .map((id) => ({
         id,
         label: getModelDisplayName(id),

@@ -316,7 +316,9 @@ function generateLLMDoc(): string {
     lines.push("");
 
     lines.push("### GET /api/account/profile");
-    lines.push("Returns user profile: githubUsername, image.");
+    lines.push(
+        "Returns user profile: name, email, githubUsername, image, tier, createdAt, nextResetAt.",
+    );
     lines.push("Requires `account:profile` permission.");
     lines.push("");
 
@@ -765,7 +767,7 @@ response = requests.get(
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 profile = response.json()
-print(profile["githubUsername"])`,
+print(f"{profile['name']} ({profile['tier']})")`,
         },
         {
             label: "JavaScript",
@@ -775,7 +777,7 @@ print(profile["githubUsername"])`,
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const profile = await response.json();
-console.log(profile.githubUsername);`,
+console.log(\`\${profile.name} (\${profile.tier})\`);`,
         },
     ],
     "get /account/key": [
@@ -1057,8 +1059,14 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
         balance: 42.5,
     },
     "get /account/profile": {
+        name: "Jane Developer",
+        email: "jane@example.com",
         githubUsername: "janedeveloper",
         image: "https://avatars.example.com/jane.jpg",
+        tier: "seed",
+        displayTier: "Seed",
+        createdAt: "2024-01-15T10:30:00.000Z",
+        nextResetAt: "2024-02-15T14:00:00.000Z",
     },
     "get /account/key": {
         valid: true,
@@ -1398,7 +1406,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "",
                                 "| Endpoint | Description |",
                                 "|----------|-------------|",
-                                "| `GET /account/profile` | GitHub username, profile image |",
+                                "| `GET /account/profile` | Name, email, tier, creation date |",
                                 "| `GET /account/balance` | Current pollen balance |",
                                 "| `GET /account/usage` | Per-request history with costs |",
                                 "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",

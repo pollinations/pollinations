@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAllowedModelSelection } from "@/client/components/api-keys/model-selection.ts";
 import {
+    AUTHORIZE_ALLOWED_ACCOUNT_PERMISSIONS,
     DEFAULT_CONSENT_ACCOUNT_PERMISSIONS,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     getAuthorizeInitialPermissions,
+    sanitizeAuthorizeAccountPermissions,
 } from "@/client/lib/authorize-config.ts";
 
 describe("normalizeAllowedModelSelection", () => {
@@ -51,6 +53,19 @@ describe("getAuthorizeInitialPermissions", () => {
         });
     });
 
+    it("strips hidden permissions from url-provided values", () => {
+        expect(
+            getAuthorizeInitialPermissions({
+                permissions: ["usage", "keys", "profile"],
+            }),
+        ).toEqual({
+            allowedModels: undefined,
+            pollenBudget: DEFAULT_CONSENT_BUDGET,
+            expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
+            accountPermissions: ["usage", "profile"],
+        });
+    });
+
     it("preserves an explicit unrestricted model selection", () => {
         expect(
             getAuthorizeInitialPermissions({
@@ -75,5 +90,30 @@ describe("getAuthorizeInitialPermissions", () => {
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
             accountPermissions: [...DEFAULT_CONSENT_ACCOUNT_PERMISSIONS],
         });
+    });
+});
+
+describe("sanitizeAuthorizeAccountPermissions", () => {
+    it("allows only the authorize-safe permission set", () => {
+        expect(AUTHORIZE_ALLOWED_ACCOUNT_PERMISSIONS).toEqual([
+            "profile",
+            "balance",
+            "usage",
+        ]);
+        expect(
+            sanitizeAuthorizeAccountPermissions([
+                "keys",
+                "usage",
+                "profile",
+                "usage",
+                "offline_access",
+            ]),
+        ).toEqual(["usage", "profile"]);
+    });
+
+    it("returns null when no safe permissions remain", () => {
+        expect(
+            sanitizeAuthorizeAccountPermissions(["keys", "offline_access"]),
+        ).toBeNull();
     });
 });

@@ -1,6 +1,3 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { cn } from "../../util.ts";
@@ -9,6 +6,7 @@ import { authClient } from "../auth.ts";
 import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
+import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
 import { getPermissionPillClasses } from "../components/api-keys/permission-ui.ts";
 import { PollenBudgetInput } from "../components/api-keys/pollen-budget-input.tsx";
 import { SCOPE_LABELS } from "../components/auth/scope-labels.ts";
@@ -20,6 +18,7 @@ import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 import {
     AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    sanitizeAuthorizeAccountPermissions,
 } from "../lib/authorize-config.ts";
 import { formatPollen } from "../lib/format-pollen.ts";
 
@@ -55,34 +54,6 @@ function safeParseUrl(url: string): URL | null {
     } catch {
         return null;
     }
-}
-
-const ALL_MODALITIES = ["text", "images", "audio", "video"] as const;
-const SERVICE_MODALITY_SOURCES: Record<
-    string,
-    { outputModalities?: readonly string[] }
-> = {
-    ...TEXT_SERVICES,
-    ...IMAGE_SERVICES,
-    ...AUDIO_SERVICES,
-};
-
-function computeModalities(allowedModels: string[] | null): string[] {
-    if (allowedModels === null) return [...ALL_MODALITIES];
-    const present = new Set<(typeof ALL_MODALITIES)[number]>();
-    for (const id of allowedModels) {
-        for (const output of SERVICE_MODALITY_SOURCES[id]?.outputModalities ??
-            []) {
-            if (output === "image") {
-                present.add("images");
-                continue;
-            }
-            if (output === "text" || output === "audio" || output === "video") {
-                present.add(output);
-            }
-        }
-    }
-    return ALL_MODALITIES.filter((modality) => present.has(modality));
 }
 
 export const Route = createFileRoute("/authorize")({
@@ -171,12 +142,13 @@ function AuthorizeComponent() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    const modalities = computeModalities(
+    const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
     );
-    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>();
-    const canAuthorize =
-        (isDeviceMode || parsedRedirectUrl !== null) && modalities.length > 0;
+    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>(
+        !isPending && !!user,
+    );
+    const canAuthorize = isDeviceMode || parsedRedirectUrl !== null;
 
     useScrollLock();
 
@@ -184,7 +156,10 @@ function AuthorizeComponent() {
     useEffect(() => {
         if (deviceScopes.length > 0) {
             // Always include "profile", merge with device-requested scopes
-            const perms = Array.from(new Set(["profile", ...deviceScopes]));
+            const perms = sanitizeAuthorizeAccountPermissions([
+                "profile",
+                ...deviceScopes,
+            ]);
             setAccountPermissions(perms);
         }
     }, [deviceScopes, setAccountPermissions]);
@@ -312,10 +287,14 @@ function AuthorizeComponent() {
 
             const { allowedModels, pollenBudget, accountPermissions } =
                 keyPermissions.permissions;
+            const safeAccountPermissions =
+                sanitizeAuthorizeAccountPermissions(accountPermissions);
             const updates = {
                 ...(allowedModels !== null && { allowedModels }),
                 ...(pollenBudget !== null && { pollenBudget }),
-                ...(accountPermissions?.length && { accountPermissions }),
+                ...(safeAccountPermissions?.length && {
+                    accountPermissions: safeAccountPermissions,
+                }),
             };
             if (Object.keys(updates).length > 0) {
                 const response = await fetch(`/api/api-keys/${id}/update`, {
@@ -797,8 +776,7 @@ function AuthorizeComponent() {
                                             </span>
                                             {modalities.length === 0 ? (
                                                 <span>
-                                                    No models allowed — select
-                                                    at least one in Advanced
+                                                    No AI models are enabled.
                                                 </span>
                                             ) : (
                                                 <div className="flex items-center gap-2 flex-wrap">

@@ -7,7 +7,7 @@ import {
     getOutputMode,
     printError,
     printInfo,
-    printResult,
+    printMeta,
 } from "../../lib/output.js";
 
 export function createImageCommand() {
@@ -65,7 +65,7 @@ export function createImageCommand() {
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(opts.output, buffer);
 
-                printResult({
+                printMeta({
                     path: opts.output,
                     size: buffer.length,
                     model: opts.model,

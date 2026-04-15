@@ -69,6 +69,20 @@ export const printInfo = (msg: string) => {
     process.stderr.write(`${chalk.dim(msg)}\n`);
 };
 
+/** Metadata for file-sink commands (gen image/audio/video): stdout in json
+ * mode so it's machine-parseable, stderr in human mode so it doesn't corrupt
+ * downstream pipes. Use printResult instead when the data IS the output. */
+export const printMeta = (data: Record<string, unknown>) => {
+    if (currentMode === "json") {
+        process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+        return;
+    }
+    for (const [key, value] of Object.entries(data)) {
+        if (value === null || value === undefined) continue;
+        process.stderr.write(`${chalk.bold(key)}: ${value}\n`);
+    }
+};
+
 /** Success message — shown in human mode on stderr */
 export const printSuccess = (msg: string) => {
     if (currentMode !== "human") return;

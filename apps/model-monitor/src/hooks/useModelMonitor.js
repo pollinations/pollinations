@@ -9,12 +9,12 @@ const TINYBIRD_HOST = "https://api.europe-west2.gcp.tinybird.co";
 const TINYBIRD_PUBLIC_READ_TOKEN =
     "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
-// Tinybird pipes for different aggregation windows
-const TINYBIRD_PIPES = {
-    "7d": "model_health_7d",
-    "24h": "model_health_24h",
-    "60m": "model_health_60m",
-    "5m": "model_health",
+// Minutes parameter for the parameterized model_health pipe
+const WINDOW_MINUTES = {
+    "7d": 10080,
+    "24h": 1440,
+    "60m": 60,
+    "5m": 5,
 };
 
 // Poll intervals based on aggregation window
@@ -59,27 +59,28 @@ const ALL_REGISTERED_MODELS = [
 // validation landed (same name on multiple event_types) from colliding.
 const statsKey = (eventType, model) => `${eventType}:${model}`;
 
-// Calculate total 4xx errors (user errors)
+// Calculate total 4xx errors (user errors). Sum granular columns if the pipe
+// returns them; otherwise fall back to the aggregated errors_4xx column.
 function calcTotal4xx(stats) {
-    return (
+    const granular =
         (stats.errors_400 || 0) +
         (stats.errors_401 || 0) +
         (stats.errors_402 || 0) +
         (stats.errors_403 || 0) +
         (stats.errors_429 || 0) +
-        (stats.errors_4xx_other || 0)
-    );
+        (stats.errors_4xx_other || 0);
+    return granular || stats.errors_4xx || 0;
 }
 
-// Calculate total 5xx errors (model/server errors)
+// Calculate total 5xx errors (model/server errors). Same fallback pattern.
 function calcTotal5xx(stats) {
-    return (
+    const granular =
         (stats.errors_500 || 0) +
         (stats.errors_502 || 0) +
         (stats.errors_503 || 0) +
         (stats.errors_504 || 0) +
-        (stats.errors_5xx_other || 0)
-    );
+        (stats.errors_5xx_other || 0);
+    return granular || stats.errors_5xx || 0;
 }
 
 // Enrich stats with computed totals
@@ -152,9 +153,9 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
 
         try {
-            const pipeName =
-                TINYBIRD_PIPES[aggregationWindow] || TINYBIRD_PIPES["60m"];
-            const url = `${TINYBIRD_HOST}/v0/pipes/${pipeName}.json?token=${TINYBIRD_PUBLIC_READ_TOKEN}`;
+            const minutes =
+                WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
+            const url = `${TINYBIRD_HOST}/v0/pipes/model_health.json?token=${TINYBIRD_PUBLIC_READ_TOKEN}&minutes=${minutes}`;
             const response = await fetch(url);
 
             if (!response.ok) {

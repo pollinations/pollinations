@@ -18,6 +18,7 @@ jobs:
       sdk: ${{ steps.changes.outputs.sdk }}
       mcp: ${{ steps.changes.outputs.mcp }}
       ompc: ${{ steps.changes.outputs.ompc }}
+      polli-cli: ${{ steps.changes.outputs.polli-cli }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,6 +31,7 @@ jobs:
           echo "sdk=$(echo "$changed" | grep -q '^packages/sdk/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "mcp=$(echo "$changed" | grep -q '^packages/mcp/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "ompc=$(echo "$changed" | grep -q '^packages/ompc/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "polli-cli=$(echo "$changed" | grep -q '^packages/polli-cli/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "Changed files:"
           echo "$changed" | grep '^packages/' || true
 
@@ -202,5 +204,63 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
           echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
           npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-polli-cli:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.polli-cli == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies & build
+        working-directory: packages/polli-cli
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check if version exists on NPM
+        id: check
+        working-directory: packages/polli-cli
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ ${PACKAGE_NAME}@${PACKAGE_VERSION} already published — skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "📦 Will publish ${PACKAGE_NAME}@${PACKAGE_VERSION}"
+          fi
+
+      - name: Publish to NPM (alpha)
+        if: steps.check.outputs.exists == 'false'
+        working-directory: packages/polli-cli
+        run: npm publish --access public --tag alpha --registry https://registry.npmjs.org/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
+
+      - name: Publish to GitHub Packages (alpha)
+        if: steps.check.outputs.exists == 'false'
+        working-directory: packages/polli-cli
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@pollinations/cli';
+            pkg.repository = { type: 'git', url: 'https://github.com/pollinations/pollinations.git', directory: 'packages/polli-cli' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
+          npm publish --access public --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

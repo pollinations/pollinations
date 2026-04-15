@@ -45,7 +45,7 @@ Override the stored key for a single command with `--key <key>`.
 ```bash
 polli gen image "a fox reading a book, studio ghibli style" --output fox.png
 ```
-Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. To use a local file, upload it first with `polli upload` (see next recipe).
+Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe).
 
 ### Upload a local file to get a public URL
 ```bash

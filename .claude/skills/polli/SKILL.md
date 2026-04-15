@@ -58,7 +58,7 @@ polli gen image "make the cat purple" --image "$URL" --output purple.png
 ```bash
 polli gen text "summarize the three laws of robotics"
 ```
-Save to file: `--output summary.txt`. Use `--system "<msg>"` to set system prompt. For reasoning models, pass `--reasoning low|medium|high` to control reasoning effort.
+Save to file: `--output summary.txt`. Use `--system "<msg>"` to set system prompt. For reasoning models, pass `--reasoning low|medium|high` to control reasoning effort. **Only send `--reasoning` to models where `reasoning: true`** in `polli models --type text --json` — the flag is not validated client-side, and non-reasoning models may silently accept it (openai), ignore it, or return a 400 (mistral).
 
 ### Pipe stdin as context into text generation
 ```bash
@@ -146,7 +146,7 @@ polli docs --open                   # open in browser
 1. **Run `polli auth status` first** if you don't know whether the user is logged in. Fail fast with a clear "run `polli auth login`" message if not.
 2. **Prefer `--json`** whenever you'll parse the output. Never grep human-formatted tables.
 3. **Don't hardcode model IDs.** Fetch the live list with `polli models --type <type>`. Model availability changes.
-4. **Before picking a model for production use, check `polli models --stats`.** Rule of thumb for "healthy": `err%` ≤ 5, `avg` latency in a reasonable range for the modality (text <5s, image <10s, video <60s), and `requests` high enough to be statistically meaningful (ignore rows with <10 requests — noise). **Filter by capability first, then optimize by health** — e.g. for a reasoning task, narrow to models where `reasoning: true` (via `polli models --type text --json`), *then* cross-reference against `--stats` output. The healthiest model overall may not support the capability you need.
+4. **Before picking a model for production use, check `polli models --stats`.** Rule of thumb for "healthy": `err%` ≤ 5, `avg` latency in a reasonable range for the modality (standard text <5s, image <10s, video <60s), and `requests` high enough to be statistically meaningful (ignore rows with <10 requests — noise). **Filter by capability first, then optimize by health** — e.g. for a reasoning task, narrow to models where `reasoning: true` (via `polli models --type text --json`), *then* cross-reference against `--stats` output. The healthiest model overall may not support the capability you need. **Reasoning models are inherently slower — expect 5–50s, not <5s**; when picking among them, prioritize low `err%` and request count over raw latency, and compare latency only within the reasoning-capable subset.
 5. **Always pass `--output <path>`** for `gen image`, `gen audio`, `gen video` — otherwise the file lands in the current directory with a default name.
 6. **For stdin-as-context** on `gen text`, pipe the context and pass the question as the positional argument: `cat file | polli gen text "question about the file"`.
 7. **For exact flag lists, run `polli <cmd> --help` or `polli gen <cmd> --help`.** This skill's recipes cover the common path; the CLI's own help is always the source of truth.

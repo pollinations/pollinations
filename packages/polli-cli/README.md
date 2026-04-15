@@ -79,11 +79,17 @@ polli usage --daily                      # daily cost summary
 
 ## For AI Agents
 
-This CLI is designed to be driven by an LLM agent. Every command supports:
+Driving this CLI from an AI coding agent (Claude Code, Cursor, Windsurf, etc.)? Point your agent at the skill file and it will have the full usage map:
+
+> Read https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md and follow the instructions to generate media with the `polli` CLI.
+
+The skill is also bundled with the npm package at `node_modules/@pollinations_ai/cli/SKILL.md`, so `npx @pollinations_ai/cli` installs it alongside the binary.
+
+Every command is designed to be agent-friendly:
 
 - **`--json`** — structured output to stdout, human messages to stderr. Safe to parse.
-- **Deterministic exit codes** — `0` success, `1` error.
-- **Friendly 402 hints** — when a generation runs out of pollen, the CLI prints the account balance, the key's remaining budget, and a suggested fix (`polli auth login` or top up at enter.pollinations.ai).
+- **Deterministic exit codes** — `0` on success, non-zero on error.
+- **Prominent 402 hints** — when a generation runs out of pollen, the CLI prints the top-up link (`https://enter.pollinations.ai`) as the first line of the error, followed by the account balance and the offending key's remaining budget.
 - **No hidden state** — `polli auth status --json` returns everything an agent needs to know.
 
 A minimal agent loop:

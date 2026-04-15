@@ -41,7 +41,18 @@ export function createImageCommand() {
             if (opts.negative) params.set("negative_prompt", opts.negative);
             if (opts.safe) params.set("safe", "true");
             if (opts.transparent) params.set("transparent", "true");
-            if (opts.image?.length) params.set("image", opts.image.join("|"));
+            if (opts.image?.length) {
+                const bad = opts.image.find(
+                    (u: string) => !/^https?:\/\//i.test(u),
+                );
+                if (bad) {
+                    printError(
+                        `--image requires a public http(s) URL, not a local path: ${bad}`,
+                    );
+                    process.exit(1);
+                }
+                params.set("image", opts.image.join("|"));
+            }
 
             const encodedPrompt = encodeURIComponent(prompt);
             const url = `${BASE_URL}/image/${encodedPrompt}?${params}`;

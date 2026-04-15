@@ -43,7 +43,15 @@ export function createVideoCommand() {
             if (opts.seed) params.set("seed", opts.seed);
             if (opts.enhance) params.set("enhance", "true");
             if (opts.negative) params.set("negative_prompt", opts.negative);
-            if (opts.image) params.set("image", opts.image);
+            if (opts.image) {
+                if (!/^https?:\/\//i.test(opts.image)) {
+                    printError(
+                        `--image requires a public http(s) URL, not a local path: ${opts.image}`,
+                    );
+                    process.exit(1);
+                }
+                params.set("image", opts.image);
+            }
 
             const encodedPrompt = encodeURIComponent(prompt);
             const url = `${BASE_URL}/video/${encodedPrompt}?${params}`;

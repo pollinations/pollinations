@@ -101,6 +101,8 @@ polli models --stats --window 5       # last 5 minutes only
 ```
 Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5xx only** — a model can show `0.0%` while having massive 4xx rates (auth, validation, etc.). For the full picture use `--stats --json` and read `errors_4xx`, `errors_5xx`, `latency_p95_ms`.
 
+**Pricing fields are per-token, not per-request.** `completionImageTokens: 0.000008` means each output image-token costs that much — a single 1024x1024 image from `gptimage` lands at ~$0.008, not $0.000008. Flat-priced image models (`flux`, `zimage`) expose `completionImageTokens` as the whole-image price because they emit exactly one "token" per image. When in doubt, make one call and read the true cost from `polli usage --history --limit 5 --json`.
+
 ### Check usage and balance
 ```bash
 polli usage              # current pollen balance

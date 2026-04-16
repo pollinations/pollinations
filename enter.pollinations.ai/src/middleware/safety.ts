@@ -189,7 +189,30 @@ export async function applySafety(
     if (!text.trim()) return;
 
     const env = c.env as unknown as BedrockGuardrailEnv;
-    const response = await applyGuardrail(text, "INPUT", env);
+
+    let response: BedrockResponse;
+    try {
+        response = await applyGuardrail(text, "INPUT", env);
+    } catch {
+        // Bedrock unavailable — fail closed for safe-enabled requests
+        c.header("X-Safety-Applied", [...features].join(","));
+        c.header("X-Safety-Status", "unavailable");
+        throw new HTTPException(503, {
+            res: new Response(
+                JSON.stringify({
+                    error: {
+                        message: "Safety service temporarily unavailable",
+                        type: "safety_error",
+                        code: "service_unavailable",
+                    },
+                }),
+                {
+                    status: 503,
+                    headers: { "Content-Type": "application/json" },
+                },
+            ),
+        });
+    }
 
     const reasons = getTriggeredReasons(response, features);
     c.header("X-Safety-Applied", [...features].join(","));

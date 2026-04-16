@@ -70,12 +70,10 @@ You get **one central wallet** for all your applications. It holds two types of 
 | 🍄 Spore | 0.01 |
 | 🌱 Seed | 0.15 |
 | 🌸 Flower | 0.4 |
-| 🍯 Nectar | 0.8 |
 
 All tiers refill every hour. Everyone starts at Spore — the more you build and contribute, the bigger your grants:
 - **Seed** — Automatic, based on GitHub activity (8+ dev points)
 - **Flower** — Publish an app to the showcase
-- **Nectar** — Coming soon
 
 ## 🔌 What is BYOP (Bring Your Own Pollen)?
 

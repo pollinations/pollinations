@@ -8,6 +8,11 @@ export type DailyUsageRecord = {
 };
 
 export type TimeRange = "7d" | "30d" | "all";
+export const TIME_RANGE_DAYS: Record<TimeRange, number> = {
+    "7d": 7,
+    "30d": 30,
+    all: 90,
+};
 export type Metric = "requests" | "pollen";
 
 export type FilterState = {

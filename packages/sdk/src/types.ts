@@ -627,10 +627,20 @@ export interface UsageResponse {
 export interface UsageOptions {
     /** Response format (default: 'json') */
     format?: "json" | "csv";
-    /** Max records to return, 1-50000 (default: 100) */
+    /** Number of days to include, max 90 (default: 30) */
+    days?: number;
+    /** Max records to return, 1-50000 (default: 100). CSV exports are capped at 50000. */
     limit?: number;
     /** ISO timestamp cursor for pagination */
     before?: string;
+}
+
+/** Options for fetching daily usage */
+export interface DailyUsageOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include, max 90 (default: 90) */
+    days?: number;
 }
 
 /** Daily usage summary */

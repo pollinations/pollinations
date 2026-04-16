@@ -7,7 +7,7 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "decrypt-vars": "node scripts/decrypt-dev-vars.mjs",
-        "dev": "npm run decrypt-vars && vite dev",
+        "dev": "npm run decrypt-vars && CLOUDFLARE_ENV=local vite dev",
         "dev:production": "npm run decrypt-vars:production && CLOUDFLARE_ENV=production vite dev",
         "test": "npm run decrypt-vars && vitest run",
         "test:e2e": "vitest run --config vitest.e2e.config.ts",

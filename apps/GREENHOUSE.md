@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **678** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **680** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -477,7 +477,7 @@
 | [🎭 GEEMS](https://geems.web.app) | AI interactive fiction platform with LLM game master, 7 game modes, and psychological profiling. | [@web](https://github.com/web) |  | 🫧 |
 | [🐉 polli-dungeon](https://polli-game.netlify.app/) | Add AI-driven NPC behavior, encounter generation, and narrative assistance to Dungeons & Dragons sessions. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 54 apps</summary>
+<details><summary>Show all 55 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -520,6 +520,7 @@
 | [🎭 Jenny AI](https://jenny-two.vercel.app/) | Chatbot + character creator with TTS/STT, image gen, and vision features | [@web](https://github.com/web) |  |  |
 | [🔥 RoastMaster AI](https://roastmaster-ai.vercel.app/) | AI roast generator for playful, creative insults and banter | [@web](https://github.com/web) |  |  |
 | [🎮 roastmyselfie.app](https://storyai-wizard.vercel.app) | Analyzes a selfie to generate a humorous roast and personality-style commentary based on the image. | [@web](https://github.com/web) |  |  |
+| [🏃‍♂️ Neon Runner](https://neon-runnerai.netlify.app/) | Neon Runner AI is a high-speed procedural infinite runner set in a 90s retro-anime aesthetic. It changes the environment based on player performance and progression using real-time Generative AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎲 AI Dungeon Master](197366900) | AI-run text RPG that improvises stories, quests, and character dialogue | [@api](https://github.com/api) |  |  |
 | [🛗 Sirius Cybernetics Elevator Challenge](https://sirius-cybernetics-elevator-challenge.pollinations.ai) | Quirky elevator game with real-time AI-generated encounters and replies | [@web](https://github.com/web) |  |  |
 | [🎮 AI Character RP (Roblox)](63375371) | Roblox roleplay with AI characters, dynamic chats, and quests. | [@roblox](https://github.com/roblox) |  |  |
@@ -669,7 +670,7 @@
 | [🌱 Pollinations Seed Plan Qualification](https://app-j.pl/Pollinations/) | Analyze a public GitHub user profile with Pollinations Seed Plan Qualification to calculate points per the Pollinations Seed Plan scoring system and display the score and breakdown. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 NEURGenerator for ESP32-S3](113021062) | Uses Pollinations.aihttpspollinations.ai API on ESP32-S3 with PSRAM and WDT support in NEURGenerator for ESP32-S3. | [@library](https://github.com/library) |  | 🫧 |
 
-<details><summary>Show all 109 apps</summary>
+<details><summary>Show all 110 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -759,6 +760,7 @@
 | [🖼️ Quicker Pollinations AI](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) | Provides faster access to Pollinations AI features and quick image and media generation workflows. | [@web](https://github.com/web) |  |  |
 | [🛠 Herramientas IA ️](https://proyectodescartes.org/descartescms/herramientas-ia) | Publishes tools built with Pollinations.AI and the DescartesJS editor and links other community-created utilities. | [@web](https://github.com/web) |  |  |
 | [🎨 Pollinations.ai Model Comparison](https://endemicmedia.github.io/FLARE/llm-comparison-tool/) | Compares outputs from multiple LLMs via a GitHub Pages tool with prompt input, selectable timeouts, and submit/cancel controls. | [@web](https://github.com/web) |  |  |
+| [❓](110448841) | No description provided. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Overtli Studio Suite](188361908) | OVERTLI STUDIO Suite is a collection of nodes for Comfy UI that makes local and cloud AI generation easier through a unified advanced router and specialized media nodes. It uses Pollinations.ai as its | [@api](https://github.com/api) |  | 🫧 |
 | [🛠️ PollinCoder](https://pollincoder.vercel.app) | AI app builder that generates and previews full web applications from natural language prompts. | [@web](https://github.com/web) |  |  |
 | [🦞 Pollinations × OpenClaw](https://openclaw.pollinations.ai) | Use 25+ AI models as your OpenClaw agent brain via one setup script | [@web](https://github.com/web) |  |  |

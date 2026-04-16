@@ -1057,7 +1057,8 @@
     <script>
         function copyCode(id) {
             const el = document.getElementById(id);
-            const text = el.textContent.replace(/Copy|Copied!/g, '').trim();
+            const inner = el.querySelector('.code-inner') || el;
+            const text = inner.textContent.trim();
             navigator.clipboard.writeText(text).then(() => {
                 const btn = el.querySelector('.copy-btn');
                 btn.textContent = 'Copied!';

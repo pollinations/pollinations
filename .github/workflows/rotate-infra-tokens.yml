@@ -156,9 +156,9 @@ jobs:
         run: |
           cd tools/scripts/rotation
           if [ "$DRY_RUN" = "true" ]; then
-            bash rotate-infra-enter-token.sh --dry-run
-          else
             bash rotate-infra-enter-token.sh
+          else
+            bash rotate-infra-enter-token.sh --execute
           fi
 
       - name: Rotate PLN_GPU_TOKEN
@@ -169,9 +169,9 @@ jobs:
         run: |
           cd tools/scripts/rotation
           if [ "$DRY_RUN" = "true" ]; then
-            bash rotate-infra-gpu-token.sh --dry-run
-          else
             bash rotate-infra-gpu-token.sh
+          else
+            bash rotate-infra-gpu-token.sh --execute
           fi
 
       # --- Deploy EC2 services to pick up new SOPS values ---

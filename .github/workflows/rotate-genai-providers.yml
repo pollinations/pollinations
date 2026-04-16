@@ -114,9 +114,9 @@ jobs:
           fi
 
           if [ "$DRY_RUN" = "true" ]; then
-            bash "$SCRIPT" --verify
-          else
             bash "$SCRIPT"
+          else
+            bash "$SCRIPT" --execute
           fi
 
       # --- Deploy EC2 services to pick up new SOPS values ---

@@ -1,7 +1,10 @@
 #!/bin/bash
 # Rotate Azure Cognitive Services / OpenAI API keys.
 #
-# Usage: ./rotate-genai-azure.sh [--dry-run] [--resource east|sweden|safety|all]
+# Usage: ./rotate-genai-azure.sh [--execute] [--resource east|sweden|safety|all]
+#
+# Default: dry-run (verify Azure access + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Resources managed:
 #   east   — AZURE_MYCELI_PROD_API_KEY          (text env.json)
@@ -26,14 +29,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 TARGET="all"
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         --resource) TARGET="$2"; shift 2 ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
@@ -56,23 +57,23 @@ TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 
 FAILURES=()
 
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
+#######################################
+# Pre-flight: verify Azure CLI access
+#######################################
+section "Pre-flight: verifying Azure CLI access"
+if ! az account show --query '{name:name, id:id}' -o json >/dev/null 2>&1; then
+    error "Azure CLI not authenticated. Run: az login"
+    exit 1
 fi
+log "Azure CLI authenticated"
+if ! az cognitiveservices account list --query '[].{name:name, location:location}' -o table >/dev/null 2>&1; then
+    error "Azure access failed — cannot list Cognitive Services accounts"
+    exit 1
+fi
+log "Azure Cognitive Services access OK"
 
-if $VERIFY_ONLY; then
-    section "Verifying Azure CLI access"
-    az account show --query '{name:name, id:id}' -o json && {
-        log "Azure CLI authenticated"
-        log "Listing Cognitive Services accounts..."
-        az cognitiveservices account list --query '[].{name:name, location:location}' -o table 2>&1 && {
-            log "Azure access verified"
-            exit 0
-        }
-    } || {
-        error "Azure CLI not authenticated. Run: az login"
-        exit 1
-    }
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 # Extract resource name from Azure endpoint URL

@@ -2,7 +2,10 @@
 # Rotate PLN_ENTER_TOKEN — the token enter.pollinations.ai uses to authenticate
 # requests to the EC2 backend services (image.pollinations.ai, text.pollinations.ai).
 #
-# Usage: ./rotate-infra-enter-token.sh [--dry-run] [--verify] [NEW_TOKEN]
+# Usage: ./rotate-infra-enter-token.sh [--execute] [NEW_TOKEN]
+#
+# Default: dry-run (verify prerequisites + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Trust boundary: Cloudflare Worker (enter) → EC2 (image/text services)
 #
@@ -27,8 +30,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
 SOPS_FILES=(
     "$REPO_ROOT/enter.pollinations.ai/secrets/dev.vars.json"
@@ -42,8 +44,7 @@ FAILURES=()
 # Parse flags
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -97,37 +98,41 @@ run() {
     fi
 }
 
-if $VERIFY_ONLY; then
-    section "Verifying PLN_ENTER_TOKEN prerequisites"
+#######################################
+# Pre-flight: verify prerequisites (always runs)
+#######################################
+section "Pre-flight: verifying PLN_ENTER_TOKEN prerequisites"
 
-    for f in "${SOPS_FILES[@]}"; do
-        check_sops_key "$f" "PLN_ENTER_TOKEN"
-    done
+for f in "${SOPS_FILES[@]}"; do
+    check_sops_key "$f" "PLN_ENTER_TOKEN"
+done
 
-    if gh auth status >/dev/null 2>&1; then
-        log "GitHub CLI authenticated"
-    else
-        error "GitHub CLI not authenticated"
-        FAILURES+=("GitHub CLI auth")
-    fi
+if gh auth status >/dev/null 2>&1; then
+    log "GitHub CLI authenticated"
+else
+    error "GitHub CLI not authenticated"
+    FAILURES+=("GitHub CLI auth")
+fi
 
-    if wrangler_cmd whoami >/dev/null 2>&1; then
-        log "Wrangler authenticated"
-    else
-        error "Wrangler not authenticated"
-        FAILURES+=("Wrangler auth")
-    fi
+if wrangler_cmd whoami >/dev/null 2>&1; then
+    log "Wrangler authenticated"
+else
+    error "Wrangler not authenticated"
+    FAILURES+=("Wrangler auth")
+fi
 
-    if [ ${#FAILURES[@]} -eq 0 ]; then
-        log "PLN_ENTER_TOKEN verification passed"
-        exit 0
-    fi
-
-    error "PLN_ENTER_TOKEN verification failed"
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    error "Pre-flight failed:"
     for failure in "${FAILURES[@]}"; do
         echo "  - $failure"
     done
     exit 1
+fi
+log "Pre-flight OK"
+FAILURES=()
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 # Get or generate token
@@ -139,10 +144,6 @@ else
     NEW_TOKEN=$(openssl rand -hex 32)
 fi
 log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
-
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
 
 #######################################
 # 1. Update SOPS files

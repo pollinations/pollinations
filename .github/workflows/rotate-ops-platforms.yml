@@ -90,14 +90,14 @@ jobs:
             exit 1
           fi
 
-          if [ "$DRY_RUN" = "true" ]; then
-            bash "$SCRIPT" --verify
+          EXEC_FLAG=""
+          if [ "$DRY_RUN" != "true" ]; then
+            EXEC_FLAG="--execute"
+          fi
+          if [ "$PLATFORM" = "tinybird" ]; then
+            bash "$SCRIPT" $EXEC_FLAG --all
           else
-            if [ "$PLATFORM" = "tinybird" ]; then
-              bash "$SCRIPT" --all
-            else
-              bash "$SCRIPT"
-            fi
+            bash "$SCRIPT" $EXEC_FLAG
           fi
 
       # --- Deploy EC2 services to pick up new SOPS values ---

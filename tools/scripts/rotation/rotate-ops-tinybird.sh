@@ -2,7 +2,10 @@
 # Rotate Tinybird machine tokens using the Tinybird REST API.
 #
 # Usage:
-#   ./rotate-ops-tinybird.sh [--dry-run] [--verify] [--token TOKEN_NAME | --all]
+#   ./rotate-ops-tinybird.sh [--execute] [--token TOKEN_NAME | --all]
+#
+# Default: dry-run (verify admin token + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Canonical Tinybird tokens:
 #   tinybird_ingest       → enter runtime append token
@@ -22,15 +25,13 @@ REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
 GITHUB_REPO="pollinations/pollinations"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 TARGET=""
 ROTATE_ALL=false
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         --token) TARGET="$2"; shift 2 ;;
         --all) ROTATE_ALL=true; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
@@ -70,27 +71,27 @@ if [ -z "$TINYBIRD_ADMIN_TOKEN" ]; then
     exit 1
 fi
 
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
-
-if $VERIFY_ONLY; then
-    section "Verifying Tinybird admin token"
-    RESPONSE=$(curl -s --max-time 15 \
-        -H "Authorization: Bearer $TINYBIRD_ADMIN_TOKEN" \
-        "$API_BASE/tokens")
-    TOKEN_COUNT=$(echo "$RESPONSE" | jq '.tokens | length' 2>/dev/null)
-    if [ -n "$TOKEN_COUNT" ] && [ "$TOKEN_COUNT" -gt 0 ]; then
-        log "Tinybird admin token valid — $TOKEN_COUNT tokens in workspace"
-        exit 0
-    fi
+#######################################
+# Pre-flight: verify Tinybird admin token
+#######################################
+section "Pre-flight: verifying Tinybird admin token"
+RESPONSE=$(curl -s --max-time 15 \
+    -H "Authorization: Bearer $TINYBIRD_ADMIN_TOKEN" \
+    "$API_BASE/tokens")
+TOKEN_COUNT=$(echo "$RESPONSE" | jq '.tokens | length' 2>/dev/null)
+if [ -z "$TOKEN_COUNT" ] || [ "$TOKEN_COUNT" -eq 0 ]; then
     error "Tinybird admin token invalid or no tokens found"
     echo "$RESPONSE" | head -5
     exit 1
 fi
+log "Tinybird admin token valid — $TOKEN_COUNT tokens in workspace"
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
+fi
 
 if [ -z "$TARGET" ] && ! $ROTATE_ALL; then
-    echo "Usage: $0 [--dry-run] [--verify] [--token TOKEN_NAME | --all]"
+    echo "Usage: $0 [--execute] [--token TOKEN_NAME | --all]"
     echo ""
     echo "Known Tinybird token names:"
     echo "  tinybird_ingest"

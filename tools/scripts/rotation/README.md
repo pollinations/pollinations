@@ -40,25 +40,21 @@
 | `rotate-ops-cloudflare.sh` | Cloudflare | Roll token via `PUT /tokens/{id}/value` |
 | `rotate-ops-portkey.sh` | Portkey | Admin API create/delete |
 
-All scripts accept `--dry-run` (preview) and `--verify` (read-only API call to confirm connectivity without mutating).
+All scripts default to **dry-run**: they always run a read-only connectivity check first, then print what would change. Pass `--execute` to actually rotate.
 
 ## Running
 
 ```bash
-# Verify connectivity first (read-only)
-./rotate-infra-enter-token.sh --verify
-./rotate-genai-aws.sh --verify
-./rotate-ops-cloudflare.sh --verify
-
-# Dry run (prints what would change)
-./rotate-infra-enter-token.sh --dry-run
-./rotate-genai-aws.sh --dry-run
-
-# Real rotation
+# Dry run (default) — verifies connectivity + prints planned changes
 ./rotate-infra-enter-token.sh
 ./rotate-genai-aws.sh
-./rotate-ops-cloudflare.sh --token api
-TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --all
+./rotate-ops-cloudflare.sh
+
+# Real rotation — pre-flight still runs; aborts if it fails
+./rotate-infra-enter-token.sh --execute
+./rotate-genai-aws.sh --execute
+./rotate-ops-cloudflare.sh --execute --token api
+TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --execute --all
 ```
 
 ## CI workflows

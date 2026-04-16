@@ -1,7 +1,10 @@
 #!/bin/bash
 # Rotate XAI_API_KEY using the xAI Management API.
 #
-# Usage: ./rotate-genai-xai.sh [--dry-run]
+# Usage: ./rotate-genai-xai.sh [--execute]
+#
+# Default: dry-run (verify Management API access + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Environment variables (required):
 #   XAI_MANAGEMENT_KEY — Management API key (from console.x.ai > Settings > Management Keys)
@@ -24,13 +27,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -51,10 +52,6 @@ IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 MGMT_API="https://management-api.x.ai"
 
 FAILURES=()
-
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
 
 if [ -z "$XAI_MANAGEMENT_KEY" ]; then
     error "XAI_MANAGEMENT_KEY must be set (get from console.x.ai > Settings > Management Keys)"
@@ -83,22 +80,18 @@ fi
 OLD_PREFIX="${OLD_KEY:0:12}"
 log "Current key prefix: $OLD_PREFIX..."
 
-if $VERIFY_ONLY; then
-    section "Verifying xAI Management API access"
-    if [ -z "$XAI_MANAGEMENT_KEY" ] || [ -z "$XAI_TEAM_ID" ]; then
-        error "XAI_MANAGEMENT_KEY and XAI_TEAM_ID required for verify"
-        exit 1
-    fi
-    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
-        "$MGMT_API/auth/teams/$XAI_TEAM_ID/api-keys?pageSize=1" \
-        -H "Authorization: Bearer $XAI_MANAGEMENT_KEY")
-    if [ "$STATUS" = "200" ]; then
-        log "xAI Management API access verified (HTTP 200)"
-        exit 0
-    else
-        error "xAI Management API access failed (HTTP $STATUS)"
-        exit 1
-    fi
+section "Pre-flight: verifying xAI Management API access"
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+    "$MGMT_API/auth/teams/$XAI_TEAM_ID/api-keys?pageSize=1" \
+    -H "Authorization: Bearer $XAI_MANAGEMENT_KEY")
+if [ "$STATUS" != "200" ]; then
+    error "xAI Management API access failed (HTTP $STATUS)"
+    exit 1
+fi
+log "xAI Management API access OK (HTTP 200)"
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 #######################################

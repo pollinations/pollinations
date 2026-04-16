@@ -2,7 +2,10 @@
 # Rotate PLN_GPU_TOKEN — the token the EC2 image service uses to
 # authenticate requests to GPU worker instances (Flux, Z-Image, Klein, LTX-2).
 #
-# Usage: ./rotate-infra-gpu-token.sh [--dry-run] [--verify] [NEW_TOKEN]
+# Usage: ./rotate-infra-gpu-token.sh [--execute] [NEW_TOKEN]
+#
+# Default: dry-run (verify prerequisites + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Trust boundary: EC2 image service → GPU workers (RunPod, Lambda Labs)
 #
@@ -25,8 +28,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 SOPS_FILES=(
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
     "$REPO_ROOT/enter.pollinations.ai/secrets/dev.vars.json"
@@ -38,8 +40,7 @@ FAILURES=()
 # Parse flags
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -141,57 +142,55 @@ verify_ssh_host() {
     fi
 }
 
-if ! $DRY_RUN || $VERIFY_ONLY; then
-    section "Extracting SSH keys from SOPS"
-    FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE) || {
-        error "Missing SSH_RUNPOD_FLUX_ZIMAGE in SOPS"
-        FAILURES+=("Missing SSH_RUNPOD_FLUX_ZIMAGE")
-    }
-    KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN) || {
-        error "Missing SSH_RUNPOD_KLEIN in SOPS"
-        FAILURES+=("Missing SSH_RUNPOD_KLEIN")
-    }
-    LAMBDA_KEY=$(extract_ssh_key SSH_LAMBDA_SANA_LTX2_ACESTEP) || {
-        error "Missing SSH_LAMBDA_SANA_LTX2_ACESTEP in SOPS"
-        FAILURES+=("Missing SSH_LAMBDA_SANA_LTX2_ACESTEP")
-    }
-    log "Extracted 3 SSH keys to $TEMP_DIR"
+#######################################
+# Pre-flight: SOPS keys, SSH keys, Wrangler, SSH connectivity
+#######################################
+section "Pre-flight: extracting SSH keys from SOPS"
+FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE) || {
+    error "Missing SSH_RUNPOD_FLUX_ZIMAGE in SOPS"
+    FAILURES+=("Missing SSH_RUNPOD_FLUX_ZIMAGE")
+}
+KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN) || {
+    error "Missing SSH_RUNPOD_KLEIN in SOPS"
+    FAILURES+=("Missing SSH_RUNPOD_KLEIN")
+}
+LAMBDA_KEY=$(extract_ssh_key SSH_LAMBDA_SANA_LTX2_ACESTEP) || {
+    error "Missing SSH_LAMBDA_SANA_LTX2_ACESTEP in SOPS"
+    FAILURES+=("Missing SSH_LAMBDA_SANA_LTX2_ACESTEP")
+}
+log "Extracted 3 SSH keys to $TEMP_DIR"
+
+section "Pre-flight: verifying PLN_GPU_TOKEN prerequisites"
+
+for f in "${SOPS_FILES[@]}"; do
+    check_sops_key "$f" "PLN_GPU_TOKEN"
+done
+
+if wrangler_cmd whoami >/dev/null 2>&1; then
+    log "Wrangler authenticated"
 else
-    FLUX_ZIMAGE_KEY="/dev/null"
-    KLEIN_KEY="/dev/null"
-    LAMBDA_KEY="/dev/null"
+    error "Wrangler not authenticated"
+    FAILURES+=("Wrangler auth")
 fi
 
-if $VERIFY_ONLY; then
-    section "Verifying PLN_GPU_TOKEN prerequisites"
+if [ -n "$FLUX_ZIMAGE_KEY" ] && [ -n "$KLEIN_KEY" ] && [ -n "$LAMBDA_KEY" ]; then
+    verify_ssh_host "RunPod Flux+Z-Image" "root@38.65.239.17" "19489" "$FLUX_ZIMAGE_KEY"
+    verify_ssh_host "RunPod Klein" "root@213.144.200.243" "10207" "$KLEIN_KEY"
+    verify_ssh_host "Lambda GH200" "ubuntu@192.222.51.105" "" "$LAMBDA_KEY"
+fi
 
-    for f in "${SOPS_FILES[@]}"; do
-        check_sops_key "$f" "PLN_GPU_TOKEN"
-    done
-
-    if wrangler_cmd whoami >/dev/null 2>&1; then
-        log "Wrangler authenticated"
-    else
-        error "Wrangler not authenticated"
-        FAILURES+=("Wrangler auth")
-    fi
-
-    if [ -n "$FLUX_ZIMAGE_KEY" ] && [ -n "$KLEIN_KEY" ] && [ -n "$LAMBDA_KEY" ]; then
-        verify_ssh_host "RunPod Flux+Z-Image" "root@38.65.239.17" "19489" "$FLUX_ZIMAGE_KEY"
-        verify_ssh_host "RunPod Klein" "root@213.144.200.243" "10207" "$KLEIN_KEY"
-        verify_ssh_host "Lambda GH200" "ubuntu@192.222.51.105" "" "$LAMBDA_KEY"
-    fi
-
-    if [ ${#FAILURES[@]} -eq 0 ]; then
-        log "PLN_GPU_TOKEN verification passed"
-        exit 0
-    fi
-
-    error "PLN_GPU_TOKEN verification failed"
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    error "Pre-flight failed:"
     for failure in "${FAILURES[@]}"; do
         echo "  - $failure"
     done
     exit 1
+fi
+log "Pre-flight OK"
+FAILURES=()
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 # Get or generate token
@@ -203,10 +202,6 @@ else
     NEW_TOKEN=$(openssl rand -hex 32)
 fi
 log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
-
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
 
 #######################################
 # Helper: update .env on a remote host

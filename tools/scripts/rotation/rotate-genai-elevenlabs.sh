@@ -1,7 +1,10 @@
 #!/bin/bash
 # Rotate ELEVENLABS_API_KEY using the ElevenLabs service account API.
 #
-# Usage: ./rotate-genai-elevenlabs.sh [--dry-run]
+# Usage: ./rotate-genai-elevenlabs.sh [--execute]
+#
+# Default: dry-run (verify current key + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Environment variables (required):
 #   ELEVENLABS_SERVICE_ACCOUNT_ID — Service account user ID
@@ -29,13 +32,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -74,10 +75,6 @@ SOPS_FILES=(
 
 FAILURES=()
 
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
-
 if [ -z "$ELEVENLABS_SERVICE_ACCOUNT_ID" ]; then
     error "ELEVENLABS_SERVICE_ACCOUNT_ID must be set"
     echo "Find it in ElevenLabs workspace > Service Accounts"
@@ -108,18 +105,18 @@ if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "null" ]; then
 fi
 log "Current key: ${OLD_KEY:0:8}..."
 
-if $VERIFY_ONLY; then
-    section "Verifying ElevenLabs API key"
-    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
-        "https://api.elevenlabs.io/v1/user" \
-        -H "xi-api-key: $OLD_KEY")
-    if [ "$STATUS" = "200" ]; then
-        log "ElevenLabs API key valid (HTTP 200)"
-        exit 0
-    else
-        error "ElevenLabs API key invalid (HTTP $STATUS)"
-        exit 1
-    fi
+section "Pre-flight: verifying ElevenLabs API key"
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+    "https://api.elevenlabs.io/v1/user" \
+    -H "xi-api-key: $OLD_KEY")
+if [ "$STATUS" != "200" ]; then
+    error "ElevenLabs API key invalid (HTTP $STATUS)"
+    exit 1
+fi
+log "ElevenLabs API key valid (HTTP 200)"
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 #######################################

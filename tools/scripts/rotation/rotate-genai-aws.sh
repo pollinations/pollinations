@@ -1,7 +1,10 @@
 #!/bin/bash
 # Rotate AWS IAM access keys used by the image and text EC2 services.
 #
-# Usage: ./rotate-genai-aws.sh [--dry-run]
+# Usage: ./rotate-genai-aws.sh [--execute]
+#
+# Default: dry-run (verify credentials + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # This script:
 # 1. Reads the current access key ID from SOPS
@@ -25,13 +28,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -67,14 +68,10 @@ SOPS_FILES=(
 
 FAILURES=()
 
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
-
 #######################################
-# 1. Read current key from SOPS
+# Pre-flight: read current creds + verify they work
 #######################################
-section "Reading current AWS credentials from SOPS"
+section "Pre-flight: reading current AWS credentials from SOPS"
 
 IMAGE_SOPS="${SOPS_FILES[0]}"
 
@@ -91,16 +88,16 @@ if [ -z "$OLD_KEY_ID" ] || [ "$OLD_KEY_ID" = "null" ]; then
 fi
 log "Current key ID: $OLD_KEY_ID"
 
-if $VERIFY_ONLY; then
-    section "Verifying AWS credentials"
-    CALLER=$(AWS_ACCESS_KEY_ID="$OLD_KEY_ID" AWS_SECRET_ACCESS_KEY="$OLD_SECRET" \
-        aws sts get-caller-identity 2>&1) && {
-        log "AWS credentials valid: $(echo "$CALLER" | jq -r '.Arn')"
-        exit 0
-    } || {
-        error "AWS credentials invalid: $CALLER"
-        exit 1
-    }
+section "Pre-flight: verifying AWS credentials"
+CALLER=$(AWS_ACCESS_KEY_ID="$OLD_KEY_ID" AWS_SECRET_ACCESS_KEY="$OLD_SECRET" \
+    aws sts get-caller-identity 2>&1) || {
+    error "AWS credentials invalid: $CALLER"
+    exit 1
+}
+log "AWS credentials valid: $(echo "$CALLER" | jq -r '.Arn')"
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 #######################################

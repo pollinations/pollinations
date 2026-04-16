@@ -1,7 +1,10 @@
 #!/bin/bash
 # Rotate Portkey API key using the Portkey Admin API.
 #
-# Usage: ./rotate-ops-portkey.sh [--dry-run]
+# Usage: ./rotate-ops-portkey.sh [--execute]
+#
+# Default: dry-run (verify current key + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Environment variables:
 #   PORTKEY_ADMIN_KEY — a Portkey API key with admin/organisation scope
@@ -24,13 +27,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -51,10 +52,6 @@ TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 API_BASE="https://api.portkey.ai/v1"
 
 FAILURES=()
-
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
 
 #######################################
 # 1. Read current key from SOPS
@@ -88,18 +85,18 @@ fi
 AUTH_KEY="${PORTKEY_ADMIN_KEY:-$OLD_KEY}"
 log "Current key: ${OLD_KEY:0:8}..."
 
-if $VERIFY_ONLY; then
-    section "Verifying Portkey API key"
-    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
-        "$API_BASE/api-keys" \
-        -H "x-portkey-api-key: $OLD_KEY")
-    if [ "$STATUS" = "200" ]; then
-        log "Portkey API key valid (HTTP 200)"
-        exit 0
-    else
-        error "Portkey API key invalid (HTTP $STATUS)"
-        exit 1
-    fi
+section "Pre-flight: verifying Portkey API key"
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+    "$API_BASE/api-keys" \
+    -H "x-portkey-api-key: $OLD_KEY")
+if [ "$STATUS" != "200" ]; then
+    error "Portkey API key invalid (HTTP $STATUS)"
+    exit 1
+fi
+log "Portkey API key valid (HTTP 200)"
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 #######################################

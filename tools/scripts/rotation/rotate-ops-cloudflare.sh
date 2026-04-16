@@ -2,7 +2,10 @@
 # Rotate Cloudflare API tokens using the Cloudflare REST API.
 #
 # Usage:
-#   ./rotate-ops-cloudflare.sh [--dry-run] [--token api|observability|all]
+#   ./rotate-ops-cloudflare.sh [--execute] [--token api|observability|all]
+#
+# Default: dry-run (verify tokens + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Tokens managed:
 #   api           — CLOUDFLARE_API_TOKEN (image service, Workers AI, D1)
@@ -34,14 +37,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 TARGET="all"
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         --token) TARGET="$2"; shift 2 ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
@@ -64,10 +65,6 @@ IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 ENTER_SOPS="$REPO_ROOT/enter.pollinations.ai/secrets/env.json"
 
 FAILURES=()
-
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
 
 verify_token_status() {
     local label=$1
@@ -94,31 +91,35 @@ verify_token_status() {
     return 1
 }
 
-if $VERIFY_ONLY; then
-    section "Verifying Cloudflare API tokens"
+#######################################
+# Pre-flight: verify current Cloudflare tokens
+#######################################
+section "Pre-flight: verifying Cloudflare API tokens"
 
-    if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
-        CF_TOKEN=$(sops -d "$IMAGE_SOPS" | jq -r '.CLOUDFLARE_API_TOKEN')
-        if ! verify_token_status "CLOUDFLARE_API_TOKEN" "$CF_TOKEN"; then
-            :
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
+    CF_TOKEN=$(sops -d "$IMAGE_SOPS" | jq -r '.CLOUDFLARE_API_TOKEN')
+    verify_token_status "CLOUDFLARE_API_TOKEN" "$CF_TOKEN" || true
+fi
+
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "observability" ]; then
+    if [ -f "$ENTER_SOPS" ]; then
+        OBS_TOKEN=$(sops -d "$ENTER_SOPS" | jq -r '.CLOUDFLARE_OBSERVABILITY_TOKEN // empty')
+        if [ -n "$OBS_TOKEN" ]; then
+            verify_token_status "CLOUDFLARE_OBSERVABILITY_TOKEN" "$OBS_TOKEN" || true
         fi
     fi
+fi
 
-    if [ "$TARGET" = "all" ] || [ "$TARGET" = "observability" ]; then
-        if [ -f "$ENTER_SOPS" ]; then
-            OBS_TOKEN=$(sops -d "$ENTER_SOPS" | jq -r '.CLOUDFLARE_OBSERVABILITY_TOKEN // empty')
-            if [ -n "$OBS_TOKEN" ]; then
-                if ! verify_token_status "CLOUDFLARE_OBSERVABILITY_TOKEN" "$OBS_TOKEN"; then
-                    :
-                fi
-            fi
-        fi
-    fi
-
-    if [ ${#FAILURES[@]} -eq 0 ]; then
-        exit 0
-    fi
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    error "Pre-flight failed:"
+    for f in "${FAILURES[@]}"; do echo "  - $f"; done
     exit 1
+fi
+log "Pre-flight OK"
+FAILURES=()
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 #######################################

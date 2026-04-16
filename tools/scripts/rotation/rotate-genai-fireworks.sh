@@ -1,7 +1,10 @@
 #!/bin/bash
 # Rotate FIREWORKS_API_KEY using the Fireworks AI key management API.
 #
-# Usage: ./rotate-genai-fireworks.sh [--dry-run]
+# Usage: ./rotate-genai-fireworks.sh [--execute]
+#
+# Default: dry-run (verify current key + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # Environment variables (required):
 #   FIREWORKS_ACCOUNT_ID — your Fireworks account ID
@@ -26,13 +29,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -53,10 +54,6 @@ TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 API_BASE="https://api.fireworks.ai/v1"
 
 FAILURES=()
-
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
 
 # Try to read account/user from ~/.fireworks/auth.ini if not set
 if [ -z "$FIREWORKS_ACCOUNT_ID" ] && [ -f "$HOME/.fireworks/auth.ini" ]; then
@@ -95,22 +92,18 @@ fi
 OLD_PREFIX="${OLD_KEY:0:8}"
 log "Current key prefix: $OLD_PREFIX..."
 
-if $VERIFY_ONLY; then
-    section "Verifying Fireworks API key"
-    if [ -z "$FIREWORKS_ACCOUNT_ID" ] || [ -z "$FIREWORKS_USER_ID" ]; then
-        error "FIREWORKS_ACCOUNT_ID and FIREWORKS_USER_ID required for verify"
-        exit 1
-    fi
-    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
-        "$KEYS_URL" \
-        -H "Authorization: Bearer $OLD_KEY")
-    if [ "$STATUS" = "200" ]; then
-        log "Fireworks API key valid (HTTP 200)"
-        exit 0
-    else
-        error "Fireworks API key invalid (HTTP $STATUS)"
-        exit 1
-    fi
+section "Pre-flight: verifying Fireworks API key"
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+    "$KEYS_URL" \
+    -H "Authorization: Bearer $OLD_KEY")
+if [ "$STATUS" != "200" ]; then
+    error "Fireworks API key invalid (HTTP $STATUS)"
+    exit 1
+fi
+log "Fireworks API key valid (HTTP 200)"
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 #######################################

@@ -1,7 +1,10 @@
 #!/bin/bash
 # Rotate GCP service account key used by image and text EC2 services.
 #
-# Usage: ./rotate-genai-gcp.sh [--dry-run]
+# Usage: ./rotate-genai-gcp.sh [--execute]
+#
+# Default: dry-run (verify GCP credentials + preview, no mutation).
+# Pass --execute to actually rotate.
 #
 # This script:
 # 1. Reads current GOOGLE_CLIENT_EMAIL from SOPS to identify the service account
@@ -22,13 +25,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
-DRY_RUN=false
-VERIFY_ONLY=false
+DRY_RUN=true
 
 while [[ "$1" == --* ]]; do
     case "$1" in
-        --dry-run) DRY_RUN=true; shift ;;
-        --verify) VERIFY_ONLY=true; shift ;;
+        --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -54,14 +55,10 @@ FAILURES=()
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made"
-fi
-
 #######################################
-# 1. Read current service account info from SOPS
+# Pre-flight: read SOPS + verify gcloud access
 #######################################
-section "Reading current GCP credentials from SOPS"
+section "Pre-flight: reading current GCP credentials from SOPS"
 
 IMAGE_SOPS="${SOPS_FILES[0]}"
 
@@ -83,17 +80,17 @@ log "Service account: $SA_EMAIL"
 log "Project: $PROJECT_ID"
 log "Current key ID: $OLD_KEY_ID"
 
-if $VERIFY_ONLY; then
-    section "Verifying GCP credentials"
-    KEY_COUNT=$(gcloud iam service-accounts keys list \
-        --iam-account="$SA_EMAIL" --project="$PROJECT_ID" \
-        --format="value(name)" 2>&1 | wc -l) && {
-        log "GCP credentials valid: $SA_EMAIL has $KEY_COUNT key(s)"
-        exit 0
-    } || {
-        error "GCP credentials invalid or insufficient permissions"
-        exit 1
-    }
+section "Pre-flight: verifying GCP credentials"
+if ! KEY_COUNT=$(gcloud iam service-accounts keys list \
+    --iam-account="$SA_EMAIL" --project="$PROJECT_ID" \
+    --format="value(name)" 2>&1 | wc -l); then
+    error "GCP credentials invalid or insufficient permissions"
+    exit 1
+fi
+log "GCP credentials valid: $SA_EMAIL has $KEY_COUNT key(s)"
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 #######################################

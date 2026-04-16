@@ -1,4 +1,5 @@
 import { writeFileSync } from "node:fs";
+import chalk from "chalk";
 import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
@@ -136,10 +137,16 @@ export function createTextCommand() {
                 }
 
                 if (useStream) {
+                    // Dim the model's streamed output in TTY mode so it's
+                    // visually distinct from the user's commands. chalk auto-
+                    // disables when stdout is piped, so files/pipes stay clean.
+                    const colorize = process.stdout.isTTY
+                        ? (s: string) => chalk.dim(s)
+                        : (s: string) => s;
                     let content = "";
                     for await (const chunk of streamSSE(res)) {
                         content += chunk;
-                        if (isHuman) process.stdout.write(chunk);
+                        if (isHuman) process.stdout.write(colorize(chunk));
                     }
                     if (isHuman) process.stdout.write("\n");
                     if (getOutputMode() === "json") {
@@ -161,7 +168,10 @@ export function createTextCommand() {
                         tokens: data.usage?.total_tokens ?? null,
                     });
                 } else {
-                    process.stdout.write(`${content}\n`);
+                    const out = process.stdout.isTTY
+                        ? chalk.dim(content)
+                        : content;
+                    process.stdout.write(`${out}\n`);
                 }
             } catch (err) {
                 printError(

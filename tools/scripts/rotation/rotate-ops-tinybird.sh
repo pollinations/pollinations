@@ -11,7 +11,11 @@
 #   tinybird_ingest       → enter runtime append token
 #   tinybird_read         → internal current-workspace read token
 #   tinybird_sync         → GitHub sync token for D1 + app_directory
-#   tinybird_legacy_read  → legacy pollinations_ai read token
+#
+# Note: tinybird_legacy_read (consumed by apps/operation/economics) lives in
+# the retired pollinations_ai workspace. It is not rotated by this script —
+# the current admin token can't reach that workspace. Rotate manually if
+# needed, or migrate economics off the legacy workspace.
 #
 # This script:
 # 1. Verifies the Tinybird admin token (optional)
@@ -99,7 +103,6 @@ if [ -z "$TARGET" ] && ! $ROTATE_ALL; then
     echo "  tinybird_ingest"
     echo "  tinybird_read"
     echo "  tinybird_sync"
-    echo "  tinybird_legacy_read"
     echo ""
     echo "Run with --all to rotate all known tokens, or --token <name> for one."
     exit 1
@@ -111,7 +114,6 @@ TOKENS=(
     "tinybird_ingest|TINYBIRD_INGEST_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json|wrangler:TINYBIRD_INGEST_TOKEN"
     "tinybird_read|TINYBIRD_READ_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json,apps/operation/kpi/secrets/env.json,apps/operation/economics/secrets/secrets.vars.json|github:TINYBIRD_READ_TOKEN wrangler:TINYBIRD_READ_TOKEN"
     "tinybird_sync|TINYBIRD_SYNC_TOKEN|enter.pollinations.ai/secrets/dev.vars.json,enter.pollinations.ai/secrets/staging.vars.json,enter.pollinations.ai/secrets/prod.vars.json|github:TINYBIRD_SYNC_TOKEN wrangler:TINYBIRD_SYNC_TOKEN"
-    "tinybird_legacy_read|TINYBIRD_LEGACY_READ_TOKEN|apps/operation/economics/secrets/secrets.vars.json|"
 )
 
 find_entry() {

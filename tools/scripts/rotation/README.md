@@ -10,7 +10,8 @@
 | `TINYBIRD_INGEST_TOKEN` | enter runtime → Tinybird current workspace append | enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
 | `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird current workspace read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
 | `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
-| `TINYBIRD_LEGACY_READ_TOKEN` | economics → Tinybird legacy workspace read | economics `secrets.vars.json` | none |
+
+`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/economics`) lives in the retired `pollinations_ai` workspace and is not rotated by the script — rotate manually or migrate economics off the legacy workspace.
 
 ## Scripts
 

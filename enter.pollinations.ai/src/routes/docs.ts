@@ -69,6 +69,9 @@ function generateLLMDoc(): string {
     lines.push("Base URL: https://gen.pollinations.ai");
     lines.push("API Keys: https://enter.pollinations.ai");
     lines.push("Docs: https://gen.pollinations.ai/api/docs");
+    lines.push(
+        "CLI: `npx @pollinations_ai/cli` (binary: `polli`) — agent-friendly, `--json` everywhere",
+    );
     lines.push("");
 
     // Quick Start
@@ -116,6 +119,29 @@ function generateLLMDoc(): string {
     );
     lines.push('  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3');
     lines.push("```");
+    lines.push("");
+
+    // CLI
+    lines.push("## CLI");
+    lines.push("");
+    lines.push(
+        "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+    );
+    lines.push("");
+    lines.push("```bash");
+    lines.push("npm install -g @pollinations_ai/cli");
+    lines.push("polli auth login");
+    lines.push(
+        'polli gen image "a cat in space" --model flux --output cat.png',
+    );
+    lines.push('polli gen text "summarize this" < notes.md');
+    lines.push("polli models --type image");
+    lines.push("polli usage");
+    lines.push("```");
+    lines.push("");
+    lines.push(
+        "Source: https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
+    );
     lines.push("");
 
     // Auth
@@ -178,6 +204,9 @@ function generateLLMDoc(): string {
     lines.push("- image (string): Reference image URL(s), | or , separated");
     lines.push(
         "- transparent (boolean, default: false): gptimage, gptimage-large",
+    );
+    lines.push(
+        "- reasoning (boolean, default: false): Enable thinking for improved text/layout. nanobanana, nanobanana-2, nanobanana-pro",
     );
     lines.push("- duration (int, 1-10): Video duration in seconds");
     lines.push('- aspectRatio ("16:9"|"9:16"): Video only');
@@ -331,16 +360,18 @@ function generateLLMDoc(): string {
         "Per-request usage history: model, token counts, cost, response time.",
     );
     lines.push(
-        "Query params: format (json|csv, default json), limit (1-50000, default 100), before (ISO timestamp cursor)",
+        "Query params: format (json|csv, default json), days (1-90, default 30), limit (1-50000, default 100), before (ISO timestamp cursor). Each response is capped by limit; dashboard detailed CSV uses the latest 50,000 rows within the selected period.",
     );
     lines.push("Requires `account:usage` permission.");
     lines.push("");
 
     lines.push("### GET /api/account/usage/daily");
     lines.push(
-        "Daily aggregated usage (last 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
+        "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
     );
-    lines.push("Query params: format (json|csv, default json)");
+    lines.push(
+        "Query params: format (json|csv, default json), days (1-90, default 90)",
+    );
     lines.push("Requires `account:usage` permission. Cached 1 hour.");
     lines.push("");
 
@@ -431,6 +462,10 @@ function generateLLMDoc(): string {
     lines.push("- 402: Insufficient balance");
     lines.push("- 403: Permission denied");
     lines.push("- 500: Server error");
+    lines.push("");
+
+    // BYOP content carries its own `# Bring Your Own Pollen` H1 heading.
+    lines.push(BYOP_DOCS);
 
     return lines.join("\n");
 }
@@ -889,8 +924,8 @@ models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
 curl "https://gen.pollinations.ai/account/usage?limit=10" \\
   -H "Authorization: Bearer YOUR_API_KEY"
 
-# Export as CSV
-curl "https://gen.pollinations.ai/account/usage?format=csv&limit=100" \\
+# Export the latest 50,000 rows from the last 30 days as CSV
+curl "https://gen.pollinations.ai/account/usage?format=csv&days=30&limit=50000" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o usage.csv`,
         },
         {
@@ -900,11 +935,11 @@ curl "https://gen.pollinations.ai/account/usage?format=csv&limit=100" \\
 
 response = requests.get(
     "https://gen.pollinations.ai/account/usage",
-    params={"limit": 10},
+    params={"limit": 10, "days": 30},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
-for record in response.json()["data"]:
-    print(f"{record['model']}: {record['cost']} pollen")`,
+for record in response.json()["usage"]:
+    print(f"{record['model']}: {record['cost_usd']} pollen")`,
         },
     ],
     "get /account/usage/daily": [
@@ -1260,6 +1295,20 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             'curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\',
                             '  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3',
                             "```",
+                            "",
+                            "## 🖥️ CLI",
+                            "",
+                            "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+                            "",
+                            "```bash",
+                            "npm install -g @pollinations_ai/cli",
+                            "polli auth login",
+                            'polli gen image "a cat in space" --model flux --output cat.png',
+                            'polli gen text "summarize this" < notes.md',
+                            "polli models --type image",
+                            "```",
+                            "",
+                            "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
                             "",
                             "## 🔐 Authentication",
                             "",

@@ -444,7 +444,15 @@ app.get("/api/kpi/churn", async (c) => {
     const result = await fetchTinybird(c.env, "weekly_retention", {
         weeks_back: weeksBack,
     });
-    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    if (result.error) {
+        if (result.status === 408) {
+            console.warn(
+                `[Tinybird] Soft-failing churn timeout: ${result.error}`,
+            );
+            return c.json({ data: [], warning: result.error });
+        }
+        return c.json({ error: result.error, data: [] }, 500);
+    }
     const data = { data: result.data } as {
         data: Array<{
             cohort: string;

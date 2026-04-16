@@ -148,7 +148,7 @@ Returns your account profile including name, email, tier level, and account crea
 
 - **`tier` (required)**
 
-  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
+  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "router"` — User's current tier level
 
 **Example:**
 
@@ -190,7 +190,7 @@ Returns your current pollen balance. If the API key has a budget limit, returns 
 - **Path:** `/account/usage`
 - **Tags:** 👤 Account
 
-Returns your request history with per-request details: model used, token counts, cost, and response time. Supports JSON and CSV export. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.
+Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, and supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.
 
 #### Responses
 
@@ -300,7 +300,7 @@ Returns your request history with per-request details: model used, token counts,
 - **Path:** `/account/usage/daily`
 - **Tags:** 👤 Account
 
-Returns daily aggregated usage for the last 90 days, grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.
+Returns daily aggregated usage for the requested time window (max 90 days), grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.
 
 #### Responses
 
@@ -1140,7 +1140,7 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
 - **`user_tier`**
 
-  `string`, possible values: `"anonymous", "seed", "flower", "nectar"`
+  `string`, possible values: `"anonymous", "seed", "flower"`
 
 **Example:**
 

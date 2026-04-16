@@ -15,9 +15,14 @@ import { Header } from "../components/layout/header.tsx";
 import { NewsBanner } from "../components/layout/news-banner.tsx";
 import { User } from "../components/layout/user.tsx";
 import { Pricing } from "../components/pricing";
-import { UsageGraph } from "../components/usage-analytics";
+import {
+    TIME_RANGE_DAYS,
+    type TimeRange,
+    UsageGraph,
+} from "../components/usage-analytics";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
+const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -73,9 +78,10 @@ function RouteComponent() {
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
+    const [usageTimeRange, setUsageTimeRange] = useState<TimeRange>("7d");
     const [downloadOpen, setDownloadOpen] = useState(false);
-    const [downloadingDetailed, setDownloadingDetailed] = useState(false);
     const downloadRef = useRef<HTMLDivElement>(null);
+    const usageDays = TIME_RANGE_DAYS[usageTimeRange];
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -221,6 +227,15 @@ function RouteComponent() {
         router.invalidate();
     }
 
+    function triggerUsageDownload(path: string, params: URLSearchParams): void {
+        const anchor = document.createElement("a");
+        anchor.href = `${path}?${params.toString()}`;
+        anchor.rel = "noopener";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-20">
@@ -328,98 +343,40 @@ function RouteComponent() {
                                             <button
                                                 type="button"
                                                 onClick={async () => {
-                                                    try {
-                                                        const res = await fetch(
-                                                            "/api/account/usage/daily?format=csv",
-                                                        );
-                                                        if (!res.ok)
-                                                            throw new Error(
-                                                                "Failed to fetch",
-                                                            );
-                                                        const blob =
-                                                            await res.blob();
-                                                        const url =
-                                                            URL.createObjectURL(
-                                                                blob,
-                                                            );
-                                                        const a =
-                                                            document.createElement(
-                                                                "a",
-                                                            );
-                                                        a.href = url;
-                                                        a.download =
-                                                            "usage-daily.csv";
-                                                        a.click();
-                                                        URL.revokeObjectURL(
-                                                            url,
-                                                        );
-                                                    } catch (e) {
-                                                        console.error(
-                                                            "Download failed:",
-                                                            e,
-                                                        );
-                                                    } finally {
-                                                        setDownloadOpen(false);
-                                                    }
+                                                    triggerUsageDownload(
+                                                        "/api/account/usage/daily",
+                                                        new URLSearchParams({
+                                                            format: "csv",
+                                                            days: usageDays.toString(),
+                                                        }),
+                                                    );
+                                                    setDownloadOpen(false);
                                                 }}
                                                 className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50"
                                             >
                                                 Daily Summary
                                                 <span className="block text-xs text-amber-500">
-                                                    Aggregated by day
+                                                    Selected period
                                                 </span>
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={async () => {
-                                                    setDownloadingDetailed(
-                                                        true,
+                                                onClick={() => {
+                                                    triggerUsageDownload(
+                                                        "/api/account/usage",
+                                                        new URLSearchParams({
+                                                            format: "csv",
+                                                            days: usageDays.toString(),
+                                                            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
+                                                        }),
                                                     );
-                                                    try {
-                                                        const res = await fetch(
-                                                            "/api/account/usage?format=csv&limit=50000",
-                                                        );
-                                                        if (!res.ok)
-                                                            throw new Error(
-                                                                "Failed to fetch",
-                                                            );
-                                                        const blob =
-                                                            await res.blob();
-                                                        const url =
-                                                            URL.createObjectURL(
-                                                                blob,
-                                                            );
-                                                        const a =
-                                                            document.createElement(
-                                                                "a",
-                                                            );
-                                                        a.href = url;
-                                                        a.download =
-                                                            "usage-detailed.csv";
-                                                        a.click();
-                                                        URL.revokeObjectURL(
-                                                            url,
-                                                        );
-                                                    } catch (e) {
-                                                        console.error(
-                                                            "Download failed:",
-                                                            e,
-                                                        );
-                                                    } finally {
-                                                        setDownloadingDetailed(
-                                                            false,
-                                                        );
-                                                        setDownloadOpen(false);
-                                                    }
+                                                    setDownloadOpen(false);
                                                 }}
-                                                disabled={downloadingDetailed}
-                                                className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50 disabled:opacity-50"
+                                                className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50"
                                             >
-                                                {downloadingDetailed
-                                                    ? "Downloading..."
-                                                    : "Detailed Usage"}
+                                                Detailed Usage
                                                 <span className="block text-xs text-amber-500">
-                                                    Per-request data
+                                                    Latest 50k requests
                                                 </span>
                                             </button>
                                         </div>
@@ -437,7 +394,11 @@ function RouteComponent() {
                         />
                     )}
                     {activeTab === "usage" && (
-                        <UsageGraph tier={tierData?.active?.tier} />
+                        <UsageGraph
+                            tier={tierData?.active?.tier}
+                            timeRange={usageTimeRange}
+                            onTimeRangeChange={setUsageTimeRange}
+                        />
                     )}
                 </div>
                 {tierData && (

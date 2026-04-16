@@ -22,18 +22,16 @@ This will start the Portkey gateway on http://localhost:8787/v1
 Add the following to your `.env` file:
 
 ```
-# Portkey API Configuration
-PORTKEY_API_KEY=your_portkey_api_key_here
-PORTKEY_PROVIDER=openai  # Default provider (optional)
+# Portkey Gateway Configuration
+PORTKEY_GATEWAY_URL=http://localhost:8787
 ```
 
 Notes:
-- `PORTKEY_API_KEY`: This is your provider's API key (e.g., OpenAI, Anthropic) that Portkey will forward
-- `PORTKEY_PROVIDER`: (Optional) Default provider to use. Supported values include: openai, anthropic, mistral, google, etc.
+- `PORTKEY_GATEWAY_URL`: Optional override for the Portkey gateway host. Production defaults to `https://portkey.pollinations.ai`.
 
 ### 3. Provider-Specific API Keys
 
-You'll need to have valid API keys for any providers you want to use through Portkey. The Portkey gateway will forward your API key to the selected provider.
+You'll still need valid credentials for any providers you want to use through Portkey. In this codebase, those come from the provider-specific environment variables already used by the model configs in `configs/modelConfigs.ts` and `configs/providerConfigs.ts`.
 
 ## Available Models
 
@@ -140,7 +138,7 @@ npm run test:pattern "test/portkey.integration.test.js"
 ### Common Issues
 
 1. **Connection Errors**: Ensure the Portkey gateway is running at http://localhost:8787
-2. **Authentication Errors**: Verify your API keys are correctly set in the `.env` file
+2. **Authentication Errors**: Verify the provider-specific environment variables are correctly set in `.env` or `secrets/env.json`
 3. **Model Not Found**: Check that the model name is correctly specified and supported by the provider
 
 ### Debug Logs

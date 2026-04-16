@@ -10,4 +10,5 @@ export type {
     ModelBreakdown,
     TimeRange,
 } from "./types";
+export { TIME_RANGE_DAYS } from "./types";
 export { UsageGraph } from "./usage-graph";

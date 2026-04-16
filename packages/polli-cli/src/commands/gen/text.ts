@@ -43,7 +43,10 @@ export function createTextCommand() {
             "Attach image URL(s) for vision models (repeatable)",
         )
         .option("--output <path>", "Save to file instead of stdout")
-        .option("--stream", "Stream tokens as they arrive (interactive use)")
+        .option(
+            "--no-stream",
+            "Wait for full response instead of streaming tokens",
+        )
         .action(async (promptArg, opts) => {
             const key = requireKey();
             const stdinText = await readStdin();
@@ -64,7 +67,9 @@ export function createTextCommand() {
             }
 
             const isHuman = getOutputMode() === "human";
-            const useStream = Boolean(opts.stream) && !opts.output && isHuman;
+            // Streaming on by default in human mode; --no-stream opts out.
+            // Always off when writing to a file or emitting JSON.
+            const useStream = opts.stream !== false && !opts.output && isHuman;
 
             type ContentPart =
                 | { type: "text"; text: string }

@@ -705,11 +705,9 @@
 
                 <div class="tab-panel" id="tab-agent">
                     <div class="step-text">Paste this into your agent chat — it will configure Pollinations as a provider:</div>
-                    <div class="code-block" id="agent-msg" style="white-space:pre-wrap; font-size:12px; line-height:1.6">Add pollinations.ai as a model provider. Run this command:
-
-curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span class="key-in-json">YOUR_API_KEY</span>
-
-The script will restart the gateway automatically. After that, switch to the new provider with: /model pollinations/openclaw<button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
+                    <p style="margin-bottom:8px;">Add pollinations.ai as a model provider. Run this command:</p>
+                    <div class="code-block" id="agent-msg" style="white-space:pre-wrap; font-size:12px; line-height:1.6">curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- <span class="key-in-json">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('agent-msg')">Copy</button></div>
+                    <p style="margin-top:8px;">The script will restart the gateway automatically. After that, switch to the new provider with: <code>/model pollinations/openclaw</code></p>
                 </div>
             </div>
         </div>

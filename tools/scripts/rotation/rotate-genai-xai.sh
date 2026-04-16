@@ -79,8 +79,8 @@ if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "null" ]; then
     error "Could not read XAI_API_KEY from SOPS"
     exit 1
 fi
-OLD_PREFIX="${OLD_KEY:0:12}"
-log "Current key prefix: $OLD_PREFIX..."
+OLD_SUFFIX="${OLD_KEY: -4}"
+log "Current key suffix: ...$OLD_SUFFIX"
 
 section "Pre-flight: verifying xAI Management API access"
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
@@ -109,22 +109,15 @@ if ! $DRY_RUN; then
         exit 1
     }
 
-    # Match by redactedApiKey prefix
+    # Match by redactedApiKey suffix (format: "xai-...LAST4")
     API_KEY_ID=$(echo "$LIST_RESPONSE" | jq -r \
-        --arg prefix "${OLD_KEY:0:8}" \
-        '.[] | select(.redactedApiKey | startswith($prefix)) | .apiKeyId' 2>/dev/null | head -1)
+        --arg suffix "$OLD_SUFFIX" \
+        '.apiKeys[] | select(.redactedApiKey | endswith($suffix)) | .apiKeyId' | head -1)
 
     if [ -z "$API_KEY_ID" ]; then
-        # Try matching with shorter prefix
-        API_KEY_ID=$(echo "$LIST_RESPONSE" | jq -r \
-            --arg prefix "${OLD_KEY:0:4}" \
-            '.[] | select(.redactedApiKey | startswith($prefix)) | .apiKeyId' 2>/dev/null | head -1)
-    fi
-
-    if [ -z "$API_KEY_ID" ]; then
-        error "Could not find apiKeyId matching prefix $OLD_PREFIX"
+        error "Could not find apiKeyId matching suffix ...$OLD_SUFFIX"
         error "Listed keys:"
-        echo "$LIST_RESPONSE" | jq '.[].redactedApiKey' 2>/dev/null || echo "$LIST_RESPONSE"
+        echo "$LIST_RESPONSE" | jq '.apiKeys[].redactedApiKey' 2>/dev/null || echo "$LIST_RESPONSE"
         exit 1
     fi
     log "Found apiKeyId: $API_KEY_ID"

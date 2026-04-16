@@ -1,0 +1,34 @@
+{
+  "pr_number": 10231,
+  "title": "fix: restore IntraMind/AlessiaBot app row for @Goddino-Repo",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10231",
+  "merged_at": "2026-04-16T05:35:49Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Justice for AlessiaBot",
+    "blurb": "We fixed a tiny paperwork glitch that accidentally hid IntraMind and AlessiaBot from the app registry. @Goddino-Repo is officially back to Flower tier where they belong!",
+    "summary": "Restored the missing IntraMind / AlessiaBot app entry for @Goddino-Repo in the community apps registry.",
+    "impact": "This fixes an issue where the user was incorrectly demoted, ensuring their app is properly showcased and their Flower tier status is restored.",
+    "keywords": [
+      "community",
+      "apps",
+      "registry",
+      "bug-fix",
+      "tier"
+    ],
+    "visual_concept": "Polly the bee (wearing a tiny gardener's apron) carefully replanting a beautiful glowing flower (representing the Flower tier) into a lime green pot labeled 'AlessiaBot'. The Nomnom creature watches happily.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, carefully replanting a beautiful glowing pink flower into a lime green (#ecf874) pot labeled 'AlessiaBot'. The round Nomnom creature watches happily nearby. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-16/PR-10231.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, carefully replanting a beautiful glowing pink flower into a lime green (#ecf874) pot labeled 'AlessiaBot'. The round Nomnom creature watches happily nearby. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-16T05:36:58.093214+00:00"
+}

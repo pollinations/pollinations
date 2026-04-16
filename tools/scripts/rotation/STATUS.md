@@ -40,6 +40,27 @@ Nothing has actually mutated production. The following are theoretical until som
 4. **ElevenLabs first-run edge case** — the current runtime `ELEVENLABS_API_KEY` is Thomas's personal key, not under the rotate SA. First `--execute` will create a new SA key, switch SOPS to it, but **skip deleting** the personal key (the admin key can only manage keys under the SA). Operator revokes the personal key manually in the ElevenLabs UI after rotation. The script warns in that case.
 5. **Health checks are basic.** They verify the production endpoint is reachable (HTTP 200 or 401), not that the *specific rotated provider* actually works end-to-end. A targeted check would call a known model routed to that provider. Upgrade path documented per-script.
 
+## Providers without automated rotation (manual only)
+
+These providers show up in [`shared/registry/{audio,image,text}.ts`](../../../shared/registry/) but do **not** have a corresponding `rotate-genai-*.sh` script — their key-management flow is dashboard-only (no public key-rotation API) so rotation can't be automated today. They are **out of scope for this PR** but must still be rotated periodically. When doing so, the manual rotation looks like:
+
+1. Log in to the provider dashboard, issue a new API key.
+2. `sops enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json` (or the relevant `image`/`text` `env.json`) and paste the new value under the listed env-var name.
+3. For worker-consumed keys: `wrangler secret put <NAME> --env production` (and `--env staging`).
+4. Open a PR with the SOPS changes → merge to `main` → push `main` → `production` to trigger the deploy.
+5. Revoke the old key in the provider dashboard **only after** production health checks pass.
+
+| Provider | Env var(s) | Used by | SOPS file(s) | Dashboard |
+|---|---|---|---|---|
+| **Alibaba (DashScope)** | `DASHSCOPE_API_KEY` | image + text registries (Wan image models, Qwen text models) | `image.pollinations.ai/secrets/env.json`, `text.pollinations.ai/secrets/env.json` | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
+| **ByteDance** | `BYTEDANCE_API_KEY` | image registry (SeedEdit / Seedream models) | `image.pollinations.ai/secrets/env.json` | [volcengine.com](https://www.volcengine.com) |
+| **Pruna** | `PRUNA_API_KEY` | image registry (Pruna-optimised image models) | `image.pollinations.ai/secrets/env.json` | [pruna.ai dashboard](https://pruna.ai) |
+| **OVHCloud** | `OVHCLOUD_API_KEY` | text registry (OVH AI endpoints) + enter worker (audio fallback) | `text.pollinations.ai/secrets/env.json`, `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [ovh.com manager](https://www.ovh.com/manager/) |
+
+OVHCloud's key is worker-consumed (step 3 applies); the others are EC2-consumed only.
+
+Community-tier models in `text.ts` (provider `community`) don't have a key to rotate — they run on free public endpoints.
+
 ## Invariant that holds so far
 
 Despite the gaps above, nothing has actually broken in production:

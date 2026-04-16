@@ -1,5 +1,9 @@
 # Token Rotation Reference
 
+Local-only rotation scripts. Each script is self-contained and runs the full cycle end-to-end: create new secret on the provider, update SOPS + Wrangler + GitHub secrets, open a PR to `main`, auto-merge, promote `main` → `production`, wait for deploy, health-check, delete the old secret.
+
+No CI workflows — operators run scripts from their own machine with admin credentials.
+
 ## Token inventory
 
 | Token | Trust boundary | SOPS files | Fan-out targets |
@@ -11,7 +15,7 @@
 | `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird current workspace read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
 | `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
 
-`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/economics`) lives in the retired `pollinations_ai` workspace and is not rotated by the script — rotate manually or migrate economics off the legacy workspace.
+`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/economics`) lives in the retired `pollinations_ai` workspace and is not rotated by any script — rotate manually or migrate economics off the legacy workspace.
 
 ## Scripts
 
@@ -19,31 +23,51 @@
 
 | Script | Token | What it does |
 |--------|-------|-------------|
-| `rotate-infra-enter-token.sh` | `PLN_ENTER_TOKEN` | Updates SOPS → GitHub secrets → Wrangler secrets |
-| `rotate-infra-gpu-token.sh` | `PLN_GPU_TOKEN` | Updates SOPS → Wrangler → SSH to each GPU worker, updates `.env`, restarts services |
+| `rotate-infra-enter-token.sh` | `PLN_ENTER_TOKEN` | Generates new token → SOPS → GitHub secrets → Wrangler → PR → prod → deploy → health check |
+| `rotate-infra-gpu-token.sh` | `PLN_GPU_TOKEN` | Generates new token → SSH to each GPU worker → SOPS → Wrangler → PR → prod → deploy → health check |
 
 ### GenAI provider keys (external)
 
-| Script | Provider | Mechanism |
-|--------|----------|-----------|
-| `rotate-genai-aws.sh` | AWS | IAM `create-access-key` → verify → delete old |
-| `rotate-genai-azure.sh` | Azure | `az cognitiveservices account keys regenerate` (East US, Sweden, Content Safety) |
-| `rotate-genai-gcp.sh` | GCP | `gcloud iam service-accounts keys create` → delete old |
-| `rotate-genai-perplexity.sh` | Perplexity | API `generate_auth_token` → `revoke_auth_token` |
-| `rotate-genai-fireworks.sh` | Fireworks | REST API create/delete |
-| `rotate-genai-xai.sh` | xAI | Management API `/rotate` endpoint |
-| `rotate-genai-elevenlabs.sh` | ElevenLabs | Service account API (multi-seat plans only) |
+| Script | Provider | Rotation strategy | Downtime |
+|--------|----------|-------------------|----------|
+| `rotate-genai-aws.sh` | AWS | IAM create new → deploy → delete old | 0 (rolling) |
+| `rotate-genai-azure.sh` | Azure | alternate key1/key2 (use unused slot, deploy, leave previous slot valid) | 0 (dual-key) |
+| `rotate-genai-gcp.sh` | GCP | `gcloud iam service-accounts keys create` → deploy → delete old | 0 (rolling) |
+| `rotate-genai-perplexity.sh` | Perplexity | `generate_auth_token` → deploy → `revoke_auth_token` | 0 (rolling) |
+| `rotate-genai-fireworks.sh` | Fireworks | REST create → deploy → delete old | 0 (rolling) |
+| `rotate-genai-xai.sh` | xAI | `POST /auth/api-keys` create → deploy → `DELETE /auth/api-keys/{id}` | 0 (rolling) |
+| `rotate-genai-elevenlabs.sh` | ElevenLabs | SA create → deploy → delete old | 0 (rolling) |
 
 ### Ops platform tokens
 
-| Script | Platform | Mechanism |
-|--------|----------|-----------|
-| `rotate-ops-tinybird.sh` | Tinybird | Refresh tokens via API, update SOPS + GitHub + Wrangler |
-| `rotate-ops-cloudflare.sh` | Cloudflare | Roll `CLOUDFLARE_OBSERVABILITY_TOKEN` via `PUT /tokens/{id}/value` |
+| Script | Platform | Rotation strategy | Downtime |
+|--------|----------|-------------------|----------|
+| `rotate-ops-tinybird.sh` | Tinybird | `POST /tokens/{name}/refresh` (in-place) + live Wrangler put | ~5s wrangler propagation |
+| `rotate-ops-cloudflare.sh` | Cloudflare | `PUT /tokens/{id}/value` (in-place) + live Wrangler put | ~5s wrangler propagation |
 
-All scripts default to **dry-run**: they always run a read-only connectivity check first, then print what would change. Pass `--execute` to actually rotate.
+All scripts default to **dry-run**. Pass `--execute` to actually rotate.
 
-## Rotation admin credentials
+## End-to-end flow (every `--execute` run)
+
+```
+1. Pre-flight: verify all accesses (SOPS, provider API, wrangler, gh, etc.)
+2. Create new secret on provider (old stays valid)
+3. Update SOPS files
+4. Update Wrangler + GitHub secrets (live — bridges the deploy gap for worker consumers)
+5. git checkout -b rotate/<name>-<date>
+6. git add <sops files>, commit, push
+7. gh pr create --base main, gh pr merge --auto --squash
+8. Poll until PR is MERGED
+9. git fetch && git push origin main:production  (admin push, no PR)
+10. gh run watch <deploy workflow>
+11. Health check against production endpoint
+12. Delete old secret on provider (only if health check passes)
+13. Exit 0
+```
+
+Step 9 requires admin permission on the repo (direct push to `production`). Step 7 uses repo's auto-merge feature.
+
+## Admin credentials
 
 Four scripts need extra admin credentials beyond the keys they rotate:
 
@@ -54,62 +78,40 @@ Four scripts need extra admin credentials beyond the keys they rotate:
 | `rotate-genai-xai.sh` | `XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID` |
 | `rotate-genai-elevenlabs.sh` | `ELEVENLABS_SERVICE_ACCOUNT_ID`, `ELEVENLABS_ADMIN_API_KEY` |
 
-The ElevenLabs script uses two distinct keys: `ELEVENLABS_ADMIN_API_KEY` (static, held here, authenticates admin API calls) and `ELEVENLABS_API_KEY` (runtime generative key, lives in enter SOPS, is what the script rotates).
+The ElevenLabs script uses two distinct keys: `ELEVENLABS_ADMIN_API_KEY` (static, authenticates admin API calls) and `ELEVENLABS_API_KEY` (runtime generative key, lives in enter SOPS, is what the script rotates).
 
-These live in a SOPS-encrypted file next to the scripts:
+These admin credentials live in a SOPS-encrypted file alongside the scripts:
 
 ```
 tools/scripts/rotation/secrets.vars.json
 ```
 
-Each of those four scripts sources `_load-admin-secrets.sh`, which exports any key from this SOPS file that isn't already set in the environment. Env vars always take precedence, so CI (which passes admin creds via GitHub secrets) is unaffected.
+Each script sources `_load-admin-secrets.sh`, which decrypts this file and exports any keys not already set in the environment. Env vars take precedence, so you can override locally without touching SOPS.
 
-To add or update a credential locally:
-
+To edit a credential:
 ```bash
 sops tools/scripts/rotation/secrets.vars.json
 ```
 
-The `TINYBIRD_ADMIN_TOKEN` can be copied from the Tinybird CLI (to the macOS clipboard):
-
-```bash
-tb --cloud token copy "admin token"
-```
+Quick ways to obtain the admin credentials:
+- `TINYBIRD_ADMIN_TOKEN` — `tb --cloud token copy "admin token"` (puts it in the macOS clipboard, then `pbpaste`).
+- `XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID` — console.x.ai → Team settings.
+- `ELEVENLABS_ADMIN_API_KEY`, `ELEVENLABS_SERVICE_ACCOUNT_ID` — ElevenLabs → Developers → Service Accounts (key needs `workspace_read` + `workspace_write`).
+- `FIREWORKS_ACCOUNT_ID`, `FIREWORKS_USER_ID` — Fireworks dashboard or `~/.fireworks/auth.ini`.
 
 ## Running
 
 ```bash
-# Dry run (default) — verifies connectivity + prints planned changes
+# Dry run (default) — verifies connectivity + prints planned changes, no mutation
 ./rotate-infra-enter-token.sh
 ./rotate-genai-aws.sh
-./rotate-ops-cloudflare.sh
 
-# Real rotation — pre-flight still runs; aborts if it fails
+# Real rotation — runs the full cycle end-to-end, including PR + deploy + health check
 ./rotate-infra-enter-token.sh --execute
 ./rotate-genai-aws.sh --execute
 ./rotate-ops-cloudflare.sh --execute
-TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --execute --all
+./rotate-ops-tinybird.sh --execute --all
 ```
-
-## CI workflows
-
-Three `workflow_dispatch` workflows mirror the script categories. All require `main` branch, actor allowlist (voodoohop + ElliotEtag), and `production` environment.
-
-| Workflow | Covers |
-|----------|--------|
-| `.github/workflows/rotate-infra-tokens.yml` | `enter`, `gpu`, `both` |
-| `.github/workflows/rotate-genai-providers.yml` | aws, azure, gcp, perplexity, fireworks, xai, elevenlabs |
-| `.github/workflows/rotate-ops-platforms.yml` | tinybird, cloudflare |
-
-All default to dry-run. After rotation, the workflow SCPs decrypted `.env` files to EC2, restarts systemd services, and runs health checks before committing SOPS changes to main.
-
-After running, commit the SOPS file changes and merge to trigger EC2 deploy.
-`MUSIC_SERVICE_URL` is still required by ACE-Step and must remain configured in enter.
-
-Tinybird notes:
-- `tinybird_ingest` and `tinybird_read` are expected to be current-workspace consolidated tokens.
-- `tinybird_sync` is shared by the D1 sync and APPS.md sync GitHub workflows.
-- Public embedded Tinybird tokens are not rotated by this script.
 
 ## What breaks what
 
@@ -122,7 +124,7 @@ Tinybird notes:
 | `PLN_GPU_TOKEN` in SOPS/EC2 deploy but not GPU workers | image service sends new token → GPU workers reject → image generation fails |
 | `PLN_GPU_TOKEN` on GPU workers but EC2 not redeployed yet | GPU workers expect new token → image service still sends old → image generation fails |
 
-**Key insight:** both sides of each trust boundary must be updated together. For `PLN_GPU_TOKEN`, that means Wrangler, GPU workers, and an EC2 image deploy in the same rollout window.
+**Key insight:** both sides of each trust boundary must be updated together. The end-to-end flow handles this atomically; individual `wrangler secret put` or SOPS edits do not.
 
 ## Rollback
 
@@ -133,23 +135,19 @@ If rotation breaks production, revert to the previous token value:
 git log -p -- image.pollinations.ai/secrets/env.json | head -50
 
 # 2. Re-run the script with the old token
-./rotate-infra-enter-token.sh OLD_TOKEN_VALUE
-./rotate-infra-gpu-token.sh OLD_TOKEN_VALUE
+./rotate-infra-enter-token.sh OLD_TOKEN_VALUE --execute
+./rotate-infra-gpu-token.sh OLD_TOKEN_VALUE --execute
 ```
 
-Or revert the SOPS commit and redeploy.
+Or revert the SOPS commit on `main`, push `main` to `production`, and redeploy.
 
 ## Secrets NOT rotated by these scripts
-
-These require code changes or external coordination before automated rotation is safe:
 
 | Secret | Why deferred |
 |--------|-------------|
 | `BETTER_AUTH_SECRET` | Needs `secrets: []` multi-secret array in Better Auth config — rotating now would invalidate all user sessions |
 | `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier in `stripe-webhooks.ts` |
-| Provider API keys (Azure, AWS, etc.) | Issued by external providers, different rotation mechanisms |
-
-**Out of scope:** Polar keys (`POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`) — Polar is a third-party payment platform; key rotation is managed through their dashboard and not automated here.
+| Polar (`POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`) | Third-party payment platform; rotation managed through Polar dashboard |
 
 `MUSIC_SERVICE_URL` is intentionally not rotated here. It is configuration, not an auth token, and enter still needs it for ACE-Step routing.
 

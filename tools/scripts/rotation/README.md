@@ -67,6 +67,208 @@ All scripts default to **dry-run**. Pass `--execute` to actually rotate.
 
 Step 9 requires admin permission on the repo (direct push to `production`). Step 7 uses repo's auto-merge feature.
 
+## Per-script behaviour
+
+Each script follows the same 13-step flow; the table describes what is verified, what mechanism is used, and where deploy/health converge for that specific secret.
+
+### `rotate-infra-enter-token.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh authed, wrangler authed, SOPS decryptable, `PLN_ENTER_TOKEN` present in all 5 SOPS files |
+| Rotation mechanism | `openssl rand -hex 32` (self-generated; we own both sides of the trust boundary) |
+| Create-before-delete | n/a (no external secret to delete; old token simply stops being used) |
+| Branch naming | `rotate/enter-token-<timestamp>` |
+| PR body | Mentions automation, new token prefix, fan-out targets |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-cloudflare.yml` AND `deploy-enter-services.yml` |
+| Health check | `GET gen.pollinations.ai/v1/models` → 200 (verifies enter gateway + EC2) |
+| Failure handling | If any step after SOPS update fails, new token is still half-live; operator must reconcile |
+| Cleanup | Restore original branch at end |
+
+### `rotate-infra-gpu-token.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, wrangler, SOPS with 3 SSH keys, SSH reachable to all 3 GPU hosts |
+| Rotation mechanism | `openssl rand -hex 32` + SSH fan-out to RunPod (Flux+Z-Image, Klein) + Lambda Labs (LTX-2+ACE-Step+Sana) |
+| Create-before-delete | n/a |
+| Branch naming | `rotate/gpu-token-<timestamp>` |
+| PR body | Mentions automation, new token prefix, 3 GPU hosts updated |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-cloudflare.yml` + `deploy-enter-services.yml` |
+| Health check | `GET gen.pollinations.ai/image/...` (image path exercises GPU backend) |
+| Failure handling | Step ordering places SSH fan-out BEFORE wrangler put so GPUs accept new token before enter starts sending it |
+| Cleanup | Restore original branch at end |
+
+### `rotate-genai-aws.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh authed, SOPS decryptable, AWS sts works with current key |
+| Rotation mechanism | IAM `create-access-key` → wait for propagation → verify → (later) `delete-access-key` |
+| Create-before-delete | ✅ (AWS allows 2 active keys per user) |
+| Branch naming | `rotate/aws-<timestamp>` |
+| PR body | Mentions automation, old key ID, IAM user |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-services.yml` |
+| Health check | `GET gen.pollinations.ai/v1/models` → 200 |
+| Failure handling | Any failure after key creation = abort without deleting old key; old still valid |
+| Cleanup | Restore original branch at end |
+
+### `rotate-genai-azure.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations (for each of 3 resources) |
+| Pre-flight | git clean, gh, `az account show`, list cognitive services accounts, SOPS readable |
+| Rotation mechanism | Alternate key1/key2 slot per resource: detect which slot matches SOPS → regenerate the UNUSED slot → update SOPS to it (previous slot stays valid in Azure) |
+| Create-before-delete | ✅ via dual-key (Azure always exposes key1+key2; unused slot = the rolling backup) |
+| Branch naming | `rotate/azure-<timestamp>` |
+| PR body | Mentions automation, which of 3 resources rotated, slot switched |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-services.yml` |
+| Health check | `POST gen.pollinations.ai/v1/chat/completions` with an Azure-backed model → 200 |
+| Failure handling | If deploy fails, previous slot still valid in SOPS via git revert |
+| Cleanup | Restore original branch at end |
+
+### `rotate-genai-gcp.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, `gcloud auth list`, can list SA keys, SOPS readable |
+| Rotation mechanism | `gcloud iam service-accounts keys create` → verify → (later) `keys delete` |
+| Create-before-delete | ✅ (GCP allows up to 10 keys per SA) |
+| Branch naming | `rotate/gcp-<timestamp>` |
+| PR body | Mentions automation, SA email, old key ID |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-services.yml` |
+| Health check | `POST gen.pollinations.ai/v1/chat/completions` with a GCP/Vertex-backed model → 200 |
+| Failure handling | Any failure after key creation = abort without deleting old key |
+| Cleanup | Restore original branch at end |
+
+### `rotate-genai-perplexity.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, current key works via `/chat/completions`, SOPS readable |
+| Rotation mechanism | `POST /generate_auth_token` → verify → (later) `POST /revoke_auth_token` (authed with new key) |
+| Create-before-delete | ✅ |
+| Branch naming | `rotate/perplexity-<timestamp>` |
+| PR body | Mentions automation, new key prefix |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-services.yml` |
+| Health check | `POST gen.pollinations.ai/v1/chat/completions` with `sonar` model → 200 |
+| Failure handling | Any failure after new-key creation = abort without revoking old |
+| Cleanup | Restore original branch at end |
+
+### `rotate-genai-fireworks.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, `FIREWORKS_ACCOUNT_ID` + `FIREWORKS_USER_ID` set, current key lists apiKeys |
+| Rotation mechanism | `POST apiKeys` → verify → (later) `POST apiKeys:delete` |
+| Create-before-delete | ✅ |
+| Branch naming | `rotate/fireworks-<timestamp>` |
+| PR body | Mentions automation, new key prefix, account/user IDs |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-services.yml` |
+| Health check | `POST gen.pollinations.ai/v1/chat/completions` with a Fireworks-backed model → 200 |
+| Failure handling | Any failure after new-key creation = abort without deleting old |
+| Cleanup | Restore original branch at end |
+
+### `rotate-genai-xai.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, `XAI_MANAGEMENT_KEY` + `XAI_TEAM_ID` set, can list team api-keys |
+| Rotation mechanism | `POST /auth/api-keys` with cloned ACLs from old key → verify → (later) `DELETE /auth/api-keys/{old-id}` |
+| Create-before-delete | ✅ (replaces old `/rotate` in-place approach, which was immediate-invalidate) |
+| Branch naming | `rotate/xai-<timestamp>` |
+| PR body | Mentions automation, new key prefix, old apiKeyId |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-services.yml` (xAI is consumed by image EC2) |
+| Health check | `POST gen.pollinations.ai/v1/chat/completions` with a grok model → 200 |
+| Failure handling | Any failure after new-key creation = abort without deleting old |
+| Cleanup | Restore original branch at end |
+
+### `rotate-genai-elevenlabs.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, wrangler, `ELEVENLABS_ADMIN_API_KEY` + `ELEVENLABS_SERVICE_ACCOUNT_ID` set, admin can list SA keys |
+| Rotation mechanism | `POST /service-accounts/{id}/api-keys` (authed with admin key) → (later) `DELETE /service-accounts/{id}/api-keys/{old-id}` |
+| Create-before-delete | ✅ (SA allows multiple keys coexisting) |
+| Branch naming | `rotate/elevenlabs-<timestamp>` |
+| PR body | Mentions automation, new key prefix, SA ID |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-cloudflare.yml` (ElevenLabs is called by enter worker) |
+| Health check | `POST gen.pollinations.ai/v1/audio/speech` (worker calls ElevenLabs) → 200 |
+| Failure handling | On first rotation, old runtime key may be Thomas's personal (not under SA) → skip delete, warn operator to revoke manually |
+| Cleanup | Restore original branch at end |
+
+### `rotate-ops-cloudflare.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, wrangler, current `CLOUDFLARE_OBSERVABILITY_TOKEN` valid via `/user/tokens/verify` |
+| Rotation mechanism | `PUT /user/tokens/{id}/value` (in-place — immediate invalidation) |
+| Create-before-delete | ❌ (in-place rotate). Wrangler `secret put` is applied immediately (inside this script) to close the ~5s gap. |
+| Branch naming | `rotate/cloudflare-obs-<timestamp>` |
+| PR body | Mentions automation, token ID, in-place note |
+| Auto-merge | `gh pr merge --auto --squash` (for SOPS audit sync) |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | n/a — worker-consumed; wrangler put already applied. Merge is just for SOPS/git audit. |
+| Health check | Worker observability endpoint responds (or known enter worker health endpoint) |
+| Failure handling | In-place rotate cannot be rolled back via SOPS — forward-only. |
+| Cleanup | Restore original branch at end |
+
+### `rotate-ops-tinybird.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, wrangler, `TINYBIRD_ADMIN_TOKEN` set, can list workspace tokens |
+| Rotation mechanism | `POST /tokens/{name}/refresh` for each of ingest/read/sync (in-place — immediate invalidation per token) |
+| Create-before-delete | ❌ (in-place refresh). Wrangler `secret put` applied immediately per token to close the ~5s gap. |
+| Branch naming | `rotate/tinybird-<timestamp>` |
+| PR body | Mentions automation, which tokens rotated |
+| Auto-merge | `gh pr merge --auto --squash` (for SOPS + GitHub secret audit sync) |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | n/a — worker-consumed; wrangler put already applied. GitHub secret update affects sync workflow on its next run. |
+| Health check | Verify worker can write an event to Tinybird with the new `ingest` token |
+| Failure handling | Per-token in-place rotate; partial failure (e.g. ingest OK, read fails) leaves mixed state — operator re-runs with `--token <name>` |
+| Cleanup | Restore original branch at end |
+
 ## Admin credentials
 
 Four scripts need extra admin credentials beyond the keys they rotate:

@@ -42,6 +42,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
 - **All models, one place** — Flux, GPT-5, Claude, Gemini, Seedream, and more
 - **API keys** — publishable keys for frontend, secret keys for backend
+- **CLI** — `npx @pollinations_ai/cli` for humans and AI agents ([source](packages/polli-cli))
 
 > Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://enter.pollinations.ai/api/docs)
 
@@ -377,6 +378,8 @@ Our codebase is organized into several key folders, each serving a specific purp
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
+
+- [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.
 
 - [`packages/sdk/`](./packages/sdk/): SDK NPM library with pollinations ready functions for Pollinations.ai.
 

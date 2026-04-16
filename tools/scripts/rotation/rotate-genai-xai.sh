@@ -1,26 +1,19 @@
 #!/bin/bash
-# Rotate XAI_API_KEY using the xAI Management API.
+# Rotate XAI_API_KEY via create-new + delete-old (zero-downtime).
 #
 # Usage: ./rotate-genai-xai.sh [--execute]
 #
-# Default: dry-run (verify Management API access + preview, no mutation).
-# Pass --execute to actually rotate.
+# Default: dry-run. Pass --execute for the full end-to-end cycle.
 #
-# Environment variables (required):
-#   XAI_MANAGEMENT_KEY — Management API key (from console.x.ai > Settings > Management Keys)
-#   XAI_TEAM_ID        — Team ID (from console.x.ai > Team settings)
+# Strategy: xAI's Management API supports POST /auth/api-keys (create) and
+# DELETE /auth/api-keys/{id}. We create a new key (inheriting ACLs from the
+# old one), update SOPS, deploy, health-check, then delete the old key.
+# The earlier POST /auth/api-keys/{id}/rotate was in-place immediate-invalidate
+# — replaced with this rolling approach.
 #
-# This script:
-# 1. Reads the current key prefix from SOPS
-# 2. Lists keys to find the matching apiKeyId
-# 3. Uses the /rotate endpoint to get a new secret (keeps same key ID, name, ACLs)
-# 4. Updates SOPS with the new key
-#
-# Prerequisites:
-# - sops, jq, curl installed
-# - XAI_MANAGEMENT_KEY and XAI_TEAM_ID set
-#
-# After running, commit the SOPS changes and redeploy EC2 image service.
+# Environment (from secrets.vars.json):
+#   XAI_MANAGEMENT_KEY — Management API key
+#   XAI_TEAM_ID        — team ID
 
 set -e
 
@@ -28,7 +21,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 DRY_RUN=true
-
 while [[ "$1" == --* ]]; do
     case "$1" in
         --execute) DRY_RUN=false; shift ;;
@@ -36,7 +28,6 @@ while [[ "$1" == --* ]]; do
     esac
 done
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -52,22 +43,33 @@ source "$SCRIPT_DIR/_load-admin-secrets.sh"
 
 IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 MGMT_API="https://management-api.x.ai"
-
-FAILURES=()
-
-if [ -z "$XAI_MANAGEMENT_KEY" ]; then
-    error "XAI_MANAGEMENT_KEY must be set (get from console.x.ai > Settings > Management Keys)"
-    exit 1
-fi
-if [ -z "$XAI_TEAM_ID" ]; then
-    error "XAI_TEAM_ID must be set (get from console.x.ai > Team settings)"
-    exit 1
-fi
+DEPLOY_WORKFLOW="deploy-enter-services.yml"
+HEALTH_URL="https://gen.pollinations.ai/v1/chat/completions"
 
 #######################################
-# 1. Read current key from SOPS
+# Pre-flight
 #######################################
-section "Reading current XAI_API_KEY from SOPS"
+section "Pre-flight: checks"
+
+cd "$REPO_ROOT"
+
+if ! $DRY_RUN; then
+    if [ -n "$(git status --porcelain)" ]; then
+        error "Working tree not clean — commit or stash before --execute."
+        git status --short
+        exit 1
+    fi
+fi
+
+if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
+    error "gh CLI not authenticated."
+    exit 1
+fi
+
+if [ -z "$XAI_MANAGEMENT_KEY" ] || [ -z "$XAI_TEAM_ID" ]; then
+    error "XAI_MANAGEMENT_KEY and XAI_TEAM_ID must be set."
+    exit 1
+fi
 
 if [ ! -f "$IMAGE_SOPS" ]; then
     error "SOPS file not found: $IMAGE_SOPS"
@@ -76,123 +78,200 @@ fi
 
 OLD_KEY=$(sops -d "$IMAGE_SOPS" | jq -r '.XAI_API_KEY')
 if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "null" ]; then
-    error "Could not read XAI_API_KEY from SOPS"
+    error "Could not read XAI_API_KEY from SOPS."
     exit 1
 fi
 OLD_SUFFIX="${OLD_KEY: -4}"
 log "Current key suffix: ...$OLD_SUFFIX"
 
-section "Pre-flight: verifying xAI Management API access"
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
-    "$MGMT_API/auth/teams/$XAI_TEAM_ID/api-keys?pageSize=1" \
-    -H "Authorization: Bearer $XAI_MANAGEMENT_KEY")
-if [ "$STATUS" != "200" ]; then
-    error "xAI Management API access failed (HTTP $STATUS)"
+LIST_RESPONSE=$(curl -sS --fail-with-body --max-time 15 \
+    "$MGMT_API/auth/teams/$XAI_TEAM_ID/api-keys?pageSize=100" \
+    -H "Authorization: Bearer $XAI_MANAGEMENT_KEY") || {
+    error "Management API access failed: $LIST_RESPONSE"
+    exit 1
+}
+
+OLD_KEY_ID=$(echo "$LIST_RESPONSE" | jq -r \
+    --arg suffix "$OLD_SUFFIX" \
+    '.apiKeys[] | select(.redactedApiKey | endswith($suffix)) | .apiKeyId' | head -1)
+
+if [ -z "$OLD_KEY_ID" ]; then
+    error "Could not find apiKeyId matching suffix ...$OLD_SUFFIX in team $XAI_TEAM_ID."
+    echo "Listed keys:"
+    echo "$LIST_RESPONSE" | jq '.apiKeys[].redactedApiKey' 2>/dev/null
     exit 1
 fi
-log "xAI Management API access OK (HTTP 200)"
+log "Old apiKeyId: $OLD_KEY_ID"
+
+OLD_NAME=$(echo "$LIST_RESPONSE" | jq -r --arg id "$OLD_KEY_ID" \
+    '.apiKeys[] | select(.apiKeyId == $id) | .name')
+OLD_ACLS=$(echo "$LIST_RESPONSE" | jq -c --arg id "$OLD_KEY_ID" \
+    '.apiKeys[] | select(.apiKeyId == $id) | .aclStrings')
+log "Old key name: $OLD_NAME"
+log "Old key ACLs: $OLD_ACLS"
+
+log "Pre-flight OK"
 
 if $DRY_RUN; then
     warn "DRY RUN — no changes will be made. Pass --execute to rotate."
+    echo
+    log "Plan:"
+    echo "  1. Create new xAI key with cloned ACLs (old $OLD_KEY_ID stays valid)"
+    echo "  2. Update SOPS: image.pollinations.ai/env.json"
+    echo "  3. Open PR: rotate/xai-<date> → main, auto-merge"
+    echo "  4. Push main → production (admin)"
+    echo "  5. Watch $DEPLOY_WORKFLOW"
+    echo "  6. Health check $HEALTH_URL"
+    echo "  7. Delete old key $OLD_KEY_ID"
+    exit 0
 fi
 
+ORIGINAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
 #######################################
-# 2. Find key ID by listing keys
+# 1. Create new xAI key with cloned ACLs
 #######################################
-section "Listing keys to find apiKeyId"
+section "Creating new xAI key"
 
-if ! $DRY_RUN; then
-    LIST_RESPONSE=$(curl -s --fail-with-body \
-        --url "$MGMT_API/auth/teams/$XAI_TEAM_ID/api-keys?pageSize=100" \
-        --header "Authorization: Bearer $XAI_MANAGEMENT_KEY") || {
-        error "Failed to list keys: $LIST_RESPONSE"
-        exit 1
-    }
+NEW_NAME="rotated-$(date +%Y%m%d-%H%M%S)"
+CREATE_PAYLOAD=$(jq -n \
+    --arg team "$XAI_TEAM_ID" \
+    --arg name "$NEW_NAME" \
+    --argjson acls "$OLD_ACLS" \
+    '{teamId: $team, name: $name, aclStrings: $acls}')
 
-    # Match by redactedApiKey suffix (format: "xai-...LAST4")
-    API_KEY_ID=$(echo "$LIST_RESPONSE" | jq -r \
-        --arg suffix "$OLD_SUFFIX" \
-        '.apiKeys[] | select(.redactedApiKey | endswith($suffix)) | .apiKeyId' | head -1)
+CREATE_RESPONSE=$(curl -sS --fail-with-body \
+    -X POST "$MGMT_API/auth/api-keys" \
+    -H "Authorization: Bearer $XAI_MANAGEMENT_KEY" \
+    -H "Content-Type: application/json" \
+    --data "$CREATE_PAYLOAD") || {
+    error "Failed to create new key: $CREATE_RESPONSE"
+    exit 1
+}
 
-    if [ -z "$API_KEY_ID" ]; then
-        error "Could not find apiKeyId matching suffix ...$OLD_SUFFIX"
-        error "Listed keys:"
-        echo "$LIST_RESPONSE" | jq '.apiKeys[].redactedApiKey' 2>/dev/null || echo "$LIST_RESPONSE"
-        exit 1
-    fi
-    log "Found apiKeyId: $API_KEY_ID"
-else
-    API_KEY_ID="dry-run-key-id"
-    log "[dry-run] Would list keys to find apiKeyId"
+NEW_KEY=$(echo "$CREATE_RESPONSE" | jq -r '.apiKey // empty')
+NEW_KEY_ID=$(echo "$CREATE_RESPONSE" | jq -r '.apiKeyId // empty')
+
+if [ -z "$NEW_KEY" ] || [ -z "$NEW_KEY_ID" ]; then
+    error "Response missing apiKey or apiKeyId: $CREATE_RESPONSE"
+    exit 1
 fi
+log "New key: ${NEW_KEY:0:12}... (ID: $NEW_KEY_ID)"
 
 #######################################
-# 3. Rotate (new secret, same key ID)
-#######################################
-section "Rotating key via Management API"
-
-if ! $DRY_RUN; then
-    ROTATE_RESPONSE=$(curl -s --fail-with-body \
-        --request POST \
-        --url "$MGMT_API/auth/api-keys/$API_KEY_ID/rotate" \
-        --header "Authorization: Bearer $XAI_MANAGEMENT_KEY") || {
-        error "Failed to rotate key: $ROTATE_RESPONSE"
-        exit 1
-    }
-
-    NEW_KEY=$(echo "$ROTATE_RESPONSE" | jq -r '.apiKey')
-    if [ -z "$NEW_KEY" ] || [ "$NEW_KEY" = "null" ]; then
-        error "No apiKey in rotate response: $ROTATE_RESPONSE"
-        exit 1
-    fi
-    log "New key: ${NEW_KEY:0:12}..."
-    warn "Old key is immediately invalidated by rotate"
-else
-    NEW_KEY="xai-dry-run-key"
-    log "[dry-run] Would rotate key $API_KEY_ID via $MGMT_API/auth/api-keys/$API_KEY_ID/rotate"
-fi
-
-#######################################
-# 4. Update SOPS
+# 2. Update SOPS
 #######################################
 section "Updating SOPS"
 
-fname="image.pollinations.ai/env.json"
-if $DRY_RUN; then
-    log "[dry-run] sops --set XAI_API_KEY in $fname"
-else
-    if sops --set "[\"XAI_API_KEY\"] \"$NEW_KEY\"" "$IMAGE_SOPS"; then
-        log "$fname"
-    else
-        error "$fname"
-        FAILURES+=("SOPS: $fname")
+sops --set "[\"XAI_API_KEY\"] \"$NEW_KEY\"" "$IMAGE_SOPS"
+log "  image.pollinations.ai/env.json updated"
+
+#######################################
+# 3. Open PR to main, auto-merge
+#######################################
+section "Opening PR to main"
+
+BRANCH="rotate/xai-$(date +%Y%m%d-%H%M%S)"
+git checkout -b "$BRANCH"
+git add "$IMAGE_SOPS"
+git commit -m "rotate: xAI API key"
+git push -u origin "$BRANCH"
+
+gh pr create \
+    --base main \
+    --head "$BRANCH" \
+    --title "rotate: xAI API key" \
+    --body "Rotates \`XAI_API_KEY\` via create-new + delete-old (replaces the old in-place /rotate endpoint). Old key \`$OLD_KEY_ID\` stays valid until this PR merges, production deploys, and health check passes. Automated by \`rotate-genai-xai.sh\`."
+
+log "Enabling auto-merge..."
+gh pr merge "$BRANCH" --auto --squash
+
+#######################################
+# 4. Poll until PR merged
+#######################################
+section "Waiting for PR to merge"
+
+MERGE_TIMEOUT=900
+MERGE_ELAPSED=0
+while true; do
+    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    case "$STATE" in
+        MERGED) log "PR merged."; break ;;
+        CLOSED) error "PR was closed without merging."; exit 1 ;;
+    esac
+    if [ "$MERGE_ELAPSED" -ge "$MERGE_TIMEOUT" ]; then
+        error "Timed out waiting for PR merge after ${MERGE_TIMEOUT}s."
+        exit 1
     fi
-fi
+    sleep 15
+    MERGE_ELAPSED=$((MERGE_ELAPSED + 15))
+done
 
 #######################################
-# Summary
+# 5. Push main → production
 #######################################
-section "xAI Key Rotation Summary"
+section "Promoting main → production"
 
-echo ""
-if ! $DRY_RUN; then
-    log "New key: ${NEW_KEY:0:12}..."
+git checkout main
+git pull --ff-only origin main
+git fetch origin production
+git push origin main:production
+log "production advanced to main."
+
+#######################################
+# 6. Watch deploy workflow
+#######################################
+section "Waiting for $DEPLOY_WORKFLOW"
+
+sleep 10
+RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+if [ -z "$RUN_ID" ]; then
+    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    exit 1
 fi
-echo "Updated: image.pollinations.ai/secrets/env.json"
-echo ""
-warn "The old key was invalidated immediately by the rotate endpoint."
-warn "Deploy image EC2 service NOW to pick up the new key."
-echo ""
+log "Watching run $RUN_ID..."
+gh run watch "$RUN_ID" --exit-status || {
+    error "Deploy workflow failed. Old key NOT deleted — resolve manually."
+    exit 1
+}
 
-if [ ${#FAILURES[@]} -eq 0 ]; then
-    log "All updates completed successfully!"
-    echo ""
-    log "Next steps:"
-    echo "  1. Commit the SOPS file changes"
-    echo "  2. Deploy image EC2 service IMMEDIATELY"
+#######################################
+# 7. Health check
+#######################################
+section "Health check"
+
+STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
+    -X POST "$HEALTH_URL" \
+    -H "Content-Type: application/json" \
+    -d '{"model":"grok","messages":[{"role":"user","content":"ping"}],"max_tokens":1}')
+if [ "$STATUS" != "200" ] && [ "$STATUS" != "401" ]; then
+    error "Health check failed (HTTP $STATUS). Old key NOT deleted — resolve manually."
+    exit 1
+fi
+log "Production endpoint reachable (HTTP $STATUS)."
+
+#######################################
+# 8. Delete old key
+#######################################
+section "Deleting old xAI key"
+
+DELETE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+    -X DELETE "$MGMT_API/auth/api-keys/$OLD_KEY_ID" \
+    -H "Authorization: Bearer $XAI_MANAGEMENT_KEY")
+if [ "$DELETE_STATUS" = "200" ] || [ "$DELETE_STATUS" = "204" ]; then
+    log "Old key deleted (ID: $OLD_KEY_ID)."
 else
-    error "The following updates failed:"
-    for failure in "${FAILURES[@]}"; do
-        echo "  - $failure"
-    done
+    warn "Delete returned HTTP $DELETE_STATUS — check manually."
 fi
+
+#######################################
+# 9. Restore original branch
+#######################################
+git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout main
+
+section "xAI Key Rotation Complete"
+echo ""
+log "Old key: ${OLD_KEY:0:12}... (deleted, ID: $OLD_KEY_ID)"
+log "New key: ${NEW_KEY:0:12}... (ID: $NEW_KEY_ID)"
+echo ""
+log "SOPS + production + EC2 image service now using the new key."

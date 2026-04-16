@@ -51,7 +51,9 @@ Four scripts need extra admin credentials beyond the keys they rotate:
 | `rotate-ops-tinybird.sh` | `TINYBIRD_ADMIN_TOKEN` |
 | `rotate-genai-fireworks.sh` | `FIREWORKS_ACCOUNT_ID`, `FIREWORKS_USER_ID` |
 | `rotate-genai-xai.sh` | `XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID` |
-| `rotate-genai-elevenlabs.sh` | `ELEVENLABS_SERVICE_ACCOUNT_ID` |
+| `rotate-genai-elevenlabs.sh` | `ELEVENLABS_SERVICE_ACCOUNT_ID`, `ELEVENLABS_ADMIN_API_KEY` |
+
+The ElevenLabs script uses two distinct keys: `ELEVENLABS_ADMIN_API_KEY` (static, held here, authenticates admin API calls) and `ELEVENLABS_API_KEY` (runtime generative key, lives in enter SOPS, is what the script rotates).
 
 These live in a SOPS-encrypted file next to the scripts:
 

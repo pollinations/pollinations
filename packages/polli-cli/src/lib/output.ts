@@ -51,7 +51,27 @@ export const printTable = (
     const widths = cols.map((c, i) =>
         Math.max(c.length, ...stringRows.map((r) => visibleLen(r[i]))),
     );
+
+    // When stdout is a TTY, truncate the last column so each row fits on one
+    // line. Pipes keep full output (no TTY width = no truncation).
+    const termWidth = process.stdout.columns ?? 0;
+    const sepWidth = 2 * (cols.length - 1);
     const lastIdx = cols.length - 1;
+    const fixedWidth =
+        widths.slice(0, lastIdx).reduce((a, b) => a + b, 0) + sepWidth;
+    const lastMax = termWidth > 0 ? termWidth - fixedWidth : Infinity;
+    if (lastMax < widths[lastIdx] && lastMax > 3) {
+        widths[lastIdx] = lastMax;
+        for (const row of stringRows) {
+            const cell = row[lastIdx];
+            if (visibleLen(cell) > lastMax) {
+                // Truncate visually, leaving room for ellipsis. Assumes the
+                // last column is plain text (true for current callers).
+                row[lastIdx] = `${cell.slice(0, lastMax - 1)}…`;
+            }
+        }
+    }
+
     const pad = (s: string, w: number, i: number) =>
         i === lastIdx ? s : s + " ".repeat(w - visibleLen(s));
     const brand = chalk.hex("#a78bfa").bold;

@@ -8,13 +8,19 @@ import {
     printError,
     printInfo,
     printMeta,
+    printWarn,
 } from "../../lib/output.js";
+import { playAudio, playerMissingHint } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
 export function createAudioCommand() {
     return new Command("audio")
         .description(
             "Generate speech or music from text (stdin ok). Discover voices: polli models --type audio --json | jq '.[].voices'",
+        )
+        .addHelpText(
+            "after",
+            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice callum --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
         )
         .argument("[text]", "Text to speak (or pipe via stdin)")
         .option("--voice <voice>", "Voice name", "alloy")
@@ -24,6 +30,7 @@ export function createAudioCommand() {
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
         .option("--instrumental", "Instrumental only (elevenmusic)")
         .option("--output <path>", "Save to file", "speech.mp3")
+        .option("--play", "Play the audio after saving (platform player)")
         .action(async (textArg, opts) => {
             const key = requireKey();
             const isHuman = getOutputMode() === "human";
@@ -71,6 +78,12 @@ export function createAudioCommand() {
                     size: buffer.length,
                     voice: opts.voice,
                 });
+
+                if (opts.play) {
+                    if (isHuman) printInfo("Playing...");
+                    const ok = await playAudio(opts.output);
+                    if (!ok) printWarn(playerMissingHint());
+                }
             } catch (err) {
                 printError(
                     err instanceof Error ? err.message : "unknown error",

@@ -6,6 +6,7 @@
 |-------|---------------|------------|-----------------|
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 (image/text) | enter `{dev,staging,prod}.vars.json`, image `env.json`, text `env.json` | GitHub secrets (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (production, staging) |
 | `PLN_GPU_TOKEN` | EC2 image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
+| `CLOUDFLARE_OBSERVABILITY_TOKEN` | enter.pollinations.ai observability pipeline | enter `env.json` | none |
 | `TINYBIRD_INGEST_TOKEN` | enter runtime → Tinybird current workspace append | enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
 | `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird current workspace read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
 | `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
@@ -37,8 +38,7 @@
 | Script | Platform | Mechanism |
 |--------|----------|-----------|
 | `rotate-ops-tinybird.sh` | Tinybird | Refresh tokens via API, update SOPS + GitHub + Wrangler |
-| `rotate-ops-cloudflare.sh` | Cloudflare | Roll token via `PUT /tokens/{id}/value` |
-| `rotate-ops-portkey.sh` | Portkey | Admin API create/delete |
+| `rotate-ops-cloudflare.sh` | Cloudflare | Roll `CLOUDFLARE_OBSERVABILITY_TOKEN` via `PUT /tokens/{id}/value` |
 
 All scripts default to **dry-run**: they always run a read-only connectivity check first, then print what would change. Pass `--execute` to actually rotate.
 
@@ -53,7 +53,7 @@ All scripts default to **dry-run**: they always run a read-only connectivity che
 # Real rotation — pre-flight still runs; aborts if it fails
 ./rotate-infra-enter-token.sh --execute
 ./rotate-genai-aws.sh --execute
-./rotate-ops-cloudflare.sh --execute --token api
+./rotate-ops-cloudflare.sh --execute
 TINYBIRD_ADMIN_TOKEN=xxx ./rotate-ops-tinybird.sh --execute --all
 ```
 
@@ -65,7 +65,7 @@ Three `workflow_dispatch` workflows mirror the script categories. All require `m
 |----------|--------|
 | `.github/workflows/rotate-infra-tokens.yml` | `enter`, `gpu`, `both` |
 | `.github/workflows/rotate-genai-providers.yml` | aws, azure, gcp, perplexity, fireworks, xai, elevenlabs |
-| `.github/workflows/rotate-ops-platforms.yml` | tinybird, cloudflare, portkey |
+| `.github/workflows/rotate-ops-platforms.yml` | tinybird, cloudflare |
 
 All default to dry-run. After rotation, the workflow SCPs decrypted `.env` files to EC2, restarts systemd services, and runs health checks before committing SOPS changes to main.
 

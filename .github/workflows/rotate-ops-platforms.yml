@@ -10,7 +10,6 @@ on:
         options:
           - tinybird
           - cloudflare
-          - portkey
       dry_run:
         description: "Dry run (preview without changes)"
         required: false
@@ -80,7 +79,6 @@ jobs:
           CF_MANAGEMENT_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           TINYBIRD_ADMIN_TOKEN: ${{ secrets.TINYBIRD_ADMIN_TOKEN }}
-          PORTKEY_ADMIN_KEY: ${{ secrets.PORTKEY_ADMIN_KEY }}
         run: |
           cd tools/scripts/rotation
           SCRIPT="rotate-ops-$PLATFORM.sh"

@@ -1,34 +1,26 @@
 #!/bin/bash
-# Rotate Cloudflare API tokens using the Cloudflare REST API.
+# Rotate CLOUDFLARE_OBSERVABILITY_TOKEN using the Cloudflare REST API.
 #
-# Usage:
-#   ./rotate-ops-cloudflare.sh [--execute] [--token api|observability|all]
+# Usage: ./rotate-ops-cloudflare.sh [--execute]
 #
-# Default: dry-run (verify tokens + preview, no mutation).
+# Default: dry-run (verify token + preview, no mutation).
 # Pass --execute to actually rotate.
 #
-# Tokens managed:
-#   api           — CLOUDFLARE_API_TOKEN (image service, Workers AI, D1)
-#   observability — CLOUDFLARE_OBSERVABILITY_TOKEN (observability pipeline)
-#   all           — both (default)
-#
-# This script:
-# 1. Identifies the token ID by verifying the current token
-# 2. Rolls (rotates) the token via PUT /tokens/{id}/value
-# 3. Updates SOPS + GitHub Actions secrets
+# Rotates the single token used by the enter.pollinations.ai observability
+# pipeline (Logpush / Workers Analytics Engine). The former
+# CLOUDFLARE_API_TOKEN (image service, Workers AI) was removed when the
+# Cloudflare image code path was retired — see commits 62011caa6 / cf0fbf63d.
 #
 # The roll endpoint generates a new secret while keeping the same token ID,
 # name, and permissions. The old secret is immediately invalidated.
 #
 # Environment variables:
 #   CF_MANAGEMENT_TOKEN — a Cloudflare token with "API Tokens: Edit" permission
-#     (if not set, the script tries to use the token being rotated to roll itself,
-#     which works if it has the "API Tokens: Edit" permission)
-#   CLOUDFLARE_API_TOKEN — legacy alias for the management token in CI
+#     (if not set, the script tries to use the token being rotated to roll
+#     itself, which works if it has the "API Tokens: Edit" permission)
 #
 # Prerequisites:
 # - sops, jq, curl installed
-# - gh CLI authenticated (for GitHub secrets)
 #
 # After running, commit SOPS changes and redeploy affected services.
 
@@ -38,12 +30,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 DRY_RUN=true
-TARGET="all"
 
 while [[ "$1" == --* ]]; do
     case "$1" in
         --execute) DRY_RUN=false; shift ;;
-        --token) TARGET="$2"; shift 2 ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
@@ -61,14 +51,13 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
 CF_API="https://api.cloudflare.com/client/v4"
-IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 ENTER_SOPS="$REPO_ROOT/enter.pollinations.ai/secrets/env.json"
+SOPS_KEY="CLOUDFLARE_OBSERVABILITY_TOKEN"
 
 FAILURES=()
 
 verify_token_status() {
-    local label=$1
-    local token=$2
+    local token=$1
     local response
     local success
     local status
@@ -82,193 +71,96 @@ verify_token_status() {
     message=$(echo "$response" | jq -r '.errors[0].message // .messages[0].message // "unknown response"')
 
     if [ "$success" = "true" ] && [ "$status" = "active" ]; then
-        log "$label valid (status: active)"
+        log "$SOPS_KEY valid (status: active)"
         return 0
     fi
 
-    error "$label invalid (status: ${status:-unknown}; message: $message)"
-    FAILURES+=("$label")
+    error "$SOPS_KEY invalid (status: ${status:-unknown}; message: $message)"
     return 1
 }
 
 #######################################
-# Pre-flight: verify current Cloudflare tokens
+# Pre-flight: read token from SOPS + verify
 #######################################
-section "Pre-flight: verifying Cloudflare API tokens"
+section "Pre-flight: reading $SOPS_KEY from SOPS"
 
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
-    CF_TOKEN=$(sops -d "$IMAGE_SOPS" | jq -r '.CLOUDFLARE_API_TOKEN')
-    verify_token_status "CLOUDFLARE_API_TOKEN" "$CF_TOKEN" || true
-fi
-
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "observability" ]; then
-    if [ -f "$ENTER_SOPS" ]; then
-        OBS_TOKEN=$(sops -d "$ENTER_SOPS" | jq -r '.CLOUDFLARE_OBSERVABILITY_TOKEN // empty')
-        if [ -n "$OBS_TOKEN" ]; then
-            verify_token_status "CLOUDFLARE_OBSERVABILITY_TOKEN" "$OBS_TOKEN" || true
-        fi
-    fi
-fi
-
-if [ ${#FAILURES[@]} -gt 0 ]; then
-    error "Pre-flight failed:"
-    for f in "${FAILURES[@]}"; do echo "  - $f"; done
+if [ ! -f "$ENTER_SOPS" ]; then
+    error "SOPS file not found: $ENTER_SOPS"
     exit 1
 fi
-log "Pre-flight OK"
-FAILURES=()
+
+CURRENT_TOKEN=$(sops -d "$ENTER_SOPS" | jq -r ".$SOPS_KEY // empty")
+if [ -z "$CURRENT_TOKEN" ]; then
+    error "$SOPS_KEY not found in SOPS ($ENTER_SOPS)"
+    exit 1
+fi
+log "Current token: ${CURRENT_TOKEN:0:8}..."
+
+section "Pre-flight: verifying $SOPS_KEY"
+verify_token_status "$CURRENT_TOKEN" || exit 1
 
 if $DRY_RUN; then
     warn "DRY RUN — no changes will be made. Pass --execute to rotate."
 fi
 
 #######################################
-# Helper: roll a single Cloudflare token
+# Roll the observability token
 #######################################
-roll_token() {
-    local sops_key=$1       # SOPS key name
-    local sops_file=$2      # SOPS file path
-    local gh_secret=$3      # GitHub secret name (or empty)
-    local label=$4
+section "Rolling $SOPS_KEY"
 
-    section "Rolling $label"
+AUTH_TOKEN="${CF_MANAGEMENT_TOKEN:-$CURRENT_TOKEN}"
 
-    # Read current token from SOPS
-    if [ ! -f "$sops_file" ]; then
-        error "SOPS file not found: $sops_file"
-        FAILURES+=("$label: SOPS file missing")
-        return 1
+if $DRY_RUN; then
+    log "[dry-run] Would verify and roll $SOPS_KEY"
+    log "[dry-run] sops --set $SOPS_KEY in enter.pollinations.ai/env.json"
+    NEW_TOKEN="cf-dry-run-token"
+else
+    VERIFY_RESPONSE=$(curl -s --fail-with-body \
+        "$CF_API/user/tokens/verify" \
+        -H "Authorization: Bearer $CURRENT_TOKEN") || {
+        error "Token verification failed: $VERIFY_RESPONSE"
+        exit 1
+    }
+
+    TOKEN_ID=$(echo "$VERIFY_RESPONSE" | jq -r '.result.id')
+    log "Token ID: $TOKEN_ID"
+
+    ROLL_RESPONSE=$(curl -s --fail-with-body \
+        -X PUT \
+        "$CF_API/user/tokens/$TOKEN_ID/value" \
+        -H "Authorization: Bearer $AUTH_TOKEN") || {
+        error "Failed to roll token: $ROLL_RESPONSE"
+        exit 1
+    }
+
+    NEW_TOKEN=$(echo "$ROLL_RESPONSE" | jq -r '.result // empty')
+    if [ -z "$NEW_TOKEN" ]; then
+        error "No token value in roll response"
+        echo "$ROLL_RESPONSE" | jq . 2>/dev/null || echo "$ROLL_RESPONSE"
+        exit 1
     fi
+    log "New token: ${NEW_TOKEN:0:8}..."
+    warn "Old token is immediately invalidated"
 
-    local current_token
-    current_token=$(sops -d "$sops_file" | jq -r ".$sops_key")
-    if [ -z "$current_token" ] || [ "$current_token" = "null" ]; then
-        error "Could not read $sops_key from SOPS"
-        FAILURES+=("$label: missing in SOPS")
-        return 1
-    fi
-    log "Current token: ${current_token:0:8}..."
-
-    # Use management token or the token itself
-    local auth_token="${CF_MANAGEMENT_TOKEN:-${CLOUDFLARE_API_TOKEN:-$current_token}}"
-
-    # Verify and get token ID
-    if ! $DRY_RUN; then
-        local verify_response
-        verify_response=$(curl -s --fail-with-body \
-            "$CF_API/user/tokens/verify" \
-            -H "Authorization: Bearer $current_token") || {
-            error "Token verification failed: $verify_response"
-            FAILURES+=("$label: verify failed")
-            return 1
-        }
-
-        local token_id
-        token_id=$(echo "$verify_response" | jq -r '.result.id')
-        local token_status
-        token_status=$(echo "$verify_response" | jq -r '.result.status')
-        log "Token ID: $token_id (status: $token_status)"
-
-        # Roll the token
-        local roll_response
-        roll_response=$(curl -s --fail-with-body \
-            -X PUT \
-            "$CF_API/user/tokens/$token_id/value" \
-            -H "Authorization: Bearer $auth_token") || {
-            error "Failed to roll token: $roll_response"
-            FAILURES+=("$label: roll failed")
-            return 1
-        }
-
-        local new_token
-        new_token=$(echo "$roll_response" | jq -r '.result // empty')
-        if [ -z "$new_token" ]; then
-            error "No token value in roll response"
-            echo "$roll_response" | jq . 2>/dev/null || echo "$roll_response"
-            FAILURES+=("$label: no value in response")
-            return 1
-        fi
-        log "New token: ${new_token:0:8}..."
-        warn "Old token is immediately invalidated"
+    if sops --set "[\"$SOPS_KEY\"] \"$NEW_TOKEN\"" "$ENTER_SOPS"; then
+        log "SOPS: enter.pollinations.ai/env.json"
     else
-        new_token="cf-dry-run-token"
-        log "[dry-run] Would verify and roll $sops_key"
+        error "SOPS update failed"
+        FAILURES+=("SOPS update")
     fi
-
-    # Update SOPS
-    local fname
-    fname=$(basename "$(dirname "$(dirname "$sops_file")")")/$(basename "$sops_file")
-    if $DRY_RUN; then
-        log "[dry-run] sops --set $sops_key in $fname"
-    else
-        if sops --set "[\"$sops_key\"] \"$new_token\"" "$sops_file"; then
-            log "SOPS: $fname"
-        else
-            error "SOPS: $fname"
-            FAILURES+=("$label: SOPS update")
-        fi
-    fi
-
-    # Update GitHub secret if specified
-    if [ -n "$gh_secret" ]; then
-        if $DRY_RUN; then
-            log "[dry-run] gh secret set $gh_secret"
-        else
-            if echo "$new_token" | gh secret set "$gh_secret" --repo pollinations/pollinations; then
-                log "GitHub secret: $gh_secret"
-            else
-                error "GitHub secret: $gh_secret"
-                FAILURES+=("$label: GitHub secret")
-            fi
-        fi
-    fi
-}
-
-#######################################
-# Rotate requested tokens
-#######################################
-
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
-    roll_token \
-        "CLOUDFLARE_API_TOKEN" \
-        "$IMAGE_SOPS" \
-        "CLOUDFLARE_API_TOKEN" \
-        "CLOUDFLARE_API_TOKEN (image service)"
-fi
-
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "observability" ]; then
-    roll_token \
-        "CLOUDFLARE_OBSERVABILITY_TOKEN" \
-        "$ENTER_SOPS" \
-        "" \
-        "CLOUDFLARE_OBSERVABILITY_TOKEN (observability)"
 fi
 
 #######################################
 # Summary
 #######################################
 section "Cloudflare Token Rotation Summary"
-
 echo ""
 warn "Rolled tokens are immediately invalidated."
-warn "Deploy affected services NOW to pick up new tokens."
-echo ""
-echo "Affected services:"
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
-    echo "  - image.pollinations.ai (EC2 deploy)"
-    echo "  - GitHub Actions workflows (secret updated)"
-fi
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "observability" ]; then
-    echo "  - enter.pollinations.ai observability"
-fi
+warn "Redeploy the enter.pollinations.ai observability pipeline to pick up the new token."
 echo ""
 
 if [ ${#FAILURES[@]} -eq 0 ]; then
     log "All updates completed successfully!"
-    echo ""
-    log "Next steps:"
-    echo "  1. Commit the SOPS file changes"
-    echo "  2. Deploy affected EC2 services IMMEDIATELY"
 else
     error "The following updates failed:"
     for failure in "${FAILURES[@]}"; do

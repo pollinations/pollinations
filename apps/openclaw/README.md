@@ -2,7 +2,7 @@
 
 Use **25+ AI models** as your OpenClaw brain through a single API.
 
-**OpenClaw** as default (agentic coding + computer-use preset), with Kimi K2.5, DeepSeek, GLM 5, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
+**OpenClaw** as default — a preset alias over the existing `qwen3-coder` backbone, tuned with a system prompt for agentic coding and computer-use workflows. Not a new backend model. Kimi K2.5, DeepSeek, GLM 5, and Claude Haiku available as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) on paid tier.
 
 ## Setup
 

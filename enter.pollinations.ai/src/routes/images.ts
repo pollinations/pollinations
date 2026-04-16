@@ -6,6 +6,7 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import { applySafety } from "@/middleware/safety.ts";
 import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
@@ -213,6 +214,12 @@ export function handleImageGeneration(
 
         const body = (await c.req.json()) as CreateImageRequest &
             Record<string, unknown>;
+
+        // Apply safety — reject if prompt is flagged
+        const safeParam = body.safe as string | undefined;
+        delete body.safe;
+        await applySafety(c, body.prompt, safeParam);
+
         const model = c.var.model.resolved;
         const resolved = resolveParams(body);
 
@@ -263,6 +270,10 @@ export function handleImageEdit(
 
         const { prompt, imageUrls, size, quality, seed, extra } =
             await parseEditInput(c);
+
+        // Apply safety — reject if prompt is flagged
+        await applySafety(c, prompt);
+
         const resolved = resolveParams({ size, quality, seed });
 
         const targetUrl = buildImageServiceUrl(c.env.IMAGE_SERVICE_URL, {

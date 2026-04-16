@@ -88,6 +88,9 @@ const imageVideoHandlers = factory.createHandlers(
         // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
         const promptParam = c.req.param("prompt") || "";
 
+        // Apply safety — reject if prompt is flagged
+        await applySafety(c, promptParam);
+
         log.debug("Extracted prompt param: {prompt}", {
             prompt: promptParam,
             length: promptParam.length,
@@ -753,6 +756,10 @@ export const proxyRoutes = new Hono<Env>()
             await requireGenerationAccess(c.var, c.env);
 
             const text = decodeURIComponent(c.req.param("text"));
+
+            // Apply safety — reject if text is flagged
+            await applySafety(c, text);
+
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
@@ -891,9 +898,10 @@ function proxyUrl(c: Context, targetBaseUrl: string, targetPort = ""): URL {
         targetUrl.port = targetPort;
     }
 
-    // Copy query parameters excluding 'key' (auth only)
+    // Copy query parameters excluding auth and safety params
     const searchParams = new URLSearchParams(incomingUrl.search);
     searchParams.delete("key");
+    searchParams.delete("safe");
 
     // Replace model with resolved model (handles aliases)
     if (c.var.model?.resolved && searchParams.has("model")) {

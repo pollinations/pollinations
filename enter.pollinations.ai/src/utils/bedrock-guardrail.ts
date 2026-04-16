@@ -29,54 +29,12 @@ interface ContentFilter {
 export interface BedrockResponse {
     action: "NONE" | "GUARDRAIL_INTERVENED";
     assessments: {
-        contentPolicy?: { filters: ContentFilter[] };
+        contentPolicy?: { filters?: ContentFilter[] };
         sensitiveInformationPolicy?: {
-            piiEntities: PIIFilter[];
-            regexes: RegexFilter[];
+            piiEntities?: PIIFilter[];
+            regexes?: RegexFilter[];
         };
     }[];
-    outputs: { text: string }[];
-    usage: {
-        contentPolicyUnits: number;
-        sensitiveInformationPolicyUnits: number;
-        wordPolicyUnits: number;
-    };
-}
-
-type GuardrailBody = {
-    source: "INPUT" | "OUTPUT";
-    content: { text: { text: string } }[];
-};
-
-async function signRequest(
-    serializedBody: string,
-    url: string,
-    region: string,
-    accessKeyId: string,
-    secretAccessKey: string,
-): Promise<Record<string, string>> {
-    const signer = new SignatureV4({
-        service: "bedrock",
-        region,
-        credentials: { accessKeyId, secretAccessKey },
-        sha256: Sha256,
-    });
-
-    const urlObj = new URL(url);
-    const signed = await signer.sign({
-        method: "POST",
-        path: urlObj.pathname,
-        protocol: "https",
-        query: Object.fromEntries(urlObj.searchParams.entries()),
-        hostname: urlObj.hostname,
-        headers: {
-            host: urlObj.host,
-            "Content-Type": "application/json",
-        },
-        body: serializedBody,
-    });
-
-    return signed.headers;
 }
 
 export interface BedrockGuardrailEnv {
@@ -93,25 +51,34 @@ export async function applyGuardrail(
     env: BedrockGuardrailEnv,
 ): Promise<BedrockResponse> {
     const url = `https://bedrock-runtime.${env.AWS_BEDROCK_REGION}.amazonaws.com/guardrail/${env.BEDROCK_GUARDRAIL_ID}/version/${env.BEDROCK_GUARDRAIL_VERSION}/apply`;
-
-    const body: GuardrailBody = {
+    const body = JSON.stringify({
         source,
         content: [{ text: { text } }],
-    };
-    const serializedBody = JSON.stringify(body);
+    });
 
-    const headers = await signRequest(
-        serializedBody,
-        url,
-        env.AWS_BEDROCK_REGION,
-        env.AWS_BEDROCK_ACCESS_KEY_ID,
-        env.AWS_BEDROCK_SECRET_ACCESS_KEY,
-    );
+    const signer = new SignatureV4({
+        service: "bedrock",
+        region: env.AWS_BEDROCK_REGION,
+        credentials: {
+            accessKeyId: env.AWS_BEDROCK_ACCESS_KEY_ID,
+            secretAccessKey: env.AWS_BEDROCK_SECRET_ACCESS_KEY,
+        },
+        sha256: Sha256,
+    });
+    const urlObj = new URL(url);
+    const signed = await signer.sign({
+        method: "POST",
+        path: urlObj.pathname,
+        protocol: "https",
+        hostname: urlObj.hostname,
+        headers: { host: urlObj.host, "Content-Type": "application/json" },
+        body,
+    });
 
     const response = await fetch(url, {
         method: "POST",
-        headers,
-        body: serializedBody,
+        headers: signed.headers,
+        body,
     });
 
     if (!response.ok) {
@@ -120,6 +87,5 @@ export async function applyGuardrail(
             `Bedrock Guardrail API error ${response.status}: ${errorText}`,
         );
     }
-
     return response.json();
 }

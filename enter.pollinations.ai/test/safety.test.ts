@@ -23,11 +23,18 @@ describe("resolveEffectiveSafety", () => {
 
     it("key-level features cannot be removed by request", () => {
         const result = resolveEffectiveSafety("privacy,secrets", "nsfw");
-        expect(result).toEqual(new Set(["privacy", "secrets", "nsfw"]));
+        expect(result).toEqual(
+            new Set(["privacy", "secrets", "sexual", "violence"]),
+        );
     });
 
-    it("accepts 'true' as a valid feature", () => {
+    it("expands 'true' alias to privacy + secrets", () => {
         const result = resolveEffectiveSafety(null, "true");
-        expect(result).toEqual(new Set(["true"]));
+        expect(result).toEqual(new Set(["privacy", "secrets"]));
+    });
+
+    it("expands 'nsfw' alias to sexual + violence", () => {
+        const result = resolveEffectiveSafety(null, "nsfw");
+        expect(result).toEqual(new Set(["sexual", "violence"]));
     });
 });

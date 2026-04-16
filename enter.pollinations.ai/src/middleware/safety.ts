@@ -11,7 +11,7 @@
  *   violence — block violence, hate speech, insults
  *   shield   — block prompt injection, misconduct
  *   nsfw     — shorthand for sexual,violence
- *   true     — expands to privacy,secrets
+ *   true     — shorthand for privacy,secrets
  *
  * All checks are binary: if Bedrock flags anything matching the active features,
  * the entire request is rejected with HTTP 400. No redaction, no partial pass-through.
@@ -25,63 +25,59 @@ import {
     type BedrockResponse,
 } from "@/utils/bedrock-guardrail.ts";
 
-// PII types grouped by feature
-const PRIVACY_PII_TYPES = new Set([
-    "EMAIL",
-    "PHONE",
-    "NAME",
-    "ADDRESS",
-    "IP_ADDRESS",
-    "AGE",
-    "URL",
-    "USERNAME",
-]);
+// What each feature blocks: PII types, regex names, and content categories.
+// Bedrock returns all of these as flat string identifiers, so one map covers all.
+const FEATURE_TRIGGERS: Record<string, Set<string>> = {
+    privacy: new Set([
+        "EMAIL",
+        "PHONE",
+        "NAME",
+        "ADDRESS",
+        "IP_ADDRESS",
+        "AGE",
+        "URL",
+        "USERNAME",
+    ]),
+    secrets: new Set([
+        "AWS_ACCESS_KEY",
+        "AWS_SECRET_KEY",
+        "PASSWORD",
+        "CREDIT_DEBIT_CARD_NUMBER",
+        "CREDIT_DEBIT_CARD_CVV",
+        "CREDIT_DEBIT_CARD_EXPIRY",
+        "PIN",
+        "US_BANK_ACCOUNT_NUMBER",
+        "US_BANK_ROUTING_NUMBER",
+        "POLLINATIONS_SECRET_KEY",
+        "POLLINATIONS_PUBLIC_KEY",
+    ]),
+    sexual: new Set(["SEXUAL"]),
+    violence: new Set(["VIOLENCE", "HATE", "INSULTS"]),
+    shield: new Set(["PROMPT_ATTACK", "MISCONDUCT"]),
+};
 
-const SECRETS_PII_TYPES = new Set([
-    "AWS_ACCESS_KEY",
-    "AWS_SECRET_KEY",
-    "PASSWORD",
-    "CREDIT_DEBIT_CARD_NUMBER",
-    "CREDIT_DEBIT_CARD_CVV",
-    "CREDIT_DEBIT_CARD_EXPIRY",
-    "PIN",
-    "US_BANK_ACCOUNT_NUMBER",
-    "US_BANK_ROUTING_NUMBER",
-]);
-
-// Custom regex names mapped to secrets feature
-const SECRETS_REGEX_NAMES = new Set([
-    "POLLINATIONS_SECRET_KEY",
-    "POLLINATIONS_PUBLIC_KEY",
-]);
-
-// Content filter categories by feature
-const SEXUAL_CATEGORIES = new Set(["SEXUAL"]);
-const VIOLENCE_CATEGORIES = new Set(["VIOLENCE", "HATE", "INSULTS"]);
-const SHIELD_CATEGORIES = new Set(["PROMPT_ATTACK", "MISCONDUCT"]);
-
-const DEFAULT_FEATURES = ["privacy", "secrets"];
+// Shorthand aliases — expanded during parsing.
+const ALIASES: Record<string, string[]> = {
+    true: ["privacy", "secrets"],
+    nsfw: ["sexual", "violence"],
+};
 
 const VALID_FEATURES = new Set([
-    "privacy",
-    "secrets",
-    "nsfw",
-    "sexual",
-    "violence",
-    "shield",
-    "true",
+    ...Object.keys(FEATURE_TRIGGERS),
+    ...Object.keys(ALIASES),
 ]);
 
 /**
- * Parse a safe value (string like "privacy,secrets" or "true") into a feature set.
+ * Parse a comma-separated safe value into a feature set, expanding aliases.
  */
 function parseSafe(value: string | undefined | null): Set<string> {
     if (!value) return new Set();
     const features = new Set<string>();
     for (const part of value.split(",")) {
-        const trimmed = part.trim().toLowerCase();
-        if (trimmed && VALID_FEATURES.has(trimmed)) {
-            features.add(trimmed);
+        const name = part.trim().toLowerCase();
+        if (!VALID_FEATURES.has(name)) continue;
+        for (const expanded of ALIASES[name] ?? [name]) {
+            features.add(expanded);
         }
     }
     return features;
@@ -89,88 +85,13 @@ function parseSafe(value: string | undefined | null): Set<string> {
 
 /**
  * Resolve effective safety features from API key metadata + request.
- * Key-level features can't be removed by request — only additive.
+ * Both sources are unioned — request can add features but not remove key-level ones.
  */
 export function resolveEffectiveSafety(
     keyMetadataSafe: string | undefined | null,
     requestSafe: string | undefined | null,
 ): Set<string> {
-    const keyFeatures = parseSafe(keyMetadataSafe);
-    const requestFeatures = parseSafe(requestSafe);
-    return new Set([...keyFeatures, ...requestFeatures]);
-}
-
-/**
- * Expand shorthand features: `true` → defaults, `nsfw` → sexual + violence.
- */
-function expandDefaults(features: Set<string>): Set<string> {
-    const expanded = new Set(features);
-    if (expanded.has("true")) {
-        expanded.delete("true");
-        for (const f of DEFAULT_FEATURES) expanded.add(f);
-    }
-    if (expanded.has("nsfw")) {
-        expanded.delete("nsfw");
-        expanded.add("sexual");
-        expanded.add("violence");
-    }
-    return expanded;
-}
-
-/**
- * Check if Bedrock response triggers any active features.
- * Returns the list of reasons (PII types + content categories) that matched.
- */
-function getTriggeredReasons(
-    response: BedrockResponse,
-    features: Set<string>,
-): string[] {
-    if (response.action !== "GUARDRAIL_INTERVENED") return [];
-
-    const reasons: string[] = [];
-
-    // Check PII / sensitive info
-    const policy = response.assessments[0]?.sensitiveInformationPolicy;
-    if (policy) {
-        const hasPrivacy = features.has("privacy");
-        const hasSecrets = features.has("secrets");
-
-        for (const entity of policy.piiEntities ?? []) {
-            if (hasPrivacy && PRIVACY_PII_TYPES.has(entity.type)) {
-                reasons.push(entity.type);
-            }
-            if (hasSecrets && SECRETS_PII_TYPES.has(entity.type)) {
-                reasons.push(entity.type);
-            }
-        }
-        for (const regex of policy.regexes ?? []) {
-            if (hasSecrets && SECRETS_REGEX_NAMES.has(regex.name)) {
-                reasons.push(regex.name);
-            }
-        }
-    }
-
-    // Check content filters
-    const filters = response.assessments[0]?.contentPolicy?.filters;
-    if (filters) {
-        for (const filter of filters) {
-            if (filter.action !== "BLOCKED") continue;
-            if (features.has("sexual") && SEXUAL_CATEGORIES.has(filter.type)) {
-                reasons.push(filter.type);
-            }
-            if (
-                features.has("violence") &&
-                VIOLENCE_CATEGORIES.has(filter.type)
-            ) {
-                reasons.push(filter.type);
-            }
-            if (features.has("shield") && SHIELD_CATEGORIES.has(filter.type)) {
-                reasons.push(filter.type);
-            }
-        }
-    }
-
-    return reasons;
+    return new Set([...parseSafe(keyMetadataSafe), ...parseSafe(requestSafe)]);
 }
 
 /**
@@ -184,41 +105,31 @@ export async function applySafety(
     bodySafe?: string,
 ): Promise<void> {
     const features = getEffectiveFeatures(c, bodySafe);
-    if (features.size === 0) return;
+    if (features.size === 0 || !text.trim()) return;
 
-    if (!text.trim()) return;
+    c.header("X-Safety-Applied", [...features].join(","));
 
-    const env = c.env as unknown as BedrockGuardrailEnv;
-
-    let response: BedrockResponse;
+    let triggered: BedrockResponse;
     try {
-        response = await applyGuardrail(text, "INPUT", env);
+        triggered = await applyGuardrail(
+            text,
+            "INPUT",
+            c.env as unknown as BedrockGuardrailEnv,
+        );
     } catch {
         // Bedrock unavailable — fail closed for safe-enabled requests
-        c.header("X-Safety-Applied", [...features].join(","));
         c.header("X-Safety-Status", "unavailable");
-        throw new HTTPException(503, {
-            res: new Response(
-                JSON.stringify({
-                    error: {
-                        message: "Safety service temporarily unavailable",
-                        type: "safety_error",
-                        code: "service_unavailable",
-                    },
-                }),
-                {
-                    status: 503,
-                    headers: { "Content-Type": "application/json" },
-                },
-            ),
+        throw safetyError(503, "service_unavailable", {
+            message: "Safety service temporarily unavailable",
         });
     }
 
-    const reasons = getTriggeredReasons(response, features);
-    c.header("X-Safety-Applied", [...features].join(","));
-
+    const reasons = getTriggeredReasons(triggered, features);
     if (reasons.length > 0) {
-        throw createSafetyError(reasons, features);
+        throw safetyError(400, "content_blocked", {
+            message: "Request blocked by safety filter",
+            safety: { applied: [...features], triggered: reasons },
+        });
     }
 }
 
@@ -236,40 +147,56 @@ function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
         return new Set();
     }
 
-    const keyMeta = (
-        c.var as { auth?: { apiKey?: { metadata?: Record<string, unknown> } } }
-    ).auth?.apiKey?.metadata?.safe as string | undefined;
-
-    const querySafe = c.req.query("safe");
-    const headerSafe = c.req.header("x-safe");
-
-    const raw = resolveEffectiveSafety(
-        keyMeta,
-        bodySafe || querySafe || headerSafe,
-    );
-
-    return expandDefaults(raw);
+    const keyMeta = c.var.auth?.apiKey?.metadata?.safe as string | undefined;
+    const requestSafe =
+        bodySafe || c.req.query("safe") || c.req.header("x-safe");
+    return resolveEffectiveSafety(keyMeta, requestSafe);
 }
 
-function createSafetyError(
-    reasons: string[],
+/**
+ * Walk every Bedrock-detected item and collect those that match an active feature.
+ * Returns deduplicated identifiers (PII types or content categories) for the error response.
+ */
+function getTriggeredReasons(
+    response: BedrockResponse,
     features: Set<string>,
+): string[] {
+    if (response.action !== "GUARDRAIL_INTERVENED") return [];
+
+    const policy = response.assessments[0]?.sensitiveInformationPolicy;
+    const filters = response.assessments[0]?.contentPolicy?.filters;
+
+    const detected: string[] = [
+        ...(policy?.piiEntities ?? []).map((e) => e.type),
+        ...(policy?.regexes ?? []).map((r) => r.name),
+        ...(filters ?? [])
+            .filter((f) => f.action === "BLOCKED")
+            .map((f) => f.type),
+    ];
+
+    const reasons = new Set<string>();
+    for (const id of detected) {
+        for (const feature of features) {
+            if (FEATURE_TRIGGERS[feature]?.has(id)) {
+                reasons.add(id);
+                break;
+            }
+        }
+    }
+    return [...reasons];
+}
+
+function safetyError(
+    status: 400 | 503,
+    code: string,
+    extra: { message: string; safety?: object },
 ): HTTPException {
     const body = JSON.stringify({
-        error: {
-            message: "Request blocked by safety filter",
-            type: "safety_error",
-            code: "content_blocked",
-            safety: {
-                applied: [...features],
-                triggered: [...new Set(reasons)],
-            },
-        },
+        error: { type: "safety_error", code, ...extra },
     });
-
-    return new HTTPException(400, {
+    return new HTTPException(status, {
         res: new Response(body, {
-            status: 400,
+            status,
             headers: { "Content-Type": "application/json" },
         }),
     });

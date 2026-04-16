@@ -23,7 +23,7 @@ export function createAudioCommand() {
             `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice callum --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
         )
         .argument("[text]", "Text to speak (or pipe via stdin)")
-        .option("--voice <voice>", "Voice name", "alloy")
+        .option("--voice <voice>", "Voice name", "sage")
         .option("--format <fmt>", "mp3/opus/aac/flac/wav", "mp3")
         .option("--model <model>", "Audio model")
         .option("--speed <n>", "Playback speed (0.25-4)")

@@ -1,0 +1,70 @@
+{
+  "name": "@pollinations_ai/cli",
+  "version": "0.1.0-alpha.1",
+  "description": "The Pollinations CLI — for humans, AI agents, and everything in between",
+  "type": "module",
+  "bin": {
+    "polli": "./bin/polli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check --write src/",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "SKILL.md"
+  ],
+  "keywords": [
+    "pollinations",
+    "ai",
+    "cli",
+    "image-generation",
+    "text-generation"
+  ],
+  "author": "pollinations.ai <hello@pollinations.ai>",
+  "contributors": [
+    {
+      "name": "Thomas Haferlach",
+      "email": "thomash@myceli.ai",
+      "url": "https://github.com/voodoohop"
+    },
+    {
+      "name": "Ayushman",
+      "email": "ayushman@myceli.ai",
+      "url": "https://github.com/Circuit-Overtime"
+    },
+    {
+      "name": "Itachi",
+      "email": "itachi@myceli.ai",
+      "url": "https://github.com/Itachi-1824"
+    }
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pollinations/pollinations.git",
+    "directory": "packages/polli-cli"
+  },
+  "homepage": "https://pollinations.ai",
+  "bugs": {
+    "url": "https://github.com/pollinations/pollinations/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

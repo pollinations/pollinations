@@ -641,7 +641,7 @@ https://myapp.com/callback#api_key=sk_xxxxx
 | spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
 | seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
 | flower | 🌸    | 0.4      | hourly  | Contributor              |
-| nectar | 🍯    | 0.8      | hourly  | Coming soon              |
+| nectar | 🍯    | 0.8      | hourly  | Legacy — still supported for existing users, no longer granted |
 
 ### Quick Tier Update
 

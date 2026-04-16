@@ -16,12 +16,12 @@ const MODEL_ENDPOINTS = {
     audio: "https://gen.pollinations.ai/audio/models",
 };
 
-// Tinybird pipes for different aggregation windows
-const TINYBIRD_PIPES = {
-    "7d": "model_health_7d",
-    "24h": "model_health_24h",
-    "60m": "model_health_60m",
-    "5m": "model_health",
+// Minutes parameter for the parameterized model_health pipe
+const WINDOW_MINUTES = {
+    "7d": 10080,
+    "24h": 1440,
+    "60m": 60,
+    "5m": 5,
 };
 
 // Poll intervals based on aggregation window
@@ -105,44 +105,11 @@ function normalizeModelEntry(model, endpointType, source = "endpoint") {
     };
 }
 
-// Calculate total 4xx errors (user errors)
-function calcTotal4xx(stats) {
-    return (
-        (stats.errors_400 || 0) +
-        (stats.errors_401 || 0) +
-        (stats.errors_402 || 0) +
-        (stats.errors_403 || 0) +
-        (stats.errors_429 || 0) +
-        (stats.errors_4xx_other || 0)
-    );
-}
-
-// Calculate total 5xx errors (model/server errors)
-function calcTotal5xx(stats) {
-    return (
-        (stats.errors_500 || 0) +
-        (stats.errors_502 || 0) +
-        (stats.errors_503 || 0) +
-        (stats.errors_504 || 0) +
-        (stats.errors_5xx_other || 0)
-    );
-}
-
-// Enrich stats with computed totals
-function enrichStats(stats) {
-    if (!stats) return null;
-    return {
-        ...stats,
-        total_4xx: calcTotal4xx(stats),
-        total_5xx: calcTotal5xx(stats),
-    };
-}
-
 // Helper to extract metrics from stats
 function extractMetrics(stats) {
     if (!stats) return null;
     const total = stats.total_requests || 0;
-    const err5xx = calcTotal5xx(stats);
+    const err5xx = stats.errors_5xx || 0;
     return {
         p95: stats.latency_p95_ms || 0,
         err5xxPct: total > 0 ? (err5xx / total) * 100 : 0,
@@ -251,9 +218,9 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
 
         try {
-            const pipeName =
-                TINYBIRD_PIPES[aggregationWindow] || TINYBIRD_PIPES["60m"];
-            const url = `${TINYBIRD_HOST}/v0/pipes/${pipeName}.json?token=${TINYBIRD_PUBLIC_READ_TOKEN}`;
+            const minutes =
+                WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
+            const url = `${TINYBIRD_HOST}/v0/pipes/model_health.json?token=${TINYBIRD_PUBLIC_READ_TOKEN}&minutes=${minutes}`;
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -270,8 +237,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
     }, [aggregationWindow]);
 
-    // Separate gateway stats (undefined model = auth/validation failures before model resolution)
-    const gatewayStats = healthStats.filter((s) => s.model === "undefined");
     const modelStats = healthStats.filter((s) => s.model !== "undefined");
 
     // Get history and compute trends for a model
@@ -331,12 +296,12 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const mergedModels = models.map((model) => {
         const statsType = model.endpointType || model.type;
         const modelKey = `${statsType}-${model.name}`;
-        const rawStats = modelStats.find(
-            (s) =>
-                s.model === model.name &&
-                s.event_type === `generate.${statsType}`,
-        );
-        const stats = enrichStats(rawStats);
+        const stats =
+            modelStats.find(
+                (s) =>
+                    s.model === model.name &&
+                    s.event_type === `generate.${statsType}`,
+            ) ?? null;
         const { trend, sparkline } = getModelTrend(modelKey, stats);
         return { ...model, stats, trend, sparkline };
     });
@@ -353,7 +318,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const extraModels = unmatchedStats.map((s) => {
         const statsType = s.event_type?.replace("generate.", "") || "unknown";
         const modelKey = `${statsType}-${s.model}`;
-        const stats = enrichStats(s);
+        const stats = s;
         const { trend, sparkline } = getModelTrend(modelKey, stats);
         const registeredExact = REGISTERED_MODELS_BY_SIGNATURE.get(
             `${statsType}:${s.model}`,
@@ -439,7 +404,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
 
     return {
         models: allModels,
-        gatewayStats, // Pre-model auth/validation failures
         refresh,
         pollInterval,
         lastUpdated,

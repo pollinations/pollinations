@@ -3,26 +3,11 @@
 #
 # Usage: ./rotate-genai-fireworks.sh [--execute]
 #
-# Default: dry-run (verify current key + preview, no mutation).
-# Pass --execute to actually rotate.
+# Default: dry-run. Pass --execute for the full end-to-end cycle.
 #
-# Environment variables (required):
-#   FIREWORKS_ACCOUNT_ID — your Fireworks account ID
-#   FIREWORKS_USER_ID    — your Fireworks user ID
-#   (find both in the Fireworks dashboard or ~/.fireworks/auth.ini)
-#
-# This script:
-# 1. Reads the current key from SOPS
-# 2. Lists existing keys to find the old key's ID
-# 3. Creates a new key via the Fireworks API
-# 4. Updates SOPS
-# 5. Deletes the old key (authed with new key)
-#
-# Prerequisites:
-# - sops, jq, curl installed
-# - FIREWORKS_ACCOUNT_ID and FIREWORKS_USER_ID set
-#
-# After running, commit the SOPS changes and redeploy EC2 text service.
+# Environment (from secrets.vars.json):
+#   FIREWORKS_ACCOUNT_ID — Fireworks account ID
+#   FIREWORKS_USER_ID    — Fireworks user ID
 
 set -e
 
@@ -30,7 +15,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 DRY_RUN=true
-
 while [[ "$1" == --* ]]; do
     case "$1" in
         --execute) DRY_RUN=false; shift ;;
@@ -38,7 +22,6 @@ while [[ "$1" == --* ]]; do
     esac
 done
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -54,32 +37,36 @@ source "$SCRIPT_DIR/_load-admin-secrets.sh"
 
 TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 API_BASE="https://api.fireworks.ai/v1"
+DEPLOY_WORKFLOW="deploy-enter-services.yml"
+HEALTH_URL="https://gen.pollinations.ai/v1/chat/completions"
 
-FAILURES=()
+#######################################
+# Pre-flight
+#######################################
+section "Pre-flight: checks"
 
-# Try to read account/user from ~/.fireworks/auth.ini if not set
-if [ -z "$FIREWORKS_ACCOUNT_ID" ] && [ -f "$HOME/.fireworks/auth.ini" ]; then
-    FIREWORKS_ACCOUNT_ID=$(grep -oP 'account_id\s*=\s*\K.*' "$HOME/.fireworks/auth.ini" 2>/dev/null || true)
+cd "$REPO_ROOT"
+
+if ! $DRY_RUN; then
+    if [ -n "$(git status --porcelain)" ]; then
+        error "Working tree not clean — commit or stash before --execute."
+        git status --short
+        exit 1
+    fi
 fi
-if [ -z "$FIREWORKS_USER_ID" ] && [ -f "$HOME/.fireworks/auth.ini" ]; then
-    FIREWORKS_USER_ID=$(grep -oP 'user_id\s*=\s*\K.*' "$HOME/.fireworks/auth.ini" 2>/dev/null || true)
-fi
 
-if [ -z "$FIREWORKS_ACCOUNT_ID" ] || [ -z "$FIREWORKS_USER_ID" ]; then
-    error "FIREWORKS_ACCOUNT_ID and FIREWORKS_USER_ID must be set"
-    echo "Find them in the Fireworks dashboard or ~/.fireworks/auth.ini"
+if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
+    error "gh CLI not authenticated."
     exit 1
 fi
 
-log "Account: $FIREWORKS_ACCOUNT_ID"
-log "User: $FIREWORKS_USER_ID"
+if [ -z "$FIREWORKS_ACCOUNT_ID" ] || [ -z "$FIREWORKS_USER_ID" ]; then
+    error "FIREWORKS_ACCOUNT_ID and FIREWORKS_USER_ID must be set (in secrets.vars.json or env)."
+    exit 1
+fi
+log "Account: $FIREWORKS_ACCOUNT_ID / User: $FIREWORKS_USER_ID"
 
 KEYS_URL="$API_BASE/accounts/$FIREWORKS_ACCOUNT_ID/users/$FIREWORKS_USER_ID/apiKeys"
-
-#######################################
-# 1. Read current key from SOPS
-#######################################
-section "Reading current FIREWORKS_API_KEY from SOPS"
 
 if [ ! -f "$TEXT_SOPS" ]; then
     error "SOPS file not found: $TEXT_SOPS"
@@ -88,144 +75,217 @@ fi
 
 OLD_KEY=$(sops -d "$TEXT_SOPS" | jq -r '.FIREWORKS_API_KEY')
 if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "null" ]; then
-    error "Could not read FIREWORKS_API_KEY from SOPS"
+    error "Could not read FIREWORKS_API_KEY from SOPS."
     exit 1
 fi
 OLD_PREFIX="${OLD_KEY:0:8}"
 log "Current key prefix: $OLD_PREFIX..."
 
-section "Pre-flight: verifying Fireworks API key"
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
-    "$KEYS_URL" \
-    -H "Authorization: Bearer $OLD_KEY")
+    "$KEYS_URL" -H "Authorization: Bearer $OLD_KEY")
 if [ "$STATUS" != "200" ]; then
-    error "Fireworks API key invalid (HTTP $STATUS)"
+    error "Current Fireworks key invalid (HTTP $STATUS)."
     exit 1
 fi
-log "Fireworks API key valid (HTTP 200)"
+log "Current key valid (HTTP 200)"
+
+log "Pre-flight OK"
 
 if $DRY_RUN; then
     warn "DRY RUN — no changes will be made. Pass --execute to rotate."
+    echo
+    log "Plan:"
+    echo "  1. Create new Fireworks key (old stays valid)"
+    echo "  2. Update SOPS: text.pollinations.ai/env.json"
+    echo "  3. Verify new key can list apiKeys"
+    echo "  4. Open PR: rotate/fireworks-<date> → main, auto-merge"
+    echo "  5. Push main → production (admin)"
+    echo "  6. Watch $DEPLOY_WORKFLOW"
+    echo "  7. Health check $HEALTH_URL"
+    echo "  8. Delete old key"
+    exit 0
 fi
 
+ORIGINAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
 #######################################
-# 2. Find old key ID
+# 1. Find old key ID (for later delete)
 #######################################
-section "Listing existing keys"
+section "Locating old key ID"
 
-if ! $DRY_RUN; then
-    LIST_RESPONSE=$(curl -s --fail-with-body \
-        --url "$KEYS_URL" \
-        --header "Authorization: Bearer $OLD_KEY") || {
-        error "Failed to list keys: $LIST_RESPONSE"
-        exit 1
-    }
+LIST_RESPONSE=$(curl -sS --fail-with-body \
+    --url "$KEYS_URL" \
+    --header "Authorization: Bearer $OLD_KEY") || {
+    error "Failed to list keys: $LIST_RESPONSE"
+    exit 1
+}
 
-    # Find the keyId matching our current key's prefix
-    OLD_KEY_ID=$(echo "$LIST_RESPONSE" | jq -r \
-        --arg prefix "$OLD_PREFIX" \
-        '.apiKeys[] | select(.prefix | startswith($prefix)) | .keyId' | head -1)
+OLD_KEY_ID=$(echo "$LIST_RESPONSE" | jq -r \
+    --arg prefix "$OLD_PREFIX" \
+    '.apiKeys[] | select(.prefix | startswith($prefix)) | .keyId' | head -1)
 
-    if [ -z "$OLD_KEY_ID" ]; then
-        warn "Could not find keyId for prefix $OLD_PREFIX — old key won't be auto-deleted"
-    else
-        log "Old key ID: $OLD_KEY_ID"
-    fi
+if [ -z "$OLD_KEY_ID" ]; then
+    warn "Could not find keyId for prefix $OLD_PREFIX — old key won't be auto-deleted."
 else
-    OLD_KEY_ID="dry-run-key-id"
-    log "[dry-run] Would list keys to find old key ID"
+    log "Old key ID: $OLD_KEY_ID"
 fi
 
 #######################################
-# 3. Create new key
+# 2. Create new key
 #######################################
-section "Creating new API key"
+section "Creating new Fireworks API key"
 
-if ! $DRY_RUN; then
-    CREATE_RESPONSE=$(curl -s --fail-with-body \
-        --request POST \
-        --url "$KEYS_URL" \
-        --header "Authorization: Bearer $OLD_KEY" \
-        --header "Content-Type: application/json" \
-        --data '{"apiKey":{"displayName":"rotated-'"$(date +%Y%m%d-%H%M%S)"'"}}') || {
-        error "Failed to create new key: $CREATE_RESPONSE"
-        exit 1
-    }
+CREATE_RESPONSE=$(curl -sS --fail-with-body \
+    --request POST \
+    --url "$KEYS_URL" \
+    --header "Authorization: Bearer $OLD_KEY" \
+    --header "Content-Type: application/json" \
+    --data '{"apiKey":{"displayName":"rotated-'"$(date +%Y%m%d-%H%M%S)"'"}}') || {
+    error "Failed to create new key: $CREATE_RESPONSE"
+    exit 1
+}
 
-    NEW_KEY=$(echo "$CREATE_RESPONSE" | jq -r '.key')
-    if [ -z "$NEW_KEY" ] || [ "$NEW_KEY" = "null" ]; then
-        error "No key in response: $CREATE_RESPONSE"
-        exit 1
-    fi
-    log "New key: ${NEW_KEY:0:8}..."
-else
-    NEW_KEY="fw_dry_run_key"
-    log "[dry-run] Would create new key"
+NEW_KEY=$(echo "$CREATE_RESPONSE" | jq -r '.key')
+if [ -z "$NEW_KEY" ] || [ "$NEW_KEY" = "null" ]; then
+    error "No key in response: $CREATE_RESPONSE"
+    exit 1
 fi
+log "New key: ${NEW_KEY:0:8}..."
 
 #######################################
-# 4. Update SOPS
+# 3. Update SOPS
 #######################################
 section "Updating SOPS"
 
-fname="text.pollinations.ai/env.json"
-if $DRY_RUN; then
-    log "[dry-run] sops --set FIREWORKS_API_KEY in $fname"
-else
-    if sops --set "[\"FIREWORKS_API_KEY\"] \"$NEW_KEY\"" "$TEXT_SOPS"; then
-        log "$fname"
-    else
-        error "$fname"
-        FAILURES+=("SOPS: $fname")
-    fi
+sops --set "[\"FIREWORKS_API_KEY\"] \"$NEW_KEY\"" "$TEXT_SOPS"
+log "  text.pollinations.ai/env.json updated"
+
+#######################################
+# 4. Verify new key
+#######################################
+section "Verifying new key"
+
+VERIFY=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 \
+    "$KEYS_URL" -H "Authorization: Bearer $NEW_KEY")
+if [ "$VERIFY" != "200" ]; then
+    error "New key verification failed (HTTP $VERIFY). Old key NOT deleted."
+    exit 1
 fi
+log "New key verified (HTTP 200)."
 
 #######################################
-# 5. Delete old key (auth with new key)
+# 5. Open PR to main, auto-merge
 #######################################
-section "Deleting old key"
+section "Opening PR to main"
 
-if ! $DRY_RUN && [ -n "$OLD_KEY_ID" ]; then
+BRANCH="rotate/fireworks-$(date +%Y%m%d-%H%M%S)"
+git checkout -b "$BRANCH"
+git add "$TEXT_SOPS"
+git commit -m "rotate: Fireworks API key"
+git push -u origin "$BRANCH"
+
+gh pr create \
+    --base main \
+    --head "$BRANCH" \
+    --title "rotate: Fireworks API key" \
+    --body "Rotates \`FIREWORKS_API_KEY\`. Old key stays valid until this PR merges, production is promoted, services are redeployed, and health check passes. Automated by \`rotate-genai-fireworks.sh\`."
+
+log "Enabling auto-merge..."
+gh pr merge "$BRANCH" --auto --squash
+
+#######################################
+# 6. Poll until PR merged
+#######################################
+section "Waiting for PR to merge"
+
+MERGE_TIMEOUT=900
+MERGE_ELAPSED=0
+while true; do
+    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    case "$STATE" in
+        MERGED) log "PR merged."; break ;;
+        CLOSED) error "PR was closed without merging."; exit 1 ;;
+    esac
+    if [ "$MERGE_ELAPSED" -ge "$MERGE_TIMEOUT" ]; then
+        error "Timed out waiting for PR merge after ${MERGE_TIMEOUT}s."
+        exit 1
+    fi
+    sleep 15
+    MERGE_ELAPSED=$((MERGE_ELAPSED + 15))
+done
+
+#######################################
+# 7. Push main → production
+#######################################
+section "Promoting main → production"
+
+git checkout main
+git pull --ff-only origin main
+git fetch origin production
+git push origin main:production
+log "production advanced to main."
+
+#######################################
+# 8. Watch deploy workflow
+#######################################
+section "Waiting for $DEPLOY_WORKFLOW"
+
+sleep 10
+RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+if [ -z "$RUN_ID" ]; then
+    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    exit 1
+fi
+log "Watching run $RUN_ID..."
+gh run watch "$RUN_ID" --exit-status || {
+    error "Deploy workflow failed. Old key NOT deleted — resolve manually."
+    exit 1
+}
+
+#######################################
+# 9. Health check
+#######################################
+section "Health check"
+
+STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
+    -X POST "$HEALTH_URL" \
+    -H "Content-Type: application/json" \
+    -d '{"model":"qwen-large","messages":[{"role":"user","content":"ping"}],"max_tokens":1}')
+if [ "$STATUS" != "200" ] && [ "$STATUS" != "401" ]; then
+    error "Health check failed (HTTP $STATUS). Old key NOT deleted — resolve manually."
+    exit 1
+fi
+log "Production endpoint reachable."
+
+#######################################
+# 10. Delete old key
+#######################################
+section "Deleting old Fireworks key"
+
+if [ -n "$OLD_KEY_ID" ]; then
     DELETE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
         --request POST \
         --url "$KEYS_URL:delete" \
         --header "Authorization: Bearer $NEW_KEY" \
         --header "Content-Type: application/json" \
         --data "{\"keyId\": \"$OLD_KEY_ID\"}")
-
     if [ "$DELETE_RESPONSE" = "200" ]; then
-        log "Old key deleted (ID: $OLD_KEY_ID)"
+        log "Old key deleted (ID: $OLD_KEY_ID)."
     else
-        warn "Delete returned HTTP $DELETE_RESPONSE — check manually"
-        FAILURES+=("Delete old key: $OLD_KEY_ID")
+        warn "Delete returned HTTP $DELETE_RESPONSE — check manually."
     fi
-elif $DRY_RUN; then
-    log "[dry-run] Would delete old key"
 else
-    warn "Skipping delete — old key ID not found"
+    warn "Skipping delete — old key ID not found."
 fi
 
 #######################################
-# Summary
+# 11. Restore original branch
 #######################################
-section "Fireworks Key Rotation Summary"
+git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout main
 
+section "Fireworks Key Rotation Complete"
 echo ""
-if ! $DRY_RUN; then
-    log "New key: ${NEW_KEY:0:8}..."
-fi
-echo "Updated: text.pollinations.ai/secrets/env.json"
+log "Old key: ${OLD_KEY:0:8}... (deleted)"
+log "New key: ${NEW_KEY:0:8}..."
 echo ""
-
-if [ ${#FAILURES[@]} -eq 0 ]; then
-    log "All updates completed successfully!"
-    echo ""
-    log "Next steps:"
-    echo "  1. Commit the SOPS file changes"
-    echo "  2. Deploy text EC2 service"
-else
-    error "The following updates failed:"
-    for failure in "${FAILURES[@]}"; do
-        echo "  - $failure"
-    done
-fi
+log "SOPS + production + EC2 text service now using the new key."

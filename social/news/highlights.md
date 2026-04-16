@@ -1,3 +1,4 @@
+- **2026-04-15** – **🎮 Neon Runner** Play a real-time AI-generated infinite runner game with a 90s retro-anime aesthetic, fresh in the community showcase. [Try it](https://neon-runnerai.netlify.app/) <!-- app -->
 - **2026-04-14** – **🧠 Gemini Image Reasoning** Gemini can now think before it draws. Append `?reasoning=true` to your [image requests](https://gen.pollinations.ai/image/{prompt}) to enable native reasoning modes for complex prompts.
 - **2026-04-13** – **🔗 ComfyUI Nodes** Overtli Studio Suite built custom nodes to route generations through our API directly inside your local ComfyUI workflows. [View repo](https://github.com/OvertliDS/overtli-studio-suite) <!-- app -->
 - **2026-04-13** – **🎨 Brand Generation** StyleOps joined the showcase, wrapping our image models into a dedicated tool for spitting out cohesive brand assets. [Try it](https://styleops.co) <!-- app -->

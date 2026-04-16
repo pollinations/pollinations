@@ -49,6 +49,8 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
+source "$SCRIPT_DIR/_load-admin-secrets.sh"
+
 run() {
     if $DRY_RUN; then
         log "[dry-run] $1"

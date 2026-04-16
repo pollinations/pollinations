@@ -50,6 +50,8 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
+source "$SCRIPT_DIR/_load-admin-secrets.sh"
+
 TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 API_BASE="https://api.fireworks.ai/v1"
 

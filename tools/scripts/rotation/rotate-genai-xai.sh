@@ -48,6 +48,8 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
+source "$SCRIPT_DIR/_load-admin-secrets.sh"
+
 IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 MGMT_API="https://management-api.x.ai"
 

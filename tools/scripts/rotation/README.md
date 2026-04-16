@@ -42,6 +42,37 @@
 
 All scripts default to **dry-run**: they always run a read-only connectivity check first, then print what would change. Pass `--execute` to actually rotate.
 
+## Rotation admin credentials
+
+Four scripts need extra admin credentials beyond the keys they rotate:
+
+| Script | Admin credentials |
+|--------|-------------------|
+| `rotate-ops-tinybird.sh` | `TINYBIRD_ADMIN_TOKEN` |
+| `rotate-genai-fireworks.sh` | `FIREWORKS_ACCOUNT_ID`, `FIREWORKS_USER_ID` |
+| `rotate-genai-xai.sh` | `XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID` |
+| `rotate-genai-elevenlabs.sh` | `ELEVENLABS_SERVICE_ACCOUNT_ID` |
+
+These live in a SOPS-encrypted file next to the scripts:
+
+```
+tools/scripts/rotation/secrets.vars.json
+```
+
+Each of those four scripts sources `_load-admin-secrets.sh`, which exports any key from this SOPS file that isn't already set in the environment. Env vars always take precedence, so CI (which passes admin creds via GitHub secrets) is unaffected.
+
+To add or update a credential locally:
+
+```bash
+sops tools/scripts/rotation/secrets.vars.json
+```
+
+The `TINYBIRD_ADMIN_TOKEN` can be copied from the Tinybird CLI (to the macOS clipboard):
+
+```bash
+tb --cloud token copy "admin token"
+```
+
 ## Running
 
 ```bash

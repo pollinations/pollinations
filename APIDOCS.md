@@ -148,7 +148,7 @@ Returns your account profile including name, email, tier level, and account crea
 
 - **`tier` (required)**
 
-  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
+  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "router"` — User's current tier level
 
 **Example:**
 
@@ -1140,7 +1140,7 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
 - **`user_tier`**
 
-  `string`, possible values: `"anonymous", "seed", "flower", "nectar"`
+  `string`, possible values: `"anonymous", "seed", "flower"`
 
 **Example:**
 

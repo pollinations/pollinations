@@ -1,0 +1,27 @@
+{
+  "date": "2026-04-15",
+  "period_start": "2026-04-15",
+  "period_end": "2026-04-15",
+  "title": "The greenhouse expands: Neon Runner and new community apps",
+  "summary": "A healthy mix of community game additions, dashboard decluttering, and restoring Veo 3.1 Fast video generation.\n\nThe community showcase picked up two new additions today, headlined by Neon Runner—an infinite runner game that generates its 90s retro-anime environments in real-time using the API.\n\nGoogle retired the preview alias for Veo 3.1 Fast, resulting in 404s for video generation requests. We've updated our routing to point to the General Availability model ID. Pixels are flowing again.\n\nThe dashboard now automatically hides expired API keys from your list view. A small UI tweak to reduce visual noise and save you some scrolling.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 10235,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10237,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10245,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10254,
+      "date": "2026-04-15"
+    }
+  ],
+  "generated_at": "2026-04-16T06:34:45.585891+00:00"
+}

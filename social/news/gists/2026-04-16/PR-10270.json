@@ -1,0 +1,34 @@
+{
+  "pr_number": 10270,
+  "title": "Add kre8.info to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10270",
+  "merged_at": "2026-04-16T13:43:51Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Shorts in a snap",
+    "blurb": "The community just dropped kre8.info into the greenhouse. Spin up end-to-end faceless videos and shorts in under 10 minutes with a single prompt.",
+    "summary": "Added kre8.info to the community showcase, a new tool for generating end-to-end shorts and faceless videos from a single prompt.",
+    "impact": "Creators can now discover and use kre8.info to rapidly produce video content directly from the community apps directory.",
+    "keywords": [
+      "community",
+      "showcase",
+      "video",
+      "shorts",
+      "kre8"
+    ],
+    "visual_concept": "The PR is about a video creation tool ('kre8.info') that makes shorts/faceless videos. Visual symbols: film reels, clapperboards, video screens. Characters: Polly the bee acting as a movie director.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny movie director's beret, sitting in a small canvas chair next to a glowing retro monitor showing a vertical video short. A chunky pixel clapperboard rests on the ground nearby. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-16/PR-10270.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny movie director's beret, sitting in a small canvas chair next to a glowing retro monitor showing a vertical video short. A chunky pixel clapperboard rests on the ground nearby. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-16T13:44:44.765274+00:00",
+  "app_name": "kre8.info",
+  "app_url": "https://kre8.info"
+}

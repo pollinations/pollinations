@@ -3,25 +3,28 @@
 #
 # Usage: ./rotate-genai-aws.sh [--execute]
 #
-# Default: dry-run (verify credentials + preview, no mutation).
-# Pass --execute to actually rotate.
+# Default: dry-run (verify + preview, no mutation).
 #
-# This script:
-# 1. Reads the current access key ID from SOPS
-# 2. Creates a new IAM access key for the same user
-# 3. Updates both SOPS files (image + text)
-# 4. Verifies the new key works (sts get-caller-identity)
-# 5. Deletes the old key
+# Pass --execute to run the full end-to-end cycle:
+#   1. Pre-flight (git clean, SOPS, AWS sts, gh, wrangler auth)
+#   2. Create new IAM access key (old stays valid)
+#   3. Update SOPS (image + text env.json)
+#   4. Verify new key works via sts
+#   5. Open PR to main, enable auto-merge
+#   6. Poll until PR merged
+#   7. git push origin main:production (admin push, no PR)
+#   8. Watch deploy-enter-services.yml complete
+#   9. Health check production endpoint
+#  10. Delete old IAM access key
 #
-# The old key is kept until the new one is verified. If verification
-# fails, the script exits without deleting the old key.
+# Zero-downtime: old key remains valid until step 10. If anything fails between
+# steps 2 and 10, the new key is already live — operator can re-run or clean up.
 #
 # Prerequisites:
-# - aws CLI configured with permissions to manage IAM keys
-# - sops configured and working
-# - jq installed
-#
-# After running, commit the SOPS changes and redeploy EC2 services.
+# - aws CLI configured (to call IAM on behalf of the user who owns the keys)
+# - sops configured, jq, curl
+# - gh CLI authenticated, repo auto-merge enabled
+# - git admin permission to push directly to the production branch
 
 set -e
 
@@ -29,7 +32,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 DRY_RUN=true
-
 while [[ "$1" == --* ]]; do
     case "$1" in
         --execute) DRY_RUN=false; shift ;;
@@ -49,32 +51,34 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
-run() {
-    if $DRY_RUN; then
-        log "[dry-run] $1"
-        return 0
-    fi
-    set +e
-    eval "$2"
-    local status=$?
-    set -e
-    return $status
-}
-
 SOPS_FILES=(
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
     "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 )
-
-FAILURES=()
+DEPLOY_WORKFLOW="deploy-enter-services.yml"
+HEALTH_URL="https://gen.pollinations.ai/v1/models"
 
 #######################################
-# Pre-flight: read current creds + verify they work
+# Pre-flight
 #######################################
-section "Pre-flight: reading current AWS credentials from SOPS"
+section "Pre-flight: checks"
+
+cd "$REPO_ROOT"
+
+if ! $DRY_RUN; then
+    if [ -n "$(git status --porcelain)" ]; then
+        error "Working tree not clean — commit or stash before --execute."
+        git status --short
+        exit 1
+    fi
+fi
+
+if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
+    error "gh CLI not authenticated."
+    exit 1
+fi
 
 IMAGE_SOPS="${SOPS_FILES[0]}"
-
 if [ ! -f "$IMAGE_SOPS" ]; then
     error "SOPS file not found: $IMAGE_SOPS"
     exit 1
@@ -83,66 +87,54 @@ fi
 OLD_KEY_ID=$(sops -d "$IMAGE_SOPS" | jq -r '.AWS_ACCESS_KEY_ID')
 OLD_SECRET=$(sops -d "$IMAGE_SOPS" | jq -r '.AWS_SECRET_ACCESS_KEY')
 if [ -z "$OLD_KEY_ID" ] || [ "$OLD_KEY_ID" = "null" ]; then
-    error "Could not read AWS_ACCESS_KEY_ID from SOPS"
+    error "Could not read AWS_ACCESS_KEY_ID from SOPS."
     exit 1
 fi
-log "Current key ID: $OLD_KEY_ID"
+log "Current AWS access key: $OLD_KEY_ID"
 
-section "Pre-flight: verifying AWS credentials"
 CALLER=$(AWS_ACCESS_KEY_ID="$OLD_KEY_ID" AWS_SECRET_ACCESS_KEY="$OLD_SECRET" \
     aws sts get-caller-identity 2>&1) || {
-    error "AWS credentials invalid: $CALLER"
+    error "Current AWS credentials invalid: $CALLER"
     exit 1
 }
-log "AWS credentials valid: $(echo "$CALLER" | jq -r '.Arn')"
+IAM_ARN=$(echo "$CALLER" | jq -r '.Arn')
+IAM_USER=$(echo "$IAM_ARN" | sed 's|.*/||')
+log "IAM user: $IAM_USER"
+
+log "Pre-flight OK"
 
 if $DRY_RUN; then
     warn "DRY RUN — no changes will be made. Pass --execute to rotate."
+    echo
+    log "Plan:"
+    echo "  1. Create new IAM access key for $IAM_USER (old $OLD_KEY_ID stays valid)"
+    echo "  2. Update SOPS: image.pollinations.ai/env.json, text.pollinations.ai/env.json"
+    echo "  3. Verify new key via sts"
+    echo "  4. Open PR: rotate/aws-<date> → main, auto-merge"
+    echo "  5. Push main → production (admin)"
+    echo "  6. Watch $DEPLOY_WORKFLOW"
+    echo "  7. Health check $HEALTH_URL"
+    echo "  8. Delete old IAM access key $OLD_KEY_ID"
+    exit 0
 fi
 
-#######################################
-# 2. Identify the IAM user
-#######################################
-section "Identifying IAM user for key $OLD_KEY_ID"
-
-if ! $DRY_RUN; then
-    # Use the current credentials to identify the user
-    OLD_SECRET=$(sops -d "$IMAGE_SOPS" | jq -r '.AWS_SECRET_ACCESS_KEY')
-    CALLER_INFO=$(AWS_ACCESS_KEY_ID="$OLD_KEY_ID" AWS_SECRET_ACCESS_KEY="$OLD_SECRET" \
-        aws sts get-caller-identity 2>&1) || {
-        error "Cannot identify current key owner: $CALLER_INFO"
-        exit 1
-    }
-    IAM_ARN=$(echo "$CALLER_INFO" | jq -r '.Arn')
-    # Extract username from ARN (arn:aws:iam::ACCOUNT:user/USERNAME)
-    IAM_USER=$(echo "$IAM_ARN" | sed 's|.*/||')
-    log "IAM user: $IAM_USER (ARN: $IAM_ARN)"
-else
-    IAM_USER="<detected-at-runtime>"
-    log "[dry-run] Would detect IAM user from current key"
-fi
+ORIGINAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 #######################################
-# 3. Create new access key
+# 1. Create new IAM access key
 #######################################
-section "Creating new access key"
+section "Creating new IAM access key"
 
-if ! $DRY_RUN; then
-    NEW_KEY_JSON=$(aws iam create-access-key --user-name "$IAM_USER" 2>&1) || {
-        error "Failed to create new key: $NEW_KEY_JSON"
-        exit 1
-    }
-    NEW_KEY_ID=$(echo "$NEW_KEY_JSON" | jq -r '.AccessKey.AccessKeyId')
-    NEW_SECRET=$(echo "$NEW_KEY_JSON" | jq -r '.AccessKey.SecretAccessKey')
-    log "New key ID: $NEW_KEY_ID"
-else
-    NEW_KEY_ID="AKIA_DRY_RUN_EXAMPLE"
-    NEW_SECRET="dry-run-secret"
-    log "[dry-run] Would create new IAM access key for $IAM_USER"
-fi
+NEW_KEY_JSON=$(aws iam create-access-key --user-name "$IAM_USER" 2>&1) || {
+    error "Failed to create new IAM key: $NEW_KEY_JSON"
+    exit 1
+}
+NEW_KEY_ID=$(echo "$NEW_KEY_JSON" | jq -r '.AccessKey.AccessKeyId')
+NEW_SECRET=$(echo "$NEW_KEY_JSON" | jq -r '.AccessKey.SecretAccessKey')
+log "New access key: $NEW_KEY_ID"
 
 #######################################
-# 4. Update SOPS files
+# 2. Update SOPS
 #######################################
 section "Updating SOPS-encrypted secrets"
 
@@ -152,85 +144,126 @@ for f in "${SOPS_FILES[@]}"; do
         warn "Skipping $fname — file not found"
         continue
     fi
-    run "sops --set AWS_ACCESS_KEY_ID in $fname" \
-        "sops --set '[\"AWS_ACCESS_KEY_ID\"] \"$NEW_KEY_ID\"' '$f'"
-    if [ $? -eq 0 ]; then
-        log "  AWS_ACCESS_KEY_ID in $fname"
-    else
-        error "  AWS_ACCESS_KEY_ID in $fname"
-        FAILURES+=("SOPS AWS_ACCESS_KEY_ID: $fname")
-    fi
-
-    run "sops --set AWS_SECRET_ACCESS_KEY in $fname" \
-        "sops --set '[\"AWS_SECRET_ACCESS_KEY\"] \"$NEW_SECRET\"' '$f'"
-    if [ $? -eq 0 ]; then
-        log "  AWS_SECRET_ACCESS_KEY in $fname"
-    else
-        error "  AWS_SECRET_ACCESS_KEY in $fname"
-        FAILURES+=("SOPS AWS_SECRET_ACCESS_KEY: $fname")
-    fi
+    sops --set "[\"AWS_ACCESS_KEY_ID\"] \"$NEW_KEY_ID\"" "$f"
+    sops --set "[\"AWS_SECRET_ACCESS_KEY\"] \"$NEW_SECRET\"" "$f"
+    log "  $fname updated"
 done
 
 #######################################
-# 5. Verify new key works
+# 3. Verify new key
 #######################################
-section "Verifying new credentials"
+section "Verifying new AWS credentials"
 
-if ! $DRY_RUN; then
-    # AWS keys can take a few seconds to propagate
-    log "Waiting 10s for IAM propagation..."
-    sleep 10
+log "Waiting 10s for IAM propagation..."
+sleep 10
 
-    VERIFY=$(AWS_ACCESS_KEY_ID="$NEW_KEY_ID" AWS_SECRET_ACCESS_KEY="$NEW_SECRET" \
-        aws sts get-caller-identity 2>&1) || {
-        error "New key verification failed: $VERIFY"
-        error "Old key ($OLD_KEY_ID) NOT deleted — fix manually"
+VERIFY=$(AWS_ACCESS_KEY_ID="$NEW_KEY_ID" AWS_SECRET_ACCESS_KEY="$NEW_SECRET" \
+    aws sts get-caller-identity 2>&1) || {
+    error "New key verification failed: $VERIFY"
+    error "Old key $OLD_KEY_ID NOT deleted — resolve manually."
+    exit 1
+}
+log "New key verified: $(echo "$VERIFY" | jq -r '.Arn')"
+
+#######################################
+# 4. Open PR to main, auto-merge
+#######################################
+section "Opening PR to main"
+
+BRANCH="rotate/aws-$(date +%Y%m%d-%H%M%S)"
+git checkout -b "$BRANCH"
+git add "${SOPS_FILES[@]}"
+git commit -m "rotate: AWS access keys ($IAM_USER)"
+git push -u origin "$BRANCH"
+
+gh pr create \
+    --base main \
+    --head "$BRANCH" \
+    --title "rotate: AWS access keys ($IAM_USER)" \
+    --body "Rotates AWS IAM access keys for \`$IAM_USER\`. Old key \`$OLD_KEY_ID\` stays valid until this PR merges, production is promoted, services are redeployed, and health check passes. Automated by \`rotate-genai-aws.sh\`."
+
+log "Enabling auto-merge..."
+gh pr merge "$BRANCH" --auto --squash
+
+#######################################
+# 5. Poll until PR merged
+#######################################
+section "Waiting for PR to merge"
+
+MERGE_TIMEOUT=900  # 15 minutes
+MERGE_ELAPSED=0
+while true; do
+    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    case "$STATE" in
+        MERGED) log "PR merged."; break ;;
+        CLOSED) error "PR was closed without merging."; exit 1 ;;
+    esac
+    if [ "$MERGE_ELAPSED" -ge "$MERGE_TIMEOUT" ]; then
+        error "Timed out waiting for PR merge after ${MERGE_TIMEOUT}s."
         exit 1
-    }
-    log "Verified: $(echo "$VERIFY" | jq -r '.Arn')"
-else
-    log "[dry-run] Would verify new key with sts get-caller-identity"
+    fi
+    sleep 15
+    MERGE_ELAPSED=$((MERGE_ELAPSED + 15))
+done
+
+#######################################
+# 6. Push main → production
+#######################################
+section "Promoting main → production"
+
+git checkout main
+git pull --ff-only origin main
+git fetch origin production
+git push origin main:production
+log "production advanced to main."
+
+#######################################
+# 7. Watch deploy workflow
+#######################################
+section "Waiting for $DEPLOY_WORKFLOW"
+
+sleep 10  # give GH a moment to register the run
+RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+if [ -z "$RUN_ID" ]; then
+    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    exit 1
 fi
+log "Watching run $RUN_ID..."
+gh run watch "$RUN_ID" --exit-status || {
+    error "Deploy workflow failed. Old key NOT deleted — resolve manually."
+    exit 1
+}
 
 #######################################
-# 6. Delete old key
+# 8. Health check
 #######################################
-section "Deleting old access key"
+section "Health check"
 
-run "aws iam delete-access-key $OLD_KEY_ID" \
-    "aws iam delete-access-key --user-name '$IAM_USER' --access-key-id '$OLD_KEY_ID'"
-if [ $? -eq 0 ]; then
-    log "Deleted old key: $OLD_KEY_ID"
-else
-    error "Failed to delete old key: $OLD_KEY_ID"
-    FAILURES+=("Delete old key: $OLD_KEY_ID")
+STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "$HEALTH_URL")
+if [ "$STATUS" != "200" ]; then
+    error "Health check failed (HTTP $STATUS). Old key NOT deleted — resolve manually."
+    exit 1
 fi
+log "Production healthy (HTTP 200)."
 
 #######################################
-# Summary
+# 9. Delete old IAM access key
 #######################################
-section "AWS Key Rotation Summary"
+section "Deleting old IAM access key"
 
+aws iam delete-access-key --user-name "$IAM_USER" --access-key-id "$OLD_KEY_ID" || {
+    warn "Could not delete old key $OLD_KEY_ID — delete manually."
+}
+log "Old key $OLD_KEY_ID deleted."
+
+#######################################
+# 10. Restore original branch
+#######################################
+git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout main
+
+section "AWS Key Rotation Complete"
 echo ""
 log "Old key: $OLD_KEY_ID (deleted)"
-if ! $DRY_RUN; then
-    log "New key: $NEW_KEY_ID"
-fi
+log "New key: $NEW_KEY_ID"
 echo ""
-echo "Updated SOPS files:"
-echo "  - image.pollinations.ai/secrets/env.json"
-echo "  - text.pollinations.ai/secrets/env.json"
-echo ""
-
-if [ ${#FAILURES[@]} -eq 0 ]; then
-    log "All updates completed successfully!"
-    echo ""
-    log "Next steps:"
-    echo "  1. Commit the SOPS file changes"
-    echo "  2. Deploy EC2 services (image + text) to pick up new credentials"
-else
-    error "The following updates failed:"
-    for failure in "${FAILURES[@]}"; do
-        echo "  - $failure"
-    done
-fi
+log "SOPS + production + EC2 services now using the new key."

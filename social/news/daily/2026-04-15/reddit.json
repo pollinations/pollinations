@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-15",
+  "period_start": "2026-04-15",
+  "period_end": "2026-04-15",
+  "generated_at": "2026-04-16T06:34:45.585891+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-15/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged today: Veo 3.1 Fast video model update, dashboard fixes, new games",
+  "text": "We merged 4 PRs today for pollinations.ai. Small update, but fixes a few annoying things.\n\nFirst, Veo 3.1 Fast video generation is working again. The upstream provider moved the model from preview to GA and changed the ID, which broke our endpoint. PR #10245 updates the model ID to the GA version, so video generation via the API is back up.\n\nSecond, the dashboard was getting cluttered if you cycle through API keys frequently. PR #10237 hides expired API keys from the default view. You can still find them if you need to audit old usage, but they aren't taking up screen space anymore.\n\nWe also merged PR #10254 which adds 'Neon Runner' to the community games showcase. It is always cool to see what people are building with the infrastructure. Finally, there was a minor build config update (#10235).\n\nAll the code is open source and available at github.com/pollinations/pollinations. If you are building something and need a bump in your free tier rate limits, just open an issue or drop a note in the repo."
+}

@@ -26,6 +26,8 @@ export const printResult = (data: Record<string, unknown> | unknown[]) => {
         if (value === null || value === undefined) continue;
         process.stdout.write(`${chalk.bold(key)}: ${value}\n`);
     }
+    // Trailing blank line in TTY for visual breathing room before the next prompt.
+    if (process.stdout.isTTY) process.stdout.write("\n");
 };
 
 /** Print a list of objects as a table */
@@ -81,6 +83,8 @@ export const printTable = (
         const line = vals.map((v, i) => pad(v, widths[i], i)).join("  ");
         process.stdout.write(`${line}\n`);
     }
+    // Trailing blank line in TTY for visual breathing room before the next prompt.
+    if (process.stdout.isTTY) process.stdout.write("\n");
 };
 
 /** Info message — only shown in human mode, goes to stderr */
@@ -101,6 +105,7 @@ export const printMeta = (data: Record<string, unknown>) => {
         if (value === null || value === undefined) continue;
         process.stderr.write(`${chalk.bold(key)}: ${value}\n`);
     }
+    if (process.stderr.isTTY) process.stderr.write("\n");
 };
 
 /** Success message — shown in human mode on stderr */

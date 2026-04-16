@@ -6,7 +6,7 @@ allowed-tools: Bash(vhs *), Bash(ffmpeg *), Bash(ffprobe *), Bash(afplay *), Bas
 
 # polli-video — record polli CLI demos
 
-Hybrid pipeline: VHS records silent terminal video; polli generates audio (speech + music); ffmpeg merges. VHS cannot capture system audio — always overlay in post.
+VHS records silent terminal video; polli generates audio; ffmpeg merges. VHS cannot capture system audio — always overlay in post.
 
 ## When to use
 
@@ -16,7 +16,7 @@ Hybrid pipeline: VHS records silent terminal video; polli generates audio (speec
 
 ## Working directory
 
-`temp/vhs-demo/` in the repo. Everything stays there — `.tape`, intermediate mp3s, silent mp4, final mp4.
+`temp/vhs-demo/`. All artifacts (`.tape`, mp3s, silent mp4, final mp4) stay there.
 
 ## Core pipeline (4 steps)
 
@@ -42,11 +42,43 @@ ffmpeg -y -i demo-silent.mp4 -i speech.mp3 -i music.mp3 \
   -map 0:v -map "[a]" -c:v copy -c:a aac final.mp4
 ```
 
-Overlay start (`adelay=16000|16000`) is **milliseconds for left|right channels** — must be twice for stereo. Tune to the timestamp when the `polli gen audio --play` command fires in the tape.
+`adelay=16000|16000` is **ms, left|right** (must be stereo pair). Tune to tape timestamp where `polli gen audio --play` fires.
+
+### Alternative: live capture via BlackHole (no manual timestamp math)
+
+If timing narrations in `adelay` is too fiddly, capture system audio while VHS plays it. Needs [BlackHole](https://existential.audio/blackhole/) installed.
+
+```bash
+# User sets system default output → BlackHole 2ch in menu bar (Option+click speaker)
+# OR: brew install switchaudio-osx && SwitchAudioSource -s "BlackHole 2ch"
+
+# Find BlackHole avfoundation index
+ffmpeg -f avfoundation -list_devices true -i "" 2>&1 | grep BlackHole
+# Typically :1 for BlackHole 2ch
+
+ffmpeg -nostdin -y -f avfoundation -i ":1" -ac 2 -ar 48000 -c:a pcm_s16le captured.wav &
+FFPID=$!
+sleep 1
+vhs demo.tape
+sleep 2
+kill -INT $FFPID; wait $FFPID 2>/dev/null
+
+# Trim leading silence (ffmpeg starts ~1s before VHS)
+ffmpeg -y -i captured.wav -af "silenceremove=start_periods=1:start_duration=0.05:start_threshold=-50dB" captured-trim.wav
+
+# Mux (trim audio to video length to avoid tail padding)
+VID=$(ffprobe -v error -show_entries format=duration -of csv=p=0 demo-silent.mp4)
+ffmpeg -y -i demo-silent.mp4 -i captured-trim.wav -t "$VID" -c:v copy -c:a aac -map 0:v -map 1:a demo.mp4
+```
+
+All `polli gen audio --play` calls route through default output → BlackHole → captured WAV with perfect sync. Music gen needs `--play` too or it won't be captured. Remember to switch default output back after.
 
 ## VHS tape conventions
 
-Target 960×640 (half width, ~60% height) — lets terminal line-wrap naturally and reads well on phones. Menlo 16pt. Catppuccin Frappe theme matches polli's brand.
+- 960×640, Menlo 16pt, Catppuccin Frappe — reads on mobile, matches brand.
+- Absolute paths in `cd` only (relative paths nest `temp/vhs-demo/temp/vhs-demo/`).
+- Always `export FORCE_COLOR=1` in `Hide` — VHS pty fails `isTTY`/`chalk.level`, colors strip otherwise.
+- Scene titles: emit via ANSI from shell (no VHS primitive). Define `scene()` once in `Hide`, call per scene. `\033[1;38;5;141m` = bold + polli purple (xterm-256 141 ≈ `#af87ff`).
 
 ```tape
 Output demo-silent.mp4
@@ -69,22 +101,30 @@ Set CursorBlink true
 Hide
 Type "cd /absolute/path/to/temp/vhs-demo"
 Enter
+Type "export FORCE_COLOR=1"
+Enter
 Type "export PROMPT='%F{8}»%f '"
+Enter
+Type `scene() { printf '\n\033[1;38;5;141m»» %s\033[0m\n\n' "$1"; }`
 Enter
 Type "clear"
 Enter
 Show
+
+# Between scenes:
+Type `scene "BROWSE MODELS"`
+Enter
 ```
 
-The `Hide`/`Show` block sets working directory + minimal `»` prompt off-camera. **Absolute paths only** — relative paths create nested `temp/vhs-demo/temp/vhs-demo/` directories.
+For ffmpeg `drawtext` overlays (rarely needed), pass explicit `fontfile=/System/Library/Fonts/Monaco.dfont`.
 
 ## Known VHS gotchas
 
-- **JetBrains Mono not installed** by default on macOS — use `Menlo`, universally available.
-- **Absolute paths in `Output` fail** — the parser splits on `/`. Use relative `Output demo-silent.mp4`, and `cd` into the directory via a `Hide` block.
-- **`Type` with embedded single quotes**: use backticks around the outer string: `` Type `polli gen text "what is 2+2?"` ``. Regular double quotes also work for simple strings.
-- **TypingSpeed compounds**: a 200-char command at 35ms = 7s of just typing. For long prompts, drop to 18–22ms, or shorten the prompt.
-- **Font size vs width**: at 960×640, FontSize >18 wraps the prompt awkwardly. 16 fits a typical `polli gen text --model X "..."` line.
+- **JetBrains Mono** not on macOS — use `Menlo`.
+- **Absolute paths in `Output`** fail (parser splits on `/`). Use relative; `cd` in `Hide`.
+- **Single quotes in `Type`**: wrap outer string in backticks.
+- **TypingSpeed compounds**: 200 chars × 35ms = 7s. Use 12–20ms for long prompts.
+- **FontSize >18 at 960×640** wraps prompts. 16 fits `polli gen text --model X "..."`.
 
 ## Shell patterns inside the tape
 
@@ -96,21 +136,17 @@ The `Hide`/`Show` block sets working directory + minimal `»` prompt off-camera.
 | Capture output AND show it on screen | `cmd \| tee file.txt` then `$(cat file.txt)` downstream |
 | Simple save without pipe | `cmd --output file.txt` then `cat file.txt` |
 
-**Do not chain commands with pipes when visual clarity matters** — pipes blur the boundary between producer and consumer on screen. Two separate commands read better unless the pipe itself is the point.
+Avoid pipes when visual clarity matters — two separate commands read better.
 
 ## Timing math (approximate)
 
-Each tape frame cost:
-- `Type "text"` = `len(text) × TypingSpeed`
-- `Sleep 300ms` before `Enter` = small pause
-- `Enter` = one keystroke (negligible)
-- `Sleep N` = literal N
-
-For a `polli gen audio --play "..." &` command that fires an audio request:
-- After `Enter`, allow ~2000ms for API roundtrip before playback starts
-- Narration is usually 2–4s for short phrases, 20–30s for long answers
+- `Type "text"` = `len(text) × TypingSpeed`; `Sleep N` = literal N; `Enter` negligible
+- `polli gen audio --play "..." &`: ~2000ms API roundtrip before playback
+- Narration: 2–4s short phrases, 20–30s long answers
 
 ## Audio overlay: three recipes
+
+Ducking: `0.12–0.20` under narration, `0.25–0.35` music-only. **Never pass `-shortest`** — truncates video to shortest audio.
 
 ### A. One voiceover at a known timestamp
 
@@ -128,9 +164,7 @@ ffmpeg -y -i demo-silent.mp4 -i music.mp3 \
   -map 0:v -map "[bg]" -c:v copy -c:a aac demo.mp4
 ```
 
-Typical ducking levels: `0.12–0.20` when narration is present, `0.25–0.35` when music is the only audio.
-
-### C. Music bed + narration (the usual demo recipe)
+### C. Music bed + narration (usual demo recipe)
 
 ```bash
 ffmpeg -y -i demo-silent.mp4 -i speech.mp3 -i music.mp3 \
@@ -140,59 +174,43 @@ ffmpeg -y -i demo-silent.mp4 -i speech.mp3 -i music.mp3 \
   -map 0:v -map "[a]" -c:v copy -c:a aac demo.mp4
 ```
 
-**Never pass `-shortest`** — it cuts the video to the length of the shortest audio clip, which is almost always a 2s narration.
-
 ## Voice selection
 
-Default is `sage` (warm, conversational). Others worth trying:
-- `fin` — Irish male, distinctive
-- `callum` — clear male, newsreader energy
-- `onyx` — deep, authoritative
-- `rachel` — neutral female, broadcaster
+Default: `sage`. Others: `fin`, `callum`, `onyx`, `rachel`.
 
-Preview any voice: `polli gen audio --voice <name> --output sample.mp3 "test line" && afplay sample.mp3`.
+- Preview: `polli gen audio --voice <name> --output sample.mp3 "test line" && afplay sample.mp3`
+- Full list: `polli models --type audio --json | jq '.[].voices'`
+- ElevenMusic caches deterministic prompts (same prompt+duration → same bytes). Always `--instrumental`. Match duration to `ffprobe` of silent mp4.
 
-Full list: `polli models --type audio --json | jq '.[].voices'`.
+## Demo design principles
 
-## Music prompts that work
-
-Sample prompts for `elevenmusic --instrumental`:
-- `"lofi instrumental hip hop, warm analog, mellow, soft piano and jazzy bass, chill study vibe"`
-- `"ambient synth pad, slow tempo, cinematic, minimal"`
-- `"90s boom bap instrumental, dusty drums, mellow Rhodes piano"`
-
-Keep it instrumental (`--instrumental`) so it doesn't compete with voiceover. Duration: match the video length (`ffprobe` the silent mp4 first).
-
-**Caching:** ElevenMusic caches deterministic prompts — rerunning the same prompt + duration returns the same bytes. Useful when iterating on the video without re-spending pollen.
-
-## Demo design principles (learned from iterating)
-
-1. **Open with proof-of-identity**: `polli --help` and `polli auth status` same screen, silent. Orients the viewer without narration.
-2. **One audio moment, not many**: scattered voiceovers feel cluttered. Pick the single announcement that introduces the payoff.
-3. **Hold scenes long enough**: help needs ~6s, auth ~4s, streaming text ~10–20s. Viewers read slower than you think.
-4. **The payoff should produce something reusable**: the actual LinkedIn post, an image the user keeps, a document. Don't just show features.
-5. **Cut composability when viewers don't need it**: `| tee` is elegant but noisy. For a short demo, two separate commands are cleaner.
-6. **Streaming feels more alive than buffered**: polli streams text by default. Lean into it — streaming reveals is a core vibe.
-7. **`Set Width 960 Set Height 640`** reads better on mobile feeds than 1920×1080. Wide demos waste space.
+- Open silent with `polli --help` + `polli auth status` — orients without narration.
+- One audio moment, not many.
+- Hold scenes: help ~6s, auth ~4s, streaming text ~10–20s.
+- Payoff produces something reusable (the post, an image, a doc).
+- Cut `| tee` when it adds noise — two commands often cleaner.
+- Streaming > buffered — lean into polli's default streaming reveal.
+- 960×640 reads better on mobile feeds than 1920×1080.
 
 ## Brand voice for generated content
 
-When generating the post/copy inside the demo, match pollinations voice:
-- **dry, information-dense, anti-corporate**
-- No "excited to announce", no "game-changing", no hashtag spam
-- Plain text for LinkedIn (no markdown — it renders raw)
-- Think Phrack article, not press release
-- Full brand doc: `social/prompts/tone/linkedin.md` and `social/prompts/brand/about.md`
+Full brand doc: `social/prompts/tone/linkedin.md`, `social/prompts/brand/about.md`.
+
+- Dry, information-dense, anti-corporate.
+- No "excited to announce", "game-changing", hashtag spam.
+- Plain text for LinkedIn (markdown renders raw).
 
 ## Iteration loop
 
+Archive prior renders (don't delete — users compare versions). Keep `s*.mp3` / `fact.txt` untouched so narrations re-merge cleanly.
+
 ```bash
-# Edit demo.tape, then:
-rm -f demo-silent.mp4 demo.mp4 speech.mp3 fact.txt   # clean stale artifacts
-vhs demo.tape                                          # re-render silent video (spends pollen on real API calls)
-open demo-silent.mp4                                   # preview structure
-# tune tape timings based on what you see, repeat
-# only merge audio when structure is locked
+ts=$(date +%H%M)
+for f in demo.mp4 demo-silent.mp4; do
+    [ -f "$f" ] && mv "$f" "${f%.mp4}-v$ts.mp4"
+done
+vhs demo.tape          # re-renders silent video (spends pollen on real API calls)
+open demo-silent.mp4   # preview structure before audio merge
 ```
 
 ## Troubleshooting
@@ -211,9 +229,9 @@ open demo-silent.mp4                                   # preview structure
 
 - `demo.tape` — VHS script (commit this)
 - `demo-silent.mp4` — intermediate, no audio (regenerate each run)
-- `demo.mp4` — final with audio (the deliverable)
+- `demo.mp4` — final with audio (deliverable)
 - `speech.mp3` — narration from `polli gen audio --play` during tape run
 - `music.mp3` — backing track, pre-generated separately
-- `fact.txt` / `answer.txt` — captured text from scenes (ephemeral)
+- `fact.txt` / `answer.txt` — captured scene text (ephemeral)
 
-Regenerate everything from `demo.tape` + the pipeline above. Only `demo.tape` needs to live in git.
+Only `demo.tape` needs git. Regenerate the rest from the pipeline.

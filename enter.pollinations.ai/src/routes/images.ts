@@ -215,10 +215,10 @@ export function handleImageGeneration(
         const body = (await c.req.json()) as CreateImageRequest &
             Record<string, unknown>;
 
-        // Apply safety — reject if prompt is flagged
+        // Apply safety — swap in redacted prompt or throw on block
         const safeParam = body.safe as string | undefined;
         delete body.safe;
-        await applySafety(c, body.prompt, safeParam);
+        body.prompt = await applySafety(c, body.prompt, safeParam);
 
         const model = c.var.model.resolved;
         const resolved = resolveParams(body);
@@ -268,11 +268,17 @@ export function handleImageEdit(
     return async (c: Context) => {
         await requireAuthAndBalance(c, checkBalance);
 
-        const { prompt, imageUrls, size, quality, seed, extra } =
-            await parseEditInput(c);
+        const {
+            prompt: rawPrompt,
+            imageUrls,
+            size,
+            quality,
+            seed,
+            extra,
+        } = await parseEditInput(c);
 
-        // Apply safety — reject if prompt is flagged
-        await applySafety(c, prompt);
+        // Apply safety — swap in redacted prompt or throw on block
+        const prompt = await applySafety(c, rawPrompt);
 
         const resolved = resolveParams({ size, quality, seed });
 

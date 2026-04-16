@@ -107,6 +107,10 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
+# Bedrock Guardrails (safety) — needed for local safety testing
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
 # NOWPayments crypto payments (sandbox for local development)
 NOWPAYMENTS_ENV = "sandbox"
 # Stripe payments (sandbox for local development)

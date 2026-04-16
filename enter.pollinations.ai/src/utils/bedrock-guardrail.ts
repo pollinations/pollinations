@@ -12,6 +12,10 @@ interface PIIFilter {
     type: string;
 }
 
+interface GuardrailOutput {
+    text: string;
+}
+
 interface RegexFilter {
     action: "BLOCKED";
     match: string;
@@ -28,6 +32,7 @@ interface ContentFilter {
 
 export interface BedrockResponse {
     action: "NONE" | "GUARDRAIL_INTERVENED";
+    outputs?: GuardrailOutput[];
     assessments: {
         contentPolicy?: { filters?: ContentFilter[] };
         sensitiveInformationPolicy?: {

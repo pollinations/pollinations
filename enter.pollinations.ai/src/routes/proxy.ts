@@ -86,10 +86,10 @@ const imageVideoHandlers = factory.createHandlers(
         await checkBalance(c.var, c.env);
 
         // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
-        const promptParam = c.req.param("prompt") || "";
+        const rawPrompt = c.req.param("prompt") || "";
 
-        // Apply safety — reject if prompt is flagged
-        await applySafety(c, promptParam);
+        // Apply safety — reject blocked content, swap in redacted text when PII is anonymized
+        const promptParam = await applySafety(c, rawPrompt);
 
         log.debug("Extracted prompt param: {prompt}", {
             prompt: promptParam,
@@ -141,10 +141,23 @@ const chatCompletionHandlers = factory.createHandlers(
         const requestBody = await c.req.json();
         requestBody.model = c.var.model.resolved;
 
-        // Apply safety — stringify the whole messages body, reject if flagged
+        // Apply safety per-message: each text content is independently scanned.
+        // Redaction (privacy) rewrites content in place; blocks throw 400.
         const safeParam = requestBody.safe as string | undefined;
         delete requestBody.safe;
-        await applySafety(c, JSON.stringify(requestBody.messages), safeParam);
+        await Promise.all(
+            (requestBody.messages ?? []).map(
+                async (msg: { content?: unknown }) => {
+                    if (typeof msg.content === "string") {
+                        msg.content = await applySafety(
+                            c,
+                            msg.content,
+                            safeParam,
+                        );
+                    }
+                },
+            ),
+        );
 
         await checkBalance(c.var, c.env);
 
@@ -529,9 +542,9 @@ export const proxyRoutes = new Hono<Env>()
             // Use resolved model from middleware
             const model = c.var.model.resolved;
 
-            // Apply safety — reject if prompt is flagged
-            const prompt = c.req.param("prompt");
-            await applySafety(c, prompt);
+            // Apply safety — swap in redacted text or throw on block
+            const rawPrompt = c.req.param("prompt");
+            const prompt = await applySafety(c, rawPrompt);
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -755,10 +768,10 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await requireGenerationAccess(c.var, c.env);
 
-            const text = decodeURIComponent(c.req.param("text"));
+            const rawText = decodeURIComponent(c.req.param("text"));
 
-            // Apply safety — reject if text is flagged
-            await applySafety(c, text);
+            // Apply safety — swap in redacted text or throw on block
+            const text = await applySafety(c, rawText);
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;

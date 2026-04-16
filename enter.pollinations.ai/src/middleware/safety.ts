@@ -2,19 +2,22 @@
  * Safety middleware for enter.pollinations.ai
  *
  * Reads `safe` from API key metadata and/or request (query param, header, body).
- * Calls AWS Bedrock Guardrails to scan input and block requests that trigger.
+ * Calls AWS Bedrock Guardrails to scan input. Privacy violations are redacted
+ * (PII replaced with `{EMAIL}` etc.); everything else is hard-rejected.
  *
  * Features:
- *   privacy  — block if emails, phones, names, addresses, IPs detected
- *   secrets  — block if API keys, passwords, tokens, credit cards detected
- *   sexual   — block sexual/nude content
- *   violence — block violence, hate speech, insults
- *   shield   — block prompt injection, misconduct
+ *   privacy  — REDACT emails, phones, names, addresses, IPs (PII placeholders)
+ *   secrets  — BLOCK API keys, passwords, tokens, credit cards
+ *   sexual   — BLOCK sexual/nude content
+ *   violence — BLOCK violence, hate speech, insults
+ *   shield   — BLOCK prompt injection, misconduct
  *   nsfw     — shorthand for sexual,violence
  *   true     — shorthand for privacy,secrets
  *
- * All checks are binary: if Bedrock flags anything matching the active features,
- * the entire request is rejected with HTTP 400. No redaction, no partial pass-through.
+ * Bedrock guardrail config must set PII action=ANONYMIZE and content/regex
+ * policies to BLOCK. If anything in a block-feature triggers, request fails
+ * with HTTP 400. Otherwise the (possibly redacted) text is returned and the
+ * caller forwards it to the upstream service.
  */
 
 import type { Context } from "hono";
@@ -25,7 +28,7 @@ import {
     type BedrockResponse,
 } from "@/utils/bedrock-guardrail.ts";
 
-// What each feature blocks: PII types, regex names, and content categories.
+// What each feature covers: PII types, regex names, and content categories.
 // Bedrock returns all of these as flat string identifiers, so one map covers all.
 const FEATURE_TRIGGERS: Record<string, Set<string>> = {
     privacy: new Set([
@@ -55,6 +58,9 @@ const FEATURE_TRIGGERS: Record<string, Set<string>> = {
     violence: new Set(["VIOLENCE", "HATE", "INSULTS"]),
     shield: new Set(["PROMPT_ATTACK", "MISCONDUCT"]),
 };
+
+// Features handled by redaction (Bedrock action=ANONYMIZE) instead of blocking.
+const REDACT_FEATURES = new Set(["privacy"]);
 
 // Shorthand aliases — expanded during parsing.
 const ALIASES: Record<string, string[]> = {
@@ -95,23 +101,23 @@ export function resolveEffectiveSafety(
 }
 
 /**
- * Apply safety checks to any text input.
- * Sends text to Bedrock, blocks the request if any active feature triggers.
- * Sets X-Safety-Applied header on all safe-enabled requests.
+ * Apply safety to text. Returns the (possibly redacted) text the caller should
+ * forward upstream. If a block-feature triggers, throws HTTPException 400.
+ * If safety is disabled or the text is empty, returns the original unchanged.
  */
 export async function applySafety(
     c: Context,
     text: string,
     bodySafe?: string,
-): Promise<void> {
+): Promise<string> {
     const features = getEffectiveFeatures(c, bodySafe);
-    if (features.size === 0 || !text.trim()) return;
+    if (features.size === 0 || !text.trim()) return text;
 
     c.header("X-Safety-Applied", [...features].join(","));
 
-    let triggered: BedrockResponse;
+    let response: BedrockResponse;
     try {
-        triggered = await applyGuardrail(
+        response = await applyGuardrail(
             text,
             "INPUT",
             c.env as unknown as BedrockGuardrailEnv,
@@ -124,13 +130,21 @@ export async function applySafety(
         });
     }
 
-    const reasons = getTriggeredReasons(triggered, features);
-    if (reasons.length > 0) {
+    if (response.action !== "GUARDRAIL_INTERVENED") return text;
+
+    const { blocked, redacted } = classifyTriggers(response, features);
+    if (blocked.length > 0) {
         throw safetyError(400, "content_blocked", {
             message: "Request blocked by safety filter",
-            safety: { applied: [...features], triggered: reasons },
+            safety: { applied: [...features], triggered: blocked },
         });
     }
+
+    if (redacted.length > 0 && response.outputs?.[0]?.text) {
+        c.header("X-Safety-Redacted", redacted.join(","));
+        return response.outputs[0].text;
+    }
+    return text;
 }
 
 // --- Internal helpers ---
@@ -154,36 +168,45 @@ function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
 }
 
 /**
- * Walk every Bedrock-detected item and collect those that match an active feature.
- * Returns deduplicated identifiers (PII types or content categories) for the error response.
+ * Walk every Bedrock-detected item, bucket each into "blocked" or "redacted"
+ * based on its feature membership. Items belonging to features the caller
+ * didn't request are ignored.
  */
-function getTriggeredReasons(
+function classifyTriggers(
     response: BedrockResponse,
     features: Set<string>,
-): string[] {
-    if (response.action !== "GUARDRAIL_INTERVENED") return [];
-
+): { blocked: string[]; redacted: string[] } {
     const policy = response.assessments[0]?.sensitiveInformationPolicy;
     const filters = response.assessments[0]?.contentPolicy?.filters;
 
-    const detected: string[] = [
-        ...(policy?.piiEntities ?? []).map((e) => e.type),
-        ...(policy?.regexes ?? []).map((r) => r.name),
+    const detected: { id: string; action: "ANONYMIZED" | "BLOCKED" }[] = [
+        ...(policy?.piiEntities ?? []).map((e) => ({
+            id: e.type,
+            action: e.action,
+        })),
+        ...(policy?.regexes ?? []).map((r) => ({
+            id: r.name,
+            action: "BLOCKED" as const,
+        })),
         ...(filters ?? [])
             .filter((f) => f.action === "BLOCKED")
-            .map((f) => f.type),
+            .map((f) => ({ id: f.type, action: "BLOCKED" as const })),
     ];
 
-    const reasons = new Set<string>();
-    for (const id of detected) {
+    const blocked = new Set<string>();
+    const redacted = new Set<string>();
+    for (const { id, action } of detected) {
         for (const feature of features) {
-            if (FEATURE_TRIGGERS[feature]?.has(id)) {
-                reasons.add(id);
-                break;
+            if (!FEATURE_TRIGGERS[feature]?.has(id)) continue;
+            if (action === "ANONYMIZED" && REDACT_FEATURES.has(feature)) {
+                redacted.add(id);
+            } else {
+                blocked.add(id);
             }
+            break;
         }
     }
-    return [...reasons];
+    return { blocked: [...blocked], redacted: [...redacted] };
 }
 
 function safetyError(

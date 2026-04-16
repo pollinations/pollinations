@@ -1,0 +1,34 @@
+{
+  "pr_number": 10225,
+  "title": "feat: add polli CLI",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10225",
+  "merged_at": "2026-04-16T00:46:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive mind in your terminal",
+    "blurb": "We've packed the entire Pollinations ecosystem into a tiny 47KB CLI. Generate images, chat with models, and manage your keys right from your terminal—whether you're a human or an AI agent.",
+    "summary": "Introduced the official Pollinations CLI (@pollinations_ai/cli), providing terminal access to image, text, audio, and video generation for both developers and AI agents.",
+    "impact": "Developers can now interact with all Pollinations APIs directly from the command line, featuring colored tables for humans and JSON output for agentic workflows.",
+    "keywords": [
+      "cli",
+      "terminal",
+      "npm",
+      "agents",
+      "generation"
+    ],
+    "visual_concept": "A retro computer terminal glowing with lime green text. The Pollinations bee (Polli) wearing a tiny hacker beanie, typing on a chunky mechanical keyboard. The Nomnom creature eating a printed JSON receipt.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hacker beanie, typing on a chunky mechanical keyboard connected to a retro computer terminal. The CRT monitor glows with lime green (#ecf874) code. A round tan mochi-ball creature happily eats a printed JSON receipt nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-16/PR-10225.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hacker beanie, typing on a chunky mechanical keyboard connected to a retro computer terminal. The CRT monitor glows with lime green (#ecf874) code. A round tan mochi-ball creature happily eats a printed JSON receipt nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-16T00:47:04.611210+00:00"
+}

@@ -1,26 +1,23 @@
 #!/bin/bash
-# Rotate PLN_GPU_TOKEN — the token the EC2 image service uses to
-# authenticate requests to GPU worker instances (Flux, Z-Image, Klein, LTX-2).
+# Rotate PLN_GPU_TOKEN — the token EC2 image service + enter worker (ACE-Step)
+# use to authenticate requests to GPU worker instances.
 #
 # Usage: ./rotate-infra-gpu-token.sh [--execute] [NEW_TOKEN]
 #
-# Default: dry-run (verify prerequisites + preview, no mutation).
-# Pass --execute to actually rotate.
+# Default: dry-run. Pass --execute for the full end-to-end cycle.
 #
-# Trust boundary: EC2 image service → GPU workers (RunPod, Lambda Labs)
+# Trust boundary: EC2 image + enter worker → GPU workers (RunPod + Lambda Labs)
 #
-# This script:
-# 1. Writes the new token into the SOPS-encrypted image + enter secrets files
-# 2. Updates Wrangler secrets used by enter.pollinations.ai (production, staging)
-# 3. Updates the token on each GPU worker via SSH ($HOME/.env + restart)
+# Order matters:
+#   1. SOPS → PR → main → production → deploy-enter-services triggers
+#      (EC2 image redeploys with new token, starts sending new to GPUs)
+#   2. SSH fan-out to 3 GPU hosts (each host's .env is replaced + workers restart)
+#   3. Wrangler secret put (enter worker switches to new)
 #
-# GPU workers validate the token via the x-backend-token HTTP header.
-# After running, commit the SOPS change and deploy EC2 to pick up the new env.
-#
-# Prerequisites:
-# - sops configured and working
-# - SSH keys stored in SOPS (SSH_RUNPOD_FLUX_ZIMAGE, SSH_RUNPOD_KLEIN, SSH_LAMBDA_SANA_LTX2_ACESTEP)
-# - wrangler CLI authenticated
+# Rejection windows (unavoidable without multi-token acceptance in GPU workers):
+#   - After step 1, before step 2: image EC2 sends new to GPUs with old → ~2min
+#   - After step 2, before step 3: enter sends old to updated GPUs → ~5s
+# Both are minimised by running SSH + Wrangler back-to-back post-deploy.
 
 set -e
 
@@ -29,23 +26,17 @@ REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
 
 DRY_RUN=true
-SOPS_FILES=(
-    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/enter.pollinations.ai/secrets/dev.vars.json"
-    "$REPO_ROOT/enter.pollinations.ai/secrets/staging.vars.json"
-    "$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
-)
-FAILURES=()
-
-# Parse flags
+PROVIDED_TOKEN=""
 while [[ "$1" == --* ]]; do
     case "$1" in
         --execute) DRY_RUN=false; shift ;;
         *) echo "Unknown flag: $1"; exit 1 ;;
     esac
 done
+if [ -n "$1" ]; then
+    PROVIDED_TOKEN="$1"
+fi
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -65,51 +56,24 @@ wrangler_cmd() {
     fi
 }
 
-check_sops_key() {
-    local file=$1
-    local key=$2
-    local fname
-    fname=$(basename "$(dirname "$(dirname "$file")")")/$(basename "$file")
+SOPS_FILES=(
+    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
+    "$ENTER_DIR/secrets/dev.vars.json"
+    "$ENTER_DIR/secrets/staging.vars.json"
+    "$ENTER_DIR/secrets/prod.vars.json"
+)
+SOPS_SECRETS_SSH_SOURCE="$ENTER_DIR/secrets/prod.vars.json"
+DEPLOY_WORKFLOW="deploy-enter-services.yml"
+HEALTH_URL="https://gen.pollinations.ai/v1/models"
 
-    if [ ! -f "$file" ]; then
-        error "Missing file: $fname"
-        FAILURES+=("Missing file: $fname")
-        return 1
-    fi
-
-    if sops -d "$file" | jq -e --arg key "$key" 'has($key)' >/dev/null; then
-        log "SOPS contains $key in $fname"
-    else
-        error "Missing $key in $fname"
-        FAILURES+=("Missing $key: $fname")
-        return 1
-    fi
-}
-
-run() {
-    if $DRY_RUN; then
-        log "[dry-run] $1"
-        return 0
-    fi
-
-    set +e
-    eval "$2"
-    local status=$?
-    set -e
-    return $status
-}
-
-# SSH configuration — extract keys from SOPS into temp files
 SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes"
-SOPS_SECRETS="$REPO_ROOT/enter.pollinations.ai/secrets/prod.vars.json"
-
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
 extract_ssh_key() {
     local sops_key=$1
     local out="$TEMP_DIR/$sops_key"
-    if ! sops -d "$SOPS_SECRETS" | jq -e -r --arg key "$sops_key" '.[$key] | select(. != null and . != "")' > "$out"; then
+    if ! sops -d "$SOPS_SECRETS_SSH_SOURCE" | jq -e -r --arg key "$sops_key" '.[$key] | select(. != null and . != "")' > "$out"; then
         return 1
     fi
     chmod 600 "$out"
@@ -134,87 +98,25 @@ verify_ssh_host() {
     set -e
 
     if [ $status -eq 0 ]; then
-        log "SSH OK: $label"
+        log "  SSH OK: $label"
     else
         error "SSH failed: $label"
         echo "  $output"
-        FAILURES+=("SSH: $label")
+        return 1
     fi
 }
 
 #######################################
-# Pre-flight: SOPS keys, SSH keys, Wrangler, SSH connectivity
-#######################################
-section "Pre-flight: extracting SSH keys from SOPS"
-FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE) || {
-    error "Missing SSH_RUNPOD_FLUX_ZIMAGE in SOPS"
-    FAILURES+=("Missing SSH_RUNPOD_FLUX_ZIMAGE")
-}
-KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN) || {
-    error "Missing SSH_RUNPOD_KLEIN in SOPS"
-    FAILURES+=("Missing SSH_RUNPOD_KLEIN")
-}
-LAMBDA_KEY=$(extract_ssh_key SSH_LAMBDA_SANA_LTX2_ACESTEP) || {
-    error "Missing SSH_LAMBDA_SANA_LTX2_ACESTEP in SOPS"
-    FAILURES+=("Missing SSH_LAMBDA_SANA_LTX2_ACESTEP")
-}
-log "Extracted 3 SSH keys to $TEMP_DIR"
-
-section "Pre-flight: verifying PLN_GPU_TOKEN prerequisites"
-
-for f in "${SOPS_FILES[@]}"; do
-    check_sops_key "$f" "PLN_GPU_TOKEN"
-done
-
-if wrangler_cmd whoami >/dev/null 2>&1; then
-    log "Wrangler authenticated"
-else
-    error "Wrangler not authenticated"
-    FAILURES+=("Wrangler auth")
-fi
-
-if [ -n "$FLUX_ZIMAGE_KEY" ] && [ -n "$KLEIN_KEY" ] && [ -n "$LAMBDA_KEY" ]; then
-    verify_ssh_host "RunPod Flux+Z-Image" "root@38.65.239.17" "19489" "$FLUX_ZIMAGE_KEY"
-    verify_ssh_host "RunPod Klein" "root@213.144.200.243" "10207" "$KLEIN_KEY"
-    verify_ssh_host "Lambda GH200" "ubuntu@192.222.51.105" "" "$LAMBDA_KEY"
-fi
-
-if [ ${#FAILURES[@]} -gt 0 ]; then
-    error "Pre-flight failed:"
-    for failure in "${FAILURES[@]}"; do
-        echo "  - $failure"
-    done
-    exit 1
-fi
-log "Pre-flight OK"
-FAILURES=()
-
-if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
-fi
-
-# Get or generate token
-if [ -n "$1" ]; then
-    section "Using provided token"
-    NEW_TOKEN="$1"
-else
-    section "Generating new PLN_GPU_TOKEN"
-    NEW_TOKEN=$(openssl rand -hex 32)
-fi
-log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
-
-#######################################
-# Helper: update .env on a remote host
+# Update token on a remote GPU host + restart workers
 #######################################
 update_remote_env() {
     local host=$1
     local port=$2
     local ssh_key=$3
-    local env_path=$4  # e.g. $HOME/.env or /workspace/.env
+    local env_path=$4
     local label=$5
     local restart_kind=$6
-
-    log "Updating $label..."
+    local new_token=$7
 
     local ssh_target
     if [ -n "$port" ]; then
@@ -227,36 +129,25 @@ update_remote_env() {
         ENV_FILE="$env_path"
         RESTART_KIND="$restart_kind"
         if [ -f "\$ENV_FILE" ]; then
-            sed -i 's/^PLN_GPU_TOKEN=.*/PLN_GPU_TOKEN=${NEW_TOKEN}/' "\$ENV_FILE"
+            sed -i 's/^PLN_GPU_TOKEN=.*/PLN_GPU_TOKEN=${new_token}/' "\$ENV_FILE"
             if ! grep -q PLN_GPU_TOKEN "\$ENV_FILE"; then
-                echo "PLN_GPU_TOKEN=${NEW_TOKEN}" >> "\$ENV_FILE"
+                echo "PLN_GPU_TOKEN=${new_token}" >> "\$ENV_FILE"
             fi
         else
-            echo "PLN_GPU_TOKEN=${NEW_TOKEN}" > "\$ENV_FILE"
+            echo "PLN_GPU_TOKEN=${new_token}" > "\$ENV_FILE"
         fi
-        echo "Updated \$ENV_FILE"
         VERIFY=\$(grep PLN_GPU_TOKEN "\$ENV_FILE" | cut -d= -f2)
-        echo "Verify: PLN_GPU_TOKEN=\${VERIFY:0:8}..."
+        echo "  remote: \${ENV_FILE} now PLN_GPU_TOKEN=\${VERIFY:0:8}..."
 
         start_screen_worker() {
-            local name=\$1
-            local workdir=\$2
-            local gpu=\$3
-            local port=\$4
-            local public_ip=\$5
-            local service_type=\$6
-            local log_file=\$7
-
+            local name=\$1 workdir=\$2 gpu=\$3 port=\$4 public_ip=\$5 service_type=\$6 log_file=\$7
             screen -S "\$name" -X quit 2>/dev/null || true
             screen -dmS "\$name" bash -lc "cd '\$workdir' && set -a && [ -f \$HOME/.env ] && source \$HOME/.env && set +a && source venv/bin/activate && CUDA_VISIBLE_DEVICES=\$gpu PORT=\$port PUBLIC_IP=\$public_ip PUBLIC_PORT=443 SERVICE_TYPE=\$service_type python server.py 2>&1 | tee \$log_file"
         }
 
         case "\$RESTART_KIND" in
             flux_zimage_screen)
-                if ! command -v screen >/dev/null 2>&1; then
-                    echo "screen is required to restart Flux/Z-Image workers"
-                    exit 1
-                fi
+                command -v screen >/dev/null 2>&1 || { echo "screen not available"; exit 1; }
                 start_screen_worker flux-gpu0 /opt/pollinations/image.pollinations.ai/nunchaku 0 8765 hsl3ksl31lvrcc-8765.proxy.runpod.net flux /tmp/flux-gpu0.log
                 start_screen_worker flux-gpu1 /opt/pollinations/image.pollinations.ai/nunchaku 1 8766 hsl3ksl31lvrcc-8766.proxy.runpod.net flux /tmp/flux-gpu1.log
                 start_screen_worker zimage-gpu2 /opt/pollinations/image.pollinations.ai/z-image 2 8767 hsl3ksl31lvrcc-8767.proxy.runpod.net zimage /tmp/zimage-gpu2.log
@@ -264,10 +155,7 @@ update_remote_env() {
                 screen -ls
                 ;;
             klein_workspace)
-                if [ ! -f /workspace/restart.sh ]; then
-                    echo "Missing /workspace/restart.sh"
-                    exit 1
-                fi
+                [ -f /workspace/restart.sh ] || { echo "missing /workspace/restart.sh"; exit 1; }
                 bash /workspace/restart.sh
                 ;;
             gh200_systemd)
@@ -276,110 +164,216 @@ update_remote_env() {
         esac
 REMOTE_EOF
     then
-        log "✅ $label"
+        log "  $label: updated + restarted"
     else
-        error "❌ $label"
-        FAILURES+=("$label")
+        error "  $label: update or restart FAILED"
+        return 1
     fi
 }
 
 #######################################
-# 1. Update SOPS files
+# Pre-flight
 #######################################
-section "Updating SOPS-encrypted secrets"
+section "Pre-flight: checks"
+
+cd "$REPO_ROOT"
+
+if ! $DRY_RUN; then
+    if [ -n "$(git status --porcelain)" ]; then
+        error "Working tree not clean — commit or stash before --execute."
+        git status --short
+        exit 1
+    fi
+fi
+
+if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
+    error "gh CLI not authenticated."
+    exit 1
+fi
+
+if ! wrangler_cmd whoami >/dev/null 2>&1; then
+    error "wrangler not authenticated."
+    exit 1
+fi
 
 for f in "${SOPS_FILES[@]}"; do
     fname=$(basename "$(dirname "$(dirname "$f")")")/$(basename "$f")
-    if [ ! -f "$f" ]; then
-        warn "Skipping $fname — file not found"
-        continue
+    if [ ! -f "$f" ] || ! sops -d "$f" | jq -e 'has("PLN_GPU_TOKEN")' >/dev/null; then
+        error "PLN_GPU_TOKEN missing from $fname"
+        exit 1
     fi
-    run "sops --set PLN_GPU_TOKEN in $fname" \
-        "sops --set '[\"PLN_GPU_TOKEN\"] \"$NEW_TOKEN\"' '$f'"
-    if [ $? -eq 0 ] || $DRY_RUN; then
-        log "✅ $fname"
-    else
-        error "❌ $fname"
-        FAILURES+=("SOPS: $fname")
-    fi
+done
+log "SOPS: PLN_GPU_TOKEN present in all 4 target files"
+
+section "Pre-flight: SSH reachability"
+FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE) || { error "Missing SSH_RUNPOD_FLUX_ZIMAGE in SOPS"; exit 1; }
+KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN) || { error "Missing SSH_RUNPOD_KLEIN in SOPS"; exit 1; }
+LAMBDA_KEY=$(extract_ssh_key SSH_LAMBDA_SANA_LTX2_ACESTEP) || { error "Missing SSH_LAMBDA_SANA_LTX2_ACESTEP in SOPS"; exit 1; }
+
+verify_ssh_host "RunPod Flux+Z-Image" "root@38.65.239.17" "19489" "$FLUX_ZIMAGE_KEY" || exit 1
+verify_ssh_host "RunPod Klein" "root@213.144.200.243" "10207" "$KLEIN_KEY" || exit 1
+verify_ssh_host "Lambda GH200" "ubuntu@192.222.51.105" "" "$LAMBDA_KEY" || exit 1
+
+log "Pre-flight OK"
+
+if $DRY_RUN; then
+    warn "DRY RUN — no changes will be made. Pass --execute to rotate."
+    echo
+    log "Plan:"
+    echo "  1. Generate new PLN_GPU_TOKEN (openssl rand -hex 32)"
+    echo "  2. Update SOPS (4 files: image + enter dev/staging/prod)"
+    echo "  3. Open PR: rotate/gpu-token-<date> → main, auto-merge"
+    echo "  4. Push main → production (admin) → deploy-enter-services deploys EC2"
+    echo "  5. SSH fan-out: update .env + restart workers on 3 GPU hosts"
+    echo "  6. Wrangler secret put (enter worker switches to new token)"
+    echo "  7. Health check $HEALTH_URL"
+    exit 0
+fi
+
+ORIGINAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+#######################################
+# 1. Generate or use provided token
+#######################################
+if [ -n "$PROVIDED_TOKEN" ]; then
+    section "Using provided token"
+    NEW_TOKEN="$PROVIDED_TOKEN"
+else
+    section "Generating new PLN_GPU_TOKEN"
+    NEW_TOKEN=$(openssl rand -hex 32)
+fi
+log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
+
+#######################################
+# 2. Update SOPS
+#######################################
+section "Updating SOPS-encrypted files"
+
+for f in "${SOPS_FILES[@]}"; do
+    fname=$(basename "$(dirname "$(dirname "$f")")")/$(basename "$f")
+    sops --set "[\"PLN_GPU_TOKEN\"] \"$NEW_TOKEN\"" "$f"
+    log "  $fname updated"
 done
 
 #######################################
-# 2. Update Wrangler secrets used by enter.pollinations.ai
+# 3. Open PR to main, auto-merge
 #######################################
-section "Updating Wrangler Secrets (enter.pollinations.ai)"
+section "Opening PR to main"
 
-run "wrangler secret put PLN_GPU_TOKEN --env production" \
-    "echo '$NEW_TOKEN' | wrangler_cmd secret put PLN_GPU_TOKEN --env production --config '$ENTER_DIR/wrangler.toml'"
-if [ $? -eq 0 ] || $DRY_RUN; then log "✅ production"; else error "❌ production"; FAILURES+=("Wrangler: production"); fi
+BRANCH="rotate/gpu-token-$(date +%Y%m%d-%H%M%S)"
+git checkout -b "$BRANCH"
+git add "${SOPS_FILES[@]}"
+git commit -m "rotate: PLN_GPU_TOKEN"
+git push -u origin "$BRANCH"
 
-run "wrangler secret put PLN_GPU_TOKEN --env staging" \
-    "echo '$NEW_TOKEN' | wrangler_cmd secret put PLN_GPU_TOKEN --env staging --config '$ENTER_DIR/wrangler.toml'"
-if [ $? -eq 0 ] || $DRY_RUN; then log "✅ staging"; else error "❌ staging"; FAILURES+=("Wrangler: staging"); fi
+gh pr create \
+    --base main \
+    --head "$BRANCH" \
+    --title "rotate: PLN_GPU_TOKEN" \
+    --body "Rotates \`PLN_GPU_TOKEN\` (EC2 image + enter worker → GPU workers). Updates 4 SOPS files. After merge, main→production triggers EC2 image deploy; the script then SSH-fans-out to GPU hosts, then updates the Wrangler secret so the worker switches too. Automated by \`rotate-infra-gpu-token.sh\`."
 
-#######################################
-# 3. RunPod pod hsl3ksl31lvrcc
-#    Flux + Z-Image (4x RTX 4090)
-#    SSH: root@38.65.239.17:19489 (key: SSH_RUNPOD_FLUX_ZIMAGE from SOPS)
-#    Workers: screen sessions (flux-gpu0, flux-gpu1, zimage-gpu2, zimage-gpu3)
-#    Token: $HOME/.env → read by server.py at startup
-#######################################
-section "Updating RunPod pod hsl3ksl31lvrcc (Flux + Z-Image)"
-
-run "SSH to RunPod Flux+Z-Image pod — update .env + restart workers" \
-    "update_remote_env 'root@38.65.239.17' '19489' '$FLUX_ZIMAGE_KEY' '\$HOME/.env' 'RunPod hsl3ksl31lvrcc (Flux+Z-Image)' 'flux_zimage_screen'"
+log "Enabling auto-merge..."
+gh pr merge "$BRANCH" --auto --squash
 
 #######################################
-# 4. RunPod pod pi90tfk3sa9t12
-#    Klein 4B (1x RTX 3090)
-#    SSH: root@213.144.200.243:10207 (key: SSH_RUNPOD_KLEIN from SOPS)
-#    Worker: FastAPI handler.py on port 8000
-#    Token: /workspace/.env → read by handler.py
+# 4. Poll until PR merged
 #######################################
-section "Updating RunPod pod pi90tfk3sa9t12 (Klein 4B)"
+section "Waiting for PR to merge"
 
-run "SSH to RunPod Klein pod — update .env + restart worker" \
-    "update_remote_env 'root@213.144.200.243' '10207' '$KLEIN_KEY' '/workspace/.env' 'RunPod pi90tfk3sa9t12 (Klein 4B)' 'klein_workspace'"
-
-#######################################
-# 5. Lambda Labs GH200
-#    LTX-2 (port 8765) + ACE-Step (port 8189) + Sana (port 8766)
-#    SSH: ubuntu@192.222.51.105
-#    Token: $HOME/.env → systemd services
-#######################################
-section "Updating Lambda Labs GH200 (LTX-2 + ACE-Step + Sana)"
-
-run "SSH to Lambda Labs GH200 — update .env + restart services" \
-    "update_remote_env 'ubuntu@192.222.51.105' '' '$LAMBDA_KEY' '\$HOME/.env' 'Lambda GH200 (LTX-2+ACE-Step+Sana)' 'gh200_systemd'"
+MERGE_TIMEOUT=900
+MERGE_ELAPSED=0
+while true; do
+    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    case "$STATE" in
+        MERGED) log "PR merged."; break ;;
+        CLOSED) error "PR was closed without merging."; exit 1 ;;
+    esac
+    if [ "$MERGE_ELAPSED" -ge "$MERGE_TIMEOUT" ]; then
+        error "Timed out waiting for PR merge after ${MERGE_TIMEOUT}s."
+        exit 1
+    fi
+    sleep 15
+    MERGE_ELAPSED=$((MERGE_ELAPSED + 15))
+done
 
 #######################################
-# Summary
+# 5. Push main → production
 #######################################
-section "PLN_GPU_TOKEN Rotation Summary"
+section "Promoting main → production"
 
-echo ""
-log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
-echo ""
-echo "Fan-out targets:"
-echo "  - SOPS: image.pollinations.ai/secrets/env.json"
-echo "  - Wrangler: enter.pollinations.ai (production, staging)"
-echo "  - RunPod hsl3ksl31lvrcc (Flux + Z-Image, 4x RTX 4090)"
-echo "  - RunPod pi90tfk3sa9t12 (Klein 4B, RTX 3090)"
-echo "  - Lambda Labs GH200 (LTX-2 + ACE-Step + Sana)"
-echo ""
+git checkout main
+git pull --ff-only origin main
+git fetch origin production
+git push origin main:production
+log "production advanced to main."
 
-if [ ${#FAILURES[@]} -eq 0 ]; then
-    log "✅ All updates completed successfully!"
-    echo ""
-    log "Next steps:"
-    echo "  1. Commit the SOPS file changes"
-    echo "  2. Deploy EC2 image service so it picks up PLN_GPU_TOKEN from SOPS"
-    echo "  3. Verify image generation and ACE-Step after rollout"
-else
-    error "The following updates failed:"
-    for failure in "${FAILURES[@]}"; do
-        echo "  - $failure"
-    done
-    echo ""
-    warn "Fix failures before proceeding."
+#######################################
+# 6. Watch deploy-enter-services (image EC2 picks up new token)
+#######################################
+section "Waiting for $DEPLOY_WORKFLOW"
+
+sleep 10
+RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+if [ -z "$RUN_ID" ]; then
+    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    exit 1
 fi
+log "Watching run $RUN_ID..."
+gh run watch "$RUN_ID" --exit-status || {
+    error "Deploy workflow failed. GPUs still have OLD token, EC2 now has NEW. Production is in a broken state — SSH fan-out not attempted."
+    exit 1
+}
+
+#######################################
+# 7. SSH fan-out to GPU hosts (close the image↔GPU rejection window)
+#######################################
+section "Updating GPU hosts via SSH"
+
+update_remote_env 'root@38.65.239.17' '19489' "$FLUX_ZIMAGE_KEY" '$HOME/.env' \
+    'RunPod hsl3ksl31lvrcc (Flux+Z-Image)' 'flux_zimage_screen' "$NEW_TOKEN" || {
+    error "SSH fan-out failed for Flux+Z-Image host. Fix manually."
+    exit 1
+}
+update_remote_env 'root@213.144.200.243' '10207' "$KLEIN_KEY" '/workspace/.env' \
+    'RunPod pi90tfk3sa9t12 (Klein)' 'klein_workspace' "$NEW_TOKEN" || {
+    error "SSH fan-out failed for Klein host. Fix manually."
+    exit 1
+}
+update_remote_env 'ubuntu@192.222.51.105' '' "$LAMBDA_KEY" '$HOME/.env' \
+    'Lambda GH200 (LTX-2+ACE-Step+Sana)' 'gh200_systemd' "$NEW_TOKEN" || {
+    error "SSH fan-out failed for Lambda GH200 host. Fix manually."
+    exit 1
+}
+
+#######################################
+# 8. Wrangler secret put (enter worker switches to new token)
+#######################################
+section "Updating Wrangler secret (enter worker switches to new token)"
+
+for env in production staging; do
+    echo "$NEW_TOKEN" | wrangler_cmd secret put PLN_GPU_TOKEN --env "$env" --config "$ENTER_DIR/wrangler.toml"
+    log "  wrangler: $env"
+done
+
+#######################################
+# 9. Health check
+#######################################
+section "Health check"
+
+STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "$HEALTH_URL")
+if [ "$STATUS" != "200" ]; then
+    error "Health check failed (HTTP $STATUS)."
+    exit 1
+fi
+log "Production healthy (HTTP 200)."
+
+#######################################
+# Restore original branch
+#######################################
+git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout main
+
+section "PLN_GPU_TOKEN Rotation Complete"
+echo ""
+log "New token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
+echo ""
+log "SOPS + EC2 image + GPU hosts (3) + enter worker now aligned on the new token."

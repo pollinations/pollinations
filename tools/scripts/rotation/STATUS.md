@@ -19,12 +19,6 @@ All scripts below have been rewritten under the unified full-cycle local flow (p
 | `rotate-genai-azure.sh` | ⚠️ partial | ✅ for 2/3 | East US + Sweden OK; **Content Safety resource not visible in default `az` subscription** |
 | `rotate-genai-gcp.sh` | ❌ | — | **Local `gcloud` (elliot@myceli.ai) can't list keys on the pollinations GCP project**; needs different auth |
 
-### Not rewritten (intentionally)
-
-| Script | State | Reason |
-|---|---|---|
-| `rotate-ops-cloudflare.sh` | Still the narrowed-to-observability version from earlier refactor, not brought under the full-cycle flow | Operator chose to skip in Batch 7 — observability token rotation is low-priority and the existing script is still functional |
-
 ## Never tested end-to-end
 
 Nothing has actually mutated production. The following are theoretical until someone runs `--execute`:
@@ -45,7 +39,6 @@ Nothing has actually mutated production. The following are theoretical until som
 3. **`TINYBIRD_LEGACY_READ_TOKEN`** — lives in the retired `pollinations_ai` Tinybird workspace. Consumed by `apps/operation/economics`. Not rotated by `rotate-ops-tinybird.sh` (current admin token can't reach that workspace). Rotate manually or migrate economics off the legacy workspace.
 4. **ElevenLabs first-run edge case** — the current runtime `ELEVENLABS_API_KEY` is Thomas's personal key, not under the rotate SA. First `--execute` will create a new SA key, switch SOPS to it, but **skip deleting** the personal key (the admin key can only manage keys under the SA). Operator revokes the personal key manually in the ElevenLabs UI after rotation. The script warns in that case.
 5. **Health checks are basic.** They verify the production endpoint is reachable (HTTP 200 or 401), not that the *specific rotated provider* actually works end-to-end. A targeted check would call a known model routed to that provider. Upgrade path documented per-script.
-6. **`rotate-ops-cloudflare.sh` not under the full-cycle flow.** Still uses the older in-place rotation approach without PR/production promotion; fine for observability token rotation but inconsistent with the rest of the suite. Convert later if needed.
 
 ## Invariant that holds so far
 
@@ -61,5 +54,4 @@ Despite the gaps above, nothing has actually broken in production:
 1. **First real `--execute` run**: pick the lowest-risk one (`rotate-genai-perplexity.sh` — small blast radius, rolling-safe, isolated to text service) to validate the PR→merge→production→deploy→health-check plumbing end-to-end.
 2. **Upgrade health checks** to be provider-specific (call a known model routed through the rotated provider).
 3. **Address gcp local auth** (either document the `gcloud auth login` recipe or delegate gcp rotations to CI).
-4. **Decide cloudflare-obs rotation fate** — bring under full-cycle flow, delete, or leave as-is.
-5. **Modularize** once all scripts are battle-tested: extract the shared git + PR + deploy-watch tail into a helper file (currently duplicated across 10 scripts as per the explicit "make them each 100% self-contained" constraint).
+4. **Modularize** once all scripts are battle-tested: extract the shared git + PR + deploy-watch tail into a helper file (currently duplicated across 9 scripts as per the explicit "make them each 100% self-contained" constraint).

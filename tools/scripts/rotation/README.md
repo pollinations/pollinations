@@ -10,7 +10,6 @@ No CI workflows — operators run scripts from their own machine with admin cred
 |-------|---------------|------------|-----------------|
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 (image/text) | enter `{dev,staging,prod}.vars.json`, image `env.json`, text `env.json` | GitHub secrets (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (production, staging) |
 | `PLN_GPU_TOKEN` | EC2 image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
-| `CLOUDFLARE_OBSERVABILITY_TOKEN` | enter.pollinations.ai observability pipeline | enter `env.json` | none |
 | `TINYBIRD_INGEST_TOKEN` | enter runtime → Tinybird current workspace append | enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
 | `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird current workspace read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
 | `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
@@ -43,7 +42,6 @@ No CI workflows — operators run scripts from their own machine with admin cred
 | Script | Platform | Rotation strategy | Downtime |
 |--------|----------|-------------------|----------|
 | `rotate-ops-tinybird.sh` | Tinybird | `POST /tokens/{name}/refresh` (in-place) + live Wrangler put | ~5s wrangler propagation |
-| `rotate-ops-cloudflare.sh` | Cloudflare | `PUT /tokens/{id}/value` (in-place) + live Wrangler put | ~5s wrangler propagation |
 
 All scripts default to **dry-run**. Pass `--execute` to actually rotate.
 
@@ -233,24 +231,6 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Failure handling | On first rotation, old runtime key may be Thomas's personal (not under SA) → skip delete, warn operator to revoke manually |
 | Cleanup | Restore original branch at end |
 
-### `rotate-ops-cloudflare.sh`
-
-| Aspect | Choice |
-|---|---|
-| Dry-run | Shows plan, exits 0 with no mutations |
-| Pre-flight | git clean, gh, wrangler, current `CLOUDFLARE_OBSERVABILITY_TOKEN` valid via `/user/tokens/verify` |
-| Rotation mechanism | `PUT /user/tokens/{id}/value` (in-place — immediate invalidation) |
-| Create-before-delete | ❌ (in-place rotate). Wrangler `secret put` is applied immediately (inside this script) to close the ~5s gap. |
-| Branch naming | `rotate/cloudflare-obs-<timestamp>` |
-| PR body | Mentions automation, token ID, in-place note |
-| Auto-merge | `gh pr merge --auto --squash` (for SOPS audit sync) |
-| Merge wait | Poll PR state, 15min timeout |
-| main→production | `git push origin main:production` (admin push) |
-| Deploy wait | n/a — worker-consumed; wrangler put already applied. Merge is just for SOPS/git audit. |
-| Health check | Worker observability endpoint responds (or known enter worker health endpoint) |
-| Failure handling | In-place rotate cannot be rolled back via SOPS — forward-only. |
-| Cleanup | Restore original branch at end |
-
 ### `rotate-ops-tinybird.sh`
 
 | Aspect | Choice |
@@ -311,7 +291,6 @@ Quick ways to obtain the admin credentials:
 # Real rotation — runs the full cycle end-to-end, including PR + deploy + health check
 ./rotate-infra-enter-token.sh --execute
 ./rotate-genai-aws.sh --execute
-./rotate-ops-cloudflare.sh --execute
 ./rotate-ops-tinybird.sh --execute --all
 ```
 
@@ -351,28 +330,21 @@ Or revert the SOPS commit on `main`, push `main` to `production`, and redeploy.
 | `STRIPE_WEBHOOK_SECRET` | Needs dual-secret verifier in `stripe-webhooks.ts` |
 | Polar (`POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`) | Third-party payment platform; rotation managed through Polar dashboard |
 
-`MUSIC_SERVICE_URL` is intentionally not rotated here. It is configuration, not an auth token, and enter still needs it for ACE-Step routing.
+## GPU workers
 
-## SSH keys
+Hosts reached by SSH during `rotate-infra-gpu-token.sh`. SSH keys are stored in SOPS (`enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`) and extracted into a temp file at rotation time.
 
-SSH keys for GPU workers are stored in SOPS (`enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`):
+| Worker | Pod / Host | SSH key (SOPS) | SSH target | `.env` path | Restart |
+|---|---|---|---|---|---|
+| Flux + Z-Image | RunPod `hsl3ksl31lvrcc` | `SSH_RUNPOD_FLUX_ZIMAGE` | `root@38.65.239.17 -p 19489` | `$HOME/.env` | screen sessions |
+| Klein 4B | RunPod `pi90tfk3sa9t12` | `SSH_RUNPOD_KLEIN` | `root@213.144.200.243 -p 10207` | `/workspace/.env` | `/workspace/restart.sh` |
+| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | `ubuntu@192.222.51.105` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
 
-| SOPS key | Provider | Models | SSH target |
-|----------|----------|--------|------------|
-| `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | Flux + Z-Image | `root@38.65.239.17 -p 19489` |
-| `SSH_RUNPOD_KLEIN` | RunPod | Klein 4B | `root@213.144.200.243 -p 10207` |
-| `SSH_LAMBDA_SANA_LTX2_ACESTEP` | Lambda Labs | Sana + LTX-2 + ACE-Step | `ubuntu@192.222.51.105` |
+`MUSIC_SERVICE_URL` in enter's SOPS points at the ACE-Step endpoint on the Lambda GH200 host. It is configuration (not an auth token) and is not rotated — but if the Lambda host changes, this URL has to move with it.
 
-To extract a key for SSH use:
+Ad-hoc SSH for debugging a GPU host:
+
 ```bash
 sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.SSH_RUNPOD_KLEIN' > /tmp/key && chmod 600 /tmp/key
 ssh -i /tmp/key root@213.144.200.243 -p 10207
 ```
-
-## GPU worker details
-
-| Worker | Pod/Host | SSH key (SOPS) | Token location | Restart method |
-|--------|----------|---------------|---------------|----------------|
-| Flux + Z-Image | RunPod `hsl3ksl31lvrcc` | `SSH_RUNPOD_FLUX_ZIMAGE` | `$HOME/.env` | Restart screen sessions |
-| Klein 4B | RunPod `pi90tfk3sa9t12` | `SSH_RUNPOD_KLEIN` | `/workspace/.env` | `/workspace/restart.sh` |
-| LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |

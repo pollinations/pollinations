@@ -72,7 +72,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 📈 <strong>Grow Your Tier:</strong> For developers building with
                 pollinations.ai. Level up to earn more pollen.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
                 {/* Spore */}
                 <div
                     className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.spore].bg} ${currentTier === "spore" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.spore].ring}` : ""}`}
@@ -142,26 +142,6 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <p className="text-[10px] text-amber-600 mt-0.5">
                             {TIER_EMOJIS.seed} Must be Seed first
                         </p>
-                    </div>
-                </div>
-
-                {/* Nectar */}
-                <div
-                    className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.nectar].bg} ${currentTier === "nectar" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.nectar].ring}` : ""}`}
-                >
-                    <div className="flex items-center gap-1.5">
-                        <span>{TIER_EMOJIS.nectar}</span>
-                        <strong className="text-gray-800 text-sm">
-                            Nectar
-                        </strong>
-                    </div>
-                    <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.nectar} pollen/hour
-                    </p>
-                    <div className="mt-1.5 border-t border-gray-200 pt-1.5">
-                        <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
-                            Coming soon 🔮
-                        </span>
                     </div>
                 </div>
             </div>

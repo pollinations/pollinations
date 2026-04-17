@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-16",
+  "period_start": "2026-04-16",
+  "period_end": "2026-04-16",
+  "generated_at": "2026-04-17T06:34:45.483020+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-16/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped polli CLI for terminal access and new prompt-to-video showcase",
+  "text": "Just merged a couple PRs today. The main update is PR #10225, which introduces `polli`, our official CLI.\n\nIf you've been writing your own curl wrappers to hit the API, you can swap those out now. The CLI lets you generate images or pipe text to the LLM endpoints directly from your terminal. It's lightweight and makes testing prompts or chaining outputs into other scripts a lot less annoying. \n\nWe also merged PR #10270, which adds kre8.info to the community showcase. It's a prompt-to-video shorts generator built on top of our infrastructure. It's a good example of how to handle the video generation endpoints if you're looking for reference implementations.\n\nBoth updates are live. The CLI is still in its early stages, so if you run into weird edge cases or formatting bugs when piping stdout, please drop an issue on GitHub. \n\nCode, docs, and the new CLI are up on the main repo."
+}

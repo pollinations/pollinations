@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import { normalizeAllowedModelSelection } from "@/client/components/api-keys/model-selection.ts";
 import {
     AUTHORIZE_ALLOWED_ACCOUNT_PERMISSIONS,
-    DEFAULT_CONSENT_ACCOUNT_PERMISSIONS,
+    BASELINE_CONSENT_PERMISSIONS,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
-    getAuthorizeDevicePermissions,
     getAuthorizeInitialPermissions,
+    OPTIONAL_CONSENT_PERMISSIONS,
     sanitizeAuthorizeAccountPermissions,
+    withBaselinePermissions,
 } from "@/client/lib/authorize-config.ts";
 
 describe("normalizeAllowedModelSelection", () => {
@@ -42,11 +43,11 @@ describe("getAuthorizeInitialPermissions", () => {
             allowedModels: undefined,
             pollenBudget: DEFAULT_CONSENT_BUDGET,
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
-            accountPermissions: [...DEFAULT_CONSENT_ACCOUNT_PERMISSIONS],
+            accountPermissions: null,
         });
     });
 
-    it("preserves explicit url-provided permission values", () => {
+    it("keeps optional permissions from the url in state", () => {
         expect(
             getAuthorizeInitialPermissions({
                 models: ["flux"],
@@ -62,16 +63,29 @@ describe("getAuthorizeInitialPermissions", () => {
         });
     });
 
-    it("strips hidden permissions from url-provided values", () => {
+    it("strips baseline permissions from url-provided values (they are implicit)", () => {
         expect(
             getAuthorizeInitialPermissions({
-                permissions: ["usage", "keys", "profile"],
+                permissions: ["profile", "balance", "usage"],
             }),
         ).toEqual({
             allowedModels: undefined,
             pollenBudget: DEFAULT_CONSENT_BUDGET,
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
-            accountPermissions: ["usage", "profile"],
+            accountPermissions: ["usage"],
+        });
+    });
+
+    it("returns null account permissions when only baseline scopes are passed", () => {
+        expect(
+            getAuthorizeInitialPermissions({
+                permissions: ["profile", "balance"],
+            }),
+        ).toEqual({
+            allowedModels: undefined,
+            pollenBudget: DEFAULT_CONSENT_BUDGET,
+            expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
+            accountPermissions: null,
         });
     });
 
@@ -84,7 +98,7 @@ describe("getAuthorizeInitialPermissions", () => {
             allowedModels: null,
             pollenBudget: DEFAULT_CONSENT_BUDGET,
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
-            accountPermissions: [...DEFAULT_CONSENT_ACCOUNT_PERMISSIONS],
+            accountPermissions: null,
         });
     });
 
@@ -97,7 +111,7 @@ describe("getAuthorizeInitialPermissions", () => {
             allowedModels: undefined,
             pollenBudget: 0,
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
-            accountPermissions: [...DEFAULT_CONSENT_ACCOUNT_PERMISSIONS],
+            accountPermissions: null,
         });
     });
 });
@@ -127,23 +141,31 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
     });
 });
 
-describe("getAuthorizeDevicePermissions", () => {
-    it("always includes profile for device flows", () => {
-        expect(getAuthorizeDevicePermissions(["usage"])).toEqual([
-            "profile",
+describe("withBaselinePermissions", () => {
+    it("always includes profile and balance", () => {
+        expect(withBaselinePermissions(null)).toEqual([
+            ...BASELINE_CONSENT_PERMISSIONS,
+        ]);
+    });
+
+    it("merges optional permissions without duplicating baseline", () => {
+        expect(withBaselinePermissions(["usage"])).toEqual([
+            ...BASELINE_CONSENT_PERMISSIONS,
             "usage",
         ]);
     });
 
-    it("strips hidden or invalid device scopes", () => {
+    it("is idempotent when optional already contains baseline", () => {
         expect(
-            getAuthorizeDevicePermissions(["keys", "offline_access", "usage"]),
-        ).toEqual(["profile", "usage"]);
+            withBaselinePermissions(["profile", "balance", "usage"]),
+        ).toEqual([...BASELINE_CONSENT_PERMISSIONS, "usage"]);
     });
+});
 
-    it("falls back to profile when no safe device scopes remain", () => {
-        expect(
-            getAuthorizeDevicePermissions(["keys", "offline_access"]),
-        ).toEqual(["profile"]);
+describe("consent permission sets", () => {
+    it("baseline and optional sets do not overlap", () => {
+        for (const p of BASELINE_CONSENT_PERMISSIONS) {
+            expect(OPTIONAL_CONSENT_PERMISSIONS).not.toContain(p);
+        }
     });
 });

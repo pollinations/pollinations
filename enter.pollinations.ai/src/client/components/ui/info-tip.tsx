@@ -5,6 +5,7 @@ type InfoTipProps = {
     label?: string;
     tone?: "pink" | "amber" | "blue" | "violet";
     placement?: "top" | "bottom";
+    icon?: "i" | "!";
 };
 
 const TONES = {
@@ -35,6 +36,7 @@ export const InfoTip: FC<InfoTipProps> = ({
     label = "More info",
     tone = "pink",
     placement = "bottom",
+    icon = "i",
 }) => {
     const [show, setShow] = useState(false);
     const tooltipId = useId();
@@ -62,7 +64,7 @@ export const InfoTip: FC<InfoTipProps> = ({
             <span
                 className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border transition-colors text-[10px] font-bold cursor-pointer ${classes.badge}`}
             >
-                i
+                {icon}
             </span>
             <span
                 id={tooltipId}

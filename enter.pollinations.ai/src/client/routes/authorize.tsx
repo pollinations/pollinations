@@ -13,13 +13,12 @@ import { SCOPE_LABELS } from "../components/auth/scope-labels.ts";
 import { Button } from "../components/button.tsx";
 import { InfoTip } from "../components/ui/info-tip.tsx";
 import { config } from "../config.ts";
-import { useAutoHideScrollbar } from "../hooks/use-auto-hide-scrollbar.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 import {
     AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
-    getAuthorizeDevicePermissions,
     getAuthorizeInitialPermissions,
     sanitizeAuthorizeAccountPermissions,
+    withBaselinePermissions,
 } from "../lib/authorize-config.ts";
 import { formatPollen } from "../lib/format-pollen.ts";
 
@@ -146,18 +145,18 @@ function AuthorizeComponent() {
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
     );
-    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>(
-        !isPending && !!user,
-    );
-    const canAuthorize = isDeviceMode || parsedRedirectUrl !== null;
+    const hasBudget = keyPermissions.permissions.pollenBudget !== null;
+    const canAuthorize =
+        (isDeviceMode || parsedRedirectUrl !== null) && hasBudget;
 
     useScrollLock();
 
-    // Sync device scopes into key permissions when they arrive
+    // Sync device-requested optional permissions (e.g. "usage") into state.
+    // Baseline profile+balance is always granted and not stored here.
     useEffect(() => {
-        if (deviceScopes.length > 0) {
-            setAccountPermissions(getAuthorizeDevicePermissions(deviceScopes));
-        }
+        if (deviceScopes.length === 0) return;
+        const sanitized = sanitizeAuthorizeAccountPermissions(deviceScopes);
+        setAccountPermissions(sanitized);
     }, [deviceScopes, setAccountPermissions]);
 
     useEffect(() => {
@@ -283,14 +282,14 @@ function AuthorizeComponent() {
 
             const { allowedModels, pollenBudget, accountPermissions } =
                 keyPermissions.permissions;
-            const safeAccountPermissions =
+            const sanitizedOptional =
                 sanitizeAuthorizeAccountPermissions(accountPermissions);
+            const finalPermissions =
+                withBaselinePermissions(sanitizedOptional);
             const updates = {
                 ...(allowedModels !== null && { allowedModels }),
                 ...(pollenBudget !== null && { pollenBudget }),
-                ...(safeAccountPermissions?.length && {
-                    accountPermissions: safeAccountPermissions,
-                }),
+                accountPermissions: finalPermissions,
             };
             if (Object.keys(updates).length > 0) {
                 const response = await fetch(`/api/api-keys/${id}/update`, {
@@ -448,9 +447,9 @@ function AuthorizeComponent() {
                             Sign in to Authorize
                         </h2>
                         <img
-                            src="/logo_text_black.svg"
+                            src="/logo.svg"
                             alt="pollinations.ai"
-                            className="h-8 object-contain"
+                            className="h-8 w-8 object-contain invert"
                         />
                     </div>
 
@@ -567,173 +566,269 @@ function AuthorizeComponent() {
     }
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
+        <div className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto bg-green-950/50">
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="authorize-dialog-title"
-                className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col"
+                className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-w-lg w-full my-auto"
             >
-                <div className="shrink-0 px-6 pt-6 pb-2">
-                    <div className="flex items-center justify-between">
-                        <h2
-                            id="authorize-dialog-title"
-                            className="text-lg font-semibold"
+                <div className="px-6 pt-6 pb-2">
+                    <div className="flex items-center justify-between gap-3">
+                        <a
+                            href="https://enter.pollinations.ai"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 min-w-0"
                         >
-                            {isDeviceMode
-                                ? "Authorize Device"
-                                : "Authorize App"}
-                        </h2>
-                        <img
-                            src="/logo_text_black.svg"
-                            alt="pollinations.ai"
-                            className="h-8 object-contain"
-                        />
+                            {user.image && (
+                                <img
+                                    src={user.image}
+                                    alt=""
+                                    className="w-6 h-6 rounded-full shrink-0"
+                                />
+                            )}
+                            <span className="text-sm font-medium text-gray-900 truncate">
+                                {user.githubUsername || user.email}
+                            </span>
+                        </a>
+                        <div className="shrink-0">
+                            <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden">
+                                {totalBalance !== null && (
+                                    <span className="flex items-center px-3 text-amber-900 whitespace-nowrap">
+                                        {formatPollen(totalBalance)} pollen
+                                    </span>
+                                )}
+                                <a
+                                    href="https://enter.pollinations.ai/#buy-pollen"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={cn(
+                                        "flex items-center px-3 py-1 font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 transition-colors cursor-pointer",
+                                        totalBalance !== null &&
+                                            "border-l border-amber-300",
+                                    )}
+                                >
+                                    Top up
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex-1 min-h-0 flex flex-col px-6 py-2 space-y-4">
+                <div className="px-6 py-2 space-y-4">
                     {error ? (
                         <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
                             <p className="text-red-800 text-sm">{error}</p>
                         </div>
                     ) : (
                         <>
-                            <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-4 shrink-0">
-                                {isDeviceMode ? (
-                                    <>
-                                        {attribution?.appName ? (
-                                            <>
-                                                <p className="text-xs text-amber-800 mb-1">
+                            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg overflow-hidden">
+                                <div className="p-4 bg-amber-100">
+                                    <p
+                                        id="authorize-dialog-title"
+                                        className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2"
+                                    >
+                                        Authorize
+                                    </p>
+                                    {isDeviceMode ? (
+                                        <>
+                                            {attribution?.appName ? (
+                                                <>
+                                                    <p className="text-xs text-amber-800 mb-1">
+                                                        A device is requesting
+                                                        access via
+                                                    </p>
+                                                    <p className="font-bold text-gray-900 text-lg">
+                                                        {attribution.appName}
+                                                    </p>
+                                                    {attribution.githubUsername && (
+                                                        <p className="text-sm text-amber-900 mt-0.5">
+                                                            by{" "}
+                                                            <a
+                                                                href={`https://github.com/${attribution.githubUsername}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="font-medium underline hover:text-gray-900"
+                                                            >
+                                                                @
+                                                                {
+                                                                    attribution.githubUsername
+                                                                }
+                                                            </a>
+                                                        </p>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <p className="text-sm text-gray-900 font-medium">
                                                     A device is requesting
-                                                    access via
+                                                    access to your account
                                                 </p>
+                                            )}
+                                            <p className="text-xs text-amber-900 mt-1 font-mono">
+                                                Code: {user_code}
+                                            </p>
+                                        </>
+                                    ) : attribution?.appName ? (
+                                        <>
+                                            <div className="flex items-center gap-1.5">
                                                 <p className="font-bold text-gray-900 text-lg">
                                                     {attribution.appName}
                                                 </p>
-                                                {attribution.githubUsername && (
-                                                    <p className="text-sm text-amber-900 mt-0.5">
-                                                        by{" "}
-                                                        <a
-                                                            href={`https://github.com/${attribution.githubUsername}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="font-medium underline hover:text-gray-900"
-                                                        >
-                                                            @
-                                                            {
-                                                                attribution.githubUsername
-                                                            }
-                                                        </a>
-                                                    </p>
+                                                {!isDeviceMode && (
+                                                    <InfoTip
+                                                        text="Same as copy-pasting an API key into their app. Only share with apps you trust."
+                                                        label="API key sharing warning"
+                                                        tone="amber"
+                                                        icon="!"
+                                                    />
                                                 )}
-                                            </>
-                                        ) : (
-                                            <p className="text-sm text-gray-900 font-medium">
-                                                A device is requesting access to
-                                                your account
+                                            </div>
+                                            {attribution.githubUsername && (
+                                                <p className="text-sm text-amber-900 mt-0.5">
+                                                    by{" "}
+                                                    <a
+                                                        href={`https://github.com/${attribution.githubUsername}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="font-medium underline hover:text-gray-900"
+                                                    >
+                                                        @
+                                                        {
+                                                            attribution.githubUsername
+                                                        }
+                                                    </a>
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-amber-900 font-mono mt-1">
+                                                {redirectHostname}
                                             </p>
-                                        )}
-                                        <p className="text-xs text-amber-900 mt-1 font-mono">
-                                            Code: {user_code}
-                                        </p>
-                                    </>
-                                ) : attribution?.appName ? (
-                                    <>
-                                        <p className="font-bold text-gray-900 text-lg">
-                                            {attribution.appName}
-                                        </p>
-                                        {attribution.githubUsername && (
-                                            <p className="text-sm text-amber-900 mt-0.5">
-                                                by{" "}
-                                                <a
-                                                    href={`https://github.com/${attribution.githubUsername}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="font-medium underline hover:text-gray-900"
-                                                >
-                                                    @
-                                                    {attribution.githubUsername}
-                                                </a>
+                                        </>
+                                    ) : (
+                                        <div className="flex items-center gap-1.5">
+                                            <p className="font-bold text-gray-900 text-lg font-mono">
+                                                {redirectHostname}
                                             </p>
-                                        )}
-                                        <p className="text-xs text-amber-900 font-mono mt-1">
-                                            {redirectHostname}
-                                        </p>
-                                    </>
-                                ) : (
-                                    <p className="font-bold text-gray-900 text-lg font-mono">
-                                        {redirectHostname}
-                                    </p>
-                                )}
-                            </div>
+                                            {!isDeviceMode && (
+                                                <InfoTip
+                                                    text="Same as copy-pasting an API key into their app. Only share with apps you trust."
+                                                    label="API key sharing warning"
+                                                    tone="amber"
+                                                    icon="!"
+                                                />
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
 
-                            {deviceScopes.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium text-gray-900 mb-2">
-                                        This will allow the device to:
-                                    </p>
-                                    <ul className="text-sm text-amber-900 space-y-2">
-                                        {deviceScopes.map((s) => (
-                                            <li
-                                                key={s}
-                                                className="flex items-start gap-2"
-                                            >
-                                                <span className="text-amber-700">
-                                                    &#x2713;
+                                {deviceScopes.length > 0 && (
+                                    <div className="p-4 border-b border-amber-300">
+                                        <p className="text-sm font-medium text-gray-900 mb-2">
+                                            This will allow the device to:
+                                        </p>
+                                        <ul className="text-sm text-amber-900 space-y-2">
+                                            {deviceScopes.map((s) => (
+                                                <li
+                                                    key={s}
+                                                    className="flex items-start gap-2"
+                                                >
+                                                    <span className="text-amber-700">
+                                                        &#x2713;
+                                                    </span>
+                                                    <span>
+                                                        {SCOPE_LABELS[s] || s}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {!isDeviceMode && (
+                                    <div className="p-4">
+                                        <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-3">
+                                            To
+                                        </p>
+                                        <ul className="text-sm text-amber-900 space-y-3">
+                                            <li className="flex items-start gap-2">
+                                                <span
+                                                    className={`w-4 shrink-0 ${
+                                                        modalities.length === 0
+                                                            ? "text-red-600"
+                                                            : "text-amber-700"
+                                                    }`}
+                                                >
+                                                    {modalities.length === 0
+                                                        ? "\u2717"
+                                                        : "\u2713"}
+                                                </span>
+                                                {modalities.length === 0 ? (
+                                                    <span>
+                                                        No AI models are
+                                                        enabled.
+                                                    </span>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span>Generate</span>
+                                                        <div className="flex items-center gap-1 flex-nowrap">
+                                                            {modalities.map(
+                                                                (m) => (
+                                                                    <span
+                                                                        key={m}
+                                                                        className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${getPermissionPillClasses(m)}`}
+                                                                    >
+                                                                        {m}
+                                                                    </span>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <span className="w-4 shrink-0 text-amber-800">
+                                                    &#x231B;
                                                 </span>
                                                 <span>
-                                                    {SCOPE_LABELS[s] || s}
+                                                    {keyPermissions.permissions
+                                                        .expiryDays === null
+                                                        ? "Never expires"
+                                                        : `Expires in ${keyPermissions.permissions.expiryDays} day${keyPermissions.permissions.expiryDays === 1 ? "" : "s"}`}
+                                                    {" — revoke anytime at "}
+                                                    <a
+                                                        href="https://enter.pollinations.ai"
+                                                        className="text-gray-900 font-medium underline"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        enter.pollinations.ai
+                                                    </a>
                                                 </span>
                                             </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                            <div
-                                ref={scrollAreaRef}
-                                className="bg-amber-50 border-2 border-amber-300 rounded-lg flex-1 min-h-0 overflow-y-auto scrollbar-subtle scrollbar-theme-amber"
-                            >
-                                <div className="p-4 flex items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        {user.image && (
-                                            <img
-                                                src={user.image}
-                                                alt=""
-                                                className="w-6 h-6 rounded-full shrink-0"
-                                            />
-                                        )}
-                                        <span className="text-sm font-medium text-gray-900 truncate">
-                                            {user.githubUsername || user.email}
-                                        </span>
-                                    </div>
-                                    <div className="shrink-0">
-                                        <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden">
-                                            {totalBalance !== null && (
-                                                <span className="flex items-center px-3 text-amber-900 whitespace-nowrap">
-                                                    {formatPollen(totalBalance)}{" "}
-                                                    pollen
+                                            <li className="flex items-start gap-2">
+                                                <span className="w-4 shrink-0 text-amber-800">
+                                                    &#x1F464;
                                                 </span>
-                                            )}
-                                            <a
-                                                href="https://enter.pollinations.ai/#buy-pollen"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className={cn(
-                                                    "flex items-center px-3 py-1 font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 transition-colors cursor-pointer",
-                                                    totalBalance !== null &&
-                                                        "border-l border-amber-300",
-                                                )}
-                                            >
-                                                Top up
-                                            </a>
-                                        </div>
+                                                <span>
+                                                    See your GitHub username,
+                                                    name, email, and tier.
+                                                </span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <span className="w-4 shrink-0 text-amber-800">
+                                                    &#x1F4B0;
+                                                </span>
+                                                <span>
+                                                    See its own remaining
+                                                    spending limit.
+                                                </span>
+                                            </li>
+                                        </ul>
                                     </div>
-                                </div>
+                                )}
 
                                 <div className="border-t border-amber-300 p-4">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center justify-between gap-3">
                                         <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 mb-0 shrink-0">
                                             Spending limit
                                             <InfoTip
@@ -756,71 +851,17 @@ function AuthorizeComponent() {
                                     </div>
                                 </div>
 
-                                {!isDeviceMode && (
-                                    <ul className="border-t border-amber-300 p-4 text-sm text-amber-900 space-y-3">
-                                        <li className="flex items-start gap-2">
-                                            <span
-                                                className={`w-4 shrink-0 ${
-                                                    modalities.length === 0
-                                                        ? "text-red-600"
-                                                        : "text-amber-700"
-                                                }`}
-                                            >
-                                                {modalities.length === 0
-                                                    ? "\u2717"
-                                                    : "\u2713"}
-                                            </span>
-                                            {modalities.length === 0 ? (
-                                                <span>
-                                                    No AI models are enabled.
-                                                </span>
-                                            ) : (
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span>Generate</span>
-                                                    <div className="flex items-center gap-1 flex-nowrap">
-                                                        {modalities.map((m) => (
-                                                            <span
-                                                                key={m}
-                                                                className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${getPermissionPillClasses(m)}`}
-                                                            >
-                                                                {m}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="w-4 shrink-0 text-amber-800">
-                                                &#x231B;
-                                            </span>
-                                            <span>
-                                                {keyPermissions.permissions
-                                                    .expiryDays === null
-                                                    ? "Never expires"
-                                                    : `Expires in ${keyPermissions.permissions.expiryDays} day${keyPermissions.permissions.expiryDays === 1 ? "" : "s"}`}
-                                                {" — revoke anytime at "}
-                                                <a
-                                                    href="https://enter.pollinations.ai"
-                                                    className="text-gray-900 font-medium underline"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    enter.pollinations.ai
-                                                </a>
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="w-4 shrink-0 text-amber-800">
-                                                &#x1F464;
-                                            </span>
-                                            <span>
-                                                Shares your GitHub username and
-                                                profile picture.
-                                            </span>
-                                        </li>
-                                    </ul>
-                                )}
+                                <div className="border-t border-amber-300 p-4">
+                                    <ExpiryDaysInput
+                                        value={
+                                            keyPermissions.permissions
+                                                .expiryDays
+                                        }
+                                        onChange={keyPermissions.setExpiryDays}
+                                        inline
+                                        theme="amber"
+                                    />
+                                </div>
 
                                 <details className="group border-t border-amber-300">
                                     <summary className="cursor-pointer list-none px-3 py-3 text-xs font-medium text-amber-800 flex items-center justify-end gap-1 select-none transition-all hover:bg-amber-100 hover:text-amber-950">
@@ -830,17 +871,6 @@ function AuthorizeComponent() {
                                         </span>
                                     </summary>
                                     <div className="px-3 pb-3 pt-1 space-y-6">
-                                        <ExpiryDaysInput
-                                            value={
-                                                keyPermissions.permissions
-                                                    .expiryDays
-                                            }
-                                            onChange={
-                                                keyPermissions.setExpiryDays
-                                            }
-                                            inline
-                                            theme="amber"
-                                        />
                                         <AccountPermissionsInput
                                             value={
                                                 keyPermissions.permissions
@@ -869,7 +899,7 @@ function AuthorizeComponent() {
                     )}
                 </div>
 
-                <div className="flex items-center justify-between p-6 pt-4 shrink-0">
+                <div className="flex items-center justify-between p-6 pt-4">
                     <a
                         href="/terms"
                         className="text-xs text-amber-800 hover:text-gray-900 hover:underline"

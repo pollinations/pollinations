@@ -851,7 +851,7 @@ function AuthorizeComponent() {
                                     </div>
                                 </div>
 
-                                <div className="border-t border-amber-300 p-4">
+                                <div className="px-4 pb-4">
                                     <ExpiryDaysInput
                                         value={
                                             keyPermissions.permissions

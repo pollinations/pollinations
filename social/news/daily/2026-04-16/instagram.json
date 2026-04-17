@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-16",
+  "period_start": "2026-04-16",
+  "period_end": "2026-04-16",
+  "generated_at": "2026-04-17T06:34:45.483020+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-16/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-16/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-16/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Terminal velocity achieved. We shipped the official `polli` CLI this week. Because sometimes you just want to generate things without leaving your terminal or writing a fetch request. Just install it and you're off.\n\nWe also added kre8.info to the community showcase — they're doing some wild prompt-to-video shorts using our infrastructure. We love seeing what happens when we just provide the pipes and get out of the way.\n\nCode's open, API's free. Come build something weird. 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #cli #terminal #generativeai #buildinpublic #developer #techcommunity",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

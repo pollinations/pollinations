@@ -41,18 +41,15 @@ function capabilities(m: ModelEntry): string {
     return caps.join(",") || "-";
 }
 
-function truncate(s: string, max: number): string {
-    return s.length <= max ? s : `${s.slice(0, max - 1)}…`;
-}
-
 function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
     const name = chalk.level > 0 ? chalk.hex("#a78bfa").bold(m.name) : m.name;
-    const descMax = verbose ? 80 : 44;
+    // Keep full description intact so pipes and redirects preserve data.
+    // printTable handles TTY-aware truncation of the last column.
     const row: Record<string, unknown> = {
         name,
         type: mType,
         capabilities: capabilities(m),
-        description: truncate(m.description ?? "-", descMax),
+        description: m.description ?? "-",
         pricing: m.pricing ?? null,
     };
     if (verbose) {

@@ -40,7 +40,7 @@ program
     .addHelpText(
         "after",
         chalk.dim(
-            `\nAI agent? Read the skill file for the full usage map:\n  raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md\n`,
+            `\nAI agent? Read the skill file for the full usage map:\n  https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md\n`,
         ),
     )
     .hook("preAction", () => {

@@ -7,13 +7,17 @@
 # Produces: <base>.mp4 (final, audio+video muxed) where <base> is the tape
 # filename minus .tape. Defaults to demo.tape.
 
+set -eu
+set -o pipefail
+
 cd "$(dirname "$0")"
 
 TAPE="${1:-demo.tape}"
 BASE="${TAPE%.tape}"
 
-# Archive previous renders for this base
-ts=$(date +%H%M)
+# Archive previous renders for this base. HHMMSS so two renders in the
+# same minute don't collide.
+ts=$(date +%H%M%S)
 for f in "$BASE.mp4" "$BASE-silent.mp4" captured.wav captured-trim.wav; do
     [ -f "$f" ] && mv "$f" "${f%.*}-v$ts.${f##*.}"
 done
@@ -22,8 +26,8 @@ done
 # for long recordings; no device-index dance, addresses BlackHole by name).
 AUDIODRIVER=coreaudio sox -q -c 2 -r 48000 -t coreaudio "BlackHole 2ch" \
     -c 2 -r 48000 -b 16 captured.wav 2>/tmp/sox-capture.log &
-FFPID=$!
-trap "kill -INT $FFPID 2>/dev/null; wait $FFPID 2>/dev/null" EXIT
+SOX_PID=$!
+trap "kill -INT $SOX_PID 2>/dev/null; wait $SOX_PID 2>/dev/null" EXIT
 sleep 2.5
 
 # (Optional) play external music through BlackHole in parallel so it gets captured too
@@ -34,8 +38,8 @@ vhs "$TAPE"
 
 # Let trailing audio flush, then stop capture
 sleep 2
-kill -INT $FFPID 2>/dev/null
-wait $FFPID 2>/dev/null
+kill -INT $SOX_PID 2>/dev/null
+wait $SOX_PID 2>/dev/null
 trap - EXIT
 
 # Mux: keep video, shift captured audio forward 4s so narrations land
@@ -47,7 +51,7 @@ ffmpeg -y -ss 5 -i captured.wav -i "$BASE-silent.mp4" \
     -t "$VID_DUR" -c:v copy -c:a aac \
     -af "afade=t=out:st=${FADE_START}:d=3" \
     -map 1:v -map 0:a \
-    "$BASE.mp4" 2>/dev/null
+    "$BASE.mp4" 2>/tmp/ffmpeg-mux.log
 
 V=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$BASE.mp4")
 SZ=$(stat -f%z "$BASE.mp4")

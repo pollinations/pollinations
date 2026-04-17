@@ -45,7 +45,7 @@ polli gen image "cyberpunk city at night" --model flux --output city.png
 polli gen image "enhance this" --image https://media.pollinations.ai/abc --model gptimage
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
-polli gen audio "read it to me" --play                # also plays while writing
+polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
 polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
 polli gen transcribe speech.mp3
 

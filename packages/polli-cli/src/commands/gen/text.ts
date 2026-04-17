@@ -68,9 +68,16 @@ export function createTextCommand() {
             }
 
             const isHuman = getOutputMode() === "human";
-            // Streaming on by default in human mode; --no-stream opts out.
-            // Always off when writing to a file or emitting JSON.
-            const useStream = opts.stream !== false && !opts.output && isHuman;
+            // Streaming on by default when a human is watching (TTY stdout).
+            // Auto-off when piping/redirecting so SSE chunks don't leak into
+            // the downstream consumer. `--no-stream` forces off; `--stream`
+            // (when explicitly passed) forces on even if piped.
+            const explicitStream = opts.stream === true;
+            const autoStream = isHuman && !!process.stdout.isTTY;
+            const useStream =
+                opts.stream !== false &&
+                !opts.output &&
+                (explicitStream || autoStream);
 
             type ContentPart =
                 | { type: "text"; text: string }

@@ -21,8 +21,7 @@ Set Framerate 20
 Set CursorBlink true
 
 Hide
-Type "cd /Users/thomash/Documents/GitHub/pollinations-fundraising/.claude/skills/polli-video/example"
-Enter
+# render.sh already cd's into the example dir; no `cd` needed here.
 Type "export FORCE_COLOR=1"
 Enter
 Type "export PS1='» '"

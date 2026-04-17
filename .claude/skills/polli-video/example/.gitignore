@@ -2,4 +2,5 @@
 *.mp4
 *.wav
 music.mp3
+speech.mp3
 .DS_Store

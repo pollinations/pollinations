@@ -29,7 +29,7 @@ Produces `demo.mp4`. Edit `demo.tape` to change content.
 
 Single command, no `adelay` math, perfect sync. Requires [BlackHole 2ch](https://existential.audio/blackhole/) and default system output set to it (Option+click menu-bar speaker, or `SwitchAudioSource -s "BlackHole 2ch"`).
 
-See `example/render.sh` — archives old renders, captures while VHS runs, muxes trimmed to video length with a 2s audio pre-roll shift. Copy and adapt.
+See `example/render.sh` — archives old renders, captures while VHS runs, muxes trimmed to video length with a 5s audio pre-roll shift (ffmpeg startup + API roundtrip offset) and a 3s audio fade-out at the end. Copy and adapt.
 
 **Capture tool: `sox` over `ffmpeg avfoundation`.** ffmpeg dropped samples on long recordings (choppy audio) even with `-thread_queue_size 4096`, `-async 1`, `nice -20`. sox + coreaudio is stable end-to-end, addresses device by name ("BlackHole 2ch") instead of a flaky index, and needs no post-trim:
 
@@ -136,7 +136,10 @@ Enter
 | No sound in final mp4 | Missing audio map | `-map 0:v -map "[a]"` |
 | BlackHole not found by ffmpeg | Wrong device index | Use sox + device name instead |
 | Disk fills during capture | Uncompressed wav, forgot to trap | `trap "kill $FFPID" EXIT` |
-| Final MP4 narration lands too late | 2s ffmpeg+API pre-roll | In mux: `ffmpeg -ss 2 -i captured.wav …` |
+| Final MP4 narration lands too late | ffmpeg startup + API pre-roll | In mux: `ffmpeg -ss 5 -i captured.wav …` (tune 3–6s) |
+| Music cuts abruptly at end | No fade filter | Add `-af "afade=t=out:st=$((VID_DUR-3)):d=3"` |
+| `afade` filter errors `No option name near '3'` on `st=66,36` | Locale uses comma for decimals | Wrap the `awk` computing `FADE_START` with `LC_ALL=C` |
+| Punctuation/wording cached across renders | Pollinations text cache keys on exact string | Change a character (swap `·` ↔ `;` ↔ `,`, add `!`) each re-render |
 
 ## Voice selection
 
@@ -154,12 +157,13 @@ Deterministic cache — same prompt+duration = same bytes. Always `--instrumenta
 
 ## Demo design principles
 
-- Open silent with `polli --help` + `polli auth status` — orients without narration.
+- Open silent with `polli --help` — orients without narration.
 - One audio moment per scene, not many.
-- Hold scenes: help ~6s, auth ~4s, streaming text ~10–20s.
+- Hold scenes: help ~4s, streaming text 10–20s, ASCII outro 15–17s.
 - Payoff produces something reusable (the post, an image, a doc).
-- Streaming > buffered — lean into polli's default streaming reveal.
-- 960×640 beats 1920×1080 on mobile feeds.
+- Streaming > buffered — lean into polli's default streaming reveal (drop `--no-stream` when used in a recorded tape so the audience sees generation happening live).
+- End with a punchy ASCII wordmark outro (see "Streaming outros" section).
+- 960×720 or 960×640 beats 1920×1080 on mobile feeds.
 
 ## Brand voice for generated content
 
@@ -210,11 +214,41 @@ Pipe in via: `polli --help | polli gen text --model claude-fast --no-stream "<pr
 
 **Parallel batching gotcha:** 3+ concurrent calls to the same model hit Cloudflare 520. Run sequentially for reliable batches.
 
+## Streaming outros (ASCII demoscene)
+
+`polli gen text` streams by default — no `animate` helper or frame splitter needed. Pipe straight to the terminal and the characters appear as generated:
+
+```
+Type "clear"
+Enter
+Sleep 400ms
+Type `polli gen text --model claude "ascii frame 50×20; spell POLLI big block letters centered. organic evolving mycelium decor — demoscene."`
+Enter
+Sleep 17000ms   # hold long enough for full generation + read time
+```
+
+**Prompt engineering notes for ASCII wordmarks:**
+- Small prompts work best. Every added constraint (CA rules, 6 frames, palette, emoji) pushes the model away from the actual word. Keep it one sentence.
+- Strict letter constraints ("P O L L I — two L's") drift anyway with claude-fast. Use `claude` (non-fast) for final renders; `claude-fast` often outputs "POLL" / "PELL" / random block shapes.
+- Canvas 50×20 is the sweet spot for 960-wide terminals at FontSize 16. 60×40 overflows vertically.
+- No color/palette mentions — ASCII is monochrome. Confuses the model.
+- One keyword for "evolving" (e.g. `mycelium`, `cellular automaton`) > a full description. But `cellular automaton` sometimes confuses the model into abandoning the word entirely — `mycelium` is more reliable.
+
+## Layered emotion cues in announce()
+
+ElevenLabs handles multiple `[cue]` markers in one line, changing tone mid-sentence. Useful for punchy payoff lines:
+
+```
+announce "[playful] confused? just ask your agent to [whispers] install me... [curious] install me? [excited] install me!!"
+```
+
+The `sed` strip removes all cues from the printed text, so the screen just shows `»» confused? just ask your agent to install me... install me? install me!!` while the audio layers whisper → curious → excited across three repetitions. The `...` and `?` / `!!` punctuation gives ElevenLabs natural beats to change register.
+
 ## Files
 
-- `example/demo.tape` — canonical working tape (polli launch post demo, 4 scenes, bash, claude-fast)
-- `example/render.sh` — canonical pipeline (sox BlackHole capture + mux with 2s audio pre-roll)
-- `example/scene4-bash.tape` — minimal single-scene tape (reference for the bash Hide incantation)
-- `example/.gitignore` — ignores `demo.mp4`, `demo-silent.mp4`, `captured*.wav`, `music.mp3`, timestamped archives
+- `example/demo.tape` — canonical working tape (polli launch demo, 5 scenes incl. streaming ASCII outro, bash, `claude`)
+- `example/render.sh` — canonical pipeline (sox BlackHole capture + mux with 5s audio pre-roll + 3s fade-out)
+- `example/scene4-bash.tape` — minimal single-scene tape (reference for the bash `Hide` incantation — uses older `glm` + `--no-stream` for demo purposes only; don't copy the `gen text` line verbatim)
+- `example/.gitignore` — ignores `*.mp4`, `*.wav`, `music.mp3`, `speech.mp3`, `.DS_Store`, timestamped archives
 
-Render artifacts (regenerable, gitignored): `demo.mp4`, `demo-silent.mp4`, `captured.wav`, `music.mp3`. Previous renders are auto-archived to `<base>-vHHMM.<ext>` by `render.sh`.
+Render artifacts (regenerable, gitignored): `demo.mp4`, `demo-silent.mp4`, `captured.wav`, `music.mp3`, `speech.mp3`. Previous renders are auto-archived to `<base>-vHHMM.<ext>` by `render.sh`.

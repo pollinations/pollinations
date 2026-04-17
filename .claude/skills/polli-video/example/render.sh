@@ -38,11 +38,15 @@ kill -INT $FFPID 2>/dev/null
 wait $FFPID 2>/dev/null
 trap - EXIT
 
-# Mux: keep video, shift captured audio forward 2s so narrations land
+# Mux: keep video, shift captured audio forward 4s so narrations land
 # earlier relative to video (ffmpeg pre-roll + API roundtrip offset).
+# Fade out last 3s of audio so the music doesn't end abruptly.
 VID_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$BASE-silent.mp4")
-ffmpeg -y -ss 4 -i captured.wav -i "$BASE-silent.mp4" \
-    -t "$VID_DUR" -c:v copy -c:a aac -map 1:v -map 0:a \
+FADE_START=$(LC_ALL=C awk "BEGIN {printf \"%.2f\", $VID_DUR - 3}")
+ffmpeg -y -ss 5 -i captured.wav -i "$BASE-silent.mp4" \
+    -t "$VID_DUR" -c:v copy -c:a aac \
+    -af "afade=t=out:st=${FADE_START}:d=3" \
+    -map 1:v -map 0:a \
     "$BASE.mp4" 2>/dev/null
 
 V=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$BASE.mp4")

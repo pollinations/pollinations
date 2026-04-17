@@ -67,9 +67,12 @@ export const printTable = (
         for (const row of stringRows) {
             const cell = row[lastIdx];
             if (visibleLen(cell) > lastMax) {
-                // Truncate visually, leaving room for ellipsis. Assumes the
-                // last column is plain text (true for current callers).
-                row[lastIdx] = `${cell.slice(0, lastMax - 1)}…`;
+                // Strip ANSI before slicing so we never cut inside an escape
+                // sequence. We lose color on the truncated cell — acceptable
+                // since the full colored string still prints to pipes.
+                // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI strip for safe slicing
+                const plain = cell.replace(/\u001b\[[0-9;]*m/g, "");
+                row[lastIdx] = `${plain.slice(0, lastMax - 1)}…`;
             }
         }
     }

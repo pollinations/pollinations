@@ -61,11 +61,11 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={cn("input-number-clean w-24", inputClasses)}
+                    className={cn("input-number-clean w-20", inputClasses)}
                     placeholder="Unlimited"
                     disabled={disabled}
                 />
-                <span className="text-sm text-gray-500">pollen</span>
+                <span className="text-sm text-gray-500 w-12">pollen</span>
             </div>
         </Field.Root>
     );

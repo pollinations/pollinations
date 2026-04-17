@@ -4,7 +4,11 @@
 
 import { AUDIO_SERVICES } from "../../../../../shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "../../../../../shared/registry/image.ts";
-import type { CostDefinition } from "../../../../../shared/registry/registry.ts";
+import {
+    getActivePriceDefinition,
+    type ModelName,
+    type PriceDefinition,
+} from "../../../../../shared/registry/registry.ts";
 import { TEXT_SERVICES } from "../../../../../shared/registry/text.ts";
 import {
     formatPrice,
@@ -18,38 +22,36 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];
 
     // Add text models
-    for (const [serviceName, serviceConfig] of Object.entries(TEXT_SERVICES)) {
-        const costHistory = serviceConfig.cost;
-        if (!costHistory) continue;
-
-        const latestCost: CostDefinition = costHistory[0];
+    for (const serviceName of Object.keys(TEXT_SERVICES)) {
+        const latestPrice = getActivePriceDefinition(serviceName as ModelName);
+        if (!latestPrice) continue;
 
         prices.push({
             name: serviceName,
             type: "text",
             perToken: true,
             promptTextPrice: formatPrice(
-                latestCost.promptTextTokens,
+                latestPrice.promptTextTokens,
                 formatPricePer1M,
             ),
             promptCachedPrice: formatPrice(
-                latestCost.promptCachedTokens,
+                latestPrice.promptCachedTokens,
                 formatPricePer1M,
             ),
             promptAudioPrice: formatPrice(
-                latestCost.promptAudioTokens,
+                latestPrice.promptAudioTokens,
                 formatPricePer1M,
             ),
             completionTextPrice: formatPrice(
-                latestCost.completionTextTokens,
+                latestPrice.completionTextTokens,
                 formatPricePer1M,
             ),
             completionAudioPrice: formatPrice(
-                latestCost.completionAudioTokens,
+                latestPrice.completionAudioTokens,
                 formatPricePer1M,
             ),
             completionAudioTokens: formatPrice(
-                latestCost.completionAudioTokens,
+                latestPrice.completionAudioTokens,
                 formatPricePer1M,
             ),
         });
@@ -57,21 +59,21 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
 
     // Add image/video models - use outputModalities to determine type
     for (const [serviceName, serviceConfig] of Object.entries(IMAGE_SERVICES)) {
-        const costHistory = serviceConfig.cost;
-        if (!costHistory) continue;
-
-        const latestCost: CostDefinition = costHistory[0];
+        const latestPrice: PriceDefinition | null = getActivePriceDefinition(
+            serviceName as ModelName,
+        );
+        if (!latestPrice) continue;
         const outputType = serviceConfig.outputModalities?.[0] || "image";
 
         if (outputType === "video") {
             // Check if it's token-based (seedance) or second-based (veo)
-            if (latestCost.completionVideoTokens) {
+            if (latestPrice.completionVideoTokens) {
                 prices.push({
                     name: serviceName,
                     type: "video",
                     perToken: true,
                     perTokenPrice: formatPrice(
-                        latestCost.completionVideoTokens,
+                        latestPrice.completionVideoTokens,
                         formatPricePer1M,
                     ),
                 });
@@ -81,18 +83,18 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                     type: "video",
                     perToken: false,
                     perSecondPrice: formatPrice(
-                        latestCost.completionVideoSeconds,
+                        latestPrice.completionVideoSeconds,
                         (v: number) => v.toFixed(3),
                     ),
                     perAudioSecondPrice: formatPrice(
-                        latestCost.completionAudioSeconds,
+                        latestPrice.completionAudioSeconds,
                         (v: number) => v.toFixed(3),
                     ),
                 });
             }
         } else if (
-            latestCost.promptTextTokens ||
-            latestCost.promptImageTokens
+            latestPrice.promptTextTokens ||
+            latestPrice.promptImageTokens
         ) {
             // Token-based image pricing (e.g., gptimage, nanobanana)
             prices.push({
@@ -100,15 +102,15 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                 type: "image",
                 perToken: true,
                 promptTextPrice: formatPrice(
-                    latestCost.promptTextTokens,
+                    latestPrice.promptTextTokens,
                     formatPricePer1M,
                 ),
                 promptImagePrice: formatPrice(
-                    latestCost.promptImageTokens,
+                    latestPrice.promptImageTokens,
                     formatPricePer1M,
                 ),
                 completionImagePrice: formatPrice(
-                    latestCost.completionImageTokens,
+                    latestPrice.completionImageTokens,
                     formatPricePer1M,
                 ),
             });
@@ -119,7 +121,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                 type: "image",
                 perToken: false,
                 perImagePrice: formatPrice(
-                    latestCost.completionImageTokens,
+                    latestPrice.completionImageTokens,
                     formatPricePerImage,
                 ),
             });
@@ -127,31 +129,29 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     }
 
     // Add audio models (TTS and STT)
-    for (const [serviceName, serviceConfig] of Object.entries(AUDIO_SERVICES)) {
-        const costHistory = serviceConfig.cost;
-        if (!costHistory) continue;
+    for (const serviceName of Object.keys(AUDIO_SERVICES)) {
+        const latestPrice = getActivePriceDefinition(serviceName as ModelName);
+        if (!latestPrice) continue;
 
-        const latestCost: CostDefinition = costHistory[0];
-
-        if (latestCost.promptAudioSeconds) {
+        if (latestPrice.promptAudioSeconds) {
             // Speech-to-text (Whisper) — billed per input audio second
             prices.push({
                 name: serviceName,
                 type: "audio",
                 perToken: false,
                 perSecondPrice: formatPrice(
-                    latestCost.promptAudioSeconds,
+                    latestPrice.promptAudioSeconds,
                     (v: number) => v.toFixed(5),
                 ),
             });
-        } else if (latestCost.completionAudioSeconds) {
+        } else if (latestPrice.completionAudioSeconds) {
             // Music generation (ElevenLabs Music) — billed per output audio second
             prices.push({
                 name: serviceName,
                 type: "audio",
                 perToken: false,
                 perSecondPrice: formatPrice(
-                    latestCost.completionAudioSeconds,
+                    latestPrice.completionAudioSeconds,
                     (v: number) => v.toFixed(4),
                 ),
             });
@@ -162,7 +162,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                 type: "audio",
                 perToken: false,
                 perCharPrice: formatPrice(
-                    latestCost.completionAudioTokens,
+                    latestPrice.completionAudioTokens,
                     (v: number) => (v * 1000).toFixed(2),
                 ),
             });

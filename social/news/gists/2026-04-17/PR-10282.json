@@ -1,0 +1,34 @@
+{
+  "pr_number": 10282,
+  "title": "feat(polli): CLI polish + video demo skill",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10282",
+  "merged_at": "2026-04-17T14:56:09Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The CLI learns to speak",
+    "blurb": "The polli CLI just got a massive glow-up. Text streams by default, tables fit your terminal perfectly, and you can now play generated audio straight from the command line.",
+    "summary": "Polished the polli CLI with default text streaming, improved terminal formatting, a new `--play` flag for audio, and a Claude skill for creating video demos.",
+    "impact": "CLI users will enjoy a much smoother experience with real-time text streaming, perfectly sized tables, and instant audio playback right in the terminal.",
+    "keywords": [
+      "cli",
+      "terminal",
+      "audio",
+      "streaming",
+      "developer-tools"
+    ],
+    "visual_concept": "The pollinations bee mascot wearing a tiny director's beret, holding a clapperboard next to a glowing retro terminal. A chunky pixel robot with a monitor head is wearing headphones, listening to audio.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret and holding a clapperboard next to a glowing retro terminal. A chunky pixel robot with a monitor head wears headphones, happily listening to audio. The terminal screen glows with soft lime green (#ecf874) and cyan text. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-17/PR-10282.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret and holding a clapperboard next to a glowing retro terminal. A chunky pixel robot with a monitor head wears headphones, happily listening to audio. The terminal screen glows with soft lime green (#ecf874) and cyan text. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-17T14:57:04.589118+00:00"
+}

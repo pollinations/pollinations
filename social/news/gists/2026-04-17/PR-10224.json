@@ -1,0 +1,33 @@
+{
+  "pr_number": 10224,
+  "title": "feat: separate price from cost in model registry",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10224",
+  "merged_at": "2026-04-17T16:53:49Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The price is right",
+    "blurb": "We've upgraded our model registry to support flexible pricing structures. This behind-the-scenes magic helps us keep the hive healthy and sustainable!",
+    "summary": "Updated the model registry architecture to decouple user-facing pricing from underlying provider costs.",
+    "impact": "This enables more flexible and sustainable pricing structures across our text and image endpoints, ensuring long-term availability of top-tier models.",
+    "keywords": [
+      "pricing",
+      "registry",
+      "billing",
+      "models"
+    ],
+    "visual_concept": "Polly the bee acting as a shopkeeper or accountant. A cute pixel art cash register or ledger book with a glowing lime green screen. Nomnom creature eating a receipt.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny accountant glasses, standing next to a chunky retro cash register with a glowing lime green (#ecf874) screen. The round Nomnom creature is happily eating a long paper receipt. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-17/PR-10224.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny accountant glasses, standing next to a chunky retro cash register with a glowing lime green (#ecf874) screen. The round Nomnom creature is happily eating a long paper receipt. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-04-17T16:54:48.771049+00:00"
+}

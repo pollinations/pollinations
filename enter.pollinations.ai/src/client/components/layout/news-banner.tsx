@@ -22,6 +22,13 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-04-17",
+        emoji: "💰",
+        title: "Transparent Pricing: Cost vs Price",
+        description:
+            "The registry now tracks provider cost separately from user price. See the [pricing table](/#pricing) for the rates you pay.",
+    },
+    {
         date: "2026-03-26",
         emoji: "⏱️",
         title: "Flower & Nectar: Daily → Hourly Refills",

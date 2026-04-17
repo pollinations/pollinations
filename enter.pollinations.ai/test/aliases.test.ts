@@ -63,3 +63,31 @@ test("gemini-fast can expose a higher public price than provider cost", () => {
         geminiFastCost.totalCost,
     );
 });
+
+test("image model with marked-up price bills users above provider cost", () => {
+    const usage = { completionImageTokens: 1 };
+    const cost = calculateCost("seedream", usage);
+    const price = calculatePrice("seedream", usage);
+
+    expect(cost.totalCost).toBeCloseTo(0.03, 8);
+    expect(price.totalPrice).toBeCloseTo(0.045, 8);
+    expect(price.totalPrice).toBeGreaterThan(cost.totalCost);
+});
+
+test("video model with marked-up price bills users above provider cost", () => {
+    const usage = { completionVideoSeconds: 1, completionAudioSeconds: 1 };
+    const cost = calculateCost("wan", usage);
+    const price = calculatePrice("wan", usage);
+
+    expect(cost.totalCost).toBeCloseTo(0.1, 8);
+    expect(price.totalPrice).toBeCloseTo(0.15, 8);
+    expect(price.totalPrice).toBeGreaterThan(cost.totalCost);
+});
+
+test("model without explicit price falls back to cost for both values", () => {
+    const usage = { completionImageTokens: 1 };
+    const cost = calculateCost("flux", usage);
+    const price = calculatePrice("flux", usage);
+
+    expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
+});

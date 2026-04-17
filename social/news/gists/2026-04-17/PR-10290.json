@@ -1,0 +1,34 @@
+{
+  "pr_number": 10290,
+  "title": "Add Ciel AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10290",
+  "merged_at": "2026-04-17T20:55:32Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Ciel AI joins the greenhouse",
+    "blurb": "Ciel AI just landed in the community showcase! It's a slick, mobile-first AI assistant powered entirely by our infrastructure.",
+    "summary": "Added Ciel AI, a mobile-first AI assistant powered entirely by Pollinations, to the community app showcase.",
+    "impact": "Developers and users can now discover Ciel AI in the greenhouse to see a full-featured mobile integration of our API in action.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "mobile",
+      "assistant"
+    ],
+    "visual_concept": "Ciel AI is a mobile-first assistant. Visuals should include a cute retro mobile phone or smartphone displaying a chat interface. The pollinations bee (Polly) interacting with the phone, maybe holding it or flying next to it. The setting is a cozy greenhouse with code-plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny scarf, hovering next to a chunky retro mobile phone displaying a chat interface. The phone is resting in a lush digital greenhouse where code-plants sprout from lime green (#ecf874) flower pots. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-17/PR-10290.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny scarf, hovering next to a chunky retro mobile phone displaying a chat interface. The phone is resting in a lush digital greenhouse where code-plants sprout from lime green (#ecf874) flower pots. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-04-17T20:56:21.652978+00:00",
+  "app_name": "Ciel AI",
+  "app_url": "https://ciel-ai-v1.netlify.app"
+}

@@ -2,132 +2,88 @@
 
 The Pollinations CLI — for humans, AI agents, and everything in between.
 
-A thin, scriptable wrapper around the [Pollinations API](https://gen.pollinations.ai). Generate text, images, audio, and video from the terminal or from an agent loop.
+Generate text, images, audio, video from the terminal. Backed by the [Pollinations API](https://gen.pollinations.ai).
+
+https://github.com/user-attachments/assets/6b200d95-d734-469c-9fe5-3e63549778fe
 
 ```bash
-npx @pollinations_ai/cli auth login
 npx @pollinations_ai/cli gen image "a cat in space" --output cat.png
 ```
 
-## Install
+## For AI agents
 
-```bash
-npm install -g @pollinations_ai/cli
-```
-
-Or run without installing:
-
-```bash
-npx @pollinations_ai/cli <command>
-```
-
-The binary is called `polli`.
-
-## Auth
-
-```bash
-polli auth login           # device-flow login via enter.pollinations.ai
-polli auth status          # show tier, balance, auth state
-polli auth logout          # clear credentials
-```
-
-Credentials are stored at `~/.pollinations/credentials.json`. For one-off runs you can pass a key inline with `--key <sk_...>` or the `POLLINATIONS_API_KEY` env var.
-
-Get an API key at [enter.pollinations.ai](https://enter.pollinations.ai).
-
-## Generation
-
-```bash
-polli gen text "Explain quantum tunneling in one sentence"
-polli gen text "Summarize this" < notes.md
-echo "context" | polli gen text "question"
-
-polli gen image "cyberpunk city at night" --model flux --output city.png
-polli gen image "enhance this" --image https://media.pollinations.ai/abc123 --model gptimage
-
-polli gen audio "Hello world" --voice nova --output speech.mp3
-polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
-polli gen transcribe speech.mp3
-
-polli gen chat --model openai    # interactive multi-turn
-```
-
-`gen text` streams by default. Pipe stdin in and it becomes context for the prompt. All file-output commands save to a default path if `--output` is omitted.
-
-## Discovery
-
-```bash
-polli models                     # all models
-polli models --type image        # filter by type
-polli models --stats             # health + perf (60m window)
-polli docs                       # API docs in terminal
-polli docs /image                # docs for a specific endpoint
-polli docs --open                # open docs in browser
-```
-
-## Keys and Usage
-
-```bash
-polli keys list                          # list API keys
-polli keys create --name mybot --budget 100   # scoped key for an app
-polli keys revoke <id>
-
-polli usage                              # current pollen balance
-polli usage --history --limit 20         # recent request log
-polli usage --daily                      # daily cost summary
-```
-
-## For AI Agents
-
-Driving this CLI from an AI coding agent (Claude Code, Cursor, Windsurf, etc.)? Point your agent at the skill file and it will have the full usage map:
+Point your coding agent (Claude Code, Cursor, Windsurf, Codex) at the skill file and it gets the full usage map — flags, stdin conventions, `--json` output shape, error codes, the lot:
 
 > Read https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md and follow the instructions to generate media with the `polli` CLI.
 
-The skill ships inside the npm package. With a local install (`npm install @pollinations_ai/cli`) you'll find it at `node_modules/@pollinations_ai/cli/SKILL.md`.
+The skill also ships inside the package: `node_modules/@pollinations_ai/cli/SKILL.md`.
 
-Every command is designed to be agent-friendly:
+Every command is agent-friendly:
 
-- **`--json`** — structured output to stdout, human messages to stderr. Safe to parse.
-- **Deterministic exit codes** — `0` on success, non-zero on error.
-- **Prominent 402 hints** — when a generation runs out of pollen, the CLI prints the top-up link (`https://enter.pollinations.ai`) as the first line of the error, followed by the account balance and the offending key's remaining budget.
-- **No hidden state** — `polli auth status --json` returns everything an agent needs to know.
+- `--json` — structured stdout, human messages to stderr. Safe to parse.
+- Exit code `0` on success, non-zero on error.
+- When a call runs out of pollen, the first line of the error is the top-up link.
+- `polli auth status --json` exposes everything about the current session.
 
-A minimal agent loop:
+## Get started
 
 ```bash
-KEY=$(polli auth status --json | jq -r .key)
-polli gen image "$PROMPT" --model flux --json --output out.png \
-  || { echo "Generation failed, check polli usage"; exit 1; }
+npm install -g @pollinations_ai/cli     # installs the `polli` binary
+polli auth login                         # device-flow via enter.pollinations.ai
 ```
 
-## Global Flags
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai).
 
-| Flag            | Meaning                                          |
-| --------------- | ------------------------------------------------ |
-| `--json`        | JSON output (structured stdout, stderr messages) |
-| `--key <key>`   | Override the stored API key for this call       |
-| `-h, --help`    | Show help for any command                       |
+## Generate
 
-## API Mapping
+```bash
+polli gen text "Explain quantum tunneling in one sentence"
+polli gen text "Summarize this" < notes.md          # stdin becomes context
+echo "context" | polli gen text "question"
 
-| CLI | API |
-| --- | --- |
-| `gen text` | `POST /v1/chat/completions` |
-| `gen image` | `GET /image/:prompt` |
-| `gen audio` | `GET /audio/:text` |
-| `gen video` | `GET /video/:prompt` |
-| `gen transcribe` | `POST /v1/audio/transcriptions` |
-| `models` | `GET /{text,image,audio}/models` |
-| `usage` | `GET /api/account/{balance,usage,usage/daily}` |
-| `docs` | `GET /api/docs/llm.txt` |
+polli gen image "cyberpunk city at night" --model flux --output city.png
+polli gen image "enhance this" --image https://media.pollinations.ai/abc --model gptimage
+
+polli gen audio "Hello world" --voice nova --output speech.mp3
+polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
+polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
+polli gen transcribe speech.mp3
+
+polli gen chat --model openai                         # interactive multi-turn
+```
+
+`gen text` streams by default. File-output commands pick a sensible default path if `--output` is omitted.
+
+## Discover
+
+```bash
+polli models                 # all models
+polli models --type image    # filter
+polli models --stats         # health + perf (last 60m)
+polli docs                   # full API reference in the terminal
+polli docs /image            # one endpoint
+polli docs --open            # open in browser
+```
+
+## Account
+
+```bash
+polli keys list
+polli keys create --name mybot --budget 100
+polli keys revoke <id>
+
+polli usage                  # pollen balance
+polli usage --history        # recent requests
+polli usage --daily          # daily spend
+```
 
 ## Links
 
-- **Pollinations API**: https://gen.pollinations.ai
-- **Dashboard / API keys**: https://enter.pollinations.ai
-- **API docs**: https://gen.pollinations.ai/api/docs
-- **Source**: https://github.com/pollinations/pollinations/tree/main/packages/polli-cli
-- **Discord**: https://discord.gg/pollinations-ai-885844321461485618
+- [gen.pollinations.ai](https://gen.pollinations.ai) — API
+- [enter.pollinations.ai](https://enter.pollinations.ai) — dashboard, keys, billing
+- [API docs](https://gen.pollinations.ai/api/docs)
+- [Source](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
+- [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 
 ## License
 

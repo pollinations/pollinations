@@ -26,6 +26,8 @@ export const printResult = (data: Record<string, unknown> | unknown[]) => {
         if (value === null || value === undefined) continue;
         process.stdout.write(`${chalk.bold(key)}: ${value}\n`);
     }
+    // Trailing blank line in TTY for visual breathing room before the next prompt.
+    if (process.stdout.isTTY) process.stdout.write("\n");
 };
 
 /** Print a list of objects as a table */
@@ -51,7 +53,30 @@ export const printTable = (
     const widths = cols.map((c, i) =>
         Math.max(c.length, ...stringRows.map((r) => visibleLen(r[i]))),
     );
+
+    // When stdout is a TTY, truncate the last column so each row fits on one
+    // line. Pipes keep full output (no TTY width = no truncation).
+    const termWidth = process.stdout.columns ?? 0;
+    const sepWidth = 2 * (cols.length - 1);
     const lastIdx = cols.length - 1;
+    const fixedWidth =
+        widths.slice(0, lastIdx).reduce((a, b) => a + b, 0) + sepWidth;
+    const lastMax = termWidth > 0 ? termWidth - fixedWidth : Infinity;
+    if (lastMax < widths[lastIdx] && lastMax > 3) {
+        widths[lastIdx] = lastMax;
+        for (const row of stringRows) {
+            const cell = row[lastIdx];
+            if (visibleLen(cell) > lastMax) {
+                // Strip ANSI before slicing so we never cut inside an escape
+                // sequence. We lose color on the truncated cell — acceptable
+                // since the full colored string still prints to pipes.
+                // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI strip for safe slicing
+                const plain = cell.replace(/\u001b\[[0-9;]*m/g, "");
+                row[lastIdx] = `${plain.slice(0, lastMax - 1)}…`;
+            }
+        }
+    }
+
     const pad = (s: string, w: number, i: number) =>
         i === lastIdx ? s : s + " ".repeat(w - visibleLen(s));
     const brand = chalk.hex("#a78bfa").bold;
@@ -61,12 +86,14 @@ export const printTable = (
         const line = vals.map((v, i) => pad(v, widths[i], i)).join("  ");
         process.stdout.write(`${line}\n`);
     }
+    // Trailing blank line in TTY for visual breathing room before the next prompt.
+    if (process.stdout.isTTY) process.stdout.write("\n");
 };
 
 /** Info message — only shown in human mode, goes to stderr */
 export const printInfo = (msg: string) => {
     if (currentMode !== "human") return;
-    process.stderr.write(`${chalk.dim(msg)}\n`);
+    process.stderr.write(`${chalk.cyan.italic(msg)}\n`);
 };
 
 /** Metadata for file-sink commands (gen image/audio/video): stdout in json
@@ -81,6 +108,7 @@ export const printMeta = (data: Record<string, unknown>) => {
         if (value === null || value === undefined) continue;
         process.stderr.write(`${chalk.bold(key)}: ${value}\n`);
     }
+    if (process.stderr.isTTY) process.stderr.write("\n");
 };
 
 /** Success message — shown in human mode on stderr */

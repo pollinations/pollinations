@@ -28,13 +28,6 @@ const PINNED_NEWS: Highlight[] = [
         description:
             "The registry now tracks provider cost separately from user price. See the [pricing table](/#pricing) for the rates you pay.",
     },
-    {
-        date: "2026-03-26",
-        emoji: "⏱️",
-        title: "Flower & Nectar: Daily → Hourly Refills",
-        description:
-            "Starting Thursday, March 26 — Flower 0.4p/hr, Nectar 0.8p/hr. Need more? Grab a Pollen Pack below!",
-    },
 ];
 
 /** Render markdown links [text](url) as clickable <a> tags, preserving surrounding text. */

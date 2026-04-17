@@ -56,3 +56,20 @@ test("normalize preserves negative/positive amounts as-is", async () => {
     assert.equal(canonical[0].amount, -100.5);
     assert.equal(canonical[2].amount, 500);
 });
+
+test("normalize aggregates unknownStats by counterparty, sorted by |sum|", () => {
+    const rows = [
+        { counterparty: "Small Vendor", date: "2026-01-05", amount_eur: -10 },
+        { counterparty: "Big Vendor", date: "2026-01-10", amount_eur: -500 },
+        { counterparty: "Big Vendor", date: "2026-01-11", amount_eur: -500 },
+        { counterparty: "Small Vendor", date: "2026-01-12", amount_eur: -5 },
+    ];
+    const { unknownStats } = normalize(rows, {});
+    assert.equal(unknownStats.length, 2);
+    assert.equal(unknownStats[0].counterparty, "Big Vendor");
+    assert.equal(unknownStats[0].count, 2);
+    assert.equal(unknownStats[0].sumEur, -1000);
+    assert.equal(unknownStats[1].counterparty, "Small Vendor");
+    assert.equal(unknownStats[1].count, 2);
+    assert.equal(unknownStats[1].sumEur, -15);
+});

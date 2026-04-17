@@ -1,0 +1,19 @@
+{
+  "date": "2026-04-16",
+  "period_start": "2026-04-16",
+  "period_end": "2026-04-16",
+  "title": "Terminal velocity: the official Pollinations CLI is live",
+  "summary": "We brought the entire Pollinations stack to your terminal with a new CLI, and welcomed a prompt-to-video generator to the community showcase.\n\nWe shipped @pollinations_ai/cli, bringing image, text, audio, and video generation straight to your terminal. It outputs colored tables if you're human, and clean JSON if you're an AI agent wiring up your own workflows.\n\nThe community directory keeps growing. We just added kre8.info, a tool built on our infrastructure that turns a single prompt into end-to-end shorts and faceless videos.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 10225,
+      "date": "2026-04-16"
+    },
+    {
+      "number": 10270,
+      "date": "2026-04-16"
+    }
+  ],
+  "generated_at": "2026-04-17T06:34:45.483020+00:00"
+}

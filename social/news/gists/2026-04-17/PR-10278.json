@@ -1,0 +1,35 @@
+{
+  "pr_number": 10278,
+  "title": "chore: update app metrics 2026-04-17",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10278",
+  "merged_at": "2026-04-17T05:08:38Z",
+  "labels": [
+    "WEB",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bot just watered the plants and updated the health metrics for all community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics and health checks in the APPS.md registry.",
+    "impact": "Keeps the community app showcase up-to-date with the latest health statuses and usage metrics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "health-check",
+      "automated",
+      "greenhouse"
+    ],
+    "visual_concept": "A cute robot with a monitor head holding a clipboard, checking on pixelated code-plants in a greenhouse. The bee mascot is watering a nearby plant.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head holding a tiny clipboard, inspecting glowing code-plants in a digital greenhouse. The bee mascot hovers nearby with a tiny watering can. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-17/PR-10278.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head holding a tiny clipboard, inspecting glowing code-plants in a digital greenhouse. The bee mascot hovers nearby with a tiny watering can. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-04-17T05:09:42.826849+00:00"
+}

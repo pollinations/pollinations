@@ -4,8 +4,6 @@ The Pollinations CLI — for humans, AI agents, and everything in between.
 
 Generate text, images, audio, video from the terminal. Backed by the [Pollinations API](https://gen.pollinations.ai).
 
-https://github.com/pollinations/pollinations/raw/main/packages/polli-cli/demo.mp4
-
 ```bash
 npx @pollinations_ai/cli gen image "a cat in space" --output cat.png
 ```

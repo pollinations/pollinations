@@ -248,7 +248,6 @@ The `sed` strip removes all cues from the printed text, so the screen just shows
 
 - `example/demo.tape` — canonical working tape (polli launch demo, 5 scenes incl. streaming ASCII outro, bash, `claude`)
 - `example/render.sh` — canonical pipeline (sox BlackHole capture + mux with 5s audio pre-roll + 3s fade-out)
-- `example/scene4-bash.tape` — minimal single-scene tape (reference for the bash `Hide` incantation — uses older `glm` + `--no-stream` for demo purposes only; don't copy the `gen text` line verbatim)
 - `example/.gitignore` — ignores `*.mp4`, `*.wav`, `music.mp3`, `speech.mp3`, `.DS_Store`, timestamped archives
 
 Render artifacts (regenerable, gitignored): `demo.mp4`, `demo-silent.mp4`, `captured.wav`, `music.mp3`, `speech.mp3`. Previous renders are auto-archived to `<base>-vHHMM.<ext>` by `render.sh`.

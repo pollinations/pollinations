@@ -26,7 +26,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Text with stdin as context | `echo "<ctx>" \| polli gen text "<question>"` |
 | Describe an image (vision) | `polli gen text "what is this?" --image <url>` |
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
-| Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS, `mpg123`/`ffplay` elsewhere) |
+| Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS; `ffplay`/`mpv`/`mpg123` on Linux) |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
@@ -86,7 +86,7 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Default voice is `sage`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to play the audio while it's being written (handy for narration/demos — plays via `afplay` on macOS, falls back to `mpg123`/`ffplay` elsewhere).
+Default voice is `sage`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to play the audio while it's being written (handy for narration/demos — plays via `afplay` on macOS; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order).
 
 ### Generate music (elevenmusic)
 ```bash

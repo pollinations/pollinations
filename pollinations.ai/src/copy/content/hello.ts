@@ -75,11 +75,6 @@ export const HELLO_PAGE = {
     tierFlowerDescription: "Your app is live and getting used.",
     tierFlowerGrant: "0.4 pollen / hour",
     tierFlowerPoints: "",
-    tierNectarEmoji: "🍯",
-    tierNectarTitle: "Nectar",
-    tierNectarDescription: "Most active builders.",
-    tierNectarGrant: "0.8 pollen / hour",
-    tierNectarPoints: "",
 
     // Section — What you get
     whatYouGetTitle: "What's inside",

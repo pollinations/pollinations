@@ -1,35 +1,26 @@
 /**
- * Stripe provider — fetches payout-arrival-dated revenue from /v1/payouts.
+ * Stripe provider — fetches two things from the Stripe API:
  *
- * Unlike the cost providers (Azure / AWS / Alibaba / GCP) this is a REVENUE
- * provider — it populates matrix.data with positive numbers for the Stripe
- * vendor, keyed by payout arrival date (not charge date). The arrival date
- * is what matters for runway math because it's exactly when the money hits
- * our Wise bank account, so replacing the Wise CSV's Stripe row with API
- * payout data keeps running-cash math accurate to the cent.
+ * 1. Historical payouts (by arrival date) — one row per past month. Stored in
+ *    `pool.monthly_payouts` for sanity-checking against the Wise feed. Not
+ *    currently injected into the sheet; the Wise activity feed already
+ *    reports these as cash inflows on their arrival date.
+ *
+ * 2. Live month-to-date net revenue (by charge date) — sum of every
+ *    balance_transaction created in the current calendar month, net of Stripe
+ *    fees, excluding payouts. This is the "what we're currently winning"
+ *    number that rebuild-sheet.mjs writes into the current-month Stripe cell,
+ *    replacing the Apr-1 payout value (which represented March's activity).
+ *    Stored in `pool.mtd_live_net_eur`.
  *
  * Validated 2026-04-12: the three historical payouts on 2026-02-02 (€241),
  * 2026-03-02 (€4,227), 2026-04-01 (€5,962) match the Wise CSV deposits
  * exactly. See .claude/skills/provider-billing/providers/stripe.md.
  *
- * The common wrapper shape is awkward for a revenue provider because
- * mtd_credit / mtd_cash don't semantically fit. Instead, this wrapper writes
- * a `monthly_payouts` map directly into the pool state:
- *
- *   pool.monthly_payouts = {
- *     "2026-02": 241.18,
- *     "2026-03": 4227.21,
- *     "2026-04": 5961.71
- *   }
- *
- * rebuild-sheet.mjs reads that map and injects values into matrix.data[m][vendor]
- * for every month the API returned. This overrides the Wise CSV row because
- * API payout value = Wise deposit value (they reconcile to the cent).
- *
  * We use the "common wrapper" return shape for compatibility with update-live.mjs:
- *   mtd_total_usd  = sum of all payouts this month (native EUR, field misnamed)
+ *   mtd_total_usd  = live MTD net (native EUR, field misnamed)
  *   mtd_credit_usd = 0 (revenue has no "credit" concept)
- *   mtd_cash_usd   = same as mtd_total_usd — this is the number that lands in the bank
+ *   mtd_cash_usd   = same as mtd_total_usd — this is revenue expected to pay out next month
  *   live_balance   = true (skip seed-based balance derivation in orchestrator)
  */
 
@@ -71,6 +62,49 @@ async function fetchAllPayouts(apiKey, startUnix, endUnix) {
     return payouts;
 }
 
+async function fetchAllBalanceTransactions(apiKey, startUnix, endUnix) {
+    const txns = [];
+    let startingAfter = null;
+    for (let page = 0; page < 100; page++) {
+        const qs = new URLSearchParams({
+            limit: "100",
+            "created[gte]": String(startUnix),
+            "created[lte]": String(endUnix),
+        });
+        if (startingAfter) qs.set("starting_after", startingAfter);
+        const d = await stripeGet(
+            `/balance_transactions?${qs.toString()}`,
+            apiKey,
+        );
+        const batch = d.data ?? [];
+        txns.push(...batch);
+        if (!d.has_more || batch.length === 0) break;
+        startingAfter = batch[batch.length - 1].id;
+    }
+    return txns;
+}
+
+/**
+ * Sum net revenue (in cents) from a list of balance_transaction objects.
+ * Excludes every payout-type transaction — those are outbound movements to
+ * the bank and already captured by the Wise activity feed. Everything else
+ * (charges, refunds, adjustments, Stripe fees) contributes to what will
+ * eventually pay out.
+ *
+ * Pure. Extracted for unit testing.
+ *
+ * @param {Array<{type: string, net: number, currency: string}>} txns
+ * @returns {number} sum of net values, in minor currency units (cents)
+ */
+export function sumNetRevenueCents(txns) {
+    let total = 0;
+    for (const t of txns) {
+        if (typeof t.type === "string" && t.type.startsWith("payout")) continue;
+        total += Number(t.net ?? 0);
+    }
+    return total;
+}
+
 /**
  * @param {string} currentMonth  "YYYY-MM"
  * @param {object} pool          vendors.json._pools.Stripe (mutated)
@@ -83,42 +117,53 @@ export async function fetchMtd(currentMonth, pool) {
         );
     }
 
-    const startUnix = Math.floor(
+    const historicalStartUnix = Math.floor(
         new Date(`${PAYOUT_START_DATE}T00:00:00Z`).getTime() / 1000,
     );
-    const endUnix = Math.floor(Date.now() / 1000);
+    const nowUnix = Math.floor(Date.now() / 1000);
 
-    const payouts = await fetchAllPayouts(apiKey, startUnix, endUnix);
+    // --- 1. Historical payouts (for sanity-check against Wise) ---
+    const payouts = await fetchAllPayouts(apiKey, historicalStartUnix, nowUnix);
 
-    // Aggregate per month using arrival_date
     const monthlyPayouts = {};
-    let mtdThisMonth = 0;
     for (const p of payouts) {
         const arrivalDate = new Date(p.arrival_date * 1000);
         const monthKey = `${arrivalDate.getUTCFullYear()}-${String(arrivalDate.getUTCMonth() + 1).padStart(2, "0")}`;
         const amountEur = Number(p.amount ?? 0) / 100;
         monthlyPayouts[monthKey] = (monthlyPayouts[monthKey] ?? 0) + amountEur;
-        if (monthKey === currentMonth) mtdThisMonth += amountEur;
     }
-
-    // Round each month value
     for (const k of Object.keys(monthlyPayouts)) {
         monthlyPayouts[k] = Number(monthlyPayouts[k].toFixed(2));
     }
 
+    // --- 2. Live MTD net revenue (charges created in currentMonth) ---
+    const monthStartUnix = Math.floor(
+        new Date(`${currentMonth}-01T00:00:00Z`).getTime() / 1000,
+    );
+    const liveTxns = await fetchAllBalanceTransactions(
+        apiKey,
+        monthStartUnix,
+        nowUnix,
+    );
+    const mtdLiveNetEur = Number(
+        (sumNetRevenueCents(liveTxns) / 100).toFixed(2),
+    );
+
     pool.monthly_payouts = monthlyPayouts;
     pool.payout_count = payouts.length;
     pool.native_currency = "EUR"; // Stripe account is EUR — no FX needed
-    pool.mtd_total_usd = Number(mtdThisMonth.toFixed(2));
+    pool.mtd_live_net_eur = mtdLiveNetEur;
+    pool.mtd_live_txn_count = liveTxns.length;
+    pool.mtd_total_usd = mtdLiveNetEur;
     pool.mtd_credit_usd = 0;
-    pool.mtd_cash_usd = Number(mtdThisMonth.toFixed(2));
+    pool.mtd_cash_usd = mtdLiveNetEur;
     pool.as_of = new Date().toISOString().slice(0, 10);
 
     return {
         mtd_total_usd: pool.mtd_total_usd,
         mtd_credit_usd: pool.mtd_credit_usd,
         mtd_cash_usd: pool.mtd_cash_usd,
-        records: payouts.length,
+        records: payouts.length + liveTxns.length,
         as_of: pool.as_of,
         live_balance: true,
     };

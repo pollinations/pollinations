@@ -641,7 +641,7 @@ https://myapp.com/callback#api_key=sk_xxxxx
 | spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
 | seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
 | flower | 🌸    | 0.4      | hourly  | Contributor              |
-| nectar | 🍯    | 0.8      | hourly  | Coming soon              |
+| nectar | 🍯    | 0.8      | hourly  | Legacy — still supported for existing users, no longer granted |
 
 ### Quick Tier Update
 
@@ -730,7 +730,7 @@ OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
 
 ### Regenerating APIDOCS.md
 
-- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs on push to `main`
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy enter.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
 - **Manual**: `npm run docs:generate` (fetches from production `enter.pollinations.ai`, so changes must be deployed first)
 
 ### Where to Make Changes

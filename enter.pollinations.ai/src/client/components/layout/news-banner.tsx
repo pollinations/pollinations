@@ -20,7 +20,15 @@ interface Highlight {
  * Edit this array to add/remove pinned announcements.
  * When empty, the full TOTAL_NEWS_COUNT dynamic highlights are shown.
  */
-const PINNED_NEWS: Highlight[] = [];
+const PINNED_NEWS: Highlight[] = [
+    {
+        date: "2026-04-17",
+        emoji: "💰",
+        title: "Transparent Pricing: Cost vs Price",
+        description:
+            "The registry now tracks provider cost separately from user price. See the [pricing table](/#pricing) for the rates you pay.",
+    },
+];
 
 /** Render markdown links [text](url) as clickable <a> tags, preserving surrounding text. */
 function renderWithLinks(text: string): ReactNode[] {

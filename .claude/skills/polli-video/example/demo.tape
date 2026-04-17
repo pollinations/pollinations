@@ -47,11 +47,6 @@ Sleep 200ms
 Enter
 Sleep 4000ms
 
-Type "polli auth status"
-Sleep 200ms
-Enter
-Sleep 2500ms
-
 # Define announce: print bold purple title, speak it in the background
 Type `announce() { printf '\n\033[1;38;5;141m»» %s\033[0m\n\n' "$(sed -E 's/\[[^]]*\] *//g' <<< "$1")"; ( polli gen audio --play --output /tmp/narr-$$-$RANDOM.mp3 "$1" >/dev/null 2>&1 & ); }`
 Sleep 200ms
@@ -71,12 +66,12 @@ Sleep 300ms
 # ============================================================
 # Scene 2 — theme + soundtrack
 # ============================================================
-Type `announce "first — [excited] we need some backing music"`
+Type `announce "first — [excited] let's compose some music with pollinations"`
 Sleep 200ms
 Enter
 Sleep 3000ms
 
-Type `( polli gen audio --model elevenmusic --instrumental --output music.mp3 --play "boom bap, wonky beats, lofi instrumental hip hop, warm analog, jazzy bass" >/dev/null 2>&1 & )`
+Type `( polli gen audio --model elevenmusic --instrumental --play "boom bap, wonky beats, lofi instrumental hip hop, warm analog, jazzy bass" >/dev/null 2>&1 & )`
 Sleep 200ms
 Enter
 # Backgrounded — shell returns instantly; music API runs in parallel (~25s) then plays
@@ -111,8 +106,26 @@ Sleep 200ms
 Enter
 Sleep 2500ms
 
-Type `polli --help | polli gen text --model claude "↑ → linkedin post (no md · proportional font). polli = admin CLI (auth · keys · usage · models · docs · upload · gen). voice: hacker-genz · whimsical · zen-terminal · .nfo/phrack irc-drop · emojis 🐝💾⚡🔮. 80-130w · sharp sign-off. no md, no 🚀."`
+Type `polli --help | polli gen text --model claude "↑ → linkedin post (no md · proportional font). polli = admin CLI (auth · keys · usage · models · docs · upload · gen). voice: hacker · whimsical · zen-terminal · .nfo/phrack irc-drop · emojis 🐝💾⚡🔮. 80–130w, sharp sign-off, no md, no cringe slang!!!"`
 Sleep 200ms
 Enter
-# Hold so the streamed post is visible before the video ends
-Sleep 10000ms
+# Hold so the streamed post is visible
+Sleep 13000ms
+
+# ============================================================
+# Scene 5 — demoscene outro: ascii POLLI wordmark, streamed
+# ============================================================
+Type "clear"
+Enter
+Sleep 400ms
+
+Type `announce "[playful] confused? just ask your agent to [whispers] install me... [curious] install me? [excited] install me!!"`
+Sleep 200ms
+Enter
+Sleep 600ms
+
+Type `polli gen text --model claude "ascii frame 50×20 — spell POLLI big block letters centered. organic evolving mycelium decor; demoscene!"`
+Sleep 200ms
+Enter
+# Hold on the outro while ascii renders
+Sleep 17000ms

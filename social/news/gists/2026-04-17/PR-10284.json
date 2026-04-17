@@ -1,0 +1,33 @@
+{
+  "pr_number": 10284,
+  "title": "chore(polli): bump to 0.1.0-alpha.2",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10284",
+  "merged_at": "2026-04-17T15:00:06Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polli CLI gets a bump",
+    "blurb": "Just a quick version bump for the Polli CLI to keep the NPM registry happy and unblock our latest updates.",
+    "summary": "Bumped the polli-cli package version to 0.1.0-alpha.2 to resolve an NPM publishing conflict.",
+    "impact": "Unblocks the release pipeline for the latest CLI updates.",
+    "keywords": [
+      "cli",
+      "npm",
+      "versioning",
+      "chore"
+    ],
+    "visual_concept": "The bee mascot (Polly) stamping a new version number on a cardboard box representing an NPM package.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot stamping a new version number on a small cardboard box. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-17/PR-10284.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot stamping a new version number on a small cardboard box. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-17T15:00:59.265300+00:00"
+}

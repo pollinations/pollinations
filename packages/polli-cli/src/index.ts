@@ -39,7 +39,9 @@ program
     .option("--key <key>", "Override stored API key for this command")
     .addHelpText(
         "after",
-        `\nAI agent? Read the skill file for the full usage map:\n  https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md\n`,
+        chalk.dim(
+            `\nAI agent? Read the skill file for the full usage map:\n  raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md\n`,
+        ),
     )
     .hook("preAction", () => {
         const opts = program.opts();

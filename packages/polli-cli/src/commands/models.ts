@@ -41,12 +41,18 @@ function capabilities(m: ModelEntry): string {
     return caps.join(",") || "-";
 }
 
+function truncate(s: string, max: number): string {
+    return s.length <= max ? s : `${s.slice(0, max - 1)}…`;
+}
+
 function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
+    const name = chalk.level > 0 ? chalk.hex("#a78bfa").bold(m.name) : m.name;
+    const descMax = verbose ? 80 : 44;
     const row: Record<string, unknown> = {
-        name: m.name,
+        name,
         type: mType,
         capabilities: capabilities(m),
-        description: m.description ?? "-",
+        description: truncate(m.description ?? "-", descMax),
         pricing: m.pricing ?? null,
     };
     if (verbose) {

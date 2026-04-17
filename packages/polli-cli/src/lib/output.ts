@@ -90,7 +90,7 @@ export const printTable = (
 /** Info message — only shown in human mode, goes to stderr */
 export const printInfo = (msg: string) => {
     if (currentMode !== "human") return;
-    process.stderr.write(`${chalk.dim(msg)}\n`);
+    process.stderr.write(`${chalk.cyan.italic(msg)}\n`);
 };
 
 /** Metadata for file-sink commands (gen image/audio/video): stdout in json

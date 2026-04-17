@@ -26,6 +26,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Text with stdin as context | `echo "<ctx>" \| polli gen text "<question>"` |
 | Describe an image (vision) | `polli gen text "what is this?" --image <url>` |
 | One-shot TTS | `polli gen audio "<text>" --output speech.mp3` |
+| Speak out loud | `polli gen audio "<text>" --play` (uses `afplay` on macOS, `mpg123`/`ffplay` elsewhere) |
 | Generate video | `polli gen video "<prompt>" --output out.mp4` |
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
@@ -85,7 +86,7 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Default voice is `alloy`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`).
+Default voice is `sage`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to play the audio while it's being written (handy for narration/demos — plays via `afplay` on macOS, falls back to `mpg123`/`ffplay` elsewhere).
 
 ### Generate music (elevenmusic)
 ```bash
@@ -165,5 +166,5 @@ polli docs --open                   # open in browser
 - Forgetting `--output` on binary generators (image/audio/video) — the file goes to a default path, which may not be what the user wants.
 - Using `polli gen text --json` expecting OpenAI chat-completions shape — the CLI's `--json` wraps its own structure. Use `polli docs /v1/chat/completions` to see the raw API shape if you need it.
 - Running commands without auth — `polli auth status` tells you the tier and balance in one call.
-- Using `polli gen text --stream` in a pipe. The flag exists (visible in `--help`) and streams tokens for interactive use, but stream chunks leak into the downstream command in a chain like `polli gen text --stream … | polli gen audio …`. **Non-streaming is the default** — leave it alone for scripts and pipes, reach for `--stream` only when a human is watching the terminal.
+- **Streaming is now the default for `gen text`.** Use `--no-stream` when piping into another command (chains like `polli gen text … | polli gen audio …` can mis-handle partial tokens). For scripts, `--no-stream` also returns faster and more predictably — streaming is for when a human is watching the terminal.
 - **Translating a `polli` workflow into a browser app.** `gen.pollinations.ai` requires a bearer token, so a plain client-side `fetch` with no auth returns 401. The only anonymous escape hatch is the legacy `https://text.pollinations.ai/openai` endpoint, which accepts exactly `openai` and `openai-fast` — the healthy-model advice from `--stats` does not carry over. For anything beyond those two text models in the browser, mint a scoped key with `polli keys create` and proxy via your own backend.

@@ -222,12 +222,11 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
 
     return (
         <div>
-            <div className="space-y-2">
+            <div className="space-y-4">
                 {/* Model Permission */}
                 <div
                     className={cn(
-                        "relative rounded-lg border transition-all",
-                        "border-gray-200",
+                        "relative transition-all",
                         disabled && "opacity-50 cursor-not-allowed",
                     )}
                 >
@@ -248,11 +247,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         className={cn(
                             "relative flex items-center gap-3 px-3 py-2 text-left transition-all",
                             rowTheme.focusRingClasses,
-                            hasSelectedModels && rowTheme.selectedClasses,
-                            !disabled &&
-                                (hasSelectedModels
-                                    ? rowTheme.selectedHoverClasses
-                                    : rowTheme.rowHoverClasses),
+                            !disabled && rowTheme.rowHoverClasses,
                             !disabled && "cursor-pointer",
                         )}
                     >
@@ -359,10 +354,8 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                     }
                                 }}
                                 className={cn(
-                                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
-                                    isChecked
-                                        ? rowTheme.selectedClasses
-                                        : "border-gray-200",
+                                    "w-full flex items-center gap-3 px-3 py-2 transition-all text-left",
+                                    isChecked && rowTheme.selectedClasses,
                                     rowTheme.focusRingClasses,
                                     !disabled &&
                                         (isChecked
@@ -438,7 +431,7 @@ const ModelCategory: FC<{
                 {isCategoryAllSelected(models) ? "Deselect all" : "Select all"}
             </button>
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap gap-1.5">
             {models.map((model) => (
                 <ModelChip
                     key={model.id}

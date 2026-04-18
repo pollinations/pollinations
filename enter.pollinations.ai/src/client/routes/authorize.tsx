@@ -623,8 +623,8 @@ function AuthorizeComponent() {
                         </div>
                     ) : (
                         <>
-                            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg overflow-hidden">
-                                <div className="p-4 bg-amber-100">
+                            <div>
+                                <div className="-mx-6 px-6 py-4 bg-amber-100">
                                     <p
                                         id="authorize-dialog-title"
                                         className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2"
@@ -827,7 +827,7 @@ function AuthorizeComponent() {
                                     </div>
                                 )}
 
-                                <div className="border-t border-amber-300 p-4">
+                                <div className="-mx-6 px-10 py-4 border-t border-amber-300">
                                     <div className="flex items-center justify-between gap-3">
                                         <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 mb-0 shrink-0">
                                             Spending limit
@@ -863,7 +863,7 @@ function AuthorizeComponent() {
                                     />
                                 </div>
 
-                                <details className="group border-t border-amber-300">
+                                <details className="group -mx-6 border-t border-amber-300">
                                     <summary className="cursor-pointer list-none px-3 py-3 text-xs font-medium text-amber-800 flex items-center justify-end gap-1 select-none transition-all hover:bg-amber-100 hover:text-amber-950">
                                         <span>Advanced</span>
                                         <span className="text-amber-700 transition-transform group-open:rotate-180">

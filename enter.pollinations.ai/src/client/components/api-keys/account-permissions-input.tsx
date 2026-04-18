@@ -226,7 +226,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 {/* Model Permission */}
                 <div
                     className={cn(
-                        "relative transition-all",
+                        "relative rounded-lg border border-gray-200 transition-all",
                         disabled && "opacity-50 cursor-not-allowed",
                     )}
                 >
@@ -292,25 +292,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         )}
                     >
                         <div className="px-3 pb-4 space-y-3 border-t border-gray-200 pt-3">
-                            <div className="flex justify-end">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        onModelsChange(
-                                            isUnrestricted ? [] : null,
-                                        )
-                                    }
-                                    disabled={disabled}
-                                    className={cn(
-                                        "text-xs font-medium cursor-pointer disabled:opacity-50",
-                                        accentTheme.actionTextClasses,
-                                    )}
-                                >
-                                    {isUnrestricted
-                                        ? "Deselect all"
-                                        : "Select all"}
-                                </button>
-                            </div>
                             {MODEL_CATEGORIES.map(({ label, models }) => (
                                 <ModelCategory
                                     key={label}
@@ -354,8 +335,10 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                     }
                                 }}
                                 className={cn(
-                                    "w-full flex items-center gap-3 px-3 py-2 transition-all text-left",
-                                    isChecked && rowTheme.selectedClasses,
+                                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
+                                    isChecked
+                                        ? rowTheme.selectedClasses
+                                        : "border-gray-200",
                                     rowTheme.focusRingClasses,
                                     !disabled &&
                                         (isChecked

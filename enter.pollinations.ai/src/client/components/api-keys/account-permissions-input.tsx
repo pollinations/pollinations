@@ -1,5 +1,7 @@
 import type { FC } from "react";
+import { useState } from "react";
 import { cn } from "@/util.ts";
+import { Badge } from "../ui/badge.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import {
     audioModelIds,
@@ -30,6 +32,8 @@ type AccountPermissionsInputProps = {
     visiblePermissions?: readonly AccountPermissionOption["id"][];
     theme?: PermissionUiTheme;
     showApiName?: boolean;
+    /** Whether the Models section starts expanded. Always collapsible. */
+    modelsInitiallyExpanded?: boolean;
 };
 
 export const ACCOUNT_PERMISSIONS = [
@@ -117,6 +121,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     visiblePermissions,
     theme = "green",
     showApiName = true,
+    modelsInitiallyExpanded = false,
 }) => {
     const themeConfig = getPermissionUiTheme(theme);
     const { row: rowTheme, accent: accentTheme } = themeConfig;
@@ -200,6 +205,15 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         isUnrestricted ||
         categoryModels.every((m) => (allowedModels ?? []).includes(m.id));
 
+    const selectedCount = isUnrestricted
+        ? allModelIds.length
+        : (allowedModels ?? []).length;
+
+    // Start open if caller requested, or if the key is already restricted.
+    const [modelsExpanded, setModelsExpanded] = useState(
+        modelsInitiallyExpanded || !isUnrestricted,
+    );
+
     return (
         <div>
             <div className="space-y-4">
@@ -255,34 +269,89 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 {/* Models */}
                 <div
                     className={cn(
-                        "relative transition-all",
+                        "rounded-lg border transition-all",
+                        rowTheme.selectedClasses,
                         disabled && "opacity-50 cursor-not-allowed",
                     )}
                 >
-                    <div className="flex items-center gap-1.5 px-3 py-2">
-                        <span className="text-sm font-medium">Models</span>
-                        <InfoTip
-                            text="Choose which models this key can use. By default, all models are allowed."
-                            label="Model access information"
-                            tone={accentTheme.tipTone}
-                        />
+                    {/* biome-ignore lint/a11y/useSemanticElements: full-row toggle with nested Badge */}
+                    <div
+                        role="button"
+                        tabIndex={disabled ? -1 : 0}
+                        aria-expanded={modelsExpanded}
+                        aria-label="Toggle model list"
+                        onClick={() =>
+                            !disabled && setModelsExpanded((v) => !v)
+                        }
+                        onKeyDown={(e) => {
+                            if (disabled) return;
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setModelsExpanded((v) => !v);
+                            }
+                        }}
+                        className={cn(
+                            "flex items-center gap-3 px-3 py-2",
+                            rowTheme.focusRingClasses,
+                            !disabled &&
+                                (!isUnrestricted
+                                    ? rowTheme.selectedHoverClasses
+                                    : rowTheme.rowHoverClasses),
+                            !disabled && "cursor-pointer",
+                        )}
+                    >
+                        <div className="flex flex-1 items-baseline gap-1">
+                            <span className="text-sm font-medium">Models</span>
+                            <span className="text-sm text-gray-500">
+                                –{" "}
+                                {isUnrestricted
+                                    ? "all models allowed"
+                                    : "restricted to selected"}
+                            </span>
+                        </div>
+                        <Badge
+                            color={
+                                isUnrestricted
+                                    ? accentTheme.badgeColor
+                                    : selectedCount === 0
+                                      ? "gray"
+                                      : "amber"
+                            }
+                        >
+                            {isUnrestricted
+                                ? "All"
+                                : `${selectedCount} selected`}
+                        </Badge>
+                        <span
+                            className={cn(
+                                "text-gray-500 text-xs transition-transform",
+                                modelsExpanded && "rotate-180",
+                            )}
+                            aria-hidden="true"
+                        >
+                            ▼
+                        </span>
                     </div>
-                    <div className="px-3 pb-4 space-y-3">
-                        {MODEL_CATEGORIES.map(({ label, models }) => (
-                            <ModelCategory
-                                key={label}
-                                label={label}
-                                models={models}
-                                disabled={disabled}
-                                isModelSelected={isModelSelected}
-                                toggleModel={toggleModel}
-                                toggleCategory={toggleCategory}
-                                isCategoryAllSelected={isCategoryAllSelected}
-                                showApiName={showApiName}
-                                theme={theme}
-                            />
-                        ))}
-                    </div>
+                    {modelsExpanded && (
+                        <div className="px-3 pb-3 pt-3 space-y-3 border-t border-gray-200">
+                            {MODEL_CATEGORIES.map(({ label, models }) => (
+                                <ModelCategory
+                                    key={label}
+                                    label={label}
+                                    models={models}
+                                    disabled={disabled}
+                                    isModelSelected={isModelSelected}
+                                    toggleModel={toggleModel}
+                                    toggleCategory={toggleCategory}
+                                    isCategoryAllSelected={
+                                        isCategoryAllSelected
+                                    }
+                                    showApiName={showApiName}
+                                    theme={theme}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

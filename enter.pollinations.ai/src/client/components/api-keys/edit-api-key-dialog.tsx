@@ -3,7 +3,6 @@ import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
-import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
@@ -35,7 +34,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
     const isAppKey = isPublishable && !!initialAppUrl;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
-    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>();
 
     useScrollLock();
 
@@ -115,10 +113,10 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     return (
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-            <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
+            <Dialog.Positioner className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto z-[100]">
                 <Dialog.Content
                     className={cn(
-                        "border-green-950 border-4 rounded-lg shadow-lg max-w-xl w-full max-h-[85vh] flex flex-col",
+                        "border-green-950 border-4 rounded-lg shadow-lg max-w-xl w-full my-auto",
                         "bg-green-100",
                     )}
                 >
@@ -165,13 +163,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </div>
                     </div>
 
-                    <div
-                        ref={scrollAreaRef}
-                        className="flex-1 overflow-y-auto p-6 py-4 scrollbar-subtle scrollbar-theme-green"
-                        style={{
-                            overscrollBehavior: "contain",
-                        }}
-                    >
+                    <div className="p-6 py-4">
                         {error && (
                             <Card
                                 color="red"

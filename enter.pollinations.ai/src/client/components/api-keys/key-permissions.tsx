@@ -50,6 +50,7 @@ interface KeyPermissionsInputsProps {
     disabled?: boolean;
     inline?: boolean;
     theme?: PermissionUiTheme;
+    modelsInitiallyExpanded?: boolean;
 }
 
 /**
@@ -60,6 +61,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     disabled = false,
     inline = false,
     theme = "green",
+    modelsInitiallyExpanded = false,
 }) => {
     const {
         permissions,
@@ -92,6 +94,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 allowedModels={permissions.allowedModels}
                 onModelsChange={setAllowedModels}
                 theme={theme}
+                modelsInitiallyExpanded={modelsInitiallyExpanded}
             />
         </div>
     );

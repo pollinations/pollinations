@@ -112,10 +112,10 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
     };
 
 const PERMISSION_CATEGORY_PILLS = {
-    text: "bg-blue-100 text-blue-800 border-blue-300",
-    image: "bg-pink-100 text-pink-800 border-pink-300",
-    video: "bg-teal-100 text-teal-800 border-teal-300",
-    audio: "bg-violet-100 text-violet-800 border-violet-300",
+    text: "bg-blue-200 text-blue-900 border-blue-400",
+    image: "bg-pink-200 text-pink-900 border-pink-400",
+    video: "bg-teal-200 text-teal-900 border-teal-400",
+    audio: "bg-violet-200 text-violet-900 border-violet-400",
 } as const;
 
 export function getPermissionUiTheme(

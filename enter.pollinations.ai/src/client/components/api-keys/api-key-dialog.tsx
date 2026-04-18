@@ -8,7 +8,6 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
-import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
@@ -66,7 +65,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>(isOpen);
 
     useScrollLock(isOpen);
 
@@ -184,10 +182,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 </Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-            <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
+            <Dialog.Positioner className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto z-[100]">
                 <Dialog.Content
                     className={cn(
-                        "border-4 rounded-lg shadow-lg max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden",
+                        "border-4 rounded-lg shadow-lg max-w-2xl w-full my-auto",
                         "bg-white border-green-950",
                     )}
                 >
@@ -327,17 +325,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             )}
                         </div>
 
-                        <div className="px-6 pb-2 flex flex-1 min-h-0 overflow-hidden">
-                            <div
-                                ref={scrollAreaRef}
-                                className={cn(
-                                    "border-2 rounded-lg flex-1 min-h-0 overflow-y-auto scrollbar-subtle",
-                                    keyTypeStyles.panelClasses,
-                                )}
-                                style={{
-                                    overscrollBehavior: "contain",
-                                }}
-                            >
+                        <div className="px-6 pb-2">
+                            <div>
                                 <div className="p-4 space-y-4">
                                     <Field.Root className="flex items-center gap-3">
                                         <Field.Label className="text-sm font-semibold shrink-0">

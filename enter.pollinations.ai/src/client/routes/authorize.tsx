@@ -863,6 +863,7 @@ function AuthorizeComponent() {
                                         }
                                         theme="amber"
                                         showApiName={false}
+                                        modelsInitiallyExpanded
                                     />
                                 </div>
                             </details>

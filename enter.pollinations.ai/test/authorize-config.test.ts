@@ -122,21 +122,25 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
             "profile",
             "balance",
             "usage",
+            "keys",
         ]);
         expect(
             sanitizeAuthorizeAccountPermissions([
-                "keys",
+                "offline_access",
                 "usage",
                 "profile",
                 "usage",
-                "offline_access",
+                "admin",
             ]),
         ).toEqual(["usage", "profile"]);
     });
 
     it("returns null when no safe permissions remain", () => {
         expect(
-            sanitizeAuthorizeAccountPermissions(["keys", "offline_access"]),
+            sanitizeAuthorizeAccountPermissions([
+                "admin",
+                "offline_access",
+            ]),
         ).toBeNull();
     });
 });

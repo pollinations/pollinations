@@ -814,30 +814,17 @@ function AuthorizeComponent() {
                             </div>
 
                             <div className="-mx-6 px-10 py-4 border-t border-amber-300">
-                                <div className="flex items-center justify-between gap-3">
-                                    <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 mb-0 shrink-0">
-                                        Spending limit
-                                        <InfoTip
-                                            text="This app can only spend this amount from your pollen balance."
-                                            label="Spending limit information"
-                                            tone="amber"
-                                        />
-                                    </p>
-                                    <PollenBudgetInput
-                                        value={
-                                            keyPermissions.permissions
-                                                .pollenBudget
-                                        }
-                                        onChange={
-                                            keyPermissions.setPollenBudget
-                                        }
-                                        hideLabel
-                                        theme="amber"
-                                    />
-                                </div>
+                                <PollenBudgetInput
+                                    value={
+                                        keyPermissions.permissions.pollenBudget
+                                    }
+                                    onChange={keyPermissions.setPollenBudget}
+                                    inline
+                                    theme="amber"
+                                />
                             </div>
 
-                            <div className="px-4 pb-4">
+                            <div className="-mx-6 px-10 py-4 border-t border-amber-300">
                                 <ExpiryDaysInput
                                     value={
                                         keyPermissions.permissions.expiryDays

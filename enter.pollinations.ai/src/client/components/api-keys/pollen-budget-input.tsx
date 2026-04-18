@@ -12,7 +12,6 @@ type PollenBudgetInputProps = {
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
-    hideLabel?: boolean;
     inline?: boolean;
     theme?: PermissionUiTheme;
 };
@@ -26,7 +25,6 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     value,
     onChange,
     disabled = false,
-    hideLabel = false,
     inline = false,
     theme = "green",
 }) => {
@@ -36,19 +34,19 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     } = getPermissionUiTheme(theme);
 
     return (
-        <Field.Root className={inline ? "flex items-center gap-3" : ""}>
-            {!hideLabel && (
-                <Field.Label
-                    className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
-                >
-                    Budget
-                    <InfoTip
-                        text="Set a spending limit for this key. Leave empty for unlimited."
-                        label="Budget information"
-                        tone={tipTone}
-                    />
-                </Field.Label>
-            )}
+        <Field.Root
+            className={inline ? "flex items-center justify-between gap-3" : ""}
+        >
+            <Field.Label
+                className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
+            >
+                Budget
+                <InfoTip
+                    text="Set a spending limit for this key. Leave empty for unlimited."
+                    label="Budget information"
+                    tone={tipTone}
+                />
+            </Field.Label>
             <div className="flex items-center gap-2">
                 <Input
                     id="pollen-budget-input"

@@ -12,7 +12,6 @@ type ExpiryDaysInputProps = {
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
-    hideLabel?: boolean;
     inline?: boolean;
     theme?: PermissionUiTheme;
 };
@@ -26,7 +25,6 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     value,
     onChange,
     disabled = false,
-    hideLabel = false,
     inline = false,
     theme = "green",
 }) => {
@@ -37,22 +35,18 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
 
     return (
         <Field.Root
-            className={
-                inline ? "flex items-center justify-between gap-3" : ""
-            }
+            className={inline ? "flex items-center justify-between gap-3" : ""}
         >
-            {!hideLabel && (
-                <Field.Label
-                    className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
-                >
-                    Expiry
-                    <InfoTip
-                        text="Key expires after this many days. Leave empty for no expiry."
-                        label="Expiry information"
-                        tone={tipTone}
-                    />
-                </Field.Label>
-            )}
+            <Field.Label
+                className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
+            >
+                Expiry
+                <InfoTip
+                    text="Key expires after this many days. Leave empty for no expiry."
+                    label="Expiry information"
+                    tone={tipTone}
+                />
+            </Field.Label>
             <div className="flex items-center gap-2">
                 <Input
                     id="expiry-days-input"
@@ -65,11 +59,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={cn(
-                        "input-number-clean w-20",
-                        hideLabel && "text-sm",
-                        inputClasses,
-                    )}
+                    className={cn("input-number-clean w-20", inputClasses)}
                     placeholder="Never"
                     disabled={disabled}
                 />

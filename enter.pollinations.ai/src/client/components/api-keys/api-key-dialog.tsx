@@ -275,7 +275,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                                 </li>
                                             </ul>
                                             <div className="mt-3 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
-                                                ⚠️ Beta – still working out bugs
+                                                ⚠️ Beta – not safe for production
                                             </div>
                                         </label>
                                         <label

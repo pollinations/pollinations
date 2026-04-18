@@ -36,7 +36,11 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     } = getPermissionUiTheme(theme);
 
     return (
-        <Field.Root className={inline ? "flex items-center gap-3" : ""}>
+        <Field.Root
+            className={
+                inline ? "flex items-center justify-between gap-3" : ""
+            }
+        >
             {!hideLabel && (
                 <Field.Label
                     className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
@@ -69,7 +73,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                     placeholder="Never"
                     disabled={disabled}
                 />
-                <span className="text-sm text-gray-500">days</span>
+                <span className="text-sm text-gray-500 w-12">days</span>
             </div>
         </Field.Root>
     );

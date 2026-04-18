@@ -1,0 +1,38 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 401,
+    "statusText": "Unauthorized",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "24",
+      "content-type": "application/json",
+      "date": "Tue, 14 Apr 2026 09:05:49 GMT",
+      "keep-alive": "timeout=5"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Unauthorized"
+      }
+    }
+  }
+}

@@ -48,6 +48,14 @@ type GuardrailBody = {
     content: { text: { text: string } }[];
 };
 
+export interface BedrockGuardrailEnv {
+    AWS_BEDROCK_ACCESS_KEY_ID: string;
+    AWS_BEDROCK_SECRET_ACCESS_KEY: string;
+    AWS_BEDROCK_REGION: string;
+    BEDROCK_GUARDRAIL_ID: string;
+    BEDROCK_GUARDRAIL_VERSION: string;
+}
+
 async function signRequest(
     serializedBody: string,
     url: string,
@@ -77,14 +85,6 @@ async function signRequest(
     });
 
     return signed.headers;
-}
-
-export interface BedrockGuardrailEnv {
-    AWS_BEDROCK_ACCESS_KEY_ID: string;
-    AWS_BEDROCK_SECRET_ACCESS_KEY: string;
-    AWS_BEDROCK_REGION: string;
-    BEDROCK_GUARDRAIL_ID: string;
-    BEDROCK_GUARDRAIL_VERSION: string;
 }
 
 export async function applyGuardrail(
@@ -122,45 +122,4 @@ export async function applyGuardrail(
     }
 
     return response.json();
-}
-
-/**
- * Redact PII in text based on Bedrock response.
- * Returns redacted text, or null if nothing was redacted.
- */
-export function redactText(
-    text: string,
-    result: BedrockResponse,
-    allowedTypes?: Set<string>,
-): string | null {
-    const policy = result.assessments[0]?.sensitiveInformationPolicy;
-    if (!policy) return null;
-
-    let redacted = text;
-
-    // If Bedrock already anonymized all types and no type filter is active,
-    // use its pre-masked output directly
-    const hasAnonymized = policy.piiEntities?.some(
-        (e) => e.action === "ANONYMIZED",
-    );
-    if (hasAnonymized && !allowedTypes && result.outputs?.[0]?.text) {
-        redacted = result.outputs[0].text;
-    } else {
-        for (const entity of policy.piiEntities ?? []) {
-            if (!allowedTypes || allowedTypes.has(entity.type)) {
-                redacted = redacted.replaceAll(
-                    entity.match,
-                    `{${entity.type}}`,
-                );
-            }
-        }
-    }
-
-    for (const regex of policy.regexes ?? []) {
-        if (!allowedTypes || allowedTypes.has(regex.name)) {
-            redacted = redacted.replaceAll(regex.match, `{${regex.name}}`);
-        }
-    }
-
-    return redacted !== text ? redacted : null;
 }

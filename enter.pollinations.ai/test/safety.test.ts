@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { resolveEffectiveSafety } from "@/middleware/safety.ts";
-import { type BedrockResponse, redactText } from "@/utils/bedrock-guardrail.ts";
+import {
+    computeTriggeredFeatures,
+    expandDefaults,
+    resolveEffectiveSafety,
+} from "@/middleware/safety.ts";
+import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 
 describe("resolveEffectiveSafety", () => {
     it("returns empty set when both sources are undefined", () => {
@@ -33,39 +37,57 @@ describe("resolveEffectiveSafety", () => {
     });
 });
 
-describe("redactText", () => {
-    type Assessment = BedrockResponse["assessments"][0];
-    type PiiEntities = Assessment["sensitiveInformationPolicy"]["piiEntities"];
-    type Regexes = Assessment["sensitiveInformationPolicy"]["regexes"];
+describe("expandDefaults", () => {
+    it("expands 'true' to privacy + secrets", () => {
+        expect(expandDefaults(new Set(["true"]))).toEqual(
+            new Set(["privacy", "secrets"]),
+        );
+    });
 
-    function makeResponse(
-        piiEntities: PiiEntities = [],
-        regexes: Regexes = [],
-        outputText?: string,
-    ): BedrockResponse {
-        return {
-            action:
-                piiEntities.length > 0 || regexes.length > 0
-                    ? "GUARDRAIL_INTERVENED"
-                    : "NONE",
-            assessments: [
-                {
-                    sensitiveInformationPolicy: { piiEntities, regexes },
-                },
-            ],
-            outputs: outputText ? [{ text: outputText }] : [],
-            usage: {
-                contentPolicyUnits: 0,
-                sensitiveInformationPolicyUnits: 1,
-                wordPolicyUnits: 0,
-            },
-        };
-    }
+    it("expands 'nsfw' to sexual + violence", () => {
+        expect(expandDefaults(new Set(["nsfw"]))).toEqual(
+            new Set(["sexual", "violence"]),
+        );
+    });
 
-    it("returns null when no PII detected", () => {
+    it("combines true + nsfw expansions", () => {
+        expect(expandDefaults(new Set(["true", "nsfw"]))).toEqual(
+            new Set(["privacy", "secrets", "sexual", "violence"]),
+        );
+    });
+
+    it("leaves concrete features untouched", () => {
+        expect(expandDefaults(new Set(["privacy", "shield"]))).toEqual(
+            new Set(["privacy", "shield"]),
+        );
+    });
+});
+
+describe("computeTriggeredFeatures", () => {
+    const emptyResponse = (
+        action: "NONE" | "GUARDRAIL_INTERVENED" = "NONE",
+    ): BedrockResponse => ({
+        action,
+        assessments: [{}],
+        outputs: [],
+        usage: {
+            contentPolicyUnits: 0,
+            sensitiveInformationPolicyUnits: 0,
+            wordPolicyUnits: 0,
+        },
+    });
+
+    it("returns empty when guardrail action is NONE", () => {
+        const features = new Set(["privacy", "secrets"]);
+        expect(computeTriggeredFeatures(emptyResponse("NONE"), features)).toEqual(
+            [],
+        );
+    });
+
+    it("returns empty when no assessments exist", () => {
         const response: BedrockResponse = {
-            action: "NONE",
-            assessments: [{}],
+            action: "GUARDRAIL_INTERVENED",
+            assessments: [],
             outputs: [],
             usage: {
                 contentPolicyUnits: 0,
@@ -73,106 +95,173 @@ describe("redactText", () => {
                 wordPolicyUnits: 0,
             },
         };
-        expect(redactText("hello world", response)).toBeNull();
-    });
-
-    it("redacts PII matches with type tokens", () => {
-        const response = makeResponse([
-            { action: "BLOCKED", match: "test@example.com", type: "EMAIL" },
-        ]);
-        expect(redactText("my email is test@example.com", response)).toBe(
-            "my email is {EMAIL}",
-        );
-    });
-
-    it("redacts multiple PII types", () => {
-        const response = makeResponse([
-            { action: "BLOCKED", match: "test@example.com", type: "EMAIL" },
-            { action: "BLOCKED", match: "555-1234", type: "PHONE" },
-        ]);
         expect(
-            redactText("email: test@example.com phone: 555-1234", response),
-        ).toBe("email: {EMAIL} phone: {PHONE}");
+            computeTriggeredFeatures(response, new Set(["privacy"])),
+        ).toEqual([]);
     });
 
-    it("only redacts allowed types when filter is provided", () => {
-        const response = makeResponse([
-            { action: "BLOCKED", match: "test@example.com", type: "EMAIL" },
-            {
-                action: "BLOCKED",
-                match: "AKIAIOSFODNN7EXAMPLE",
-                type: "AWS_ACCESS_KEY",
+    it("triggers 'privacy' when EMAIL PII is detected and privacy is active", () => {
+        const response = emptyResponse("GUARDRAIL_INTERVENED");
+        response.assessments[0] = {
+            sensitiveInformationPolicy: {
+                piiEntities: [
+                    {
+                        action: "ANONYMIZED",
+                        match: "alice@example.com",
+                        type: "EMAIL",
+                    },
+                ],
+                regexes: [],
             },
-        ]);
-        const emailOnly = new Set(["EMAIL"]);
+        };
         expect(
-            redactText(
-                "email: test@example.com key: AKIAIOSFODNN7EXAMPLE",
-                response,
-                emailOnly,
-            ),
-        ).toBe("email: {EMAIL} key: AKIAIOSFODNN7EXAMPLE");
+            computeTriggeredFeatures(response, new Set(["privacy"])),
+        ).toEqual(["privacy"]);
     });
 
-    it("redacts regex matches (custom patterns)", () => {
-        const response = makeResponse(
-            [],
-            [
-                {
-                    action: "BLOCKED",
-                    match: "sk_abc123",
-                    name: "POLLINATIONS_SECRET_KEY",
-                    regex: "sk_[a-zA-Z0-9]+",
-                },
-            ],
-        );
-        expect(redactText("my key is sk_abc123", response)).toBe(
-            "my key is {POLLINATIONS_SECRET_KEY}",
-        );
-    });
-
-    it("skips regex matches when allowedTypes excludes them", () => {
-        const response = makeResponse(
-            [
-                {
-                    action: "BLOCKED",
-                    match: "test@example.com",
-                    type: "EMAIL",
-                },
-            ],
-            [
-                {
-                    action: "BLOCKED",
-                    match: "sk_abc123",
-                    name: "POLLINATIONS_SECRET_KEY",
-                    regex: "sk_[a-zA-Z0-9]+",
-                },
-            ],
-        );
-        const privacyOnly = new Set(["EMAIL"]);
+    it("does NOT trigger when PII is detected but feature is not active", () => {
+        const response = emptyResponse("GUARDRAIL_INTERVENED");
+        response.assessments[0] = {
+            sensitiveInformationPolicy: {
+                piiEntities: [
+                    {
+                        action: "ANONYMIZED",
+                        match: "alice@example.com",
+                        type: "EMAIL",
+                    },
+                ],
+                regexes: [],
+            },
+        };
         expect(
-            redactText(
-                "email: test@example.com key: sk_abc123",
-                response,
-                privacyOnly,
-            ),
-        ).toBe("email: {EMAIL} key: sk_abc123");
+            computeTriggeredFeatures(response, new Set(["secrets"])),
+        ).toEqual([]);
     });
 
-    it("uses Bedrock anonymized output when available", () => {
-        const response = makeResponse(
-            [
-                {
-                    action: "ANONYMIZED",
-                    match: "test@example.com",
-                    type: "EMAIL",
-                },
-            ],
-            [],
-            "my email is {EMAIL}",
+    it("triggers 'secrets' on AWS access key detection", () => {
+        const response = emptyResponse("GUARDRAIL_INTERVENED");
+        response.assessments[0] = {
+            sensitiveInformationPolicy: {
+                piiEntities: [
+                    {
+                        action: "BLOCKED",
+                        match: "REDACTED_AWS_KEY",
+                        type: "AWS_ACCESS_KEY",
+                    },
+                ],
+                regexes: [],
+            },
+        };
+        expect(
+            computeTriggeredFeatures(response, new Set(["secrets"])),
+        ).toEqual(["secrets"]);
+    });
+
+    it("triggers 'secrets' on custom regex match (Pollinations key)", () => {
+        const response = emptyResponse("GUARDRAIL_INTERVENED");
+        response.assessments[0] = {
+            sensitiveInformationPolicy: {
+                piiEntities: [],
+                regexes: [
+                    {
+                        action: "BLOCKED",
+                        match: "sk_abc123",
+                        name: "POLLINATIONS_SECRET_KEY",
+                        regex: "sk_[a-zA-Z0-9]+",
+                    },
+                ],
+            },
+        };
+        expect(
+            computeTriggeredFeatures(response, new Set(["secrets"])),
+        ).toEqual(["secrets"]);
+    });
+
+    it("triggers 'sexual' when SEXUAL content filter fires", () => {
+        const response = emptyResponse("GUARDRAIL_INTERVENED");
+        response.assessments[0] = {
+            contentPolicy: {
+                filters: [
+                    {
+                        action: "BLOCKED",
+                        confidence: "HIGH",
+                        type: "SEXUAL",
+                        filterStrength: "HIGH",
+                    },
+                ],
+            },
+        };
+        expect(
+            computeTriggeredFeatures(response, new Set(["sexual"])),
+        ).toEqual(["sexual"]);
+    });
+
+    it("triggers 'violence' for VIOLENCE, HATE, or INSULTS", () => {
+        const response = emptyResponse("GUARDRAIL_INTERVENED");
+        response.assessments[0] = {
+            contentPolicy: {
+                filters: [
+                    {
+                        action: "BLOCKED",
+                        confidence: "HIGH",
+                        type: "HATE",
+                        filterStrength: "HIGH",
+                    },
+                ],
+            },
+        };
+        expect(
+            computeTriggeredFeatures(response, new Set(["violence"])),
+        ).toEqual(["violence"]);
+    });
+
+    it("triggers 'shield' for PROMPT_ATTACK", () => {
+        const response = emptyResponse("GUARDRAIL_INTERVENED");
+        response.assessments[0] = {
+            contentPolicy: {
+                filters: [
+                    {
+                        action: "BLOCKED",
+                        confidence: "HIGH",
+                        type: "PROMPT_ATTACK",
+                        filterStrength: "HIGH",
+                    },
+                ],
+            },
+        };
+        expect(
+            computeTriggeredFeatures(response, new Set(["shield"])),
+        ).toEqual(["shield"]);
+    });
+
+    it("returns multiple triggered features in a single request", () => {
+        const response = emptyResponse("GUARDRAIL_INTERVENED");
+        response.assessments[0] = {
+            contentPolicy: {
+                filters: [
+                    {
+                        action: "BLOCKED",
+                        confidence: "HIGH",
+                        type: "SEXUAL",
+                        filterStrength: "HIGH",
+                    },
+                ],
+            },
+            sensitiveInformationPolicy: {
+                piiEntities: [
+                    {
+                        action: "ANONYMIZED",
+                        match: "alice@example.com",
+                        type: "EMAIL",
+                    },
+                ],
+                regexes: [],
+            },
+        };
+        const triggered = computeTriggeredFeatures(
+            response,
+            new Set(["privacy", "sexual"]),
         );
-        expect(redactText("my email is test@example.com", response)).toBe(
-            "my email is {EMAIL}",
-        );
+        expect(new Set(triggered)).toEqual(new Set(["privacy", "sexual"]));
     });
 });

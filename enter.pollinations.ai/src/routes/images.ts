@@ -6,6 +6,7 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import { applySafety } from "@/middleware/safety.ts";
 import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
@@ -21,7 +22,6 @@ const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = [
     "nologo",
     "enhance",
-    "safe",
     "private",
     "transparent",
     "negative_prompt",
@@ -129,6 +129,7 @@ async function parseEditInput(c: Context): Promise<{
     size?: string;
     quality?: string;
     seed?: number;
+    safe?: string;
     extra: Record<string, unknown>;
 }> {
     const contentType = c.req.header("content-type") || "";
@@ -165,6 +166,7 @@ async function parseEditInput(c: Context): Promise<{
             imageUrls,
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
+            safe: (formData.get("safe") as string) || undefined,
             extra: {},
         };
     }
@@ -198,6 +200,7 @@ async function parseEditInput(c: Context): Promise<{
         size: parsed.data.size,
         quality: parsed.data.quality,
         seed,
+        safe: body.safe as string | undefined,
         extra: passthrough,
     };
 }
@@ -213,6 +216,10 @@ export function handleImageGeneration(
 
         const body = (await c.req.json()) as CreateImageRequest &
             Record<string, unknown>;
+
+        // Apply safety: reject if guardrail triggers on the prompt.
+        await applySafety(c, body.prompt ?? "", body.safe as string | undefined);
+
         const model = c.var.model.resolved;
         const resolved = resolveParams(body);
 
@@ -261,8 +268,12 @@ export function handleImageEdit(
     return async (c: Context) => {
         await requireAuthAndBalance(c, checkBalance);
 
-        const { prompt, imageUrls, size, quality, seed, extra } =
+        const { prompt, imageUrls, size, quality, seed, safe, extra } =
             await parseEditInput(c);
+
+        // Apply safety: reject if guardrail triggers on the prompt.
+        await applySafety(c, prompt, safe);
+
         const resolved = resolveParams({ size, quality, seed });
 
         const targetUrl = buildImageServiceUrl(c.env.IMAGE_SERVICE_URL, {

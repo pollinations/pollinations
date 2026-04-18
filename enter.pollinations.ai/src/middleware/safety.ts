@@ -1,17 +1,19 @@
 /**
  * Safety middleware for enter.pollinations.ai
  *
- * Reads `safe` from API key metadata and/or request (query param, header, body).
- * Calls AWS Bedrock Guardrails to redact PII/secrets or block harmful content.
+ * Reads `safe` from API key metadata and/or request (query param, header, body)
+ * and sends the request text to AWS Bedrock Guardrails. If the guardrail
+ * triggers on any feature the caller opted into, the whole request is rejected
+ * with HTTP 400. Otherwise the request passes through unchanged.
  *
  * Features:
- *   privacy  — redact emails, phones, names, addresses, IPs
- *   secrets  — redact API keys, passwords, tokens, credit cards
- *   sexual   — block sexual/nude content
- *   violence — block violence, hate speech, insults
- *   shield   — block prompt injection, misconduct
+ *   privacy  — reject if emails/phones/names/addresses/IPs/etc. detected
+ *   secrets  — reject if API keys/passwords/tokens/credit cards detected
+ *   sexual   — reject sexual/nude content
+ *   violence — reject violence, hate speech, insults
+ *   shield   — reject prompt injection / misconduct
  *   nsfw     — shorthand for sexual,violence
- *   true     — expands to privacy,secrets
+ *   true     — shorthand for privacy,secrets (the defaults)
  */
 
 import type { Context } from "hono";
@@ -20,10 +22,8 @@ import {
     applyGuardrail,
     type BedrockGuardrailEnv,
     type BedrockResponse,
-    redactText,
 } from "@/utils/bedrock-guardrail.ts";
 
-// PII types grouped by feature
 const PRIVACY_PII_TYPES = new Set([
     "EMAIL",
     "PHONE",
@@ -47,18 +47,16 @@ const SECRETS_PII_TYPES = new Set([
     "US_BANK_ROUTING_NUMBER",
 ]);
 
-// Custom regex names mapped to secrets feature
 const SECRETS_REGEX_NAMES = new Set([
     "POLLINATIONS_SECRET_KEY",
     "POLLINATIONS_PUBLIC_KEY",
 ]);
 
-// Content filter categories by feature
 const SEXUAL_CATEGORIES = new Set(["SEXUAL"]);
 const VIOLENCE_CATEGORIES = new Set(["VIOLENCE", "HATE", "INSULTS"]);
 const SHIELD_CATEGORIES = new Set(["PROMPT_ATTACK", "MISCONDUCT"]);
 
-const DEFAULT_FEATURES = ["privacy", "secrets"];
+const DEFAULT_FEATURES = ["privacy", "secrets"] as const;
 
 const VALID_FEATURES = new Set([
     "privacy",
@@ -70,13 +68,12 @@ const VALID_FEATURES = new Set([
     "true",
 ]);
 
-type ChatMessage = {
-    role?: string;
-    content?: string | { type?: string; text?: string }[];
-};
+export interface SafetyResult {
+    applied: string[];
+}
 
 /**
- * Parse a safe value (string like "privacy,secrets" or "true") into a feature set.
+ * Parse a safe value (e.g. "privacy,secrets" or "true") into a feature set.
  */
 function parseSafe(value: string | undefined | null): Set<string> {
     if (!value) return new Set();
@@ -104,9 +101,9 @@ export function resolveEffectiveSafety(
 }
 
 /**
- * Expand shorthand features: `true` → defaults, `nsfw` → sexual + violence.
+ * Expand shorthand features: `true` -> defaults, `nsfw` -> sexual + violence.
  */
-function expandDefaults(features: Set<string>): Set<string> {
+export function expandDefaults(features: Set<string>): Set<string> {
     const expanded = new Set(features);
     if (expanded.has("true")) {
         expanded.delete("true");
@@ -121,203 +118,77 @@ function expandDefaults(features: Set<string>): Set<string> {
 }
 
 /**
- * Get the allowed PII types based on active features.
+ * Return the list of user-requested features that Bedrock actually triggered.
+ * Empty list means accept; non-empty means reject.
  */
-function getAllowedPiiTypes(features: Set<string>): Set<string> | undefined {
-    const hasPrivacy = features.has("privacy");
-    const hasSecrets = features.has("secrets");
-    if (!hasPrivacy && !hasSecrets) return undefined;
-
-    const allowed = new Set<string>();
-    if (hasPrivacy) for (const t of PRIVACY_PII_TYPES) allowed.add(t);
-    if (hasSecrets) {
-        for (const t of SECRETS_PII_TYPES) allowed.add(t);
-        // Include custom regex names so they pass the allowedTypes filter
-        for (const name of SECRETS_REGEX_NAMES) allowed.add(name);
-    }
-    return allowed;
-}
-
-/**
- * Check content policy filters against active features.
- * Returns the list of triggered categories, or empty if none match.
- */
-function getBlockedCategories(
+export function computeTriggeredFeatures(
     response: BedrockResponse,
     features: Set<string>,
 ): string[] {
-    const filters = response.assessments[0]?.contentPolicy?.filters;
-    if (!filters || response.action !== "GUARDRAIL_INTERVENED") return [];
+    if (response.action !== "GUARDRAIL_INTERVENED") return [];
 
-    const blocked: string[] = [];
-    for (const filter of filters) {
+    const triggered = new Set<string>();
+    const assessment = response.assessments[0];
+    if (!assessment) return [];
+
+    const contentFilters = assessment.contentPolicy?.filters ?? [];
+    for (const filter of contentFilters) {
         if (filter.action !== "BLOCKED") continue;
         if (features.has("sexual") && SEXUAL_CATEGORIES.has(filter.type)) {
-            blocked.push(filter.type);
+            triggered.add("sexual");
         }
         if (features.has("violence") && VIOLENCE_CATEGORIES.has(filter.type)) {
-            blocked.push(filter.type);
+            triggered.add("violence");
         }
         if (features.has("shield") && SHIELD_CATEGORIES.has(filter.type)) {
-            blocked.push(filter.type);
+            triggered.add("shield");
         }
     }
-    return blocked;
+
+    const pii = assessment.sensitiveInformationPolicy?.piiEntities ?? [];
+    for (const entity of pii) {
+        if (features.has("privacy") && PRIVACY_PII_TYPES.has(entity.type)) {
+            triggered.add("privacy");
+        }
+        if (features.has("secrets") && SECRETS_PII_TYPES.has(entity.type)) {
+            triggered.add("secrets");
+        }
+    }
+
+    const regexes = assessment.sensitiveInformationPolicy?.regexes ?? [];
+    for (const regex of regexes) {
+        if (features.has("secrets") && SECRETS_REGEX_NAMES.has(regex.name)) {
+            triggered.add("secrets");
+        }
+    }
+
+    return [...triggered];
 }
 
 /**
- * Extract text content from chat completion messages.
+ * Apply safety to a text string. Throws HTTPException on block.
+ * Returns null when safety is not active (unconfigured or no features requested).
  */
-function extractMessagesText(messages: ChatMessage[]): string {
-    const parts: string[] = [];
-    for (const msg of messages) {
-        if (typeof msg.content === "string") {
-            parts.push(msg.content);
-        } else if (Array.isArray(msg.content)) {
-            for (const part of msg.content) {
-                if (part.type === "text" && part.text) {
-                    parts.push(part.text);
-                }
-            }
-        }
-    }
-    return parts.join("\n");
-}
-
-/**
- * Apply PII redaction to each message individually using Bedrock's detected entities.
- * Unlike extractMessagesText which joins all text, this applies replacements
- * per-message so multi-line content within messages is handled correctly.
- */
-function redactMessages(
-    messages: ChatMessage[],
-    response: BedrockResponse,
-    allowedTypes: Set<string>,
-): void {
-    for (const msg of messages) {
-        if (typeof msg.content === "string") {
-            const redacted = redactText(msg.content, response, allowedTypes);
-            if (redacted !== null) {
-                msg.content = redacted;
-            }
-        } else if (Array.isArray(msg.content)) {
-            for (const part of msg.content) {
-                if (part.type === "text" && part.text) {
-                    const redacted = redactText(
-                        part.text,
-                        response,
-                        allowedTypes,
-                    );
-                    if (redacted !== null) {
-                        part.text = redacted;
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Collect unique redacted PII type names from the Bedrock response.
- */
-function getRedactedTypes(
-    response: BedrockResponse,
-    allowedTypes: Set<string>,
-): string[] {
-    const policy = response.assessments[0]?.sensitiveInformationPolicy;
-    if (!policy) return [];
-
-    const types = new Set<string>();
-    for (const entity of policy.piiEntities ?? []) {
-        if (allowedTypes.has(entity.type)) {
-            types.add(entity.type);
-        }
-    }
-    for (const regex of policy.regexes ?? []) {
-        if (allowedTypes.has(regex.name)) {
-            types.add(regex.name);
-        }
-    }
-    return [...types];
-}
-
-export interface SafetyResult {
-    applied: string[];
-    redactedTypes: string[];
-    blocked: boolean;
-    blockedCategories: string[];
-}
-
-/**
- * Apply safety to a chat completions request body.
- * Modifies requestBody in place. Throws HTTPException on block.
- * Returns null if safety is not active.
- */
-export async function applySafetyToChat(
+export async function applySafety(
     c: Context,
-    requestBody: Record<string, unknown>,
+    text: string,
+    bodySafe?: string,
 ): Promise<SafetyResult | null> {
-    const features = getEffectiveFeatures(c, requestBody.safe as string);
+    const features = getEffectiveFeatures(c, bodySafe);
     if (features.size === 0) return null;
-
-    // Strip safe from body before forwarding
-    delete requestBody.safe;
-
-    const messages = requestBody.messages as ChatMessage[];
-    if (!messages?.length) return null;
-
-    const text = extractMessagesText(messages);
     if (!text.trim()) return null;
 
     const env = c.env as unknown as BedrockGuardrailEnv;
     const response = await applyGuardrail(text, "INPUT", env);
 
-    checkContentBlocking(c, response, features);
+    setSafetyAppliedHeader(c, features);
 
-    const { allowedTypes, redactedTypes } = resolvePiiRedaction(
-        response,
-        features,
-    );
-    if (allowedTypes && redactedTypes.length > 0) {
-        redactMessages(messages, response, allowedTypes);
+    const triggered = computeTriggeredFeatures(response, features);
+    if (triggered.length > 0) {
+        throw createSafetyError(triggered);
     }
 
-    setSafetyHeaders(c, features, redactedTypes);
-    return makeSafetyResult(features, redactedTypes);
-}
-
-/**
- * Apply safety to a plain text prompt (GET /text/:prompt).
- * Returns the (possibly redacted) prompt, or throws on block.
- * Returns null if safety is not active.
- */
-export async function applySafetyToText(
-    c: Context,
-    prompt: string,
-): Promise<{ prompt: string; result: SafetyResult } | null> {
-    const features = getEffectiveFeatures(c);
-    if (features.size === 0) return null;
-
-    if (!prompt.trim()) return null;
-
-    const env = c.env as unknown as BedrockGuardrailEnv;
-    const response = await applyGuardrail(prompt, "INPUT", env);
-
-    checkContentBlocking(c, response, features);
-
-    const { allowedTypes, redactedTypes } = resolvePiiRedaction(
-        response,
-        features,
-    );
-    const redactedPrompt = allowedTypes
-        ? (redactText(prompt, response, allowedTypes) ?? prompt)
-        : prompt;
-
-    setSafetyHeaders(c, features, redactedTypes);
-    return {
-        prompt: redactedPrompt,
-        result: makeSafetyResult(features, redactedTypes),
-    };
+    return { applied: [...features] };
 }
 
 // --- Internal helpers ---
@@ -349,71 +220,19 @@ function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
     return expandDefaults(raw);
 }
 
-function checkContentBlocking(
-    c: Context,
-    response: BedrockResponse,
-    features: Set<string>,
-): void {
-    const blockedCategories = getBlockedCategories(response, features);
-    if (blockedCategories.length > 0) {
-        setSafetyHeaders(c, features);
-        throw createSafetyError(blockedCategories);
-    }
-}
-
-function resolvePiiRedaction(
-    response: BedrockResponse,
-    features: Set<string>,
-): { allowedTypes: Set<string> | undefined; redactedTypes: string[] } {
-    const allowedTypes = getAllowedPiiTypes(features);
-    const redactedTypes = allowedTypes
-        ? getRedactedTypes(response, allowedTypes)
-        : [];
-    return { allowedTypes, redactedTypes };
-}
-
-function makeSafetyResult(
-    features: Set<string>,
-    redactedTypes: string[],
-): SafetyResult {
-    return {
-        applied: [...features],
-        redactedTypes,
-        blocked: false,
-        blockedCategories: [],
-    };
-}
-
-function setSafetyHeaders(
-    c: Context,
-    features: Set<string>,
-    redactedTypes: string[] = [],
-): void {
+function setSafetyAppliedHeader(c: Context, features: Set<string>): void {
     if (features.size > 0) {
         c.header("X-Safety-Applied", [...features].join(","));
     }
-    if (redactedTypes.length > 0) {
-        c.header("X-Safety-Redacted", redactedTypes.join(","));
-    }
 }
 
-function createSafetyError(blockedCategories: string[]): HTTPException {
-    const triggeredFeatures = new Set<string>();
-    for (const cat of blockedCategories) {
-        if (SEXUAL_CATEGORIES.has(cat)) triggeredFeatures.add("sexual");
-        if (VIOLENCE_CATEGORIES.has(cat)) triggeredFeatures.add("violence");
-        if (SHIELD_CATEGORIES.has(cat)) triggeredFeatures.add("shield");
-    }
-
+function createSafetyError(triggered: string[]): HTTPException {
     const body = JSON.stringify({
         error: {
             message: "Request blocked by safety filter",
             type: "safety_error",
             code: "content_blocked",
-            safety: {
-                triggered: [...triggeredFeatures],
-                categories: blockedCategories,
-            },
+            triggered,
         },
     });
 

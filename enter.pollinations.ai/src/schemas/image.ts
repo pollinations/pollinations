@@ -62,11 +62,10 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             description:
                 "What to avoid in the generated image. Only supported by `flux` and `zimage` — other models ignore this.",
         }),
-    safe: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Enable safety content filters" }),
+    safe: z.string().optional().meta({
+        description:
+            "Safety features: true, privacy, secrets, sexual, violence, shield, nsfw (comma-separated). Rejects the request if the guardrail triggers.",
+    }),
     quality: z
         .enum(QUALITIES as unknown as [string, ...string[]])
         .optional()

@@ -8,7 +8,7 @@ import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
-import { applySafetyToChat, applySafetyToText } from "@/middleware/safety.ts";
+import { applySafety } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import type { Env } from "../env.ts";
@@ -88,6 +88,9 @@ const imageVideoHandlers = factory.createHandlers(
         // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
         const promptParam = c.req.param("prompt") || "";
 
+        // Apply safety: reject if guardrail triggers on the prompt.
+        await applySafety(c, promptParam);
+
         log.debug("Extracted prompt param: {prompt}", {
             prompt: promptParam,
             length: promptParam.length,
@@ -138,8 +141,12 @@ const chatCompletionHandlers = factory.createHandlers(
         const requestBody = await c.req.json();
         requestBody.model = c.var.model.resolved;
 
-        // Apply safety features (PII redaction / content blocking)
-        await applySafetyToChat(c, requestBody);
+        // Apply safety: stringify whole messages body so every field
+        // (content, tool_calls args, names) is scanned; reject on trigger.
+        const bodySafe = requestBody.safe as string | undefined;
+        delete requestBody.safe;
+        const messagesText = JSON.stringify(requestBody.messages ?? []);
+        await applySafety(c, messagesText, bodySafe);
 
         await checkBalance(c.var, c.env);
 
@@ -524,12 +531,9 @@ export const proxyRoutes = new Hono<Env>()
             // Use resolved model from middleware
             const model = c.var.model.resolved;
 
-            // Apply safety features (PII redaction / content blocking)
-            let prompt = c.req.param("prompt");
-            const safetyResult = await applySafetyToText(c, prompt);
-            if (safetyResult) {
-                prompt = safetyResult.prompt;
-            }
+            // Apply safety: reject if the guardrail triggers.
+            const prompt = c.req.param("prompt");
+            await applySafety(c, prompt);
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -754,6 +758,10 @@ export const proxyRoutes = new Hono<Env>()
             await requireGenerationAccess(c.var, c.env);
 
             const text = decodeURIComponent(c.req.param("text"));
+
+            // Apply safety: reject if guardrail triggers on the audio text.
+            await applySafety(c, text);
+
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
@@ -892,9 +900,11 @@ function proxyUrl(c: Context, targetBaseUrl: string, targetPort = ""): URL {
         targetUrl.port = targetPort;
     }
 
-    // Copy query parameters excluding 'key' (auth only)
+    // Copy query parameters excluding 'key' (auth only) and 'safe'
+    // (handled by safety middleware — never forwarded to backends).
     const searchParams = new URLSearchParams(incomingUrl.search);
     searchParams.delete("key");
+    searchParams.delete("safe");
 
     // Replace model with resolved model (handles aliases)
     if (c.var.model?.resolved && searchParams.has("model")) {

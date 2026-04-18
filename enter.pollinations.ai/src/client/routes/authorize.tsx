@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { cn } from "../../util.ts";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
-import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
+import {
+    ACCOUNT_PERMISSIONS,
+    AccountPermissionsInput,
+} from "../components/api-keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
 import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
@@ -810,8 +813,15 @@ function AuthorizeComponent() {
                                                     &#x1F464;
                                                 </span>
                                                 <span>
-                                                    See your GitHub username,
-                                                    name, email, and tier.
+                                                    See{" "}
+                                                    {
+                                                        ACCOUNT_PERMISSIONS.find(
+                                                            (p) =>
+                                                                p.id ===
+                                                                "profile",
+                                                        )?.tooltip
+                                                    }
+                                                    .
                                                 </span>
                                             </li>
                                             <li className="flex items-start gap-2">
@@ -819,8 +829,15 @@ function AuthorizeComponent() {
                                                     &#x1F4B0;
                                                 </span>
                                                 <span>
-                                                    See its own remaining
-                                                    spending limit.
+                                                    See{" "}
+                                                    {
+                                                        ACCOUNT_PERMISSIONS.find(
+                                                            (p) =>
+                                                                p.id ===
+                                                                "balance",
+                                                        )?.tooltip
+                                                    }
+                                                    .
                                                 </span>
                                             </li>
                                         </ul>
@@ -864,7 +881,7 @@ function AuthorizeComponent() {
                                 </div>
 
                                 <details className="group -mx-6 border-t border-amber-300">
-                                    <summary className="cursor-pointer list-none px-3 py-3 text-xs font-medium text-amber-800 flex items-center justify-end gap-1 select-none transition-all hover:bg-amber-100 hover:text-amber-950">
+                                    <summary className="cursor-pointer list-none px-3 py-3 text-sm font-medium text-amber-800 flex items-center justify-end gap-1 select-none transition-all hover:bg-amber-100 hover:text-amber-950">
                                         <span>Advanced</span>
                                         <span className="text-amber-700 transition-transform group-open:rotate-180">
                                             &#x25BE;

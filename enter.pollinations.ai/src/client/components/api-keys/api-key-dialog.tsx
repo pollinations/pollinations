@@ -187,7 +187,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
                 <Dialog.Content
                     className={cn(
-                        "border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden",
+                        "border-4 rounded-lg shadow-lg max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden",
                         "bg-white border-green-950",
                     )}
                 >

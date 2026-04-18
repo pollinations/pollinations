@@ -34,29 +34,26 @@ type AccountPermissionsInputProps = {
     showApiName?: boolean;
 };
 
-const ACCOUNT_PERMISSIONS = [
+export const ACCOUNT_PERMISSIONS = [
     {
         id: "profile",
         label: "Profile",
-        tooltip: "Read your GitHub username and profile image.",
+        tooltip: "username and profile image",
     },
     {
         id: "balance",
         label: "Balance",
-        tooltip:
-            "Read your total pollen balance and the spending limit set on this key.",
+        tooltip: "remaining spending limit",
     },
     {
         id: "usage",
         label: "Usage",
-        tooltip:
-            "Read your entire account's usage history across all API keys — not just activity from this key.",
+        tooltip: "account usage history",
     },
     {
         id: "keys",
         label: "Key Management",
-        tooltip:
-            "Create, list, and revoke API keys on your account via the API.",
+        tooltip: "create, list, and revoke API keys via the API",
     },
 ] as const satisfies readonly AccountPermissionOption[];
 
@@ -247,7 +244,11 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         className={cn(
                             "relative flex items-center gap-3 px-3 py-2 text-left transition-all",
                             rowTheme.focusRingClasses,
-                            !disabled && rowTheme.rowHoverClasses,
+                            hasSelectedModels && rowTheme.selectedClasses,
+                            !disabled &&
+                                (hasSelectedModels
+                                    ? rowTheme.selectedHoverClasses
+                                    : rowTheme.rowHoverClasses),
                             !disabled && "cursor-pointer",
                         )}
                     >
@@ -348,16 +349,13 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                     disabled && "opacity-50 cursor-not-allowed",
                                 )}
                             >
-                                <div className="flex flex-1 items-center gap-1.5">
+                                <div className="flex flex-1 items-baseline gap-1">
                                     <span className="text-sm font-medium">
                                         {permission.label}
                                     </span>
-                                    <InfoTip
-                                        text={permission.tooltip}
-                                        label={`${permission.label} information`}
-                                        tone={accentTheme.tipTone}
-                                        placement="top"
-                                    />
+                                    <span className="text-sm text-gray-500">
+                                        – {permission.tooltip}
+                                    </span>
                                 </div>
                             </div>
                         </div>

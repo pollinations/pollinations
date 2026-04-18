@@ -1,13 +1,12 @@
 """Configuration loading from config.json and .env (secrets only)."""
 
+import json
 import logging
 import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-
-from ._json import load_file as _json_load_file
 
 load_dotenv()
 
@@ -25,7 +24,8 @@ def load_config_json() -> dict:
         return {}
 
     try:
-        return _json_load_file(str(config_path))
+        with open(config_path) as f:
+            return json.load(f)
     except Exception as e:
         logger.error(f"Failed to load config.json: {e}")
         return {}
@@ -50,7 +50,6 @@ class Config:
         # =================================================================
         discord_cfg = cfg.get("discord", {})
         self.admin_role_ids: list[int] = discord_cfg.get("admin_role_ids", [])
-        self.collaborator_role_ids: list[int] = discord_cfg.get("collaborator_role_ids", [])
 
         # Secret from .env
         self.discord_token = os.getenv("DISCORD_TOKEN")

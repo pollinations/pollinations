@@ -118,7 +118,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
                 <Dialog.Content
                     className={cn(
-                        "border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col",
+                        "border-green-950 border-4 rounded-lg shadow-lg max-w-xl w-full max-h-[85vh] flex flex-col",
                         "bg-green-100",
                     )}
                 >

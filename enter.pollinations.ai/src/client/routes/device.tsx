@@ -57,7 +57,9 @@ function DeviceComponent() {
                     to: "/authorize",
                     search: {
                         user_code: code.toUpperCase(),
-                        ...(data.scope && { device_scope: data.scope }),
+                        ...(data.scope && {
+                            scope: data.scope.split(" ").filter(Boolean),
+                        }),
                         ...(data.clientId && { app_key: data.clientId }),
                     },
                 });
@@ -102,7 +104,7 @@ function DeviceComponent() {
     if (isPending) {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
+                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-xl w-full">
                     <p className="text-green-950">Loading...</p>
                 </div>
             </div>
@@ -112,7 +114,7 @@ function DeviceComponent() {
     if (!user) {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-w-lg w-full">
+                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-w-xl w-full">
                     <div className="p-6 pb-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold">
@@ -148,7 +150,7 @@ function DeviceComponent() {
 
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-            <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-w-lg w-full">
+            <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-w-xl w-full">
                 <div className="p-6 pb-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-semibold">

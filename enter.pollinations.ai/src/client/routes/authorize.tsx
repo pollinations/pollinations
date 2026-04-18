@@ -20,6 +20,7 @@ import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 import {
     AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    parseScopeList,
     sanitizeAuthorizeAccountPermissions,
     withBaselinePermissions,
 } from "../lib/authorize-config.ts";
@@ -72,7 +73,12 @@ export const Route = createFileRoute("/authorize")({
             expiry?: number | null;
             permissions?: string[] | null;
         } = {
-            redirect_url: (search.redirect_url as string) || "",
+            // Canonical OAuth name is `redirect_uri`; keep `redirect_url`
+            // as a legacy alias so existing apps keep working.
+            redirect_url:
+                (search.redirect_uri as string) ||
+                (search.redirect_url as string) ||
+                "",
         };
 
         if (search.user_code && typeof search.user_code === "string") {
@@ -96,7 +102,11 @@ export const Route = createFileRoute("/authorize")({
         const expiry = parseNumber(search.expiry);
         if (expiry !== null) result.expiry = expiry;
 
-        const permissions = parseList(search.permissions);
+        // Canonical OAuth name is `scope` (space-separated); keep
+        // `permissions` (comma-separated) as a legacy alias. parseScopeList
+        // accepts either separator so both work.
+        const permissions =
+            parseScopeList(search.scope) ?? parseList(search.permissions);
         if (permissions !== null) result.permissions = permissions;
 
         return result;
@@ -215,7 +225,7 @@ function AuthorizeComponent() {
 
             const params = new URLSearchParams();
             if (app_key) params.set("app_key", app_key);
-            else params.set("redirect_url", redirect_url);
+            else params.set("redirect_uri", redirect_url);
 
             fetch(`/api/app-lookup?${params}`)
                 .then((r) => r.json())
@@ -821,6 +831,19 @@ function AuthorizeComponent() {
                                                             )?.tooltip
                                                         }
                                                         .
+                                                    </span>
+                                                </li>
+                                            )}
+                                            {keyPermissions.permissions.accountPermissions?.includes(
+                                                "keys",
+                                            ) && (
+                                                <li className="flex items-start gap-2">
+                                                    <span className="w-4 shrink-0 text-amber-800">
+                                                        &#x1F511;
+                                                    </span>
+                                                    <span>
+                                                        Create, list, and
+                                                        revoke API keys.
                                                     </span>
                                                 </li>
                                             )}

@@ -51,7 +51,7 @@ export const ACCOUNT_PERMISSIONS = [
     {
         id: "keys",
         label: "Key Management",
-        tooltip: "create, list, and revoke API keys via the API",
+        tooltip: "create, list, and revoke API keys",
     },
 ] as const satisfies readonly AccountPermissionOption[];
 

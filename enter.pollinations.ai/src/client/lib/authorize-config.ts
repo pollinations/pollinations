@@ -1,3 +1,17 @@
+/**
+ * Parse a scope/permissions URL parameter. Accepts both OAuth-canonical
+ * space-separated format (`scope=usage%20keys`) and our legacy
+ * comma-separated format (`permissions=usage,keys`).
+ */
+export function parseScopeList(val: unknown): string[] | null {
+    if (typeof val !== "string" || !val) return null;
+    const items = val
+        .split(/[\s,]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    return items.length ? items : null;
+}
+
 type AuthorizeDefaultsInput = {
     models?: string[] | null;
     budget?: number | null;
@@ -20,10 +34,12 @@ export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
 export const BASELINE_CONSENT_PERMISSIONS = ["profile", "balance"] as const;
 
 /**
- * Permissions the user can opt into via the Advanced section. Currently only
- * `usage` (cross-key usage history).
+ * Permissions the user can opt into via the Advanced section.
+ *
+ * - `usage`: cross-key usage history
+ * - `keys`: create, list, and revoke API keys
  */
-export const OPTIONAL_CONSENT_PERMISSIONS = ["usage"] as const;
+export const OPTIONAL_CONSENT_PERMISSIONS = ["usage", "keys"] as const;
 
 export const AUTHORIZE_ALLOWED_ACCOUNT_PERMISSIONS = [
     ...BASELINE_CONSENT_PERMISSIONS,

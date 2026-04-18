@@ -39,12 +39,19 @@ const AppLookupQuerySchema = z.object({
         .describe(
             "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username instead of a generic hostname. Create one at enter.pollinations.ai → Create New App Key.",
         ),
+    redirect_uri: z
+        .string()
+        .url()
+        .optional()
+        .describe(
+            "The URL users return to after authorizing. If no app_key is provided, the system tries to match this URL against registered app URLs. Canonical OAuth name.",
+        ),
     redirect_url: z
         .string()
         .url()
         .optional()
         .describe(
-            "The URL users return to after authorizing. If no app_key is provided, the system tries to match this URL against registered app URLs.",
+            "Legacy alias for `redirect_uri`. Accepted for backwards compatibility.",
         ),
 });
 
@@ -58,8 +65,12 @@ export const appLookupRoutes = new Hono<Env>().get(
     }),
     validator("query", AppLookupQuerySchema),
     async (c) => {
-        const { app_key: appKey, redirect_url: redirectUrl } =
-            c.req.valid("query");
+        const {
+            app_key: appKey,
+            redirect_uri: redirectUri,
+            redirect_url: redirectUrl,
+        } = c.req.valid("query");
+        const resolvedRedirect = redirectUri ?? redirectUrl;
         const db = drizzle(c.env.DB, { schema });
 
         // Strategy 1: Explicit app_key — verify via better-auth
@@ -78,16 +89,16 @@ export const appLookupRoutes = new Hono<Env>().get(
             }
         }
 
-        // Strategy 2: Match redirect_url against registered appUrl values
+        // Strategy 2: Match redirect_uri against registered appUrl values
         // Fetch all publishable keys with appUrl and match in JS
         // (D1 rejects the LIKE pattern at scale with "pattern too complex")
-        if (redirectUrl) {
+        if (resolvedRedirect) {
             const candidates = await db.query.apikey.findMany({
                 where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
             });
-            // Find the best match: longest appUrl that is a prefix of redirectUrl
+            // Find the best match: longest appUrl that is a prefix of resolvedRedirect
             // Case-insensitive to handle mixed-case registrations
-            const redirectLower = redirectUrl.toLowerCase();
+            const redirectLower = resolvedRedirect.toLowerCase();
             let bestMatch: (typeof candidates)[number] | null = null;
             let bestLen = 0;
             for (const row of candidates) {

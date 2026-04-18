@@ -1,3 +1,6 @@
+- **2026-04-17** – **🚀 Polli CLI hits v0.1.0** The terminal client is officially stable. It now streams text by default, formats tables without breaking your terminal, and plays audio directly via the new `--play` flag.
+- **2026-04-17** – **🧠 Flashlearn** Turn your documents into true/false flashcards and AI audio lessons. Because reading is hard. [Try it](http://flashlearn.asquareportal.com/) <!-- app -->
+- **2026-04-17** – **📱 Ciel AI** A full-featured, mobile-first AI assistant powered entirely by our API. Good inspiration for your own mobile builds. [Try it](https://ciel-ai-v1.netlify.app) <!-- app -->
 - **2026-04-16** – **🚀 The hive mind in your terminal** We shipped an official CLI (`@pollinations_ai/cli`). Generate images, text, audio, and video directly from the command line. Includes colored tables for humans and JSON output for your agentic workflows.
 - **2026-04-16** – **✨ Shorts in a snap** Generate end-to-end shorts and faceless videos from a single prompt with kre8.info, the latest addition to the community showcase. [Try it](https://kre8.info) <!-- app -->
 - **2026-04-15** – **🎮 Neon Runner** Play a real-time AI-generated infinite runner game with a 90s retro-anime aesthetic, fresh in the community showcase. [Try it](https://neon-runnerai.netlify.app/) <!-- app -->

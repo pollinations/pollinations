@@ -14,6 +14,7 @@ const SECONDS_PER_DAY = 24 * 60 * 60;
 
 type Attribution = {
     found: boolean;
+    clientId?: string;
     userId?: string;
     userName?: string;
     githubUsername?: string;
@@ -225,6 +226,7 @@ function AuthorizeComponent() {
                 createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
                 ...(isDeviceMode && { deviceUserCode: user_code }),
                 ...(attribution?.found && {
+                    clientId: attribution.clientId,
                     createdForUserId: attribution.userId,
                     createdForApp: attribution.appName,
                 }),

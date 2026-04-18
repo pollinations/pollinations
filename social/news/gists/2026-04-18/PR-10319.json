@@ -1,0 +1,34 @@
+{
+  "pr_number": 10319,
+  "title": "chore(polly): update bot to latest source",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/10319",
+  "merged_at": "2026-04-18T19:36:35Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polly learns Rust",
+    "blurb": "Our resident bot Polly just got a major brain upgrade with a new Rust core. She's now faster at reading code, better at avoiding infinite loops, and ready to help collaborators manage issues.",
+    "summary": "Updated the Polly bot with a new Rust-based core for faster code indexing, improved system prompts, and new GitHub collaborator permissions.",
+    "impact": "Discord and GitHub interactions with Polly will be noticeably faster and more reliable, with fewer runaway tool loops.",
+    "keywords": [
+      "bot",
+      "rust",
+      "discord",
+      "github",
+      "automation"
+    ],
+    "visual_concept": "Polly the bee mascot getting a technical upgrade, represented by her reading a technical manual or wearing a tiny hard hat, with a retro computer processing code quickly in the background.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny yellow hard hat, reading a thick book with a gear on the cover. A chunky retro computer monitor in the background displays fast-scrolling lime green (#ecf874) code. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-18/PR-10319.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny yellow hard hat, reading a thick book with a gear on the cover. A chunky retro computer monitor in the background displays fast-scrolling lime green (#ecf874) code. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-04-18T19:37:36.834336+00:00"
+}

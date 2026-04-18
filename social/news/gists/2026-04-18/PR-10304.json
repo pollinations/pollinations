@@ -1,0 +1,33 @@
+{
+  "pr_number": 10304,
+  "title": "docs: compress AGENTS.md (~55%)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10304",
+  "merged_at": "2026-04-18T10:57:26Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Honey, I shrunk the docs",
+    "blurb": "We put our AI agent instructions on a diet, cutting the token count in half without losing any of the critical rules. Faster context loading, same great taste.",
+    "summary": "Compressed the AGENTS.md documentation by 55%, significantly reducing token count while preserving all actionable rules and critical markers.",
+    "impact": "AI agents and developers will experience faster context loading and less token bloat when reading the repository guidelines.",
+    "keywords": [
+      "docs",
+      "agents",
+      "optimization",
+      "tokens"
+    ],
+    "visual_concept": "The Nomnom creature eating a giant stack of paper/documents to compress them, leaving a neat, small stack behind. The bee mascot is watching happily, holding a tiny clipboard.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a massive stack of messy documents, leaving a neat, tiny stack of papers behind. The cute bee mascot hovers nearby holding a tiny clipboard, looking pleased. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-18/PR-10304.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a massive stack of messy documents, leaving a neat, tiny stack of papers behind. The cute bee mascot hovers nearby holding a tiny clipboard, looking pleased. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-04-18T10:58:16.168754+00:00"
+}

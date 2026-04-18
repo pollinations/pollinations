@@ -1,0 +1,31 @@
+{
+  "date": "2026-04-17",
+  "period_start": "2026-04-17",
+  "period_end": "2026-04-17",
+  "title": "The CLI hits 0.1.0 and learns to stream",
+  "summary": "The CLI hits stable 0.1.0 with terminal audio playback, two new apps join the community showcase, and the model registry gets an under-the-hood upgrade.\n\nThe polli CLI officially dropped its alpha tag. Version 0.1.0 brings default real-time text streaming, perfectly sized terminal tables, and a new `--play` flag that pipes audio directly to your speakers. We also fixed the npm publish pipeline so you don't get stuck on old releases, and threw in a Claude skill for generating video demos.\n\nTwo new community apps sprouted in the showcase. Flashlearn turns documents into true/false flashcards and AI audio lessons for desktop study sessions. Ciel AI is a mobile-first assistant running entirely on our infrastructure, proving you can build full-featured mobile apps without managing your own backend.\n\nWe decoupled some internal logic in the model registry to ensure top-tier text and image models remain highly available and sustainable for the long haul.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 10224,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10282,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10287,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10289,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10290,
+      "date": "2026-04-17"
+    }
+  ],
+  "generated_at": "2026-04-18T06:24:06.330017+00:00"
+}

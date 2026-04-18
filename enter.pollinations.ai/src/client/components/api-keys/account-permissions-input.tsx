@@ -222,7 +222,6 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
 
     return (
         <div>
-            <div className="text-sm font-semibold mb-4">Permissions</div>
             <div className="space-y-2">
                 {/* Model Permission */}
                 <div

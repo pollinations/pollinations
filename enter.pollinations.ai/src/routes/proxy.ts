@@ -730,6 +730,15 @@ export const proxyRoutes = new Hono<Env>()
                         "Style/genre tags for music generation (acestep only)",
                     example: "brazilian berimbau instrumental",
                 }),
+                seed: z
+                    .string()
+                    .optional()
+                    .transform((v) => (v ? parseInt(v, 10) : undefined))
+                    .meta({
+                        description:
+                            "Seed for deterministic output (0-4294967295). Same seed + params = cached result. Omit for random.",
+                        example: "42",
+                    }),
                 key: z.string().optional().meta({
                     description:
                         "API key (alternative to Authorization header)",
@@ -762,32 +771,36 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental } = c.req.valid(
+                const { duration, instrumental, seed } = c.req.valid(
                     "query" as never,
                 ) as {
                     duration?: number;
                     instrumental?: boolean;
+                    seed?: number;
                 };
                 return generateMusic({
                     prompt: text,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
+                    seed,
                     apiKey,
                     log,
                 });
             }
 
-            const { voice, response_format } = c.req.valid(
+            const { voice, response_format, seed } = c.req.valid(
                 "query" as never,
             ) as {
                 voice: string;
                 response_format: string;
+                seed?: number;
             };
 
             return generateSpeech({
                 text,
                 voice: voice || "alloy",
                 responseFormat: response_format || "mp3",
+                seed,
                 apiKey,
                 log,
             });

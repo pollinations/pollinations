@@ -67,6 +67,11 @@ const CreateSpeechRequestSchema = z
                 "If true, guarantees instrumental output (elevenmusic only)",
             example: false,
         }),
+        seed: z.number().int().min(0).max(4294967295).optional().meta({
+            description:
+                "Seed for deterministic output. Same seed + params = same cached result. Omit for random.",
+            example: 42,
+        }),
         style: z.string().optional().meta({
             description:
                 "Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.",
@@ -93,6 +98,7 @@ export async function generateSpeech(opts: {
     text: string;
     voice: string;
     responseFormat: string;
+    seed?: number;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
@@ -130,7 +136,7 @@ export async function generateSpeech(opts: {
 
     const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${outputFormat}`;
 
-    const elevenLabsBody = {
+    const elevenLabsBody: Record<string, unknown> = {
         text,
         model_id: DEFAULT_ELEVENLABS_MODEL,
         voice_settings: {
@@ -140,6 +146,9 @@ export async function generateSpeech(opts: {
             use_speaker_boost: true,
         },
     };
+    if (opts.seed !== undefined) {
+        elevenLabsBody.seed = opts.seed;
+    }
 
     const response = await fetch(elevenLabsUrl, {
         method: "POST",
@@ -317,6 +326,7 @@ export async function generateMusic(opts: {
     prompt: string;
     durationSeconds?: number;
     forceInstrumental?: boolean;
+    seed?: number;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
@@ -354,6 +364,9 @@ export async function generateMusic(opts: {
     }
     if (forceInstrumental) {
         elevenLabsBody.force_instrumental = true;
+    }
+    if (opts.seed !== undefined) {
+        elevenLabsBody.seed = opts.seed;
     }
 
     const response = await fetch(elevenLabsUrl, {
@@ -618,22 +631,27 @@ export const audioRoutes = new Hono<Env>()
             }
 
             if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental } = c.req.valid(
+                const { duration, instrumental, seed } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
                 return generateMusic({
                     prompt: input,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
+                    seed,
                     apiKey,
                     log,
                 });
             }
 
+            const { seed } = c.req.valid(
+                "json" as never,
+            ) as CreateSpeechRequest;
             return generateSpeech({
                 text: input,
                 voice,
                 responseFormat: response_format,
+                seed,
                 apiKey,
                 log,
             });

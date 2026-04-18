@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-17",
+  "period_start": "2026-04-17",
+  "period_end": "2026-04-17",
+  "generated_at": "2026-04-18T06:24:06.330017+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-17/images/twitter.jpg"
+    }
+  ],
+  "text": "polli cli hit v0.1.0 today. dropped the alpha, hardened the ci, and gave it a video demo skill. also welcomed flashlearn and ciel ai to the greenhouse, and decoupled price from cost in the model registry. 5 prs merged. back to the terminal."
+}

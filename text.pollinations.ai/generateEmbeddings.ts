@@ -23,9 +23,9 @@ function assertPublicUrl(url: string): URL {
         h.startsWith("169.254.") ||
         h === "metadata.google.internal" ||
         /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-        /^f[cd]/i.test(h) ||     // IPv6 ULA fc00::/7
-        /^fe[89ab]/i.test(h) ||  // IPv6 link-local fe80::/10
-        /^::ffff:/i.test(h)      // IPv4-mapped IPv6
+        /^f[cd]/i.test(h) || // IPv6 ULA fc00::/7
+        /^fe[89ab]/i.test(h) || // IPv6 link-local fe80::/10
+        /^::ffff:/i.test(h) // IPv4-mapped IPv6
     ) {
         throw new Error(`Blocked request to private/internal URL: ${h}`);
     }
@@ -278,7 +278,12 @@ export async function generateEmbeddings(
 
     // Process in chunks to avoid saturating Vertex AI with concurrent requests
     const EMBED_CONCURRENCY = 10;
-    const results: { object: "embedding"; embedding: number[]; index: number; tokens: number }[] = [];
+    const results: {
+        object: "embedding";
+        embedding: number[];
+        index: number;
+        tokens: number;
+    }[] = [];
     for (let i = 0; i < inputs.length; i += EMBED_CONCURRENCY) {
         const chunk = inputs.slice(i, i + EMBED_CONCURRENCY);
         const chunkResults = await Promise.all(

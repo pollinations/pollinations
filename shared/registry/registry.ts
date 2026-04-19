@@ -55,11 +55,20 @@ export type CostDefinition = {
 // usage keys as the cost definition at the same date (enforced at registry build).
 export type PriceDefinition = CostDefinition;
 
-export type ModelId = ImageModelId | TextModelId | AudioModelId | EmbeddingModelId;
-export type ModelName = ImageModelName | TextModelName | AudioModelName | EmbeddingServiceId;
+export type ModelId =
+    | ImageModelId
+    | TextModelId
+    | AudioModelId
+    | EmbeddingModelId;
+export type ModelName =
+    | ImageModelName
+    | TextModelName
+    | AudioModelName
+    | EmbeddingServiceId;
 
 /** Alias kept for backward compatibility with embeddings.ts */
-export type ServiceDefinition<TModelId extends string = ModelId> = ModelDefinition<TModelId>;
+export type ServiceDefinition<TModelId extends string = ModelId> =
+    ModelDefinition<TModelId>;
 
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];

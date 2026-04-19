@@ -1,0 +1,34 @@
+{
+  "pr_number": 10328,
+  "title": "[FEAT]: NPM packages chore maintenance ",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10328",
+  "merged_at": "2026-04-19T08:53:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Device Flow Unlocked",
+    "blurb": "We've bumped the SDK to v4.3.0, bringing a brand new device login flow and key management straight to your terminal. Plus, we added image reasoning flags and fresh examples to get you building faster.",
+    "summary": "Updated the Pollinations SDK to version 4.3.0, introducing device login flow support, key management CRUD operations, and image reasoning flags.",
+    "impact": "Developers can now easily authenticate devices and manage account keys directly through the SDK, streamlining the integration process.",
+    "keywords": [
+      "sdk",
+      "authentication",
+      "device-flow",
+      "npm",
+      "keys"
+    ],
+    "visual_concept": "The PR is about SDK updates, device login flow, and authentication keys. Visuals: Polly the bee holding a shiny digital key, interacting with a retro terminal or smartphone (device). The robot companion could be holding a smartphone displaying a login screen.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot handing a glowing golden pixel key to a chunky retro robot holding a smartphone. The smartphone screen glows with a lime green (#ecf874) login prompt. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10328.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot handing a glowing golden pixel key to a chunky retro robot holding a smartphone. The smartphone screen glows with a lime green (#ecf874) login prompt. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-19T08:53:56.140135+00:00"
+}

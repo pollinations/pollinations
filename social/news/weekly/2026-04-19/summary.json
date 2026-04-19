@@ -1,0 +1,127 @@
+{
+  "date": "2026-04-19",
+  "period_start": "2026-04-12",
+  "period_end": "2026-04-18",
+  "title": "Inference speedruns and reasoning flags",
+  "summary": "We drastically cut inference latency, launched an official CLI, and merged a massive wave of community apps.\n\nWe ripped out old infrastructure and migrated Kimi, DeepSeek, GLM, Qwen, and Minimax to Fireworks and AWS Bedrock, resulting in up to 50x faster generation. Sana 1.6B moved to GH200 instances (dropping to ~0.165s per image), and Gemini image models got a native reasoning flag.\n\nWe shipped the official @pollinations_ai/cli (v0.1.0). It gives you text, image, audio, and video generation straight from your command line, complete with real-time text streaming, perfectly sized tables, and a --play flag that instantly plays generated audio.\n\nWe updated our CORS middleware so standard OpenAI SDKs work directly from the browser without preflight errors. We also fixed the usage dashboard so heavy API users can export their logs without silent truncations, and restored the Veo 3.1 Fast model.\n\nA massive week for the community showcase. We merged over a dozen apps, including a real-time AI infinite runner game, a generator for fake academic museum exhibits, ComfyUI routing nodes, and a mobile-first AI assistant.",
+  "pr_count": 29,
+  "prs": [
+    {
+      "number": 10155,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10156,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10159,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10160,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10165,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10176,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10177,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10178,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10182,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10186,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10187,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10191,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10192,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10194,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10196,
+      "date": "2026-04-14"
+    },
+    {
+      "number": 10222,
+      "date": "2026-04-14"
+    },
+    {
+      "number": 10235,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10237,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10245,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10254,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10225,
+      "date": "2026-04-16"
+    },
+    {
+      "number": 10270,
+      "date": "2026-04-16"
+    },
+    {
+      "number": 10224,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10282,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10287,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10289,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10290,
+      "date": "2026-04-17"
+    },
+    {
+      "number": 10306,
+      "date": "2026-04-18"
+    },
+    {
+      "number": 10313,
+      "date": "2026-04-18"
+    }
+  ],
+  "generated_at": "2026-04-19T06:32:36.167679+00:00"
+}

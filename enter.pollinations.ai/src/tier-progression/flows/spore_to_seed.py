@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
 
-from d1_updates import ban_deleted_accounts, batch_upgrade_users, run_d1_query
+from d1_updates import batch_upgrade_users, run_d1_query
 from github_profile import THRESHOLD, validate_users
 
 # Max users to process per run.
@@ -185,26 +185,8 @@ def main():
 
     approved_ids = [r["github_id"] for r in approved if r.get("github_id")]
 
-    # Ban users with deleted GitHub accounts
-    ban_failures = False
-    if deleted and not args.dry_run:
-        deleted_ids = [r["github_id"] for r in deleted if r.get("github_id")]
-        if deleted_ids:
-            banned, ban_failures = ban_deleted_accounts(deleted_ids, args.env)
-            print(f"\n🚫 Banned {banned} users with deleted GitHub accounts")
-            if ban_failures:
-                print("   ❌ Some ban batches failed — check logs above")
-    elif deleted and args.dry_run:
-        print(
-            f"\n🚫 DRY RUN - would ban {len(deleted)} users with deleted GitHub accounts"
-        )
-
-    print(
-        f"\n📊 Summary: {len(approved)} approved, {len(rejected)} rejected (threshold {THRESHOLD})"
-    )
-    print(
-        f"   Scored: {len(scored)} | Not found: {len(not_found)} | Deleted: {len(deleted)}"
-    )
+    print(f"\n📊 Summary: {len(approved)} approved, {len(rejected)} rejected (threshold {THRESHOLD})")
+    print(f"   Scored: {len(scored)} | Not found: {len(not_found)} | Deleted: {len(deleted)}")
 
     # Score distribution
     if scored:
@@ -213,7 +195,9 @@ def main():
         buckets = Counter()
         for r in scored:
             buckets[int(r["details"]["total"])] += 1
-        dist = " | ".join(f"{k}pts:{buckets[k]}" for k in sorted(buckets.keys()))
+        dist = " | ".join(
+            f"{k}pts:{buckets[k]}" for k in sorted(buckets.keys())
+        )
         print(f"   Score distribution: {dist}")
 
     # All approved users with scores
@@ -226,29 +210,19 @@ def main():
         for r in top:
             d = r["details"]
             name = _display_name(r)
-            print(
-                f"      {name:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})"
-            )
+            print(f"      {name:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
 
     # Borderline rejected (close to threshold)
     borderline = sorted(
-        [
-            r
-            for r in scored
-            if not r["approved"] and r["details"]["total"] >= THRESHOLD - 1.5
-        ],
+        [r for r in scored if not r["approved"] and r["details"]["total"] >= THRESHOLD - 1.5],
         key=lambda r: -r["details"]["total"],
     )
     if borderline:
-        print(
-            f"\n   ⚠️  Borderline rejected ({len(borderline)}, within 1.5pts of threshold):"
-        )
+        print(f"\n   ⚠️  Borderline rejected ({len(borderline)}, within 1.5pts of threshold):")
         for r in borderline[:20]:
             d = r["details"]
             name = _display_name(r)
-            print(
-                f"      {name:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})"
-            )
+            print(f"      {name:<25} {d['total']:.1f}pts  (age={d['age_pts']:.1f} repos={d['repos_pts']:.1f} commits={d['commits_pts']:.1f} stars={d['stars_pts']:.1f})")
         if len(borderline) > 20:
             print(f"      ... and {len(borderline) - 20} more")
 
@@ -261,11 +235,7 @@ def main():
             print(f"      ... and {len(not_found) - 20} more")
 
     # Sample low-score rejected
-    low_score = [
-        r
-        for r in scored
-        if not r["approved"] and r["details"]["total"] < THRESHOLD - 1.5
-    ]
+    low_score = [r for r in scored if not r["approved"] and r["details"]["total"] < THRESHOLD - 1.5]
     if low_score:
         print(f"\n   Sample low-score rejected ({len(low_score)} total):")
         for r in low_score[:5]:
@@ -293,7 +263,7 @@ def main():
 
     if not approved_ids:
         print("\n✅ No users approved for upgrade")
-        return 1 if ban_failures else 0
+        return 0
 
     # Upgrade approved users
     if args.dry_run:
@@ -313,7 +283,7 @@ def main():
     if had_failures:
         print("   ❌ Some batches failed — check logs above")
 
-    return 1 if (had_failures or ban_failures) else 0
+    return 1 if had_failures else 0
 
 
 if __name__ == "__main__":

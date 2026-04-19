@@ -26,6 +26,15 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
                 promptVideoTokens: perMillion(12),
             },
         ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.3),
+                promptImageTokens: perMillion(0.675),
+                promptAudioTokens: perMillion(9.75),
+                promptVideoTokens: perMillion(18),
+            },
+        ],
         description:
             "Gemini Embedding 2 - Multimodal embeddings for text, images, audio, and video. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text", "image", "audio", "video"],

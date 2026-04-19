@@ -1,0 +1,34 @@
+{
+  "pr_number": 10337,
+  "title": "chore(sops): split CI age key from team dev key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10337",
+  "merged_at": "2026-04-19T22:17:10Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "New keys for the robot",
+    "blurb": "Gave our automated deployment robots their very own set of keys. Better security boundaries mean a safer hive for everyone!",
+    "summary": "Separated the CI deployment identity from the shared developer key in SOPS to improve security boundaries.",
+    "impact": "Improves infrastructure security by ensuring automated systems use dedicated, isolated credentials.",
+    "keywords": [
+      "security",
+      "sops",
+      "infrastructure",
+      "ci-cd",
+      "secrets"
+    ],
+    "visual_concept": "The pollinations bee (Polly) giving a shiny new key to the Monitor Robot (representing CI/CD). They are standing in front of a secure vault or a server rack.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing a shiny golden key to a chunky robot with a CRT monitor head. They are standing in a cozy server room with glowing lime green (#ecf874) lights on the racks. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10337.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot handing a shiny golden key to a chunky robot with a CRT monitor head. They are standing in a cozy server room with glowing lime green (#ecf874) lights on the racks. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-19T22:17:58.680080+00:00"
+}

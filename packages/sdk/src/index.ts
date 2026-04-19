@@ -43,6 +43,7 @@ export {
 } from "./extras.js";
 // Helper functions
 export {
+    authorizeDevice,
     authorizeUrl,
     chat,
     chatStream,
@@ -61,10 +62,12 @@ export {
     getProfile,
     getTextModels,
     getUsage,
+    imageGenerate,
     imageUrl,
     resetClient,
     transcribe,
     upload,
+    userInfo,
     validateKey,
     videoUrl,
 } from "./helpers.js";
@@ -82,6 +85,7 @@ export type {
     AudioModel,
     AudioResponse,
     AudioVoice,
+    AuthorizeDeviceOptions,
     AuthorizeOptions,
     BuiltInToolType,
     ChatChoice,
@@ -91,11 +95,15 @@ export type {
     CompletionUsage,
     DailyUsageRecord,
     DailyUsageResponse,
+    DeviceAuthorization,
+    DeviceCodeResponse,
+    DeviceTokenResponse,
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,
     ImageEditOptions,
     ImageGenerateOptions,
+    ImageGenerateV1Options,
     // Image
     ImageModel,
     ImageQuality,
@@ -132,6 +140,7 @@ export type {
     UsageOptions,
     UsageRecord,
     UsageResponse,
+    UserInfo,
     VideoContentPart,
     VideoGenerateOptions,
     // Video

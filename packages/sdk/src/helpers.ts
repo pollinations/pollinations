@@ -34,12 +34,15 @@ import type {
     AccountBalance,
     AccountProfile,
     AudioGenerateOptions,
+    AuthorizeDeviceOptions,
     AuthorizeOptions,
     ChatOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DeviceAuthorization,
     ImageEditOptions,
     ImageGenerateOptions,
+    ImageGenerateV1Options,
     KeyInfo,
     Message,
     ModelInfo,
@@ -51,6 +54,7 @@ import type {
     UploadResponse,
     UsageOptions,
     UsageResponse,
+    UserInfo,
     VideoGenerateOptions,
 } from "./types.js";
 
@@ -185,6 +189,29 @@ export async function editImage(
 ): Promise<ImageResponseExt> {
     const response = await getClient().imageEdit(prompt, options);
     return wrapImageResponse(response);
+}
+
+/**
+ * Generate image(s) via the OpenAI-compatible POST /v1/images/generations endpoint.
+ *
+ * @example
+ * ```ts
+ * // Single image, OpenAI-style size string
+ * const img = await imageGenerate('A robot', { size: '1024x1024' });
+ * await img.saveToFile('robot.png');
+ *
+ * // Multiple images
+ * const imgs = await imageGenerate('A robot', { n: 3 });
+ * ```
+ */
+export async function imageGenerate(
+    prompt: string,
+    options?: ImageGenerateV1Options,
+): Promise<ImageResponseExt | ImageResponseExt[]> {
+    const response = await getClient().imageGenerate(prompt, options);
+    return Array.isArray(response)
+        ? response.map(wrapImageResponse)
+        : wrapImageResponse(response);
 }
 
 // ============================================================================
@@ -517,6 +544,39 @@ export async function upload(
  */
 export function authorizeUrl(options: AuthorizeOptions): string {
     return getClient().authorizeUrl(options);
+}
+
+/**
+ * Start OAuth device flow for headless/CLI authentication. Does NOT
+ * require an existing API key — use the returned access token to
+ * configure the SDK.
+ *
+ * @example
+ * ```ts
+ * const auth = await authorizeDevice();
+ * console.log(`Visit ${auth.verificationUri} and enter: ${auth.userCode}`);
+ * const accessToken = await auth.poll();
+ * configure({ apiKey: accessToken });
+ * ```
+ */
+export async function authorizeDevice(
+    options?: AuthorizeDeviceOptions,
+): Promise<DeviceAuthorization> {
+    return Pollinations.authorizeDevice(options);
+}
+
+/**
+ * Get the authenticated user's identity. Uses the currently configured
+ * API key (from `configure()` or the `POLLINATIONS_API_KEY` env var).
+ *
+ * @example
+ * ```ts
+ * const user = await userInfo();
+ * console.log(user.name, user.tier);
+ * ```
+ */
+export async function userInfo(): Promise<UserInfo> {
+    return getClient().userInfo();
 }
 
 // ============================================================================

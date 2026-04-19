@@ -13,6 +13,7 @@ import {
     hasCodeExecution,
     hasReasoning,
     hasSearch,
+    hasVideoInput,
     hasVision,
     isAlpha,
     isNewModel,
@@ -48,6 +49,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showVision = hasVision(model.name);
     const showAudioInput = hasAudioInput(model.name);
     const showAudioOutput = hasAudioOutput(model.name);
+    const showVideoInput = hasVideoInput(model.name);
     const showSearch = hasSearch(model.name);
     const showCodeExecution = hasCodeExecution(model.name);
     const showNew = isNewModel(model.name);
@@ -157,6 +159,11 @@ export const ModelRow: FC<ModelRowProps> = ({
                             <span className="text-sm">🎙️</span>
                         </Tooltip>
                     )}
+                    {showVideoInput && (
+                        <Tooltip content="Video input">
+                            <span className="text-sm">🎬</span>
+                        </Tooltip>
+                    )}
                     {showAudioOutput && (
                         <Tooltip content="Audio output">
                             <span className="text-sm">🔊</span>
@@ -235,6 +242,12 @@ export const ModelRow: FC<ModelRowProps> = ({
                         prices={[model.promptImagePrice]}
                         emoji="🖼️"
                         subEmojis={["🖼️"]}
+                        perToken={model.perToken}
+                    />
+                    <PriceBadge
+                        prices={[model.promptVideoPrice]}
+                        emoji="🎬"
+                        subEmojis={["🎬"]}
                         perToken={model.perToken}
                     />
                 </div>

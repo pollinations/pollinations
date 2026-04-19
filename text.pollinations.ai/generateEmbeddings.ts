@@ -1,3 +1,4 @@
+import type { Usage } from "../shared/registry/registry.ts";
 import { buildUsageHeaders } from "../shared/registry/usage-headers.ts";
 import googleCloudAuth from "./auth/googleCloudAuth.ts";
 
@@ -108,12 +109,48 @@ interface GeminiPart {
     inline_data?: { mime_type: string; data: string };
 }
 
+type GeminiModality = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO";
+
+interface ModalityTokenCount {
+    modality?: GeminiModality;
+    tokenCount?: number;
+}
+
 interface GeminiEmbedResponse {
     embedding: { values: number[] };
     usageMetadata?: {
         promptTokenCount?: number;
         totalTokenCount?: number;
+        promptTokensDetails?: ModalityTokenCount[];
     };
+}
+
+const MODALITY_TO_USAGE_KEY: Record<GeminiModality, keyof Usage> = {
+    TEXT: "promptTextTokens",
+    IMAGE: "promptImageTokens",
+    AUDIO: "promptAudioTokens",
+    VIDEO: "promptVideoTokens",
+};
+
+/**
+ * Split Gemini's per-modality token breakdown into our Usage shape.
+ * Falls back to billing the full promptTokenCount as text if no modality
+ * details are returned (older API versions, pure-text requests).
+ */
+function extractModalityUsage(result: GeminiEmbedResponse): Usage {
+    const details = result.usageMetadata?.promptTokensDetails;
+    if (details && details.length > 0) {
+        const usage: Usage = {};
+        for (const { modality, tokenCount } of details) {
+            if (!modality || !tokenCount) continue;
+            const key = MODALITY_TO_USAGE_KEY[modality];
+            if (key) {
+                usage[key] = (usage[key] ?? 0) + tokenCount;
+            }
+        }
+        return usage;
+    }
+    return { promptTextTokens: result.usageMetadata?.promptTokenCount ?? 0 };
 }
 
 // --- Transform: OpenAI input → Gemini parts ---
@@ -282,7 +319,7 @@ export async function generateEmbeddings(
         object: "embedding";
         embedding: number[];
         index: number;
-        tokens: number;
+        usage: Usage;
     }[] = [];
     for (let i = 0; i < inputs.length; i += EMBED_CONCURRENCY) {
         const chunk = inputs.slice(i, i + EMBED_CONCURRENCY);
@@ -299,7 +336,7 @@ export async function generateEmbeddings(
                     object: "embedding" as const,
                     embedding: result.embedding.values,
                     index: i + j,
-                    tokens: result.usageMetadata?.promptTokenCount ?? 0,
+                    usage: extractModalityUsage(result),
                 };
             }),
         );
@@ -312,11 +349,23 @@ export async function generateEmbeddings(
         index,
     }));
 
-    const promptTokens = results.reduce((s, r) => s + r.tokens, 0);
+    const aggregatedUsage: Usage = {};
+    for (const r of results) {
+        for (const [key, value] of Object.entries(r.usage) as [
+            keyof Usage,
+            number | undefined,
+        ][]) {
+            if (value) {
+                aggregatedUsage[key] = (aggregatedUsage[key] ?? 0) + value;
+            }
+        }
+    }
+    const promptTokens = Object.values(aggregatedUsage).reduce(
+        (s, v) => s + (v ?? 0),
+        0,
+    );
 
-    const usageHeaders = buildUsageHeaders(modelId, {
-        promptTextTokens: promptTokens,
-    });
+    const usageHeaders = buildUsageHeaders(modelId, aggregatedUsage);
 
     const responseBody = {
         object: "list",

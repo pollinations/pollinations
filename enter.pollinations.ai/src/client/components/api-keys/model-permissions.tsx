@@ -1,4 +1,5 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
@@ -39,6 +40,14 @@ const videoModels = Object.entries(IMAGE_SERVICES)
 
 // Audio models
 const audioModels = Object.keys(AUDIO_SERVICES)
+    .map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+// Embedding models
+const embeddingModels = Object.keys(EMBEDDING_SERVICES)
     .map((id) => ({
         id,
         label: getModelDisplayName(id),
@@ -98,7 +107,8 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
         textModels.length +
         imageModels.length +
         videoModels.length +
-        audioModels.length;
+        audioModels.length +
+        embeddingModels.length;
     const selectedCount = isUnrestricted ? totalModels : (value ?? []).length;
 
     return (
@@ -231,6 +241,29 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                                 ))}
                             </div>
                         </div>
+
+                        {/* Embedding models */}
+                        {embeddingModels.length > 0 && (
+                            <div>
+                                <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                    Embedding
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    {embeddingModels.map((model) => (
+                                        <ModelChip
+                                            key={model.id}
+                                            apiName={model.id}
+                                            officialName={model.label}
+                                            selected={isModelSelected(model.id)}
+                                            onClick={() =>
+                                                toggleModel(model.id)
+                                            }
+                                            disabled={disabled}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

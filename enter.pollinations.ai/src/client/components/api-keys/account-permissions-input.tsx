@@ -1,4 +1,5 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
@@ -72,6 +73,13 @@ const audioModels = Object.keys(AUDIO_SERVICES)
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
+const embeddingModels = Object.keys(EMBEDDING_SERVICES)
+    .map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
 /**
  * Unified permissions input for API keys.
  * Includes model restrictions and account permissions (profile, balance, usage).
@@ -90,7 +98,8 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         textModels.length +
         imageModels.length +
         videoModels.length +
-        audioModels.length;
+        audioModels.length +
+        embeddingModels.length;
     const selectedCount = isUnrestricted
         ? totalModels
         : (allowedModels ?? []).length;
@@ -303,6 +312,19 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                             isCategoryAllSelected
                                         }
                                     />
+                                    {embeddingModels.length > 0 && (
+                                        <ModelCategory
+                                            label="Embedding"
+                                            models={embeddingModels}
+                                            disabled={disabled}
+                                            isModelSelected={isModelSelected}
+                                            toggleModel={toggleModel}
+                                            toggleCategory={toggleCategory}
+                                            isCategoryAllSelected={
+                                                isCategoryAllSelected
+                                            }
+                                        />
+                                    )}
                                 </>
                             )}
                         </div>

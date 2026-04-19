@@ -58,6 +58,11 @@ export const hasAudioInput = (modelName: string): boolean => {
     return modalities.input.includes("audio");
 };
 
+export const hasVideoInput = (modelName: string): boolean => {
+    const modalities = getModalities(modelName);
+    return modalities.input.includes("video");
+};
+
 export const hasAudioOutput = (modelName: string): boolean => {
     const modalities = getModalities(modelName);
     return modalities.output.includes("audio");

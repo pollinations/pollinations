@@ -32,6 +32,7 @@ export const Pricing: FC<PricingProps> = ({
     const videoModels = allModels.filter((m) => m.type === "video");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const textModels = allModels.filter((m) => m.type === "text");
+    const embeddingModels = allModels.filter((m) => m.type === "embedding");
     return (
         <div id="models" className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row justify-between gap-3">
@@ -66,6 +67,7 @@ export const Pricing: FC<PricingProps> = ({
                         videoModels={videoModels}
                         audioModels={audioModels}
                         textModels={textModels}
+                        embeddingModels={embeddingModels}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
                         cryptoBalance={cryptoBalance}
@@ -84,8 +86,9 @@ export const Pricing: FC<PricingProps> = ({
                                     <div>🧠 reasoning</div>
                                     <div>🎙️ audio in</div>
                                     <div>🔍 search</div>
-                                    <div>🔊 audio out</div>
+                                    <div>🎬 video in</div>
                                     <div>💻 code exec</div>
+                                    <div>🔊 audio out</div>
                                 </div>
                             </div>
                             <div className="hidden min-[500px]:block w-px bg-teal-300 mx-4 self-stretch" />

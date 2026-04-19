@@ -4,12 +4,12 @@ import asyncio
 import base64
 import io
 import logging
+import re
 
 import aiohttp
 import discord
 from discord.ext import commands, tasks
 
-from ._re import re
 from .config import config
 from .constants import POLLINATIONS_API_BASE
 from .context import ConversationSession, session_manager
@@ -47,16 +47,6 @@ def is_admin(user: discord.User | discord.Member) -> bool:
         )
         return is_admin_user
     logger.debug(f"User {user} is not a Member (type={type(user).__name__}), not admin")
-    return False
-
-
-def is_collaborator(user: discord.User | discord.Member) -> bool:
-    """Check if a user has any of the configured collaborator roles."""
-    if not config.collaborator_role_ids:
-        return False
-    if isinstance(user, discord.Member):
-        user_role_ids = [r.id for r in user.roles]
-        return any(role_id in config.collaborator_role_ids for role_id in user_role_ids)
     return False
 
 
@@ -220,25 +210,22 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
 
 
 def suppress_url_embeds(text: str) -> str:
-    """Wrap bare URLs in angle brackets to suppress Discord embed previews.
+    """Wrap all URLs in angle brackets to suppress Discord embed previews.
 
-    Skips URLs inside code blocks (```) and inline code (`).
-    Does NOT wrap URLs inside markdown links [text](url).
+    Handles:
+    - Bare URLs: https://example.com -> <https://example.com>
+    - Markdown links: [text](url) -> [text](<url>)
+    - Already wrapped: <url> stays as <url>
     """
-    # Split text into code and non-code segments
-    # Match fenced code blocks (```...```) and inline code (`...`)
-    code_pattern = re.compile(r"(```[\s\S]*?```|`[^`\n]+`)")
-    segments = code_pattern.split(text)
+    # Fix markdown links: [text](url) -> [text](<url>)
+    # Don't double-wrap if already has angle brackets
+    text = re.sub(r"\[([^\]]+)\]\((https?://[^<\)]+)(?<!>)\)", r"[\1](<\2>)", text)
 
-    for i, segment in enumerate(segments):
-        # Skip code segments (odd indices from split)
-        if code_pattern.match(segment):
-            continue
-        # Wrap bare URLs not already in angle brackets or markdown links
-        segment = re.sub(r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", segment)
-        segments[i] = segment
+    # Wrap bare URLs (not already in angle brackets, not in markdown links)
+    # Match URLs that aren't preceded by ]( or <
+    text = re.sub(r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", text)
 
-    return "".join(segments)
+    return text
 
 
 def extract_media_urls(
@@ -439,11 +426,10 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
             if is_first:
                 is_first = False
                 continue  # Skip the current message (newest)
-            content = msg.content or "[attachment/embed]"
             if msg.author.bot:
-                fetched.append({"role": "assistant", "content": content})
+                fetched.append({"role": "assistant", "content": msg.content})
             else:
-                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
+                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
         # Reverse to chronological order (oldest to newest)
         # Add starter message FIRST, then thread messages
         if starter_msg:
@@ -536,17 +522,25 @@ class PollyBot(commands.Bot):
 
         # Start API server if enabled
         if config.api_enabled:
-            from granian.server.embed import Server as GranianServer
+            import uvicorn
 
             from .api.polly_api import create_api_app
 
             api_app = create_api_app(pollinations_client, config)
-            self._api_server = GranianServer(
-                target=api_app,
-                address="127.0.0.1",
+            uvi_config = uvicorn.Config(
+                api_app,
+                host="127.0.0.1",
                 port=config.api_port,
-                interface="asgi",
+                log_level="warning",
+                loop="none",  # Use bot's existing event loop
+                http="httptools",  # C-based HTTP parser (2-4x faster)
+                ws="none",  # No WebSocket needed
+                access_log=False,
+                server_header=False,
+                date_header=False,
+                limit_concurrency=50,
             )
+            self._api_server = uvicorn.Server(uvi_config)
             task = asyncio.create_task(self._api_server.serve())
             task.add_done_callback(
                 lambda t: (
@@ -566,15 +560,15 @@ class PollyBot(commands.Bot):
             ):
                 pass
             logger.info("Pre-warmed connection to gen.pollinations.ai")
-        except Exception as e:
-            logger.debug(f"Pre-warm failed (non-critical): {e}")
+        except Exception:
+            pass  # Non-critical
 
         logger.info("Bot setup complete")
 
     async def close(self):
         """Clean up resources when bot shuts down."""
         if self._api_server:
-            self._api_server.stop()
+            self._api_server.should_exit = True
             logger.info("Polly API stopped")
         self.cleanup_sessions.cancel()
         if config.doc_embeddings_enabled:
@@ -888,6 +882,8 @@ async def handle_dm_message(message: discord.Message):
     - unsubscribe all
     - list subscriptions / my subscriptions
     """
+    import re
+
     from .services.github import TOOL_HANDLERS
 
     text = message.content.strip().lower()
@@ -1042,25 +1038,22 @@ async def handle_inline_polly_mention(message: discord.Message):
             if msg.id == message.id:
                 continue  # Skip current message
 
-            content = msg.content or "[attachment/embed]"
             if msg.author.bot:
-                channel_history.append({"role": "assistant", "content": content})
+                channel_history.append({"role": "assistant", "content": msg.content})
             else:
-                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
+                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
     except Exception as e:
         logger.warning(f"Failed to fetch channel history for inline mention: {e}")
 
-    # Check if user is admin or collaborator
+    # Check if user is admin
     user_is_admin = is_admin(message.author)
-    user_is_collaborator = is_collaborator(message.author)
 
     # Build tool context (same structure as normal processing)
     tool_context = {
         "is_admin": user_is_admin,
-        "is_collaborator": user_is_collaborator,
         "user_id": message.author.id,
         "user_name": str(message.author),
         "reporter": str(message.author),
@@ -1196,12 +1189,9 @@ async def process_message(
 
     All tool calls happen in parallel when possible.
     """
-    # Check if user is admin or collaborator (has relevant role)
+    # Check if user is admin (has admin role)
     user_is_admin = is_admin(user)
-    user_is_collaborator = is_collaborator(user)
-    logger.info(
-        f"process_message: user={user}, user_is_admin={user_is_admin}, user_is_collaborator={user_is_collaborator}"
-    )
+    logger.info(f"process_message: user={user}, user_is_admin={user_is_admin}")
 
     # Build tool context - this is passed to ALL tool handlers for permission checks
     # This is thread-safe because it's created per-request, not globally registered
@@ -1215,7 +1205,6 @@ async def process_message(
 
     tool_context = {
         "is_admin": user_is_admin,
-        "is_collaborator": user_is_collaborator,
         "user_id": user.id,
         "user_name": str(user),
         "reporter": session.original_author_name,
@@ -1395,5 +1384,5 @@ async def archive_thread(channel: discord.Thread | discord.TextChannel):
     if isinstance(channel, discord.Thread):
         try:
             await channel.edit(archived=True)
-        except discord.HTTPException as e:
-            logger.warning(f"Failed to archive thread {channel.id}: {e}")
+        except discord.HTTPException:
+            pass

@@ -1,4 +1,5 @@
 import { writeFileSync } from "node:fs";
+import chalk from "chalk";
 import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
@@ -43,7 +44,10 @@ export function createTextCommand() {
             "Attach image URL(s) for vision models (repeatable)",
         )
         .option("--output <path>", "Save to file instead of stdout")
-        .option("--stream", "Stream tokens as they arrive (interactive use)")
+        .option(
+            "--no-stream",
+            "Wait for full response instead of streaming tokens",
+        )
         .action(async (promptArg, opts) => {
             const key = requireKey();
             const stdinText = await readStdin();
@@ -64,7 +68,16 @@ export function createTextCommand() {
             }
 
             const isHuman = getOutputMode() === "human";
-            const useStream = Boolean(opts.stream) && !opts.output && isHuman;
+            // Streaming on by default when a human is watching (TTY stdout).
+            // Auto-off when piping/redirecting so SSE chunks don't leak into
+            // the downstream consumer. `--no-stream` forces off; `--stream`
+            // (when explicitly passed) forces on even if piped.
+            const explicitStream = opts.stream === true;
+            const autoStream = isHuman && !!process.stdout.isTTY;
+            const useStream =
+                opts.stream !== false &&
+                !opts.output &&
+                (explicitStream || autoStream);
 
             type ContentPart =
                 | { type: "text"; text: string }
@@ -131,10 +144,16 @@ export function createTextCommand() {
                 }
 
                 if (useStream) {
+                    // Dim the model's streamed output in TTY mode so it's
+                    // visually distinct from the user's commands. chalk auto-
+                    // disables when stdout is piped, so files/pipes stay clean.
+                    const colorize = process.stdout.isTTY
+                        ? (s: string) => chalk.dim(s)
+                        : (s: string) => s;
                     let content = "";
                     for await (const chunk of streamSSE(res)) {
                         content += chunk;
-                        if (isHuman) process.stdout.write(chunk);
+                        if (isHuman) process.stdout.write(colorize(chunk));
                     }
                     if (isHuman) process.stdout.write("\n");
                     if (getOutputMode() === "json") {
@@ -156,7 +175,10 @@ export function createTextCommand() {
                         tokens: data.usage?.total_tokens ?? null,
                     });
                 } else {
-                    process.stdout.write(`${content}\n`);
+                    const out = process.stdout.isTTY
+                        ? chalk.dim(content)
+                        : content;
+                    process.stdout.write(`${out}\n`);
                 }
             } catch (err) {
                 printError(

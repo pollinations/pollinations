@@ -179,50 +179,6 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen-tts-clone": {
-        aliases: ["qwen3-tts-vc", "qwen3-tts-voice-clone"],
-        modelId: "qwen3-tts-vc-2026-01-22",
-        provider: "alibaba",
-        paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                completionAudioTokens: 0.013 / 1000,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                completionAudioTokens: 0.013 / 1000,
-            },
-        ],
-        description:
-            "Qwen3-TTS Voice Clone - 3s reference voice cloning via DashScope",
-        inputModalities: ["text", "audio"],
-        outputModalities: ["audio"],
-    },
-    "qwen-tts-design": {
-        aliases: ["qwen3-tts-vd", "qwen3-tts-voice-design"],
-        modelId: "qwen3-tts-vd-2026-01-26",
-        provider: "alibaba",
-        paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                completionAudioTokens: 0.013 / 1000,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                completionAudioTokens: 0.013 / 1000,
-            },
-        ],
-        description:
-            "Qwen3-TTS Voice Design - Custom voice generation via DashScope",
-        inputModalities: ["text"],
-        outputModalities: ["audio"],
-    },
 } satisfies Record<string, ModelDefinition<string>>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {

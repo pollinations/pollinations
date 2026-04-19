@@ -30,9 +30,19 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations_ai/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations_ai/model-context-protocol` (MCP server; see `packages/mcp/AGENTS.md`)
+- `packages/skills/` — Shared agent-agnostic skills (SKILL.md format). Consumable by any harness; symlinked back into `.claude/skills/` for Claude Code. See `packages/skills/README.md`.
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Community apps + `APPS.md`
 - `social/` — Discord/Reddit/GitHub automation
+
+### Skills
+
+Two homes, one format:
+
+- `packages/skills/` — agent-agnostic skills (wrap public APIs/CLIs, no harness coupling). Any agent that understands `SKILL.md` can use them. Add new general-purpose skills here.
+- `.claude/skills/` — Pollinations-internal or Claude-Code-harness-specific skills (tier management, Tinybird deploys, permission tuning, etc.). Also contains symlinks to the shared skills in `packages/skills/` so Claude Code discovers both sets in one place.
+
+When authoring a new skill, ask: does it depend on internal infra/credentials or Claude-Code-only features (hooks, settings.json, keybindings)? If no, put it in `packages/skills/` and symlink into `.claude/skills/`.
 
 ## API Gateway
 

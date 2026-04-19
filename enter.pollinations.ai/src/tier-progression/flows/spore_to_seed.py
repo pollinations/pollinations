@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
 
-from d1_updates import ban_deleted_accounts, batch_upgrade_users, run_d1_query
+from d1_updates import batch_upgrade_users, run_d1_query
 from github_profile import THRESHOLD, validate_users
 
 # Max users to process per run.
@@ -185,18 +185,6 @@ def main():
 
     approved_ids = [r["github_id"] for r in approved if r.get("github_id")]
 
-    # Ban users with deleted GitHub accounts
-    ban_failures = False
-    if deleted and not args.dry_run:
-        deleted_ids = [r["github_id"] for r in deleted if r.get("github_id")]
-        if deleted_ids:
-            banned, ban_failures = ban_deleted_accounts(deleted_ids, args.env)
-            print(f"\n🚫 Banned {banned} users with deleted GitHub accounts")
-            if ban_failures:
-                print("   ❌ Some ban batches failed — check logs above")
-    elif deleted and args.dry_run:
-        print(f"\n🚫 DRY RUN - would ban {len(deleted)} users with deleted GitHub accounts")
-
     print(f"\n📊 Summary: {len(approved)} approved, {len(rejected)} rejected (threshold {THRESHOLD})")
     print(f"   Scored: {len(scored)} | Not found: {len(not_found)} | Deleted: {len(deleted)}")
 
@@ -275,7 +263,7 @@ def main():
 
     if not approved_ids:
         print("\n✅ No users approved for upgrade")
-        return 1 if ban_failures else 0
+        return 0
 
     # Upgrade approved users
     if args.dry_run:
@@ -295,7 +283,7 @@ def main():
     if had_failures:
         print("   ❌ Some batches failed — check logs above")
 
-    return 1 if (had_failures or ban_failures) else 0
+    return 1 if had_failures else 0
 
 
 if __name__ == "__main__":

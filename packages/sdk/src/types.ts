@@ -711,6 +711,87 @@ export interface ModelInfo {
 }
 
 // ============================================================================
+// Device Flow (OAuth)
+// ============================================================================
+
+/** Raw response from POST /api/device/code */
+export interface DeviceCodeResponse {
+    device_code: string;
+    user_code: string;
+    verification_uri_complete: string;
+    expires_in: number;
+    interval: number;
+}
+
+/** Raw response from POST /api/device/token (polling) */
+export interface DeviceTokenResponse {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+}
+
+/** Options for starting device flow */
+export interface AuthorizeDeviceOptions extends RequestOptions {
+    /** OAuth client ID. Defaults to the public polli CLI client. */
+    clientId?: string;
+    /** Space-separated scope string (default: "generate keys balance usage") */
+    scope?: string;
+}
+
+/**
+ * Handle returned by `authorizeDevice()` — surfaces the user-facing
+ * verification URL/code, and exposes `poll()` to block until approval.
+ */
+export interface DeviceAuthorization {
+    /** Short code the user types in the verification page */
+    userCode: string;
+    /** URL to open in a browser (includes the user code as a query param) */
+    verificationUri: string;
+    /** When the device code expires and polling must stop */
+    expiresAt: Date;
+    /** Block until the user approves. Resolves with an access token or throws. */
+    poll(): Promise<string>;
+}
+
+/** User identity returned by GET /api/device/userinfo */
+export interface UserInfo {
+    sub?: string;
+    name?: string;
+    email?: string;
+    githubUsername?: string;
+    tier?: string;
+    [key: string]: unknown;
+}
+
+// ============================================================================
+// Image Generation (OpenAI-compatible POST /v1/images/generations)
+// ============================================================================
+
+/** Options for POST /v1/images/generations */
+export interface ImageGenerateV1Options extends RequestOptions {
+    /** Image model to use (default: 'zimage') */
+    model?: ImageModel;
+    /** Size string like "1024x1024". Alternative to width + height. */
+    size?: string;
+    /** Image width in pixels (converted to `size` when both dimensions provided) */
+    width?: number;
+    /** Image height in pixels */
+    height?: number;
+    /** Number of images to generate (default: 1) */
+    n?: number;
+    /** Response format (default: server decides — usually b64_json) */
+    responseFormat?: "url" | "b64_json";
+    /** Enable reasoning mode (nanobanana-pro, gptimage family). Silently ignored by other models. */
+    reasoning?: boolean;
+    /** Seed for reproducible generation */
+    seed?: number;
+    /** Output quality */
+    quality?: ImageQuality;
+    /** Negative prompt - what to avoid */
+    negativePrompt?: string;
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 

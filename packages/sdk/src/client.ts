@@ -3,20 +3,26 @@ import type {
     AccountProfile,
     AudioBinaryResponse,
     AudioGenerateOptions,
+    AuthorizeDeviceOptions,
     AuthorizeOptions,
     ChatOptions,
     ChatResponse,
     ChatStreamChunk,
     DailyUsageOptions,
     DailyUsageResponse,
+    DeviceAuthorization,
+    DeviceCodeResponse,
+    DeviceTokenResponse,
     ImageEditOptions,
     ImageGenerateOptions,
+    ImageGenerateV1Options,
     ImageResponse,
     KeyInfo,
     Message,
     ModelInfo,
     PollinationsConfig,
     PollinationsErrorDetails,
+    RequestOptions,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -25,12 +31,16 @@ import type {
     UploadResponse,
     UsageOptions,
     UsageResponse,
+    UserInfo,
     VideoGenerateOptions,
     VideoResponse,
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+const AUTH_BASE_URL = "https://enter.pollinations.ai";
+const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
+const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys balance usage";
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
 // Default timeouts in milliseconds
@@ -597,7 +607,7 @@ export class Pollinations {
         const queryString = this.buildQueryParams(params);
         const encodedPrompt = encodeURIComponent(prompt);
 
-        return `${this.baseUrl}/image/${encodedPrompt}${queryString ? `?${queryString}` : ""}`;
+        return `${this.baseUrl}/video/${encodedPrompt}${queryString ? `?${queryString}` : ""}`;
     }
 
     /**

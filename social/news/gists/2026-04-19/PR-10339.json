@@ -1,0 +1,34 @@
+{
+  "pr_number": 10339,
+  "title": "Add ManhwaGen to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10339",
+  "merged_at": "2026-04-19T12:19:02Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Comics in the greenhouse",
+    "blurb": "ManhwaGen just dropped into the community showcase. Time to generate some webtoons.",
+    "summary": "Added ManhwaGen, a community-built tool for generating Manhwa-style content, to the apps directory.",
+    "impact": "Creators can now find and use ManhwaGen directly from the community showcase.",
+    "keywords": [
+      "community",
+      "app",
+      "manhwa",
+      "showcase",
+      "greenhouse"
+    ],
+    "visual_concept": "Manhwa refers to Korean comics/webtoons. The scene should feature Polly the bee in a greenhouse setting (referencing GREENHOUSE.md), interacting with comic books or drawing webtoons alongside the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny artist beret, reading a colorful comic book inside a lush digital greenhouse with code-plants. A chunky pixel robot with a CRT monitor head holds up a freshly drawn comic page. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10339.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny artist beret, reading a colorful comic book inside a lush digital greenhouse with code-plants. A chunky pixel robot with a CRT monitor head holds up a freshly drawn comic page. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-19T12:19:54.408809+00:00",
+  "app_name": "ManhwaGen",
+  "app_url": "https://manhwagen.vercel.app/"
+}

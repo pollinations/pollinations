@@ -1,0 +1,35 @@
+{
+  "pr_number": 10333,
+  "title": "Add Akhbaar to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10333",
+  "merged_at": "2026-04-19T08:46:56Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Hot off the press",
+    "blurb": "Akhbaar just sprouted in the greenhouse! It's a clever new app that digests daily tech report PDFs and turns them into structured JSON insights and a live news feed.",
+    "summary": "Added Akhbaar to the community apps showcase, a tool that converts daily tech report PDFs into structured JSON insights.",
+    "impact": "Users can now discover Akhbaar in the greenhouse and see how it leverages AI to create live tech news feeds from PDF reports.",
+    "keywords": [
+      "community",
+      "apps",
+      "greenhouse",
+      "akhbaar",
+      "pdf",
+      "json"
+    ],
+    "visual_concept": "Akhbaar means news. The app converts PDFs to JSON. Depict the Nomnom creature eating PDF documents and producing JSON code, while Polly the bee wears a newsboy cap and holds a newspaper.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a stack of PDF documents while glowing JSON code blocks appear nearby. The cute bee mascot hovers next to it wearing a tiny retro newsboy cap, holding a rolled-up newspaper. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10333.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating a stack of PDF documents while glowing JSON code blocks appear nearby. The cute bee mascot hovers next to it wearing a tiny retro newsboy cap, holding a rolled-up newspaper. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-19T08:47:57.040954+00:00",
+  "app_name": "Akhbaar",
+  "app_url": "https://akhbaar.hoxlabs.com/"
+}

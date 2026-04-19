@@ -121,6 +121,32 @@ console.log(`Logged in as ${me.name} (${me.tier})`);
 
 `authorizeDevice()` does NOT require an API key — it's how you get one.
 
+### Managing API keys
+
+Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
+
+```javascript
+import { listKeys, createKey, revokeKey } from '@pollinations_ai/sdk';
+
+// List all keys on the account
+const keys = await listKeys();
+keys.forEach(k => console.log(k.name, k.prefix, k.enabled));
+
+// Create a scoped key (the raw value is only shown at creation)
+const created = await createKey({
+  name: 'my-bot',
+  type: 'secret',
+  pollenBudget: 1000,
+  accountPermissions: ['balance', 'usage'],
+});
+console.log('Save now — will not be shown again:', created.key);
+
+// Revoke by id
+await revokeKey(created.id);
+```
+
+Without `accountPermissions`, scoped keys can generate media but cannot read account state (balance, usage).
+
 ## Image Generation
 
 ```javascript

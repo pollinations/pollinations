@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-04-19",
+  "period_start": "2026-04-12",
+  "period_end": "2026-04-18",
+  "generated_at": "2026-04-19T06:32:36.167679+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-19/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-04-19\n\nHey <@&1424461167883194418>. 29 PRs merged this week. We moved a bunch of models around to make them faster, shipped a CLI, and the app showcase is officially overflowing.\n\n💻 **The terminal is the new frontend**\n* Cut v0.1.0 of the new `polli` CLI. It's polished, has a video demo skill, and saves you from writing raw curl commands when you just want to test something quickly.\n\n🏎️ **Inference speedruns & reasoning flags**\n* Migrated Kimi, Deepseek, GLM, Qwen-large, and Minimax to Fireworks AI. Sana Sprint 1.6B is now running on GH200s. Things should feel snappier.\n* Added a `reasoning` flag for Gemini image models.\n* Veo 3.1 fast model ID updated to the GA version.\n\n🔧 **Browser SDKs & power user plumbing**\n* Reflected CORS request headers — OpenAI SDKs will now work directly from your browser without complaining.\n* Fixed `enter` usage exports for power users.\n* Expired API keys are now hidden from the dashboard. Less clutter.\n\n🌸 **The greenhouse is overflowing**\n* You all shipped a lot. Added Neon Runner, Flashlearn, Ciel AI, DREAMMELD, StyleOps, Overtli Studio Suite, and about 10 others to the showcase. Keep building."
+}

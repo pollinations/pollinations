@@ -139,9 +139,12 @@ class PollinationsClient:
         mode: str = "discord",
         api_params: dict | None = None,
     ) -> dict:
-        system_content = get_tool_system_prompt(is_admin=is_admin, mode=mode)
+        is_collaborator = (tool_context or {}).get("is_collaborator", False)
+        system_content = get_tool_system_prompt(is_admin=is_admin, is_collaborator=is_collaborator, mode=mode)
         if is_admin:
             system_content += "\n\n## ADMIN MODE\nUser is admin. All tools available. Confirm before destructive ops (merge, delete, lock, close PR, bulk edits, etc.) - use judgment."
+        elif is_collaborator:
+            system_content += "\n\n## COLLABORATOR MODE\nUser is a collaborator. Can close/reopen issues, manage labels, and assign users. Cannot edit titles/bodies, lock, manage milestones, or modify PRs."
         else:
             system_content += "\n\n## USER MODE\nUser is NOT admin. Read-only + create/comment only. Admin actions will return permission error."
 
@@ -254,7 +257,7 @@ class PollinationsClient:
         self,
         messages: list[dict],
         discord_username: str,
-        max_iterations: int = 20,  # Safety cap - most tasks finish in 3-8 calls
+        max_iterations: int = 500,  # High cap - Polly handles complex multi-step tasks
         is_admin: bool = False,
         user_message: str = "",
         tool_context: dict | None = None,
@@ -274,11 +277,14 @@ class PollinationsClient:
             GITHUB_TOOLS.copy(), config.local_embeddings_enabled, config.doc_embeddings_enabled
         )
 
+        is_collaborator = (tool_context or {}).get("is_collaborator", False)
         if mode == "api":
             all_tools = filter_api_tools(all_tools)
         else:
-            all_tools = filter_admin_actions_from_tools(all_tools, is_admin)
-        tools = filter_tools_by_intent(user_message, all_tools, is_admin) if user_message else all_tools
+            all_tools = filter_admin_actions_from_tools(all_tools, is_admin, is_collaborator)
+        tools = (
+            filter_tools_by_intent(user_message, all_tools, is_admin or is_collaborator) if user_message else all_tools
+        )
 
         # Log available tools for debugging
         all_tool_names = [t["function"]["name"] for t in all_tools]
@@ -289,6 +295,10 @@ class PollinationsClient:
 
         all_content_blocks = []
         total_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+        # Soft guidance: track consecutive same-tool calls to nudge the AI
+        consecutive_same_tool = 0
+        last_tool_signature = None
 
         for iteration in range(max_iterations):
             start_time = time.time()
@@ -338,6 +348,23 @@ class PollinationsClient:
                 for tc in tool_calls
             ]
             logger.info(f"Executing {len(tool_calls)} tool(s): {', '.join(tool_names)}")
+
+            # Soft guidance: nudge AI if it keeps calling the same tool
+            current_signature = tuple(sorted(tool_names))
+            if current_signature == last_tool_signature:
+                consecutive_same_tool += 1
+                if consecutive_same_tool >= 3:
+                    logger.info(f"Soft nudge: {current_signature} called {consecutive_same_tool + 1}x consecutively")
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": f"[Hint: You've called {', '.join(tool_names)} {consecutive_same_tool + 1} times in a row. Consider if you already have enough info to respond, or try a different tool/approach.]",
+                        }
+                    )
+            else:
+                consecutive_same_tool = 0
+            last_tool_signature = current_signature
+
             all_tool_calls.extend(tool_calls)
 
             start_time = time.time()
@@ -347,13 +374,15 @@ class PollinationsClient:
             all_tool_results.extend(tool_results)
 
             # Add assistant message with tool calls
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": response.get("content"),
-                    "tool_calls": tool_calls,
-                }
-            )
+            # content must be non-empty string or omitted — Bedrock rejects None/empty
+            assistant_msg = {
+                "role": "assistant",
+                "tool_calls": tool_calls,
+            }
+            resp_content = response.get("content")
+            if resp_content:
+                assistant_msg["content"] = resp_content
+            messages.append(assistant_msg)
 
             # Add tool results
             for tool_call, result in zip(tool_calls, tool_results):

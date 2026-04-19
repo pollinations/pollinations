@@ -12,6 +12,16 @@ from .embeddings_utils import validate_and_get_openai_client
 
 logger = logging.getLogger(__name__)
 
+# Try to use Rust-accelerated polly_core, fall back to Python
+try:
+    import polly_core
+
+    _use_rust = True
+    logger.info("polly_core (Rust) loaded — using accelerated chunking, hashing, file collection")
+except ImportError:
+    _use_rust = False
+    logger.info("polly_core not available — using Python fallback")
+
 # tiktoken encoder for text-embedding-3-small (cl100k_base)
 _enc = tiktoken.get_encoding("cl100k_base")
 MAX_TOKENS_PER_INPUT = 8000  # hard limit is 8192, leave headroom
@@ -132,6 +142,19 @@ async def wait_for_initialization(timeout: float = 300.0) -> bool:
 
 
 def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict]:
+    if _use_rust:
+        rust_chunks = polly_core.chunk_code(content, file_path, max_tokens=MAX_TOKENS_PER_INPUT, max_lines=max_lines)
+        return [
+            {
+                "content": c.content,
+                "file_path": c.file_path,
+                "start_line": c.start_line,
+                "end_line": c.end_line,
+            }
+            for c in rust_chunks
+        ]
+
+    # Python fallback
     lines = content.split("\n")
 
     if len(lines) <= max_lines:
@@ -182,7 +205,6 @@ def _chunk_code(content: str, file_path: str, max_lines: int = 100) -> list[dict
         if len(tokens) <= MAX_TOKENS_PER_INPUT:
             final_chunks.append(chunk)
         else:
-            # Split by token boundaries — exact, no guessing
             parts = list(range(0, len(tokens), MAX_TOKENS_PER_INPUT))
             for part_idx, pos in enumerate(parts):
                 sub_tokens = tokens[pos : pos + MAX_TOKENS_PER_INPUT]
@@ -215,6 +237,8 @@ def _is_definition_start(line: str) -> bool:
 
 
 def _file_hash(content: str) -> str:
+    if _use_rust:
+        return polly_core.hash_xxh3(content)
     return content_hash(content)
 
 
@@ -297,8 +321,16 @@ async def get_changed_files(repo: str) -> list[str]:
 
 
 def _collect_code_files(repo_path: Path) -> list[Path]:
-    files = []
+    if _use_rust:
+        paths = polly_core.collect_files(
+            str(repo_path),
+            list(CODE_EXTENSIONS),
+            list(SKIP_DIRS),
+            MAX_FILE_SIZE,
+        )
+        return [Path(p) for p in paths]
 
+    files = []
     for root, dirs, filenames in os.walk(repo_path):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
 
@@ -421,7 +453,9 @@ async def embed_repository(repo: str, force_full: bool = False) -> int:
                 batch_tokens = 0
                 i = batch_start
                 while i < len(all_documents):
-                    doc_tokens = len(_enc.encode(all_documents[i]))
+                    doc_tokens = (
+                        polly_core.count_tokens(all_documents[i]) if _use_rust else len(_enc.encode(all_documents[i]))
+                    )
                     if batch_tokens + doc_tokens > MAX_BATCH_TOKENS and batch_docs:
                         break
                     batch_docs.append(all_documents[i])

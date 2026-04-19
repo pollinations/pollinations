@@ -15,12 +15,17 @@ function assertPublicUrl(url: string): URL {
     const h = parsed.hostname;
     if (
         h === "localhost" ||
+        h === "::1" ||
+        h === "0.0.0.0" ||
         h.startsWith("127.") ||
         h.startsWith("10.") ||
         h.startsWith("192.168.") ||
         h.startsWith("169.254.") ||
         h === "metadata.google.internal" ||
-        /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+        /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+        /^f[cd]/i.test(h) ||     // IPv6 ULA fc00::/7
+        /^fe[89ab]/i.test(h) ||  // IPv6 link-local fe80::/10
+        /^::ffff:/i.test(h)      // IPv4-mapped IPv6
     ) {
         throw new Error(`Blocked request to private/internal URL: ${h}`);
     }
@@ -36,7 +41,7 @@ async function fetchMedia(
     label: string,
 ): Promise<{ buffer: ArrayBuffer; contentType: string }> {
     assertPublicUrl(url);
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
     const cl = parseInt(response.headers.get("content-length") || "0", 10);
     if (cl > MAX_MEDIA_SIZE) {
         throw new Error(
@@ -209,6 +214,7 @@ async function callGeminiEmbed(
             "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
     });
 
     if (!response.ok) {
@@ -270,25 +276,30 @@ export async function generateEmbeddings(
         );
     }
 
-    // Process all inputs in parallel, collect embeddings and token counts from Gemini
-    const results = await Promise.all(
-        inputs.map(async (singleInput, index) => {
-            const parts = await inputToGeminiParts(singleInput);
-            const result = await callGeminiEmbed(
-                modelId,
-                parts,
-                task_type,
-                dimensions,
-            );
-
-            return {
-                object: "embedding" as const,
-                embedding: result.embedding.values,
-                index,
-                tokens: result.usageMetadata?.promptTokenCount ?? 0,
-            };
-        }),
-    );
+    // Process in chunks to avoid saturating Vertex AI with concurrent requests
+    const EMBED_CONCURRENCY = 10;
+    const results: { object: "embedding"; embedding: number[]; index: number; tokens: number }[] = [];
+    for (let i = 0; i < inputs.length; i += EMBED_CONCURRENCY) {
+        const chunk = inputs.slice(i, i + EMBED_CONCURRENCY);
+        const chunkResults = await Promise.all(
+            chunk.map(async (singleInput, j) => {
+                const parts = await inputToGeminiParts(singleInput);
+                const result = await callGeminiEmbed(
+                    modelId,
+                    parts,
+                    task_type,
+                    dimensions,
+                );
+                return {
+                    object: "embedding" as const,
+                    embedding: result.embedding.values,
+                    index: i + j,
+                    tokens: result.usageMetadata?.promptTokenCount ?? 0,
+                };
+            }),
+        );
+        results.push(...chunkResults);
+    }
 
     const embeddings = results.map(({ object, embedding, index }) => ({
         object,

@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🌙 DREAMMELD](https://dreammeld-1.vercel.app/) | AI dream interpretation with visual imagery and ambient soundscapes, powered by Pollinations. | [@newsister](https://github.com/newsister) |
-| [🖼️ Multimodal Image Generator](https://mowenyun.github.io/multimodal-image-generator/) | Generates images via the pollinations.ai API using httpsgen.pollinations.aiimage... from an open-source CLI GitHub Pages demo with configurable parameters and model size in Multimodal Image Generator. | [@mowenyun](https://github.com/mowenyun) |
-| [🌤️ Ciel AI](https://ciel-ai-v1.netlify.app) | Ciel AI is a mobile-first AI assistant powered entirely by Pollinations.ai, integrating Pollinations in three major ways. | [@Naruto859](https://github.com/Naruto859) |
-| [🧠 Flashlearn](http://flashlearn.asquareportal.com/) | Create true/false flashcards from documents in Flashlearn and generate an AI audio lesson for desktop study. | [@Aavirash](https://github.com/Aavirash) |
-| [🎬 kre8.info](https://kre8.info) | Helps you create end to end shorts and faceless videos in under 10 min using one prompt. | [@beyond-above](https://github.com/beyond-above) |
-| [🤖 IntraMind / AlessiaBot](https://www.intramind-srl.com/) | Multi-platform AI chatbot (WhatsApp, Telegram, Discord, Twitch) and IntraOS business automation platform powered by Pollinations. | [@Goddino-Repo](https://github.com/Goddino-Repo) |
-| [🎬 AI video generator](https://www.tomdacat.com/ai-video-generator/) | Generate videos using the free Seedance model on Pollinations.ai with AI video generator. | [@tomdacatto](https://github.com/tomdacatto) |
-| [🏃‍♂️ Neon Runner](https://neon-runnerai.netlify.app/) | Neon Runner AI is a high-speed procedural infinite runner set in a 90s retro-anime aesthetic. It changes the environment based on player performance and progression using real-time Generative AI. | [@myfriendhello265-sudo](https://github.com/myfriendhello265-sudo) |
-| [🎨 Polli-com](https://polli-com.vercel.app/) | Generate images on mobile with Polli-com, a client-side PWA built on Pollinations.ai with a Prompt Builder, optional local ComfyUI bridge, and role-based access control. | [@abhi5hek1979](https://github.com/abhi5hek1979) |
-| [🎬 AI video generator](https://www.tomdacat.com/ai-video-generator/) | Generate videos using the free Seedance model on Pollinations.ai with AI video generator. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🕒 PollenHours](https://aghartavault-ship-it.github.io/PollenHours/) | PollenHours is a mobile-first AI video pipeline built for Termux on Android. It runs on Android devices. | [@android](https://github.com/android) |
+| [🌙 DREAMMELD](https://dreammeld-1.vercel.app/) | AI dream interpretation with visual imagery and ambient soundscapes, powered by Pollinations. | [@web](https://github.com/web) |
+| [🖼️ Multimodal Image Generator](https://mowenyun.github.io/multimodal-image-generator/) | Generates images via the pollinations.ai API using httpsgen.pollinations.aiimage... from an open-source CLI GitHub Pages demo with configurable parameters and model size in Multimodal Image Generator. | [@web](https://github.com/web) |
+| [🌤️ Ciel AI](https://ciel-ai-v1.netlify.app) | Ciel AI is a mobile-first AI assistant powered entirely by Pollinations.ai, integrating Pollinations in three major ways. | [@web](https://github.com/web) |
+| [🧠 Flashlearn](http://flashlearn.asquareportal.com/) | Create true/false flashcards from documents in Flashlearn and generate an AI audio lesson for desktop study. | [@desktop](https://github.com/desktop) |
+| [🎬 kre8.info](https://kre8.info) | Helps you create end to end shorts and faceless videos in under 10 min using one prompt. | [@web](https://github.com/web) |
+| [🤖 IntraMind / AlessiaBot](https://www.intramind-srl.com/) | Multi-platform AI chatbot (WhatsApp, Telegram, Discord, Twitch) and IntraOS business automation platform powered by Pollinations. | [@web](https://github.com/web) |
+| [🎬 AI video generator](https://www.tomdacat.com/ai-video-generator/) | Generate videos using the free Seedance model on Pollinations.ai with AI video generator. | [@web](https://github.com/web) |
+| [🏃‍♂️ Neon Runner](https://neon-runnerai.netlify.app/) | Neon Runner AI is a high-speed procedural infinite runner set in a 90s retro-anime aesthetic. It changes the environment based on player performance and progression using real-time Generative AI. | [@web](https://github.com/web) |
+| [🎨 Polli-com](https://polli-com.vercel.app/) | Generate images on mobile with Polli-com, a client-side PWA built on Pollinations.ai with a Prompt Builder, optional local ComfyUI bridge, and role-based access control. | [@web](https://github.com/web) |
 
-[View all apps →](apps/APPS.md)
+[Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.

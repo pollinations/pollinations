@@ -1,0 +1,34 @@
+{
+  "pr_number": 10334,
+  "title": "Add What If? Scenario Explorer to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10334",
+  "merged_at": "2026-04-19T08:54:59Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "What if...?",
+    "blurb": "A new community app just landed in the greenhouse! The 'What If? Scenario Explorer' lets you dive into interactive speculative storytelling and navigate branching narratives.",
+    "summary": "Added the 'What If? Scenario Explorer' to the community apps showcase under the writing category.",
+    "impact": "Users can now discover and use a new interactive tool for speculative storytelling and narrative exploration.",
+    "keywords": [
+      "community",
+      "app",
+      "writing",
+      "storytelling",
+      "what-if"
+    ],
+    "visual_concept": "The PR is about a 'What If? Scenario Explorer' for writing and storytelling. Metaphors: branching paths, storybooks, crystal balls, question marks, exploring alternate realities. Characters: Polly the bee looking into a glowing crystal ball or reading a magical branching storybook.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny wizard glasses, looking into a glowing crystal ball that shows branching paths. A retro computer monitor in the background displays a magical storybook. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10334.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny wizard glasses, looking into a glowing crystal ball that shows branching paths. A retro computer monitor in the background displays a magical storybook. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-19T08:55:47.109221+00:00",
+  "app_name": "What If? Scenario Explorer",
+  "app_url": "https://whatif.pythonanywhere.com"
+}

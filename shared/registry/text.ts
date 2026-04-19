@@ -457,6 +457,26 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
+    "claude-xlarge": {
+        aliases: ["claude-opus-4.7"],
+        modelId: "claude-opus-4-7",
+        provider: "bedrock",
+        paidOnly: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5.5),
+                promptCachedTokens: perMillion(0.55),
+                completionTextTokens: perMillion(27.5),
+            },
+        ],
+        description: "Anthropic Claude Opus 4.7 - Most Intelligent Model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 200000,
+        isSpecialized: false,
+    },
     "claude-legacy": {
         aliases: ["claude-opus-4.5", "claude-large-legacy"],
         modelId: "claude-opus-4-5-20251101",

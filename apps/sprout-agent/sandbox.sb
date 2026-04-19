@@ -1,0 +1,22 @@
+(version 1)
+(deny default)
+(allow process-exec process-fork signal)
+(allow sysctl-read mach-lookup ipc-posix-shm*)
+(allow file-read*)
+(deny file-read*
+  (subpath (string-append (param "HOME") "/.ssh"))
+  (subpath (string-append (param "HOME") "/.aws"))
+  (subpath (string-append (param "HOME") "/.config/gcloud"))
+  (subpath (string-append (param "HOME") "/Library/Keychains")))
+(allow file-write-data
+  (literal "/dev/null")
+  (literal "/dev/stdout")
+  (literal "/dev/stderr")
+  (literal "/dev/dtracehelper")
+  (regex #"^/dev/tty"))
+(allow file-write*
+  (subpath "/tmp")
+  (subpath "/private/tmp")
+  (subpath "/private/var/folders")
+  (subpath (param "WORK")))
+(allow network*)

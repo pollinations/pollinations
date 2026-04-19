@@ -21,7 +21,6 @@ interface ProfileResponse {
 
 interface BalanceResponse {
     balance?: number;
-    cadence?: string;
 }
 
 interface DeviceCodeResponse {
@@ -236,12 +235,11 @@ export async function showAuthStatus(): Promise<void> {
         key: masked,
         name: profile.githubUsername ?? "unknown",
         pollen: balance?.balance ?? "unknown",
-        cadence: balance?.cadence ?? "unknown",
     });
 }
 
 const status = new Command("status")
-    .description("Show current auth status, tier, and balance")
+    .description("Show current auth status and balance")
     .action(showAuthStatus);
 
 export const authCommand = new Command("auth")

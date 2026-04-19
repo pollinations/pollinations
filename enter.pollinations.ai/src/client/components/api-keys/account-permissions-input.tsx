@@ -35,7 +35,7 @@ type AccountPermissionsInputProps = {
     modelsInitiallyExpanded?: boolean;
 };
 
-export const ACCOUNT_PERMISSIONS = [
+export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
     {
         id: "profile",
         label: "Profile",
@@ -57,7 +57,7 @@ export const ACCOUNT_PERMISSIONS = [
         shortLabel: "Keys",
         tooltip: "create, list, and revoke API keys",
     },
-] as const satisfies readonly AccountPermissionOption[];
+];
 
 const textModels = textModelIds
     .map((id) => ({

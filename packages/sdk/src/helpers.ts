@@ -32,11 +32,14 @@ import {
 } from "./extras.js";
 import type {
     AccountBalance,
+    AccountKey,
     AccountProfile,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
     ChatOptions,
+    CreatedKey,
+    CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
@@ -618,4 +621,49 @@ export async function getDailyUsage(
  */
 export async function validateKey(): Promise<KeyInfo> {
     return getClient().validateKey();
+}
+
+/**
+ * List all API keys on the authenticated account.
+ *
+ * @example
+ * ```ts
+ * const keys = await listKeys();
+ * keys.forEach(k => console.log(k.name, k.prefix, k.enabled));
+ * ```
+ */
+export async function listKeys(): Promise<AccountKey[]> {
+    return getClient().listKeys();
+}
+
+/**
+ * Create a new API key. The returned `key` field is only shown once —
+ * store it immediately.
+ *
+ * @example
+ * ```ts
+ * const created = await createKey({
+ *   name: 'my-bot',
+ *   type: 'secret',
+ *   accountPermissions: ['balance', 'usage'],
+ * });
+ * console.log('Save this key — it will not be shown again:', created.key);
+ * ```
+ */
+export async function createKey(
+    options: CreateKeyOptions,
+): Promise<CreatedKey> {
+    return getClient().createKey(options);
+}
+
+/**
+ * Revoke an API key by its id (from `listKeys()`).
+ *
+ * @example
+ * ```ts
+ * await revokeKey('key_abc123');
+ * ```
+ */
+export async function revokeKey(id: string): Promise<void> {
+    return getClient().revokeKey(id);
 }

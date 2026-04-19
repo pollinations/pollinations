@@ -410,6 +410,7 @@ type UserData = {
     apiKeyCreatedVia?: string;
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
+    apiKeyClientId?: string;
 };
 
 type BalanceData = {

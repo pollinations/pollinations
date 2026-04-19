@@ -67,6 +67,7 @@ export const Route = createFileRoute("/authorize")({
             redirect_url?: string;
             user_code?: string;
             app_key?: string;
+            state?: string;
             models?: string[] | null;
             budget?: number | null;
             expiry?: number | null;
@@ -84,8 +85,17 @@ export const Route = createFileRoute("/authorize")({
             result.user_code = search.user_code;
         }
 
-        if (search.app_key && typeof search.app_key === "string") {
-            result.app_key = search.app_key;
+        // Canonical OAuth name is `client_id`; `app_key` is a legacy alias.
+        const appKey =
+            (search.client_id as string) || (search.app_key as string);
+        if (appKey && typeof appKey === "string") {
+            result.app_key = appKey;
+        }
+
+        // OAuth `state` — echoed back on the callback so the caller can
+        // correlate the response and defeat CSRF.
+        if (search.state && typeof search.state === "string") {
+            result.state = search.state;
         }
 
         const models = parseList(search.models);
@@ -113,6 +123,7 @@ function AuthorizeComponent() {
         redirect_url,
         user_code,
         app_key,
+        state,
         models,
         budget,
         expiry,
@@ -390,7 +401,9 @@ function AuthorizeComponent() {
                     throw new Error("Invalid redirect URL format");
                 }
                 const url = new URL(parsedRedirectUrl.href);
-                url.hash = `api_key=${key}`;
+                const hash = new URLSearchParams({ api_key: key });
+                if (state) hash.set("state", state);
+                url.hash = hash.toString();
                 window.location.href = url.toString();
             }
         } catch (e) {
@@ -415,7 +428,11 @@ function AuthorizeComponent() {
             }
             setDeviceOutcome("denied");
         } else if (parsedRedirectUrl) {
-            window.location.href = parsedRedirectUrl.toString();
+            const url = new URL(parsedRedirectUrl.href);
+            const hash = new URLSearchParams({ error: "access_denied" });
+            if (state) hash.set("state", state);
+            url.hash = hash.toString();
+            window.location.href = url.toString();
         } else {
             navigate({ to: "/" });
         }

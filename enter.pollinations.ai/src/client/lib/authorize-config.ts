@@ -46,7 +46,8 @@ export const AUTHORIZE_ALLOWED_ACCOUNT_PERMISSIONS = [
     ...OPTIONAL_CONSENT_PERMISSIONS,
 ] as const;
 
-export const AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS = OPTIONAL_CONSENT_PERMISSIONS;
+export const AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS =
+    OPTIONAL_CONSENT_PERMISSIONS;
 
 export function sanitizeAuthorizeAccountPermissions(
     permissions: string[] | null | undefined,
@@ -71,9 +72,7 @@ export function sanitizeAuthorizeAccountPermissions(
  * toggled on. Called at key-creation time so the server always receives the
  * full set.
  */
-export function withBaselinePermissions(
-    optional: string[] | null,
-): string[] {
+export function withBaselinePermissions(optional: string[] | null): string[] {
     const merged = new Set<string>(BASELINE_CONSENT_PERMISSIONS);
     for (const p of optional ?? []) merged.add(p);
     return Array.from(merged);

@@ -137,10 +137,7 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
 
     it("returns null when no safe permissions remain", () => {
         expect(
-            sanitizeAuthorizeAccountPermissions([
-                "admin",
-                "offline_access",
-            ]),
+            sanitizeAuthorizeAccountPermissions(["admin", "offline_access"]),
         ).toBeNull();
     });
 });

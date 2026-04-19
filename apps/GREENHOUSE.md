@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **686** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **687** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -214,7 +214,7 @@
 | [🎬 Oasis AI](https://oasis-demo-brown.vercel.app/) | Convert long-form LinkedIn or Twitter posts into short vertical Instagram Reels with Oasis AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎛️ Dreamframe](https://funniman23.github.io/Dreamframe/) | Run Dreamframe as a zero-dependency single-HTML-file playground for the pollinations.ai API, accessing images, video, voice, TTS, and music from one interface. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 34 apps</summary>
+<details><summary>Show all 35 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -239,6 +239,7 @@
 | [🎬 ViralFlow AI](https://fabioarieira.com/viralflow) | Auto-generates cinematic viral videos from a theme (script, TTS, visuals). | [@web](https://github.com/web) |  | 🫧 |
 | [🔍 Polli YT Search](https://replit.com/@nojeheg897/VideoFind5) | Search YouTube using multimodal analysis of thumbnails, visuals, transcripts, and metrics to locate relevant videos beyond title keywords, leveraging Pollinations for deep video analysis. | [@web](https://github.com/web) |  | 🫧 |
 | [🌐 Yo el director](https://yoeldirector.dpana.com.ve) | Create films and YouTube content using Pollinations, export projects to YouTube, generate illustrated books, and import or export project files. | [@web](https://github.com/web) |  | 🫧 |
+| [🕒 PollenHours](https://aghartavault-ship-it.github.io/PollenHours/) | PollenHours is a mobile-first AI video pipeline built for Termux on Android. It runs on Android devices. | [@android](https://github.com/android) |  | 🫧 |
 | [🎬 FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | [@web](https://github.com/web) |  |  |
 | [🎵 Strudel AI REPL](https://strudel-ai-repl.pages.dev) | AI-powered live-coding music environment for generating and performing algorithmic compositions. | [@web](https://github.com/web) |  |  |
 | [🎬 TurboReel](https://turboreel.framer.ai/) | Provide creative generators for short video and image content, presentation tools, and design helpers driven by text prompts. | [@web](https://github.com/web) |  |  |

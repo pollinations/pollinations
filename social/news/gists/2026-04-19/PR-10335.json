@@ -1,0 +1,34 @@
+{
+  "pr_number": 10335,
+  "title": "Add Aureon to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10335",
+  "merged_at": "2026-04-19T08:59:51Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Aureon joins the greenhouse",
+    "blurb": "Aureon has officially sprouted in our community showcase! They're using our image and video APIs to give their AI agents some serious visual flair.",
+    "summary": "Added Aureon to the community showcase, highlighting their integration of Pollinations' image and video generation APIs.",
+    "impact": "The community can now discover Aureon in the apps directory and explore how they use our Flux and LTX-2.3 models for media generation.",
+    "keywords": [
+      "community",
+      "showcase",
+      "aureon",
+      "video",
+      "image-generation"
+    ],
+    "visual_concept": "Aureon (golden theme) generating media. Polly the bee as a film director with a golden film reel, alongside the monitor robot displaying generated art.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a glowing golden film reel next to a chunky robot with a CRT monitor head displaying a beautiful landscape. Soft lime green (#ecf874) and warm golden pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10335.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a glowing golden film reel next to a chunky robot with a CRT monitor head displaying a beautiful landscape. Soft lime green (#ecf874) and warm golden pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-19T09:00:50.435122+00:00",
+  "app_name": "Aureon",
+  "app_url": "https://aureon.gold"
+}

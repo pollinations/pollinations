@@ -58,7 +58,12 @@ SOPS_FILES=(
     "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 )
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
-HEALTH_URL="https://gen.pollinations.ai/v1/models"
+GEN_BASE="https://gen.pollinations.ai"
+TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
+# Token rotation impacts BOTH text and image services — verify both end-to-end
+HEALTH_TEXT_MODEL="openai-fast"
+HEALTH_TEXT_EXPECT="gpt-5"
+HEALTH_IMAGE_MODEL="zimage"
 
 #######################################
 # Pre-flight
@@ -98,6 +103,16 @@ for f in "${SOPS_FILES[@]}"; do
 done
 log "SOPS: 5 files contain PLN_ENTER_TOKEN"
 
+if [ ! -f "$TESTING_TOKENS_FILE" ]; then
+    error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
+    exit 1
+fi
+TEST_TOKEN=$(grep -E '^ENTER_API_TOKEN_REMOTE=' "$TESTING_TOKENS_FILE" | head -1 | cut -d= -f2- | tr -d '"')
+if [ -z "$TEST_TOKEN" ]; then
+    error "ENTER_API_TOKEN_REMOTE missing from $TESTING_TOKENS_FILE"
+    exit 1
+fi
+
 log "Pre-flight OK"
 
 if $DRY_RUN; then
@@ -111,7 +126,7 @@ if $DRY_RUN; then
     echo "  5. Push main → production (admin)"
     echo "  6. Watch $DEPLOY_WORKFLOW (EC2 picks up new token)"
     echo "  7. Wrangler secret put (worker switches to new token — minimises rejection window)"
-    echo "  8. Health check $HEALTH_URL"
+    echo "  8. Health check: text ($HEALTH_TEXT_MODEL) + image ($HEALTH_IMAGE_MODEL) via $GEN_BASE"
     exit 0
 fi
 
@@ -230,16 +245,47 @@ for env in production staging; do
 done
 
 #######################################
-# 9. Health check
+# 9. Health check (text + image; verifies worker→EC2 token alignment)
 #######################################
-section "Health check"
+section "Health check (text: $HEALTH_TEXT_MODEL)"
 
-STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "$HEALTH_URL")
-if [ "$STATUS" != "200" ]; then
-    error "Health check failed (HTTP $STATUS)."
+HC_BODY=$(curl -sS --max-time 60 \
+    -X POST "$GEN_BASE/v1/chat/completions" \
+    -H "Authorization: Bearer $TEST_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"model\":\"$HEALTH_TEXT_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"reply ok\"}],\"max_tokens\":10}")
+HC_ERR=$(echo "$HC_BODY" | jq -r '.error.message // ""')
+if [ -n "$HC_ERR" ]; then
+    error "Text health check failed: $HC_ERR"
+    error "Body: $HC_BODY"
     exit 1
 fi
-log "Production healthy (HTTP 200)."
+HC_MODEL=$(echo "$HC_BODY" | jq -r '.model // ""')
+if ! echo "$HC_MODEL" | grep -qiE "$HEALTH_TEXT_EXPECT"; then
+    error "Text routing mismatch: model='$HC_MODEL' (expected '$HEALTH_TEXT_EXPECT')"
+    exit 1
+fi
+log "Text OK: model='$HC_MODEL'"
+
+section "Health check (image: $HEALTH_IMAGE_MODEL)"
+
+HC_TMP=$(mktemp)
+trap 'rm -f "$HC_TMP"' EXIT
+HC_META=$(curl -sS --max-time 90 -o "$HC_TMP" \
+    -w "%{http_code}|%{content_type}|%{size_download}" \
+    "$GEN_BASE/image/healthcheck%20cat?model=$HEALTH_IMAGE_MODEL&width=512&height=512&nologo=true&seed=$(date +%s)" \
+    -H "Authorization: Bearer $TEST_TOKEN")
+HC_CODE="${HC_META%%|*}"
+HC_REST="${HC_META#*|}"
+HC_CT="${HC_REST%%|*}"
+HC_SIZE="${HC_REST#*|}"
+if [ "$HC_CODE" != "200" ] || ! echo "$HC_CT" | grep -q "^image/"; then
+    error "Image health check failed: HTTP $HC_CODE content-type=$HC_CT"
+    error "Body preview: $(head -c 500 "$HC_TMP")"
+    exit 1
+fi
+log "Image OK: $HC_CT, $HC_SIZE bytes"
+rm -f "$HC_TMP"; trap - EXIT
 
 #######################################
 # Restore original branch

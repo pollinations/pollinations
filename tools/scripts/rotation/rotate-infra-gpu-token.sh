@@ -64,7 +64,10 @@ SOPS_FILES=(
 )
 SOPS_SECRETS_SSH_SOURCE="$ENTER_DIR/secrets/prod.vars.json"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
-HEALTH_URL="https://gen.pollinations.ai/v1/models"
+GEN_BASE="https://gen.pollinations.ai"
+TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
+# GPU token gates image.pollinations.ai → GPU worker calls; verify image gen E2E
+HEALTH_IMAGE_MODEL="zimage"
 
 SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes"
 TEMP_DIR=$(mktemp -d)
@@ -205,6 +208,16 @@ for f in "${SOPS_FILES[@]}"; do
 done
 log "SOPS: PLN_GPU_TOKEN present in all 4 target files"
 
+if [ ! -f "$TESTING_TOKENS_FILE" ]; then
+    error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
+    exit 1
+fi
+TEST_TOKEN=$(grep -E '^ENTER_API_TOKEN_REMOTE=' "$TESTING_TOKENS_FILE" | head -1 | cut -d= -f2- | tr -d '"')
+if [ -z "$TEST_TOKEN" ]; then
+    error "ENTER_API_TOKEN_REMOTE missing from $TESTING_TOKENS_FILE"
+    exit 1
+fi
+
 section "Pre-flight: SSH reachability"
 FLUX_ZIMAGE_KEY=$(extract_ssh_key SSH_RUNPOD_FLUX_ZIMAGE) || { error "Missing SSH_RUNPOD_FLUX_ZIMAGE in SOPS"; exit 1; }
 KLEIN_KEY=$(extract_ssh_key SSH_RUNPOD_KLEIN) || { error "Missing SSH_RUNPOD_KLEIN in SOPS"; exit 1; }
@@ -226,7 +239,7 @@ if $DRY_RUN; then
     echo "  4. Push main → production (admin) → deploy-enter-services deploys EC2"
     echo "  5. SSH fan-out: update .env + restart workers on 3 GPU hosts"
     echo "  6. Wrangler secret put (enter worker switches to new token)"
-    echo "  7. Health check $HEALTH_URL"
+    echo "  7. Health check via $GEN_BASE/image/{prompt}?model=$HEALTH_IMAGE_MODEL (verifies GPU token end-to-end)"
     exit 0
 fi
 
@@ -356,16 +369,28 @@ for env in production staging; do
 done
 
 #######################################
-# 9. Health check
+# 9. Health check (image generation E2E — verifies GPU workers got the new token)
 #######################################
-section "Health check"
+section "Health check (image: $HEALTH_IMAGE_MODEL)"
 
-STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "$HEALTH_URL")
-if [ "$STATUS" != "200" ]; then
-    error "Health check failed (HTTP $STATUS)."
+HC_TMP=$(mktemp)
+trap 'rm -f "$HC_TMP"' EXIT
+HC_META=$(curl -sS --max-time 120 -o "$HC_TMP" \
+    -w "%{http_code}|%{content_type}|%{size_download}" \
+    "$GEN_BASE/image/healthcheck%20cat?model=$HEALTH_IMAGE_MODEL&width=512&height=512&nologo=true&seed=$(date +%s)" \
+    -H "Authorization: Bearer $TEST_TOKEN")
+HC_CODE="${HC_META%%|*}"
+HC_REST="${HC_META#*|}"
+HC_CT="${HC_REST%%|*}"
+HC_SIZE="${HC_REST#*|}"
+if [ "$HC_CODE" != "200" ] || ! echo "$HC_CT" | grep -q "^image/"; then
+    error "Health check failed: HTTP $HC_CODE content-type=$HC_CT"
+    error "Body preview: $(head -c 500 "$HC_TMP")"
+    error "Likely cause: a GPU worker (Flux/Z-Image/Klein/LTX-2) didn't pick up the new token."
     exit 1
 fi
-log "Production healthy (HTTP 200)."
+log "Health check OK: $HC_CT, $HC_SIZE bytes"
+rm -f "$HC_TMP"; trap - EXIT
 
 #######################################
 # Restore original branch

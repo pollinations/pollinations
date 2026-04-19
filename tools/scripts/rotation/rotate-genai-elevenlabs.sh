@@ -47,7 +47,9 @@ SOPS_FILES=(
     "$ENTER_DIR/secrets/prod.vars.json"
 )
 DEPLOY_WORKFLOW="deploy-enter-cloudflare.yml"
-HEALTH_URL="https://gen.pollinations.ai/v1/audio/speech"
+GEN_BASE="https://gen.pollinations.ai"
+TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
+HEALTH_MODEL="elevenlabs"  # routes via ElevenLabs TTS
 
 wrangler_cmd() {
     if [ -x "$REPO_ROOT/node_modules/.bin/wrangler" ]; then
@@ -111,6 +113,16 @@ if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "null" ]; then
 fi
 log "Current runtime key: ${OLD_KEY:0:8}..."
 
+if [ ! -f "$TESTING_TOKENS_FILE" ]; then
+    error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
+    exit 1
+fi
+TEST_TOKEN=$(grep -E '^ENTER_API_TOKEN_REMOTE=' "$TESTING_TOKENS_FILE" | head -1 | cut -d= -f2- | tr -d '"')
+if [ -z "$TEST_TOKEN" ]; then
+    error "ENTER_API_TOKEN_REMOTE missing from $TESTING_TOKENS_FILE"
+    exit 1
+fi
+
 log "Pre-flight OK"
 
 if $DRY_RUN; then
@@ -123,7 +135,7 @@ if $DRY_RUN; then
     echo "  4. Open PR: rotate/elevenlabs-<date> → main, auto-merge"
     echo "  5. Push main → production (admin)"
     echo "  6. Watch $DEPLOY_WORKFLOW"
-    echo "  7. Health check $HEALTH_URL"
+    echo "  7. Health check via $GEN_BASE/v1/audio/speech (model=$HEALTH_MODEL → expect HTTP 200 + audio/*)"
     echo "  8. Delete old SA key (if locatable; may be personal key on first run)"
     exit 0
 fi
@@ -261,19 +273,30 @@ gh run watch "$RUN_ID" --exit-status || {
 }
 
 #######################################
-# 9. Health check
+# 9. Health check (provider-specific)
 #######################################
-section "Health check"
+section "Health check ($HEALTH_MODEL → audio synthesis via ElevenLabs)"
 
-STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
-    -X POST "$HEALTH_URL" \
+HC_TMP=$(mktemp)
+trap 'rm -f "$HC_TMP"' EXIT
+HC_META=$(curl -sS --max-time 60 -o "$HC_TMP" \
+    -w "%{http_code}|%{content_type}|%{size_download}" \
+    -X POST "$GEN_BASE/v1/audio/speech" \
+    -H "Authorization: Bearer $TEST_TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{"input":"ping","voice":"nova"}')
-if [ "$STATUS" != "200" ] && [ "$STATUS" != "401" ]; then
-    error "Health check failed (HTTP $STATUS). Old key NOT deleted — resolve manually."
+    -d "{\"model\":\"$HEALTH_MODEL\",\"input\":\"hi\",\"voice\":\"alloy\"}")
+HC_CODE="${HC_META%%|*}"
+HC_REST="${HC_META#*|}"
+HC_CT="${HC_REST%%|*}"
+HC_SIZE="${HC_REST#*|}"
+if [ "$HC_CODE" != "200" ] || ! echo "$HC_CT" | grep -q "^audio/"; then
+    error "Health check failed: HTTP $HC_CODE content-type=$HC_CT"
+    error "Body preview: $(head -c 500 "$HC_TMP")"
+    error "Old key NOT deleted — resolve manually."
     exit 1
 fi
-log "Production endpoint reachable."
+log "Health check OK: $HEALTH_MODEL → $HC_CT, $HC_SIZE bytes"
+rm -f "$HC_TMP"; trap - EXIT
 
 #######################################
 # 10. Delete old SA key (if under SA)

@@ -36,7 +36,10 @@ section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 API_BASE="https://api.perplexity.ai"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
-HEALTH_URL="https://gen.pollinations.ai/v1/chat/completions"
+GEN_BASE="https://gen.pollinations.ai"
+TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
+HEALTH_MODEL="perplexity-fast"
+HEALTH_EXPECT="perplexity-ai"  # substring expected in .provider or .model
 
 #######################################
 # Pre-flight
@@ -60,6 +63,17 @@ fi
 
 if [ ! -f "$TEXT_SOPS" ]; then
     error "SOPS file not found: $TEXT_SOPS"
+    exit 1
+fi
+
+if [ ! -f "$TESTING_TOKENS_FILE" ]; then
+    error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
+    error "  Copy from 1Password 'Pollinations Testing Tokens' or ask a maintainer."
+    exit 1
+fi
+TEST_TOKEN=$(grep -E '^ENTER_API_TOKEN_REMOTE=' "$TESTING_TOKENS_FILE" | head -1 | cut -d= -f2- | tr -d '"')
+if [ -z "$TEST_TOKEN" ]; then
+    error "ENTER_API_TOKEN_REMOTE missing from $TESTING_TOKENS_FILE"
     exit 1
 fi
 
@@ -93,7 +107,7 @@ if $DRY_RUN; then
     echo "  4. Open PR: rotate/perplexity-<date> → main, auto-merge"
     echo "  5. Push main → production (admin)"
     echo "  6. Watch $DEPLOY_WORKFLOW"
-    echo "  7. Health check $HEALTH_URL"
+    echo "  7. Health check via $GEN_BASE/v1/chat/completions (model=$HEALTH_MODEL → expect '$HEALTH_EXPECT')"
     echo "  8. Revoke old key"
     exit 0
 fi
@@ -216,20 +230,30 @@ gh run watch "$RUN_ID" --exit-status || {
 }
 
 #######################################
-# 8. Health check
+# 8. Health check (provider-specific)
 #######################################
-section "Health check"
+section "Health check ($HEALTH_MODEL → expect '$HEALTH_EXPECT')"
 
-STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
-    -X POST "$HEALTH_URL" \
+HC_BODY=$(curl -sS --max-time 60 \
+    -X POST "$GEN_BASE/v1/chat/completions" \
+    -H "Authorization: Bearer $TEST_TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{"model":"perplexity-fast","messages":[{"role":"user","content":"ping"}],"max_tokens":1}')
-if [ "$STATUS" != "200" ] && [ "$STATUS" != "401" ]; then
-    # 401 means the endpoint requires auth, which is fine — just checking the endpoint is reachable
-    error "Health check failed (HTTP $STATUS). Old key NOT revoked — resolve manually."
+    -d "{\"model\":\"$HEALTH_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"reply ok\"}],\"max_tokens\":10}")
+HC_ERR=$(echo "$HC_BODY" | jq -r '.error.message // ""')
+if [ -n "$HC_ERR" ]; then
+    error "Health check failed: $HC_ERR"
+    error "Body: $HC_BODY"
+    error "Old key NOT revoked — resolve manually."
     exit 1
 fi
-log "Production endpoint reachable."
+HC_PROVIDER=$(echo "$HC_BODY" | jq -r '.provider // ""')
+HC_MODEL=$(echo "$HC_BODY" | jq -r '.model // ""')
+if ! echo "$HC_PROVIDER $HC_MODEL" | grep -qiE "$HEALTH_EXPECT"; then
+    error "Health check: routing mismatch. provider='$HC_PROVIDER' model='$HC_MODEL' (expected substring '$HEALTH_EXPECT')."
+    error "Old key NOT revoked — resolve manually."
+    exit 1
+fi
+log "Health check OK: provider='$HC_PROVIDER' model='$HC_MODEL'"
 
 #######################################
 # 9. Revoke old key

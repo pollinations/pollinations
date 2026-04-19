@@ -44,7 +44,9 @@ source "$SCRIPT_DIR/_load-admin-secrets.sh"
 IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 MGMT_API="https://management-api.x.ai"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
-HEALTH_URL="https://gen.pollinations.ai/v1/chat/completions"
+GEN_BASE="https://gen.pollinations.ai"
+TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
+HEALTH_MODEL="grok-imagine"  # routes via xAI
 
 #######################################
 # Pre-flight
@@ -110,6 +112,16 @@ OLD_ACLS=$(echo "$LIST_RESPONSE" | jq -c --arg id "$OLD_KEY_ID" \
 log "Old key name: $OLD_NAME"
 log "Old key ACLs: $OLD_ACLS"
 
+if [ ! -f "$TESTING_TOKENS_FILE" ]; then
+    error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
+    exit 1
+fi
+TEST_TOKEN=$(grep -E '^ENTER_API_TOKEN_REMOTE=' "$TESTING_TOKENS_FILE" | head -1 | cut -d= -f2- | tr -d '"')
+if [ -z "$TEST_TOKEN" ]; then
+    error "ENTER_API_TOKEN_REMOTE missing from $TESTING_TOKENS_FILE"
+    exit 1
+fi
+
 log "Pre-flight OK"
 
 if $DRY_RUN; then
@@ -121,7 +133,7 @@ if $DRY_RUN; then
     echo "  3. Open PR: rotate/xai-<date> → main, auto-merge"
     echo "  4. Push main → production (admin)"
     echo "  5. Watch $DEPLOY_WORKFLOW"
-    echo "  6. Health check $HEALTH_URL"
+    echo "  6. Health check via $GEN_BASE/image/{prompt}?model=$HEALTH_MODEL (expect HTTP 200 + image/*)"
     echo "  7. Delete old key $OLD_KEY_ID"
     exit 0
 fi
@@ -236,19 +248,28 @@ gh run watch "$RUN_ID" --exit-status || {
 }
 
 #######################################
-# 7. Health check
+# 7. Health check (provider-specific)
 #######################################
-section "Health check"
+section "Health check ($HEALTH_MODEL → image generation via xAI)"
 
-STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
-    -X POST "$HEALTH_URL" \
-    -H "Content-Type: application/json" \
-    -d '{"model":"grok","messages":[{"role":"user","content":"ping"}],"max_tokens":1}')
-if [ "$STATUS" != "200" ] && [ "$STATUS" != "401" ]; then
-    error "Health check failed (HTTP $STATUS). Old key NOT deleted — resolve manually."
+HC_TMP=$(mktemp)
+trap 'rm -f "$HC_TMP"' EXIT
+HC_META=$(curl -sS --max-time 90 -o "$HC_TMP" \
+    -w "%{http_code}|%{content_type}|%{size_download}" \
+    "$GEN_BASE/image/healthcheck%20cat?model=$HEALTH_MODEL&width=512&height=512&nologo=true&seed=$(date +%s)" \
+    -H "Authorization: Bearer $TEST_TOKEN")
+HC_CODE="${HC_META%%|*}"
+HC_REST="${HC_META#*|}"
+HC_CT="${HC_REST%%|*}"
+HC_SIZE="${HC_REST#*|}"
+if [ "$HC_CODE" != "200" ] || ! echo "$HC_CT" | grep -q "^image/"; then
+    error "Health check failed: HTTP $HC_CODE content-type=$HC_CT"
+    error "Body preview: $(head -c 500 "$HC_TMP")"
+    error "Old key NOT deleted — resolve manually."
     exit 1
 fi
-log "Production endpoint reachable (HTTP $STATUS)."
+log "Health check OK: $HEALTH_MODEL → $HC_CT, $HC_SIZE bytes"
+rm -f "$HC_TMP"; trap - EXIT
 
 #######################################
 # 8. Delete old key

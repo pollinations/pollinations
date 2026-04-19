@@ -47,7 +47,13 @@ section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
-HEALTH_URL="https://gen.pollinations.ai/v1/models"
+GEN_BASE="https://gen.pollinations.ai"
+TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
+# Per-resource health check models (substring expected in .model)
+HEALTH_MODEL_EAST="openai"          # gpt-5.4-nano deployed in East US
+HEALTH_EXPECT_EAST="gpt-5"
+HEALTH_MODEL_SWEDEN="openai-audio"  # gpt-audio-mini deployed in Sweden
+HEALTH_EXPECT_SWEDEN="gpt-audio"
 
 extract_resource_name() {
     echo "$1" | sed -E 's|https?://([^.]+)\..*|\1|'
@@ -182,6 +188,16 @@ if ! az cognitiveservices account list --query '[].name' -o tsv >/dev/null 2>&1;
 fi
 log "Cognitive Services access OK"
 
+if [ ! -f "$TESTING_TOKENS_FILE" ]; then
+    error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
+    exit 1
+fi
+TEST_TOKEN=$(grep -E '^ENTER_API_TOKEN_REMOTE=' "$TESTING_TOKENS_FILE" | head -1 | cut -d= -f2- | tr -d '"')
+if [ -z "$TEST_TOKEN" ]; then
+    error "ENTER_API_TOKEN_REMOTE missing from $TESTING_TOKENS_FILE"
+    exit 1
+fi
+
 log "Pre-flight OK"
 
 if $DRY_RUN; then
@@ -297,16 +313,56 @@ gh run watch "$RUN_ID" --exit-status || {
 }
 
 #######################################
-# Health check
+# Health check (per-resource provider-specific)
 #######################################
-section "Health check"
+hc_chat_check() {
+    local label=$1 expect=$2 payload=$3
+    section "Health check ($label → expect '$expect')"
+    local body err provider mdl
+    body=$(curl -sS --max-time 60 \
+        -X POST "$GEN_BASE/v1/chat/completions" \
+        -H "Authorization: Bearer $TEST_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "$payload")
+    err=$(echo "$body" | jq -r '.error.message // ""')
+    if [ -n "$err" ]; then
+        error "[$label] Health check failed: $err"
+        error "Body: $body"
+        return 1
+    fi
+    provider=$(echo "$body" | jq -r '.provider // ""')
+    mdl=$(echo "$body" | jq -r '.model // ""')
+    if ! echo "$provider $mdl" | grep -qiE "$expect"; then
+        error "[$label] Routing mismatch. provider='$provider' model='$mdl' (expected '$expect')."
+        return 1
+    fi
+    log "[$label] OK: provider='$provider' model='$mdl'"
+}
 
-STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "$HEALTH_URL")
-if [ "$STATUS" != "200" ]; then
-    error "Health check failed (HTTP $STATUS)."
+HC_FAILED=0
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "east" ]; then
+    hc_chat_check "east" "$HEALTH_EXPECT_EAST" \
+        "{\"model\":\"$HEALTH_MODEL_EAST\",\"messages\":[{\"role\":\"user\",\"content\":\"reply ok\"}],\"max_tokens\":10}" \
+        || HC_FAILED=1
+fi
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "sweden" ]; then
+    # Sweden hosts gpt-audio-mini — requires audio modality
+    hc_chat_check "sweden" "$HEALTH_EXPECT_SWEDEN" \
+        "{\"model\":\"$HEALTH_MODEL_SWEDEN\",\"modalities\":[\"text\",\"audio\"],\"audio\":{\"voice\":\"alloy\",\"format\":\"mp3\"},\"messages\":[{\"role\":\"user\",\"content\":\"say hi\"}],\"max_tokens\":10}" \
+        || HC_FAILED=1
+fi
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "safety" ]; then
+    section "Health check (safety: no public test endpoint)"
+    warn "Azure Content Safety has no user-facing endpoint via gen.pollinations.ai."
+    warn "Verify manually by submitting a moderated prompt that should be flagged,"
+    warn "or by checking image.pollinations.ai logs for safety service calls."
+fi
+
+if [ "$HC_FAILED" -ne 0 ]; then
+    error "One or more provider-specific health checks failed (Azure key1/key2 alternation"
+    error "means the previous slot is still valid — no downtime, but resolve before next rotation)."
     exit 1
 fi
-log "Production healthy (HTTP 200)."
 
 #######################################
 # Restore original branch

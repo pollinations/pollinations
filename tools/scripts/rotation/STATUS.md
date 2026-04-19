@@ -1,78 +1,73 @@
-# Rotation Scripts — Status
+# Rotation Scripts — What's Left
 
-Snapshot of what has been tested, what is theoretical, and known gaps. Updated as scripts progress from "written" to "verified end-to-end".
+Forward-looking status: what still needs to happen before these scripts can be trusted in production. Implementation details live in each script's header.
 
-## Tested & verified (dry-run passes locally)
+## Open work, in priority order
 
-All scripts below have been rewritten under the unified full-cycle local flow (pre-flight → create new → SOPS → PR → main→production → deploy → health → delete old). Dry-runs were run locally; no `--execute` path has been exercised.
+### 1. First real `--execute` run (highest priority)
 
-| Script | Pre-flight | Plan preview | Notes |
-|---|---|---|---|
-| `rotate-infra-enter-token.sh` | ✅ | ✅ | 5 SOPS files verified; wrangler + gh authed |
-| `rotate-infra-gpu-token.sh` | ✅ | ✅ | SSH to all 3 GPU hosts reachable; ordering fixed (SSH after EC2 deploy, before Wrangler) |
-| `rotate-genai-aws.sh` | ✅ | ✅ | IAM user `portkey-bedrock-access` |
-| `rotate-genai-perplexity.sh` | ✅ | ✅ | current key valid, healthy |
-| `rotate-genai-fireworks.sh` | ✅ | ✅ | account+user from SOPS |
-| `rotate-genai-xai.sh` | ✅ | ✅ | admin key can list, ACL cloning works |
-| `rotate-genai-elevenlabs.sh` | ✅ | ✅ | admin key works, SA has 0 keys (ready for first-run) |
-| `rotate-ops-tinybird.sh` | ✅ | ✅ | admin token OK, workspace has 10 tokens |
-| `rotate-genai-azure.sh` | ⚠️ partial | ✅ for 2/3 | East US + Sweden OK; **Content Safety resource not visible in default `az` subscription** |
-| `rotate-genai-gcp.sh` | ❌ | — | **Local `gcloud` (elliot@myceli.ai) can't list keys on the pollinations GCP project**; needs different auth |
+Nothing has actually mutated production yet. Until one full cycle runs end-to-end, the PR→merge→production→deploy→health-check plumbing is unproven. Pick the lowest-risk script:
 
-## Never tested end-to-end
+**`rotate-genai-perplexity.sh`** — small blast radius (text only), rolling-safe (old key valid until step 9), isolated provider, fastest revert path.
 
-Nothing has actually mutated production. The following are theoretical until someone runs `--execute`:
+After it succeeds, what we'll know:
+- `gh pr merge --auto --squash` actually waits for the right checks
+- `git push origin main:production` is permitted (admin push under branch-protection)
+- `gh run watch` correctly identifies the deploy run we just triggered
+- Deploy workflow propagates new SOPS values to EC2 (SCP + systemd restart)
+- The new provider-specific health check actually trips on a broken key (today the snippet works against the *current* key — failure mode is unverified)
 
-- `gh pr merge --auto --squash` — repo auto-merge behavior (waits for required checks? which checks?)
-- `git push origin main:production` — admin push under branch-protection config (confirmed allowed in principle; not exercised)
-- `gh run watch --exit-status` correctly identifying the right deploy run after the promotion push
-- Deploy workflows actually picking up new SOPS values (SCP + systemd restart for EC2, Wrangler deploy for worker)
-- Health check endpoints returning expected codes after the rotated key is live (verified the endpoints respond, not that the rotated key works downstream)
-- Infra scripts: EC2→worker rejection window (seconds) closing correctly between deploy-enter-services completion and `wrangler secret put`
-- GPU token: SSH fan-out + worker restart sequence across 3 hosts actually transitioning cleanly with the new token
-- xAI: new API path (`POST /auth/api-keys` with cloned ACLs) produces a functional key with the expected permissions
+If anything breaks mid-cycle, perplexity revert is one curl call.
 
-## Known gaps & environmental issues
+### 2. Then validate the harder cycles
 
-1. **gcp — local auth.** Operator needs `gcloud auth login` with an account holding SA-admin perms on `stellar-verve-465920-b7`, or to run the script from a CI-like environment with service-account credentials. Not a script bug.
-2. **azure safety — cross-subscription.** `gptimagemain1-resource` is not visible under the default `az` subscription on the operator's machine. Workaround: `az account set --subscription <other-sub>` or a separate `az login` before running with `--resource safety`. `--resource east` and `--resource sweden` work standalone.
-3. **`TINYBIRD_LEGACY_READ_TOKEN`** — lives in the retired `pollinations_ai` Tinybird workspace. Consumed by `apps/operation/economics`. Not rotated by `rotate-ops-tinybird.sh` (current admin token can't reach that workspace). Rotate manually or migrate economics off the legacy workspace.
-4. **ElevenLabs first-run edge case** — the current runtime `ELEVENLABS_API_KEY` is Thomas's personal key, not under the rotate SA. First `--execute` will create a new SA key, switch SOPS to it, but **skip deleting** the personal key (the admin key can only manage keys under the SA). Operator revokes the personal key manually in the ElevenLabs UI after rotation. The script warns in that case.
-5. **Health checks are basic.** They verify the production endpoint is reachable (HTTP 200 or 401), not that the *specific rotated provider* actually works end-to-end. A targeted check would call a known model routed to that provider. Upgrade path documented per-script.
+Each of these has a structural unknown the perplexity run can't answer:
+
+- **`rotate-genai-aws.sh`** — IAM key propagation delay. Sleep 10s may not be enough for sts to recognize the new key under load.
+- **`rotate-genai-xai.sh`** — new `POST /auth/api-keys` path with cloned ACLs. Has the response shape we expect? Does the new key actually inherit the ACLs?
+- **`rotate-genai-elevenlabs.sh`** — first run will leave the personal `ELEVENLABS_API_KEY` orphaned (admin SA can't delete a key it doesn't own). Operator must revoke it manually in the UI. Confirm the warning fires.
+- **`rotate-infra-enter-token.sh`** — EC2→worker rejection window. Between `deploy-enter-services.yml` finishing and `wrangler secret put`, any in-flight backend request from the old EC2 build will be rejected by the worker. Window should be seconds; needs measurement.
+- **`rotate-infra-gpu-token.sh`** — SSH fan-out across 3 GPU hosts during a live rotation. Worker restart sequencing is documented but never exercised. Highest blast radius — image generation breaks if any host misses the new token.
+- **`rotate-genai-azure.sh`** — key1/key2 alternation depends on Azure correctly accepting both slots during the deploy window. Documented as zero-downtime by design; not verified.
+- **`rotate-ops-tinybird.sh`** — `wrangler secret put` happens before the PR merges. If the PR is rejected, SOPS and Wrangler diverge. Recovery path needs documenting.
+
+### 3. Environmental blockers (operator-side, not script bugs)
+
+These prevent specific scripts from running on the current machine:
+
+- **azure (safety only)** — `gptimagemain1-resource` lives in a subscription not visible to the default `az` context. `--resource east` and `--resource sweden` work standalone; `--resource safety` and `--resource all` need `az account set --subscription <other>` first. Same decision: document or fix.
+- **`TINYBIRD_LEGACY_READ_TOKEN`** — lives in the retired `pollinations_ai` workspace. Consumed by `apps/operation/economics`. Current admin token can't rotate it. Either rotate manually periodically, or migrate economics off the legacy workspace and delete the token.
+
+### 4. Modularization (lowest priority — only after #1-#3 prove the design)
+
+Each script duplicates the PR → merge → push-to-production → watch-deploy tail (~80 lines × 9 scripts ≈ 700 LOC of duplicated bash). Decision was deliberate ("100% self-contained per script"), but once the pattern is proven across multiple successful `--execute` runs, extracting `_pr-and-deploy.sh` becomes safe.
 
 ## Providers without automated rotation (manual only)
 
-These providers show up in [`shared/registry/{audio,image,text}.ts`](../../../shared/registry/) but do **not** have a corresponding `rotate-genai-*.sh` script — their key-management flow is dashboard-only (no public key-rotation API) so rotation can't be automated today. They are **out of scope for this PR** but must still be rotated periodically. When doing so, the manual rotation looks like:
-
-1. Log in to the provider dashboard, issue a new API key.
-2. `sops enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json` (or the relevant `image`/`text` `env.json`) and paste the new value under the listed env-var name.
-3. For worker-consumed keys: `wrangler secret put <NAME> --env production` (and `--env staging`).
-4. Open a PR with the SOPS changes → merge to `main` → push `main` → `production` to trigger the deploy.
-5. Revoke the old key in the provider dashboard **only after** production health checks pass.
+Out of scope for this branch — listed here so they don't get forgotten during periodic rotation cycles.
 
 | Provider | Env var(s) | Used by | SOPS file(s) | Dashboard |
 |---|---|---|---|---|
-| **Alibaba (DashScope)** | `DASHSCOPE_API_KEY` | image + text registries (Wan image models, Qwen text models) | `image.pollinations.ai/secrets/env.json`, `text.pollinations.ai/secrets/env.json` | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
-| **ByteDance** | `BYTEDANCE_API_KEY` | image registry (SeedEdit / Seedream models) | `image.pollinations.ai/secrets/env.json` | [volcengine.com](https://www.volcengine.com) |
-| **Pruna** | `PRUNA_API_KEY` | image registry (Pruna-optimised image models) | `image.pollinations.ai/secrets/env.json` | [pruna.ai dashboard](https://pruna.ai) |
-| **OVHCloud** | `OVHCLOUD_API_KEY` | text registry (OVH AI endpoints) + enter worker (audio fallback) | `text.pollinations.ai/secrets/env.json`, `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [ovh.com manager](https://www.ovh.com/manager/) |
+| **Alibaba (DashScope)** | `DASHSCOPE_API_KEY` | image + text (Wan image, Qwen text) | `image.pollinations.ai/secrets/env.json`, `text.pollinations.ai/secrets/env.json` | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
+| **ByteDance** | `BYTEDANCE_API_KEY` | image (SeedEdit, Seedream) | `image.pollinations.ai/secrets/env.json` | [volcengine.com](https://www.volcengine.com) |
+| **Pruna** | `PRUNA_API_KEY` | image (Pruna-optimised models) | `image.pollinations.ai/secrets/env.json` | [pruna.ai dashboard](https://pruna.ai) |
+| **OVHCloud** | `OVHCLOUD_API_KEY` | text (OVH AI) + enter worker (audio fallback) | `text.pollinations.ai/secrets/env.json`, `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [ovh.com manager](https://www.ovh.com/manager/) |
 
-OVHCloud's key is worker-consumed (step 3 applies); the others are EC2-consumed only.
+Manual recipe: dashboard → new key → SOPS edit → (worker keys also need `wrangler secret put`) → PR → merge → push to production → wait for deploy + health check → revoke old key in dashboard.
 
-Community-tier models in `text.ts` (provider `community`) don't have a key to rotate — they run on free public endpoints.
+Community-tier models in `text.ts` (provider `community`) have no key to rotate — they run on free public endpoints.
 
-## Invariant that holds so far
+## Readiness snapshot
 
-Despite the gaps above, nothing has actually broken in production:
-
-- All pre-flight failures exit cleanly before mutating anything.
-- Scripts preserve zero-downtime where the provider allows it: if rotation fails mid-flight after new-key creation, the old key stays valid and deletion is skipped.
-- For infra tokens (where we own both sides of the trust boundary), rejection windows are bounded to seconds (enter-token) or ~2min + ~5s (gpu-token) and are documented in each script's header.
-- No real rotation has been attempted — this is all dry-run and plan validation.
-
-## Next steps
-
-1. **First real `--execute` run**: pick the lowest-risk one (`rotate-genai-perplexity.sh` — small blast radius, rolling-safe, isolated to text service) to validate the PR→merge→production→deploy→health-check plumbing end-to-end.
-2. **Upgrade health checks** to be provider-specific (call a known model routed through the rotated provider).
-3. **Address gcp local auth** (either document the `gcloud auth login` recipe or delegate gcp rotations to CI).
-4. **Modularize** once all scripts are battle-tested: extract the shared git + PR + deploy-watch tail into a helper file (currently duplicated across 9 scripts as per the explicit "make them each 100% self-contained" constraint).
+| Script | Can run `--execute` today? | If not, why |
+|---|---|---|
+| `rotate-genai-perplexity.sh` | yes | — |
+| `rotate-genai-fireworks.sh` | yes | — |
+| `rotate-genai-aws.sh` | yes | — |
+| `rotate-genai-xai.sh` | yes | — |
+| `rotate-genai-elevenlabs.sh` | yes (first-run leaves personal key) | — |
+| `rotate-ops-tinybird.sh` | yes | — |
+| `rotate-infra-enter-token.sh` | yes | — |
+| `rotate-infra-gpu-token.sh` | yes | — |
+| `rotate-genai-azure.sh` | east + sweden yes; safety + all no | safety needs `az account set --subscription <other>` |
+| `rotate-genai-gcp.sh` | yes | authenticates from SOPS via dedicated `key-rotator` SA — no interactive `gcloud auth login` needed |

@@ -157,7 +157,9 @@ if $DRY_RUN; then
     echo "     (wrangler put closes the enter-worker rejection window in ~5s)"
     echo "  4. Collect all SOPS changes → single PR to main, auto-merge"
     echo "  5. Push main → production (audit sync)"
-    echo "  6. Health check: directly verify each new token works against Tinybird"
+    echo "  6. Per-token scope-aware health check:"
+    echo "       *ingest → /v0/sql expect 403 (APPEND-only)"
+    echo "       *read/*sync → /v0/sql 'SELECT 1' expect 200 with data"
     exit 0
 fi
 
@@ -277,24 +279,61 @@ git push origin main:production
 log "production advanced to main."
 
 #######################################
-# Health check: verify each new token works against Tinybird
+# Health check: per-token scope-aware verification against Tinybird
 #######################################
-section "Health check (verify new tokens against Tinybird)"
+section "Health check (per-token scope verification)"
+
+# Per-token expectations:
+#   *ingest*  → APPEND scope only.   /v0/sql must return 403 (token recognized,
+#                                    SQL forbidden by design — proves scope wasn't
+#                                    accidentally widened to READ/ADMIN).
+#   *read*    → READ scope.          /v0/sql `SELECT 1` must return HTTP 200
+#                                    with `1` in the body.
+#   *sync*    → READ scope.          Same as read.
 
 FAILED_CHECK=0
 for i in "${!ROTATED_TOKENS[@]}"; do
     tname="${ROTATED_TOKENS[$i]}"
     tvalue="${ROTATED_VALUES[$i]}"
-    STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 15 \
-        -H "Authorization: Bearer $tvalue" \
-        "$API_BASE/tokens")
-    if [ "$STATUS" = "200" ] || [ "$STATUS" = "403" ]; then
-        # 200 = ADMIN/TOKENS scope, 403 = narrower scope but token valid
-        log "  $tname: new token authenticated (HTTP $STATUS)"
-    else
-        error "  $tname: new token failed (HTTP $STATUS)"
-        FAILED_CHECK=1
-    fi
+    SQL_TMP=$(mktemp)
+    SQL_STATUS=$(curl -sS -o "$SQL_TMP" -w "%{http_code}" --max-time 15 \
+        -G "$API_BASE/sql" \
+        --data-urlencode "q=SELECT 1 AS hc FORMAT JSON" \
+        -H "Authorization: Bearer $tvalue")
+    case "$tname" in
+        *ingest*)
+            if [ "$SQL_STATUS" = "403" ]; then
+                log "  $tname: APPEND scope confirmed (SQL → 403 as expected)"
+            else
+                error "  $tname: expected SQL → 403, got HTTP $SQL_STATUS"
+                error "    Body: $(head -c 300 "$SQL_TMP")"
+                error "    Either the token isn't recognized, or its scope was unexpectedly widened."
+                FAILED_CHECK=1
+            fi
+            ;;
+        *read*|*sync*)
+            if [ "$SQL_STATUS" = "200" ] && grep -q '"hc":' "$SQL_TMP"; then
+                log "  $tname: READ scope confirmed (SELECT 1 → 200 with data)"
+            else
+                error "  $tname: expected SQL SELECT 1 → 200, got HTTP $SQL_STATUS"
+                error "    Body: $(head -c 300 "$SQL_TMP")"
+                FAILED_CHECK=1
+            fi
+            ;;
+        *)
+            # Fallback: token-recognized check
+            STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 15 \
+                -H "Authorization: Bearer $tvalue" \
+                "$API_BASE/tokens")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "403" ]; then
+                log "  $tname: token recognized (HTTP $STATUS) — no scope-specific check defined"
+            else
+                error "  $tname: new token failed (HTTP $STATUS)"
+                FAILED_CHECK=1
+            fi
+            ;;
+    esac
+    rm -f "$SQL_TMP"
 done
 
 if [ "$FAILED_CHECK" -eq 1 ]; then

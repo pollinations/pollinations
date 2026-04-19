@@ -659,7 +659,11 @@ export class Pollinations {
         );
 
         // Unwrap when a single image was produced (most common case)
-        return results.length === 1 ? results[0]! : results;
+        if (results.length === 1) {
+            const [single] = results;
+            if (single) return single;
+        }
+        return results;
     }
 
     /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
@@ -2004,8 +2008,7 @@ export class Pollinations {
             type: options.type || "secret",
         };
         if (options.expiresIn !== undefined) body.expiresIn = options.expiresIn;
-        if (options.allowedModels)
-            body.allowedModels = options.allowedModels;
+        if (options.allowedModels) body.allowedModels = options.allowedModels;
         if (options.pollenBudget !== undefined)
             body.pollenBudget = options.pollenBudget;
         if (options.accountPermissions)
@@ -2034,10 +2037,7 @@ export class Pollinations {
      * await pollinations.revokeKey('key_abc123');
      * ```
      */
-    async revokeKey(
-        id: string,
-        options: RequestOptions = {},
-    ): Promise<void> {
+    async revokeKey(id: string, options: RequestOptions = {}): Promise<void> {
         if (!id || typeof id !== "string") {
             throw new PollinationsError(
                 "Key id is required",

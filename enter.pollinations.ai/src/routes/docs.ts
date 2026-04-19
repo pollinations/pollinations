@@ -249,7 +249,7 @@ function generateLLMDoc(): string {
         "Query params: voice, model (elevenlabs|elevenmusic|acestep), duration, seed",
     );
     lines.push(
-        "- seed (integer, 0-4294967295): Best-effort determinism for ElevenLabs models. Omit for fresh output each call; provide to enable response caching on identical requests",
+        "- seed (integer, 0-4294967295): Best-effort determinism for ElevenLabs models. -1 bypasses the response cache",
     );
     lines.push("");
 

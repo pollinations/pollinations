@@ -1,0 +1,34 @@
+{
+  "pr_number": 10331,
+  "title": "Add G-Pai to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10331",
+  "merged_at": "2026-04-19T08:43:02Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "G-Pai joins the greenhouse",
+    "blurb": "A new student-focused app called G-Pai has sprouted in our community greenhouse. It's still growing, but we love seeing new educational tools bloom!",
+    "summary": "Added the student-focused app G-Pai to the community showcase and greenhouse.",
+    "impact": "Users can now discover and explore G-Pai, a new educational tool built by the community.",
+    "keywords": [
+      "community",
+      "app",
+      "education",
+      "greenhouse",
+      "showcase"
+    ],
+    "visual_concept": "A greenhouse setting representing the early-stage app showcase. Polly the bee acting as a student or gardener, nurturing a new educational tool (represented by books and plants).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, watering a glowing code-plant sprouting from a stack of textbooks inside a glass greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10331.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, watering a glowing code-plant sprouting from a stack of textbooks inside a glass greenhouse. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-19T08:43:54.125255+00:00",
+  "app_name": "G-Pai",
+  "app_url": "https://g-pai.vercel.app/"
+}

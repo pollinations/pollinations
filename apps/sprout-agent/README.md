@@ -2,31 +2,49 @@
 
 A minimal LLM coding agent.
 
-- **14 lines of bash.** No framework, no dependencies beyond `curl` + `jq`.
-- **Self-referential prompt.** The agent passes its own source to the model. One directive sentence replaces the usual page of rules.
-- **Sandboxable.** Runs under macOS Seatbelt via `sandbox.sh` — writes restricted to `/tmp` and cwd, reads of `~/.ssh`/`~/.aws` denied.
+- **15 lines of bash.** No framework, no dependencies beyond `curl` + `jq`.
+- **Self-referential.** `sprout.sh` embeds its own source as context. One line of embodied directive + the script itself — no separate prompt file.
+- **Provider-agnostic.** `sprout.sh` takes `KEY` / `MODEL` / `API` env vars — works with any OpenAI-compatible endpoint.
+- **Sandboxable.** `sandbox.sh` wraps execution under macOS Seatbelt — writes restricted to `/tmp` and cwd, reads of `~/.ssh`/`~/.aws` denied.
+
+## Files
+
+- `sprout.sh` — the agent. Pure harness, zero Pollinations knowledge.
+- `sprout-polli.sh` — wrapper that fills in Pollinations defaults (endpoint, model).
+- `sandbox.sh` + `sandbox.sb` — macOS Seatbelt wrapper.
 
 ## Usage
 
+Pollinations:
+
 ```bash
 export POLLINATIONS_TOKEN=sk_...       # https://enter.pollinations.ai
-./agent.sh "draw a pelican on a bicycle as SVG, save to output.svg"
+./sprout-polli.sh "draw a pelican on a bicycle as SVG, save to output.svg"
 ```
 
-Env vars: `MODEL` (default `openai-fast`), `TURNS` (default `5`).
+Generic (any OpenAI-compatible endpoint):
 
-## Sandboxed
+```bash
+KEY=sk_... \
+MODEL=openai-fast \
+API=https://gen.pollinations.ai/v1/chat/completions \
+  ./sprout.sh "your goal"
+```
+
+Sandboxed:
 
 ```bash
 mkdir /tmp/work && cd /tmp/work
-../path/to/sandbox.sh ../path/to/agent.sh "your goal"
+../path/to/sandbox.sh ../path/to/sprout-polli.sh "your goal"
 ```
 
-## How it works
+## The directive
 
-Each turn, the model sees the full running transcript (commands + their stdout/stderr) plus the agent's own source as the system message. It emits one shell command, which `bash -c` runs. The loop closes.
+The script's only non-source prose:
 
-The contract — "output = bash command, output becomes your next input" — is implicit in the code the model reads. No PROMPT.md, no rules file.
+> **This is you. Your mouth is bash. Your ears are its output.**
+
+Anatomical, not mechanical. The model reads `sprout.sh` and infers the rest: its reply gets `eval`'d, the output loops back, the goal comes after. No separate PROMPT.md, no rules file.
 
 ## Examples
 

@@ -1,7 +1,7 @@
 (version 1)
 (deny default)
 (allow process-exec process-fork signal)
-(allow sysctl-read mach-lookup ipc-posix-shm*)
+(allow sysctl-read mach-lookup ipc-posix-shm* file-ioctl)
 (allow file-read*)
 (deny file-read*
   (subpath (string-append (param "HOME") "/.ssh"))
@@ -12,7 +12,9 @@
   (literal "/dev/null")
   (literal "/dev/stdout")
   (literal "/dev/stderr")
-  (literal "/dev/dtracehelper")
+  (literal "/dev/dtracehelper"))
+(allow file-write*
+  (subpath "/dev/fd")
   (regex #"^/dev/tty"))
 (allow file-write*
   (subpath "/tmp")

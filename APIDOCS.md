@@ -56,6 +56,20 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
   -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
 ```
 
+## 🖥️ CLI
+
+`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.
+
+```bash
+npm install -g @pollinations_ai/cli
+polli auth login
+polli gen image "a cat in space" --model flux --output cat.png
+polli gen text "summarize this" < notes.md
+polli models --type image
+```
+
+Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
+
 ## 🔐 Authentication
 
 All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.
@@ -148,7 +162,7 @@ Returns your account profile including name, email, tier level, and account crea
 
 - **`tier` (required)**
 
-  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "router"` — User's current tier level
+  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
 
 **Example:**
 
@@ -338,6 +352,14 @@ Returns daily aggregated usage for the requested time window (max 90 days), grou
 
     `number` — Number of requests
 
+  - **`api_key_names`**
+
+    `array` — API key names included in this bucket. Present for dashboard usage data.
+
+    **Items:**
+
+    `string`
+
 **Example:**
 
 ```json
@@ -345,7 +367,10 @@ Returns daily aggregated usage for the requested time window (max 90 days), grou
   "usage": [
     {
       "requests": 1,
-      "cost_usd": 1
+      "cost_usd": 1,
+      "api_key_names": [
+        ""
+      ]
     }
   ],
   "count": 1
@@ -1138,9 +1163,29 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
   `object`
 
+  - **`completion_tokens` (required)**
+
+    `integer`
+
+  - **`prompt_tokens` (required)**
+
+    `integer`
+
+  - **`total_tokens` (required)**
+
+    `integer`
+
+  - **`completion_tokens_details`**
+
+    `object`
+
+  - **`prompt_tokens_details`**
+
+    `object`
+
 - **`user_tier`**
 
-  `string`, possible values: `"anonymous", "seed", "flower"`
+  `string`, possible values: `"anonymous", "seed", "flower", "nectar"`
 
 **Example:**
 
@@ -1184,16 +1229,91 @@ Supports streaming, function calling, vision (image input), structured outputs, 
             ]
           }
         ]
+      },
+      "content_filter_results": {
+        "hate": {
+          "filtered": true,
+          "severity": "safe"
+        },
+        "self_harm": {
+          "filtered": true,
+          "severity": "safe"
+        },
+        "sexual": {
+          "filtered": true,
+          "severity": "safe"
+        },
+        "violence": {
+          "filtered": true,
+          "severity": "safe"
+        },
+        "jailbreak": {
+          "filtered": true,
+          "detected": true
+        },
+        "protected_material_text": {
+          "filtered": true,
+          "detected": true
+        },
+        "protected_material_code": {
+          "filtered": true,
+          "detected": true
+        }
       }
     }
   ],
   "prompt_filter_results": [
     {
-      "prompt_index": 0
+      "prompt_index": 0,
+      "content_filter_results": {
+        "hate": {
+          "filtered": true,
+          "severity": "safe"
+        },
+        "self_harm": {
+          "filtered": true,
+          "severity": "safe"
+        },
+        "sexual": {
+          "filtered": true,
+          "severity": "safe"
+        },
+        "violence": {
+          "filtered": true,
+          "severity": "safe"
+        },
+        "jailbreak": {
+          "filtered": true,
+          "detected": true
+        },
+        "protected_material_text": {
+          "filtered": true,
+          "detected": true
+        },
+        "protected_material_code": {
+          "filtered": true,
+          "detected": true
+        }
+      }
     }
   ],
   "created": -9007199254740991,
   "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 0,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": 0,
+      "audio_tokens": 0,
+      "reasoning_tokens": 0,
+      "rejected_prediction_tokens": 0
+    },
+    "prompt_tokens": 0,
+    "prompt_tokens_details": {
+      "audio_tokens": 0,
+      "cached_tokens": 0
+    },
+    "total_tokens": 0
+  },
   "user_tier": "anonymous",
   "citations": [
     ""
@@ -1372,9 +1492,34 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
 
 ###### Content-Type: application/json
 
+- **`created` (required)**
+
+  `integer`
+
+- **`data` (required)**
+
+  `array`
+
+  **Items:**
+
+  - **`b64_json`**
+
+    `string`
+
+  - **`revised_prompt`**
+
+    `string`
+
+  - **`url`**
+
+    `string`
+
 **Example:**
 
-```
+```json
+{
+  "created": -9007199254740991
+}
 ```
 
 ### Edit Image (OpenAI-compatible)
@@ -1395,9 +1540,34 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
 
 ###### Content-Type: application/json
 
+- **`created` (required)**
+
+  `integer`
+
+- **`data` (required)**
+
+  `array`
+
+  **Items:**
+
+  - **`b64_json`**
+
+    `string`
+
+  - **`revised_prompt`**
+
+    `string`
+
+  - **`url`**
+
+    `string`
+
 **Example:**
 
-```
+```json
+{
+  "created": -9007199254740991
+}
 ```
 
 ### Text to Speech (OpenAI-compatible)
@@ -1673,6 +1843,20 @@ Delete a file by its content hash. Only the original uploader can delete their o
 
 ## Schemas
 
+### ErrorDetails
+
+- **Type:**`object`
+
+* **`name` (required)**
+
+  `string`
+
+* **`stack`**
+
+  `string`
+
+**Example:**
+
 ### CacheControl
 
 - **Type:**`object`
@@ -1689,11 +1873,257 @@ Delete a file by its content hash. Only the original uploader can delete their o
 }
 ```
 
+### ContentFilterSeverity
+
+- **Type:**`string`
+
+**Example:**
+
+### ContentFilterResult
+
+- **Type:**`object`
+
+* **`hate`**
+
+  `object`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+  - **`severity` (required)**
+
+    `string`, possible values: `"safe", "low", "medium", "high"`
+
+* **`jailbreak`**
+
+  `object`
+
+  - **`detected` (required)**
+
+    `boolean`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+* **`protected_material_code`**
+
+  `object`
+
+  - **`detected` (required)**
+
+    `boolean`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+* **`protected_material_text`**
+
+  `object`
+
+  - **`detected` (required)**
+
+    `boolean`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+* **`self_harm`**
+
+  `object`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+  - **`severity` (required)**
+
+    `string`, possible values: `"safe", "low", "medium", "high"`
+
+* **`sexual`**
+
+  `object`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+  - **`severity` (required)**
+
+    `string`, possible values: `"safe", "low", "medium", "high"`
+
+* **`violence`**
+
+  `object`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+  - **`severity` (required)**
+
+    `string`, possible values: `"safe", "low", "medium", "high"`
+
+**Example:**
+
+```json
+{
+  "hate": {
+    "filtered": true,
+    "severity": "safe"
+  },
+  "self_harm": {
+    "filtered": true,
+    "severity": "safe"
+  },
+  "sexual": {
+    "filtered": true,
+    "severity": "safe"
+  },
+  "violence": {
+    "filtered": true,
+    "severity": "safe"
+  },
+  "jailbreak": {
+    "filtered": true,
+    "detected": true
+  },
+  "protected_material_text": {
+    "filtered": true,
+    "detected": true
+  },
+  "protected_material_code": {
+    "filtered": true,
+    "detected": true
+  }
+}
+```
+
+### CompletionUsage
+
+- **Type:**`object`
+
+* **`completion_tokens` (required)**
+
+  `integer`
+
+* **`prompt_tokens` (required)**
+
+  `integer`
+
+* **`total_tokens` (required)**
+
+  `integer`
+
+* **`completion_tokens_details`**
+
+  `object`
+
+* **`prompt_tokens_details`**
+
+  `object`
+
+**Example:**
+
+```json
+{
+  "completion_tokens": 0,
+  "completion_tokens_details": {
+    "accepted_prediction_tokens": 0,
+    "audio_tokens": 0,
+    "reasoning_tokens": 0,
+    "rejected_prediction_tokens": 0
+  },
+  "prompt_tokens": 0,
+  "prompt_tokens_details": {
+    "audio_tokens": 0,
+    "cached_tokens": 0
+  },
+  "total_tokens": 0
+}
+```
+
+### ValidationErrorDetails
+
+- **Type:**`object`
+
+* **`fieldErrors` (required)**
+
+  `object`
+
+* **`formErrors` (required)**
+
+  `array`
+
+  **Items:**
+
+  `string`
+
+* **`name` (required)**
+
+  `string`
+
+* **`stack`**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "formErrors": [
+    ""
+  ],
+  "fieldErrors": {
+    "propertyName*": [
+      ""
+    ]
+  }
+}
+```
+
 ### MessageContentPart
 
 - **Type:**
 
 **Example:**
+
+### CreateImageResponse
+
+- **Type:**`object`
+
+* **`created` (required)**
+
+  `integer`
+
+* **`data` (required)**
+
+  `array`
+
+  **Items:**
+
+  - **`b64_json`**
+
+    `string`
+
+  - **`revised_prompt`**
+
+    `string`
+
+  - **`url`**
+
+    `string`
+
+**Example:**
+
+```json
+{
+  "created": -9007199254740991
+}
+```
 
 ### CreateImageRequest
 

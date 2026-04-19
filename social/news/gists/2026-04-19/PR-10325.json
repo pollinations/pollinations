@@ -1,0 +1,34 @@
+{
+  "pr_number": 10325,
+  "title": "[PATCH] Removed the need of a tusp build at runtime ",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10325",
+  "merged_at": "2026-04-19T06:44:39Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "No Build, No Problem",
+    "blurb": "We've removed a broken dev-dependency from our MCP package and streamlined the shipping process. Now it ships directly as an ES module without needing a runtime build!",
+    "summary": "Removed a broken dev-dependency and updated the MCP package to ship directly as an ES module without a runtime build step.",
+    "impact": "Developers using the MCP package will experience a cleaner, build-free installation process.",
+    "keywords": [
+      "mcp",
+      "build",
+      "dependencies",
+      "npm",
+      "esmodule"
+    ],
+    "visual_concept": "The PR is about removing a broken dependency/build step and shipping a clean package. The Nomnom creature eating a broken gear or old code, while Polly the bee holds a clean, glowing green package representing the streamlined npm module.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a broken mechanical gear while Polly the bee mascot hovers nearby holding a glowing lime green (#ecf874) delivery box. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10325.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating a broken mechanical gear while Polly the bee mascot hovers nearby holding a glowing lime green (#ecf874) delivery box. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-19T06:45:28.658677+00:00"
+}

@@ -1,5 +1,6 @@
 import type {
     AccountBalance,
+    AccountKey,
     AccountProfile,
     AudioBinaryResponse,
     AudioGenerateOptions,
@@ -8,6 +9,8 @@ import type {
     ChatOptions,
     ChatResponse,
     ChatStreamChunk,
+    CreatedKey,
+    CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
@@ -370,6 +373,7 @@ export class Pollinations {
             image: options.referenceImage,
             transparent: options.transparent,
             guidance_scale: options.guidanceScale,
+            reasoning: options.reasoning,
         };
 
         const queryString = this.buildQueryParams(params);
@@ -1941,5 +1945,117 @@ export class Pollinations {
 
         if (!response.ok) await this.handleErrorResponse(response);
         return response.json() as Promise<KeyInfo>;
+    }
+
+    // ============================================================================
+    // Account Keys (CRUD)
+    // ============================================================================
+
+    /**
+     * List all API keys on the authenticated account.
+     *
+     * @example
+     * ```ts
+     * const keys = await pollinations.listKeys();
+     * keys.forEach(k => console.log(k.name, k.prefix, k.enabled));
+     * ```
+     */
+    async listKeys(options: RequestOptions = {}): Promise<AccountKey[]> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        const body = (await response.json()) as { data?: AccountKey[] };
+        return body.data || [];
+    }
+
+    /**
+     * Create a new API key. The returned `key` field is ONLY shown once
+     * at creation — store it immediately.
+     *
+     * @example
+     * ```ts
+     * const created = await pollinations.createKey({
+     *   name: 'my-bot',
+     *   type: 'secret',
+     *   pollenBudget: 1000,
+     *   accountPermissions: ['balance', 'usage'],
+     * });
+     * console.log('Save this now — it will not be shown again:', created.key);
+     * ```
+     */
+    async createKey(
+        options: CreateKeyOptions & RequestOptions,
+    ): Promise<CreatedKey> {
+        if (!options.name) {
+            throw new PollinationsError(
+                "name is required when creating a key",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body: Record<string, unknown> = {
+            name: options.name,
+            type: options.type || "secret",
+        };
+        if (options.expiresIn !== undefined) body.expiresIn = options.expiresIn;
+        if (options.allowedModels)
+            body.allowedModels = options.allowedModels;
+        if (options.pollenBudget !== undefined)
+            body.pollenBudget = options.pollenBudget;
+        if (options.accountPermissions)
+            body.accountPermissions = options.accountPermissions;
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<CreatedKey>;
+    }
+
+    /**
+     * Revoke an API key by ID. The id comes from `listKeys()`.
+     *
+     * @example
+     * ```ts
+     * await pollinations.revokeKey('key_abc123');
+     * ```
+     */
+    async revokeKey(
+        id: string,
+        options: RequestOptions = {},
+    ): Promise<void> {
+        if (!id || typeof id !== "string") {
+            throw new PollinationsError(
+                "Key id is required",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys/${encodeURIComponent(id)}`,
+            {
+                method: "DELETE",
+                headers: this.getHeaders(),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
     }
 }

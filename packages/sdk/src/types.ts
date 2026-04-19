@@ -64,6 +64,12 @@ export interface ImageGenerateOptions extends RequestOptions {
     transparent?: boolean;
     /** How closely to follow prompt, 1-20 (higher = stricter) */
     guidanceScale?: number;
+    /**
+     * Enable reasoning mode on supported models (nanobanana-pro,
+     * gptimage family). Silently ignored by models that don't advertise
+     * `reasoning: true`.
+     */
+    reasoning?: boolean;
 }
 
 /** Options for image editing (POST /v1/images/edits) */
@@ -671,6 +677,69 @@ export interface KeyInfo {
     };
     pollenBudget?: number;
     rateLimitEnabled?: boolean;
+}
+
+/** Detailed key record returned by GET /account/keys (list) */
+export interface AccountKey {
+    id: string;
+    name: string;
+    /** First few characters of the key (for identification) */
+    start?: string;
+    prefix: string;
+    type?: string;
+    createdAt: string;
+    expiresAt: string | null;
+    lastRequest: string | null;
+    permissions: {
+        tier?: string[];
+        models?: string[];
+        account?: string[];
+    } | null;
+    metadata: Record<string, unknown> | null;
+    pollenBalance: number | null;
+    enabled: boolean;
+}
+
+/** Key-scope permissions that can be granted on created keys. */
+export type KeyAccountPermission = "balance" | "usage" | "models" | string;
+
+/** Options for POST /account/keys */
+export interface CreateKeyOptions {
+    /** Human-readable name */
+    name: string;
+    /** Key type (default: "secret") */
+    type?: "secret" | "publishable";
+    /** Expiry in seconds from creation */
+    expiresIn?: number;
+    /** Restrict to specific model IDs */
+    allowedModels?: string[];
+    /** Pollen budget cap */
+    pollenBudget?: number;
+    /**
+     * Account permissions to grant (e.g. `["balance", "usage"]`).
+     * Without this, scoped keys cannot read account state.
+     * `"keys"` is auto-stripped server-side.
+     */
+    accountPermissions?: KeyAccountPermission[];
+}
+
+/**
+ * Response from POST /account/keys — includes the raw `key` value which
+ * is ONLY shown at creation time. Store it immediately.
+ */
+export interface CreatedKey {
+    id: string;
+    /** The secret key value. Only returned once at creation. */
+    key: string;
+    name: string;
+    type: string;
+    prefix: string;
+    expiresAt: string | null;
+    permissions: {
+        models?: string[];
+        account?: string[];
+    } | null;
+    pollenBudget: number | null;
 }
 
 // ============================================================================

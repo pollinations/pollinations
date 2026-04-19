@@ -26,7 +26,7 @@ Set an API key in an environment variable (preferred):
 export POLLINATIONS_API_KEY="YOUR_KEY"
 ```
 
-Or create a local `.env` file at `.claude/skills/web-research/.env`:
+Or create a local `.env` file at `packages/skills/web-research/.env`:
 
 ```bash
 POLLINATIONS_API_KEY="YOUR_KEY"
@@ -37,25 +37,25 @@ If `POLLINATIONS_API_KEY` is not set, the script will prompt for a key (input hi
 ## Quick usage
 
 ```bash
-.claude/skills/web-research/scripts/web-research.sh "What is pollinations.ai?" 
+packages/skills/web-research/scripts/web-research.sh "What is pollinations.ai?" 
 ```
 
 Choose a model:
 
 ```bash
-.claude/skills/web-research/scripts/web-research.sh --model perplexity-fast "Fact-check this claim with sources"
+packages/skills/web-research/scripts/web-research.sh --model perplexity-fast "Fact-check this claim with sources"
 ```
 
 Compare multiple models:
 
 ```bash
-.claude/skills/web-research/scripts/web-research.sh --models gemini-search,perplexity-fast,nomnom "Compare answers"
+packages/skills/web-research/scripts/web-research.sh --models gemini-search,perplexity-fast,nomnom "Compare answers"
 ```
 
 Run multi-model in parallel:
 
 ```bash
-.claude/skills/web-research/scripts/web-research.sh --models gemini-search,perplexity-fast --parallel "Compare answers"
+packages/skills/web-research/scripts/web-research.sh --models gemini-search,perplexity-fast --parallel "Compare answers"
 ```
 
 ## Notes

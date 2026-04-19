@@ -17,7 +17,7 @@ VHS records silent terminal video. Polli generates audio. ffmpeg merges. VHS can
 ## Quick start
 
 ```bash
-mkdir -p temp/vhs-demo && cp .claude/skills/polli-video/example/* temp/vhs-demo/
+mkdir -p temp/vhs-demo && cp packages/skills/polli-video/example/* temp/vhs-demo/
 cd temp/vhs-demo
 # Set system default output → BlackHole 2ch (see Pipeline A)
 ./render.sh

@@ -1,0 +1,19 @@
+Draw a pelican riding a bicycle as a single SVG file and save it to output.svg in the current directory.
+
+Requirements:
+- A single standalone SVG file, viewBox roughly 0 0 600 400
+- Must contain: a bicycle (two wheels, frame, handlebars, seat) AND a pelican (body, long beak with pouch, legs, one visible wing) sitting on the seat
+- The pelican's feet should be on the pedals or near them
+- Use only SVG primitives: <circle>, <ellipse>, <rect>, <line>, <path>, <polygon>. No raster images, no external fonts
+- Keep it under ~200 lines
+
+Process (important — do NOT try to dump the entire SVG in turn 1):
+1. First turn: echo a short plan (what coords the wheels go at, where the pelican sits, etc.)
+2. Write a minimal version (just the bicycle) to output.svg using a heredoc
+3. Cat output.svg to verify it parsed cleanly
+4. Add the pelican body + beak in a second heredoc that appends or rewrites
+5. Cat again, inspect
+6. Iterate: fix proportions, add legs/wing/details
+7. Final turn: cat output.svg so the full file is visible in the transcript
+
+If something looks wrong (elements off-canvas, overlapping badly, missing parts), use xmllint --noout output.svg to check validity and fix.

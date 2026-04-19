@@ -1,23 +1,19 @@
 #!/usr/bin/env node
-// Pure pipe agent: llm -> bash -> llm -> bash ...
-//   ./agent.js "goal sentence"
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-
-const system = readFileSync(new URL("PROMPT.md", import.meta.url), "utf8");
-
-const turns = Number(process.env.TURNS ?? 5);
-let history = `# GOAL: ${process.argv[2] ?? "say hello"}`;
-const model = process.env.MODEL ?? "glm";
-
-for (let i = 1; i <= turns; i++) {
-  const cmd = spawnSync("polli", ["gen", "text", "--model", model, "--no-stream", "--system", system],
-    { input: history, encoding: "utf8", stdio: ["pipe", "pipe", "ignore"], timeout: 120_000 }).stdout?.trim() ?? "";
-  if (!cmd) { console.log("[empty reply from model — stopping]"); break; }
-
-  console.log(`\n--- turn ${i} ---\n$ ${cmd}`);
-  const r = spawnSync("bash", ["-c", cmd], { encoding: "utf8" });
-  const buf = (r.stdout ?? "") + (r.stderr ?? "");
-  process.stdout.write(buf.endsWith("\n") ? buf : buf + "\n");
-  history += `\n$ ${cmd}\n${buf}`;
+const src = readFileSync(new URL(import.meta.url), "utf8");
+const sys = `Your reply is piped to bash -c by the script below. One command, no prose.\n${src}`;
+let log = `Goal: ${process.argv[2] ?? "say hello"}`;
+for (let i = 0; i < (process.env.TURNS ?? 5); i++) {
+  const r = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.POLLINATIONS_TOKEN}` },
+    body: JSON.stringify({ model: process.env.MODEL ?? "openai-fast",
+      messages: [{ role: "system", content: sys }, { role: "user", content: log }] }),
+  });
+  const cmd = (await r.json()).choices[0].message.content;
+  const out = spawnSync("bash", ["-c", cmd], { encoding: "utf8" });
+  const buf = (out.stdout ?? "") + (out.stderr ?? "");
+  console.log(`\n$ ${cmd}\n${buf}`);
+  log += `\n$ ${cmd}\n${buf}`;
 }

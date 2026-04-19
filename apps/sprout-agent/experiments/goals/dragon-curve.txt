@@ -1,0 +1,12 @@
+Draw a Heighway dragon curve as pure ASCII art and save it to output.txt in the current directory.
+
+Rules:
+- axiom: FX
+- X -> X+YF+
+- Y -> -FX-Y
+- "+" turns right 90 degrees, "-" turns left 90 degrees
+- iterate about 10-12 times
+
+Render it as ASCII onto a 2D character grid using Python 3 stdlib only. Use "#" or "*" for the curve, "." or " " for empty cells. Target roughly an 80x40 grid — auto-scale the step size so the whole curve fits. Save the final art to output.txt, then cat output.txt so you can see it.
+
+If the first render looks wrong (off-grid, squashed, too small), adjust iterations or grid size and try again.

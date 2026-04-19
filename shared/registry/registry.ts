@@ -58,6 +58,9 @@ export type PriceDefinition = CostDefinition;
 export type ModelId = ImageModelId | TextModelId | AudioModelId | EmbeddingModelId;
 export type ModelName = ImageModelName | TextModelName | AudioModelName | EmbeddingServiceId;
 
+/** Alias kept for backward compatibility with embeddings.ts */
+export type ServiceDefinition<TModelId extends string = ModelId> = ModelDefinition<TModelId>;
+
 export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;

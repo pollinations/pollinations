@@ -520,7 +520,7 @@ const applyCommand = command({
             `📋 Loaded audit report (${report.processedCount} users processed)`,
         );
         console.log(`   🔄 Renamed: ${renamed.length}`);
-        console.log(`   ❌ Deleted (no action): ${deleted.length}`);
+        console.log(`   🚫 To ban:  ${deleted.length}`);
         if (opts.dryRun) console.log(`   Mode: DRY RUN\n`);
         else console.log(`   Mode: LIVE — changes will be applied\n`);
 
@@ -558,6 +558,50 @@ const applyCommand = command({
                         `   📝 Batch ${Math.floor(i / D1_WRITE_BATCH_SIZE) + 1}/${Math.ceil(renamed.length / D1_WRITE_BATCH_SIZE)} done`,
                     );
                 }
+            }
+        }
+
+        // ── Ban deleted GitHub accounts (no deletion from DB) ──
+        if (deleted.length > 0) {
+            console.log(
+                `\n🚫 Banning ${deleted.length} deleted accounts in D1...`,
+            );
+            let banned = 0;
+            let failed = 0;
+            for (let i = 0; i < deleted.length; i += D1_WRITE_BATCH_SIZE) {
+                const batch = deleted.slice(i, i + D1_WRITE_BATCH_SIZE);
+                for (const entry of batch) {
+                    if (opts.dryRun) {
+                        console.log(
+                            `   [dry] Would ban: ${entry.d1Username} (github_id: ${entry.githubId})`,
+                        );
+                    } else {
+                        try {
+                            queryD1(
+                                env,
+                                `UPDATE user SET banned = 1, ban_reason = 'github_account_deleted' WHERE id = '${sanitizeId(entry.userId)}';`,
+                            );
+                            banned++;
+                        } catch {
+                            console.error(
+                                `   ❌ Failed to ban: ${entry.d1Username}`,
+                            );
+                            failed++;
+                        }
+                    }
+                }
+                if (!opts.dryRun) {
+                    const batchNum = Math.floor(i / D1_WRITE_BATCH_SIZE) + 1;
+                    const totalBatches = Math.ceil(
+                        deleted.length / D1_WRITE_BATCH_SIZE,
+                    );
+                    console.log(
+                        `   📝 Batch ${batchNum}/${totalBatches} done (${banned} banned, ${failed} failed)`,
+                    );
+                }
+            }
+            if (!opts.dryRun) {
+                console.log(`   ✅ Banned ${banned} users, ${failed} failures`);
             }
         }
 

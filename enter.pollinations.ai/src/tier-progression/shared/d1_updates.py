@@ -92,3 +92,33 @@ def batch_upgrade_users(
 
     return total_upgraded, total_skipped, failed
 
+
+def ban_deleted_accounts(
+    github_ids: list[int], env: str = "production"
+) -> tuple[int, bool]:
+    """Ban users whose GitHub accounts were deleted."""
+    batch_sql_size = 500
+    total_banned = 0
+    failed = False
+
+    for index in range(0, len(github_ids), batch_sql_size):
+        batch = github_ids[index : index + batch_sql_size]
+        safe_batch = [gid for gid in batch if isinstance(gid, int) and gid > 0]
+        if not safe_batch:
+            continue
+        id_list = ", ".join(str(gid) for gid in safe_batch)
+
+        query = f"""
+            UPDATE user SET banned = 1, ban_reason = 'github_account_deleted'
+            WHERE github_id IN ({id_list})
+            AND (banned = 0 OR banned IS NULL)
+        """
+        result = run_d1_query(query, env)
+        if result is not None:
+            total_banned += len(safe_batch)
+        else:
+            failed = True
+            print(f"   ❌ Ban batch {index // batch_sql_size + 1} failed")
+
+    return total_banned, failed
+

@@ -188,16 +188,20 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p1",
         }),
-    "accounts/fireworks/models/minimax-m2p5": () =>
+    "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p5",
+            model: "accounts/fireworks/models/minimax-m2p7",
         }),
 
     // -- Alibaba DashScope (Qwen) ---------------------------------------------
     "qwen3-coder-next": () =>
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-    "qwen3-vl-plus": () =>
-        createDashScopeModelConfig({ model: "qwen3-vl-plus" }),
+
+    // -- Fireworks AI (Qwen VL) -----------------------------------------------
+    "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
+        }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------
     "qwen3-coder-30b-a3b-instruct": () =>

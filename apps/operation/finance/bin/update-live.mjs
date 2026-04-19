@@ -116,9 +116,9 @@ async function main() {
             const r = await mod.fetchMtd(month, pool);
 
             let newBalance;
-            if (pool.kind === "payg") {
-                // Pay-as-you-go providers (e.g. Alibaba) have no standing
-                // balance. Skip balance tracking entirely.
+            if (pool.kind === "payg" || pool.role === "revenue") {
+                // Pay-as-you-go and revenue pools (e.g. Alibaba, Stripe) have
+                // no standing balance. Skip balance tracking entirely.
                 newBalance = null;
             } else if (
                 r.live_balance ||
@@ -151,8 +151,9 @@ async function main() {
                 `  ${poolName.padEnd(14)} total=$${r.mtd_total_usd.toFixed(2)} credit=$${r.mtd_credit_usd.toFixed(2)} cash=$${r.mtd_cash_usd.toFixed(2)} records=${r.records}`,
             );
             if (newBalance === null) {
+                const kind = pool.role === "revenue" ? "revenue" : "payg";
                 console.log(
-                    `  ${" ".repeat(14)}   (payg — no balance tracked)`,
+                    `  ${" ".repeat(14)}   (${kind} — no balance tracked)`,
                 );
             } else {
                 console.log(

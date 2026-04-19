@@ -64,6 +64,12 @@ export interface ImageGenerateOptions extends RequestOptions {
     transparent?: boolean;
     /** How closely to follow prompt, 1-20 (higher = stricter) */
     guidanceScale?: number;
+    /**
+     * Enable reasoning mode on supported models (nanobanana-pro,
+     * gptimage family). Silently ignored by models that don't advertise
+     * `reasoning: true`.
+     */
+    reasoning?: boolean;
 }
 
 /** Options for image editing (POST /v1/images/edits) */
@@ -668,6 +674,69 @@ export interface KeyInfo {
     rateLimitEnabled?: boolean;
 }
 
+/** Detailed key record returned by GET /account/keys (list) */
+export interface AccountKey {
+    id: string;
+    name: string;
+    /** First few characters of the key (for identification) */
+    start?: string;
+    prefix: string;
+    type?: string;
+    createdAt: string;
+    expiresAt: string | null;
+    lastRequest: string | null;
+    permissions: {
+        tier?: string[];
+        models?: string[];
+        account?: string[];
+    } | null;
+    metadata: Record<string, unknown> | null;
+    pollenBalance: number | null;
+    enabled: boolean;
+}
+
+/** Key-scope permissions that can be granted on created keys. */
+export type KeyAccountPermission = "balance" | "usage" | "models" | string;
+
+/** Options for POST /account/keys */
+export interface CreateKeyOptions {
+    /** Human-readable name */
+    name: string;
+    /** Key type (default: "secret") */
+    type?: "secret" | "publishable";
+    /** Expiry in seconds from creation */
+    expiresIn?: number;
+    /** Restrict to specific model IDs */
+    allowedModels?: string[];
+    /** Pollen budget cap */
+    pollenBudget?: number;
+    /**
+     * Account permissions to grant (e.g. `["balance", "usage"]`).
+     * Without this, scoped keys cannot read account state.
+     * `"keys"` is auto-stripped server-side.
+     */
+    accountPermissions?: KeyAccountPermission[];
+}
+
+/**
+ * Response from POST /account/keys — includes the raw `key` value which
+ * is ONLY shown at creation time. Store it immediately.
+ */
+export interface CreatedKey {
+    id: string;
+    /** The secret key value. Only returned once at creation. */
+    key: string;
+    name: string;
+    type: string;
+    prefix: string;
+    expiresAt: string | null;
+    permissions: {
+        models?: string[];
+        account?: string[];
+    } | null;
+    pollenBudget: number | null;
+}
+
 // ============================================================================
 // Model Information
 // ============================================================================
@@ -703,6 +772,87 @@ export interface ModelInfo {
         audio_input_price?: number;
         audio_output_price?: number;
     };
+}
+
+// ============================================================================
+// Device Flow (OAuth)
+// ============================================================================
+
+/** Raw response from POST /api/device/code */
+export interface DeviceCodeResponse {
+    device_code: string;
+    user_code: string;
+    verification_uri_complete: string;
+    expires_in: number;
+    interval: number;
+}
+
+/** Raw response from POST /api/device/token (polling) */
+export interface DeviceTokenResponse {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+}
+
+/** Options for starting device flow */
+export interface AuthorizeDeviceOptions extends RequestOptions {
+    /** OAuth client ID. Defaults to the public polli CLI client. */
+    clientId?: string;
+    /** Space-separated scope string (default: "generate keys balance usage") */
+    scope?: string;
+}
+
+/**
+ * Handle returned by `authorizeDevice()` — surfaces the user-facing
+ * verification URL/code, and exposes `poll()` to block until approval.
+ */
+export interface DeviceAuthorization {
+    /** Short code the user types in the verification page */
+    userCode: string;
+    /** URL to open in a browser (includes the user code as a query param) */
+    verificationUri: string;
+    /** When the device code expires and polling must stop */
+    expiresAt: Date;
+    /** Block until the user approves. Resolves with an access token or throws. */
+    poll(): Promise<string>;
+}
+
+/** User identity returned by GET /api/device/userinfo */
+export interface UserInfo {
+    sub?: string;
+    name?: string;
+    email?: string;
+    githubUsername?: string;
+    tier?: string;
+    [key: string]: unknown;
+}
+
+// ============================================================================
+// Image Generation (OpenAI-compatible POST /v1/images/generations)
+// ============================================================================
+
+/** Options for POST /v1/images/generations */
+export interface ImageGenerateV1Options extends RequestOptions {
+    /** Image model to use (default: 'zimage') */
+    model?: ImageModel;
+    /** Size string like "1024x1024". Alternative to width + height. */
+    size?: string;
+    /** Image width in pixels (converted to `size` when both dimensions provided) */
+    width?: number;
+    /** Image height in pixels */
+    height?: number;
+    /** Number of images to generate (default: 1) */
+    n?: number;
+    /** Response format (default: server decides — usually b64_json) */
+    responseFormat?: "url" | "b64_json";
+    /** Enable reasoning mode (nanobanana-pro, gptimage family). Silently ignored by other models. */
+    reasoning?: boolean;
+    /** Seed for reproducible generation */
+    seed?: number;
+    /** Output quality */
+    quality?: ImageQuality;
+    /** Negative prompt - what to avoid */
+    negativePrompt?: string;
 }
 
 // ============================================================================

@@ -34,8 +34,7 @@ High-level behavior:
 2. Prioritize users created in the last 8 hours, then process a rolling slice of older users.
 3. Resolve GitHub accounts by immutable `github_id`, not username.
 4. Score GitHub activity through `shared/github_profile.py`.
-5. Ban users whose GitHub accounts were deleted.
-6. Upgrade approved users to `seed`.
+5. Upgrade approved users to `seed`.
 
 This flow is triggered by:
 

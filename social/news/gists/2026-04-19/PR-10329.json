@@ -1,0 +1,34 @@
+{
+  "pr_number": 10329,
+  "title": "Add PollenHours to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10329",
+  "merged_at": "2026-04-19T08:15:20Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "AI video in your pocket",
+    "blurb": "PollenHours just sprouted in the Greenhouse! It's a clever mobile-first AI video pipeline built to run right on your Android device via Termux.",
+    "summary": "Added PollenHours, a mobile-first AI video pipeline built for Termux on Android, to the community apps showcase.",
+    "impact": "The community can now discover and use a new tool for generating AI video directly from their mobile devices.",
+    "keywords": [
+      "community",
+      "app",
+      "video",
+      "android",
+      "termux"
+    ],
+    "visual_concept": "Polly the bee holding a tiny Android smartphone displaying a video play button, standing inside a cozy greenhouse with code-plants. The robot companion looks on excitedly.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot holding a tiny glowing smartphone showing a video play button, standing inside a warm greenhouse filled with lime green (#ecf874) code-plants. A chunky robot with a CRT monitor head peeks over her shoulder in amazement. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10329.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot holding a tiny glowing smartphone showing a video play button, standing inside a warm greenhouse filled with lime green (#ecf874) code-plants. A chunky robot with a CRT monitor head peeks over her shoulder in amazement. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-04-19T08:16:11.768052+00:00",
+  "app_name": "PollenHours",
+  "app_url": "https://aghartavault-ship-it.github.io/PollenHours/"
+}

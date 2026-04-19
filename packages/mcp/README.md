@@ -2,6 +2,16 @@
 
 A Model Context Protocol (MCP) server for pollinations.ai that enables AI assistants to generate images, videos, text, and audio.
 
+[![Install in Cursor](https://img.shields.io/badge/Install%20MCP-Cursor-blue?style=flat-square&logo=cursor)](cursor://anysphere.cursor-deeplink/mcp/install?name=pollinations&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAcG9sbGluYXRpb25zX2FpL21jcCJdfQ==)
+[![npm version](https://img.shields.io/npm/v/@pollinations_ai/mcp.svg?style=flat-square)](https://www.npmjs.com/package/@pollinations_ai/mcp)
+
+**Claude Code:** `claude mcp add pollinations -- npx -y @pollinations_ai/mcp`
+
+**VS Code Copilot:** Add to `.vscode/mcp.json`:
+```json
+{ "servers": { "pollinations": { "command": "npx", "args": ["@pollinations_ai/mcp"] } } }
+```
+
 ## What's New in v2.0
 
 - **New API endpoint**: Uses `gen.pollinations.ai` - the unified pollinations.ai gateway

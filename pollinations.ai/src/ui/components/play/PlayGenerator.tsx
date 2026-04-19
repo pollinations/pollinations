@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../../api.config";
 import { PLAY_PAGE, PLAY_PAGE_NO_TRANSLATE } from "../../../copy/content/play";
-import { LINKS } from "../../../copy/content/socialLinks";
+import { DEV_TOOLS, LINKS } from "../../../copy/content/socialLinks";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { CopyIcon } from "../../assets/CopyIcon";
@@ -847,6 +847,37 @@ export function PlayGenerator({
                             {copy.copiedLabel}
                         </span>
                     )}
+                </Button>
+            </div>
+
+            {/* Build with this */}
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+                <span className="font-headline text-xs font-black text-muted">
+                    {copy.buildWithThisLabel} →
+                </span>
+                <Button
+                    as="a"
+                    href={DEV_TOOLS.colab}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="secondary"
+                    size="sm"
+                    className="bg-accent-light text-dark hover:bg-accent-light/80 hover:text-dark"
+                >
+                    {copy.openInColabButton}
+                    <ExternalLinkIcon className="w-3 h-3 text-dark" />
+                </Button>
+                <Button
+                    as="a"
+                    href="https://stackblitz.com/github/pollinations/pollinations/tree/main/apps/_templates/react"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="secondary"
+                    size="sm"
+                    className="bg-accent-light text-dark hover:bg-accent-light/80 hover:text-dark"
+                >
+                    {copy.openInStackBlitzButton}
+                    <ExternalLinkIcon className="w-3 h-3 text-dark" />
                 </Button>
             </div>
 

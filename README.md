@@ -12,6 +12,14 @@
 
 [Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 
+### Build with Pollinations
+
+[![Open in Bolt](https://img.shields.io/badge/Open%20in-Bolt.new-black?style=flat-square&logo=stackblitz)](https://bolt.new/?prompt=Build%20a%20creative%20AI%20app%20using%20the%20Pollinations%20API%20at%20gen.pollinations.ai.%20Use%20the%20image%20endpoint%20https%3A%2F%2Fgen.pollinations.ai%2Fimage%2F%7Bprompt%7D%20and%20OpenAI-compatible%20text%20endpoint%20at%20https%3A%2F%2Fgen.pollinations.ai%2Fv1%2Fchat%2Fcompletions.%20No%20API%20key%20needed%20for%20basic%20usage.)
+[![Open in Lovable](https://img.shields.io/badge/Open%20in-Lovable-ff69b4?style=flat-square)](https://lovable.dev/?autosubmit=true#prompt=Build%20a%20creative%20AI%20image%20gallery%20app%20using%20the%20Pollinations%20API.%20Use%20https%3A%2F%2Fgen.pollinations.ai%2Fimage%2F%7Bprompt%7D%20for%20image%20generation%20and%20https%3A%2F%2Fgen.pollinations.ai%2Fv1%2Fchat%2Fcompletions%20for%20text.%20No%20API%20key%20needed%20for%20basic%20usage.)
+[![Open in Colab](https://img.shields.io/badge/Open%20in-Colab-F9AB00?style=flat-square&logo=googlecolab)](https://colab.research.google.com/github/pollinations/pollinations/blob/main/notebooks/pollinations_quickstart.ipynb)
+[![Install MCP](https://img.shields.io/badge/Install%20MCP-Cursor-blue?style=flat-square&logo=cursor)](cursor://anysphere.cursor-deeplink/mcp/install?name=pollinations&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAcG9sbGluYXRpb25zX2FpL21jcCJdfQ==)
+[![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-blue?style=flat-square)](https://deepwiki.com/pollinations/pollinations)
+
 </div>
 
 <p align="center"><img src="https://media.pollinations.ai/8d8dcfb9bd9905af" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" height="340" /></p>

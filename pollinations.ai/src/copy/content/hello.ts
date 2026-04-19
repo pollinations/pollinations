@@ -19,6 +19,8 @@ export const HELLO_PAGE = {
     joinDiscordButton: "Join the Discord",
 
     readTheDocsButton: "Read the Docs",
+    tryInColabButton: "Try in Colab",
+    installCursorMcpButton: "Install Cursor MCP",
 
     // How it works section
     howItWorksTitle: "How it works",

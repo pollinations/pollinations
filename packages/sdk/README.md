@@ -4,6 +4,8 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 
 [![npm version](https://img.shields.io/npm/v/@pollinations_ai/sdk.svg)](https://www.npmjs.com/package/@pollinations_ai/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Open in Bolt](https://img.shields.io/badge/Open%20in-Bolt.new-black?style=flat-square&logo=stackblitz)](https://bolt.new/?prompt=Build%20a%20creative%20AI%20app%20using%20the%20%40pollinations_ai%2Fsdk%20npm%20package.%20Install%20it%20with%20npm%20install%20%40pollinations_ai%2Fsdk%20and%20use%20generateImage%20and%20generateText%20functions.%20API%20base%20URL%20is%20gen.pollinations.ai.%20No%20API%20key%20needed%20for%20basic%20usage.)
+[![Open in StackBlitz](https://img.shields.io/badge/Open%20in-StackBlitz-blue?style=flat-square&logo=stackblitz)](https://stackblitz.com/github/pollinations/pollinations/tree/main/apps/_templates/react)
 
 ## Installation
 

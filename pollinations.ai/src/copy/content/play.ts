@@ -102,6 +102,11 @@ export const PLAY_PAGE = {
     fullApiDocsButton: "Full API Docs",
     agentPromptButton: "Agent Prompt",
 
+    // Build with this
+    buildWithThisLabel: "Build with this",
+    openInColabButton: "Open in Colab",
+    openInStackBlitzButton: "Open in StackBlitz",
+
     // Authentication
     authTitle: "Authentication",
     authIntro:

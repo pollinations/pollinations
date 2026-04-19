@@ -52,6 +52,22 @@ export const SOCIAL_LINKS = {
     },
 };
 
+// Developer tool links
+export const DEV_TOOLS = {
+    stackblitzFull: (repo: string) =>
+        `https://stackblitz.com/github/${repo.replace("https://github.com/", "")}`,
+    bolt: (prompt: string) =>
+        `https://bolt.new/?prompt=${encodeURIComponent(prompt)}`,
+    colab: "https://colab.research.google.com/github/pollinations/pollinations/blob/main/notebooks/pollinations_quickstart.ipynb",
+    codespaces: "https://codespaces.new/pollinations/pollinations",
+    gitpod: "https://gitpod.io/#https://github.com/pollinations/pollinations",
+    cursorMcp:
+        "cursor://anysphere.cursor-deeplink/mcp/install?name=pollinations&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40pollinations_ai%2Fmodel-context-protocol%22%5D%7D",
+    llmsTxt: "https://pollinations.ai/llms.txt",
+    boltTemplate:
+        "https://bolt.new/?prompt=Create%20a%20web%20app%20using%20the%20Pollinations.ai%20API%20for%20AI%20image%20and%20text%20generation.%20Use%20https%3A%2F%2Fgen.pollinations.ai%20as%20the%20base%20URL.",
+};
+
 // Additional links (not rendered as social icons)
 export const LINKS = {
     enter: "https://enter.pollinations.ai",

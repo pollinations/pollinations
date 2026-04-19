@@ -1,0 +1,55 @@
+---
+description: Pollinations.ai API reference — use when working with gen.pollinations.ai endpoints, image/text/audio/video generation, or @pollinations packages
+globs: "**/*.{js,jsx,ts,tsx,py,html}"
+alwaysApply: false
+---
+
+# Pollinations.ai API
+
+Base URL: `https://gen.pollinations.ai`
+
+## Endpoints
+
+### Image Generation
+```
+GET /image/{prompt}?model=flux&width=1024&height=1024&seed=42&nologo=true
+POST /image/generate (OpenAI Images API compatible)
+```
+Models: `flux`, `gptimage`, `gptimage-large`, `seedream5`, `nanobanana`, `nanobanana-pro`, `kontext`
+
+### Text Generation (OpenAI-compatible)
+```
+POST /v1/chat/completions
+  {"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}
+GET /text/{prompt}?model=openai
+```
+Models: `openai`, `openai-large`, `claude`, `claude-large`, `gemini`, `gemini-large`, `deepseek`, `grok`, `mistral`, `qwen-coder`
+
+### Audio / TTS
+```
+GET /audio/{text}?voice=nova
+POST /v1/audio/speech (OpenAI TTS compatible)
+```
+
+### Video
+```
+POST /v1/chat/completions with model: "seedance" | "veo"
+```
+
+## Authentication
+- No API key needed for basic usage (rate-limited per IP)
+- `pk_` keys: client-safe, higher rate limits
+- `sk_` keys: server-side, can spend Pollen credits
+- Header: `Authorization: Bearer YOUR_KEY` or query: `?key=YOUR_KEY`
+
+## SDKs
+```bash
+npm install @pollinations_ai/sdk        # JS/TS SDK
+npm install @pollinations/react          # React hooks
+pip install pollinations                 # Python
+```
+
+## Anti-patterns
+- Do NOT use `image.pollinations.ai` or `text.pollinations.ai` directly — use `gen.pollinations.ai`
+- Do NOT hardcode model names — fetch from `/v1/models` or `/image/models`
+- Do NOT store API keys in client-side code — use `pk_` keys for frontend, `sk_` for backend

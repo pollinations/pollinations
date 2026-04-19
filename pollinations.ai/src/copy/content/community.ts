@@ -30,6 +30,11 @@ export const COMMUNITY_PAGE = {
     contributeCard3Title: "Help in Discord",
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
+    contributeCard4Title: "Quick dev setup",
+    contributeCard4Body:
+        "One click to a full dev environment — no local install needed.",
+    openInGitpodButton: "Gitpod",
+    openInCodespacesButton: "Codespaces",
     contributeNotePre: "All activity feeds your tier: ",
     contributeNoteLink: "Seed → Flower",
     contributeNotePost: ". More you do, more compute you get.",

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { HELLO_PAGE } from "../../copy/content/hello";
-import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { DEV_TOOLS, LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useHighlights } from "../../hooks/useHighlights";
 import { usePageCopy } from "../../hooks/usePageCopy";
@@ -95,6 +95,18 @@ function HelloPage() {
                         className="bg-tertiary-strong text-dark"
                     >
                         {pageCopy.readTheDocsButton}
+                        <ExternalLinkIcon className="w-4 h-4 text-dark" />
+                    </Button>
+                    <Button
+                        as="a"
+                        href={DEV_TOOLS.colab}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="secondary"
+                        size="lg"
+                        className="bg-accent-light text-dark"
+                    >
+                        {pageCopy.tryInColabButton}
                         <ExternalLinkIcon className="w-4 h-4 text-dark" />
                     </Button>
                 </div>
@@ -498,6 +510,15 @@ function HelloPage() {
                         >
                             {pageCopy.readTheDocsButton}
                             <ExternalLinkIcon className="w-4 h-4 text-dark" />
+                        </Button>
+                        <Button
+                            as="a"
+                            href={DEV_TOOLS.cursorMcp}
+                            variant="secondary"
+                            size="lg"
+                            className="bg-accent-light text-dark"
+                        >
+                            {pageCopy.installCursorMcpButton}
                         </Button>
                     </div>
                 </div>

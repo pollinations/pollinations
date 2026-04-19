@@ -7,7 +7,7 @@ import {
     badges,
     GENRE_FILTERS,
 } from "../../copy/content/apps";
-import { LINKS } from "../../copy/content/socialLinks";
+import { DEV_TOOLS, LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
 import { useAuth } from "../../hooks/useAuth";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
@@ -199,28 +199,44 @@ function AppCard({ app, copy }: { app: App; copy: typeof APPS_PAGE }) {
                         </div>
                     )}
                     {repoName && (
-                        <a
-                            href={app.repo}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition max-w-[200px]"
-                            title={copy.viewOnGithub.replace(
-                                "{name}",
-                                repoName,
-                            )}
-                        >
-                            <span className="inline-flex items-center gap-1.5 w-full">
-                                <span className="truncate flex-1 min-w-0 text-dark">
-                                    {repoName}
+                        <>
+                            <a
+                                href={app.repo}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex flex-col gap-1 px-2.5 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition max-w-[200px]"
+                                title={copy.viewOnGithub.replace(
+                                    "{name}",
+                                    repoName,
+                                )}
+                            >
+                                <span className="inline-flex items-center gap-1.5 w-full">
+                                    <span className="truncate flex-1 min-w-0 text-dark">
+                                        {repoName}
+                                    </span>
+                                    <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
                                 </span>
-                                <GithubIcon className="w-3 h-3 text-dark opacity-60 flex-shrink-0" />
-                            </span>
-                            {(app.stars || 0) > 0 && (
-                                <span className="text-muted">
-                                    ⭐ {app.stars}
-                                </span>
+                                {(app.stars || 0) > 0 && (
+                                    <span className="text-muted">
+                                        ⭐ {app.stars}
+                                    </span>
+                                )}
+                            </a>
+                            {app.repo?.includes("github.com") && (
+                                <a
+                                    href={DEV_TOOLS.stackblitzFull(app.repo)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition"
+                                    title="Open in StackBlitz"
+                                >
+                                    <span className="text-[10px]">⚡</span>
+                                    <span className="text-muted text-[10px]">
+                                        StackBlitz
+                                    </span>
+                                </a>
                             )}
-                        </a>
+                        </>
                     )}
                     {app.platform && PLATFORM_COPY_KEY[app.platform] && (
                         <Badge variant="muted" className="ml-auto">
@@ -302,7 +318,7 @@ export default function AppsPage() {
                     </Body>
 
                     {/* CTAs */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
                         <div className="flex items-center gap-4 p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
                             <div className="flex-1">
                                 <p className="font-headline text-xs font-black text-dark mb-1">
@@ -344,6 +360,28 @@ export default function AppsPage() {
                                 className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
                             >
                                 {pageCopy.pollenCtaButton}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
+                            </Button>
+                        </div>
+                        <div className="flex items-center gap-4 p-4 bg-accent-light rounded-sub-card border-2 border-dark border-r-4 border-b-4">
+                            <div className="flex-1">
+                                <p className="font-headline text-xs font-black text-dark mb-1">
+                                    {pageCopy.templateCtaTitle}
+                                </p>
+                                <p className="font-body text-sm text-muted">
+                                    {pageCopy.templateCtaDescription}
+                                </p>
+                            </div>
+                            <Button
+                                as="a"
+                                href={DEV_TOOLS.boltTemplate}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                                className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
+                            >
+                                {pageCopy.templateCtaButton}
                                 <ExternalLinkIcon className="w-3 h-3 stroke-charcoal" />
                             </Button>
                         </div>

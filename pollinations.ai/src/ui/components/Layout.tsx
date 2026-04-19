@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { AUTH_COPY } from "../../copy/content/auth";
 import { LAYOUT, LAYOUT_NO_TRANSLATE } from "../../copy/content/layout";
-import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { DEV_TOOLS, LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useAuthState } from "../../hooks/useAuth";
 import { useFooterVisibility } from "../../hooks/useFooterVisibility";
 import { useHeaderVisibility } from "../../hooks/useHeaderVisibility";
@@ -113,6 +113,17 @@ function FooterLinks({
                 >
                     {layoutCopy.copiedLabel}
                 </span>
+            </Button>
+            <Button
+                as="a"
+                href={DEV_TOOLS.llmsTxt}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="iconText"
+                size={null}
+                className={tertiaryBtn}
+            >
+                <span className={labelCls}>{layoutCopy.llmsTxtLink}</span>
             </Button>
         </>
     );

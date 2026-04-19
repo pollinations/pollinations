@@ -21,6 +21,11 @@ export const APPS_PAGE = {
         "Let users sign in with their own Pollinations account.",
     pollenCtaButton: "Learn More",
 
+    // Template CTA
+    templateCtaTitle: "Start from Template",
+    templateCtaDescription: "Scaffold a Pollinations-powered app in one click.",
+    templateCtaButton: "Open in Bolt",
+
     // Badges & tooltips
     pollenBadge: "🏵️ POLLEN",
     pollenTooltip: "Sign in with Pollinations — Pollen covers usage",

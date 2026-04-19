@@ -1,6 +1,6 @@
 import { COPY_CONSTANTS } from "../../copy/constants";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
-import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { DEV_TOOLS, LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
@@ -87,7 +87,7 @@ export default function CommunityPage() {
                         {pageCopy.contributeTitle}
                     </Heading>
                     <Body spacing="comfortable">{pageCopy.contributeBody}</Body>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <a
                             href={LINKS.githubSubmitApp}
                             target="_blank"
@@ -139,6 +139,38 @@ export default function CommunityPage() {
                                 {pageCopy.contributeCard3Body}
                             </Body>
                         </a>
+                        <div className="p-4 bg-accent-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 block">
+                            <Heading
+                                variant="subsection"
+                                as="h3"
+                                spacing="tight"
+                            >
+                                {pageCopy.contributeCard4Title}
+                            </Heading>
+                            <Body size="sm" spacing="none" className="mb-3">
+                                {pageCopy.contributeCard4Body}
+                            </Body>
+                            <div className="flex gap-2">
+                                <a
+                                    href={DEV_TOOLS.gitpod}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition"
+                                >
+                                    {pageCopy.openInGitpodButton}
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                                <a
+                                    href={DEV_TOOLS.codespaces}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono font-medium bg-white hover:bg-white border border-cream hover:border-border rounded-tag transition"
+                                >
+                                    {pageCopy.openInCodespacesButton}
+                                    <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                            </div>
+                        </div>
                     </div>
                     <Body
                         size="sm"

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10326,
+  "title": "fix(ci): remove misrouted .npmrc files blocking npmjs.org publish",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10326",
+  "merged_at": "2026-04-19T07:14:36Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Clearing the npm pipes",
+    "blurb": "Swept away some dusty config files that were confusing our automated package publishers. The pipeline to npm is flowing smoothly again!",
+    "summary": "Removed conflicting package-level .npmrc files to fix automated publishing to the npm registry.",
+    "impact": "Internal CI/CD workflows can now successfully publish the SDK, MCP, and OMPC packages to npm without authentication errors.",
+    "keywords": [
+      "ci",
+      "npm",
+      "publishing",
+      "infrastructure",
+      "packages"
+    ],
+    "visual_concept": "A cute pixel art robot with a monitor head clearing out old dusty folders or routing pipes, while the bee mascot watches happily. The pipes/boxes have 'npm' written on them.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head clearing out dusty old folders from a glowing lime green (#ecf874) pipeline. The cute bee mascot hovers nearby holding a tiny wrench. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'NPM'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-19/PR-10326.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head clearing out dusty old folders from a glowing lime green (#ecf874) pipeline. The cute bee mascot hovers nearby holding a tiny wrench. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'NPM'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-19T07:15:38.095072+00:00"
+}

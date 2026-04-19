@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-04-19",
+  "period_start": "2026-04-12",
+  "period_end": "2026-04-18",
+  "generated_at": "2026-04-19T06:32:36.167679+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-19/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-19/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-19/images/instagram-3.jpg"
+    }
+  ],
+  "text": "29 PRs merged this week. The terminal is officially the new frontend—our `polli` CLI hit v0.1.0 and shipped with a video demo skill. We also did some inference speedruns, migrating models to Fireworks and GH200 so your ideas render before you forget them.\n\nFixed CORS headers so OpenAI SDKs play nice directly from the browser, and the community greenhouse is overflowing with new apps like Neon Runner, Flashlearn, and Ciel AI.\n\nGood week for building. Check the repo to see the code, or just `npm i -g polli`.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #cli #webdev #retroaesthetic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

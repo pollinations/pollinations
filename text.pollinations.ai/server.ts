@@ -9,8 +9,8 @@ import { stream } from "hono/streaming";
 import { getIp } from "../shared/extractFromRequest.js";
 import { logIp } from "../shared/ipLogger.js";
 import {
-    getServiceDefinition,
-    type ServiceId,
+    getModelDefinition,
+    type ModelName,
 } from "../shared/registry/registry.ts";
 import {
     buildUsageHeaders,
@@ -159,9 +159,7 @@ function createExpressLikeRequest(
 function prepareRequestParameters(requestParams: RequestData): RequestData {
     let isAudioModel = false;
     try {
-        const serviceDef = getServiceDefinition(
-            requestParams.model as ServiceId,
-        );
+        const serviceDef = getModelDefinition(requestParams.model as ModelName);
         isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
     } catch {
         // Model not in registry

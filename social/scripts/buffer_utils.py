@@ -59,7 +59,10 @@ mutation CreatePost($input: CreatePostInput!) {
 
 # --- Core helpers ---
 
-def _graphql_request(access_token: str, query: str, variables: Optional[Dict] = None) -> Dict:
+
+def _graphql_request(
+    access_token: str, query: str, variables: Optional[Dict] = None
+) -> Dict:
     """Execute a GraphQL request against the Buffer API."""
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -77,7 +80,9 @@ def _graphql_request(access_token: str, query: str, variables: Optional[Dict] = 
     )
 
     if response.status_code != 200:
-        print(f"Buffer GraphQL HTTP error: {response.status_code} - {response.text[:500]}")
+        print(
+            f"Buffer GraphQL HTTP error: {response.status_code} - {response.text[:500]}"
+        )
         return {"errors": [{"message": f"HTTP {response.status_code}"}]}
 
     result = response.json()
@@ -100,6 +105,7 @@ def get_organization_id(access_token: str) -> Optional[str]:
 
 
 # --- Channel (profile) functions ---
+
 
 def get_buffer_channels(access_token: str) -> List[Dict]:
     """Fetch all Buffer channels for the authenticated user.
@@ -153,11 +159,13 @@ get_profile_by_service = get_channel_by_service
 
 # --- Post creation ---
 
+
 def create_buffer_post(
     access_token: str,
     channel_id: str,
     text: str,
     media: Optional[Dict] = None,
+    metadata: Optional[Dict] = None,
     scheduled_at: Optional[str] = None,
     now: bool = False,
 ) -> Dict:
@@ -168,6 +176,7 @@ def create_buffer_post(
         channel_id: Buffer channel ID to post to
         text: The post text content
         media: Optional media dict with key 'photo' or 'url' containing image URL
+        metadata: Optional per-platform metadata for Buffer GraphQL
         scheduled_at: Optional ISO 8601 timestamp for scheduling
         now: If True, post immediately (shareNow mode)
 
@@ -192,19 +201,18 @@ def create_buffer_post(
     if scheduled_at:
         post_input["dueAt"] = scheduled_at
 
+    if metadata:
+        post_input["metadata"] = metadata
+
     # Map media (REST used media[photo], GraphQL uses assets.images)
     if media:
         photos = media.get("photos")  # list of URLs (for carousel)
         if photos:
-            post_input["assets"] = {
-                "images": [{"url": u} for u in photos]
-            }
+            post_input["assets"] = {"images": [{"url": u} for u in photos]}
         else:
             image_url = media.get("photo") or media.get("url")
             if image_url:
-                post_input["assets"] = {
-                    "images": [{"url": image_url}]
-                }
+                post_input["assets"] = {"images": [{"url": image_url}]}
 
     result = _graphql_request(
         access_token,
@@ -248,6 +256,7 @@ def create_buffer_update(
 
 # --- High-level publish ---
 
+
 def publish_to_buffer(
     access_token: str,
     service: str,
@@ -289,12 +298,13 @@ def publish_to_buffer(
 
 # --- Text formatting helpers (unchanged) ---
 
+
 def format_linkedin_post(
     headline: str,
     body: str,
     hashtags: List[str],
     link: Optional[str] = None,
-    cta: Optional[str] = None
+    cta: Optional[str] = None,
 ) -> str:
     """Format a professional LinkedIn post
 
@@ -333,9 +343,7 @@ def format_linkedin_post(
 
 
 def format_twitter_post(
-    main_text: str,
-    hashtags: List[str],
-    link: Optional[str] = None
+    main_text: str, hashtags: List[str], link: Optional[str] = None
 ) -> str:
     """Format a Twitter/X post
 
@@ -376,6 +384,8 @@ if __name__ == "__main__":
         print("Fetching Buffer channels...")
         channels = get_buffer_channels(token)
         for ch in channels:
-            print(f"  - {ch.get('service')}: {ch.get('displayName')} (id: {ch.get('id')})")
+            print(
+                f"  - {ch.get('service')}: {ch.get('displayName')} (id: {ch.get('id')})"
+            )
     else:
         print("Set BUFFER_ACCESS_TOKEN to test")

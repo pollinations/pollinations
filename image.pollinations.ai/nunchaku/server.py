@@ -1,9 +1,7 @@
 import os
 import sys
-import time
-import uuid
-from typing import List, Dict, Any
-from fastapi import FastAPI, HTTPException, Request, Header, Depends
+from typing import List
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
@@ -26,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 MODEL_CACHE = "model-cache"
-QUANT_MODEL_PATH = "mit-han-lab/svdq-fp4-flux.1-schnell"
+QUANT_MODEL_PATH = "mit-han-lab/svdq-int4-flux.1-schnell"
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
@@ -37,6 +35,7 @@ class ImageRequest(BaseModel):
     safety_checker_adj: float = 0.5  # Controls sensitivity of NSFW detection
 
 pipe = None
+gpu_semaphore = asyncio.Semaphore(1)  # Serialize GPU inference to prevent CUDA hangs
 
 # Function to get public IP address
 def get_public_ip():
@@ -60,10 +59,10 @@ async def send_heartbeat():
                 port = int(public_port)
             else:
                 port = int(os.getenv("PORT", "8765"))
-            url = f"http://{public_ip}:{port}"
+            url = f"https://{public_ip}" if port == 443 else f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
             # Use direct EC2 endpoint to bypass Cloudflare (some io.net IPs are blocked)
-            register_url = os.getenv("REGISTER_URL", "http://3.80.56.235:16384/register")
+            register_url = os.getenv("REGISTER_URL", "http://54.147.14.220:16384/register")
             async with aiohttp.ClientSession() as session:
                 async with session.post(register_url, json={'url': url, 'type': service_type}) as response:
                     if response.status == 200:
@@ -153,7 +152,7 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
         raise ValueError(f"Dimensions too small: {width}x{height}. Minimum allowed is {MIN_DIMENSION}x{MIN_DIMENSION}")
     
     # Cap total pixels to prevent CUDA OOM with quantized models
-    MAX_PIXELS = 1024 * 1024  # 1,048,576 pixels
+    MAX_PIXELS = 900 * 900  # 810,000 pixels — reduced to prevent CUDA hangs on RTX 4090
     start_w = round(width)
     start_h = round(height)
     
@@ -195,11 +194,11 @@ def verify_backend_token(
 ):
     """Verify backend authentication token.
     
-    Requires x-backend-token header validated against PLN_IMAGE_BACKEND_TOKEN env var.
+    Requires x-backend-token header validated against PLN_GPU_TOKEN env var.
     """
-    expected_token = os.getenv("PLN_IMAGE_BACKEND_TOKEN")
+    expected_token = os.getenv("PLN_GPU_TOKEN")
     if not expected_token:
-        logger.warning("PLN_IMAGE_BACKEND_TOKEN not configured - allowing request")
+        logger.warning("PLN_GPU_TOKEN not configured - allowing request")
         return True
     
     if x_backend_token != expected_token:
@@ -229,24 +228,25 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_t
     print(f"Adjusted dimensions: {width}x{height}")
 
     try:
-        with torch.inference_mode():
-            output = pipe(
-                prompt=request.prompts[0],
-                generator=generator,
-                width=width,
-                height=height,
-                num_inference_steps=request.steps,
-            )
+        async with gpu_semaphore:
+            with torch.inference_mode():
+                output = pipe(
+                    prompt=request.prompts[0],
+                    generator=generator,
+                    width=width,
+                    height=height,
+                    num_inference_steps=request.steps,
+                )
 
-        # Check for NSFW content
-        image = output.images[0]
-        concepts, has_nsfw = check_safety([image], request.safety_checker_adj)
-        
-        # Convert image to base64
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format='JPEG', quality=95)
-        img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
-        
+            # Check for NSFW content
+            image = output.images[0]
+            concepts, has_nsfw = check_safety([image], request.safety_checker_adj)
+
+            # Convert image to base64
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='JPEG', quality=95)
+            img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+
         response_content = [{
             "image": img_base64,
             "has_nsfw_concept": has_nsfw[0],
@@ -266,8 +266,10 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_backend_t
         # Exit with non-zero status to trigger systemd restart
         sys.exit(1)
     except Exception as e:
-        # Catch any other unexpected errors (like CUDA kernel assertions) and return 500
-        # instead of crashing the entire server
+        error_msg = str(e).lower()
+        if "out of memory" in error_msg or "cuda error" in error_msg:
+            logger.error(f"CUDA error detected: {str(e)} - Exiting to trigger restart")
+            sys.exit(1)
         logger.error(f"Unexpected error during generation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 

@@ -199,7 +199,7 @@ export function KPITrendTable({ weeklyData, title }) {
             category: "Segments",
             format: "percent",
             tooltip:
-                "% of active users from BYOP apps (secret keys with hostname names, e.g. myapp.com). Matches website BYOP detection.",
+                "% of active users from BYOP apps (detected via app key attribution or hostname heuristic).",
         },
         {
             key: "byopPollenPct",

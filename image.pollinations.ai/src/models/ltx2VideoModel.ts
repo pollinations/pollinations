@@ -9,71 +9,41 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 const logOps = debug("pollinations:ltx2:ops");
 const logError = debug("pollinations:ltx2:error");
 
-// LTX-2 Modal endpoints (myceli-ai workspace)
-const MODAL_BASE_URL = "https://myceli-ai--ltx2-comfyui-api-distilled";
-const ENQUEUE_URL = `${MODAL_BASE_URL}-enqueue.modal.run/`;
-const STATUS_URL = `${MODAL_BASE_URL}-status.modal.run/`;
-const RESULT_URL = `${MODAL_BASE_URL}-result.modal.run/`;
-
-// Modal Proxy Auth Token (from environment)
-const MODAL_TOKEN_ID = process.env.MODAL_LTX2_TOKEN_ID;
-const MODAL_TOKEN_SECRET = process.env.MODAL_LTX2_TOKEN_SECRET;
-
-/**
- * Get Modal auth headers for proxy authentication
- */
-function getModalAuthHeaders(): Record<string, string> {
-    if (!MODAL_TOKEN_ID || !MODAL_TOKEN_SECRET) {
-        throw new Error(
-            "Modal authentication not configured: Missing MODAL_LTX2_TOKEN_ID or MODAL_LTX2_TOKEN_SECRET",
-        );
-    }
-    return {
-        "Modal-Key": MODAL_TOKEN_ID,
-        "Modal-Secret": MODAL_TOKEN_SECRET,
-    };
-}
+// LTX-2 GH200 endpoint (Lambda Labs, patched ComfyUI with two-stage upscaler)
+// Fallback: Vast.ai RTX 5090 instance 33569731
+const LTX2_BASE_URL = process.env.LTX2_BASE_URL || "http://192.222.51.105:8765";
 
 // Polling constants
-const INITIAL_DELAY_MS = 3000; // 3 seconds initial delay
-const POLL_INTERVAL_MS = 3000; // 3 seconds between polls
-const MAX_POLL_ATTEMPTS = 400; // ~20 minutes max (400 * 3s = 1200s)
-const DEFAULT_TIMEOUT_SECS = 1200; // 20 minutes
+const POLL_INTERVAL_MS = 2000;
+const MAX_POLL_ATTEMPTS = 150; // 150 * 2s = 5 minutes max
+const DEFAULT_TIMEOUT_SECS = 300;
+
+// Backend auth headers
+const backendHeaders = (): Record<string, string> => ({
+    ...(process.env.PLN_GPU_TOKEN && {
+        "x-backend-token": process.env.PLN_GPU_TOKEN,
+    }),
+});
 
 /**
  * Convert duration in seconds to frame count for LTX-2
  * LTX-2 requires frame count to be 8n+1 (e.g., 9, 17, 25, ..., 121)
  */
 function durationToFrameCount(durationSeconds: number): number {
-    // 24 FPS - convert seconds to frames
     const targetFrames = Math.round(durationSeconds * 24);
-
-    // Find the nearest valid frame count (8n+1)
-    // Formula: frames = 8n + 1, so n = (frames - 1) / 8
     const n = Math.round((targetFrames - 1) / 8);
     const validFrames = 8 * n + 1;
-
-    // Clamp to reasonable bounds (9 to 241 frames = 0.375s to 10s)
     return Math.max(9, Math.min(241, validFrames));
 }
 
 // Resolution limits
 const DEFAULT_SIZE = 768;
-const MAX_PIXELS = 1024 * 1024; // 1,048,576 pixels max
+const MAX_PIXELS = 1024 * 1024;
 
-/**
- * Round to nearest multiple of 32 (LTX-2 requirement)
- */
 function roundTo32(n: number): number {
     return Math.round(n / 32) * 32;
 }
 
-/**
- * Calculate width and height with resolution limits
- * - Uses unified resolution calculation, then applies LTX-2 specific constraints
- * - Max total pixels: 1024x1024 (1,048,576)
- * - Dimensions must be divisible by 32 for LTX-2
- */
 function calculateDimensions(
     inputWidth?: number,
     inputHeight?: number,
@@ -82,13 +52,10 @@ function calculateDimensions(
     let width: number;
     let height: number;
 
-    // If explicit dimensions provided, use them
     if (inputWidth && inputHeight) {
         width = inputWidth;
         height = inputHeight;
     } else {
-        // Otherwise map aspectRatio to preset dimensions
-        // Note: LTX-2 has MAX_PIXELS constraint (1024x1024), so resolution tiers don't apply
         if (aspectRatio === "16:9") {
             width = 1024;
             height = 576;
@@ -101,7 +68,6 @@ function calculateDimensions(
         }
     }
 
-    // Scale down if total pixels exceed max
     const totalPixels = width * height;
     if (totalPixels > MAX_PIXELS) {
         const scale = Math.sqrt(MAX_PIXELS / totalPixels);
@@ -112,16 +78,12 @@ function calculateDimensions(
         );
     }
 
-    // Round to nearest 32 (LTX-2 requirement) and ensure minimum size
     width = Math.max(256, roundTo32(width));
     height = Math.max(256, roundTo32(height));
 
     return { width, height };
 }
 
-/**
- * Enqueue a video generation job with LTX-2
- */
 async function enqueueLtx2Job(
     prompt: string,
     width: number,
@@ -137,11 +99,11 @@ async function enqueueLtx2Job(
 
     logOps("Enqueuing LTX-2 job:", requestBody);
 
-    const response = await fetch(ENQUEUE_URL, {
+    const response = await fetch(`${LTX2_BASE_URL}/enqueue`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            ...getModalAuthHeaders(),
+            ...backendHeaders(),
         },
         body: JSON.stringify(requestBody),
     });
@@ -164,47 +126,33 @@ async function enqueueLtx2Job(
     return data.prompt_id;
 }
 
-/**
- * Poll LTX-2 status endpoint until job is done
- */
 async function pollLtx2Status(
     promptId: string,
     progress: ProgressManager,
     requestId: string,
 ): Promise<void> {
-    const statusUrl = `${STATUS_URL}?prompt_id=${promptId}`;
-
-    // Initial delay for cold start
-    logOps("Waiting initial delay before polling...");
-    await sleep(INITIAL_DELAY_MS);
+    const statusUrl = `${LTX2_BASE_URL}/status?prompt_id=${promptId}`;
 
     for (let attempt = 1; attempt <= MAX_POLL_ATTEMPTS; attempt++) {
         logOps(`Poll attempt ${attempt}/${MAX_POLL_ATTEMPTS}...`);
 
-        // Update progress (50-90% range during generation)
         const progressPercent =
             50 + Math.min(40, Math.floor((attempt / MAX_POLL_ATTEMPTS) * 40));
-        const statusMessage =
-            attempt === 1
-                ? "Initializing model (may take up to 100s on cold start)..."
-                : `Generating video... (${attempt}/${MAX_POLL_ATTEMPTS})`;
-
         progress.updateBar(
             requestId,
             progressPercent,
             "Processing",
-            statusMessage,
+            `Generating video... (${attempt}/${MAX_POLL_ATTEMPTS})`,
         );
 
         try {
             const response = await fetch(statusUrl, {
-                headers: getModalAuthHeaders(),
+                headers: backendHeaders(),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
                 logError("Status poll error:", response.status, errorText);
-                // Continue polling on non-fatal errors
                 await sleep(POLL_INTERVAL_MS);
                 continue;
             }
@@ -226,13 +174,10 @@ async function pollLtx2Status(
                     500,
                 );
             }
-
-            // Status is "running" or other, continue polling
         } catch (error) {
             if (error instanceof HttpError) {
                 throw error;
             }
-            // Network errors - log and continue polling
             logError("Poll error:", error);
         }
 
@@ -245,21 +190,15 @@ async function pollLtx2Status(
     );
 }
 
-/**
- * Fetch the generated video from result endpoint
- */
 async function fetchLtx2Result(promptId: string): Promise<Buffer> {
-    const resultUrl = `${RESULT_URL}?prompt_id=${promptId}`;
+    const resultUrl = `${LTX2_BASE_URL}/result?prompt_id=${promptId}`;
 
     logOps("Fetching result from:", resultUrl);
 
-    const response = await fetch(resultUrl, {
-        headers: getModalAuthHeaders(),
-    });
+    const response = await fetch(resultUrl, { headers: backendHeaders() });
 
     if (!response.ok) {
         if (response.status === 202) {
-            // Not ready yet - shouldn't happen if polling worked correctly
             throw new HttpError("Video not ready yet", 202);
         }
         const errorText = await response.text();
@@ -270,7 +209,6 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
         );
     }
 
-    // Get the video as buffer
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -283,14 +221,6 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
     return buffer;
 }
 
-/**
- * Generates a video using LTX-2 on Modal
- * @param {string} prompt - The prompt for video generation
- * @param {ImageParams} safeParams - The parameters for video generation
- * @param {ProgressManager} progress - Progress manager for updates
- * @param {string} requestId - Request ID for progress tracking
- * @returns {Promise<VideoGenerationResult>}
- */
 export const callLtx2API = async (
     prompt: string,
     safeParams: ImageParams,
@@ -299,7 +229,6 @@ export const callLtx2API = async (
 ): Promise<VideoGenerationResult> => {
     logOps("Calling LTX-2 API with prompt:", prompt);
 
-    // Update progress
     progress.updateBar(
         requestId,
         35,
@@ -307,7 +236,6 @@ export const callLtx2API = async (
         "Starting LTX-2 video generation...",
     );
 
-    // Calculate video parameters
     const durationSeconds = safeParams.duration || 5;
     const frameCount = durationToFrameCount(durationSeconds);
     const { width, height } = calculateDimensions(
@@ -316,19 +244,14 @@ export const callLtx2API = async (
         safeParams.aspectRatio,
     );
 
-    // Audio is enabled by default for LTX-2 (unless explicitly disabled)
-    const generateAudio = safeParams.audio !== false;
-
     logOps("Video params:", {
         durationSeconds,
         frameCount,
         width,
         height,
         aspectRatio: safeParams.aspectRatio,
-        generateAudio,
     });
 
-    // Step 1: Enqueue the job
     progress.updateBar(
         requestId,
         40,
@@ -338,17 +261,10 @@ export const callLtx2API = async (
 
     const promptId = await enqueueLtx2Job(prompt, width, height, frameCount);
 
-    // Step 2: Poll for completion
-    progress.updateBar(
-        requestId,
-        50,
-        "Processing",
-        "Generating video (may take up to 100s on cold start)...",
-    );
+    progress.updateBar(requestId, 50, "Processing", "Generating video...");
 
     await pollLtx2Status(promptId, progress, requestId);
 
-    // Step 3: Fetch the result
     progress.updateBar(
         requestId,
         90,
@@ -360,7 +276,6 @@ export const callLtx2API = async (
 
     progress.updateBar(requestId, 95, "Success", "Video generation completed");
 
-    // Calculate actual duration based on frame count
     const actualDurationSeconds = frameCount / 24;
 
     return {
@@ -371,10 +286,6 @@ export const callLtx2API = async (
             actualModel: "ltx-2",
             usage: {
                 completionVideoSeconds: actualDurationSeconds,
-                // If audio was generated, track it separately (same duration as video)
-                ...(generateAudio && {
-                    completionAudioSeconds: actualDurationSeconds,
-                }),
             },
         },
     };

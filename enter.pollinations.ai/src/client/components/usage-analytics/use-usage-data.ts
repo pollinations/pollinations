@@ -6,6 +6,7 @@ import type {
     FilterState,
     ModelBreakdown,
 } from "./types";
+import { TIME_RANGE_DAYS } from "./types";
 
 type UsageDataResult = {
     dailyUsage: DailyUsageRecord[];
@@ -31,8 +32,12 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const fetchUsage = useCallback(() => {
         setLoading(true);
         setError(null);
+        const params = new URLSearchParams({
+            days: TIME_RANGE_DAYS[filters.timeRange].toString(),
+            granularity: "api_key",
+        });
 
-        fetch("/api/account/usage/daily")
+        fetch(`/api/account/usage/daily?${params.toString()}`)
             .then((r) => {
                 if (!r.ok)
                     throw new Error(`Failed to fetch usage data: ${r.status}`);
@@ -47,7 +52,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 setDailyUsage([]);
             })
             .finally(() => setLoading(false));
-    }, []);
+    }, [filters.timeRange]);
 
     // Fetch on mount
     useEffect(() => {

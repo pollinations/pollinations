@@ -3,17 +3,17 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");
 
-// bpaigen.com endpoint for Klein 4B
-const BPAI_BASE_URL = "https://bpaigen.com";
-const BPAI_GENERATE_URL = `${BPAI_BASE_URL}/v1/images/generate`;
+// RunPod pod endpoint for Klein 4B (read lazily so dotenv has time to load)
+const getKleinGenerateUrl = () =>
+    `${process.env.KLEIN_URL || "https://pi90tfk3sa9t12-8000.proxy.runpod.net"}/generate`;
+const MAX_INPUT_IMAGES = 10;
 
 /**
- * Calls the Flux Klein API for image generation via bpaigen.com (4B)
+ * Calls the Flux Klein API for image generation via RunPod pod (4B)
  */
 export const callFluxKleinAPI = async (
     prompt: string,
@@ -25,16 +25,123 @@ export const callFluxKleinAPI = async (
         const hasReferenceImages =
             safeParams.image && safeParams.image.length > 0;
 
+        progress.updateBar(
+            requestId,
+            hasReferenceImages ? 25 : 35,
+            "Processing",
+            hasReferenceImages
+                ? `Downloading ${safeParams.image.length} reference image(s)...`
+                : "Generating with Flux Klein (4B)...",
+        );
+
+        // Download and encode reference images if provided
+        let imagesB64: string[] = [];
         if (hasReferenceImages) {
-            return await generateWithBpaiEditing(
-                prompt,
-                safeParams,
-                progress,
+            const imageUrls = (safeParams.image || []).slice(
+                0,
+                MAX_INPUT_IMAGES,
+            );
+            const imageBuffers = await Promise.all(
+                imageUrls.map(async (url) => {
+                    const resp = await fetch(url);
+                    if (!resp.ok) {
+                        throw new HttpError(
+                            `Failed to download reference image: ${resp.status}`,
+                            resp.status,
+                        );
+                    }
+                    return Buffer.from(await resp.arrayBuffer());
+                }),
+            );
+            imagesB64 = imageBuffers.map((buf) => buf.toString("base64"));
+            progress.updateBar(
                 requestId,
+                50,
+                "Processing",
+                "Generating with Flux Klein (4B) editing...",
             );
         }
 
-        return await generateWithBpai(prompt, safeParams, progress, requestId);
+        const body: Record<string, unknown> = {
+            prompts: [prompt],
+            width: safeParams.width || 1024,
+            height: safeParams.height || 1024,
+            ...(safeParams.seed !== undefined && { seed: safeParams.seed }),
+            ...(safeParams.guidance_scale !== undefined && {
+                guidance_scale: safeParams.guidance_scale,
+            }),
+            ...(imagesB64.length > 0 && { images: imagesB64 }),
+        };
+
+        logOps(
+            "Klein request to",
+            getKleinGenerateUrl(),
+            "keys:",
+            Object.keys(body).join(", "),
+        );
+
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+        };
+        const backendToken = process.env.PLN_GPU_TOKEN;
+        if (backendToken) {
+            headers["x-backend-token"] = backendToken;
+        }
+
+        const response = await fetch(getKleinGenerateUrl(), {
+            method: "POST",
+            headers,
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logError(
+                "Klein API failed, status:",
+                response.status,
+                "response:",
+                errorText,
+            );
+            throw new HttpError(
+                `Klein API request failed: ${errorText}`,
+                response.status,
+            );
+        }
+
+        const result = await response.json();
+        const item = Array.isArray(result) ? result[0] : result;
+
+        if (!item?.image) {
+            throw new Error("Klein API returned no image");
+        }
+
+        const imageBuffer = Buffer.from(item.image, "base64");
+        logOps(
+            "Klein generation complete, buffer size:",
+            imageBuffer.length,
+            "seed:",
+            item.seed,
+        );
+
+        progress.updateBar(
+            requestId,
+            90,
+            "Success",
+            "Flux Klein generation completed",
+        );
+
+        return {
+            buffer: imageBuffer,
+            isMature: false,
+            isChild: false,
+            trackingData: {
+                actualModel: "klein",
+                usage: {
+                    completionImageTokens: 1,
+                    totalTokenCount: 1,
+                },
+            },
+        };
     } catch (error) {
         logError("Error calling Flux Klein API:", error);
         if (error instanceof HttpError) {
@@ -44,163 +151,3 @@ export const callFluxKleinAPI = async (
         throw new Error(`Flux Klein API generation failed: ${message}`);
     }
 };
-
-/**
- * Klein 4B text-to-image via bpaigen.com
- */
-async function generateWithBpai(
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<ImageGenerationResult> {
-    logOps("Calling bpaigen.com Klein 4B with prompt:", prompt);
-
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Generating with Flux Klein (4B)...",
-    );
-
-    return await callBpaiApi(prompt, safeParams, requestId, progress, {
-        width: safeParams.width || 1024,
-        height: safeParams.height || 1024,
-    });
-}
-
-/**
- * Klein 4B image editing via bpaigen.com (img2img)
- */
-async function generateWithBpaiEditing(
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<ImageGenerationResult> {
-    logOps(
-        "Using bpaigen.com Klein 4B editing mode with",
-        safeParams.image?.length,
-        "images",
-    );
-
-    progress.updateBar(
-        requestId,
-        35,
-        "Processing",
-        "Downloading reference image...",
-    );
-
-    const imageUrl = safeParams.image?.[0];
-    const { base64 } = await downloadImageAsBase64(imageUrl);
-
-    progress.updateBar(
-        requestId,
-        50,
-        "Processing",
-        "Generating with Flux Klein (4B) editing...",
-    );
-
-    return await callBpaiApi(prompt, safeParams, requestId, progress, {
-        image: base64,
-        strength: 1,
-    });
-}
-
-type BpaiResponse = {
-    status: string;
-    image_url: string;
-    seed: number;
-    job_id: string;
-};
-
-/**
- * Shared helper for bpaigen.com API calls (both generate and edit).
- * Callers pass mode-specific fields via extraBody.
- */
-async function callBpaiApi(
-    prompt: string,
-    safeParams: ImageParams,
-    requestId: string,
-    progress: ProgressManager,
-    extraBody: Record<string, unknown>,
-): Promise<ImageGenerationResult> {
-    const body: Record<string, unknown> = { prompt, ...extraBody };
-
-    if (safeParams.seed !== undefined) {
-        body.seed = safeParams.seed;
-    }
-
-    const password = process.env.BPAI_PASSWORD;
-    if (password) {
-        body.password = password;
-    }
-
-    logOps("bpaigen request body keys:", Object.keys(body).join(", "));
-
-    const response = await fetch(BPAI_GENERATE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError(
-            "bpaigen API failed, status:",
-            response.status,
-            "response:",
-            errorText,
-        );
-        throw new HttpError(
-            `bpaigen API request failed: ${errorText}`,
-            response.status,
-        );
-    }
-
-    const result = (await response.json()) as BpaiResponse;
-
-    if (result.status !== "succeeded") {
-        throw new Error(
-            `bpaigen generation failed with status: ${result.status}`,
-        );
-    }
-
-    logOps("bpaigen job succeeded, downloading from:", result.image_url);
-
-    const imageResponse = await fetch(`${BPAI_BASE_URL}${result.image_url}`);
-    if (!imageResponse.ok) {
-        throw new HttpError(
-            `bpaigen image download failed: ${imageResponse.status}`,
-            imageResponse.status,
-        );
-    }
-
-    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-    logOps(
-        "Downloaded image, buffer size:",
-        imageBuffer.length,
-        "seed:",
-        result.seed,
-    );
-
-    progress.updateBar(
-        requestId,
-        90,
-        "Success",
-        "Flux Klein generation completed",
-    );
-
-    return {
-        buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
-        trackingData: {
-            actualModel: "klein",
-            usage: {
-                completionImageTokens: 1,
-                totalTokenCount: 1,
-            },
-        },
-    };
-}

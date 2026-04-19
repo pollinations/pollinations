@@ -10,6 +10,13 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
+function setPrivateNoStoreHeaders(c: {
+    header: (name: string, value: string) => void;
+}): void {
+    c.header("Cache-Control", "private, no-store, max-age=0");
+    c.header("Pragma", "no-cache");
+}
+
 /**
  * Build updated permissions object based on changes.
  * Returns undefined if no permission fields were provided.
@@ -162,6 +169,7 @@ export const apiKeysRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
+            setPrivateNoStoreHeaders(c);
 
             const keys = await db.query.apikey.findMany({
                 where: eq(schema.apikey.userId, user.id),
@@ -239,34 +247,22 @@ export const apiKeysRoutes = new Hono<Env>()
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
             if (Object.keys(d1Updates).length > 0) {
-                const keyForCache = await db.query.apikey.findFirst({
-                    where: eq(schema.apikey.id, id),
-                });
-
                 await db
                     .update(schema.apikey)
                     .set(d1Updates)
                     .where(eq(schema.apikey.id, id));
-
-                // Invalidate better-auth's KV cache
-                await c.env.KV.delete(`auth:api-key:${id}`);
-
-                if (keyForCache?.key) {
-                    await c.env.KV.delete(`auth:api-key:${keyForCache.key}`);
-                }
             }
 
-            // Fetch updated key to return current state
-            const finalKey = await db.query.apikey.findFirst({
+            const updated = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
 
             return c.json({
-                id: finalKey?.id ?? id,
-                name: finalKey?.name,
-                permissions: finalKey?.permissions,
-                pollenBalance: finalKey?.pollenBalance ?? null,
-                expiresAt: finalKey?.expiresAt ?? null,
+                id: updated?.id ?? id,
+                name: updated?.name,
+                permissions: updated?.permissions,
+                pollenBalance: updated?.pollenBalance ?? null,
+                expiresAt: updated?.expiresAt ?? null,
             });
         },
     )
@@ -310,7 +306,6 @@ export const apiKeysRoutes = new Hono<Env>()
                 metadataUpdate,
                 existingKey.metadata,
             );
-
             return c.json({ id, metadata });
         },
     );

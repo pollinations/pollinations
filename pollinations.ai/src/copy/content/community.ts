@@ -31,7 +31,7 @@ export const COMMUNITY_PAGE = {
     contributeCard3Body:
         "Answer a question, share what you built, help someone get unstuck.",
     contributeNotePre: "All activity feeds your tier: ",
-    contributeNoteLink: "Seed → Flower → Nectar",
+    contributeNoteLink: "Seed → Flower",
     contributeNotePost: ". More you do, more compute you get.",
     learnAboutTiersButton: "Learn about tiers",
 
@@ -159,18 +159,6 @@ export const COMMUNITY_PAGE = {
             url: "https://nebius.com/",
             description:
                 "AI-optimized cloud infrastructure with NVIDIA GPU clusters",
-        },
-        {
-            name: "api.airforce",
-            url: "https://api.airforce/",
-            description:
-                "AI API gateway — alpha models (imagen-4, grok-video, qwen-character)",
-        },
-        {
-            name: "Seraphyn",
-            url: "https://seraphyn.ai/",
-            description:
-                "AI API gateway — community models (gpt-5.4, qwen3-tts)",
         },
     ],
 };

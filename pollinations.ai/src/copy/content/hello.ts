@@ -73,13 +73,8 @@ export const HELLO_PAGE = {
     tierFlowerEmoji: "🌸",
     tierFlowerTitle: "Flower",
     tierFlowerDescription: "Your app is live and getting used.",
-    tierFlowerGrant: "10 pollen / day",
+    tierFlowerGrant: "0.4 pollen / hour",
     tierFlowerPoints: "",
-    tierNectarEmoji: "🍯",
-    tierNectarTitle: "Nectar",
-    tierNectarDescription: "Most active builders.",
-    tierNectarGrant: "20 pollen / day",
-    tierNectarPoints: "",
 
     // Section — What you get
     whatYouGetTitle: "What's inside",
@@ -161,6 +156,12 @@ export const HELLO_PAGE = {
             emoji: "🗺️",
             title: "Discovery",
             description: "A place where people find what you built.",
+        },
+        {
+            emoji: "⌨️",
+            title: "CLI",
+            description:
+                "Generate content and manage your developer account from the terminal.",
         },
     ],
     comingFooterEmoji: "",

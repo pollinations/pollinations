@@ -14,12 +14,16 @@ const VALID_IMAGE_MODELS = [
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: z
-        .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
-        .optional()
-        .default(DEFAULT_IMAGE_MODEL)
+        .preprocess(
+            (val) => (val === "" ? undefined : val),
+            z
+                .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
+                .optional()
+                .default(DEFAULT_IMAGE_MODEL),
+        )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein, imagen-4, grok-imagine. **Video:** veo, seedance, seedance-pro, wan, ltx-2, grok-video. See /image/models for full list.",
+                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan. See /image/models for full list.",
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
@@ -104,9 +108,9 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
     }),
 
     // Video-specific params
-    duration: z.coerce.number().int().min(1).max(10).optional().meta({
+    duration: z.coerce.number().int().min(1).max(30).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `wan`: 2-15s. `ltx-2`: up to ~10s.",
+            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `wan`: 2-15s. `nova-reel`: 6-60s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:
@@ -114,7 +118,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
     }),
     audio: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate audio for the video. Only applies to video models. Note: `wan` and `ltx-2` generate audio regardless of this flag. For `veo`, set to `true` to enable audio.",
+            "Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio.",
     }),
 });
 

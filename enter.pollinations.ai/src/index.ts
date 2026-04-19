@@ -13,6 +13,7 @@ import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { customerRoutes } from "./routes/customer.ts";
+import { deviceRoutes } from "./routes/device.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
@@ -36,6 +37,7 @@ export const api = new Hono<Env>()
     .route("/api-keys", apiKeysRoutes)
     .route("/app-lookup", appLookupRoutes)
     .route("/account", accountRoutes)
+    .route("/device", deviceRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", webhooksCryptoRoutes)
     .route("/webhooks", stripeWebhooksRoutes)
@@ -55,7 +57,7 @@ const app = new Hono<Env>()
         cors({
             origin: "*",
             allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allowHeaders: ["Content-Type", "Authorization"],
+            allowHeaders: [], // reflect Access-Control-Request-Headers (permissive; origin already "*")
             exposeHeaders: ["Content-Length", "Content-Disposition"],
             maxAge: 600,
         }),

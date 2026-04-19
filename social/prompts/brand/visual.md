@@ -82,7 +82,7 @@ The pollinations.ai bee MUST appear in every image, interacting with the scene.
 - Flat corporate vectors or sterile grids
 - Realistic photos
 
-## Image Model: nanobanana-pro (Gemini 3 Pro Image)
+## Image Model: nanobanana-2
 
 - CONTEXTUAL UNDERSTANDING — it gets nuance
 - TEXT IN IMAGES — use simple pixel-style text sparingly

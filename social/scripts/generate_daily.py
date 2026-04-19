@@ -24,6 +24,9 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
 from common import (
+    build_canonical_summary,
+    join_summary_parts,
+    normalize_platform_post,
     load_prompt,
     get_env,
     get_repo_root,
@@ -52,6 +55,7 @@ HIGHLIGHTS_PATH = "social/news/highlights.md"
 
 # ── Highlights ────────────────────────────────────────────────────────
 
+
 def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
     """Read gists for a date and format as a changelog for the highlights prompt.
 
@@ -61,7 +65,8 @@ def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
     gists = read_gists_for_date(date_str)
 
     filtered = [
-        g for g in gists
+        g
+        for g in gists
         if g.get("gist", {}).get("publish_tier") != "none"
         and g.get("gist", {}).get("user_facing", False)
     ]
@@ -81,6 +86,9 @@ def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
             lines.append(f"**Headline:** {ai['headline']}")
         if ai.get("keywords"):
             lines.append(f"**Keywords:** {', '.join(ai['keywords'])}")
+        # Include app link so highlights can reference it
+        if g.get("app_name") and g.get("app_url"):
+            lines.append(f"**App Link:** [{g['app_name']}]({g['app_url']})")
         lines.append("")
 
     return "\n".join(lines), len(filtered)
@@ -89,8 +97,9 @@ def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
 def create_highlights_prompt(news_content: str, news_date: str) -> tuple:
     """Create prompt to extract only the most significant highlights."""
     template = load_prompt("highlights")
-    system_prompt = (template.replace("{news_date}", news_date)
-                     .replace("{news_content}", news_content))
+    system_prompt = template.replace("{news_date}", news_date).replace(
+        "{news_content}", news_content
+    )
 
     return system_prompt, "Generate the highlights now."
 
@@ -99,13 +108,13 @@ def parse_highlights_response(response: str) -> str:
     """Clean up AI response, removing code blocks if present"""
     message = response.strip()
 
-    if message.startswith('```'):
-        lines = message.split('\n')
-        if lines[0].strip() == '```' or lines[0].startswith('```'):
+    if message.startswith("```"):
+        lines = message.split("\n")
+        if lines[0].strip() == "```" or lines[0].startswith("```"):
             lines = lines[1:]
-        if lines and lines[-1].strip() == '```':
+        if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
-        message = '\n'.join(lines)
+        message = "\n".join(lines)
 
     return message.strip()
 
@@ -137,19 +146,22 @@ def generate_highlights(pollinations_token: str, date_str: str) -> str | None:
 
     system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
     ai_response = call_pollinations_api(
-        system_prompt, user_prompt, pollinations_token,
-        temperature=0.3, exit_on_failure=False,
+        system_prompt,
+        user_prompt,
+        pollinations_token,
+        temperature=0.3,
+        exit_on_failure=False,
     )
     if not ai_response:
-        print("  Highlights: AI generation failed")
-        return None
+        print("  FATAL: Highlights AI generation failed")
+        sys.exit(1)
 
     new_highlights = parse_highlights_response(ai_response)
     if not new_highlights.strip():
-        print("  Highlights: empty response from AI")
-        return None
+        print("  FATAL: Highlights AI returned empty content")
+        sys.exit(1)
 
-    print(f"  Highlights: generated new entries")
+    print("  Highlights: generated new entries")
 
     repo_root = get_repo_root()
     highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
@@ -171,6 +183,7 @@ def generate_highlights(pollinations_token: str, date_str: str) -> str | None:
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
+
 def get_target_date(override: Optional[str] = None) -> str:
     """Get the target date (YYYY-MM-DD). Defaults to yesterday UTC."""
     if override:
@@ -179,7 +192,46 @@ def get_target_date(override: Optional[str] = None) -> str:
     return yesterday.strftime("%Y-%m-%d")
 
 
+def build_daily_summary_artifact(
+    summary: Dict, gists: List[Dict], date_str: str, generated_at: str
+) -> Dict:
+    """Build the canonical daily summary stored on the news branch."""
+    arcs = summary.get("arcs") or []
+    one_liner = (summary.get("one_liner") or "").strip()
+    headline = next(
+        (
+            (arc.get("headline") or "").strip()
+            for arc in arcs
+            if (arc.get("headline") or "").strip()
+        ),
+        "",
+    )
+    title = headline or one_liner or f"Updates for {date_str}"
+    arc_summaries = [
+        (arc.get("summary") or "").strip()
+        for arc in arcs[:3]
+        if (arc.get("summary") or "").strip()
+    ]
+    summary_text = join_summary_parts(
+        ([one_liner] if one_liner and one_liner != title else []) + arc_summaries
+    )
+    if not summary_text:
+        summary_text = one_liner or title
+
+    prs = [{"number": gist.get("pr_number"), "date": date_str} for gist in gists]
+    return build_canonical_summary(
+        date=date_str,
+        period_start=date_str,
+        period_end=date_str,
+        title=title,
+        summary=summary_text,
+        prs=prs,
+        generated_at=generated_at,
+    )
+
+
 # ── Step 1: Generate daily summary ──────────────────────────────────
+
 
 def generate_summary(gists: List[Dict], date_str: str, token: str) -> Optional[Dict]:
     """Cluster gists into narrative arcs and produce summary.json."""
@@ -189,17 +241,22 @@ def generate_summary(gists: List[Dict], date_str: str, token: str) -> Optional[D
     gist_lines = []
     for g in gists:
         ai = g.get("gist", {})
-        gist_lines.append(json.dumps({
-            "pr_number": g["pr_number"],
-            "title": g["title"],
-            "author": g["author"],
-            "category": ai.get("category"),
-            "importance": ai.get("importance"),
-            "user_facing": ai.get("user_facing"),
-            "summary": ai.get("summary"),
-            "impact": ai.get("impact"),
-            "keywords": ai.get("keywords"),
-        }, indent=2))
+        gist_lines.append(
+            json.dumps(
+                {
+                    "pr_number": g["pr_number"],
+                    "title": g["title"],
+                    "author": g["author"],
+                    "category": ai.get("category"),
+                    "importance": ai.get("importance"),
+                    "user_facing": ai.get("user_facing"),
+                    "summary": ai.get("summary"),
+                    "impact": ai.get("impact"),
+                    "keywords": ai.get("keywords"),
+                },
+                indent=2,
+            )
+        )
 
     user_prompt = f"""Date: {date_str}
 Number of PRs: {len(gists)}
@@ -208,8 +265,7 @@ PR Gists:
 {chr(10).join(gist_lines)}"""
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
-        temperature=0.3, exit_on_failure=False
+        system_prompt, user_prompt, token, temperature=0.3, exit_on_failure=False
     )
 
     if not response:
@@ -219,20 +275,31 @@ PR Gists:
 
 # ── Step 2: Generate platform posts ─────────────────────────────────
 
+
 def generate_twitter_post(summary: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("twitter", summary, token,
-        "Write a tweet about today's shipped work.", temperature=0.8)
+    return generate_platform_post(
+        "twitter",
+        summary,
+        token,
+        "Write a tweet about today's shipped work.",
+        temperature=0.8,
+    )
+
 
 def generate_instagram_post(summary: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("instagram", summary, token,
-        "Create a cozy pixel art post about these updates.")
+    return generate_platform_post(
+        "instagram", summary, token, "Create a cozy pixel art post about these updates."
+    )
+
 
 def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("reddit", summary, token,
-        "Create a Reddit post for today's update.")
+    return generate_platform_post(
+        "reddit", summary, token, "Create a Reddit post for today's update."
+    )
 
 
 # ── Step 3: Generate platform images ────────────────────────────────
+
 
 def generate_platform_images(
     twitter_post: Optional[Dict],
@@ -253,56 +320,78 @@ def generate_platform_images(
     # Twitter: 1 image
     if twitter_post and twitter_post.get("image_prompt"):
         print("  Generating Twitter image...")
-        img_bytes, _ = generate_image(twitter_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/twitter.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                urls["twitter"].append(url)
-                twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
+        img_bytes, _ = generate_image(
+            twitter_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE
+        )
+        if not img_bytes:
+            print("  FATAL: Daily Twitter image generation failed")
+            sys.exit(1)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/twitter.jpg", branch, github_token, owner, repo
+        )
+        if not url:
+            print("  FATAL: Daily Twitter image commit failed")
+            sys.exit(1)
+        urls["twitter"].append(url)
+        twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
 
     # Instagram: up to 3 images (carousel)
     if instagram_post and instagram_post.get("images"):
         for i, img_info in enumerate(instagram_post["images"][:3]):
             prompt = img_info.get("prompt", "")
             if not prompt:
-                continue
-            print(f"  Generating Instagram image {i+1}...")
+                print(f"  FATAL: Daily Instagram image {i + 1} is missing a prompt")
+                sys.exit(1)
+            print(f"  Generating Instagram image {i + 1}...")
             img_bytes, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, i)
-            if img_bytes:
-                url = commit_image_to_branch(
-                    img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
-                    github_token, owner, repo
-                )
-                if url:
-                    urls["instagram"].append(url)
-                    img_info["url"] = url
+            if not img_bytes:
+                print(f"  FATAL: Daily Instagram image {i + 1} generation failed")
+                sys.exit(1)
+            url = commit_image_to_branch(
+                img_bytes,
+                f"{image_dir}/instagram-{i + 1}.jpg",
+                branch,
+                github_token,
+                owner,
+                repo,
+            )
+            if not url:
+                print(f"  FATAL: Daily Instagram image {i + 1} commit failed")
+                sys.exit(1)
+            urls["instagram"].append(url)
+            img_info["url"] = url
             time.sleep(3)  # Rate limiting
 
     # Reddit: 1 image
     if reddit_post and reddit_post.get("image_prompt"):
         print("  Generating Reddit image...")
-        img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if img_bytes:
-            url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/reddit.jpg", branch,
-                github_token, owner, repo
-            )
-            if url:
-                urls["reddit"].append(url)
-                reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
+        img_bytes, _ = generate_image(
+            reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE
+        )
+        if not img_bytes:
+            print("  FATAL: Daily Reddit image generation failed")
+            sys.exit(1)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/reddit.jpg", branch, github_token, owner, repo
+        )
+        if not url:
+            print("  FATAL: Daily Reddit image commit failed")
+            sys.exit(1)
+        urls["reddit"].append(url)
+        reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
 
     return urls
 
 
 # ── Step 4: Commit to news branch ─────────────────────────────────
 
+
 def commit_daily_to_news(
     date_str: str,
+    summary_artifact: Dict,
     twitter_post: Optional[Dict],
     instagram_post: Optional[Dict],
+    generated_at: str,
     github_token: str,
     owner: str,
     repo: str,
@@ -311,31 +400,68 @@ def commit_daily_to_news(
 ) -> bool:
     """Commit all daily content directly to the news branch. Returns True on success."""
     base_path = f"{DAILY_REL_DIR}/{date_str}"
-    now_iso = datetime.now(timezone.utc).isoformat()
 
     # Generate images (commits them directly to news branch)
     print("\n  Generating platform images...")
     generate_platform_images(
-        twitter_post, instagram_post,
-        date_str, get_env("POLLINATIONS_TOKEN"),
-        github_token, owner, repo, GISTS_BRANCH,
+        twitter_post,
+        instagram_post,
+        date_str,
+        get_env("POLLINATIONS_TOKEN"),
+        github_token,
+        owner,
+        repo,
+        GISTS_BRANCH,
         reddit_post=reddit_post,
     )
 
     # Collect files to commit
-    files_to_commit = []
+    files_to_commit = [(f"{base_path}/summary.json", summary_artifact)]
     if twitter_post:
-        twitter_post.update({"date": date_str, "generated_at": now_iso, "platform": "twitter"})
-        files_to_commit.append((f"{base_path}/twitter.json", twitter_post))
+        files_to_commit.append(
+            (
+                f"{base_path}/twitter.json",
+                normalize_platform_post(
+                    platform="twitter",
+                    scope="daily",
+                    date=date_str,
+                    period_start=date_str,
+                    period_end=date_str,
+                    generated_at=generated_at,
+                    raw_post=twitter_post,
+                ),
+            )
+        )
     if instagram_post:
-        instagram_post.update({
-            "date": date_str, "generated_at": now_iso, "platform": "instagram",
-            "post_type": "carousel" if len(instagram_post.get("images", [])) > 1 else "single",
-        })
-        files_to_commit.append((f"{base_path}/instagram.json", instagram_post))
+        files_to_commit.append(
+            (
+                f"{base_path}/instagram.json",
+                normalize_platform_post(
+                    platform="instagram",
+                    scope="daily",
+                    date=date_str,
+                    period_start=date_str,
+                    period_end=date_str,
+                    generated_at=generated_at,
+                    raw_post=instagram_post,
+                ),
+            )
+        )
     if reddit_post:
-        reddit_post.update({"date": date_str, "generated_at": now_iso, "platform": "reddit"})
-        files_to_commit.append((f"{base_path}/reddit.json", reddit_post))
+        files_to_commit.append(
+            (
+                f"{base_path}/reddit.json",
+                normalize_platform_post(
+                    platform="reddit",
+                    scope="daily",
+                    date=date_str,
+                    period_start=date_str,
+                    period_end=date_str,
+                    generated_at=generated_at,
+                    raw_post=reddit_post,
+                ),
+            )
+        )
     if highlights_content:
         files_to_commit.append(("social/news/highlights.md", highlights_content))
 
@@ -343,12 +469,20 @@ def commit_daily_to_news(
         print("  No files to commit")
         return False
 
-    commit_files_to_branch(files_to_commit, GISTS_BRANCH, github_token, owner, repo, label=f"for {date_str}")
+    commit_files_to_branch(
+        files_to_commit,
+        GISTS_BRANCH,
+        github_token,
+        owner,
+        repo,
+        label=f"for {date_str}",
+    )
     print(f"  Committed {len(files_to_commit)} files to {GISTS_BRANCH} branch")
     return True
 
 
 # ── Main ─────────────────────────────────────────────────────────────
+
 
 def main():
     print("=== Tier 2: Daily Summary Generator ===")
@@ -384,10 +518,16 @@ def main():
         )
         if resp.status_code == 200:
             for file_info in resp.json():
-                if file_info["name"].startswith("PR-") and file_info["name"].endswith(".json"):
-                    content_resp = github_api_request("GET", file_info["url"], headers=headers)
+                if file_info["name"].startswith("PR-") and file_info["name"].endswith(
+                    ".json"
+                ):
+                    content_resp = github_api_request(
+                        "GET", file_info["url"], headers=headers
+                    )
                     if content_resp.status_code == 200:
-                        content = base64.b64decode(content_resp.json()["content"]).decode()
+                        content = base64.b64decode(
+                            content_resp.json()["content"]
+                        ).decode()
                         try:
                             gists.append(json.loads(content))
                         except json.JSONDecodeError:
@@ -400,7 +540,9 @@ def main():
 
     # Filter to daily-tier gists
     daily_gists = filter_daily_gists(gists)
-    print(f"  Found {len(gists)} total gists, {len(daily_gists)} with publish_tier=daily")
+    print(
+        f"  Found {len(gists)} total gists, {len(daily_gists)} with publish_tier=daily"
+    )
 
     if not daily_gists:
         print("  No daily-tier gists. Skipping.")
@@ -408,43 +550,71 @@ def main():
         return
 
     # ── Generate summary ─────────────────────────────────────────────
-    print(f"\n[2/5] Generating daily summary...")
+    print("\n[2/5] Generating daily summary...")
     summary = generate_summary(daily_gists, date_str, pollinations_token)
     if not summary:
         print("  Summary generation failed!")
         sys.exit(1)
     print(f"  {len(summary.get('arcs', []))} arcs: {summary.get('one_liner', '')}")
+    generated_at = datetime.now(timezone.utc).isoformat()
+    summary_artifact = build_daily_summary_artifact(
+        summary, daily_gists, date_str, generated_at
+    )
 
     # ── Generate platform posts ──────────────────────────────────────
-    print(f"\n[3/5] Generating platform posts...")
+    print("\n[3/5] Generating platform posts...")
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(summary, pollinations_token)
-    if twitter_post:
-        tweet = twitter_post.get("tweet", "")
-        print(f"  Twitter: {tweet[:80]}... ({len(tweet)} chars)")
+    if not twitter_post:
+        print("  FATAL: Daily Twitter post generation failed")
+        sys.exit(1)
+    if not twitter_post.get("image_prompt"):
+        print("  FATAL: Daily Twitter post is missing image_prompt")
+        sys.exit(1)
+    tweet = twitter_post.get("tweet", "")
+    print(f"  Twitter: {tweet[:80]}... ({len(tweet)} chars)")
 
     print("  Instagram...")
     instagram_post = generate_instagram_post(summary, pollinations_token)
-    if instagram_post:
-        img_count = len(instagram_post.get("images", []))
-        print(f"  Instagram: {img_count} images")
+    if not instagram_post:
+        print("  FATAL: Daily Instagram post generation failed")
+        sys.exit(1)
+    instagram_images = instagram_post.get("images", [])
+    if not instagram_images:
+        print("  FATAL: Daily Instagram post is missing images")
+        sys.exit(1)
+    if any(not img.get("prompt") for img in instagram_images[:3]):
+        print("  FATAL: Daily Instagram post has an image without a prompt")
+        sys.exit(1)
+    img_count = len(instagram_images)
+    print(f"  Instagram: {img_count} images")
 
     print("  Reddit...")
     reddit_post = generate_reddit_post(summary, pollinations_token)
-    if reddit_post:
-        print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
+    if not reddit_post:
+        print("  FATAL: Daily Reddit post generation failed")
+        sys.exit(1)
+    if not reddit_post.get("image_prompt"):
+        print("  FATAL: Daily Reddit post is missing image_prompt")
+        sys.exit(1)
+    print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
     # ── Generate highlights ──────────────────────────────────────────
-    print(f"\n[4/5] Generating highlights...")
+    print("\n[4/5] Generating highlights...")
     highlights_content = generate_highlights(pollinations_token, date_str)
 
     # ── Commit daily content to news branch ──────────────────────────
-    print(f"\n[5/5] Committing daily content to news branch...")
+    print("\n[5/5] Committing daily content to news branch...")
     success = commit_daily_to_news(
         date_str,
-        twitter_post, instagram_post,
-        github_token, owner, repo,
+        summary_artifact,
+        twitter_post,
+        instagram_post,
+        generated_at,
+        github_token,
+        owner,
+        repo,
         reddit_post=reddit_post,
         highlights_content=highlights_content,
     )

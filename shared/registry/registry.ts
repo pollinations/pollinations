@@ -2,7 +2,7 @@ import { safeRound } from "../utils";
 import {
     AUDIO_SERVICES,
     type AudioModelId,
-    type AudioServiceId,
+    type AudioModelName,
 } from "./audio";
 import {
     EMBEDDING_SERVICES,
@@ -12,9 +12,9 @@ import {
 import {
     IMAGE_SERVICES,
     type ImageModelId,
-    type ImageServiceId,
+    type ImageModelName,
 } from "./image";
-import { TEXT_SERVICES, type TextModelId, type TextServiceId } from "./text";
+import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
 
 const PRECISION = 8;
 
@@ -36,56 +36,34 @@ export type UsageType =
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
 
-// UsageCost is Usage with dollar amounts and a total
+// Dollar amounts per usage type, plus a total cost (what Pollinations pays the provider)
 export type UsageCost = Usage & {
     totalCost: number;
 };
 
-// UsagePrice is Usage with dollar amounts and a total (currently same as cost)
+// Dollar amounts per usage type, plus a total price (what the user is billed)
 export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-// CostDefinition defines conversion rates from usage to dollars
+// Conversion rates (dollars per usage unit) used to compute provider cost
 export type CostDefinition = {
     date: number;
 } & { [K in UsageType]?: number };
 
-// PriceDefinition defines conversion rates for pricing (currently same as cost)
+// Conversion rates used to compute user-facing price; must cover the same
+// usage keys as the cost definition at the same date (enforced at registry build).
 export type PriceDefinition = CostDefinition;
 
-export type ModelDefinition = CostDefinition[];
+export type ModelId = ImageModelId | TextModelId | AudioModelId | EmbeddingModelId;
+export type ModelName = ImageModelName | TextModelName | AudioModelName | EmbeddingServiceId;
 
-// Pre-build MODEL_REGISTRY (modelId -> sorted cost definitions)
-// Uses lowercase keys for case-insensitive lookup (Azure returns lowercase model IDs)
-const MODEL_REGISTRY = Object.fromEntries(
-    Object.values({
-        ...TEXT_SERVICES,
-        ...IMAGE_SERVICES,
-        ...AUDIO_SERVICES,
-        ...EMBEDDING_SERVICES,
-    }).map((service) => [
-        service.modelId.toLowerCase(),
-        sortDefinitions([...service.cost]),
-    ]),
-);
-
-export type ModelId =
-    | ImageModelId
-    | TextModelId
-    | AudioModelId
-    | EmbeddingModelId;
-export type ServiceId =
-    | ImageServiceId
-    | TextServiceId
-    | AudioServiceId
-    | EmbeddingServiceId;
-
-export type ServiceDefinition<TModelId extends string = ModelId> = {
+export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
     provider: string;
     cost: CostDefinition[];
+    price?: PriceDefinition[];
     // User-facing metadata
     description?: string;
     inputModalities?: string[];
@@ -134,145 +112,167 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-// Generate SERVICE_REGISTRY with computed prices from costs
-type ServiceRegistryEntry = ServiceDefinition & {
+type ModelRegistryEntry = ModelDefinition & {
     price: PriceDefinition[];
 };
 
-const SERVICE_REGISTRY = Object.fromEntries(
+function usageKeys(def: CostDefinition): UsageType[] {
+    return Object.keys(def).filter((k): k is UsageType => k !== "date");
+}
+
+/**
+ * When a model defines `price`, each price entry must cover the same usage
+ * keys as the cost entry with the same date — otherwise `calculatePrice` throws
+ * at runtime for any usage type missing a conversion rate.
+ */
+function validatePriceShape(
+    name: string,
+    cost: CostDefinition[],
+    price: PriceDefinition[],
+): void {
+    for (const priceDef of price) {
+        const matchingCost = cost.find((c) => c.date === priceDef.date);
+        if (!matchingCost) {
+            throw new Error(
+                `[registry:${name}] price entry at date=${priceDef.date} has no matching cost entry`,
+            );
+        }
+        const costKeys = new Set(usageKeys(matchingCost));
+        const priceKeysSet = new Set(usageKeys(priceDef));
+        const missing = [...costKeys].filter((k) => !priceKeysSet.has(k));
+        if (missing.length > 0) {
+            throw new Error(
+                `[registry:${name}] price entry at date=${priceDef.date} missing usage keys: ${missing.join(", ")}`,
+            );
+        }
+    }
+}
+
+const MODEL_REGISTRY = Object.fromEntries(
     Object.entries({
         ...TEXT_SERVICES,
         ...IMAGE_SERVICES,
         ...AUDIO_SERVICES,
         ...EMBEDDING_SERVICES,
-    }).map(([name, service]) => [
-        name,
-        {
-            ...service,
-            price: sortDefinitions([...service.cost]),
-        } as ServiceRegistryEntry,
-    ]),
-) as Record<string, ServiceRegistryEntry>;
+    }).map(([name, service]) => {
+        const cost = sortDefinitions([...service.cost]);
+        const explicitPrice = (service as ModelDefinition).price;
+        if (explicitPrice) {
+            validatePriceShape(name, cost, explicitPrice);
+        }
+        const price = sortDefinitions([...(explicitPrice ?? cost)]);
+        return [name, { ...service, cost, price } as ModelRegistryEntry];
+    }),
+) as Record<ModelName, ModelRegistryEntry>;
 
 /**
- * Resolve a service ID from a name or alias
- * @param serviceId - Service name or alias
- * @returns Resolved service ID
- * @throws Error if service ID is not found
+ * Resolve a model name from a canonical name or alias
+ * @param model - Model name or alias
+ * @returns Resolved canonical model name
+ * @throws Error if model is not found
  */
-export function resolveServiceId(serviceId: string): ServiceId {
-    // Check if it's a direct service ID
-    if (SERVICE_REGISTRY[serviceId]) {
-        return serviceId as ServiceId;
+export function resolveModelName(model: string): ModelName {
+    if (MODEL_REGISTRY[model as ModelName]) {
+        return model as ModelName;
     }
-    // Search for alias in services
-    for (const [sid, service] of Object.entries(SERVICE_REGISTRY)) {
-        if (service.aliases.includes(serviceId)) {
-            return sid as ServiceId;
+    for (const [modelName, service] of Object.entries(MODEL_REGISTRY)) {
+        if (service.aliases.includes(model)) {
+            return modelName as ModelName;
         }
     }
     throw new Error(
-        `Invalid service or alias: "${serviceId}". Must be a valid service name or alias.`,
+        `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
     );
 }
 
 /**
- * Check if a model ID exists in the registry
+ * Check if a public model name exists in the registry
  */
-export function isValidModel(modelId: ModelId): modelId is ModelId {
-    return !!MODEL_REGISTRY[modelId.toLowerCase()];
+export function isValidModel(model: ModelName | string): model is ModelName {
+    return !!MODEL_REGISTRY[model as ModelName];
 }
 
 /**
- * Check if a service ID exists in the registry
+ * Get all public model names
  */
-export function isValidService(
-    serviceId: ServiceId | string,
-): serviceId is ServiceId {
-    return !!SERVICE_REGISTRY[serviceId];
+export function getModels(): ModelName[] {
+    return Object.keys(MODEL_REGISTRY) as ModelName[];
 }
 
 /**
- * Get all service IDs
+ * Get text model names
  */
-export function getServices(): ServiceId[] {
-    return Object.keys(SERVICE_REGISTRY) as ServiceId[];
+export function getTextModels(): TextModelName[] {
+    return Object.keys(TEXT_SERVICES) as TextModelName[];
 }
 
 /**
- * Get text service IDs
+ * Get image model names
  */
-export function getTextServices(): ServiceId[] {
-    return Object.keys(TEXT_SERVICES) as ServiceId[];
+export function getImageModels(): ImageModelName[] {
+    return Object.keys(IMAGE_SERVICES) as ImageModelName[];
 }
 
 /**
- * Get image service IDs
+ * Get audio model names
  */
-export function getImageServices(): ServiceId[] {
-    return Object.keys(IMAGE_SERVICES) as ServiceId[];
+export function getAudioModels(): AudioModelName[] {
+    return Object.keys(AUDIO_SERVICES) as AudioModelName[];
 }
 
 /**
- * Get audio service IDs
+ * Get embedding model names (service IDs)
  */
-export function getAudioServices(): ServiceId[] {
-    return Object.keys(AUDIO_SERVICES) as ServiceId[];
+export function getEmbeddingModels(): EmbeddingServiceId[] {
+    return Object.keys(EMBEDDING_SERVICES) as EmbeddingServiceId[];
 }
 
-/** Filter out hidden services */
-function filterVisible(ids: ServiceId[]): ServiceId[] {
-    return ids.filter((id) => !SERVICE_REGISTRY[id]?.hidden);
+function filterVisible<TModelName extends ModelName>(
+    ids: TModelName[],
+): TModelName[] {
+    return ids.filter((id) => !MODEL_REGISTRY[id]?.hidden);
 }
 
-export const getVisibleTextServices = () => filterVisible(getTextServices());
-export const getVisibleImageServices = () => filterVisible(getImageServices());
-export const getVisibleAudioServices = () => filterVisible(getAudioServices());
-
-/**
- * Get embedding service IDs
- */
-export function getEmbeddingServices(): ServiceId[] {
-    return Object.keys(EMBEDDING_SERVICES) as ServiceId[];
-}
-
+export const getVisibleTextModels = () => filterVisible(getTextModels());
+export const getVisibleImageModels = () => filterVisible(getImageModels());
+export const getVisibleAudioModels = () => filterVisible(getAudioModels());
 export const getVisibleEmbeddingServices = () =>
-    filterVisible(getEmbeddingServices());
+    filterVisible(getEmbeddingModels());
 
 /**
- * Get service definition by ID
+ * Get a model definition by public model name
  */
-export function getServiceDefinition(
-    serviceId: ServiceId,
-): ServiceRegistryEntry {
-    return SERVICE_REGISTRY[serviceId];
+export function getModelDefinition(model: ModelName): ModelRegistryEntry {
+    const definition = MODEL_REGISTRY[model];
+    if (!definition) {
+        throw new Error(`Invalid model: "${model}"`);
+    }
+    return definition;
 }
 
 /**
- * Get aliases for a service
+ * Get a service definition by service ID (alias for getModelDefinition, used by embeddings routes)
  */
-export function getServiceAliases(serviceId: ServiceId): readonly string[] {
-    const service = SERVICE_REGISTRY[serviceId];
+export function getServiceDefinition(id: ModelName): ModelRegistryEntry {
+    return getModelDefinition(id);
+}
+
+/**
+ * Get aliases for a model
+ */
+export function getModelAliases(model: ModelName): readonly string[] {
+    const service = MODEL_REGISTRY[model];
     return service?.aliases || [];
 }
 
 /**
- * Get model definition by ID
- */
-export function getModelDefinition(
-    modelId: string,
-): ModelDefinition | undefined {
-    return MODEL_REGISTRY[modelId.toLowerCase() as ModelId];
-}
-
-/**
- * Get active cost definition for a model
+ * Get active cost definition for a public model name
  */
 export function getActiveCostDefinition(
-    modelId: ModelId,
+    model: ModelName,
     date: Date = new Date(),
 ): CostDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[modelId.toLowerCase()];
+    const modelDefinition = MODEL_REGISTRY[model]?.cost;
     if (!modelDefinition) return null;
     for (const definition of modelDefinition) {
         if (definition.date < date.getTime()) return definition;
@@ -281,15 +281,15 @@ export function getActiveCostDefinition(
 }
 
 /**
- * Get active price definition for a service
+ * Get active price definition for a public model name
  */
 export function getActivePriceDefinition(
-    serviceId: ServiceId,
+    model: ModelName,
     date: Date = new Date(),
 ): PriceDefinition | null {
-    const serviceDefinition = SERVICE_REGISTRY[serviceId];
-    if (!serviceDefinition) return null;
-    for (const definition of serviceDefinition.price) {
+    const modelDefinition = MODEL_REGISTRY[model]?.price;
+    if (!modelDefinition) return null;
+    for (const definition of modelDefinition) {
         if (definition.date < date.getTime()) return definition;
     }
     return null;
@@ -298,11 +298,11 @@ export function getActivePriceDefinition(
 /**
  * Calculate cost for a model based on usage
  */
-export function calculateCost(modelId: ModelId, usage: Usage): UsageCost {
-    const costDefinition = getActiveCostDefinition(modelId);
+export function calculateCost(model: ModelName, usage: Usage): UsageCost {
+    const costDefinition = getActiveCostDefinition(model);
     if (!costDefinition)
         throw new Error(
-            `Failed to get current cost for model: ${modelId.toString()}`,
+            `Failed to get current cost for model: ${model.toString()}`,
         );
     const usageCost = convertUsage(usage, costDefinition);
     const totalCost = safeRound(
@@ -316,13 +316,13 @@ export function calculateCost(modelId: ModelId, usage: Usage): UsageCost {
 }
 
 /**
- * Calculate price for a service based on usage
+ * Calculate price for a model based on usage
  */
-export function calculatePrice(serviceId: ServiceId, usage: Usage): UsagePrice {
-    const priceDefinition = getActivePriceDefinition(serviceId);
+export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
+    const priceDefinition = getActivePriceDefinition(model);
     if (!priceDefinition)
         throw new Error(
-            `Failed to get current price for service: ${serviceId.toString()}`,
+            `Failed to get current price for model: ${model.toString()}`,
         );
     const usagePrice = convertUsage(usage, priceDefinition);
     const totalPrice = safeRound(

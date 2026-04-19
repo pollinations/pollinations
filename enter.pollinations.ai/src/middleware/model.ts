@@ -1,7 +1,7 @@
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
-import { resolveServiceId, type ServiceId } from "@shared/registry/registry.ts";
+import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/registry/types.ts";
 import { createMiddleware } from "hono/factory";
@@ -11,17 +11,24 @@ export type ModelVariables = {
     model: {
         /** The model string from the request (before resolution) */
         requested: string;
-        /** The resolved canonical service ID */
-        resolved: ServiceId;
+        /** The resolved canonical model name */
+        resolved: ModelName;
     };
     formData?: FormData;
+};
+
+type ResolveModelOptions = {
+    defaultModel?: string;
 };
 
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
  * Must run before auth and track middlewares.
  */
-export function resolveModel(eventType: EventType) {
+export function resolveModel(
+    eventType: EventType,
+    options?: ResolveModelOptions,
+) {
     return createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
@@ -51,20 +58,21 @@ export function resolveModel(eventType: EventType) {
 
         // Apply default based on event type
         const defaultModel =
-            eventType === "generate.text"
+            options?.defaultModel ||
+            (eventType === "generate.text"
                 ? DEFAULT_TEXT_MODEL
                 : eventType === "generate.audio"
                   ? DEFAULT_AUDIO_MODEL
                   : eventType === "generate.embedding"
                     ? DEFAULT_EMBEDDING_MODEL
-                    : DEFAULT_IMAGE_MODEL;
+                    : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
 
-        // Resolve alias to canonical service ID
+        // Resolve alias to canonical model name
         // If resolution fails, throw a 400 error with the original error message
-        let resolved: ServiceId;
+        let resolved: ModelName;
         try {
-            resolved = resolveServiceId(model);
+            resolved = resolveModelName(model);
         } catch (error) {
             throw new HTTPException(400, {
                 message:

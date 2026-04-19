@@ -2,12 +2,10 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
+import { getPollenPack } from "@/pollen-packs.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
-
-// BETA PROMOTION: Double all pack purchases (remove after beta)
-const BETA_MULTIPLIER = 2;
 
 interface StripeEventData {
     eventType: string;
@@ -23,13 +21,15 @@ interface StripeEventData {
     payload: Stripe.Event;
 }
 
+const LEGACY_BETA_MULTIPLIER = 2;
+
 async function sendStripeEventToTinybird(
     env: CloudflareBindings,
     data: StripeEventData,
 ): Promise<void> {
     const e = env as unknown as Record<string, string>;
     const tinybirdUrl = e.TINYBIRD_STRIPE_INGEST_URL;
-    const tinybirdToken = e.TINYBIRD_STRIPE_INGEST_TOKEN;
+    const tinybirdToken = e.TINYBIRD_INGEST_TOKEN;
 
     if (!tinybirdUrl || !tinybirdToken) {
         console.log("Tinybird Stripe ingest not configured, skipping");
@@ -75,7 +75,7 @@ async function sendStripeEventToTinybird(
 /**
  * Handle successful checkout session completion
  * Credits pollen to user's packBalance
- * Pollen amount is derived from payment amount ($1 = 1 pollen)
+ * Pollen amount is derived from the selected pack metadata.
  */
 const handleCheckoutSessionCompleted = async (
     session: Stripe.Checkout.Session,
@@ -89,18 +89,40 @@ const handleCheckoutSessionCompleted = async (
     }
 
     const userId = metadata.userId;
-
-    // Derive pollen from product price ($1 = 1 pollen)
-    // Use amount_subtotal (before tax) not amount_total (includes tax)
-    // This ensures customers get pollen based on product price, not tax
     const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
+    const pack = metadata.packAmount
+        ? getPollenPack(metadata.packAmount)
+        : undefined;
 
     if (amountPaid <= 0) {
         console.error("Invalid payment amount:", session.amount_total);
         return { success: false, message: "Invalid payment amount" };
     }
 
-    const creditsToAdd = amountPaid * BETA_MULTIPLIER;
+    if (!pack && metadata.packAmount) {
+        console.error("Missing or invalid packAmount in checkout session:", {
+            sessionId: session.id,
+            packAmount: metadata.packAmount,
+        });
+        return {
+            success: false,
+            message: "Missing or invalid pack metadata",
+        };
+    }
+
+    const creditsToAdd = pack
+        ? pack.pollenGrant
+        : amountPaid * LEGACY_BETA_MULTIPLIER;
+
+    if (!pack) {
+        console.warn(
+            "Legacy Stripe checkout session missing packAmount; applying 2x fallback",
+            {
+                sessionId: session.id,
+                amountPaid,
+            },
+        );
+    }
 
     const db = drizzle(env.DB);
 
@@ -125,7 +147,9 @@ const handleCheckoutSessionCompleted = async (
         .where(eq(userTable.id, userId));
 
     console.log(
-        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (paid: $${amountPaid}, session: ${session.id})`,
+        pack
+            ? `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: $${amountPaid}, session: ${session.id})`
+            : `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (legacy fallback, paid: $${amountPaid}, session: ${session.id})`,
     );
 
     return {

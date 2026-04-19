@@ -5,14 +5,16 @@ Triggered when a post PR is merged
 """
 
 import os
-import json
 import time
 import requests
 import yaml
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 
-from common import get_env
+from common import (
+    LINKEDIN_MAX_CHARS,
+    get_post_image_urls,
+)
 from buffer_utils import (
     get_channel_by_service,
     create_buffer_post,
@@ -41,7 +43,9 @@ def verify_image_urls(urls: list, max_retries: int = 6, delay: int = 10) -> bool
             print(f"All {len(urls)} image URL(s) verified accessible")
             return True
         if attempt < max_retries - 1:
-            print(f"Image URL not yet accessible (attempt {attempt + 1}/{max_retries}), waiting {delay}s...")
+            print(
+                f"Image URL not yet accessible (attempt {attempt + 1}/{max_retries}), waiting {delay}s..."
+            )
             time.sleep(delay)
     print(f"Warning: Image URLs not accessible after {max_retries} attempts")
     return False
@@ -94,6 +98,7 @@ def create_buffer_post_with_retry(
     channel_id: str,
     text: str,
     media: Optional[dict] = None,
+    metadata: Optional[dict] = None,
     scheduled_at: Optional[str] = None,
 ) -> dict:
     """Create a Buffer post with retry logic for rate limits.
@@ -106,6 +111,7 @@ def create_buffer_post_with_retry(
             channel_id=channel_id,
             text=text,
             media=media,
+            metadata=metadata,
             scheduled_at=scheduled_at,
             now=not scheduled_at,
         )
@@ -117,7 +123,9 @@ def create_buffer_post_with_retry(
         # Retry on rate limit errors
         if "limit" in error.lower() or "rate" in error.lower():
             if attempt < MAX_RETRIES - 1:
-                print(f"Rate limited, waiting {RETRY_DELAY}s before retry {attempt + 2}/{MAX_RETRIES}...")
+                print(
+                    f"Rate limited, waiting {RETRY_DELAY}s before retry {attempt + 2}/{MAX_RETRIES}..."
+                )
                 time.sleep(RETRY_DELAY)
                 continue
 
@@ -133,27 +141,28 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
     if not channel:
         return False
 
-    # Get the full post text
-    text = post_data.get("full_post", "")
+    text = (post_data.get("text") or "").strip()
     if not text:
-        # Build from parts
-        text = post_data.get("hook", "") + "\n\n" + post_data.get("body", "")
-        if post_data.get("cta"):
-            text += "\n\n" + post_data["cta"]
-        hashtags = post_data.get("hashtags", [])
-        if hashtags:
-            text += "\n\n" + " ".join(hashtags[:5])
+        print("Failed to publish: LinkedIn post text is empty")
+        return False
+
+    char_count = len(text)
+    if char_count > LINKEDIN_MAX_CHARS:
+        print(
+            f"Failed to publish: LinkedIn post is {char_count} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
+        )
+        return False
 
     print(f"Publishing to LinkedIn ({channel.get('displayName', 'unknown')})...")
-    print(f"Post preview ({len(text)} chars):")
+    print(f"Post preview ({char_count} chars):")
     print(f"---\n{text[:500]}{'...' if len(text) > 500 else ''}\n---")
 
     # Get image URL if available
     media = None
-    image_data = post_data.get("image")
-    if image_data and image_data.get("url"):
-        media = {"photo": image_data["url"]}
-        print(f"Including image: {image_data['url'][:100]}...")
+    image_urls = get_post_image_urls(post_data)
+    if image_urls:
+        media = {"photo": image_urls[0]}
+        print(f"Including image: {image_urls[0][:100]}...")
 
     # Verify image URLs are accessible (CDN propagation)
     if media:
@@ -171,7 +180,9 @@ def publish_linkedin_post(post_data: dict, access_token: str) -> bool:
     )
 
     if result.get("success"):
-        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to LinkedIn!")
+        print(
+            f"Successfully {'scheduled' if scheduled_at else 'published'} to LinkedIn!"
+        )
         return True
     else:
         print(f"Failed to publish: {result.get('error', 'Unknown error')}")
@@ -187,8 +198,10 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
     if not channel:
         return False
 
-    # Get the tweet text
-    text = post_data.get("full_tweet", post_data.get("tweet", ""))
+    text = (post_data.get("text") or "").strip()
+    if not text:
+        print("Failed to publish: Twitter/X post text is empty")
+        return False
 
     # Ensure under 280 chars
     if len(text) > 280:
@@ -201,10 +214,10 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
 
     # Get image URL if available
     media = None
-    image_data = post_data.get("image")
-    if image_data and image_data.get("url"):
-        media = {"photo": image_data["url"]}
-        print(f"Including image: {image_data['url'][:100]}...")
+    image_urls = get_post_image_urls(post_data)
+    if image_urls:
+        media = {"photo": image_urls[0]}
+        print(f"Including image: {image_urls[0][:100]}...")
 
     # Verify image URLs are accessible (CDN propagation)
     if media:
@@ -222,7 +235,9 @@ def publish_twitter_post(post_data: dict, access_token: str) -> bool:
     )
 
     if result.get("success"):
-        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to Twitter/X!")
+        print(
+            f"Successfully {'scheduled' if scheduled_at else 'published'} to Twitter/X!"
+        )
         return True
     else:
         print(f"Failed to publish: {result.get('error', 'Unknown error')}")
@@ -235,12 +250,10 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
     if not channel:
         return False
 
-    # Build caption from caption + hashtags
-    caption = post_data.get("caption", "")
-    hashtags = post_data.get("hashtags", [])
-    text = caption
-    if hashtags:
-        text += "\n\n" + " ".join(hashtags)
+    text = (post_data.get("text") or "").strip()
+    if not text:
+        print("Failed to publish: Instagram caption is empty")
+        return False
 
     # Instagram caption limit is 2200 chars
     if len(text) > 2200:
@@ -252,11 +265,26 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
 
     # Get image URLs from images array
     media = None
-    images = post_data.get("images", [])
-    image_urls = [img.get("url") for img in images if img.get("url")]
+    image_urls = get_post_image_urls(post_data)
     if image_urls:
         media = {"photos": image_urls}
         print(f"Including {len(image_urls)} image(s)")
+
+    metadata_block = post_data.get("metadata") or {}
+    stored_post_type = metadata_block.get("post_type")
+    if stored_post_type == "carousel" or len(image_urls) > 1:
+        instagram_type = "carousel"
+    else:
+        instagram_type = "post"
+    # Verified against Buffer GraphQL introspection: InstagramPostMetadataInput.type uses PostType,
+    # and PostType includes "post", "story", "reel", and "carousel".
+    metadata = {
+        "instagram": {
+            "type": instagram_type,
+            "shouldShareToFeed": True,
+        }
+    }
+    print(f"Instagram post type: {instagram_type}")
 
     # Verify image URLs are accessible (CDN propagation)
     if image_urls:
@@ -270,11 +298,14 @@ def publish_instagram_post(post_data: dict, access_token: str) -> bool:
         channel_id=channel["id"],
         text=text,
         media=media,
+        metadata=metadata,
         scheduled_at=scheduled_at,
     )
 
     if result.get("success"):
-        print(f"Successfully {'scheduled' if scheduled_at else 'published'} to Instagram!")
+        print(
+            f"Successfully {'scheduled' if scheduled_at else 'published'} to Instagram!"
+        )
         return True
     else:
         print(f"Failed to publish: {result.get('error', 'Unknown error')}")
@@ -288,18 +319,16 @@ def add_pr_comment(github_token: str, repo: str, pr_number: int, message: str):
 
     headers = {
         "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {github_token}"
+        "Authorization": f"Bearer {github_token}",
     }
 
     response = requests.post(
         f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments",
         headers=headers,
-        json={"body": message}
+        json={"body": message},
     )
 
     if response.status_code in [200, 201]:
         print(f"Added comment to PR #{pr_number}")
     else:
         print(f"Warning: Could not add PR comment: {response.status_code}")
-
-

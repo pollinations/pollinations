@@ -25,56 +25,10 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
+import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import type { Env } from "../env.ts";
 
 const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
-
-/**
- * Parse MP4/M4A container to extract exact duration from the `mvhd` atom.
- * Returns duration in seconds, or null if the atom isn't found.
- *
- * mvhd layout (after the 4-byte "mvhd" tag):
- *   - 1 byte version (0 or 1)
- *   - 3 bytes flags
- *   - version 0: 4B created, 4B modified, 4B timescale, 4B duration
- *   - version 1: 8B created, 8B modified, 4B timescale, 8B duration
- */
-function parseMp4Duration(buffer: ArrayBuffer): number | null {
-    const view = new DataView(buffer);
-    const bytes = new Uint8Array(buffer);
-
-    // Find "mvhd" marker
-    const mvhd = [0x6d, 0x76, 0x68, 0x64]; // "mvhd"
-    let offset = -1;
-    for (let i = 0; i < bytes.length - 28; i++) {
-        if (
-            bytes[i] === mvhd[0] &&
-            bytes[i + 1] === mvhd[1] &&
-            bytes[i + 2] === mvhd[2] &&
-            bytes[i + 3] === mvhd[3]
-        ) {
-            offset = i;
-            break;
-        }
-    }
-    if (offset === -1) return null;
-
-    const version = bytes[offset + 4];
-    let timescale: number;
-    let duration: number;
-
-    if (version === 0) {
-        timescale = view.getUint32(offset + 16);
-        duration = view.getUint32(offset + 20);
-    } else {
-        timescale = view.getUint32(offset + 24);
-        // Read 64-bit duration — for practical music lengths, low 32 bits suffice
-        duration = Number(view.getBigUint64(offset + 28));
-    }
-
-    if (timescale === 0) return null;
-    return duration / timescale;
-}
 
 const CreateSpeechRequestSchema = z
     .object({
@@ -104,13 +58,19 @@ const CreateSpeechRequestSchema = z
             example: 1.0,
         }),
         duration: z.number().min(3).max(300).optional().meta({
-            description: "Music duration in seconds, 3-300 (elevenmusic only)",
+            description:
+                "Music duration in seconds, 3-300 (elevenmusic/acestep)",
             example: 30,
         }),
         instrumental: z.boolean().optional().meta({
             description:
                 "If true, guarantees instrumental output (elevenmusic only)",
             example: false,
+        }),
+        style: z.string().optional().meta({
+            description:
+                "Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.",
+            example: "brazilian berimbau instrumental",
         }),
     })
     .meta({ $id: "CreateSpeechRequest" });
@@ -421,9 +381,8 @@ export async function generateMusic(opts: {
 
     // Buffer response and extract duration
     const audioBuffer = await response.arrayBuffer();
-    // Try MP4 header parsing first, fall back to MP3 byte-size estimate
-    const estimatedDuration =
-        parseMp4Duration(audioBuffer) ?? audioBuffer.byteLength / 16000;
+    // MP3 only — parseMp4Duration falsely matches random bytes in compressed audio
+    const estimatedDuration = audioBuffer.byteLength / 16000;
 
     const usageHeaders = buildUsageHeaders(
         "elevenmusic",
@@ -444,23 +403,16 @@ export async function generateMusic(opts: {
     });
 }
 
-/**
- * Generate music via Suno (api.airforce).
- * Calls the airforce images/generations endpoint with SSE, downloads the MP4 result.
- * Falls back to suno-v4.5 if suno-v5 fails.
- */
-export async function generateSunoMusic(opts: {
+export async function generateAceStepMusic(opts: {
     prompt: string;
-    apiKey: string;
+    style?: string;
+    durationSeconds?: number;
+    serviceUrl: string;
+    serviceToken: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, apiKey, log } = opts;
-
-    if (!apiKey) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "Suno music service is not configured (missing API key)",
-        });
-    }
+    const { prompt, style, serviceUrl, serviceToken, log } = opts;
+    const duration = opts.durationSeconds ?? 15;
 
     if (prompt.length > 10000) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -468,244 +420,130 @@ export async function generateSunoMusic(opts: {
         });
     }
 
-    const models = ["suno-v5", "suno-v4.5"];
+    log.info(
+        "ACE-Step request: chars={chars}, duration={duration}, style={style}",
+        { chars: prompt.length, duration, style: style ?? "(auto)" },
+    );
 
-    for (const model of models) {
-        try {
-            log.info("Suno request: model={model}, chars={chars}", {
-                model,
-                chars: prompt.length,
+    const authHeaders = { Authorization: `Bearer ${serviceToken}` };
+
+    const submitResponse = await fetch(`${serviceUrl}/release_task`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({
+            prompt: style ?? "",
+            lyrics: prompt,
+            audio_duration: duration,
+            batch_size: 1,
+            thinking: true,
+            audio_format: "mp3",
+        }),
+    });
+
+    if (!submitResponse.ok) {
+        const errorText = await submitResponse.text();
+        log.warn("ACE-Step submit error {status}: {body}", {
+            status: submitResponse.status,
+            body: errorText,
+        });
+        throw new UpstreamError(submitResponse.status as ContentfulStatusCode, {
+            message: errorText || getDefaultErrorMessage(submitResponse.status),
+        });
+    }
+
+    const submitData = (await submitResponse.json()) as {
+        data?: { task_id?: string };
+    };
+    const taskId = submitData?.data?.task_id;
+    if (!taskId) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "ACE-Step did not return a task_id",
+        });
+    }
+
+    // Poll until done (status 1=success, 2=failed)
+    // CF Workers have wall-clock limits; cap at 120s (typical gen is 8-12s)
+    const maxPollTime = 120_000;
+    const pollInterval = 2_000;
+    const startTime = Date.now();
+    let audioPath: string | undefined;
+    let consecutiveErrors = 0;
+
+    while (Date.now() - startTime < maxPollTime) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+
+        const pollResponse = await fetch(`${serviceUrl}/query_result`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...authHeaders },
+            body: JSON.stringify({ task_id_list: [taskId] }),
+        });
+
+        if (!pollResponse.ok) {
+            if (++consecutiveErrors >= 3) {
+                throw new UpstreamError(502 as ContentfulStatusCode, {
+                    message: `ACE-Step polling failed: ${pollResponse.status}`,
+                });
+            }
+            continue;
+        }
+        consecutiveErrors = 0;
+
+        const pollData = (await pollResponse.json()) as {
+            data?: Array<{ task_id: string; status: number; result?: string }>;
+        };
+        const task = pollData?.data?.[0];
+        if (!task) continue;
+
+        if (task.status === 2) {
+            throw new UpstreamError(500 as ContentfulStatusCode, {
+                message: "ACE-Step generation failed",
             });
+        }
 
-            const response = await fetch(
-                "https://api.airforce/v1/images/generations",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify({
-                        model,
-                        prompt,
-                        n: 1,
-                        sse: true,
-                        response_format: "url",
-                    }),
-                },
-            );
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                log.warn("Suno {model} error {status}: {body}", {
-                    model,
-                    status: response.status,
-                    body: errorText,
-                });
-                if (model !== models[models.length - 1]) continue;
-                throw new UpstreamError(remapUpstreamStatus(response.status), {
-                    message:
-                        errorText || getDefaultErrorMessage(response.status),
-                });
-            }
-
-            // Parse SSE response to find the result URL
-            const text = await response.text();
-            let resultUrl: string | undefined;
-
-            for (const line of text.split("\n")) {
-                const trimmed = line.trim();
-                if (
-                    !trimmed.startsWith("data: ") ||
-                    trimmed === "data: [DONE]" ||
-                    trimmed === "data: : keepalive"
-                ) {
-                    continue;
-                }
-                try {
-                    const parsed = JSON.parse(trimmed.slice(6)) as {
-                        data?: Array<{ url?: string }>;
-                        error?: string;
-                    };
-                    if (parsed.error) {
-                        throw new Error(parsed.error);
-                    }
-                    const url = parsed.data?.[0]?.url;
-                    if (url) resultUrl = url;
-                } catch (e) {
-                    if (e instanceof UpstreamError) throw e;
-                    log.debug("Skipping SSE line: {line}", { line: trimmed });
-                }
-            }
-
-            if (!resultUrl) {
-                log.warn("Suno {model} SSE returned no URL", { model });
-                if (model !== models[models.length - 1]) continue;
-                throw new UpstreamError(500 as ContentfulStatusCode, {
-                    message: "Suno returned no result URL",
-                });
-            }
-
-            // Download the MP4 result
-            log.info("Downloading Suno result from {url}", { url: resultUrl });
-            const downloadResponse = await fetch(resultUrl);
-            if (!downloadResponse.ok) {
-                throw new UpstreamError(500 as ContentfulStatusCode, {
-                    message: `Failed to download Suno result: ${downloadResponse.status}`,
-                });
-            }
-
-            const audioBuffer = await downloadResponse.arrayBuffer();
-
-            // Parse exact duration from MP4 header, fall back to byte-size estimate
-            const estimatedDuration =
-                parseMp4Duration(audioBuffer) ?? audioBuffer.byteLength / 46000;
-
-            const usageHeaders = buildUsageHeaders(
-                "suno",
-                createCompletionAudioSecondsUsage(estimatedDuration),
-            );
-
-            // Always serve as audio/mpeg for consistency with other audio endpoints
-            const contentType = "audio/mpeg";
-
-            log.info(
-                "Suno success: model={model}, {bytes} bytes, ~{duration}s",
-                {
-                    model,
-                    bytes: audioBuffer.byteLength,
-                    duration: Math.round(estimatedDuration),
-                },
-            );
-
-            return new Response(audioBuffer, {
-                status: 200,
-                headers: {
-                    "Content-Type": contentType,
-                    ...usageHeaders,
-                },
-            });
-        } catch (e) {
-            if (e instanceof UpstreamError) throw e;
-            log.warn("Suno {model} failed: {error}", {
-                model,
-                error: (e as Error).message,
-            });
-            if (model === models[models.length - 1]) {
-                throw new UpstreamError(500 as ContentfulStatusCode, {
-                    message: `Suno music generation failed: ${(e as Error).message}`,
-                });
+        if (task.status === 1 && task.result) {
+            const results = JSON.parse(task.result) as Array<{
+                file?: string;
+            }>;
+            if (results?.[0]?.file) {
+                audioPath = results[0].file;
+                break;
             }
         }
     }
 
-    // Should never reach here, but TypeScript needs it
-    throw new UpstreamError(500 as ContentfulStatusCode, {
-        message: "Suno music generation failed",
+    if (!audioPath) {
+        throw new UpstreamError(504 as ContentfulStatusCode, {
+            message: "ACE-Step generation timed out",
+        });
+    }
+
+    const audioResponse = await fetch(`${serviceUrl}${audioPath}`, {
+        headers: authHeaders,
     });
-}
-
-/**
- * Generate speech via Qwen3-TTS (seraphyn.ai).
- * Seraphyn serves qwen3-tts through /v1/chat/completions but returns
- * {audio: "data:audio/wav;base64,...", output_format: "wav"} — not standard
- * OpenAI format. We decode the base64 audio and return raw bytes.
- */
-export async function generateSeraphynTTS(opts: {
-    text: string;
-    voice: string;
-    apiKey: string;
-    log: Logger;
-}): Promise<Response> {
-    const { text, voice, apiKey, log } = opts;
-
-    if (!apiKey) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "Qwen3-TTS service is not configured (missing API key)",
+    if (!audioResponse.ok) {
+        const errorText = await audioResponse.text();
+        throw new UpstreamError(audioResponse.status as ContentfulStatusCode, {
+            message: errorText || "Failed to download generated audio",
         });
     }
 
-    if (text.length > 4096) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${text.length} characters. Maximum is 4096.`,
-        });
-    }
+    const audioBuffer = await audioResponse.arrayBuffer();
 
-    log.info("Qwen3-TTS request: voice={voice}, chars={chars}", {
-        voice,
-        chars: text.length,
-    });
-
-    // Voice control via system prompt (qwen3-tts-instruct style)
-    const messages: Array<{ role: string; content: string }> = [];
-    if (voice && voice !== "alloy") {
-        messages.push({
-            role: "system",
-            content: `You are ${voice}. Speak naturally in this voice.`,
-        });
-    }
-    messages.push({ role: "user", content: text });
-
-    const response = await fetch(
-        "https://seraphyn.ai/api/v1/chat/completions",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: "qwen3-tts",
-                messages,
-            }),
-        },
-    );
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("Seraphyn TTS error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-        });
-    }
-
-    const result = (await response.json()) as {
-        audio?: string;
-        output_format?: string;
-        input_character_length?: number;
-    };
-
-    if (!result.audio) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "Seraphyn TTS returned no audio data",
-        });
-    }
-
-    // Strip data URI prefix (e.g. "data:audio/wav;base64,") and decode
-    const base64Data = result.audio.replace(/^data:[^;]+;base64,/, "");
-    const binaryString = atob(base64Data);
-    const audioBytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-        audioBytes[i] = binaryString.charCodeAt(i);
-    }
-
+    // Use requested duration for billing (more accurate than byte-size heuristic)
     const usageHeaders = buildUsageHeaders(
-        "qwen3-tts",
-        createAudioTokenUsage(text.length),
+        "acestep",
+        createCompletionAudioSecondsUsage(duration),
     );
 
-    log.info("Qwen3-TTS success: {chars} characters, {bytes} bytes", {
-        chars: text.length,
-        bytes: audioBytes.byteLength,
+    log.info("ACE-Step success: {bytes} bytes, {duration}s", {
+        bytes: audioBuffer.byteLength,
+        duration,
     });
 
-    return new Response(audioBytes, {
+    return new Response(audioBuffer, {
         status: 200,
         headers: {
-            "Content-Type": "audio/wav",
+            "Content-Type": "audio/mpeg",
             ...usageHeaders,
         },
     });
@@ -757,13 +595,7 @@ export const audioRoutes = new Hono<Env>()
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("tts");
-            await c.var.auth.requireAuthorization();
-            if (c.var.auth.user?.id) {
-                await c.var.balance.requirePositiveBalance(
-                    c.var.auth.user.id,
-                    "Insufficient pollen balance for audio generation",
-                );
-            }
+            await requireGenerationAccess(c.var, c.env);
 
             const { input, voice, response_format } = c.req.valid(
                 "json" as never,
@@ -771,25 +603,16 @@ export const audioRoutes = new Hono<Env>()
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            if (c.var.model.resolved === "qwen3-tts") {
-                const seraphynApiKey = (
-                    c.env as unknown as { SERAPHYN_API_KEY: string }
-                ).SERAPHYN_API_KEY;
-                return generateSeraphynTTS({
-                    text: input,
-                    voice,
-                    apiKey: seraphynApiKey,
-                    log,
-                });
-            }
-
-            if (c.var.model.resolved === "suno") {
-                const airforceApiKey = (
-                    c.env as unknown as { AIRFORCE_API_KEY: string }
-                ).AIRFORCE_API_KEY;
-                return generateSunoMusic({
+            if (c.var.model.resolved === "acestep") {
+                const { duration, style } = c.req.valid(
+                    "json" as never,
+                ) as CreateSpeechRequest;
+                return generateAceStepMusic({
                     prompt: input,
-                    apiKey: airforceApiKey,
+                    style,
+                    durationSeconds: duration,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
+                    serviceToken: c.env.PLN_GPU_TOKEN,
                     log,
                 });
             }
@@ -901,17 +724,13 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.audio"),
+        resolveModel("generate.audio", {
+            defaultModel: "whisper-large-v3",
+        }),
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("transcription");
-            await c.var.auth.requireAuthorization();
-            if (c.var.auth.user?.id) {
-                await c.var.balance.requirePositiveBalance(
-                    c.var.auth.user.id,
-                    "Insufficient pollen balance for transcription",
-                );
-            }
+            await requireGenerationAccess(c.var, c.env);
 
             // Get formData from middleware or parse it
             const formData = c.get("formData") || (await c.req.formData());
@@ -962,6 +781,7 @@ export const audioRoutes = new Hono<Env>()
             if (responseFormat)
                 whisperFormData.append("response_format", responseFormat);
             whisperFormData.append("model", "whisper-large-v3");
+            whisperFormData.append("timestamp_granularities[]", "word");
 
             // Thin proxy to OVHcloud Whisper
             const response = await fetch(

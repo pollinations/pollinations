@@ -1,7 +1,7 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import type { ServiceDefinition } from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
@@ -69,6 +69,9 @@ function generateLLMDoc(): string {
     lines.push("Base URL: https://gen.pollinations.ai");
     lines.push("API Keys: https://enter.pollinations.ai");
     lines.push("Docs: https://gen.pollinations.ai/api/docs");
+    lines.push(
+        "CLI: `npx @pollinations_ai/cli` (binary: `polli`) — agent-friendly, `--json` everywhere",
+    );
     lines.push("");
 
     // Quick Start
@@ -116,6 +119,29 @@ function generateLLMDoc(): string {
     );
     lines.push('  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3');
     lines.push("```");
+    lines.push("");
+
+    // CLI
+    lines.push("## CLI");
+    lines.push("");
+    lines.push(
+        "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+    );
+    lines.push("");
+    lines.push("```bash");
+    lines.push("npm install -g @pollinations_ai/cli");
+    lines.push("polli auth login");
+    lines.push(
+        'polli gen image "a cat in space" --model flux --output cat.png',
+    );
+    lines.push('polli gen text "summarize this" < notes.md');
+    lines.push("polli models --type image");
+    lines.push("polli usage");
+    lines.push("```");
+    lines.push("");
+    lines.push(
+        "Source: https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
+    );
     lines.push("");
 
     // Auth
@@ -179,10 +205,13 @@ function generateLLMDoc(): string {
     lines.push(
         "- transparent (boolean, default: false): gptimage, gptimage-large",
     );
+    lines.push(
+        "- reasoning (boolean, default: false): Enable thinking for improved text/layout. nanobanana, nanobanana-2, nanobanana-pro",
+    );
     lines.push("- duration (int, 1-10): Video duration in seconds");
     lines.push('- aspectRatio ("16:9"|"9:16"): Video only');
     lines.push(
-        "- audio (boolean, default: false): Video audio. wan/ltx-2 always have audio",
+        "- audio (boolean, default: false): Video audio. wan always has audio",
     );
     lines.push("");
 
@@ -216,7 +245,9 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /audio/{text}");
     lines.push("Text-to-speech or music generation. Returns audio/mpeg.");
-    lines.push("Query params: voice, model (elevenlabs|elevenmusic), duration");
+    lines.push(
+        "Query params: voice, model (elevenlabs|elevenmusic|acestep), duration",
+    );
     lines.push("");
 
     lines.push("### POST /v1/audio/speech");
@@ -241,7 +272,7 @@ function generateLLMDoc(): string {
     lines.push("## Text Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(TEXT_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
+        const svc = rawSvc as ModelDefinition<string>;
         if (svc.hidden) continue;
         const caps: string[] = [];
         if (svc.tools) caps.push("tools");
@@ -260,7 +291,7 @@ function generateLLMDoc(): string {
     lines.push("## Image Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
+        const svc = rawSvc as ModelDefinition<string>;
         if (svc.hidden) continue;
         if (svc.outputModalities?.includes("video")) continue;
         const flags: string[] = [];
@@ -274,7 +305,7 @@ function generateLLMDoc(): string {
     lines.push("## Video Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
+        const svc = rawSvc as ModelDefinition<string>;
         if (svc.hidden) continue;
         if (!svc.outputModalities?.includes("video")) continue;
         const flags: string[] = [];
@@ -287,7 +318,7 @@ function generateLLMDoc(): string {
     lines.push("## Audio Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(AUDIO_SERVICES)) {
-        const svc = rawSvc as ServiceDefinition<string>;
+        const svc = rawSvc as ModelDefinition<string>;
         if (svc.hidden) continue;
         const flags: string[] = [];
         if (svc.alpha) flags.push("alpha");
@@ -301,6 +332,127 @@ function generateLLMDoc(): string {
     lines.push(ELEVENLABS_VOICES.join(", "));
     lines.push("");
 
+    // Account
+    lines.push("## Account");
+    lines.push("");
+    lines.push(
+        "All account endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission.",
+    );
+    lines.push("Base path: /api/account");
+    lines.push("");
+
+    lines.push("### GET /api/account/profile");
+    lines.push(
+        "Returns user profile: name, email, githubUsername, image, tier, createdAt, nextResetAt.",
+    );
+    lines.push("Requires `account:profile` permission.");
+    lines.push("");
+
+    lines.push("### GET /api/account/balance");
+    lines.push(
+        "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
+    );
+    lines.push("Requires `account:balance` permission.");
+    lines.push("");
+
+    lines.push("### GET /api/account/usage");
+    lines.push(
+        "Per-request usage history: model, token counts, cost, response time.",
+    );
+    lines.push(
+        "Query params: format (json|csv, default json), days (1-90, default 30), limit (1-50000, default 100), before (ISO timestamp cursor). Each response is capped by limit; dashboard detailed CSV uses the latest 50,000 rows within the selected period.",
+    );
+    lines.push("Requires `account:usage` permission.");
+    lines.push("");
+
+    lines.push("### GET /api/account/usage/daily");
+    lines.push(
+        "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
+    );
+    lines.push(
+        "Query params: format (json|csv, default json), days (1-90, default 90)",
+    );
+    lines.push("Requires `account:usage` permission. Cached 1 hour.");
+    lines.push("");
+
+    lines.push("### GET /api/account/keys");
+    lines.push(
+        "List all API keys for the current user. Requires secret key (sk_) with `account:keys` permission.",
+    );
+    lines.push("");
+
+    lines.push("### POST /api/account/keys");
+    lines.push(
+        "Create an API key. Requires secret key (sk_) with `account:keys` permission.",
+    );
+    lines.push("Body (JSON):");
+    lines.push("- name (string, required): Display name");
+    lines.push(
+        '- type ("secret"|"publishable", default "secret"): Key type (sk_ or pk_)',
+    );
+    lines.push("- expiresIn (int, optional): Seconds until expiry (max 365d)");
+    lines.push(
+        "- allowedModels (string[], optional): Restrict to specific models. null = all",
+    );
+    lines.push(
+        "- pollenBudget (number, optional): Pollen budget cap. null = unlimited",
+    );
+    lines.push(
+        '- accountPermissions (string[], optional): e.g. ["balance","usage"]. "keys" is auto-stripped',
+    );
+    lines.push(
+        "Returns full key value once: { id, key, name, type, prefix, start, expiresAt, permissions, pollenBudget }",
+    );
+    lines.push("");
+
+    lines.push("### DELETE /api/account/keys/:id");
+    lines.push(
+        "Revoke an API key by ID. Cannot revoke the key authenticating the request.",
+    );
+    lines.push("Requires secret key (sk_) with `account:keys` permission.");
+    lines.push("");
+
+    lines.push("### GET /api/account/key");
+    lines.push(
+        "Info about the current API key: { valid, type, name, expiresAt, expiresIn, permissions, pollenBudget, rateLimitEnabled }.",
+    );
+    lines.push("Requires API key authentication (any key type).");
+    lines.push("");
+
+    // Media Storage
+    lines.push("## Media Storage");
+    lines.push("");
+    lines.push("Base URL: https://media.pollinations.ai");
+    lines.push(
+        "Content-addressed file storage. Upload requires API key; retrieval is public.",
+    );
+    lines.push(
+        "Max file size: 10 MB. Files expire after 14 days; re-uploading resets the TTL.",
+    );
+    lines.push("");
+
+    lines.push("### POST /upload");
+    lines.push(
+        "Upload a file. Accepts multipart/form-data (field: `file`), raw binary, or JSON { data (base64), contentType?, name? }.",
+    );
+    lines.push("Auth: `Authorization: Bearer <key>` or `?key=<key>`");
+    lines.push(
+        "Returns { id (16-char hex hash), url, contentType, size, duplicate }.",
+    );
+    lines.push("");
+
+    lines.push("### GET /{hash}");
+    lines.push(
+        "Retrieve a file by its 16-char hex content hash. No auth required. Cached immutably.",
+    );
+    lines.push("");
+
+    lines.push("### HEAD /{hash}");
+    lines.push(
+        "Check if a file exists. Returns Content-Type, Content-Length, X-Content-Hash headers. No auth.",
+    );
+    lines.push("");
+
     // Errors
     lines.push("## Errors");
     lines.push("");
@@ -310,6 +462,10 @@ function generateLLMDoc(): string {
     lines.push("- 402: Insufficient balance");
     lines.push("- 403: Permission denied");
     lines.push("- 500: Server error");
+    lines.push("");
+
+    // BYOP content carries its own `# Bring Your Own Pollen` H1 heading.
+    lines.push(BYOP_DOCS);
 
     return lines.join("\n");
 }
@@ -476,8 +632,12 @@ const blob = await response.blob();`,
 curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
 
-# Generate music
+# Generate music (ElevenLabs)
 curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
+  -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3
+
+# Generate music (ACE-Step, open-source)
+curl "https://gen.pollinations.ai/audio/brazilian%20berimbau%20instrumental?model=acestep&duration=15" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3`,
         },
         {
@@ -764,8 +924,8 @@ models.forEach((m) => console.log(\`\${m.id}: \${m.description}\`));`,
 curl "https://gen.pollinations.ai/account/usage?limit=10" \\
   -H "Authorization: Bearer YOUR_API_KEY"
 
-# Export as CSV
-curl "https://gen.pollinations.ai/account/usage?format=csv&limit=100" \\
+# Export the latest 50,000 rows from the last 30 days as CSV
+curl "https://gen.pollinations.ai/account/usage?format=csv&days=30&limit=50000" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o usage.csv`,
         },
         {
@@ -775,11 +935,11 @@ curl "https://gen.pollinations.ai/account/usage?format=csv&limit=100" \\
 
 response = requests.get(
     "https://gen.pollinations.ai/account/usage",
-    params={"limit": 10},
+    params={"limit": 10, "days": 30},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
-for record in response.json()["data"]:
-    print(f"{record['model']}: {record['cost']} pollen")`,
+for record in response.json()["usage"]:
+    print(f"{record['model']}: {record['cost_usd']} pollen")`,
         },
     ],
     "get /account/usage/daily": [
@@ -935,7 +1095,7 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
         tier: "seed",
         displayTier: "Seed",
         createdAt: "2024-01-15T10:30:00.000Z",
-        nextResetAt: "2024-02-15T00:00:00.000Z",
+        nextResetAt: "2024-02-15T14:00:00.000Z",
     },
     "get /account/key": {
         valid: true,
@@ -1135,6 +1295,20 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             'curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\',
                             '  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3',
                             "```",
+                            "",
+                            "## 🖥️ CLI",
+                            "",
+                            "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+                            "",
+                            "```bash",
+                            "npm install -g @pollinations_ai/cli",
+                            "polli auth login",
+                            'polli gen image "a cat in space" --model flux --output cat.png',
+                            'polli gen text "summarize this" < notes.md',
+                            "polli models --type image",
+                            "```",
+                            "",
+                            "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
                             "",
                             "## 🔐 Authentication",
                             "",

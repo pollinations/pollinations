@@ -8,24 +8,15 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, apiKey, openAPI } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
-import { user as userTable } from "./db/schema/better-auth.ts";
+import {
+    account as accountTable,
+    user as userTable,
+} from "./db/schema/better-auth.ts";
 import { sendTierEventToTinybird } from "./events.ts";
 import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
-
-// Track which API keys have been written to KV in this isolate.
-// Better Auth writes tracking data (lastRequest, requestCount, updatedAt) to KV
-// on every verify call. At ~3-5M req/day this exceeds KV's write limits (429s).
-// First write per key (cache-warm on KV miss) goes through; subsequent writes
-// (verify tracking updates) are skipped. Session writes are unaffected.
-// Dashboard reads lastRequest from D1 (updated via deferUpdates).
-const kvWrittenKeys = new Set<string>();
-
-function addKeyPrefix(key: string) {
-    return `auth:${key}`;
-}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -33,8 +24,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const PUBLISHABLE_KEY_PREFIX = "pk";
 
     const apiKeyPlugin = apiKey({
-        storage: "secondary-storage",
-        fallbackToDatabase: true,
         enableMetadata: true,
         deferUpdates: true, // Defers lastRequest/requestCount updates - OK if dropped, prevents D1 contention
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
@@ -104,30 +93,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                       },
                   }
                 : undefined,
-        },
-        secondaryStorage: {
-            get: async (key) => {
-                return await env.KV.get(addKeyPrefix(key));
-            },
-            set: async (key, value, ttl) => {
-                if (key.startsWith("api-key:")) {
-                    const prefixedKey = addKeyPrefix(key);
-                    if (kvWrittenKeys.has(prefixedKey)) return;
-                    await env.KV.put(prefixedKey, value, {
-                        expirationTtl: ttl,
-                    });
-                    kvWrittenKeys.add(prefixedKey);
-                    return;
-                }
-                await env.KV.put(addKeyPrefix(key), value, {
-                    expirationTtl: ttl,
-                });
-            },
-            delete: async (key) => {
-                const prefixedKey = addKeyPrefix(key);
-                kvWrittenKeys.delete(prefixedKey);
-                await env.KV.delete(prefixedKey);
-            },
         },
         trustedOrigins: ["*"],
         user: {
@@ -205,6 +170,9 @@ function tierPlugin(
  * GitHub usernames are mutable — users can rename their account.
  * We fetch the current username from GitHub API using the immutable github_id
  * and update D1 if it changed. Non-blocking via waitUntil.
+ *
+ * When github_id is missing from the user table (legacy rows), we resolve it
+ * from the account table and backfill so subsequent logins skip the fallback.
  */
 function onAfterSessionCreate(
     env: Cloudflare.Env,
@@ -227,7 +195,30 @@ function onAfterSessionCreate(
                         .where(eq(userTable.id, session.userId))
                         .limit(1);
 
-                    if (!user?.githubId) return;
+                    let githubId = user?.githubId;
+
+                    // Fallback: resolve github_id from the account table
+                    if (!githubId) {
+                        const [acct] = await db
+                            .select({ accountId: accountTable.accountId })
+                            .from(accountTable)
+                            .where(
+                                and(
+                                    eq(accountTable.userId, session.userId),
+                                    eq(accountTable.providerId, "github"),
+                                ),
+                            )
+                            .limit(1);
+
+                        if (!acct?.accountId) return;
+                        githubId = Number(acct.accountId);
+
+                        // Backfill so subsequent logins skip this fallback
+                        await db
+                            .update(userTable)
+                            .set({ githubId })
+                            .where(eq(userTable.id, session.userId));
+                    }
 
                     const headers: Record<string, string> = {
                         Accept: "application/vnd.github+json",
@@ -238,23 +229,32 @@ function onAfterSessionCreate(
                         headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
                     }
                     const res = await fetch(
-                        `https://api.github.com/user/${user.githubId}`,
+                        `https://api.github.com/user/${githubId}`,
                         { headers },
                     );
-                    if (!res.ok) return;
+                    if (!res.ok) {
+                        console.error(
+                            `[username-sync] GitHub API ${res.status} for user ${githubId}`,
+                        );
+                        return;
+                    }
 
                     const profile = (await res.json()) as { login: string };
                     if (
                         profile.login &&
-                        profile.login !== user.githubUsername
+                        profile.login !== user?.githubUsername
                     ) {
                         await db
                             .update(userTable)
                             .set({ githubUsername: profile.login })
                             .where(eq(userTable.id, session.userId));
                     }
-                } catch {
-                    // Silently ignore — username sync is best-effort
+                } catch (e) {
+                    console.error(
+                        "[username-sync] failed for session",
+                        session.userId,
+                        e,
+                    );
                 }
             })(),
         );
@@ -293,7 +293,7 @@ function onAfterUserCreate(
                         pollen_amount: tierBalance,
                     },
                     env.TINYBIRD_TIER_INGEST_URL,
-                    env.TINYBIRD_TIER_INGEST_TOKEN,
+                    env.TINYBIRD_INGEST_TOKEN,
                 ),
             );
         } catch (e: unknown) {

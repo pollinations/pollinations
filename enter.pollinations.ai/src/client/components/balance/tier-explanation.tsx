@@ -12,40 +12,43 @@ const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
     green: { bg: "bg-green-100/60", ring: "ring-green-400" },
     pink: { bg: "bg-pink-100/60", ring: "ring-pink-400" },
     amber: { bg: "bg-amber-100/60", ring: "ring-amber-400" },
+    orange: { bg: "bg-orange-100/60", ring: "ring-orange-400" },
 };
 
 const SeedTooltipContent = () => (
-    <div className="w-56">
-        <p className="font-semibold text-gray-900 mb-2">Dev Points (need 8+)</p>
+    <div className="w-72">
+        <p className="font-semibold text-gray-900 mb-2">Dev Points (need 7+)</p>
         <table className="w-full text-left text-[11px]">
             <tbody>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Account age</td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
+                        Account age
+                    </td>
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.5pt/month (max 6)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
                         Public commits (last 90 days)
                     </td>
-                    <td className="py-1 text-right text-gray-800">
-                        0.1pt each (max 2)
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
+                        0.1pt each (max 3)
                     </td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
                         Original repos (public, non-empty)
                     </td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.5pt each (max 1)
                     </td>
                 </tr>
                 <tr>
-                    <td className="py-1 text-gray-600">
+                    <td className="py-1 pr-2 text-gray-600 leading-tight">
                         Stars (on original non-empty repos)
                     </td>
-                    <td className="py-1 text-right text-gray-800">
+                    <td className="py-1 text-right text-gray-800 whitespace-nowrap">
                         0.1pt each (max 5)
                     </td>
                 </tr>
@@ -69,7 +72,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 📈 <strong>Grow Your Tier:</strong> For developers building with
                 pollinations.ai. Level up to earn more pollen.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
                 {/* Spore */}
                 <div
                     className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.spore].bg} ${currentTier === "spore" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.spore].ring}` : ""}`}
@@ -103,7 +106,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <p className="text-xs text-gray-500">
                             <Tooltip content={<SeedTooltipContent />}>
                                 <span className="underline decoration-dotted cursor-help">
-                                    8+ dev points
+                                    7+ dev points
                                 </span>
                             </Tooltip>
                         </p>
@@ -124,7 +127,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         </strong>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.flower} pollen/day
+                        {TIER_POLLEN.flower} pollen/hour
                     </p>
                     <div className="mt-1.5 border-t border-gray-200 pt-1.5">
                         <p className={requirementLabelStyle}>To unlock</p>
@@ -139,26 +142,6 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <p className="text-[10px] text-amber-600 mt-0.5">
                             {TIER_EMOJIS.seed} Must be Seed first
                         </p>
-                    </div>
-                </div>
-
-                {/* Nectar */}
-                <div
-                    className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.nectar].bg} ${currentTier === "nectar" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.nectar].ring}` : ""}`}
-                >
-                    <div className="flex items-center gap-1.5">
-                        <span>{TIER_EMOJIS.nectar}</span>
-                        <strong className="text-gray-800 text-sm">
-                            Nectar
-                        </strong>
-                    </div>
-                    <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.nectar} pollen/day
-                    </p>
-                    <div className="mt-1.5 border-t border-gray-200 pt-1.5">
-                        <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
-                            Coming soon 🔮
-                        </span>
                     </div>
                 </div>
             </div>

@@ -129,6 +129,61 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
+    // Alibaba Wan 2.2 - Fast/cheap video generation (480P, 5s fixed)
+    "wan-fast": {
+        type: "alibaba-dashscope-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 5,
+        defaultResolution: "480p",
+    },
+
+    // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
+    "wan-image": {
+        type: "alibaba-dashscope-image",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Alibaba Wan 2.7 Image Pro - Text-to-image and editing (4K, thinking mode)
+    "wan-image-pro": {
+        type: "alibaba-dashscope-image",
+        enhance: false,
+        defaultSideLength: 2048,
+    },
+
+    // Alibaba Qwen Image Plus - Text-to-image and image editing
+    "qwen-image": {
+        type: "alibaba-dashscope-image",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Grok Imagine - xAI official image generation
+    "grok-imagine": {
+        type: "xai-image",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Grok Imagine Pro - xAI official pro image generation (Aurora)
+    "grok-imagine-pro": {
+        type: "xai-image-pro",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Grok Video Pro - xAI official video generation (720p)
+    "grok-video-pro": {
+        type: "xai-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 15,
+        defaultResolution: "720p",
+    },
+
     // Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling (IO.net)
     zimage: {
         type: "zimage",
@@ -143,65 +198,20 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Klein - Fast 4B parameter model on Modal (text-to-image + image editing)
+    // Klein - Fast 4B parameter model on RunPod (text-to-image + image editing)
     klein: {
-        type: "modal-klein",
+        type: "runpod-klein",
         enhance: false,
         defaultSideLength: 1024,
     },
 
-    // Flux 2 Dev - Next-gen Flux image generation via api.airforce
-    "flux-2-dev": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Imagen 4 - Google's latest image generation via api.airforce
-    "imagen-4": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Grok Imagine - xAI image generation via api.airforce
-    "grok-imagine": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Dirtberry - Quick realistic image generation via api.airforce
-    "dirtberry": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Dirtberry Pro - High quality realism, pixel art & complex scenes via api.airforce
-    "dirtberry-pro": {
-        type: "airforce",
-        enhance: false,
-        defaultSideLength: 1024,
-    },
-
-    // Grok Imagine Video - xAI video generation via api.airforce
-    "grok-video": {
-        type: "airforce-video",
+    // LTX-2 - Fast video generation on Lambda Labs GH200
+    "ltx-2": {
+        type: "vastai-ltx2",
         enhance: false,
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 10,
-        defaultResolution: "720p",
-    },
-
-    // LTX-2 - Fast video generation with audio on Modal
-    "ltx-2": {
-        type: "modal-ltx2",
-        enhance: false,
-        isVideo: true,
-        defaultDuration: 5, // 121 frames at 24 FPS
-        maxDuration: 10, // 241 frames
         defaultResolution: "720p",
     },
 
@@ -226,6 +236,23 @@ export const IMAGE_CONFIG = {
         isVideo: true,
         defaultDuration: 5,
         maxDuration: 10,
+        defaultResolution: "720p",
+    },
+
+    // Amazon Nova Canvas - Bedrock image generation
+    "nova-canvas": {
+        type: "nova-canvas",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
+    // Amazon Nova Reel - Bedrock video generation
+    "nova-reel": {
+        type: "nova-reel",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 6,
+        maxDuration: 60,
         defaultResolution: "720p",
     },
 } as const satisfies ImageModelsConfig;

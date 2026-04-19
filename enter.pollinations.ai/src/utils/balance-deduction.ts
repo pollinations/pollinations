@@ -6,7 +6,7 @@ import { user as userTable } from "../db/schema/better-auth.ts";
  * Atomically deducts pollen from user balance.
  *
  * If the user has no positive paid balance (crypto+pack ≤ 0), always deducts from tier.
- * Tier resets hourly/daily so going negative is fine — prevents spillover into paid balances.
+ * Tier resets hourly so going negative is fine — prevents spillover into paid balances.
  *
  * If the user has positive paid balance, uses existing priority: tier → crypto → pack.
  * This lets users who purchased packs use them after tier runs out.

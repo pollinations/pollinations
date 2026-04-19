@@ -1,5 +1,5 @@
-TOKEN generation_event_append APPEND
-TOKEN grafana_generation_read READ
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
 
 DESCRIPTION >
 Generative AI events with usage, pricing, metadata, moderation, and cache info
@@ -29,6 +29,9 @@ SCHEMA >
 `api_key_id`            String                  `json:$.apiKeyId` DEFAULT 'undefined',
 `api_key_name`          String                  `json:$.apiKeyName` DEFAULT 'undefined',
 `api_key_type`          LowCardinality(String)  `json:$.apiKeyType` DEFAULT 'undefined',
+`api_key_created_via`   LowCardinality(String)  `json:$.apiKeyCreatedVia` DEFAULT 'undefined',
+`api_key_created_for_app` String                `json:$.apiKeyCreatedForApp` DEFAULT 'undefined',
+`api_key_created_for_user_id` String            `json:$.apiKeyCreatedForUserId` DEFAULT 'undefined',
 
 -- Meter
 `selected_meter_id`     LowCardinality(String)  `json:$.selectedMeterId` DEFAULT 'undefined',
@@ -115,7 +118,7 @@ ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
 ENGINE_PRIMARY_KEY "start_time, environment, user_id"
 
 FORWARD_QUERY >
-  SELECT 
+  SELECT
     event_id,
     event_processing_id,
     request_id,
@@ -133,8 +136,8 @@ FORWARD_QUERY >
     api_key_id,
     api_key_name,
     api_key_type,
-    selected_meter_id, 
-    selected_meter_slug, 
+    selected_meter_id,
+    selected_meter_slug,
     balances,
     referrer_url,
     referrer_domain,

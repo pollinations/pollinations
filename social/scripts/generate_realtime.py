@@ -3,14 +3,15 @@
 Tier 1: PR Gist Generator
 
 On PR merge:
-  Step 1: AI analyzes PR → structured gist JSON → committed to news branch
-  Step 2: Generate pixel art image → update gist with image URL
+  Step 1: AI analyzes PR → structured gist JSON
+  Step 2: Generate pixel art image → commit image + gist to news branch
 
 Discord posting is handled separately by publish_realtime.py.
 See social/PIPELINE.md for full architecture.
 """
 
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from typing import Dict, Optional
@@ -24,18 +25,12 @@ from common import (
     commit_image_to_branch,
     validate_gist,
     apply_publish_tier_rules,
-    build_minimal_gist,
-    gist_path_for_pr,
     commit_gist,
     parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
     GISTS_BRANCH,
-    IMAGE_MODEL_FALLBACK,
     MODEL,
-    MODEL_FALLBACK,
-    OWNER,
-    REPO,
 )
 
 
@@ -56,8 +51,8 @@ def fetch_pr_data(repo: str, pr_number: str, token: str) -> Dict:
     return resp.json()
 
 
-def fetch_pr_files(repo: str, pr_number: str, token: str) -> str:
-    """Fetch list of changed files as a formatted string."""
+def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
+    """Fetch list of changed files. Returns (formatted_string, list_of_filenames)."""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
@@ -77,22 +72,69 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> str:
             break
         page += 1
 
+    filenames = [f.get("filename", "") for f in all_files]
     lines = []
     for f in all_files:
         status = f.get("status", "modified")
         filename = f.get("filename", "")
         changes = f.get("changes", 0)
         lines.append(f"  {status}: {filename} (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
-    return "\n".join(lines) if lines else "(no files changed)"
+    summary = "\n".join(lines) if lines else "(no files changed)"
+    return summary, filenames
+
+
+# ── APPS.md lookup ──────────────────────────────────────────────────
+
+def lookup_newest_app() -> Optional[Dict]:
+    """Read apps/APPS.md and return the newest app's name and URL.
+
+    APPS.md is sorted newest-first, so the first data row is the newest app.
+    Returns {"app_name": str, "app_url": str} or None.
+    """
+    repo_root = get_repo_root()
+    apps_path = os.path.join(repo_root, "apps", "APPS.md")
+    if not os.path.exists(apps_path):
+        return None
+
+    with open(apps_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    # Find the header and first data row (skip header + separator)
+    data_lines = [l.strip() for l in lines if l.strip().startswith("|") and not l.strip().startswith("| -")]
+    if len(data_lines) < 2:
+        return None
+
+    # Parse header to find column indices
+    header_cols = [c.strip() for c in data_lines[0].split("|")]
+    # First data row (newest app)
+    row_cols = [c.strip() for c in data_lines[1].split("|")]
+
+    def col_val(name):
+        try:
+            idx = header_cols.index(name)
+            return row_cols[idx] if idx < len(row_cols) else ""
+        except ValueError:
+            return ""
+
+    name = col_val("Name")
+    web_url = col_val("Web_URL")
+    github_repo_url = col_val("Github_Repository_URL")
+
+    if not name:
+        return None
+
+    # Prefer Web_URL, fall back to Github_Repository_URL
+    app_url = web_url or github_repo_url
+    if not app_url:
+        return None
+
+    return {"app_name": name, "app_url": app_url}
 
 
 # ── Step 1: AI analysis ─────────────────────────────────────────────
 
 def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
-    """Call AI to analyze a PR and return structured gist JSON.
-
-    Returns parsed dict on success, None on failure (after retries).
-    """
+    """Call AI to analyze a PR and return structured gist JSON."""
     system_prompt = load_prompt("gist")
 
     # Build user prompt with PR context
@@ -116,21 +158,10 @@ Changed files:
         system_prompt, user_prompt, token,
         temperature=0.2, exit_on_failure=False
     )
-
-    if not response:
-        print(f"  Primary model ({MODEL}) failed — trying fallback ({MODEL_FALLBACK})...")
-        response = call_pollinations_api(
-            system_prompt, user_prompt, token,
-            temperature=0.2, model=MODEL_FALLBACK, exit_on_failure=False
-        )
-
-    if not response:
-        return None
-
-    return parse_json_response(response)
+    return parse_json_response(response) if response else None
 
 
-def build_full_gist(pr_data: Dict, ai_analysis: Dict) -> Dict:
+def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Dict:
     """Build the complete gist object from PR data + AI analysis."""
     labels = [l["name"] for l in pr_data.get("labels", [])]
     author = pr_data.get("user", {}).get("login", "unknown")
@@ -150,6 +181,17 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict) -> Dict:
     # Apply hard rules for publish_tier
     gist["gist"]["publish_tier"] = apply_publish_tier_rules(gist)
 
+    # Detect app submissions: only add app link when a new app was actually added
+    # App submission branches are "auto/app-{issue}-{slug}", metrics are "auto/app-metrics-{date}"
+    branch = pr_data.get("head", {}).get("ref", "")
+    is_app_pr = "apps/APPS.md" in changed_files and re.match(r"auto/app-\d+", branch)
+    if is_app_pr:
+        app_info = lookup_newest_app()
+        if app_info:
+            gist["app_name"] = app_info["app_name"]
+            gist["app_url"] = app_info["app_url"]
+            print(f"  App detected: {app_info['app_name']} → {app_info['app_url']}")
+
     return gist
 
 
@@ -160,18 +202,14 @@ def generate_gist_image(gist: Dict, pollinations_token: str,
     """Generate pixel art image for a gist. Returns image URL or None."""
     image_prompt = gist["gist"].get("image_prompt", "")
     if not image_prompt:
-        print("  No image prompt in gist")
+        print("  FATAL: No image prompt in gist")
         return None
 
     print(f"  Image prompt: {image_prompt[:100]}...")
 
-    # Generate the image (try primary model, then fallback)
     image_bytes, _ = generate_image(image_prompt, pollinations_token)
     if not image_bytes:
-        print(f"  Primary image model failed — trying fallback ({IMAGE_MODEL_FALLBACK})...")
-        image_bytes, _ = generate_image(image_prompt, pollinations_token, model=IMAGE_MODEL_FALLBACK)
-    if not image_bytes:
-        print("  Image generation failed on both models")
+        print("  FATAL: Image generation failed")
         return None
 
     # Commit image to repo on news branch
@@ -201,54 +239,41 @@ def main():
     # ── Fetch PR data ────────────────────────────────────────────────
     print(f"\n[1/2] Analyzing PR #{pr_number}...")
     pr_data = fetch_pr_data(repo_full_name, pr_number, github_token)
-    files_summary = fetch_pr_files(repo_full_name, pr_number, github_token)
-
-    labels = [l["name"] for l in pr_data.get("labels", [])]
-    merged_at = pr_data.get("merged_at", datetime.now(timezone.utc).isoformat())
-    author = pr_data.get("user", {}).get("login", "unknown")
+    files_summary, changed_files = fetch_pr_files(repo_full_name, pr_number, github_token)
 
     # ── Step 1: AI analysis → gist JSON → commit ────────────────────
     ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token)
+    if not ai_analysis:
+        print(f"  FATAL: PR analysis failed with model {MODEL}")
+        sys.exit(1)
 
-    if ai_analysis:
-        gist = build_full_gist(pr_data, ai_analysis)
+    gist = build_full_gist(pr_data, ai_analysis, changed_files)
 
-        # Validate
-        errors = validate_gist(gist)
-        if errors:
-            print(f"  Schema validation warnings: {errors}")
-            # Fall back to minimal gist on validation failure
-            gist = build_minimal_gist(
-                int(pr_number), pr_data["title"], author,
-                pr_data["html_url"], merged_at, labels
-            )
-            print("  Using minimal gist due to validation errors")
-    else:
-        print("  AI analysis failed — using minimal gist")
-        gist = build_minimal_gist(
-            int(pr_number), pr_data["title"], author,
-            pr_data["html_url"], merged_at, labels
-        )
+    errors = validate_gist(gist)
+    if errors:
+        print(f"  FATAL: Schema validation failed: {errors}")
+        sys.exit(1)
 
-    # Commit gist to news branch
+    print(f"  Gist ready: publish_tier={gist['gist']['publish_tier']}, "
+          f"importance={gist['gist']['importance']}")
+
+    # ── Step 2: Generate image → update gist ─────────────────────────
+    print("\n[2/2] Generating image...")
+    image_url = generate_gist_image(gist, pollinations_token, github_token, owner, repo)
+    if not image_url:
+        print("  FATAL: Could not generate or commit gist image")
+        sys.exit(1)
+
+    gist["image"]["url"] = image_url
+    gist["image"]["prompt"] = gist["gist"].get("image_prompt")
+
     if not commit_gist(gist, github_token, owner, repo):
         print("  FATAL: Could not commit gist to news branch")
         sys.exit(1)
 
     print(f"  Gist committed: publish_tier={gist['gist']['publish_tier']}, "
           f"importance={gist['gist']['importance']}")
-
-    # ── Step 2: Generate image → update gist ─────────────────────────
-    print(f"\n[2/2] Generating image...")
-    image_url = generate_gist_image(gist, pollinations_token, github_token, owner, repo)
-
-    if image_url:
-        gist["image"]["url"] = image_url
-        # Re-commit gist with image URL
-        commit_gist(gist, github_token, owner, repo)
-        print(f"  Image URL: {image_url}")
-    else:
-        print("  No image generated — continuing without image")
+    print(f"  Image URL: {image_url}")
 
     print("\n=== Done ===")
 

@@ -46,13 +46,17 @@ export function processParameters(
         updatedOptions.stream_options = { include_usage: true };
     }
 
-    // Newer Azure models (gpt-4o, gpt-5, o1, o3, etc.) require max_completion_tokens
+    // Newer OpenAI models (gpt-4o, gpt-5, o1, o3, etc.) require max_completion_tokens
+    // Non-OpenAI models on Azure (Mistral, DeepSeek, Kimi, Grok) do NOT support it
+    const azureModel = (config["azure-deployment-id"] as string) || "";
+    const isOpenAIModel = /^(gpt-|o[134])/i.test(azureModel);
     if (
         updatedOptions.max_tokens !== undefined &&
-        config.provider === "azure-openai"
+        config.provider === "azure-openai" &&
+        isOpenAIModel
     ) {
         log(
-            `Converting max_tokens (${updatedOptions.max_tokens}) to max_completion_tokens for Azure model`,
+            `Converting max_tokens (${updatedOptions.max_tokens}) to max_completion_tokens for OpenAI Azure model`,
         );
         updatedOptions.max_completion_tokens = updatedOptions.max_tokens;
         delete updatedOptions.max_tokens;

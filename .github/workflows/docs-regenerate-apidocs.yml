@@ -1,24 +1,61 @@
 name: Regenerate API Docs
 
+# Runs only AFTER a successful production deploy so the fetched OpenAPI spec
+# reflects the code that's actually live. Avoids the isolate-rollout flapping
+# that happens when fetching prod right after a `main` push (enter.pollinations.ai
+# deploys from the `production` branch, not `main`).
 on:
-  push:
+  workflow_run:
+    workflows: ["Deploy enter.pollinations.ai"]
+    types:
+      - completed
     branches:
-      - main
-    paths:
-      - 'enter.pollinations.ai/src/routes/docs.ts'
-      - 'enter.pollinations.ai/src/routes/**/*.ts'
-      - 'enter.pollinations.ai/scripts/generate-apidocs.ts'
-
-permissions:
-  contents: write
-  pull-requests: write
+      - production
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to regenerate docs from'
+        required: false
+        default: main
+      create_pr:
+        description: 'Create a docs PR if APIDOCS.md changes'
+        required: false
+        default: false
+        type: boolean
+  repository_dispatch:
+    types:
+      - regenerate-apidocs
 
 jobs:
   regenerate-docs:
     runs-on: ubuntu-latest
+    # Skip if the deploy workflow failed
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    # Serialize runs so two back-to-back production deploys (or manual dispatches)
+    # cannot race on the `docs/apidocs-sync` branch tip. The second run waits
+    # for the first to finish rather than being cancelled, so the final state
+    # always reflects the latest deploy.
+    concurrency:
+      group: docs-apidocs-sync
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
-      - name: Checkout
+      - name: Generate GitHub App token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.event.client_payload.ref || 'main' }}
+          token: ${{ steps.token.outputs.token }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -28,6 +65,13 @@ jobs:
       - name: Install dependencies
         working-directory: enter.pollinations.ai
         run: npm ci
+
+      # Cloudflare rolls out new worker versions across isolates progressively.
+      # Wait a bit after deploy so the fetched spec is stable and not flapping
+      # between old and new schemas.
+      - name: Wait for Cloudflare isolate rollout
+        if: github.event_name == 'workflow_run'
+        run: sleep 60
 
       - name: Regenerate APIDOCS.md
         working-directory: enter.pollinations.ai
@@ -42,20 +86,61 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create PR with updated docs
-        if: steps.changes.outputs.changed == 'true'
+      # Uses a single stable branch `docs/apidocs-sync` instead of timestamped
+      # branches. If a PR is already open, new regenerations push follow-up
+      # commits to the same branch (updating the existing PR in place) rather
+      # than stacking new PRs. APIDOCS.md is only ever modified by this
+      # workflow, so the sync branch can be fast-forwarded without rebasing.
+      # PR creation gating:
+      # - workflow_run (post-deploy): always create/update the PR on diff
+      # - workflow_dispatch: only when `create_pr` input is true
+      # - repository_dispatch: only when `client_payload.create_pr` is truthy
+      - name: Create or update docs PR
+        if: >-
+          ${{ steps.changes.outputs.changed == 'true' && (
+            github.event_name == 'workflow_run' ||
+            (github.event_name == 'workflow_dispatch' && inputs.create_pr) ||
+            (github.event_name == 'repository_dispatch' && (github.event.client_payload.create_pr == true || github.event.client_payload.create_pr == 'true'))
+          ) }}
         run: |
-          BRANCH="docs/regenerate-apidocs-$(date +%s)"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
+          BRANCH="docs/apidocs-sync"
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
+          # Save the regenerated file so we can re-apply it after switching branches
+          cp APIDOCS.md /tmp/APIDOCS.md.new
+
+          git fetch origin "$BRANCH" || true
+
+          if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+            # Branch exists remotely — check it out and add a follow-up commit
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+          else
+            # First run — create the branch from the current main checkout
+            git checkout -b "$BRANCH"
+          fi
+
+          cp /tmp/APIDOCS.md.new APIDOCS.md
+
+          if git diff --quiet APIDOCS.md; then
+            echo "Sync branch already matches freshly generated docs; nothing to push."
+            exit 0
+          fi
+
           git add APIDOCS.md
           git commit -m "docs: regenerate APIDOCS.md"
-          git push origin "$BRANCH"
-          gh pr create \
-            --title "docs: regenerate APIDOCS.md" \
-            --body "Auto-generated from OpenAPI spec changes." \
-            --base main \
-            --head "$BRANCH"
+          git push -u origin "$BRANCH"
+
+          # Create the PR only if one doesn't already exist for this branch
+          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' || echo "")
+          if [ -z "$EXISTING" ]; then
+            gh pr create \
+              --title "docs: regenerate APIDOCS.md" \
+              --body "Auto-generated from OpenAPI spec changes after a successful production deploy." \
+              --base main \
+              --head "$BRANCH"
+          else
+            echo "PR #$EXISTING already open — updated in place."
+          fi
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.token.outputs.token }}

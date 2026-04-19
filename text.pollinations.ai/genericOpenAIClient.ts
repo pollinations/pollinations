@@ -65,10 +65,6 @@ export async function genericOpenAIClient(
     let modelName = "unknown";
 
     try {
-        if (!authHeaderValue()) {
-            throw new Error("Generic OpenAI API key is not set");
-        }
-
         normalizedOptions = normalizeOptions(options, defaultOptions);
         modelName = normalizedOptions.model;
 
@@ -91,8 +87,11 @@ export async function genericOpenAIClient(
                 ? endpoint(modelName, normalizedOptions)
                 : endpoint;
 
+        const resolvedAuthHeaderValue = authHeaderValue?.();
         const headers = {
-            [authHeaderName]: authHeaderValue(),
+            ...(resolvedAuthHeaderValue
+                ? { [authHeaderName]: resolvedAuthHeaderValue }
+                : {}),
             "Content-Type": "application/json",
             ...additionalHeaders,
         };
@@ -174,6 +173,26 @@ export async function genericOpenAIClient(
         // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
         if (formattedChoice.message?.tool_calls?.length) {
             formattedChoice.finish_reason = "tool_calls";
+        }
+
+        // Reject empty completions from unstable upstream providers.
+        const hasContent = !!formattedChoice.message?.content;
+        const hasToolCalls = !!formattedChoice.message?.tool_calls?.length;
+        const hasTokens = (data.usage?.completion_tokens ?? 0) > 0;
+
+        if (!hasContent && !hasToolCalls && !hasTokens) {
+            errorLog(
+                `[${requestId}] Empty completion from upstream: model=%s`,
+                modelName,
+            );
+            throw createApiError(
+                { status: 502, statusText: "Bad Gateway" },
+                {
+                    message: "Upstream provider returned an empty completion",
+                    model: modelName,
+                },
+                modelName,
+            );
         }
 
         return {

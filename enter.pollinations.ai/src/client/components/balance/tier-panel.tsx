@@ -9,26 +9,32 @@ import { TierExplanation } from "./tier-explanation";
 const APPEAL_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=tier-appeal.yml";
 
-// Map tier color to Badge component color (Badge doesn't support "red", use "blue" for router)
 function getBadgeColor(
     tier: TierStatus,
-): "gray" | "green" | "pink" | "amber" | "blue" {
+): "gray" | "green" | "pink" | "amber" | "blue" | "orange" | "violet" {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
-    // Badge component doesn't have "red" variant, map router's "red" to "blue"
-    if (tierColor === "red") return "blue";
-    // All other tier colors (gray, blue, green, pink, amber) are valid Badge colors
-    return tierColor as "gray" | "green" | "pink" | "amber" | "blue";
+    return tierColor as
+        | "gray"
+        | "green"
+        | "pink"
+        | "amber"
+        | "blue"
+        | "orange"
+        | "violet";
 }
 
-// Map tier color to Panel component color (Panel doesn't support "red", use "blue" for router)
 function getPanelColor(
     tier: TierStatus,
-): "blue" | "amber" | "green" | "pink" | "gray" {
+): "blue" | "amber" | "orange" | "green" | "pink" | "gray" | "violet" {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
-    // Panel component doesn't have "red" variant, map router's "red" to "blue"
-    if (tierColor === "red") return "blue";
-    // All other tier colors (gray, blue, green, pink, amber) are valid Panel colors
-    return tierColor as "blue" | "amber" | "green" | "pink" | "gray";
+    return tierColor as
+        | "blue"
+        | "amber"
+        | "orange"
+        | "green"
+        | "pink"
+        | "gray"
+        | "violet";
 }
 
 const BetaNoticeText: FC = () => (
@@ -65,20 +71,11 @@ const MicrobeLimitedPanel: FC = () => (
 
 // ─── Tier screen (spore + creator tiers) ─────────────────────
 
-const cadenceLabel = (cadence: "daily" | "hourly") =>
-    cadence === "hourly" ? "hour" : "day";
-
-const cadenceDescription = (cadence: "daily" | "hourly") => {
-    if (cadence === "hourly") return "Pollen refills every hour";
-    return "Resets daily at 00:00 UTC. Unused pollen does not carry over.";
-};
-
 const TierScreen: FC<{
     tier: TierStatus;
     active_tier_name: string;
     pollen: number;
-    cadence: "daily" | "hourly";
-}> = ({ tier, active_tier_name, pollen, cadence }) => {
+}> = ({ tier, active_tier_name, pollen }) => {
     const tierEmoji = getTierEmoji(tier);
     const panelColor = getPanelColor(tier);
     const cardColor = panelColor;
@@ -95,15 +92,13 @@ const TierScreen: FC<{
                         size="lg"
                         className="font-semibold"
                     >
-                        {pollen} pollen/{cadenceLabel(cadence)}
+                        {pollen} pollen/hour
                     </Badge>
                 </div>
 
                 <p className="text-sm text-gray-500">
-                    {cadenceDescription(cadence)}{" "}
-                    {cadence === "hourly" && (
-                        <InfoTip text="If a request costs slightly more than estimated, your balance may go briefly negative — the next refill covers the difference automatically." />
-                    )}
+                    Pollen refills every hour{" "}
+                    <InfoTip text="If a request costs slightly more than estimated, your balance may go briefly negative — the next refill covers the difference automatically." />
                 </p>
 
                 <p className="text-sm">
@@ -133,12 +128,12 @@ type TierPanelProps = {
         tier: TierStatus;
         displayName: string;
         pollen?: number;
-        cadence?: "daily" | "hourly" | "none";
+        cadence?: "hourly" | "none";
     };
 };
 
 export const TierPanel: FC<TierPanelProps> = ({ active }) => {
-    const { tier, pollen, cadence } = active;
+    const { tier, pollen } = active;
 
     if (tier === "microbe") {
         return <MicrobeLimitedPanel />;
@@ -149,7 +144,6 @@ export const TierPanel: FC<TierPanelProps> = ({ active }) => {
             tier={tier}
             active_tier_name={active.displayName}
             pollen={pollen ?? 0}
-            cadence={(cadence === "none" ? "daily" : cadence) ?? "daily"}
         />
     );
 };

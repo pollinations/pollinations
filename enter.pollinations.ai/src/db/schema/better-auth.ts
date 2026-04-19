@@ -162,3 +162,18 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// Device Authorization Grant (RFC 8628) table
+export const deviceCode = sqliteTable("device_code", {
+  id: text("id").primaryKey(),
+  deviceCode: text("device_code").notNull(),
+  userCode: text("user_code").notNull(),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  status: text("status").notNull(),
+  clientId: text("client_id"),
+  scope: text("scope"),
+}, (table) => [
+  index("idx_device_code_device_code").on(table.deviceCode),
+  index("idx_device_code_user_code").on(table.userCode),
+]);

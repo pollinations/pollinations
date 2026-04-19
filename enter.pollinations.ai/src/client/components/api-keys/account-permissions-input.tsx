@@ -31,6 +31,11 @@ const ACCOUNT_PERMISSIONS = [
         label: "Usage",
         tooltip: "Read usage history",
     },
+    {
+        id: "keys",
+        label: "Key Management",
+        tooltip: "Create, list, and revoke API keys via API",
+    },
 ] as const;
 
 const textModels = Object.keys(TEXT_SERVICES)

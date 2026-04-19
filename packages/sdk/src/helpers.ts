@@ -20,10 +20,12 @@
 
 import { Pollinations } from "./client.js";
 import {
+    type AudioResponseExt,
     type ChatResponseExt,
     Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
+    wrapAudioResponse,
     wrapChatResponse,
     wrapImageResponse,
     wrapVideoResponse,
@@ -34,7 +36,9 @@ import type {
     AudioGenerateOptions,
     AuthorizeOptions,
     ChatOptions,
+    DailyUsageOptions,
     DailyUsageResponse,
+    ImageEditOptions,
     ImageGenerateOptions,
     KeyInfo,
     Message,
@@ -158,6 +162,29 @@ export async function generateImage(
         ),
     );
     return results.map(wrapImageResponse);
+}
+
+// ============================================================================
+// Image Editing Functions
+// ============================================================================
+
+/**
+ * Edit an image using a text prompt (OpenAI-compatible endpoint)
+ *
+ * @example
+ * ```ts
+ * const result = await editImage('Make the sky purple', {
+ *   image: 'https://example.com/photo.jpg',
+ * });
+ * await result.saveToFile('edited.png');
+ * ```
+ */
+export async function editImage(
+    prompt: string,
+    options?: ImageEditOptions,
+): Promise<ImageResponseExt> {
+    const response = await getClient().imageEdit(prompt, options);
+    return wrapImageResponse(response);
 }
 
 // ============================================================================
@@ -361,21 +388,18 @@ export function conversation(options?: ChatOptions): Conversation {
 // Audio Functions
 // ============================================================================
 
-/** Audio response type */
-export interface AudioResponseExt {
-    transcript: string;
-    data: string;
-    id: string;
-    expiresAt: number;
-}
-
 /**
- * Generate speech audio from text
+ * Generate audio from text (TTS or music). Returns binary audio with helper methods.
  *
  * @example
  * ```ts
- * // Single audio
+ * // Text-to-speech
  * const audio = await generateAudio('Hello world!', { voice: 'nova' });
+ * await audio.saveToFile('speech.mp3');
+ *
+ * // Music generation
+ * const music = await generateAudio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+ * await music.saveToFile('jazz.mp3');
  *
  * // Multiple variations
  * const audios = await generateAudio('Hello world!', { n: 3, voice: 'nova' });
@@ -389,7 +413,8 @@ export async function generateAudio(
     const client = getClient();
 
     if (n === 1) {
-        return client.audio(text, audioOptions);
+        const response = await client.audio(text, audioOptions);
+        return wrapAudioResponse(response);
     }
 
     const results = await Promise.all(
@@ -397,7 +422,7 @@ export async function generateAudio(
             client.audio(text, { ...audioOptions, seed: -1 }),
         ),
     );
-    return results;
+    return results.map(wrapAudioResponse);
 }
 
 // ============================================================================
@@ -522,9 +547,9 @@ export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
 /**
  * Get daily usage summary
  */
-export async function getDailyUsage(options?: {
-    format?: "json" | "csv";
-}): Promise<DailyUsageResponse> {
+export async function getDailyUsage(
+    options?: DailyUsageOptions,
+): Promise<DailyUsageResponse> {
     return getClient().accountUsageDaily(options);
 }
 

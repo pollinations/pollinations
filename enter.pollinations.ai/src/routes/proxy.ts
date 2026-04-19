@@ -1,15 +1,9 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
-import { type AuthVariables, auth } from "@/middleware/auth.ts";
-import {
-    type BalanceVariables,
-    balance,
-    getAvailableBalance,
-} from "@/middleware/balance.ts";
-import { imageCache } from "@/middleware/image-cache.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
-import type { ModelVariables } from "@/middleware/model.ts";
+import { auth } from "@/middleware/auth.ts";
+import { balance } from "@/middleware/balance.ts";
+import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -59,8 +53,15 @@ import {
 } from "@/schemas/openai.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
-import { generateMusic, generateSpeech, generateSunoMusic } from "./audio.ts";
+import {
+    checkBalance,
+    requireGenerationAccess,
+} from "@/utils/generation-access.ts";
+import {
+    generateAceStepMusic,
+    generateMusic,
+    generateSpeech,
+} from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -761,6 +762,7 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/audio/:text",
+        audioCache,
         describeRoute({
             tags: ["🔊 Audio Generation"],
             summary: "Generate Audio",
@@ -838,6 +840,11 @@ export const proxyRoutes = new Hono<Env>()
                             "If true, guarantees instrumental output (elevenmusic only)",
                         example: "false",
                     }),
+                style: z.string().optional().meta({
+                    description:
+                        "Style/genre tags for music generation (acestep only)",
+                    example: "brazilian berimbau instrumental",
+                }),
                 key: z.string().optional().meta({
                     description:
                         "API key (alternative to Authorization header)",
@@ -848,20 +855,23 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.audio"),
         async (c) => {
             const log = c.get("log").getChild("generate");
-            await c.var.auth.requireAuthorization();
-            await checkBalance(c.var, c.env);
+            await requireGenerationAccess(c.var, c.env);
 
             const text = decodeURIComponent(c.req.param("text"));
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            if (c.var.model.resolved === "suno") {
-                const airforceApiKey = (
-                    c.env as unknown as { AIRFORCE_API_KEY: string }
-                ).AIRFORCE_API_KEY;
-                return generateSunoMusic({
+            if (c.var.model.resolved === "acestep") {
+                const { duration, style } = c.req.valid("query" as never) as {
+                    duration?: number;
+                    style?: string;
+                };
+                return generateAceStepMusic({
                     prompt: text,
-                    apiKey: airforceApiKey,
+                    style,
+                    durationSeconds: duration,
+                    serviceUrl: c.env.MUSIC_SERVICE_URL,
+                    serviceToken: c.env.PLN_GPU_TOKEN,
                     log,
                 });
             }
@@ -1070,44 +1080,4 @@ export function contentFilterResultsToHeaders(
     }
 
     return headers;
-}
-
-async function checkBalance(
-    vars: AuthVariables & BalanceVariables & ModelVariables & LoggerVariables,
-    env: CloudflareBindings,
-): Promise<void> {
-    const { auth, balance, model, log } = vars;
-    if (!auth.user?.id) return;
-
-    const serviceDefinition = getServiceDefinition(model.resolved);
-    const isPaidOnly = serviceDefinition.paidOnly ?? false;
-
-    // Pre-check: reject if balance < estimated cost for this model
-    // getModelStats is cached in KV for 1hr, so this is cheap
-    const stats = await getModelStats(env.KV, log);
-    const estimatedCost = getEstimatedPrice(stats, model.resolved);
-
-    if (estimatedCost > 0) {
-        const userBalance = await balance.getBalance(auth.user.id);
-        const available = getAvailableBalance(userBalance, isPaidOnly);
-
-        if (available < estimatedCost) {
-            throw new HTTPException(402, {
-                message: `Insufficient balance. This model costs ~${estimatedCost.toFixed(4)} pollen per request, but your available balance is ${available.toFixed(4)}.`,
-            });
-        }
-    }
-
-    // Existing check: sets balanceCheckResult for downstream cost deduction
-    if (isPaidOnly) {
-        await balance.requirePaidBalance(
-            auth.user.id,
-            "This model requires a paid balance. Tier balance cannot be used.",
-        );
-    } else {
-        await balance.requirePositiveBalance(
-            auth.user.id,
-            "Insufficient pollen balance to use this model",
-        );
-    }
 }

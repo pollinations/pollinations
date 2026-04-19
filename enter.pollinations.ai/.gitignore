@@ -3,6 +3,8 @@ dist/
 .pipelight/
 .wrangler/
 .dev.vars
+.dev.vars.local
+.dev.vars.override
 .dev.vars.prod
 .env
 *.log
@@ -15,6 +17,7 @@ scripts/abuse-detection/flagged-users*.md
 scripts/flagged-users*.csv
 scripts/flagged-users*.md
 abuse-report*.csv
+src/tier-progression/*-report.csv
 
 # Script outputs
 

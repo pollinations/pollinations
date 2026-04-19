@@ -28,7 +28,9 @@ Return ONLY the JSON object. No markdown fences, no explanation.
 - Dry, observational humor — find what's slightly absurd about the problem you solved
 - Include real links to repos, docs, or tools mentioned
 - Optional: unicode dividers (───) for section breaks
-- Target length: 800-1,200 characters. shorter is better — don't pad
+- HARD MAX: 1248 characters total after assembling hook + body + closing + blank lines + hashtags. Buffer rejects anything longer.
+- Target length: 800-1,100 characters. shorter is better — don't pad
+- Budget it: hook <= 220 chars, closing <= 120 chars, 3-5 short hashtags
 - REMEMBER: All text fields must be PLAIN TEXT. No markdown, no asterisks, no backticks. Use CAPS for emphasis, line breaks for structure.
 
 Output Format (JSON only):

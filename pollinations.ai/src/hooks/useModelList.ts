@@ -1,9 +1,9 @@
 import {
-    getServiceDefinition,
-    getVisibleAudioServices,
-    getVisibleImageServices,
-    getVisibleTextServices,
-    type ServiceId,
+    getModelDefinition,
+    getVisibleAudioModels,
+    getVisibleImageModels,
+    getVisibleTextModels,
+    type ModelName,
 } from "@shared/registry/registry";
 import { useCallback, useMemo, useState } from "react";
 import { API_BASE } from "../api.config";
@@ -39,12 +39,12 @@ interface UseModelListReturn {
     allModels: Model[];
 }
 
-// Convert a registry service to a Model
+// Convert a registry model definition to a UI model
 function serviceToModel(
-    serviceId: ServiceId,
+    serviceId: ModelName,
     type: "image" | "text" | "audio",
 ): Model {
-    const def = getServiceDefinition(serviceId);
+    const def = getModelDefinition(serviceId);
     return {
         id: serviceId as string,
         name: serviceId as string,
@@ -61,23 +61,21 @@ function serviceToModel(
 }
 
 // Build the full model lists from the shared registry (instant, no fetch)
-const REGISTRY_IMAGE_MODELS: Model[] = getVisibleImageServices().map((id) =>
+const REGISTRY_IMAGE_MODELS: Model[] = getVisibleImageModels().map((id) =>
     serviceToModel(id, "image"),
 );
-const REGISTRY_TEXT_MODELS: Model[] = getVisibleTextServices()
-    .filter(
-        (id) => !getServiceDefinition(id).outputModalities?.includes("audio"),
-    )
+const REGISTRY_TEXT_MODELS: Model[] = getVisibleTextModels()
+    .filter((id) => !getModelDefinition(id).outputModalities?.includes("audio"))
     .map((id) => serviceToModel(id, "text"));
 const REGISTRY_AUDIO_MODELS: Model[] = [
     // Audio models from text services (output_modalities includes "audio")
-    ...getVisibleTextServices()
+    ...getVisibleTextModels()
         .filter((id) =>
-            getServiceDefinition(id).outputModalities?.includes("audio"),
+            getModelDefinition(id).outputModalities?.includes("audio"),
         )
         .map((id) => serviceToModel(id, "audio")),
     // Dedicated audio services
-    ...getVisibleAudioServices().map((id) => serviceToModel(id, "audio")),
+    ...getVisibleAudioModels().map((id) => serviceToModel(id, "audio")),
 ];
 const ALL_MODELS: Model[] = [
     ...REGISTRY_IMAGE_MODELS,

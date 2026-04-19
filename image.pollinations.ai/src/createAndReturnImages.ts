@@ -7,18 +7,21 @@ import {
     fetchFromLeastBusyServer,
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
-import { callAirforceImageAPI } from "./models/airforceModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
+import { callQwenImageAPI } from "./models/qwenImageModel.ts";
 import {
     callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
 } from "./models/seedreamModel.ts";
+import { callWanImageAPI } from "./models/wanImageModel.ts";
+import { callXaiImageAPI } from "./models/xaiModel.ts";
 import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
@@ -212,8 +215,8 @@ export const callSelfHostedServer = async (
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(process.env.PLN_IMAGE_BACKEND_TOKEN && {
-                        "x-backend-token": process.env.PLN_IMAGE_BACKEND_TOKEN,
+                    ...(process.env.PLN_GPU_TOKEN && {
+                        "x-backend-token": process.env.PLN_GPU_TOKEN,
                     }),
                 },
                 body: JSON.stringify(body),
@@ -306,238 +309,6 @@ export const callSelfHostedServer = async (
 };
 
 /**
- * Calls the Cloudflare AI API to generate images using the specified model
- * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - The parameters for image generation
- * @param {string} modelPath - The Cloudflare AI model path
- * @param {Object} [additionalParams={}] - Additional parameters specific to the model
- * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
- */
-async function callCloudflareModel(
-    prompt: string,
-    safeParams: ImageParams,
-    modelPath: string,
-    additionalParams: object = {},
-): Promise<ImageGenerationResult> {
-    // Use the registry model name from safeParams, not the internal Cloudflare model path
-    const registryModelName = safeParams.model;
-    const { accountId, apiToken } = getCloudflareCredentials();
-
-    if (!accountId || !apiToken) {
-        throw new Error("Cloudflare credentials not configured");
-    }
-
-    // Limit prompt to 2048 characters
-    const truncatedPrompt = prompt.slice(0, 2048);
-
-    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/${modelPath}`;
-    logCloudflare(`Calling Cloudflare model: ${modelPath}`, url);
-
-    // Round width and height to nearest multiple of 8
-    const width = roundToMultipleOf8(safeParams.width || 1024);
-    const height = roundToMultipleOf8(safeParams.height || 1024);
-
-    const requestBody = {
-        prompt: truncatedPrompt,
-        width: width,
-        height: height,
-        seed: safeParams.seed,
-        ...additionalParams,
-    };
-
-    logCloudflare(
-        `Cloudflare ${modelPath} request body:`,
-        JSON.stringify(requestBody, null, 2),
-    );
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiToken}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-    });
-
-    // Check if response is successful
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError(
-            `Cloudflare ${modelPath} API request failed, status:`,
-            response.status,
-            "response:",
-            errorText,
-        );
-        logError(
-            `Cloudflare ${modelPath} API request headers:`,
-            JSON.stringify(Object.fromEntries([...response.headers]), null, 2),
-        );
-        throw new Error(
-            `Cloudflare ${modelPath} API request failed with status ${response.status}: ${errorText}`,
-        );
-    }
-
-    // Check content type to determine how to handle the response
-    const contentType = response.headers.get("content-type");
-    let imageBuffer = null;
-
-    if (contentType?.includes("image/")) {
-        // Direct binary image response (typical for SDXL)
-        logCloudflare(
-            `Received binary image from Cloudflare ${modelPath} with content type: ${contentType}`,
-        );
-        imageBuffer = Buffer.from(await response.arrayBuffer());
-        logCloudflare(`Image buffer size: ${imageBuffer.length} bytes`);
-    } else {
-        // JSON response with base64 encoded image (typical for Flux)
-        const data = (await response.json()) as {
-            success?: boolean;
-            errors?: Array<{ message?: string }>;
-            result?: { image?: string };
-        };
-        logCloudflare(
-            `Received JSON response from Cloudflare ${modelPath}:`,
-            JSON.stringify(data, null, 2),
-        );
-        if (!data.success) {
-            logError(
-                `Cloudflare ${modelPath} API request failed, full response:`,
-                data,
-            );
-            throw new Error(
-                data.errors?.[0]?.message ||
-                    `Cloudflare ${modelPath} API request failed`,
-            );
-        }
-        if (!data.result?.image) {
-            throw new Error("No image in response");
-        }
-        imageBuffer = Buffer.from(data.result.image, "base64");
-    }
-
-    return {
-        buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
-        trackingData: {
-            actualModel: registryModelName,
-            usage: {
-                completionImageTokens: 1,
-                totalTokenCount: 1,
-            },
-        },
-    };
-}
-
-/**
- * Calls the Cloudflare Flux API to generate images
- * @param {string} prompt - The prompt for image generation
- * @param {ImageParams} safeParams - The parameters for image generation
- * @returns {Promise<ImageGenerationResult>}
- */
-async function _callCloudflareFlux(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<ImageGenerationResult> {
-    return callCloudflareModel(
-        prompt,
-        safeParams,
-        "black-forest-labs/flux-1-schnell",
-        { steps: 4 },
-    );
-}
-
-/**
- * Calls the Cloudflare SDXL API to generate images
- * @param {string} prompt - The prompt for image generation
- * @param {ImageParams} safeParams - The parameters for image generation
- * @returns {Promise<ImageGenerationResult>}
- */
-async function _callCloudflareSDXL(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<ImageGenerationResult> {
-    return callCloudflareModel(
-        prompt,
-        safeParams,
-        "bytedance/stable-diffusion-xl-lightning",
-    );
-}
-
-/**
- * Calls the Cloudflare Dreamshaper API to generate images
- * @param {string} prompt - The prompt for image generation
- * @param {ImageParams} safeParams - The parameters for image generation
- * @returns {Promise<ImageGenerationResult>}
- */
-async function _callCloudflareDreamshaper(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<ImageGenerationResult> {
-    try {
-        // Append seed to prompt if it's non-default
-        let modifiedPrompt = prompt;
-        if (safeParams.seed && safeParams.seed !== 42) {
-            modifiedPrompt = `${prompt}, seed:${safeParams.seed}`;
-        }
-
-        // Create a minimal params object with only width and height
-        const dreamshaperParams = {
-            width: safeParams.width || 1024,
-            height: safeParams.height || 1024,
-        };
-
-        // Create a modified safeParams without the seed
-        const modifiedSafeParams = { ...safeParams };
-        delete modifiedSafeParams.seed;
-
-        // Call the model with the minimal parameters
-        logCloudflare(
-            `Using Dreamshaper with prompt: ${modifiedPrompt} and parameters:`,
-            JSON.stringify(dreamshaperParams, null, 2),
-        );
-        const result = await callCloudflareModel(
-            modifiedPrompt,
-            modifiedSafeParams,
-            "lykon/dreamshaper-8-lcm",
-            dreamshaperParams,
-        );
-        return result;
-    } catch (error) {
-        // Log detailed error information
-        logError("Dreamshaper detailed error:", error);
-        if (error.response) {
-            try {
-                const responseText = await error.response.text();
-                logError("Dreamshaper response text:", responseText);
-            } catch (textError) {
-                logError("Could not get response text:", textError.message);
-            }
-        }
-        throw error;
-    }
-}
-
-/**
- * Rounds a number to the nearest multiple of 8
- * @param {number} n - Number to round
- * @returns {number} - Nearest multiple of 8
- */
-function roundToMultipleOf8(n: number): number {
-    return Math.round(n / 8) * 8;
-}
-
-/**
- * Common Cloudflare API configuration
- * @returns {{accountId: string, apiToken: string}} Cloudflare credentials
- */
-function getCloudflareCredentials(): { accountId: string; apiToken: string } {
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-    return { accountId, apiToken };
-}
-
-/**
  * Converts an image buffer to JPEG format if it's not already a JPEG.
  * @param {Buffer} buffer - The image buffer to convert.
  * @returns {Promise<Buffer>} - The converted image buffer.
@@ -554,25 +325,24 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
 
 /**
  * Configuration for Azure GPT Image endpoints
+ * All models use myceli-prod-swedencentral with a shared API key
  */
 interface AzureGPTImageConfig {
-    apiKeyEnvVar: string;
-    endpointEnvVar: string;
+    baseUrl: string;
     modelName: string;
 }
 
-const GENERATIONS_API_VERSION = "2024-02-01";
-const EDITS_API_VERSION = "2025-04-01-preview";
+const AZURE_GPTIMAGE_API_VERSION = "2025-04-01-preview";
 
 const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     gptimage: {
-        apiKeyEnvVar: "AZURE_GPTIMAGE_1_MINI_API_KEY",
-        endpointEnvVar: "AZURE_GPTIMAGE_1_MINI_ENDPOINT",
+        baseUrl:
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
         modelName: "gpt-image-1-mini",
     },
     "gptimage-large": {
-        apiKeyEnvVar: "AZURE_GPTIMAGE_15_API_KEY",
-        endpointEnvVar: "AZURE_GPTIMAGE_15_ENDPOINT",
+        baseUrl:
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
         modelName: "gpt-image-1.5",
     },
 };
@@ -591,33 +361,23 @@ const callAzureGPTImageWithEndpoint = async (
     userInfo: AuthResult,
     config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env[config.apiKeyEnvVar];
-    const baseEndpoint = process.env[config.endpointEnvVar];
+    const apiKey = process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY;
 
-    if (!apiKey || !baseEndpoint) {
+    if (!apiKey) {
         throw new Error(
-            `Azure API key or endpoint 1 not found in environment variables`,
+            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
         );
     }
-
-    // Strip any trailing path/query from the env var to get the base deployment URL
-    // Env may contain full URL (legacy) or just the base deployment path
-    const baseUrl = baseEndpoint.replace(/\/images\/.*$/, "");
 
     // Check if we have input images for edit mode
     const isEditMode = safeParams.image && safeParams.image.length > 0;
 
     // Construct the full endpoint URL based on mode
-    let endpoint: string;
-    if (isEditMode) {
-        endpoint = `${baseUrl}/images/edits?api-version=${EDITS_API_VERSION}`;
-        logCloudflare(`Using Azure ${config.modelName} in edit mode (img2img)`);
-    } else {
-        endpoint = `${baseUrl}/images/generations?api-version=${GENERATIONS_API_VERSION}`;
-        logCloudflare(
-            `Using Azure ${config.modelName} in generation mode (text2img)`,
-        );
-    }
+    const path = isEditMode ? "images/edits" : "images/generations";
+    const endpoint = `${config.baseUrl}/${path}?api-version=${AZURE_GPTIMAGE_API_VERSION}`;
+    logCloudflare(
+        `Using Azure ${config.modelName} in ${isEditMode ? "edit" : "generation"} mode`,
+    );
 
     // Map safeParams to Azure API parameters
     // GPT Image 1.5 only supports: 1024x1024 (1:1), 1024x1536 (2:3), 1536x1024 (3:2)
@@ -1147,6 +907,38 @@ const generateImage = async (
             }
         }
 
+        case "grok-imagine": {
+            try {
+                return await callXaiImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    "grok-imagine-image",
+                );
+            } catch (error) {
+                logError("Grok Imagine generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "grok-imagine-pro": {
+            try {
+                return await callXaiImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    "grok-imagine-image-pro",
+                );
+            } catch (error) {
+                logError("Grok Imagine Pro generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
         case "p-image-edit": {
             try {
                 return await callPrunaImageEditAPI(
@@ -1165,20 +957,67 @@ const generateImage = async (
             }
         }
 
-        case "flux-2-dev":
-        case "imagen-4":
-        case "grok-imagine":
-        case "dirtberry":
-        case "dirtberry-pro":
-            return await callAirforceImageAPI(
-                prompt,
-                safeParams,
-                progress,
-                requestId,
-                safeParams.model === "dirtberry-pro"
-                    ? "special-berry"
-                    : safeParams.model,
-            );
+        case "nova-canvas": {
+            try {
+                return await callNovaCanvasAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Nova Canvas generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "wan-image": {
+            try {
+                return await callWanImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    false,
+                );
+            } catch (error) {
+                logError("Wan image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "wan-image-pro": {
+            try {
+                return await callWanImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                    true,
+                );
+            } catch (error) {
+                logError("Wan image pro generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+
+        case "qwen-image": {
+            try {
+                return await callQwenImageAPI(
+                    prompt,
+                    safeParams,
+                    progress,
+                    requestId,
+                );
+            } catch (error) {
+                logError("Qwen image generation failed:", error.message);
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
 
         case "flux":
             progress.updateBar(

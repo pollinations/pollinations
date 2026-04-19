@@ -18,8 +18,6 @@ export const log = debug("pollinations:portkey");
 const clientConfig = {
     endpoint: () =>
         `${process.env.PORTKEY_GATEWAY_URL || "https://portkey.pollinations.ai"}/v1/chat/completions`,
-    authHeaderName: "Authorization",
-    authHeaderValue: () => `Bearer ${process.env.PORTKEY_API_KEY}`,
     additionalHeaders: {},
     defaultOptions: {
         model: "openai-fast",

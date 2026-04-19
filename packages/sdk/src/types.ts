@@ -36,7 +36,7 @@ export type ImageQuality = "low" | "medium" | "high" | "hd";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (default: 'zimage') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
@@ -66,6 +66,14 @@ export interface ImageGenerateOptions extends RequestOptions {
     guidanceScale?: number;
 }
 
+/** Options for image editing (POST /v1/images/edits) */
+export interface ImageEditOptions extends RequestOptions {
+    /** Image model to use (default: 'flux') */
+    model?: ImageModel;
+    /** Source image URL(s) for editing */
+    image?: string | string[];
+}
+
 /** Response from image generation */
 export interface ImageResponse {
     /** The generated image as a Buffer (Node.js) or ArrayBuffer (browser) */
@@ -84,13 +92,13 @@ export interface ImageResponse {
 export interface VideoGenerateOptions extends RequestOptions {
     /** Video model to use (default: 'veo') */
     model?: VideoModel;
-    /** Duration in seconds (veo: 4,6,8; seedance: 2-10) */
+    /** Duration in seconds (1-30, varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
     /** Seed for reproducible generation */
     seed?: number;
-    /** Enable audio generation - veo only (default: false) */
+    /** Enable audio generation (default: false). wan always has audio */
     audio?: boolean;
     /** Reference image URL(s) for image-to-video */
     referenceImage?: string | string[];
@@ -437,16 +445,27 @@ export type AudioVoice = string;
 /** Audio format options */
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
-/** Options for audio generation */
-export interface AudioGenerateOptions {
+/** Dedicated audio/music model */
+export type AudioModel = "elevenlabs" | "elevenmusic" | "acestep" | string;
+
+/** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
+export interface AudioGenerateOptions extends RequestOptions {
     /** Voice to use (default: 'alloy') */
     voice?: AudioVoice;
-    /** Model to use (default: 'openai-audio') */
-    model?: TextModel;
-    /** Output format */
-    format?: AudioFormat;
+    /** Audio model to use (default: 'elevenlabs') */
+    model?: AudioModel;
+    /** Duration in seconds (for music models like elevenmusic, acestep) */
+    duration?: number;
     /** Seed for reproducibility */
     seed?: number;
+}
+
+/** Response from dedicated audio endpoints (binary audio data) */
+export interface AudioBinaryResponse {
+    /** The generated audio as a Buffer (Node.js) or ArrayBuffer (browser) */
+    buffer: ArrayBuffer;
+    /** Content type (audio/mpeg) */
+    contentType: string;
 }
 
 /** Audio response from chat with audio modality */
@@ -608,10 +627,20 @@ export interface UsageResponse {
 export interface UsageOptions {
     /** Response format (default: 'json') */
     format?: "json" | "csv";
-    /** Max records to return, 1-50000 (default: 100) */
+    /** Number of days to include, max 90 (default: 30) */
+    days?: number;
+    /** Max records to return, 1-50000 (default: 100). CSV exports are capped at 50000. */
     limit?: number;
     /** ISO timestamp cursor for pagination */
     before?: string;
+}
+
+/** Options for fetching daily usage */
+export interface DailyUsageOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include, max 90 (default: 90) */
+    days?: number;
 }
 
 /** Daily usage summary */
@@ -687,12 +716,17 @@ export interface ModelInfo {
 
 /** API error details */
 export interface PollinationsErrorDetails {
-    code: "BAD_REQUEST" | "UNAUTHORIZED" | "INTERNAL_ERROR" | string;
+    code:
+        | "BAD_REQUEST"
+        | "UNAUTHORIZED"
+        | "INSUFFICIENT_BALANCE"
+        | "PERMISSION_DENIED"
+        | "INTERNAL_ERROR"
+        | string;
     message: string;
     timestamp: string;
     details?: Record<string, unknown>;
     requestId?: string;
-    cause?: unknown;
 }
 
 /** Pollinations SDK Error */

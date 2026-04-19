@@ -12,14 +12,39 @@ const logError = debug("pollinations:wan:error");
 
 // API Configuration
 const DASHSCOPE_API_BASE = "https://dashscope-intl.aliyuncs.com/api/v1";
-const WAN_T2V_MODEL = "wan2.6-t2v";
-const WAN_I2V_MODEL = "wan2.6-i2v-flash";
 
-// Video generation constraints
-const MIN_DURATION_SECONDS = 2;
-const MAX_DURATION_SECONDS = 15;
-const DEFAULT_DURATION_SECONDS = 5;
-const DEFAULT_RESOLUTION = "720P"; // Supports 480P, 720P, 1080P
+interface WanModelConfig {
+    t2vModel: string;
+    i2vModel: string;
+    minDuration: number;
+    maxDuration: number;
+    defaultDuration: number;
+    defaultResolution: string;
+    trackingName: string;
+    displayName: string;
+}
+
+const WAN_26_CONFIG: WanModelConfig = {
+    t2vModel: "wan2.6-t2v",
+    i2vModel: "wan2.6-i2v-flash",
+    minDuration: 2,
+    maxDuration: 15,
+    defaultDuration: 5,
+    defaultResolution: "720P",
+    trackingName: "wan",
+    displayName: "Wan 2.6",
+};
+
+const WAN_22_CONFIG: WanModelConfig = {
+    t2vModel: "wan2.2-t2v-plus",
+    i2vModel: "wan2.2-i2v-flash",
+    minDuration: 5,
+    maxDuration: 5,
+    defaultDuration: 5,
+    defaultResolution: "480P",
+    trackingName: "wan-fast",
+    displayName: "Wan 2.2",
+};
 
 // Polling configuration for Alibaba DashScope
 const POLL_MAX_ATTEMPTS = 60; // 5 minutes max
@@ -65,7 +90,6 @@ interface DashScopeRequest {
 
 /**
  * Generates a video using Alibaba DashScope API (wan-2.6)
- * Supports both text-to-video and image-to-video with optional audio
  */
 export async function callWanAPI(
     prompt: string,
@@ -73,24 +97,51 @@ export async function callWanAPI(
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
-    return await callWanAlibabaAPI(prompt, safeParams, progress, requestId);
+    return await callWanAlibabaAPI(
+        prompt,
+        safeParams,
+        progress,
+        requestId,
+        WAN_26_CONFIG,
+    );
+}
+
+/**
+ * Generates a video using Alibaba DashScope API (wan-2.2, faster/cheaper)
+ */
+export async function callWanFastAPI(
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> {
+    return await callWanAlibabaAPI(
+        prompt,
+        safeParams,
+        progress,
+        requestId,
+        WAN_22_CONFIG,
+    );
 }
 
 /**
  * Prepare video generation parameters with resolution calculation
  */
-function prepareVideoParameters(safeParams: ImageParams) {
-    const rawDuration = safeParams.duration || DEFAULT_DURATION_SECONDS;
+function prepareVideoParameters(
+    safeParams: ImageParams,
+    config: WanModelConfig,
+) {
+    const rawDuration = safeParams.duration || config.defaultDuration;
     const durationSeconds = Math.max(
-        MIN_DURATION_SECONDS,
-        Math.min(MAX_DURATION_SECONDS, rawDuration),
+        config.minDuration,
+        Math.min(config.maxDuration, rawDuration),
     );
 
     const { aspectRatio, resolution } = calculateVideoResolution({
         width: safeParams.width,
         height: safeParams.height,
         aspectRatio: safeParams.aspectRatio,
-        defaultResolution: DEFAULT_RESOLUTION,
+        defaultResolution: config.defaultResolution,
     });
 
     return {
@@ -115,6 +166,7 @@ function extractFirstImage(image: ImageParams["image"]): string | undefined {
 function createVideoResult(
     buffer: Buffer,
     videoParams: ReturnType<typeof prepareVideoParameters>,
+    config: WanModelConfig,
     actualDuration?: number,
 ): VideoGenerationResult {
     const duration = actualDuration || videoParams.durationSeconds;
@@ -123,7 +175,7 @@ function createVideoResult(
         mimeType: "video/mp4",
         durationSeconds: videoParams.durationSeconds,
         trackingData: {
-            actualModel: "wan",
+            actualModel: config.trackingName,
             usage: {
                 completionVideoSeconds: duration,
                 completionAudioSeconds: videoParams.generateAudio
@@ -162,7 +214,7 @@ async function downloadVideo(
 }
 
 /**
- * Generates a video using Alibaba DashScope API (wan-2.6)
+ * Generates a video using Alibaba DashScope API
  * Supports both text-to-video and image-to-video with optional audio
  */
 async function callWanAlibabaAPI(
@@ -170,6 +222,7 @@ async function callWanAlibabaAPI(
     safeParams: ImageParams,
     progress: ProgressManager,
     requestId: string,
+    config: WanModelConfig,
 ): Promise<VideoGenerationResult> {
     const apiKey = process.env.DASHSCOPE_API_KEY;
     if (!apiKey) {
@@ -179,21 +232,24 @@ async function callWanAlibabaAPI(
         );
     }
 
-    const videoParams = prepareVideoParameters(safeParams);
+    const videoParams = prepareVideoParameters(safeParams, config);
     const rawImageUrl = extractFirstImage(safeParams.image);
     const mode = rawImageUrl ? "I2V" : "T2V";
 
-    logOps(`Calling Wan 2.6 API (DashScope ${mode}) with params:`, {
-        prompt,
-        ...videoParams,
-        hasImage: !!rawImageUrl,
-    });
+    logOps(
+        `Calling ${config.displayName} API (DashScope ${mode}) with params:`,
+        {
+            prompt,
+            ...videoParams,
+            hasImage: !!rawImageUrl,
+        },
+    );
 
     progress.updateBar(
         requestId,
         35,
         "Processing",
-        `Starting video generation with Wan 2.6 (${mode})...`,
+        `Starting video generation with ${config.displayName} (${mode})...`,
     );
 
     // Download image and convert to base64 data URI for reliability
@@ -210,6 +266,7 @@ async function callWanAlibabaAPI(
         prompt,
         imageDataUri,
         videoParams,
+        config,
     );
     logRequestSafely(requestBody);
 
@@ -223,6 +280,7 @@ async function callWanAlibabaAPI(
     return createVideoResult(
         result.buffer,
         videoParams,
+        config,
         result.usage.video_duration,
     );
 }
@@ -234,9 +292,10 @@ function buildDashScopeRequest(
     prompt: string,
     imageUrl: string | undefined,
     videoParams: ReturnType<typeof prepareVideoParameters>,
+    config: WanModelConfig,
 ): DashScopeRequest {
     return {
-        model: imageUrl ? WAN_I2V_MODEL : WAN_T2V_MODEL,
+        model: imageUrl ? config.i2vModel : config.t2vModel,
         input: imageUrl
             ? { prompt, img_url: prepareImageUrl(imageUrl) }
             : { prompt },

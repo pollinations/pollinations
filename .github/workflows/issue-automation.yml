@@ -1,0 +1,211 @@
+name: Issue Automation
+
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: issue-automation-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    # Skip bots and TIER issues
+    if: |
+      !endsWith(github.event.issue.user.login, '[bot]') &&
+      !contains(github.event.issue.user.login, 'dependabot') &&
+      !contains(github.event.issue.user.login, 'renovate')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: token
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Triage Issue
+        uses: actions/github-script@v7
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLY_KEY }}
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const issue = context.payload.issue;
+
+            // Skip TIER-labeled or already-polly-labeled issues
+            const hasTierLabel = issue.labels?.some(l => l.name.startsWith('TIER-'));
+            if (hasTierLabel) {
+              console.log('Skipping: TIER-labeled issue');
+              return;
+            }
+            const hasPollyLabel = issue.labels?.some(l => l.name === 'polly');
+            if (hasPollyLabel) {
+              console.log('Skipping: already has polly label');
+              return;
+            }
+
+            // --- Polly System Prompt ---
+            const systemPrompt = `You are an issue triage bot for pollinations/pollinations. Your ONLY output is a single raw JSON object. NO markdown. NO code fences. NO explanation. NO text before or after. JUST the JSON object starting with { and ending with }.
+
+            MANDATORY TOOL USAGE — you MUST call these tools before returning your verdict:
+            1. ALWAYS call github_issue with action "find_similar" using keywords from the issue title/body. Report what you found.
+            2. ALWAYS call code_search to check if the problem described is already fixed or addressed in the codebase. Search for relevant function names, error messages, or feature keywords.
+            3. Only AFTER completing both searches, assess the results and return your JSON verdict.
+
+            DO NOT skip tool calls. DO NOT guess based on your training data alone. Every verdict must be backed by actual search results from find_similar and code_search.
+
+            Schema: {"comment":"your reply to post on the issue, or null if nothing to say","close":true|false,"close_reason":"completed|not_planned|null","add_label":"polly|null","confidence":0.0-1.0,"reason":"1-2 sentences referencing what you found in search results"}
+
+            You decide dynamically what to do. Any combination is valid:
+            - Comment only (answer a question, explain behavior, help the user)
+            - Comment + close (duplicate found, issue already resolved)
+            - Comment + add "polly" label (minor fix Polly can auto-fix)
+            - Close without comment (spam, test issues)
+            - Do nothing (null comment, close=false, no label) — only when you genuinely cannot help
+
+            Guidelines:
+            - If you know the answer to a question or can explain the behavior — ALWAYS comment. Don't skip just because it's a "support question".
+            - If find_similar found a DIFFERENT matching open issue — comment referencing it + close with close_reason "not_planned".
+            - If code_search found the fix exists — comment explaining where + close with close_reason "completed".
+            - If the issue is a minor well-defined fix (typo, small bug, config change) — comment + add_label "polly".
+            - If the issue reports an outage or model errors — use your tools to investigate (code_search for error handlers, find_similar for related reports, doc_search for service architecture). Comment with what you found, even partial context helps.
+            - If the issue is spam, test, or gibberish — close with close_reason "not_planned", no comment needed.
+            - If you genuinely can't help (too vague, needs internal access, needs human judgment) — do nothing.
+            - Comments should be playful, concise, and helpful. Be a friendly team member.
+            - For duplicates, reference the original issue number.
+            - For resolved issues, reference the specific file/commit/PR.
+            - CRITICAL: The issue number being analyzed is in the user message. NEVER close an issue as duplicate of itself.
+            - Only close with high confidence (>= 0.85). Commenting is fine at any confidence.`;
+
+            // --- Few-shot examples ---
+            const fewShot = [
+              { role: 'user', content: 'Issue #9999:\nTitle: grok-video ignoring image input\nBody: When I pass an image to grok-video it completely ignores it and generates from text only.' },
+              { role: 'assistant', content: '{"comment":"This is a known issue! See #8262 for the ongoing discussion about grok-video ignoring image inputs. Closing as duplicate.","close":true,"close_reason":"not_planned","add_label":null,"confidence":0.95,"reason":"find_similar returned #8262 — same grok-video image input bug."}' },
+              { role: 'user', content: 'Issue #9998:\nTitle: grok-large returning 429 errors constantly\nBody: Every request to grok-large returns HTTP 429. Been like this for hours. Is the model down?' },
+              { role: 'assistant', content: '{"comment":"Looked into it — grok-large routes to Azure OpenAI (model grok-4-20-reasoning in text.pollinations.ai/configs/modelConfigs.ts). 429s usually mean the Azure deployment hit its TPM quota. find_similar shows #10032 and #9709 report the same pattern. The team is aware — this is an upstream Azure capacity issue, not a Pollinations bug. Try again in a bit or use a different model like openai-large in the meantime!","close":false,"close_reason":null,"add_label":null,"confidence":0.90,"reason":"code_search found grok-large Azure config. find_similar found related 429 reports. Upstream quota issue."}' },
+              { role: 'user', content: 'Issue #9997:\nTitle: Fix broken link in README contributing section\nBody: The link to CONTRIBUTING.md in the main README.md points to /docs/CONTRIBUTING.md but the file is at /CONTRIBUTING.md in the repo root.' },
+              { role: 'assistant', content: '{"comment":"Looks like a quick link fix! Polly will take care of this.","close":false,"close_reason":null,"add_label":"polly","confidence":0.90,"reason":"code_search confirmed README.md still has the broken link. Minor fix."}' },
+              { role: 'user', content: 'Issue #9996:\nTitle: Audio generation returns 500 error\nBody: Calling /audio/hello with voice=nova returns a 500 internal server error. Started happening after the last deploy.' },
+              { role: 'assistant', content: '{"comment":"This was fixed! The audio route had a missing voice parameter validation. Fix landed in enter.pollinations.ai/src/routes/audio.ts.","close":true,"close_reason":"completed","add_label":null,"confidence":0.92,"reason":"code_search found the fix in enter.pollinations.ai/src/routes/audio.ts."}' },
+              { role: 'user', content: 'Issue #9995:\nTitle: Inquiry regarding API rate limits\nBody: I have Spore tier with $194 balance. Why am I still rate limited? I thought buying pollen removes limits.' },
+              { role: 'assistant', content: '{"comment":"Tier grants and purchased pollen work differently! Your Spore tier gives 0.01 pollen/hr as a free grant, but your purchased balance ($194) is separate — it doesn\'t change your hourly tier rate. You can use purchased pollen for requests beyond your tier grant. To get higher hourly grants, upgrade your tier (Seed, Flower, etc).","close":false,"close_reason":null,"add_label":null,"confidence":0.95,"reason":"doc_search confirmed tier grant vs purchased pollen distinction. User misunderstands the system, not a bug."}' },
+            ];
+
+            // --- JSON extractor ---
+            function extractJSON(content) {
+              if (!content?.trim()) return null;
+              content = content.trim();
+
+              // Try 1: direct parse
+              try {
+                const parsed = JSON.parse(content);
+                if (parsed?.action) return parsed;
+              } catch {}
+
+              // Try 2: strip markdown code fences
+              const fenced = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+              if (fenced) {
+                try {
+                  const parsed = JSON.parse(fenced[1]);
+                  if (parsed?.action) return parsed;
+                } catch {}
+              }
+
+              // Try 3: find JSON object in prose
+              const braceMatch = content.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
+              if (braceMatch) {
+                try {
+                  const parsed = JSON.parse(braceMatch[0]);
+                  if (parsed?.action) return parsed;
+                } catch {}
+              }
+
+              return null;
+            }
+
+            // --- Call Polly with retries ---
+            const SEEDS = [42, 777, 1337];
+            const issueContent = `Issue #${issue.number}:\nTitle: ${issue.title}\nBody: ${(issue.body || '').slice(0, 3000)}`;
+            let verdict = null;
+
+            for (let attempt = 0; attempt < 3; attempt++) {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 120000);
+              try {
+                const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.POLLINATIONS_TOKEN}`,
+                  },
+                  body: JSON.stringify({
+                    model: 'polly',
+                    seed: SEEDS[attempt],
+                    messages: [
+                      { role: 'system', content: systemPrompt },
+                      ...fewShot,
+                      { role: 'user', content: issueContent },
+                    ],
+                    response_format: { type: 'json_object' },
+                  }),
+                  signal: controller.signal,
+                });
+
+                if (response.ok) {
+                  const data = await response.json();
+                  const content = data.choices?.[0]?.message?.content;
+                  console.log(`Attempt ${attempt + 1} raw response: ${content?.slice(0, 500)}`);
+                  verdict = extractJSON(content);
+                  if (verdict) break;
+                } else {
+                  console.log(`Attempt ${attempt + 1} HTTP ${response.status}`);
+                }
+              } catch (err) {
+                console.log(`Attempt ${attempt + 1} error: ${err.message}`);
+              } finally {
+                clearTimeout(timeout);
+              }
+
+              if (attempt < 2) {
+                await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+              }
+            }
+
+            if (!verdict) {
+              console.log('All retries failed or no valid JSON. Skipping.');
+              return;
+            }
+
+            console.log(`Verdict: ${JSON.stringify(verdict)}`);
+
+            // --- Coerce confidence ---
+            verdict.confidence = parseFloat(verdict.confidence) || 0;
+
+            // --- Execute actions dynamically ---
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = issue.number;
+            const actions = [];
+
+            // Post comment if present
+            if (verdict.comment) {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: verdict.comment });
+              actions.push('commented');
+            }
+
+            // Close if requested (only with high confidence)
+            if (verdict.close && verdict.confidence >= 0.85) {
+              const reason = verdict.close_reason === 'completed' ? 'completed' : 'not_planned';
+              await github.rest.issues.update({ owner, repo, issue_number, state: 'closed', state_reason: reason });
+              actions.push(`closed (${reason})`);
+            }
+
+            // Add label if requested
+            if (verdict.add_label === 'polly' && verdict.confidence >= 0.70) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['polly'] });
+              actions.push('labeled polly');
+            }
+
+            console.log(`#${issue_number}: ${actions.length ? actions.join(', ') : 'no action'}`);

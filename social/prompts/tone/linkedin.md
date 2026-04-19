@@ -59,6 +59,7 @@ Do:
 - Find the humor in the problem you solved ("the old setup had the kind of step count you'd expect from assembling furniture")
 - Use dry observations and understatement instead of hype
 - Include real links to repos, docs, or tools mentioned
+- Stay under Buffer's 1248-character cap. Cut detail before you cut clarity.
 - Keep it information-dense — every sentence earns its spot
 - Use concrete details: numbers, before/after comparisons, what changed
 - End with a plain invitation — "repo is public" or "contributions welcome" — not a manufactured question

@@ -189,6 +189,7 @@ const url = await imageUrl('a sunset');
 | `referenceImage` | string | - | URL for image-to-image |
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
+| `reasoning` | boolean | `false` | Enable reasoning (nanobanana-pro, gptimage). Ignored by other models. |
 | `n` | number | `1` | Number of images |
 
 ## Image Editing

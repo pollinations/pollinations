@@ -134,6 +134,7 @@ export const track = (eventType: EventType) =>
             apiKeyCreatedForUserId: apiKeyMetadata?.createdForUserId as
                 | string
                 | undefined,
+            apiKeyClientId: apiKeyMetadata?.clientId as string | undefined,
         } satisfies UserData;
 
         let responseOverride = null;

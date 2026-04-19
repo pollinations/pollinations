@@ -19,6 +19,7 @@ async function resolveAttribution(
     });
     return {
         found: true as const,
+        clientId: keyRow.id,
         userId: keyRow.userId,
         userName: user?.name,
         githubUsername: user?.githubUsername || undefined,

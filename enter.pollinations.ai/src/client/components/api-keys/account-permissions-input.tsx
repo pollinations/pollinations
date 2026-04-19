@@ -1,8 +1,6 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
-import { Badge } from "../ui/badge.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
 import {
     audioModelIds,
     imageModelIds,
@@ -20,6 +18,7 @@ import {
 type AccountPermissionOption = {
     id: "profile" | "balance" | "usage" | "keys";
     label: string;
+    shortLabel?: string;
     tooltip: string;
 };
 
@@ -55,6 +54,7 @@ export const ACCOUNT_PERMISSIONS = [
     {
         id: "keys",
         label: "Key Management",
+        shortLabel: "Keys",
         tooltip: "create, list, and revoke API keys",
     },
 ] as const satisfies readonly AccountPermissionOption[];
@@ -124,7 +124,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     modelsInitiallyExpanded = false,
 }) => {
     const themeConfig = getPermissionUiTheme(theme);
-    const { row: rowTheme, accent: accentTheme } = themeConfig;
+    const { row: rowTheme } = themeConfig;
     const permissionOptions =
         visiblePermissions === undefined
             ? ACCOUNT_PERMISSIONS
@@ -255,7 +255,18 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                             >
                                 <div className="flex flex-1 items-baseline gap-1">
                                     <span className="text-sm font-medium">
-                                        {permission.label}
+                                        {permission.shortLabel ? (
+                                            <>
+                                                <span className="sm:hidden">
+                                                    {permission.shortLabel}
+                                                </span>
+                                                <span className="hidden sm:inline">
+                                                    {permission.label}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            permission.label
+                                        )}
                                     </span>
                                     <span className="text-sm text-gray-500">
                                         – {permission.tooltip}
@@ -274,7 +285,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                         disabled && "opacity-50 cursor-not-allowed",
                     )}
                 >
-                    {/* biome-ignore lint/a11y/useSemanticElements: full-row toggle with nested Badge */}
+                    {/* biome-ignore lint/a11y/useSemanticElements: full-row toggle with nested interactive children */}
                     <div
                         role="button"
                         tabIndex={disabled ? -1 : 0}
@@ -306,22 +317,9 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                 –{" "}
                                 {isUnrestricted
                                     ? "all models allowed"
-                                    : "restricted to selected"}
+                                    : `restricted to ${selectedCount} selected model${selectedCount === 1 ? "" : "s"}`}
                             </span>
                         </div>
-                        <Badge
-                            color={
-                                isUnrestricted
-                                    ? accentTheme.badgeColor
-                                    : selectedCount === 0
-                                      ? "gray"
-                                      : "amber"
-                            }
-                        >
-                            {isUnrestricted
-                                ? "All"
-                                : `${selectedCount} selected`}
-                        </Badge>
                         <span
                             className={cn(
                                 "text-gray-500 text-xs transition-transform",

@@ -34,11 +34,9 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     } = getPermissionUiTheme(theme);
 
     return (
-        <Field.Root
-            className={inline ? "flex items-center justify-between gap-3" : ""}
-        >
+        <Field.Root className={inline ? "flex items-center gap-3" : ""}>
             <Field.Label
-                className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
+                className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0 w-20" : "mb-2"}`}
             >
                 Budget
                 <InfoTip
@@ -59,7 +57,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={cn("input-number-clean w-20", inputClasses)}
+                    className={cn("input-number-clean w-[90px]", inputClasses)}
                     placeholder="Unlimited"
                     disabled={disabled}
                 />

@@ -442,16 +442,32 @@ function AuthorizeComponent() {
         const denied = deviceOutcome === "denied";
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-xl w-full">
-                    <div className="text-4xl mb-4">
-                        {denied ? "\u{1F6AB}" : "\u{2705}"}
+                <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-w-xl w-full">
+                    <div className="flex justify-start px-6 pt-6">
+                        <a
+                            href="https://pollinations.ai"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0"
+                        >
+                            <img
+                                src="/logo.svg"
+                                alt="pollinations.ai"
+                                className="h-8 w-8 object-contain invert"
+                            />
+                        </a>
                     </div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                        {denied ? "Access Denied" : "Device Authorized"}
-                    </h2>
-                    <p className="text-sm text-amber-900">
-                        You can close this tab and return to your device.
-                    </p>
+                    <div className="px-8 pb-8 pt-2 text-center">
+                        <div className="text-4xl mb-4">
+                            {denied ? "\u{1F6AB}" : "\u{2705}"}
+                        </div>
+                        <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                            {denied ? "Access Denied" : "Device Authorized"}
+                        </h2>
+                        <p className="text-sm text-amber-900">
+                            You can close this tab and return to your device.
+                        </p>
+                    </div>
                 </div>
             </div>
         );
@@ -460,8 +476,24 @@ function AuthorizeComponent() {
     if (isPending) {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-xl w-full">
-                    <p className="text-gray-900">Loading...</p>
+                <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-w-xl w-full">
+                    <div className="flex justify-start px-6 pt-6">
+                        <a
+                            href="https://pollinations.ai"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0"
+                        >
+                            <img
+                                src="/logo.svg"
+                                alt="pollinations.ai"
+                                className="h-8 w-8 object-contain invert"
+                            />
+                        </a>
+                    </div>
+                    <div className="px-8 pb-8 pt-2 text-center">
+                        <p className="text-gray-900">Loading...</p>
+                    </div>
                 </div>
             </div>
         );
@@ -473,21 +505,22 @@ function AuthorizeComponent() {
                 <div
                     role="dialog"
                     aria-modal="true"
-                    aria-labelledby="authorize-sign-in-title"
+                    aria-label="Sign in to authorize"
                     className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-xl w-full"
                 >
-                    <div className="shrink-0 p-6 pb-4 flex items-center justify-between">
-                        <h2
-                            id="authorize-sign-in-title"
-                            className="text-lg font-semibold"
+                    <div className="shrink-0 p-6 pb-4 flex items-center gap-3">
+                        <a
+                            href="https://pollinations.ai"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0"
                         >
-                            Sign in to Authorize
-                        </h2>
-                        <img
-                            src="/logo.svg"
-                            alt="pollinations.ai"
-                            className="h-8 w-8 object-contain invert"
-                        />
+                            <img
+                                src="/logo.svg"
+                                alt="pollinations.ai"
+                                className="h-8 w-8 object-contain invert"
+                            />
+                        </a>
                     </div>
 
                     <div className="px-6 pb-6 space-y-4">
@@ -496,83 +529,49 @@ function AuthorizeComponent() {
                                 <p className="text-red-800 text-sm">{error}</p>
                             </div>
                         ) : (
-                            <>
-                                <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-4">
-                                    {isDeviceMode ? (
-                                        attribution?.appName ? (
-                                            <>
-                                                <p className="font-bold text-gray-900 text-lg">
-                                                    {attribution.appName}
-                                                </p>
-                                                {attribution.githubUsername && (
-                                                    <p className="text-sm text-amber-900 mt-0.5">
-                                                        by{" "}
-                                                        <a
-                                                            href={`https://github.com/${attribution.githubUsername}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="font-medium underline hover:text-gray-900"
-                                                        >
-                                                            @
-                                                            {
-                                                                attribution.githubUsername
-                                                            }
-                                                        </a>
-                                                    </p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="font-semibold text-gray-900">
-                                                A device is requesting access to
-                                                your account
-                                            </p>
-                                        )
-                                    ) : attribution?.appName ? (
-                                        <>
-                                            <p className="font-bold text-gray-900 text-lg">
-                                                {attribution.appName}
-                                            </p>
-                                            {attribution.githubUsername && (
-                                                <p className="text-sm text-amber-900 mt-0.5">
-                                                    by{" "}
-                                                    <a
-                                                        href={`https://github.com/${attribution.githubUsername}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="font-medium underline hover:text-gray-900"
-                                                    >
-                                                        @
-                                                        {
-                                                            attribution.githubUsername
-                                                        }
-                                                    </a>
-                                                </p>
-                                            )}
-                                            <p className="text-xs text-amber-900 font-mono mt-1">
-                                                {redirectHostname}
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <p className="font-semibold text-gray-900">
+                            <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-4">
+                                <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2">
+                                    Authorize
+                                </p>
+                                <p className="text-gray-900">
+                                    <span className="font-bold text-lg">
+                                        {attribution?.appName ??
+                                            (isDeviceMode
+                                                ? "A device"
+                                                : redirectHostname || "An app")}
+                                    </span>{" "}
+                                    wants access to your Pollinations account
+                                </p>
+                                {attribution?.githubUsername && (
+                                    <p className="text-sm text-amber-900 mt-1">
+                                        by{" "}
+                                        <a
+                                            href={`https://github.com/${attribution.githubUsername}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-medium underline hover:text-gray-900"
+                                        >
+                                            @{attribution.githubUsername}
+                                        </a>
+                                    </p>
+                                )}
+                                {!isDeviceMode &&
+                                    attribution?.appName &&
+                                    redirectHostname && (
+                                        <p className="text-xs text-amber-900 font-mono mt-1">
                                             {redirectHostname}
                                         </p>
                                     )}
-                                </div>
-
-                                <p className="text-amber-900 text-sm">
-                                    Sign in to let{" "}
-                                    <span className="font-semibold">
-                                        {attribution?.appName ||
-                                            redirectHostname ||
-                                            "this app"}
-                                    </span>{" "}
-                                    access your{" "}
-                                    <span className="font-semibold">
-                                        Pollinations
-                                    </span>{" "}
-                                    account.
+                                {isDeviceMode && (
+                                    <p className="text-xs text-amber-900 font-mono mt-1">
+                                        Code: {user_code}
+                                    </p>
+                                )}
+                                <p className="text-sm text-amber-900 mt-3">
+                                    Sign in to review and approve the requested
+                                    access.
                                 </p>
-                            </>
+                            </div>
                         )}
 
                         <div className="flex gap-2 justify-end">
@@ -583,7 +582,7 @@ function AuthorizeComponent() {
                                 color="dark"
                                 disabled={isSigningIn}
                             >
-                                {isDeviceMode ? "Deny" : "Cancel"}
+                                Deny
                             </Button>
                             <Button
                                 as="button"
@@ -613,24 +612,36 @@ function AuthorizeComponent() {
                 <div className="px-6 pt-6 pb-2">
                     <div className="flex items-center justify-between gap-3">
                         <a
-                            href="https://enter.pollinations.ai"
+                            href="https://pollinations.ai"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 min-w-0"
+                            className="shrink-0"
                         >
-                            {user.image && (
-                                <img
-                                    src={user.image}
-                                    alt=""
-                                    className="w-6 h-6 rounded-full shrink-0"
-                                />
-                            )}
-                            <span className="text-sm font-medium text-gray-900 truncate">
-                                {user.githubUsername || user.email}
-                            </span>
+                            <img
+                                src="/logo.svg"
+                                alt="pollinations.ai"
+                                className="h-8 w-8 object-contain invert"
+                            />
                         </a>
-                        <div className="shrink-0">
-                            <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <a
+                                href="https://enter.pollinations.ai"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 min-w-0"
+                            >
+                                {user.image && (
+                                    <img
+                                        src={user.image}
+                                        alt=""
+                                        className="w-6 h-6 rounded-full shrink-0"
+                                    />
+                                )}
+                                <span className="text-sm font-medium text-gray-900 truncate">
+                                    {user.githubUsername || user.email}
+                                </span>
+                            </a>
+                            <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden shrink-0">
                                 {totalBalance !== null && (
                                     <span className="flex items-center px-3 text-amber-900 whitespace-nowrap">
                                         {formatPollen(totalBalance)} pollen
@@ -667,91 +678,50 @@ function AuthorizeComponent() {
                                 >
                                     Authorize
                                 </p>
-                                {isDeviceMode ? (
-                                    <>
-                                        {attribution?.appName ? (
-                                            <>
-                                                <p className="text-xs text-amber-800 mb-1">
-                                                    A device is requesting
-                                                    access via
-                                                </p>
-                                                <p className="font-bold text-gray-900 text-lg">
-                                                    {attribution.appName}
-                                                </p>
-                                                {attribution.githubUsername && (
-                                                    <p className="text-sm text-amber-900 mt-0.5">
-                                                        by{" "}
-                                                        <a
-                                                            href={`https://github.com/${attribution.githubUsername}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="font-medium underline hover:text-gray-900"
-                                                        >
-                                                            @
-                                                            {
-                                                                attribution.githubUsername
-                                                            }
-                                                        </a>
-                                                    </p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-sm text-gray-900 font-medium">
-                                                A device is requesting access to
-                                                your account
-                                            </p>
-                                        )}
-                                        <p className="text-xs text-amber-900 mt-1 font-mono">
-                                            Code: {user_code}
-                                        </p>
-                                    </>
-                                ) : attribution?.appName ? (
-                                    <>
-                                        <div className="flex items-center gap-1.5">
-                                            <p className="font-bold text-gray-900 text-lg">
-                                                {attribution.appName}
-                                            </p>
-                                            {!isDeviceMode && (
-                                                <InfoTip
-                                                    text="Same as copy-pasting an API key into their app. Only share with apps you trust."
-                                                    label="API key sharing warning"
-                                                    tone="amber"
-                                                    icon="!"
-                                                />
-                                            )}
-                                        </div>
-                                        {attribution.githubUsername && (
-                                            <p className="text-sm text-amber-900 mt-0.5">
-                                                by{" "}
-                                                <a
-                                                    href={`https://github.com/${attribution.githubUsername}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="font-medium underline hover:text-gray-900"
-                                                >
-                                                    @
-                                                    {attribution.githubUsername}
-                                                </a>
-                                            </p>
-                                        )}
-                                        <p className="text-xs text-amber-900 font-mono mt-1">
-                                            {redirectHostname}
-                                        </p>
-                                    </>
-                                ) : (
-                                    <div className="flex items-center gap-1.5">
-                                        <p className="font-bold text-gray-900 text-lg font-mono">
-                                            {redirectHostname}
-                                        </p>
-                                        {!isDeviceMode && (
+                                <p className="text-gray-900">
+                                    <span className="font-bold text-lg">
+                                        {attribution?.appName ??
+                                            (isDeviceMode
+                                                ? "A device"
+                                                : redirectHostname || "An app")}
+                                    </span>
+                                    {!isDeviceMode && (
+                                        <>
+                                            {" "}
                                             <InfoTip
                                                 text="Same as copy-pasting an API key into their app. Only share with apps you trust."
                                                 label="API key sharing warning"
                                                 tone="amber"
                                                 icon="!"
                                             />
-                                        )}
-                                    </div>
+                                        </>
+                                    )}{" "}
+                                    wants access to your Pollinations account
+                                </p>
+                                {attribution?.githubUsername && (
+                                    <p className="text-sm text-amber-900 mt-1">
+                                        by{" "}
+                                        <a
+                                            href={`https://github.com/${attribution.githubUsername}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-medium underline hover:text-gray-900"
+                                        >
+                                            @{attribution.githubUsername}
+                                        </a>
+                                    </p>
+                                )}
+                                {!isDeviceMode &&
+                                    attribution?.appName &&
+                                    redirectHostname && (
+                                        <p className="text-xs text-amber-900 font-mono mt-1">
+                                            {redirectHostname}
+                                        </p>
+                                    )}
+                                {isDeviceMode && (
+                                    <p className="text-xs text-amber-900 font-mono mt-1">
+                                        Code: {user_code}
+                                    </p>
                                 )}
                             </div>
 
@@ -855,10 +825,12 @@ function AuthorizeComponent() {
                             </div>
 
                             <details className="group -mx-6 border-t border-amber-300">
-                                <summary className="cursor-pointer list-none px-3 py-3 text-sm font-medium text-amber-800 flex items-center justify-end gap-1 select-none transition-all hover:bg-amber-100 hover:text-amber-950">
-                                    <span>Advanced</span>
-                                    <span className="text-amber-700 transition-transform group-open:rotate-180">
-                                        &#x25BE;
+                                <summary className="cursor-pointer list-none px-3 py-3 flex items-center justify-end select-none">
+                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-amber-800 hover:bg-amber-100 hover:text-amber-950 transition-colors">
+                                        Permissions
+                                        <span className="text-amber-700 transition-transform group-open:rotate-180">
+                                            &#x25BE;
+                                        </span>
                                     </span>
                                 </summary>
                                 <div className="px-3 pb-3 pt-1 space-y-6">
@@ -905,7 +877,7 @@ function AuthorizeComponent() {
                             color="dark"
                             disabled={isAuthorizing}
                         >
-                            {isDeviceMode ? "Deny" : "Cancel"}
+                            Deny
                         </Button>
                         <Button
                             as="button"

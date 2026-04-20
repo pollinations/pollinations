@@ -1098,14 +1098,13 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
     "get /account/key": {
         valid: true,
         type: "secret",
-        prefix: "sk_",
+        name: "my-bot",
         expiresAt: null,
-        permissions: [
-            "generate:text",
-            "generate:image",
-            "generate:audio",
-            "account:usage",
-        ],
+        expiresIn: null,
+        permissions: {
+            models: null,
+            account: ["usage"],
+        },
         pollenBudget: null,
         rateLimitEnabled: false,
     },

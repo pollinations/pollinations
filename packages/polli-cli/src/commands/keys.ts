@@ -166,7 +166,7 @@ const create = new Command("create")
     .option("--budget <pollen>", "Pollen budget cap")
     .option(
         "--permissions <perms...>",
-        'Account permissions (e.g. balance usage). "keys" is auto-stripped.',
+        'Account permissions (e.g. profile usage). "keys" is auto-stripped.',
     )
     .action(async (opts) => {
         const key = requireKey();

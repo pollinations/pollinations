@@ -43,7 +43,7 @@ import { PollinationsError } from "./types.js";
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
-const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys balance usage";
+const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
 // Default timeouts in milliseconds

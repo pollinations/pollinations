@@ -805,7 +805,7 @@ export interface DeviceTokenResponse {
 export interface AuthorizeDeviceOptions extends RequestOptions {
     /** OAuth client ID. Defaults to the public polli CLI client. */
     clientId?: string;
-    /** Space-separated scope string (default: "generate keys balance usage") */
+    /** Space-separated scope string (default: "generate keys usage") */
     scope?: string;
 }
 

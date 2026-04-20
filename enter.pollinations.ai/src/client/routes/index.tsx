@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -79,23 +79,15 @@ function RouteComponent() {
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
     const [usageTimeRange, setUsageTimeRange] = useState<TimeRange>("7d");
-    const [downloadOpen, setDownloadOpen] = useState(false);
-    const downloadRef = useRef<HTMLDivElement>(null);
     const usageDays = TIME_RANGE_DAYS[usageTimeRange];
 
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (
-                downloadRef.current &&
-                !downloadRef.current.contains(e.target as Node)
-            ) {
-                setDownloadOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () =>
-            document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    const selectableKeys = useMemo(
+        () =>
+            apiKeys
+                .filter((k): k is typeof k & { name: string } => !!k.name)
+                .map((k) => ({ id: k.id, name: k.name })),
+        [apiKeys],
+    );
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -200,9 +192,14 @@ function RouteComponent() {
         router.invalidate();
     }
 
-    function triggerUsageDownload(path: string, params: URLSearchParams): void {
+    function downloadDetailedUsage(): void {
+        const params = new URLSearchParams({
+            format: "csv",
+            days: usageDays.toString(),
+            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
+        });
         const anchor = document.createElement("a");
-        anchor.href = `${path}?${params.toString()}`;
+        anchor.href = `/api/account/usage?${params.toString()}`;
         anchor.rel = "noopener";
         document.body.appendChild(anchor);
         anchor.click();
@@ -256,98 +253,31 @@ function RouteComponent() {
                         </h2>
                         <div className="flex flex-wrap items-center gap-2">
                             {activeTab === "usage" && (
-                                <div ref={downloadRef} className="relative">
-                                    <Button
-                                        as="button"
-                                        color="amber"
-                                        weight="light"
-                                        onClick={() =>
-                                            setDownloadOpen(!downloadOpen)
-                                        }
-                                        className="flex items-center gap-1.5"
+                                <Button
+                                    as="button"
+                                    color="amber"
+                                    weight="light"
+                                    onClick={downloadDetailedUsage}
+                                    className="flex items-center gap-1.5"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
                                     >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="14"
-                                            height="14"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        >
-                                            <title>Download</title>
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                            <polyline points="7 10 12 15 17 10" />
-                                            <line
-                                                x1="12"
-                                                y1="15"
-                                                x2="12"
-                                                y2="3"
-                                            />
-                                        </svg>
-                                        Download
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="12"
-                                            height="12"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            className={`transition-transform ${downloadOpen ? "rotate-180" : ""}`}
-                                        >
-                                            <title>Toggle</title>
-                                            <polyline points="6 9 12 15 18 9" />
-                                        </svg>
-                                    </Button>
-                                    {downloadOpen && (
-                                        <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-44 rounded-lg border border-amber-200 bg-white shadow-lg py-1 z-10">
-                                            <button
-                                                type="button"
-                                                onClick={async () => {
-                                                    triggerUsageDownload(
-                                                        "/api/account/usage/daily",
-                                                        new URLSearchParams({
-                                                            format: "csv",
-                                                            days: usageDays.toString(),
-                                                        }),
-                                                    );
-                                                    setDownloadOpen(false);
-                                                }}
-                                                className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50"
-                                            >
-                                                Daily Summary
-                                                <span className="block text-xs text-amber-500">
-                                                    Selected period
-                                                </span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    triggerUsageDownload(
-                                                        "/api/account/usage",
-                                                        new URLSearchParams({
-                                                            format: "csv",
-                                                            days: usageDays.toString(),
-                                                            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
-                                                        }),
-                                                    );
-                                                    setDownloadOpen(false);
-                                                }}
-                                                className="w-full px-3 py-2 text-left text-sm text-amber-900 hover:bg-amber-50"
-                                            >
-                                                Detailed Usage
-                                                <span className="block text-xs text-amber-500">
-                                                    Latest 50k requests
-                                                </span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
+                                        <title>Download</title>
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7 10 12 15 17 10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    Download CSV
+                                </Button>
                             )}
                         </div>
                     </div>
@@ -364,6 +294,7 @@ function RouteComponent() {
                             tier={tierData?.active?.tier}
                             timeRange={usageTimeRange}
                             onTimeRangeChange={setUsageTimeRange}
+                            apiKeys={selectableKeys}
                         />
                     )}
                 </div>

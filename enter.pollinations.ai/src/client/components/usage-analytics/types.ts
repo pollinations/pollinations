@@ -4,7 +4,6 @@ export type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     cost_usd: number;
-    api_key_names: string[];
 };
 
 export type TimeRange = "7d" | "30d" | "all";
@@ -18,7 +17,7 @@ export type Metric = "requests" | "pollen";
 export type FilterState = {
     timeRange: TimeRange;
     metric: Metric;
-    selectedKeys: string[];
+    selectedKeyIds: string[];
     selectedModels: string[];
 };
 

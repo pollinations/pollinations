@@ -589,13 +589,12 @@ export interface AuthorizeOptions {
 
 /** User profile information */
 export interface AccountProfile {
-    name: string;
-    email: string;
-    githubUsername?: string;
-    image?: string;
-    tier: string;
-    createdAt: string;
-    nextResetAt?: string;
+    githubUsername: string | null;
+    image: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    name?: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    email?: string | null;
 }
 
 /** Account balance */

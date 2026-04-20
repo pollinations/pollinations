@@ -343,9 +343,8 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /api/account/profile");
     lines.push(
-        "Returns user profile: name, email, githubUsername, image, tier, createdAt, nextResetAt.",
+        "Returns user profile. `githubUsername` and `image` are always included. `name` and `email` are included only when the API key has the `account:profile` permission.",
     );
-    lines.push("Requires `account:profile` permission.");
     lines.push("");
 
     lines.push("### GET /api/account/balance");
@@ -797,7 +796,7 @@ response = requests.get(
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 profile = response.json()
-print(f"{profile['name']} ({profile['tier']})")`,
+print(profile["githubUsername"])`,
         },
         {
             label: "JavaScript",
@@ -807,7 +806,7 @@ print(f"{profile['name']} ({profile['tier']})")`,
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const profile = await response.json();
-console.log(\`\${profile.name} (\${profile.tier})\`);`,
+console.log(profile.githubUsername);`,
         },
     ],
     "get /account/key": [
@@ -1089,14 +1088,10 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
         balance: 42.5,
     },
     "get /account/profile": {
-        name: "Jane Developer",
-        email: "jane@example.com",
         githubUsername: "janedeveloper",
         image: "https://avatars.example.com/jane.jpg",
-        tier: "seed",
-        displayTier: "Seed",
-        createdAt: "2024-01-15T10:30:00.000Z",
-        nextResetAt: "2024-02-15T14:00:00.000Z",
+        name: "Jane Developer",
+        email: "jane@example.com",
     },
     "get /account/key": {
         valid: true,
@@ -1450,7 +1445,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "",
                                 "| Endpoint | Description |",
                                 "|----------|-------------|",
-                                "| `GET /account/profile` | Name, email, tier, creation date |",
+                                "| `GET /account/profile` | GitHub username and profile image |",
                                 "| `GET /account/balance` | Current pollen balance |",
                                 "| `GET /account/usage` | Per-request history with costs |",
                                 "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",

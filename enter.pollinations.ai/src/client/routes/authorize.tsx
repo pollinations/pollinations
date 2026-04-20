@@ -3,10 +3,7 @@ import { useEffect, useState } from "react";
 import { cn } from "../../util.ts";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
-import {
-    ACCOUNT_PERMISSIONS,
-    AccountPermissionsInput,
-} from "../components/api-keys/account-permissions-input.tsx";
+import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
 import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
@@ -25,11 +22,10 @@ import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 import {
-    AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
+    CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
     parseScopeList,
     sanitizeAuthorizeAccountPermissions,
-    withBaselinePermissions,
 } from "../lib/authorize-config.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { formatPollen } from "../lib/format-pollen.ts";
@@ -174,10 +170,9 @@ function AuthorizeComponent() {
     const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
         () => new Set(urlScope ?? []),
     );
-    const visibleOptionalPermissions =
-        AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS.filter((p) =>
-            requestedScopes.has(p),
-        );
+    const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
+        requestedScopes.has(p),
+    );
     const hasBudget = keyPermissions.permissions.pollenBudget !== null;
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) && hasBudget;
@@ -296,9 +291,10 @@ function AuthorizeComponent() {
                 permissions: {
                     allowedModels,
                     pollenBudget,
-                    accountPermissions: withBaselinePermissions(
-                        sanitizeAuthorizeAccountPermissions(accountPermissions),
-                    ),
+                    accountPermissions:
+                        sanitizeAuthorizeAccountPermissions(
+                            accountPermissions,
+                        ) ?? [],
                 },
             });
 
@@ -512,8 +508,33 @@ function AuthorizeComponent() {
                                     <span className="w-4 shrink-0 text-amber-800">
                                         &#x1F464;
                                     </span>
-                                    <span>See username and budget.</span>
+                                    <span>
+                                        See your username and this key&apos;s
+                                        budget and usage.
+                                    </span>
                                 </li>
+                                {keyPermissions.permissions.accountPermissions?.includes(
+                                    "profile",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-amber-800">
+                                            &#x2709;
+                                        </span>
+                                        <span>See your name and email.</span>
+                                    </li>
+                                )}
+                                {keyPermissions.permissions.accountPermissions?.includes(
+                                    "balance",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-amber-800">
+                                            &#x1F4B0;
+                                        </span>
+                                        <span>
+                                            See your full account balance.
+                                        </span>
+                                    </li>
+                                )}
                                 {keyPermissions.permissions.accountPermissions?.includes(
                                     "usage",
                                 ) && (
@@ -521,15 +542,7 @@ function AuthorizeComponent() {
                                         <span className="w-4 shrink-0 text-amber-800">
                                             &#x1F4CA;
                                         </span>
-                                        <span>
-                                            See{" "}
-                                            {
-                                                ACCOUNT_PERMISSIONS.find(
-                                                    (p) => p.id === "usage",
-                                                )?.tooltip
-                                            }
-                                            .
-                                        </span>
+                                        <span>See your account usage.</span>
                                     </li>
                                 )}
                                 {keyPermissions.permissions.accountPermissions?.includes(

@@ -1839,7 +1839,7 @@ export class Pollinations {
      * @example
      * ```ts
      * const profile = await pollinations.accountProfile();
-     * console.log(profile.name, profile.tier);
+     * console.log(profile.githubUsername);
      * ```
      */
     async accountProfile(): Promise<AccountProfile> {

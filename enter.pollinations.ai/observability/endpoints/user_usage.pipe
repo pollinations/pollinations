@@ -30,6 +30,9 @@ SQL >
     FROM generation_event
     WHERE user_id = {{String(user_id, '')}}
     AND total_price > 0
+    {% if defined(api_key_id) %}
+    AND api_key_id = {{String(api_key_id)}}
+    {% end %}
     {% if defined(since) %}
     AND start_time >= {{DateTime(since)}}
     {% else %}

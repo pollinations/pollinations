@@ -99,33 +99,32 @@ describe("Device Authorization Flow", () => {
         expect(res.status).toBe(400);
     });
 
-    test(
-        "deny flow: token returns access_denied after deny",
-        async ({ sessionToken, mocks }) => {
-            await mocks.enable("polar", "tinybird", "github");
-            const device = await insertDeviceCode();
+    test("deny flow: token returns access_denied after deny", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("polar", "tinybird", "github");
+        const device = await insertDeviceCode();
 
-            const denyRes = await SELF.fetch(`${BASE}/api/device/deny`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-                body: JSON.stringify({ userCode: device.userCode }),
-            });
-            expect(denyRes.status).toBe(200);
+        const denyRes = await SELF.fetch(`${BASE}/api/device/deny`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ userCode: device.userCode }),
+        });
+        expect(denyRes.status).toBe(200);
 
-            const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ device_code: device.deviceCode }),
-            });
-            const body = (await tokenRes.json()) as { error: string };
-            expect(tokenRes.status).toBe(400);
-            expect(body.error).toBe("access_denied");
-        },
-        { timeout: 30000 },
-    );
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        const body = (await tokenRes.json()) as { error: string };
+        expect(tokenRes.status).toBe(400);
+        expect(body.error).toBe("access_denied");
+    }, 30000);
 
     test("expired code returns error on info and token", async () => {
         const device = await insertDeviceCode({
@@ -189,91 +188,86 @@ describe("Device Authorization Flow", () => {
         expect(res.status).toBe(401);
     });
 
-    test(
-        "full flow: approve device code, poll for key",
-        { timeout: 30000 },
-        async ({ sessionToken, mocks }) => {
-            await mocks.enable("polar", "tinybird", "github");
-            const device = await insertDeviceCode();
+    test("full flow: approve device code, poll for key", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("polar", "tinybird", "github");
+        const device = await insertDeviceCode();
 
-            // Get the user ID from session
-            const sessionRes = await SELF.fetch(
-                `${BASE}/api/auth/get-session`,
-                {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
-            );
-            const session = (await sessionRes.json()) as {
-                user: { id: string };
-            };
-            const { key, id: keyId } = await insertApiKey(session.user.id);
+        // Get the user ID from session
+        const sessionRes = await SELF.fetch(`${BASE}/api/auth/get-session`, {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+        const session = (await sessionRes.json()) as {
+            user: { id: string };
+        };
+        const { key, id: keyId } = await insertApiKey(session.user.id);
 
-            // Approve the device code
-            const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-                body: JSON.stringify({
-                    userCode: device.userCode,
-                    apiKey: key,
-                    apiKeyId: keyId,
-                }),
-            });
-            expect(approveRes.status).toBe(200);
+        // Approve the device code
+        const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                userCode: device.userCode,
+                apiKey: key,
+                apiKeyId: keyId,
+            }),
+        });
+        expect(approveRes.status).toBe(200);
 
-            // Poll for the token
-            const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ device_code: device.deviceCode }),
-            });
-            const tokenBody = (await tokenRes.json()) as {
-                access_token: string;
-                token_type: string;
-                scope?: string;
-            };
-            expect(tokenRes.status).toBe(200);
-            expect(tokenBody.access_token).toBe(key);
-            expect(tokenBody.token_type).toBe("bearer");
-            expect(tokenBody.scope).toBe("generate");
+        // Poll for the token
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        const tokenBody = (await tokenRes.json()) as {
+            access_token: string;
+            token_type: string;
+            scope?: string;
+        };
+        expect(tokenRes.status).toBe(200);
+        expect(tokenBody.access_token).toBe(key);
+        expect(tokenBody.token_type).toBe("bearer");
+        expect(tokenBody.scope).toBe("generate");
 
-            // Replay protection: row deleted, so polling returns invalid_grant
-            const replayRes = await SELF.fetch(`${BASE}/api/device/token`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ device_code: device.deviceCode }),
-            });
-            const replayBody = (await replayRes.json()) as { error: string };
-            expect(replayRes.status).toBe(400);
-            expect(replayBody.error).toBe("invalid_grant");
-        },
-    );
+        // Replay protection: row deleted, so polling returns invalid_grant
+        const replayRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        const replayBody = (await replayRes.json()) as { error: string };
+        expect(replayRes.status).toBe(400);
+        expect(replayBody.error).toBe("invalid_grant");
+    }, 30000);
 
-    test(
-        "GET /api/device/userinfo returns OIDC-shaped profile",
-        { timeout: 30000 },
-        async ({ sessionToken, mocks }) => {
-            await mocks.enable("polar", "tinybird", "github");
-            const res = await SELF.fetch(`${BASE}/api/device/userinfo`, {
-                headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-            });
-            const body = (await res.json()) as {
-                sub: string;
-                name: string;
-                preferred_username: string | null;
-            };
-            expect(res.status).toBe(200);
-            expect(body.sub).toBeTruthy();
-            expect(body.name).toBeTruthy();
-            expect(body).toHaveProperty("email");
-            expect(body).toHaveProperty("picture");
-            expect(body).toHaveProperty("preferred_username");
-        },
-    );
+    test("GET /api/device/userinfo returns OIDC-shaped profile", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("polar", "tinybird", "github");
+        const res = await SELF.fetch(`${BASE}/api/device/userinfo`, {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+        const body = (await res.json()) as {
+            sub: string;
+            name: string;
+            preferred_username: string | null;
+        };
+        expect(res.status).toBe(200);
+        expect(body.sub).toBeTruthy();
+        expect(body.name).toBeTruthy();
+        expect(body).toHaveProperty("email");
+        expect(body).toHaveProperty("picture");
+        expect(body).toHaveProperty("preferred_username");
+    }, 30000);
 });

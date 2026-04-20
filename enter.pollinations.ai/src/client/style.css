@@ -38,6 +38,7 @@
     --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
     --font-subheading: "Fraunces", ui-serif, serif;
     --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
+    --font-pixel: "Pixelify Sans", ui-monospace, monospace;
     --text-base: 16px;
 }
 
@@ -91,7 +92,60 @@
     }
 
     .scrollbar-subtle {
-        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+        --scrollbar-thumb-color: rgba(120, 113, 108, 0.65);
+        scrollbar-width: thin;
+        scrollbar-color: transparent transparent;
+    }
+
+    .scrollbar-theme-green {
+        --scrollbar-thumb-color: rgba(22, 163, 74, 0.6);
+    }
+
+    .scrollbar-theme-amber {
+        --scrollbar-thumb-color: rgba(217, 119, 6, 0.6);
+    }
+
+    .scrollbar-theme-blue {
+        --scrollbar-thumb-color: rgba(37, 99, 235, 0.6);
+    }
+
+    .scrollbar-theme-violet {
+        --scrollbar-thumb-color: rgba(124, 58, 237, 0.6);
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar-thumb {
+        background-color: transparent;
+        background-clip: content-box;
+        border: 3px solid transparent;
+        border-radius: 9999px;
+        transition: background-color 160ms ease;
+    }
+
+    .scrollbar-subtle[data-scrollbar-active="true"] {
+        scrollbar-color: var(--scrollbar-thumb-color) transparent;
+    }
+
+    .scrollbar-subtle[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb-color);
+    }
+
+    .input-number-clean::-webkit-inner-spin-button,
+    .input-number-clean::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .input-number-clean {
+        -moz-appearance: textfield;
     }
 }
 

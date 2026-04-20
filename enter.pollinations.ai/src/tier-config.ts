@@ -14,6 +14,10 @@ export const tierNames = Object.keys(TIERS) as TierName[];
 
 export const DEFAULT_TIER: TierName = "spore";
 
+// One-time grant for spore users minting their first BYOP key.
+// Set to 0 to disable. Credited to tier_balance; refill preserves over-cap values.
+export const BYOP_FIRST_KEY_GRANT_POLLEN = 1.0;
+
 export const TIER_POLLEN = Object.fromEntries(
     Object.entries(TIERS).map(([tier, config]) => [tier, config.pollen]),
 ) as Record<TierName, number>;

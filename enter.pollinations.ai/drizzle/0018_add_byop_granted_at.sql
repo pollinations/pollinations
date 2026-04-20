@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `byop_granted_at` integer;

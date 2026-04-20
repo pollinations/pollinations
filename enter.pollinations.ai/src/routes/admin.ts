@@ -184,16 +184,17 @@ export async function runTierRefill(
         .from(userTable)
         .where(sql`tier IS NOT NULL`);
 
-    // Add hourly pollen, capped at the tier max (negative balances recover gradually)
+    // Add hourly pollen, capped at the tier max (negative balances recover gradually).
+    // Balances already above cap (e.g. one-time BYOP grant) are preserved, not stripped.
     const hourlyResult = await db.run(sql`
         UPDATE user
         SET
             tier_balance = CASE tier
-                WHEN 'spore' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore})
-                WHEN 'seed' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed})
-                WHEN 'flower' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower})
-                WHEN 'nectar' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar})
-                WHEN 'router' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router})
+                WHEN 'spore' THEN CASE WHEN COALESCE(tier_balance, 0) >= ${TIER_POLLEN.spore} THEN tier_balance ELSE MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore}) END
+                WHEN 'seed' THEN CASE WHEN COALESCE(tier_balance, 0) >= ${TIER_POLLEN.seed} THEN tier_balance ELSE MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed}) END
+                WHEN 'flower' THEN CASE WHEN COALESCE(tier_balance, 0) >= ${TIER_POLLEN.flower} THEN tier_balance ELSE MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower}) END
+                WHEN 'nectar' THEN CASE WHEN COALESCE(tier_balance, 0) >= ${TIER_POLLEN.nectar} THEN tier_balance ELSE MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar}) END
+                WHEN 'router' THEN CASE WHEN COALESCE(tier_balance, 0) >= ${TIER_POLLEN.router} THEN tier_balance ELSE MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router}) END
                 ELSE tier_balance
             END,
             last_tier_grant = ${refillTimestamp}

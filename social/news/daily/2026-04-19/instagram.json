@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-19",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-19",
+  "generated_at": "2026-04-20T06:41:37.001187+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-19/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-19/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-19/images/instagram-3.jpg"
+    }
+  ],
+  "text": "10 pull requests merged this week. The greenhouse is getting crowded.\n\nWe added 8 new community apps to the ecosystem (shoutout to Aureon, ManhwaGen, and the rest of the builders). To support the growth, we upgraded our Fireworks models—say hello to minimax 2.7 and qwen vl. Bigger brains, larger context windows, same simple API.\n\nAlso shipped SDK v4.3.0 with better key management, and we stopped auto-banning users just because they deleted their GitHub accounts. Turns out, ghosting Microsoft shouldn't mean losing your API access.\n\nnpm i @pollinations/react\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #llm #api #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

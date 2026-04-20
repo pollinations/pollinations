@@ -12,9 +12,17 @@ import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
 import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
 import { getPermissionPillClasses } from "../components/api-keys/permission-ui.ts";
 import { PollenBudgetInput } from "../components/api-keys/pollen-budget-input.tsx";
+import {
+    AuthInfoCard,
+    AuthModal,
+    AuthModalHeader,
+    AuthModalLoading,
+    ErrorBanner,
+} from "../components/auth/auth-modal.tsx";
 import { Button } from "../components/button.tsx";
 import { InfoTip } from "../components/ui/info-tip.tsx";
 import { config } from "../config.ts";
+import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 import {
     AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
@@ -137,7 +145,7 @@ function AuthorizeComponent() {
     const user = session?.user;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const [isSigningIn, setIsSigningIn] = useState(false);
+    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [deviceOutcome, setDeviceOutcome] = useState<
@@ -260,18 +268,6 @@ function AuthorizeComponent() {
             })
             .catch(() => {});
     }, [user]);
-
-    async function handleSignIn(): Promise<void> {
-        setIsSigningIn(true);
-        const { error } = await authClient.signIn.social({
-            provider: "github",
-            callbackURL: window.location.href,
-        });
-        if (error) {
-            setIsSigningIn(false);
-            setError("Sign in failed. Please try again.");
-        }
-    }
 
     async function createKeyAndSetPermissions(): Promise<{
         key: string;
@@ -441,455 +437,362 @@ function AuthorizeComponent() {
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";
         return (
-            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-w-xl w-full">
-                    <div className="flex justify-start px-6 pt-6">
-                        <a
-                            href="https://pollinations.ai"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0"
-                        >
-                            <img
-                                src="/logo.svg"
-                                alt="pollinations.ai"
-                                className="h-8 w-8 object-contain invert"
-                            />
-                        </a>
+            <AuthModal>
+                <AuthModalHeader />
+                <div className="px-8 pb-8 pt-2 text-center">
+                    <div className="text-4xl mb-4">
+                        {denied ? "\u{1F6AB}" : "\u{2705}"}
                     </div>
-                    <div className="px-8 pb-8 pt-2 text-center">
-                        <div className="text-4xl mb-4">
-                            {denied ? "\u{1F6AB}" : "\u{2705}"}
-                        </div>
-                        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                            {denied ? "Access Denied" : "Device Authorized"}
-                        </h2>
-                        <p className="text-sm text-amber-900">
-                            You can close this tab and return to your device.
-                        </p>
-                    </div>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                        {denied ? "Access Denied" : "Device Authorized"}
+                    </h2>
+                    <p className="text-sm text-amber-900">
+                        You can close this tab and return to your device.
+                    </p>
                 </div>
-            </div>
+            </AuthModal>
         );
     }
 
     if (isPending) {
-        return (
-            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-w-xl w-full">
-                    <div className="flex justify-start px-6 pt-6">
-                        <a
-                            href="https://pollinations.ai"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0"
-                        >
-                            <img
-                                src="/logo.svg"
-                                alt="pollinations.ai"
-                                className="h-8 w-8 object-contain invert"
-                            />
-                        </a>
-                    </div>
-                    <div className="px-8 pb-8 pt-2 text-center">
-                        <p className="text-gray-900">Loading...</p>
-                    </div>
-                </div>
-            </div>
-        );
+        return <AuthModalLoading />;
     }
 
     if (!user) {
+        const displayedError = error ?? signInError;
         return (
-            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Sign in to authorize"
-                    className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-xl w-full"
-                >
-                    <div className="shrink-0 p-6 pb-4 flex items-center gap-3">
-                        <a
-                            href="https://pollinations.ai"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0"
-                        >
-                            <img
-                                src="/logo.svg"
-                                alt="pollinations.ai"
-                                className="h-8 w-8 object-contain invert"
-                            />
-                        </a>
-                    </div>
-
-                    <div className="px-6 pb-6 space-y-4">
-                        {error ? (
-                            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                                <p className="text-red-800 text-sm">{error}</p>
-                            </div>
-                        ) : (
-                            <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-4">
-                                <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2">
-                                    Authorize
-                                </p>
-                                <p className="text-gray-900">
-                                    <span className="font-bold text-lg">
-                                        {attribution?.appName ??
-                                            (isDeviceMode
-                                                ? "A device"
-                                                : redirectHostname || "An app")}
-                                    </span>{" "}
-                                    wants access to your Pollinations account
-                                </p>
-                                {attribution?.githubUsername && (
-                                    <p className="text-sm text-amber-900 mt-1">
-                                        by{" "}
-                                        <a
-                                            href={`https://github.com/${attribution.githubUsername}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="font-medium underline hover:text-gray-900"
-                                        >
-                                            @{attribution.githubUsername}
-                                        </a>
-                                    </p>
-                                )}
-                                {!isDeviceMode &&
-                                    attribution?.appName &&
-                                    redirectHostname && (
-                                        <p className="text-xs text-amber-900 font-mono mt-1">
-                                            {redirectHostname}
-                                        </p>
-                                    )}
-                                {isDeviceMode && (
-                                    <p className="text-xs text-amber-900 font-mono mt-1">
-                                        Code: {user_code}
-                                    </p>
-                                )}
-                                <p className="text-sm text-amber-900 mt-3">
-                                    Sign in to review and approve the requested
-                                    access.
-                                </p>
-                            </div>
-                        )}
-
-                        <div className="flex gap-2 justify-end">
-                            <Button
-                                as="button"
-                                onClick={handleDeny}
-                                weight="outline"
-                                color="dark"
-                                disabled={isSigningIn}
-                            >
-                                Deny
-                            </Button>
-                            <Button
-                                as="button"
-                                onClick={handleSignIn}
-                                disabled={isSigningIn || !!error}
-                                color="dark"
-                            >
-                                {isSigningIn
-                                    ? "Signing in..."
-                                    : "Continue with GitHub"}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto bg-green-950/50">
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="authorize-dialog-title"
-                className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-w-xl w-full my-auto"
-            >
-                <div className="px-6 pt-6 pb-2">
-                    <div className="flex items-center justify-between gap-3">
-                        <a
-                            href="https://pollinations.ai"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0"
-                        >
-                            <img
-                                src="/logo.svg"
-                                alt="pollinations.ai"
-                                className="h-8 w-8 object-contain invert"
-                            />
-                        </a>
-                        <div className="flex items-center gap-3 min-w-0">
-                            <a
-                                href="https://enter.pollinations.ai"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 min-w-0"
-                            >
-                                {user.image && (
-                                    <img
-                                        src={user.image}
-                                        alt=""
-                                        className="w-6 h-6 rounded-full shrink-0"
-                                    />
-                                )}
-                                <span className="text-sm font-medium text-gray-900 truncate">
-                                    {user.githubUsername || user.email}
-                                </span>
-                            </a>
-                            <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden shrink-0">
-                                {totalBalance !== null && (
-                                    <span className="flex items-center px-3 text-amber-900 whitespace-nowrap">
-                                        {formatPollen(totalBalance)} pollen
-                                    </span>
-                                )}
-                                <a
-                                    href="https://enter.pollinations.ai/#buy-pollen"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={cn(
-                                        "flex items-center px-3 py-1 font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 transition-colors cursor-pointer",
-                                        totalBalance !== null &&
-                                            "border-l border-amber-300",
-                                    )}
-                                >
-                                    Top up
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="px-6 py-2 space-y-4">
-                    {error ? (
-                        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                            <p className="text-red-800 text-sm">{error}</p>
-                        </div>
+            <AuthModal dialog={{ label: "Sign in to authorize" }}>
+                <AuthModalHeader />
+                <div className="px-6 pb-6 pt-4 space-y-4">
+                    {displayedError ? (
+                        <ErrorBanner>{displayedError}</ErrorBanner>
                     ) : (
-                        <div>
-                            <div className="-mx-6 px-6 py-4 bg-amber-100 border-y border-amber-300">
-                                <p
-                                    id="authorize-dialog-title"
-                                    className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2"
-                                >
-                                    Authorize
+                        <AuthInfoCard>
+                            <p className="text-gray-900">
+                                <span className="font-bold text-lg">
+                                    {attribution?.appName ??
+                                        (isDeviceMode
+                                            ? "A device"
+                                            : redirectHostname || "An app")}
+                                </span>{" "}
+                                wants access to your Pollinations account
+                            </p>
+                            {attribution?.githubUsername && (
+                                <p className="text-sm text-amber-900 mt-1">
+                                    by{" "}
+                                    <a
+                                        href={`https://github.com/${attribution.githubUsername}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium underline hover:text-gray-900"
+                                    >
+                                        @{attribution.githubUsername}
+                                    </a>
                                 </p>
-                                <p className="text-gray-900">
-                                    <span className="font-bold text-lg">
-                                        {attribution?.appName ??
-                                            (isDeviceMode
-                                                ? "A device"
-                                                : redirectHostname || "An app")}
-                                    </span>
-                                    {!isDeviceMode && (
-                                        <>
-                                            {" "}
-                                            <InfoTip
-                                                text="Same as copy-pasting an API key into their app. Only share with apps you trust."
-                                                label="API key sharing warning"
-                                                tone="amber"
-                                                icon="!"
-                                            />
-                                        </>
-                                    )}{" "}
-                                    wants access to your Pollinations account
-                                </p>
-                                {attribution?.githubUsername && (
-                                    <p className="text-sm text-amber-900 mt-1">
-                                        by{" "}
-                                        <a
-                                            href={`https://github.com/${attribution.githubUsername}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="font-medium underline hover:text-gray-900"
-                                        >
-                                            @{attribution.githubUsername}
-                                        </a>
-                                    </p>
-                                )}
-                                {!isDeviceMode &&
-                                    attribution?.appName &&
-                                    redirectHostname && (
-                                        <p className="text-xs text-amber-900 font-mono mt-1">
-                                            {redirectHostname}
-                                        </p>
-                                    )}
-                                {isDeviceMode && (
+                            )}
+                            {!isDeviceMode &&
+                                attribution?.appName &&
+                                redirectHostname && (
                                     <p className="text-xs text-amber-900 font-mono mt-1">
-                                        Code: {user_code}
+                                        {redirectHostname}
                                     </p>
                                 )}
-                            </div>
-
-                            <div className="p-4">
-                                <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-3">
-                                    To
+                            {isDeviceMode && (
+                                <p className="text-xs text-amber-900 font-mono mt-1">
+                                    Code: {user_code}
                                 </p>
-                                <ul className="text-sm text-amber-900 space-y-3">
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-amber-800">
-                                            &#x1F464;
-                                        </span>
-                                        <span>See profile and budget.</span>
-                                    </li>
-                                    {keyPermissions.permissions.accountPermissions?.includes(
-                                        "usage",
-                                    ) && (
-                                        <li className="flex items-start gap-2">
-                                            <span className="w-4 shrink-0 text-amber-800">
-                                                &#x1F4CA;
-                                            </span>
-                                            <span>
-                                                See{" "}
-                                                {
-                                                    ACCOUNT_PERMISSIONS.find(
-                                                        (p) => p.id === "usage",
-                                                    )?.tooltip
-                                                }
-                                                .
-                                            </span>
-                                        </li>
-                                    )}
-                                    {keyPermissions.permissions.accountPermissions?.includes(
-                                        "keys",
-                                    ) && (
-                                        <li className="flex items-start gap-2">
-                                            <span className="w-4 shrink-0 text-amber-800">
-                                                &#x1F511;
-                                            </span>
-                                            <span>
-                                                Create, list, and revoke API
-                                                keys.
-                                            </span>
-                                        </li>
-                                    )}
-                                    <li className="flex items-start gap-2">
-                                        <span
-                                            className={`w-4 shrink-0 ${
-                                                modalities.length === 0
-                                                    ? "text-red-600"
-                                                    : "text-amber-700"
-                                            }`}
-                                        >
-                                            {modalities.length === 0
-                                                ? "\u2717"
-                                                : "\u2713"}
-                                        </span>
-                                        {modalities.length === 0 ? (
-                                            <span>
-                                                No AI models are enabled.
-                                            </span>
-                                        ) : (
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span>Generate</span>
-                                                <div className="flex items-center gap-1 flex-nowrap">
-                                                    {modalities.map((m) => (
-                                                        <span
-                                                            key={m}
-                                                            className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${getPermissionPillClasses(m)}`}
-                                                        >
-                                                            {m}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div className="-mx-6 px-10 py-4 border-t border-amber-300">
-                                <PollenBudgetInput
-                                    value={
-                                        keyPermissions.permissions.pollenBudget
-                                    }
-                                    onChange={keyPermissions.setPollenBudget}
-                                    inline
-                                    theme="amber"
-                                />
-                            </div>
-
-                            <div className="-mx-6 px-10 py-4 border-t border-amber-300">
-                                <ExpiryDaysInput
-                                    value={
-                                        keyPermissions.permissions.expiryDays
-                                    }
-                                    onChange={keyPermissions.setExpiryDays}
-                                    inline
-                                    theme="amber"
-                                />
-                            </div>
-
-                            <details className="group -mx-6 border-t border-amber-300">
-                                <summary className="cursor-pointer list-none px-3 py-3 flex items-center justify-end select-none">
-                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-amber-800 hover:bg-amber-100 hover:text-amber-950 transition-colors">
-                                        Permissions
-                                        <span className="text-amber-700 transition-transform group-open:rotate-180">
-                                            &#x25BE;
-                                        </span>
-                                    </span>
-                                </summary>
-                                <div className="px-3 pb-3 pt-1 space-y-6">
-                                    <AccountPermissionsInput
-                                        value={
-                                            keyPermissions.permissions
-                                                .accountPermissions
-                                        }
-                                        onChange={
-                                            keyPermissions.setAccountPermissions
-                                        }
-                                        allowedModels={
-                                            keyPermissions.permissions
-                                                .allowedModels
-                                        }
-                                        onModelsChange={
-                                            keyPermissions.setAllowedModels
-                                        }
-                                        visiblePermissions={
-                                            visibleOptionalPermissions
-                                        }
-                                        theme="amber"
-                                        showApiName={false}
-                                        modelsInitiallyExpanded
-                                    />
-                                </div>
-                            </details>
-                        </div>
+                            )}
+                            <p className="text-sm text-amber-900 mt-3">
+                                Sign in to review and approve the requested
+                                access.
+                            </p>
+                        </AuthInfoCard>
                     )}
-                </div>
 
-                <div className="flex items-center justify-between p-6 pt-4">
-                    <a
-                        href="/terms"
-                        className="text-xs text-amber-800 hover:text-gray-900 hover:underline"
-                    >
-                        Terms & Conditions
-                    </a>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-end">
                         <Button
                             as="button"
                             onClick={handleDeny}
                             weight="outline"
                             color="dark"
-                            disabled={isAuthorizing}
+                            disabled={isSigningIn}
                         >
                             Deny
                         </Button>
                         <Button
                             as="button"
-                            onClick={handleAuthorize}
-                            disabled={!canAuthorize || isAuthorizing || !!error}
+                            onClick={signIn}
+                            disabled={isSigningIn || !!error}
                             color="dark"
                         >
-                            {isAuthorizing ? "Authorizing..." : "Authorize"}
+                            {isSigningIn
+                                ? "Signing in..."
+                                : "Continue with GitHub"}
                         </Button>
                     </div>
                 </div>
+            </AuthModal>
+        );
+    }
+
+    return (
+        <AuthModal dialog={{ labelledBy: "authorize-dialog-title" }}>
+            <AuthModalHeader>
+                <div className="flex items-center gap-3 min-w-0">
+                    <a
+                        href="https://enter.pollinations.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 min-w-0"
+                    >
+                        {user.image && (
+                            <img
+                                src={user.image}
+                                alt=""
+                                className="w-6 h-6 rounded-full shrink-0"
+                            />
+                        )}
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                            {user.githubUsername || user.email}
+                        </span>
+                    </a>
+                    <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden shrink-0">
+                        {totalBalance !== null && (
+                            <span className="flex items-center px-3 text-amber-900 whitespace-nowrap">
+                                {formatPollen(totalBalance)} pollen
+                            </span>
+                        )}
+                        <a
+                            href="https://enter.pollinations.ai/#buy-pollen"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(
+                                "flex items-center px-3 py-1 font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 transition-colors cursor-pointer",
+                                totalBalance !== null &&
+                                    "border-l border-amber-300",
+                            )}
+                        >
+                            Top up
+                        </a>
+                    </div>
+                </div>
+            </AuthModalHeader>
+
+            <div className="px-6 py-2 space-y-4">
+                {error ? (
+                    <ErrorBanner>{error}</ErrorBanner>
+                ) : (
+                    <div>
+                        <div className="-mx-6 px-6 py-4 bg-amber-100 border-y border-amber-300">
+                            <p
+                                id="authorize-dialog-title"
+                                className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2"
+                            >
+                                Authorize
+                            </p>
+                            <p className="text-gray-900">
+                                <span className="font-bold text-lg">
+                                    {attribution?.appName ??
+                                        (isDeviceMode
+                                            ? "A device"
+                                            : redirectHostname || "An app")}
+                                </span>
+                                {!isDeviceMode && (
+                                    <>
+                                        {" "}
+                                        <InfoTip
+                                            text="Same as copy-pasting an API key into their app. Only share with apps you trust."
+                                            label="API key sharing warning"
+                                            tone="amber"
+                                            icon="!"
+                                        />
+                                    </>
+                                )}{" "}
+                                wants access to your Pollinations account
+                            </p>
+                            {attribution?.githubUsername && (
+                                <p className="text-sm text-amber-900 mt-1">
+                                    by{" "}
+                                    <a
+                                        href={`https://github.com/${attribution.githubUsername}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium underline hover:text-gray-900"
+                                    >
+                                        @{attribution.githubUsername}
+                                    </a>
+                                </p>
+                            )}
+                            {!isDeviceMode &&
+                                attribution?.appName &&
+                                redirectHostname && (
+                                    <p className="text-xs text-amber-900 font-mono mt-1">
+                                        {redirectHostname}
+                                    </p>
+                                )}
+                            {isDeviceMode && (
+                                <p className="text-xs text-amber-900 font-mono mt-1">
+                                    Code: {user_code}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="p-4">
+                            <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-3">
+                                To
+                            </p>
+                            <ul className="text-sm text-amber-900 space-y-3">
+                                <li className="flex items-start gap-2">
+                                    <span className="w-4 shrink-0 text-amber-800">
+                                        &#x1F464;
+                                    </span>
+                                    <span>See profile and budget.</span>
+                                </li>
+                                {keyPermissions.permissions.accountPermissions?.includes(
+                                    "usage",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-amber-800">
+                                            &#x1F4CA;
+                                        </span>
+                                        <span>
+                                            See{" "}
+                                            {
+                                                ACCOUNT_PERMISSIONS.find(
+                                                    (p) => p.id === "usage",
+                                                )?.tooltip
+                                            }
+                                            .
+                                        </span>
+                                    </li>
+                                )}
+                                {keyPermissions.permissions.accountPermissions?.includes(
+                                    "keys",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-amber-800">
+                                            &#x1F511;
+                                        </span>
+                                        <span>
+                                            Create, list, and revoke API keys.
+                                        </span>
+                                    </li>
+                                )}
+                                <li className="flex items-start gap-2">
+                                    <span
+                                        className={`w-4 shrink-0 ${
+                                            modalities.length === 0
+                                                ? "text-red-600"
+                                                : "text-amber-700"
+                                        }`}
+                                    >
+                                        {modalities.length === 0
+                                            ? "\u2717"
+                                            : "\u2713"}
+                                    </span>
+                                    {modalities.length === 0 ? (
+                                        <span>No AI models are enabled.</span>
+                                    ) : (
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span>Generate</span>
+                                            <div className="flex items-center gap-1 flex-nowrap">
+                                                {modalities.map((m) => (
+                                                    <span
+                                                        key={m}
+                                                        className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${getPermissionPillClasses(m)}`}
+                                                    >
+                                                        {m}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div className="-mx-6 px-10 py-4 border-t border-amber-300">
+                            <PollenBudgetInput
+                                value={keyPermissions.permissions.pollenBudget}
+                                onChange={keyPermissions.setPollenBudget}
+                                inline
+                                theme="amber"
+                            />
+                        </div>
+
+                        <div className="-mx-6 px-10 py-4 border-t border-amber-300">
+                            <ExpiryDaysInput
+                                value={keyPermissions.permissions.expiryDays}
+                                onChange={keyPermissions.setExpiryDays}
+                                inline
+                                theme="amber"
+                            />
+                        </div>
+
+                        <details className="group -mx-6 border-t border-amber-300">
+                            <summary className="cursor-pointer list-none px-3 py-3 flex items-center justify-end select-none">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-amber-800 hover:bg-amber-100 hover:text-amber-950 transition-colors">
+                                    Permissions
+                                    <span className="text-amber-700 transition-transform group-open:rotate-180">
+                                        &#x25BE;
+                                    </span>
+                                </span>
+                            </summary>
+                            <div className="px-3 pb-3 pt-1 space-y-6">
+                                <AccountPermissionsInput
+                                    value={
+                                        keyPermissions.permissions
+                                            .accountPermissions
+                                    }
+                                    onChange={
+                                        keyPermissions.setAccountPermissions
+                                    }
+                                    allowedModels={
+                                        keyPermissions.permissions.allowedModels
+                                    }
+                                    onModelsChange={
+                                        keyPermissions.setAllowedModels
+                                    }
+                                    visiblePermissions={
+                                        visibleOptionalPermissions
+                                    }
+                                    theme="amber"
+                                    showApiName={false}
+                                    modelsInitiallyExpanded
+                                />
+                            </div>
+                        </details>
+                    </div>
+                )}
             </div>
-        </div>
+
+            <div className="flex items-center justify-between p-6 pt-4">
+                <a
+                    href="/terms"
+                    className="text-xs text-amber-800 hover:text-gray-900 hover:underline"
+                >
+                    Terms & Conditions
+                </a>
+                <div className="flex gap-2">
+                    <Button
+                        as="button"
+                        onClick={handleDeny}
+                        weight="outline"
+                        color="dark"
+                        disabled={isAuthorizing}
+                    >
+                        Deny
+                    </Button>
+                    <Button
+                        as="button"
+                        onClick={handleAuthorize}
+                        disabled={!canAuthorize || isAuthorizing || !!error}
+                        color="dark"
+                    >
+                        {isAuthorizing ? "Authorizing..." : "Authorize"}
+                    </Button>
+                </div>
+            </div>
+        </AuthModal>
     );
 }

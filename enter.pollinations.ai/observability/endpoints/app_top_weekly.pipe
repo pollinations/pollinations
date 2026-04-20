@@ -41,8 +41,7 @@ SQL >
     FROM generation_event ge
     INNER JOIN registered_apps ra
         ON ge.api_key_created_via = 'redirect-auth'
-       AND ge.api_key_created_for_app = ra.app_name
-       AND ge.api_key_created_for_user_id = ra.owner_user_id
+       AND ge.api_key_client_id = ra.app_key_id
     WHERE ge.start_time > now() - INTERVAL 7 DAY
       AND ge.environment = 'production'
       AND ge.response_status >= 200 AND ge.response_status < 300

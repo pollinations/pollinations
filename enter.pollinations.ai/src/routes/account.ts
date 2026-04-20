@@ -362,6 +362,7 @@ async function fetchDetailedUsagePage(
     token: string,
     params: {
         userId: string;
+        apiKeyId?: string;
         limit: number;
         since: string;
         until: string;
@@ -375,6 +376,7 @@ async function fetchDetailedUsagePage(
         token,
         {
             user_id: params.userId,
+            api_key_id: params.apiKeyId,
             limit: params.limit.toString(),
             since: params.since,
             until: params.until,
@@ -396,6 +398,20 @@ const profileResponseSchema = z.object({
         .string()
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
+    name: z
+        .string()
+        .nullable()
+        .optional()
+        .describe(
+            "User's display name (only returned when the key has `account:profile`)",
+        ),
+    email: z
+        .email()
+        .nullable()
+        .optional()
+        .describe(
+            "User's email address (only returned when the key has `account:profile`)",
+        ),
 });
 
 const balanceResponseSchema = z.object({
@@ -461,7 +477,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile including GitHub username and profile image. Requires `account:profile` permission when using API keys.",
+                "Returns your account profile. GitHub username and profile image are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",
@@ -472,31 +488,22 @@ export const accountRoutes = new Hono<Env>()
                     },
                 },
                 401: { description: "Unauthorized" },
-                403: {
-                    description:
-                        "Permission denied - API key missing `account:profile` permission",
-                },
             },
         }),
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
+            const includeProfilePII =
+                !apiKey || !!apiKey.permissions?.account?.includes("profile");
 
-            // Check permission for API key access
-            if (apiKey && !apiKey.permissions?.account?.includes("profile")) {
-                throw new HTTPException(403, {
-                    message:
-                        "API key does not have 'account:profile' permission",
-                });
-            }
-
-            // Get user profile from D1
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
+                    name: userTable.name,
+                    email: userTable.email,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -510,6 +517,10 @@ export const accountRoutes = new Hono<Env>()
             return c.json({
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
+                ...(includeProfilePII && {
+                    name: profile.name ?? null,
+                    email: profile.email ?? null,
+                }),
             });
         },
     )
@@ -519,7 +530,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns your current pollen balance. If the API key has a budget limit, returns the key's remaining budget instead. Requires `account:balance` permission when using API keys.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:balance` scope see the full account balance.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -532,7 +543,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key missing `account:balance` permission",
+                        "Permission denied - API key has no budget and is missing the `account:balance` scope",
                 },
             },
         }),
@@ -541,20 +552,19 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            // Check permission for API key access
-            if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
-                throw new HTTPException(403, {
-                    message:
-                        "API key does not have 'account:balance' permission",
-                });
-            }
-
-            // If API key has a budget, return that
+            // Keys with a budget always see their own budget — no scope needed.
             if (apiKey?.pollenBalance != null) {
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
-            // Otherwise return user's total balance
+            // Beyond that, reading account balance requires the `balance` scope.
+            if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
+                throw new HTTPException(403, {
+                    message:
+                        "API key does not have 'account:balance' scope and no budget of its own. Add `account:balance` to read account balance, or set a budget on the key.",
+                });
+            }
+
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
@@ -1189,6 +1199,86 @@ export const accountRoutes = new Hono<Env>()
                 // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
                 rateLimitEnabled: keyType === "publishable",
             });
+        },
+    )
+    .get(
+        "/key/usage",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get API Key Usage",
+            description:
+                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.",
+            responses: {
+                200: {
+                    description: "Usage records for this key",
+                    content: {
+                        "application/json": {
+                            schema: resolver(usageResponseSchema),
+                        },
+                    },
+                },
+                401: {
+                    description:
+                        "API key required (this endpoint is key-auth only)",
+                },
+            },
+        }),
+        validator("query", usageQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("key-usage");
+            const apiKey = c.var.auth.apiKey;
+            if (!apiKey) {
+                throw new HTTPException(401, {
+                    message:
+                        "API key required. This endpoint is authenticated by API key only.",
+                });
+            }
+            const user = c.var.auth.requireUser();
+
+            const { format, limit, before, days } = c.req.valid("query");
+            const usageWindow = buildUsageWindow(days);
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const header =
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
+
+            log.debug(
+                "Fetching key usage: userId={userId} keyId={keyId} days={days}",
+                { userId: user.id, keyId: apiKey.id, days },
+            );
+
+            try {
+                const usage = (
+                    await fetchDetailedUsagePage(
+                        tinybirdOrigin,
+                        tinybirdToken,
+                        {
+                            userId: user.id,
+                            apiKeyId: apiKey.id,
+                            limit,
+                            since: usageWindow.since,
+                            until: usageWindow.until,
+                            before,
+                        },
+                    )
+                ).map(stripUsageCursor);
+
+                if (format === "csv") {
+                    const rows = usage.map(usageRecordToCsvRow);
+                    const csv = [header, ...rows].join("\n");
+                    return new Response(csv, {
+                        headers: {
+                            "Content-Type": "text/csv",
+                            "Content-Disposition": `attachment; filename="pollinations-key-usage-${usage.length}-rows-${days}d-${new Date().toISOString().split("T")[0]}.csv"`,
+                        },
+                    });
+                }
+
+                return c.json({ usage, count: usage.length });
+            } catch (error) {
+                log.error("Error fetching key usage: {error}", { error });
+                return c.json({ error: "Failed to fetch usage data" }, 500);
+            }
         },
     );
 

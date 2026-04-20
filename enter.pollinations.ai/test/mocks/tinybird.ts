@@ -54,6 +54,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         })
         .get("/v0/pipes/user_usage.json", async (c) => {
             const userId = c.req.query("user_id") || "";
+            const apiKeyId = c.req.query("api_key_id");
             const limit = Number(c.req.query("limit") || "100");
             const before = c.req.query("before");
             const beforeEventId = c.req.query("before_event_id");
@@ -62,6 +63,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
 
             const rows = state.events
                 .filter((event) => isBilledUsage(event, userId))
+                .filter((event) => !apiKeyId || event.apiKeyId === apiKeyId)
                 .filter((event) => isWithinRange(event, since, until))
                 .sort(compareEventsNewestFirst)
                 .filter((event) => isBeforeCursor(event, before, beforeEventId))

@@ -26,20 +26,27 @@ export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
  * Permissions that every consent-flow key always receives. Not user-toggleable;
  * surfaced to the user as read-only lines in the consent summary.
  *
- * - `profile`: read name, email, GitHub username, tier, account timestamps
- * - `balance`: read the remaining spending budget on this key (NOT the user's
- *   total account balance — the balance endpoint clamps to the key's budget
- *   when a budget is set, which it always is in the consent flow)
+ * Currently empty — every scope gates account-wide data. The caller's own key
+ * metadata (budget, expiry, permissions) is always readable via `/account/key`,
+ * and `githubUsername` + profile image are always readable via
+ * `/account/profile`, neither requires a scope.
  */
-export const BASELINE_CONSENT_PERMISSIONS = ["profile", "balance"] as const;
+export const BASELINE_CONSENT_PERMISSIONS = [] as const;
 
 /**
  * Permissions the user can opt into via the Advanced section.
  *
- * - `usage`: cross-key usage history
+ * - `profile`: read account name and email (username + image are free)
+ * - `balance`: read full account balance (key's own budget is free)
+ * - `usage`: cross-key account-wide usage (key's own usage is free)
  * - `keys`: create, list, and revoke API keys
  */
-export const OPTIONAL_CONSENT_PERMISSIONS = ["usage", "keys"] as const;
+export const OPTIONAL_CONSENT_PERMISSIONS = [
+    "profile",
+    "balance",
+    "usage",
+    "keys",
+] as const;
 
 export const AUTHORIZE_ALLOWED_ACCOUNT_PERMISSIONS = [
     ...BASELINE_CONSENT_PERMISSIONS,

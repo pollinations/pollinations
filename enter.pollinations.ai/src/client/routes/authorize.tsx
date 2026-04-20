@@ -3,10 +3,7 @@ import { useEffect, useState } from "react";
 import { cn } from "../../util.ts";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
-import {
-    ACCOUNT_PERMISSIONS,
-    AccountPermissionsInput,
-} from "../components/api-keys/account-permissions-input.tsx";
+import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
 import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
@@ -512,8 +509,33 @@ function AuthorizeComponent() {
                                     <span className="w-4 shrink-0 text-amber-800">
                                         &#x1F464;
                                     </span>
-                                    <span>See username and budget.</span>
+                                    <span>
+                                        See your username and this key&apos;s
+                                        budget and usage.
+                                    </span>
                                 </li>
+                                {keyPermissions.permissions.accountPermissions?.includes(
+                                    "profile",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-amber-800">
+                                            &#x2709;
+                                        </span>
+                                        <span>See your name and email.</span>
+                                    </li>
+                                )}
+                                {keyPermissions.permissions.accountPermissions?.includes(
+                                    "balance",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-amber-800">
+                                            &#x1F4B0;
+                                        </span>
+                                        <span>
+                                            See your full account balance.
+                                        </span>
+                                    </li>
+                                )}
                                 {keyPermissions.permissions.accountPermissions?.includes(
                                     "usage",
                                 ) && (
@@ -521,15 +543,7 @@ function AuthorizeComponent() {
                                         <span className="w-4 shrink-0 text-amber-800">
                                             &#x1F4CA;
                                         </span>
-                                        <span>
-                                            See{" "}
-                                            {
-                                                ACCOUNT_PERMISSIONS.find(
-                                                    (p) => p.id === "usage",
-                                                )?.tooltip
-                                            }
-                                            .
-                                        </span>
+                                        <span>See your account usage.</span>
                                     </li>
                                 )}
                                 {keyPermissions.permissions.accountPermissions?.includes(

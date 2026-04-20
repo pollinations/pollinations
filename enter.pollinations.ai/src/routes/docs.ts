@@ -342,8 +342,9 @@ function generateLLMDoc(): string {
     lines.push("");
 
     lines.push("### GET /api/account/profile");
-    lines.push("Returns user profile: githubUsername, image.");
-    lines.push("Requires `account:profile` permission.");
+    lines.push(
+        "Returns user profile. `githubUsername` and `image` are always included. `name` and `email` are included only when the API key has the `account:profile` permission.",
+    );
     lines.push("");
 
     lines.push("### GET /api/account/balance");
@@ -1089,6 +1090,8 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
     "get /account/profile": {
         githubUsername: "janedeveloper",
         image: "https://avatars.example.com/jane.jpg",
+        name: "Jane Developer",
+        email: "jane@example.com",
     },
     "get /account/key": {
         valid: true,

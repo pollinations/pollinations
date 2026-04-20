@@ -39,17 +39,17 @@ export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
     {
         id: "profile",
         label: "Profile",
-        tooltip: "username and profile image",
+        tooltip: "account name and email",
     },
     {
         id: "balance",
         label: "Balance",
-        tooltip: "remaining spending limit",
+        tooltip: "full account balance",
     },
     {
         id: "usage",
         label: "Usage",
-        tooltip: "account usage history",
+        tooltip: "account usage",
     },
     {
         id: "keys",

@@ -591,6 +591,10 @@ export interface AuthorizeOptions {
 export interface AccountProfile {
     githubUsername: string | null;
     image: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    name?: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    email?: string | null;
 }
 
 /** Account balance */

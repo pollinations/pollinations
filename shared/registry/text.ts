@@ -651,18 +651,23 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "minimax": {
-        aliases: ["minimax-m2.5", "minimax-m2p5"],
-        modelId: "accounts/fireworks/models/minimax-m2p5",
+        aliases: [
+            "minimax-m2.7",
+            "minimax-m2p7",
+            "minimax-m2.5",
+            "minimax-m2p5",
+        ],
+        modelId: "accounts/fireworks/models/minimax-m2p7",
         provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-04-12").getTime(),
+                date: new Date("2026-04-19").getTime(),
                 promptTextTokens: perMillion(0.3),
-                promptCachedTokens: perMillion(0.03),
+                promptCachedTokens: perMillion(0.06),
                 completionTextTokens: perMillion(1.2),
             },
         ],
-        description: "MiniMax M2.5 - Coding, Agentic & Multi-Language",
+        description: "MiniMax M2.7 - Coding, Agentic & Multi-Language",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -758,30 +763,30 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-vision": {
-        aliases: ["qwen3-vl", "qwen3-vl-plus", "qwen-vl"],
-        modelId: "qwen3-vl-plus",
-        provider: "alibaba",
+        aliases: [
+            "qwen3-vl",
+            "qwen3-vl-30b-a3b-thinking",
+            "qwen3-vl-thinking",
+            "qwen3-vl-plus",
+            "qwen-vl",
+        ],
+        modelId: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
+        provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.2), // per 1M tokens
-                completionTextTokens: perMillion(1.6), // per 1M tokens
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.3), // per 1M tokens
-                completionTextTokens: perMillion(2.4), // per 1M tokens
+                date: new Date("2026-04-19").getTime(),
+                promptTextTokens: perMillion(0.15),
+                promptCachedTokens: perMillion(0.08),
+                completionTextTokens: perMillion(0.6),
             },
         ],
         description:
-            "Qwen3 VL Plus - Vision-Language Understanding with Reasoning via DashScope",
+            "Qwen3 VL 30B A3B Thinking - Vision-Language Reasoning (Fireworks)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 131072,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "qwen-safety": {

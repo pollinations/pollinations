@@ -14,6 +14,11 @@ export const tierNames = Object.keys(TIERS) as TierName[];
 
 export const DEFAULT_TIER: TierName = "spore";
 
+// One-time welcome grant for every new signup.
+// Credited to tier_balance; refill preserves over-cap values.
+// Set to 0 to disable (falls back to the default tier's hourly pollen).
+export const SIGNUP_GRANT_POLLEN = 1.0;
+
 export const TIER_POLLEN = Object.fromEntries(
     Object.entries(TIERS).map(([tier, config]) => [tier, config.pollen]),
 ) as Record<TierName, number>;

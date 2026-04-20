@@ -34,11 +34,13 @@ describe("Tier Balance Management", () => {
             const db = drizzle(env.DB);
             const executionContext = createExecutionContext();
 
-            // Setup: Create test users with different tiers and depleted balances
+            // Setup: Create test users with different tiers and depleted balances.
+            // Router starts above cap (to verify above-cap balances are preserved
+            // by refill — signup grant path).
             const testUsers = [
                 { id: "user-spore", tier: "spore", tierBalance: 0 },
                 { id: "user-seed", tier: "seed", tierBalance: 0 },
-                { id: "user-flower", tier: "flower", tierBalance: 2.0 },
+                { id: "user-flower", tier: "flower", tierBalance: 0 },
                 { id: "user-nectar", tier: "nectar", tierBalance: 0 },
                 { id: "user-router", tier: "router", tierBalance: 100 },
             ];
@@ -101,8 +103,9 @@ describe("Tier Balance Management", () => {
             expect(users.find((u) => u.id === "user-nectar")?.tierBalance).toBe(
                 TIER_POLLEN.nectar,
             );
+            // Router starts at 100 (above cap 10); refill preserves it.
             expect(users.find((u) => u.id === "user-router")?.tierBalance).toBe(
-                TIER_POLLEN.router,
+                100,
             );
 
             // All refilled users should have lastTierGrant updated
@@ -154,7 +157,8 @@ describe("Tier Balance Management", () => {
                 .where(sql`${userTable.id} = 'user-multi-balance'`)
                 .limit(1);
 
-            expect(user[0]?.tierBalance).toBe(TIER_POLLEN.flower);
+            // Starts at 2 (above flower cap 0.4); refill preserves above-cap balance.
+            expect(user[0]?.tierBalance).toBe(2);
             expect(user[0]?.packBalance).toBe(50); // Unchanged
             expect(user[0]?.cryptoBalance).toBe(25); // Unchanged
         });

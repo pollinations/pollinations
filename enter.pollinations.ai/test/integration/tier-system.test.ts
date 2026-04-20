@@ -407,7 +407,8 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = 'migrated-active'`)
                 .limit(1);
 
-            expect(activeUser[0]?.tierBalance).toBe(0.8); // Nectar tier (additive: MIN(15 + 0.8, 0.8) = 0.8, capped)
+            // Above nectar cap (0.8); refill preserves above-cap balance.
+            expect(activeUser[0]?.tierBalance).toBe(15);
             expect(activeUser[0]?.packBalance).toBe(200); // Unchanged
 
             const depletedUser = await db
@@ -430,7 +431,7 @@ describe("Tier System End-to-End", () => {
             const _executionContext = createExecutionContext();
             const userId = "tier-change-user";
 
-            // User starts as seed tier
+            // User starts as seed tier with a depleted balance
             await db
                 .insert(userTable)
                 .values({
@@ -438,7 +439,7 @@ describe("Tier System End-to-End", () => {
                     email: "tierchange@test.com",
                     name: "Tier Change User",
                     tier: "seed",
-                    tierBalance: 2, // Partially used seed balance
+                    tierBalance: 0,
                     packBalance: 0,
                     cryptoBalance: 0,
                     createdAt: new Date(),
@@ -448,7 +449,7 @@ describe("Tier System End-to-End", () => {
                     target: userTable.id,
                     set: {
                         tier: "seed",
-                        tierBalance: 2,
+                        tierBalance: 0,
                     },
                 });
 

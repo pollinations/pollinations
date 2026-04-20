@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-19",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-19",
+  "generated_at": "2026-04-20T06:41:37.001187+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-19/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped sdk v4.3.0 and upgraded fireworks models (minimax 2.7, qwen vl). we also stopped auto-banning users who delete their github accounts. deleting your online presence is a valid life choice and shouldn't cost you your api access."
+}

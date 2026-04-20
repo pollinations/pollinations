@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
+import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -226,10 +227,17 @@ export const apiKeysRoutes = new Hono<Env>()
                 ? JSON.parse(existingKey.permissions as string)
                 : {};
 
+            // Whitelist to known scopes (drops unknown / legacy names like "balance").
+            // Dashboard-only endpoint, so "keys" is allowed here.
+            const sanitizedAccountPerms =
+                accountPermissions === undefined
+                    ? undefined
+                    : sanitizeAuthorizeAccountPermissions(accountPermissions);
+
             const updatedPermissions = buildUpdatedPermissions(
                 existingPermissions,
                 allowedModels,
-                accountPermissions,
+                sanitizedAccountPerms,
             );
 
             if (updatedPermissions) {

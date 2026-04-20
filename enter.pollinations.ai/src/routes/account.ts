@@ -9,8 +9,8 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
+import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import type { Env } from "../env.ts";
-
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
@@ -902,10 +902,12 @@ export const accountRoutes = new Hono<Env>()
             const isPublishable = type === "publishable";
             const prefix = isPublishable ? "pk" : "sk";
 
-            // Strip "keys" from child account permissions to prevent escalation
-            const safeAccountPerms = accountPermissions
-                ? accountPermissions.filter((p) => p !== "keys")
-                : accountPermissions;
+            // Whitelist to known scopes (drops unknown / legacy names like "balance").
+            // Then strip "keys" to prevent escalation via the BYOP flow.
+            const safeAccountPerms =
+                sanitizeAuthorizeAccountPermissions(accountPermissions)?.filter(
+                    (p) => p !== "keys",
+                ) ?? null;
 
             // Build permissions object
             const permissions: Record<string, string[]> = {};

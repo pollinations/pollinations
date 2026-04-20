@@ -1,0 +1,34 @@
+{
+  "pr_number": 10368,
+  "title": "Add Insight Engine to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10368",
+  "merged_at": "2026-04-20T17:29:05Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Insight Engine blooms again",
+    "blurb": "Insight Engine has been updated to our latest endpoints and is back in the greenhouse. A beautiful Flower tier app returns to the garden.",
+    "summary": "Insight Engine has been updated to use the current gen.pollinations.ai endpoints and re-added to the community apps showcase.",
+    "impact": "Users can once again discover and use Insight Engine from the community apps directory.",
+    "keywords": [
+      "community",
+      "app",
+      "insight-engine",
+      "showcase",
+      "flower-tier"
+    ],
+    "visual_concept": "The PR is about 'Insight Engine' returning to the 'Greenhouse' (Flower tier). Visuals: Polly the bee watering or tending to a glowing mechanical flower or an engine-like plant in a greenhouse. The robot companion could be holding a magnifying glass to represent 'insight'.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and the chunky monitor robot in a lush digital greenhouse. Polly is watering a glowing mechanical flower that looks like a tiny engine, while the robot examines it with a magnifying glass. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-20/PR-10368.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and the chunky monitor robot in a lush digital greenhouse. Polly is watering a glowing mechanical flower that looks like a tiny engine, while the robot examines it with a magnifying glass. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-20T17:29:58.496291+00:00",
+  "app_name": "Insight Engine",
+  "app_url": "https://erbharatmalhotra.github.io/Insight_Engine/"
+}

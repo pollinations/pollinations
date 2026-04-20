@@ -1,0 +1,34 @@
+{
+  "pr_number": 10360,
+  "title": "refactor: merge account:balance scope into account:usage",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10360",
+  "merged_at": "2026-04-20T13:42:36Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the Hive's Ledger",
+    "blurb": "We've merged the balance and usage API scopes into a single, unified permission. Less clutter in the UI, simpler key management for everyone.",
+    "summary": "Merged the account:balance and account:usage API scopes into a single account:usage permission to simplify key management.",
+    "impact": "Developers will see a cleaner consent UI with a single 'Usage' row instead of two separate permissions for account-wide aggregates.",
+    "keywords": [
+      "api",
+      "auth",
+      "scopes",
+      "refactor",
+      "billing"
+    ],
+    "visual_concept": "Polly the bee organizing two separate ledgers or folders into a single unified file, representing the merging of the two API scopes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot organizing two glowing folders into a single lime green (#ecf874) filing cabinet. A retro terminal nearby displays clean code. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-20/PR-10360.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot organizing two glowing folders into a single lime green (#ecf874) filing cabinet. A retro terminal nearby displays clean code. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-20T13:43:39.059364+00:00"
+}

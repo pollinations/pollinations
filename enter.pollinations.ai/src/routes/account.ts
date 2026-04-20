@@ -114,7 +114,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions (e.g. ["balance", "usage"]). "keys" is auto-stripped.',
+            'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
         ),
 });
 
@@ -507,7 +507,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:balance` scope see the full account balance.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -520,7 +520,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key has no budget and is missing the `account:balance` scope",
+                        "Permission denied - API key has no budget and is missing the `account:usage` scope",
                 },
             },
         }),
@@ -534,11 +534,11 @@ export const accountRoutes = new Hono<Env>()
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
-            // Beyond that, reading account balance requires the `balance` scope.
-            if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
+            // Beyond that, reading account balance requires the `usage` scope.
+            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
                 throw new HTTPException(403, {
                     message:
-                        "API key does not have 'account:balance' scope and no budget of its own. Add `account:balance` to read account balance, or set a budget on the key.",
+                        "API key does not have 'account:usage' scope and no budget of its own. Add `account:usage` to read account balance, or set a budget on the key.",
                 });
             }
 

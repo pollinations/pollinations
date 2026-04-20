@@ -104,7 +104,7 @@ async function updateKeyMetadata(
  *
  * Permissions format: { models?: string[], account?: string[] }
  * - models: ["flux", "openai"] = restrict to specific models
- * - account: ["balance", "usage"] = allow access to account endpoints
+ * - account: ["profile", "usage", "keys"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
@@ -122,7 +122,9 @@ const UpdateApiKeySchema = z.object({
         .array(z.string())
         .nullable()
         .optional()
-        .describe('Account permissions: ["balance", "usage"]. null = none'),
+        .describe(
+            'Account permissions: ["profile", "usage", "keys"]. null = none',
+        ),
     expiresAt: z
         .string()
         .datetime()

@@ -1,3 +1,12 @@
+- **2026-04-19** – **🚀 Upgraded Vision Models** MiniMax is now on version 2.7, and Qwen Vision got migrated to a new Fireworks model with a massive 262K context window. Stuff more pixels into the prompt. Check the [available models](https://gen.pollinations.ai/v1/models).
+- **2026-04-19** – **🔐 SDK 4.3.0** Added device login flow and key management CRUD operations to the [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk). Manage your account keys without leaving the terminal.
+- **2026-04-19** – **📱 PollenHours** A mobile-first AI video pipeline built for Termux on Android. Generate video directly from your pocket. [Try it](https://aghartavault-ship-it.github.io/PollenHours/) <!-- app -->
+- **2026-04-19** – **📰 Akhbaar** Converts dense daily tech report PDFs into structured JSON insights for live news feeds. [Try it](https://akhbaar.hoxlabs.com/) <!-- app -->
+- **2026-04-19** – **🎨 ManhwaGen** A community-built tool for generating Manhwa-style comic content. [Try it](https://manhwagen.vercel.app/) <!-- app -->
+- **2026-04-19** – **✍️ What If? Scenario Explorer** An interactive tool for speculative storytelling and narrative exploration. [Try it](https://whatif.pythonanywhere.com) <!-- app -->
+- **2026-04-19** – **✨ Aureon** A new media generation platform leveraging our Flux and LTX-2.3 models. [Try it](https://aureon.gold) <!-- app -->
+- **2026-04-19** – **🎓 G-Pai** A new student-focused educational tool built by the community. [Try it](https://g-pai.vercel.app/) <!-- app -->
+- **2026-04-19** – **🎯 Deals King & Radar Ai** A new business tool added to the community greenhouse. [Try it](https://deal.pm/en/extension) <!-- app -->
 - **2026-04-17** – **🚀 Polli CLI hits v0.1.0** The terminal client is officially stable. It now streams text by default, formats tables without breaking your terminal, and plays audio directly via the new `--play` flag.
 - **2026-04-17** – **🧠 Flashlearn** Turn your documents into true/false flashcards and AI audio lessons. Because reading is hard. [Try it](http://flashlearn.asquareportal.com/) <!-- app -->
 - **2026-04-17** – **📱 Ciel AI** A full-featured, mobile-first AI assistant powered entirely by our API. Good inspiration for your own mobile builds. [Try it](https://ciel-ai-v1.netlify.app) <!-- app -->

@@ -35,8 +35,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const params = new URLSearchParams({
             days: TIME_RANGE_DAYS[filters.timeRange].toString(),
         });
-        if (filters.selectedKeyId) {
-            params.set("api_key_id", filters.selectedKeyId);
+        if (filters.selectedKeyIds.length > 0) {
+            params.set("api_key_ids", filters.selectedKeyIds.join(","));
         }
 
         fetch(`/api/account/usage/daily?${params.toString()}`)
@@ -54,7 +54,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 setDailyUsage([]);
             })
             .finally(() => setLoading(false));
-    }, [filters.timeRange, filters.selectedKeyId]);
+    }, [filters.timeRange, filters.selectedKeyIds]);
 
     useEffect(() => {
         fetchUsage();

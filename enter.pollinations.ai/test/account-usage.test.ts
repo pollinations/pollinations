@@ -6,7 +6,7 @@ const authHeaders = (sessionToken: string) => ({
     Cookie: `better-auth.session_token=${sessionToken}`,
 });
 
-test("GET /api/account/usage/daily forwards api_key_id filter to the pipe", async ({
+test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", async ({
     sessionToken,
     mocks,
 }) => {
@@ -30,18 +30,26 @@ test("GET /api/account/usage/daily forwards api_key_id filter to the pipe", asyn
     const unfilteredBody = (await unfiltered.json()) as { usage: unknown[] };
     expect(unfilteredBody.usage).toHaveLength(1);
 
-    const filtered = await SELF.fetch(
-        "http://localhost:3000/api/account/usage/daily?days=30&api_key_id=key_abc123",
+    const filteredSingle = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?days=30&api_key_ids=key_abc123",
         { headers: authHeaders(sessionToken) },
     );
-    expect(filtered.status).toBe(200);
+    expect(filteredSingle.status).toBe(200);
+
+    const filteredMulti = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?days=30&api_key_ids=key_def456,key_abc123",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(filteredMulti.status).toBe(200);
 
     const dailyCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("user_usage_daily_filtered.json"),
     );
-    expect(dailyCalls).toHaveLength(2);
-    expect(dailyCalls[0].query.api_key_id).toBeUndefined();
-    expect(dailyCalls[1].query.api_key_id).toBe("key_abc123");
+    expect(dailyCalls).toHaveLength(3);
+    expect(dailyCalls[0].query.api_key_ids).toBeUndefined();
+    expect(dailyCalls[1].query.api_key_ids).toBe("key_abc123");
+    // Multi-key filter is sorted and deduped before forwarding
+    expect(dailyCalls[2].query.api_key_ids).toBe("key_abc123,key_def456");
     expect(dailyCalls[0].query.since).toMatch(/^\d{4}-\d{2}-\d{2}/);
     expect(dailyCalls[0].query.until).toMatch(/^\d{4}-\d{2}-\d{2}/);
 });

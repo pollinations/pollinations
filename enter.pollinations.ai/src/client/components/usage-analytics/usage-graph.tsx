@@ -35,18 +35,22 @@ export const UsageGraph: FC<UsageGraphProps> = ({
 }) => {
     const [filters, setFilters] = useState<Omit<FilterState, "timeRange">>({
         metric: "pollen",
-        selectedKeyId: null,
+        selectedKeyIds: [],
         selectedModels: [],
     });
 
     useEffect(() => {
-        if (
-            filters.selectedKeyId &&
-            !apiKeys.some((k) => k.id === filters.selectedKeyId)
-        ) {
-            setFilters((f) => ({ ...f, selectedKeyId: null }));
+        const validIds = new Set(apiKeys.map((k) => k.id));
+        const pruned = filters.selectedKeyIds.filter((id) => validIds.has(id));
+        if (pruned.length !== filters.selectedKeyIds.length) {
+            setFilters((f) => ({ ...f, selectedKeyIds: pruned }));
         }
-    }, [apiKeys, filters.selectedKeyId]);
+    }, [apiKeys, filters.selectedKeyIds]);
+
+    const keySelectOptions = apiKeys.map((k) => ({
+        value: k.id,
+        label: k.name,
+    }));
 
     const { loading, error, fetchUsage, usedModels, chartData, stats } =
         useUsageData({
@@ -185,28 +189,21 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 disabledText="None"
                                 label="Models"
                             />
-                            <label className="flex items-center gap-2 text-xs font-medium text-gray-500">
-                                API Key
-                                <select
-                                    value={filters.selectedKeyId ?? ""}
-                                    onChange={(e) =>
-                                        setFilters((f) => ({
-                                            ...f,
-                                            selectedKeyId:
-                                                e.target.value || null,
-                                        }))
-                                    }
-                                    disabled={apiKeys.length === 0}
-                                    className="rounded-md border border-amber-200 bg-white px-2 py-1 text-sm text-amber-900 disabled:opacity-50"
-                                >
-                                    <option value="">All</option>
-                                    {apiKeys.map((k) => (
-                                        <option key={k.id} value={k.id}>
-                                            {k.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                            <MultiSelect
+                                options={keySelectOptions}
+                                selected={filters.selectedKeyIds}
+                                onChange={(v) =>
+                                    setFilters((f) => ({
+                                        ...f,
+                                        selectedKeyIds: v,
+                                    }))
+                                }
+                                placeholder="All"
+                                disabled={keySelectOptions.length === 0}
+                                disabledText="None"
+                                align="end"
+                                label="API Keys"
+                            />
                         </div>
 
                         {/* Chart */}

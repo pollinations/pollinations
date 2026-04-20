@@ -641,8 +641,8 @@ export interface DailyUsageOptions {
     format?: "json" | "csv";
     /** Number of days to include, max 90 (default: 90) */
     days?: number;
-    /** Filter to a single API key by id */
-    api_key_id?: string;
+    /** Filter to one or more API keys by id */
+    api_key_ids?: string[];
 }
 
 /** Daily usage summary */

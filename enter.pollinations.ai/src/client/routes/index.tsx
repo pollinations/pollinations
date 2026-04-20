@@ -81,15 +81,13 @@ function RouteComponent() {
     const [usageTimeRange, setUsageTimeRange] = useState<TimeRange>("7d");
     const usageDays = TIME_RANGE_DAYS[usageTimeRange];
 
-    const nonExpiredKeys = useMemo(() => {
-        const now = Date.now();
-        return apiKeys
-            .filter(
-                (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
-            )
-            .filter((k): k is typeof k & { name: string } => !!k.name)
-            .map((k) => ({ id: k.id, name: k.name }));
-    }, [apiKeys]);
+    const selectableKeys = useMemo(
+        () =>
+            apiKeys
+                .filter((k): k is typeof k & { name: string } => !!k.name)
+                .map((k) => ({ id: k.id, name: k.name })),
+        [apiKeys],
+    );
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -330,7 +328,7 @@ function RouteComponent() {
                             tier={tierData?.active?.tier}
                             timeRange={usageTimeRange}
                             onTimeRangeChange={setUsageTimeRange}
-                            apiKeys={nonExpiredKeys}
+                            apiKeys={selectableKeys}
                         />
                     )}
                 </div>

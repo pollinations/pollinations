@@ -253,7 +253,21 @@ const usageDailyQuerySchema = z.object({
         .max(MAX_USAGE_DAYS)
         .optional()
         .default(DEFAULT_DAILY_USAGE_DAYS),
-    api_key_id: z.string().optional(),
+    api_key_ids: z
+        .string()
+        .optional()
+        .transform((value) =>
+            value
+                ? Array.from(
+                      new Set(
+                          value
+                              .split(",")
+                              .map((id) => id.trim())
+                              .filter((id) => id.length > 0),
+                      ),
+                  ).sort()
+                : [],
+        ),
 });
 
 type DailyUsageRecord = {
@@ -724,7 +738,11 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const { format, days, api_key_id: apiKeyId } = c.req.valid("query");
+            const {
+                format,
+                days,
+                api_key_ids: apiKeyIds,
+            } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -733,7 +751,7 @@ export const accountRoutes = new Hono<Env>()
             const cacheKeyPrefix = usageUserOverridden
                 ? `usage:daily:debug:${usageUserId}`
                 : `usage:daily:${usageUserId}`;
-            const cacheKey = `${cacheKeyPrefix}:${days}:${apiKeyId ? `key:${apiKeyId}` : "all"}`;
+            const cacheKey = `${cacheKeyPrefix}:${days}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
             const windows = buildUsageWindows(days);
 
             try {
@@ -761,7 +779,10 @@ export const accountRoutes = new Hono<Env>()
                                     user_id: usageUserId,
                                     since: window.since,
                                     until: window.until,
-                                    api_key_id: apiKeyId,
+                                    api_key_ids:
+                                        apiKeyIds.length > 0
+                                            ? apiKeyIds.join(",")
+                                            : undefined,
                                 },
                             ),
                         ),
@@ -778,13 +799,13 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 log.debug(
-                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyId={apiKeyId} count={count} cached={cached}",
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count} cached={cached}",
                     {
                         requesterUserId: user.id,
                         targetUserId: usageUserId,
                         override: usageUserOverridden,
                         days,
-                        apiKeyId: apiKeyId ?? null,
+                        apiKeyIds,
                         count: usage.length,
                         cached,
                     },

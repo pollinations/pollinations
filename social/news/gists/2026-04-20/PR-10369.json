@@ -1,0 +1,34 @@
+{
+  "pr_number": 10369,
+  "title": "Add Reporay to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10369",
+  "merged_at": "2026-04-20T17:31:29Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "X-Ray Vision for Repos",
+    "blurb": "Reporay just joined the greenhouse! It's an AI-powered GitHub repository analyzer that gives you instant insights into tech stacks and architecture just by pasting a URL.",
+    "summary": "Added Reporay, an AI-powered GitHub repository analyzer, to the community apps showcase.",
+    "impact": "Users can now discover Reporay in our app directory to easily generate smart summaries and architectural insights from any GitHub repository URL.",
+    "keywords": [
+      "community",
+      "app",
+      "github",
+      "analyzer",
+      "reporay"
+    ],
+    "visual_concept": "Reporay is a repository analyzer, suggesting themes of scanning, x-rays, or magnifying glasses looking at code. The scene should feature Polly the bee and the Monitor Robot examining a glowing folder or code block, revealing its inner structure.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot examining a glowing digital folder with a magnifying glass. The folder emits a soft lime green (#ecf874) light, revealing tiny 8-bit code blocks inside like an x-ray. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-20/PR-10369.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot examining a glowing digital folder with a magnifying glass. The folder emits a soft lime green (#ecf874) light, revealing tiny 8-bit code blocks inside like an x-ray. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-04-20T17:32:33.006965+00:00",
+  "app_name": "Reporay",
+  "app_url": "https://repo-ray.vercel.app"
+}

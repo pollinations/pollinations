@@ -12,6 +12,7 @@ import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
 import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
 import { getPermissionPillClasses } from "../components/api-keys/permission-ui.ts";
 import { PollenBudgetInput } from "../components/api-keys/pollen-budget-input.tsx";
+import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import {
     AuthInfoCard,
     AuthModal,
@@ -20,7 +21,6 @@ import {
     ErrorBanner,
 } from "../components/auth/auth-modal.tsx";
 import { Button } from "../components/button.tsx";
-import { InfoTip } from "../components/ui/info-tip.tsx";
 import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
@@ -468,40 +468,12 @@ function AuthorizeComponent() {
                         <ErrorBanner>{displayedError}</ErrorBanner>
                     ) : (
                         <AuthInfoCard>
-                            <p className="text-gray-900">
-                                <span className="font-bold text-lg">
-                                    {attribution?.appName ??
-                                        (isDeviceMode
-                                            ? "A device"
-                                            : redirectHostname || "An app")}
-                                </span>{" "}
-                                wants access to your Pollinations account
-                            </p>
-                            {attribution?.githubUsername && (
-                                <p className="text-sm text-amber-900 mt-1">
-                                    by{" "}
-                                    <a
-                                        href={`https://github.com/${attribution.githubUsername}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-medium underline hover:text-gray-900"
-                                    >
-                                        @{attribution.githubUsername}
-                                    </a>
-                                </p>
-                            )}
-                            {!isDeviceMode &&
-                                attribution?.appName &&
-                                redirectHostname && (
-                                    <p className="text-xs text-amber-900 font-mono mt-1">
-                                        {redirectHostname}
-                                    </p>
-                                )}
-                            {isDeviceMode && (
-                                <p className="text-xs text-amber-900 font-mono mt-1">
-                                    Code: {user_code}
-                                </p>
-                            )}
+                            <AppAttribution
+                                attribution={attribution}
+                                isDeviceMode={isDeviceMode}
+                                userCode={user_code}
+                                redirectHostname={redirectHostname}
+                            />
                             <p className="text-sm text-amber-900 mt-3">
                                 Sign in to review and approve the requested
                                 access.
@@ -590,51 +562,12 @@ function AuthorizeComponent() {
                             >
                                 Authorize
                             </p>
-                            <p className="text-gray-900">
-                                <span className="font-bold text-lg">
-                                    {attribution?.appName ??
-                                        (isDeviceMode
-                                            ? "A device"
-                                            : redirectHostname || "An app")}
-                                </span>
-                                {!isDeviceMode && (
-                                    <>
-                                        {" "}
-                                        <InfoTip
-                                            text="Same as copy-pasting an API key into their app. Only share with apps you trust."
-                                            label="API key sharing warning"
-                                            tone="amber"
-                                            icon="!"
-                                        />
-                                    </>
-                                )}{" "}
-                                wants access to your Pollinations account
-                            </p>
-                            {attribution?.githubUsername && (
-                                <p className="text-sm text-amber-900 mt-1">
-                                    by{" "}
-                                    <a
-                                        href={`https://github.com/${attribution.githubUsername}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-medium underline hover:text-gray-900"
-                                    >
-                                        @{attribution.githubUsername}
-                                    </a>
-                                </p>
-                            )}
-                            {!isDeviceMode &&
-                                attribution?.appName &&
-                                redirectHostname && (
-                                    <p className="text-xs text-amber-900 font-mono mt-1">
-                                        {redirectHostname}
-                                    </p>
-                                )}
-                            {isDeviceMode && (
-                                <p className="text-xs text-amber-900 font-mono mt-1">
-                                    Code: {user_code}
-                                </p>
-                            )}
+                            <AppAttribution
+                                attribution={attribution}
+                                isDeviceMode={isDeviceMode}
+                                userCode={user_code}
+                                redirectHostname={redirectHostname}
+                            />
                         </div>
 
                         <div className="p-4">

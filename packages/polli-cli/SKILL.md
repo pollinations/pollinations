@@ -132,10 +132,10 @@ polli usage --daily      # daily cost summary
 ```bash
 polli keys list                                                    # list all keys on the account
 polli keys info                                                    # details about the CURRENTLY AUTHENTICATED key only (takes no id)
-polli keys create --name "my-bot" --type secret --budget 1000 --permissions balance usage   # scoped key
+polli keys create --name "my-bot" --type secret --budget 1000 --permissions profile usage   # scoped key
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--permissions <perms...>` scopes what the new key can do on the account (e.g. `balance usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Read API docs
 ```bash

@@ -117,7 +117,7 @@ const login = new Command("login")
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 client_id: "pk_NgBAArhUeGvSRFba",
-                scope: "generate keys balance usage",
+                scope: "generate keys usage",
             }),
         }).catch((err) => {
             printError(

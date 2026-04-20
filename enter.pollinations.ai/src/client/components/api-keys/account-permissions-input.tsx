@@ -16,7 +16,7 @@ import {
 } from "./permission-ui.ts";
 
 type AccountPermissionOption = {
-    id: "profile" | "balance" | "usage" | "keys";
+    id: "profile" | "usage" | "keys";
     label: string;
     shortLabel?: string;
     tooltip: string;
@@ -42,14 +42,9 @@ export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
         tooltip: "account name and email",
     },
     {
-        id: "balance",
-        label: "Balance",
-        tooltip: "full account balance",
-    },
-    {
         id: "usage",
         label: "Usage",
-        tooltip: "account usage",
+        tooltip: "account balance and usage",
     },
     {
         id: "keys",
@@ -110,7 +105,7 @@ const MODEL_CATEGORY_HOVER_CLASSES = {
 
 /**
  * Unified permissions input for API keys.
- * Includes model restrictions and account permissions (profile, balance, usage).
+ * Includes model restrictions and account permissions (profile, usage).
  */
 export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     value,
@@ -217,7 +212,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     return (
         <div>
             <div className="space-y-4">
-                {/* Other Permissions - Profile, Balance, Usage */}
+                {/* Other Permissions - Profile, Usage */}
                 {permissionOptions.map((permission) => {
                     const isChecked = value?.includes(permission.id) ?? false;
                     return (

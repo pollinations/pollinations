@@ -351,7 +351,9 @@ function generateLLMDoc(): string {
     lines.push(
         "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
     );
-    lines.push("Requires `account:balance` permission.");
+    lines.push(
+        "Requires `account:usage` permission when using an API key without a budget of its own.",
+    );
     lines.push("");
 
     lines.push("### GET /api/account/usage");
@@ -397,7 +399,7 @@ function generateLLMDoc(): string {
         "- pollenBudget (number, optional): Pollen budget cap. null = unlimited",
     );
     lines.push(
-        '- accountPermissions (string[], optional): e.g. ["balance","usage"]. "keys" is auto-stripped',
+        '- accountPermissions (string[], optional): e.g. ["profile","usage"]. "keys" is auto-stripped',
     );
     lines.push(
         "Returns full key value once: { id, key, name, type, prefix, start, expiresAt, permissions, pollenBudget }",
@@ -1102,7 +1104,6 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
             "generate:text",
             "generate:image",
             "generate:audio",
-            "account:balance",
             "account:usage",
         ],
         pollenBudget: null,
@@ -1451,7 +1452,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",
                                 "| `GET /account/key` | API key validity, type, and permissions |",
                                 "",
-                                "When using API keys, specific permissions may be required (e.g., `account:balance`, `account:usage`).",
+                                "When using API keys, specific permissions may be required (e.g., `account:usage`, `account:profile`).",
                             ].join("\n"),
                         },
                         {

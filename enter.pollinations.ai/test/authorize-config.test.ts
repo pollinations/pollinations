@@ -60,7 +60,7 @@ describe("getAuthorizeInitialPermissions", () => {
         });
     });
 
-    it("keeps balance as an optional permission from the url", () => {
+    it("drops legacy balance scope after the merge with usage", () => {
         expect(
             getAuthorizeInitialPermissions({
                 permissions: ["balance", "usage"],
@@ -69,7 +69,7 @@ describe("getAuthorizeInitialPermissions", () => {
             allowedModels: undefined,
             pollenBudget: DEFAULT_CONSENT_BUDGET,
             expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
-            accountPermissions: ["balance", "usage"],
+            accountPermissions: ["usage"],
         });
     });
 
@@ -102,12 +102,7 @@ describe("getAuthorizeInitialPermissions", () => {
 
 describe("sanitizeAuthorizeAccountPermissions", () => {
     it("allows only the consent permission set", () => {
-        expect(CONSENT_PERMISSIONS).toEqual([
-            "profile",
-            "balance",
-            "usage",
-            "keys",
-        ]);
+        expect(CONSENT_PERMISSIONS).toEqual(["profile", "usage", "keys"]);
         expect(
             sanitizeAuthorizeAccountPermissions([
                 "offline_access",

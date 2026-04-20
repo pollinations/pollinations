@@ -524,25 +524,15 @@ function AuthorizeComponent() {
                                     </li>
                                 )}
                                 {keyPermissions.permissions.accountPermissions?.includes(
-                                    "balance",
-                                ) && (
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-amber-800">
-                                            &#x1F4B0;
-                                        </span>
-                                        <span>
-                                            See your full account balance.
-                                        </span>
-                                    </li>
-                                )}
-                                {keyPermissions.permissions.accountPermissions?.includes(
                                     "usage",
                                 ) && (
                                     <li className="flex items-start gap-2">
                                         <span className="w-4 shrink-0 text-amber-800">
                                             &#x1F4CA;
                                         </span>
-                                        <span>See your account usage.</span>
+                                        <span>
+                                            See your account balance and usage.
+                                        </span>
                                     </li>
                                 )}
                                 {keyPermissions.permissions.accountPermissions?.includes(

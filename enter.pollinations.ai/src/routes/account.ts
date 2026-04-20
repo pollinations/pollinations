@@ -9,8 +9,8 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
+import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import type { Env } from "../env.ts";
-
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
@@ -114,7 +114,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions (e.g. ["balance", "usage"]). "keys" is auto-stripped.',
+            'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
         ),
 });
 
@@ -507,7 +507,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:balance` scope see the full account balance.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -520,7 +520,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key has no budget and is missing the `account:balance` scope",
+                        "Permission denied - API key has no budget and is missing the `account:usage` scope",
                 },
             },
         }),
@@ -534,11 +534,11 @@ export const accountRoutes = new Hono<Env>()
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
-            // Beyond that, reading account balance requires the `balance` scope.
-            if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
+            // Beyond that, reading account balance requires the `usage` scope.
+            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
                 throw new HTTPException(403, {
                     message:
-                        "API key does not have 'account:balance' scope and no budget of its own. Add `account:balance` to read account balance, or set a budget on the key.",
+                        "API key does not have 'account:usage' scope and no budget of its own. Add `account:usage` to read account balance, or set a budget on the key.",
                 });
             }
 
@@ -902,10 +902,12 @@ export const accountRoutes = new Hono<Env>()
             const isPublishable = type === "publishable";
             const prefix = isPublishable ? "pk" : "sk";
 
-            // Strip "keys" from child account permissions to prevent escalation
-            const safeAccountPerms = accountPermissions
-                ? accountPermissions.filter((p) => p !== "keys")
-                : accountPermissions;
+            // Whitelist to known scopes (drops unknown / legacy names like "balance").
+            // Then strip "keys" to prevent escalation via the BYOP flow.
+            const safeAccountPerms =
+                sanitizeAuthorizeAccountPermissions(accountPermissions)?.filter(
+                    (p) => p !== "keys",
+                ) ?? null;
 
             // Build permissions object
             const permissions: Record<string, string[]> = {};

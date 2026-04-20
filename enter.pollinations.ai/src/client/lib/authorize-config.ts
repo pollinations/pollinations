@@ -29,16 +29,11 @@ export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
  * image (`/account/profile`) are all readable without any scope.
  *
  * - `profile`: read account name and email
- * - `balance`: read full account balance (key's own budget is free)
- * - `usage`: read account-wide usage (key's own usage is free)
+ * - `usage`: read full account balance + account-wide usage (key's own
+ *   balance and usage are free regardless)
  * - `keys`: create, list, and revoke API keys
  */
-export const CONSENT_PERMISSIONS = [
-    "profile",
-    "balance",
-    "usage",
-    "keys",
-] as const;
+export const CONSENT_PERMISSIONS = ["profile", "usage", "keys"] as const;
 
 export function sanitizeAuthorizeAccountPermissions(
     permissions: string[] | null | undefined,

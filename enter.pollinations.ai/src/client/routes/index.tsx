@@ -20,8 +20,8 @@ import {
     type TimeRange,
     UsageGraph,
 } from "../components/usage-analytics";
+import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
-const SECONDS_PER_DAY = 24 * 60 * 60;
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
 export const Route = createFileRoute("/")({
@@ -116,40 +116,40 @@ function RouteComponent() {
         const keyType = formState.keyType || "secret";
         const isPublishable = keyType === "publishable";
 
-        const createResult = await authClient.apiKey.create({
+        const created = await createKeyWithPermissions({
             name: formState.name,
             prefix: isPublishable ? "pk" : "sk",
-            expiresIn: formState.expiryDays
-                ? formState.expiryDays * SECONDS_PER_DAY
-                : undefined,
+            expiryDays: formState.expiryDays,
             metadata: {
                 description: formState.description,
                 keyType,
                 ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
             },
+            permissions: {
+                allowedModels: formState.allowedModels,
+                pollenBudget: formState.pollenBudget,
+                accountPermissions: formState.accountPermissions?.length
+                    ? formState.accountPermissions
+                    : undefined,
+            },
         });
-
-        if (createResult.error || !createResult.data) {
-            throw new Error(
-                createResult.error?.message || "Failed to create API key",
-            );
-        }
-
-        const apiKey = createResult.data;
 
         // Store plaintext key and app settings for publishable keys
         if (isPublishable) {
-            const metaRes = await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    description: formState.description,
-                    keyType,
-                    plaintextKey: apiKey.key,
-                    ...(formState.appUrl && { appUrl: formState.appUrl }),
-                }),
-            });
+            const metaRes = await fetch(
+                `/api/api-keys/${created.id}/metadata`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        description: formState.description,
+                        keyType,
+                        plaintextKey: created.key,
+                        ...(formState.appUrl && { appUrl: formState.appUrl }),
+                    }),
+                },
+            );
             if (!metaRes.ok) {
                 const err = await metaRes.json().catch(() => null);
                 throw new Error(
@@ -159,38 +159,11 @@ function RouteComponent() {
             }
         }
 
-        // Set permissions and budget if provided
-        const permissionUpdates = Object.fromEntries(
-            Object.entries({
-                allowedModels: formState.allowedModels,
-                pollenBudget: formState.pollenBudget,
-                accountPermissions: formState.accountPermissions?.length
-                    ? formState.accountPermissions
-                    : undefined,
-            }).filter(([_, v]) => v !== undefined),
-        );
-
-        if (Object.keys(permissionUpdates).length > 0) {
-            const response = await fetch(`/api/api-keys/${apiKey.id}/update`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(permissionUpdates),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(
-                    `Key created but failed to set permissions: ${(error as { message?: string }).message || "Unknown error"}`,
-                );
-            }
-        }
-
         router.invalidate();
         return {
-            id: apiKey.id,
-            key: apiKey.key,
-            name: apiKey.name,
+            id: created.id,
+            key: created.key,
+            name: created.name,
         } as CreateApiKeyResponse;
     }
 

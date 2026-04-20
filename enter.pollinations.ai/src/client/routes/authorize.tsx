@@ -31,9 +31,8 @@ import {
     sanitizeAuthorizeAccountPermissions,
     withBaselinePermissions,
 } from "../lib/authorize-config.ts";
+import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { formatPollen } from "../lib/format-pollen.ts";
-
-const SECONDS_PER_DAY = 24 * 60 * 60;
 
 type Attribution = {
     found: boolean;
@@ -269,24 +268,21 @@ function AuthorizeComponent() {
             .catch(() => {});
     }, [user]);
 
-    async function createKeyAndSetPermissions(): Promise<{
-        key: string;
-        id: string;
-        expiresIn: number | null;
-    }> {
-        let createdKeyId: string | null = null;
-        const displayName = isDeviceMode
-            ? `Device ${user_code}`
-            : attribution?.appName || redirectHostname;
+    async function handleAuthorize(): Promise<void> {
+        if (!canAuthorize || isAuthorizing) return;
 
-        const expiryDays = keyPermissions.permissions.expiryDays;
+        setIsAuthorizing(true);
+        setError(null);
+
         try {
-            const result = await authClient.apiKey.create({
-                name: displayName,
-                ...(expiryDays !== null && {
-                    expiresIn: expiryDays * SECONDS_PER_DAY,
-                }),
+            const { allowedModels, pollenBudget, accountPermissions } =
+                keyPermissions.permissions;
+            const { key, id, expiresIn } = await createKeyWithPermissions({
+                name: isDeviceMode
+                    ? `Device ${user_code}`
+                    : attribution?.appName || redirectHostname,
                 prefix: "sk",
+                expiryDays: keyPermissions.permissions.expiryDays,
                 metadata: {
                     keyType: "secret",
                     createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
@@ -297,99 +293,36 @@ function AuthorizeComponent() {
                         createdForApp: attribution.appName,
                     }),
                 },
+                permissions: {
+                    allowedModels,
+                    pollenBudget,
+                    accountPermissions: withBaselinePermissions(
+                        sanitizeAuthorizeAccountPermissions(accountPermissions),
+                    ),
+                },
             });
 
-            if (result.error || !result.data?.key) {
-                throw new Error(
-                    result.error?.message || "Failed to create API key",
-                );
-            }
-
-            const { key, id } = result.data;
-            createdKeyId = id;
-
-            const { allowedModels, pollenBudget, accountPermissions } =
-                keyPermissions.permissions;
-            const sanitizedOptional =
-                sanitizeAuthorizeAccountPermissions(accountPermissions);
-            const finalPermissions = withBaselinePermissions(sanitizedOptional);
-            const updates = {
-                ...(allowedModels !== null && { allowedModels }),
-                ...(pollenBudget !== null && { pollenBudget }),
-                accountPermissions: finalPermissions,
-            };
-            if (Object.keys(updates).length > 0) {
-                const response = await fetch(`/api/api-keys/${id}/update`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(updates),
-                });
-                if (!response.ok) {
-                    const errBody = await response.json().catch(() => null);
-                    throw new Error(
-                        `Key created but failed to set permissions: ${(errBody as { message?: string }).message || "Unknown error"}`,
-                    );
-                }
-            }
-
-            return {
-                key,
-                id,
-                expiresIn:
-                    expiryDays !== null ? expiryDays * SECONDS_PER_DAY : null,
-            };
-        } catch (error) {
-            if (createdKeyId) {
-                try {
-                    await authClient.apiKey.delete({ keyId: createdKeyId });
-                } catch {
-                    // Best-effort rollback; preserve the original error.
-                }
-            }
-            throw error;
-        }
-    }
-
-    async function handleAuthorize(): Promise<void> {
-        if (!canAuthorize || isAuthorizing) return;
-
-        setIsAuthorizing(true);
-        setError(null);
-
-        try {
-            const { key, id, expiresIn } = await createKeyAndSetPermissions();
-
             if (isDeviceMode) {
-                try {
-                    const res = await fetch(
-                        `${config.baseUrl}/api/device/approve`,
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            credentials: "include",
-                            body: JSON.stringify({
-                                userCode: user_code,
-                                apiKey: key,
-                                apiKeyId: id,
-                                expiresIn,
-                            }),
-                        },
+                const res = await fetch(
+                    `${config.baseUrl}/api/device/approve`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            userCode: user_code,
+                            apiKey: key,
+                            apiKeyId: id,
+                            expiresIn,
+                        }),
+                    },
+                );
+                if (!res.ok) {
+                    const data = await res.json().catch(() => null);
+                    throw new Error(
+                        (data as { message?: string })?.message ||
+                            "Failed to approve device",
                     );
-                    if (!res.ok) {
-                        const data = await res.json().catch(() => null);
-                        throw new Error(
-                            (data as { message?: string })?.message ||
-                                "Failed to approve device",
-                        );
-                    }
-                } catch (error) {
-                    try {
-                        await authClient.apiKey.delete({ keyId: id });
-                    } catch {
-                        // Best-effort rollback; preserve the original error.
-                    }
-                    throw error;
                 }
                 setDeviceOutcome("approved");
             } else {
@@ -579,7 +512,7 @@ function AuthorizeComponent() {
                                     <span className="w-4 shrink-0 text-amber-800">
                                         &#x1F464;
                                     </span>
-                                    <span>See profile and budget.</span>
+                                    <span>See username and budget.</span>
                                 </li>
                                 {keyPermissions.permissions.accountPermissions?.includes(
                                     "usage",

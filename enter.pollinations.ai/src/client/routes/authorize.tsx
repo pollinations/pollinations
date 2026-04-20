@@ -1,19 +1,42 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { cn } from "../../util.ts";
+import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import {
-    KeyPermissionsInputs,
-    useKeyPermissions,
-} from "../components/api-keys";
-import { SCOPE_LABELS } from "../components/auth/scope-labels.ts";
+    ACCOUNT_PERMISSIONS,
+    AccountPermissionsInput,
+} from "../components/api-keys/account-permissions-input.tsx";
+import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
+import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
+import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
+import { getPermissionPillClasses } from "../components/api-keys/permission-ui.ts";
+import { PollenBudgetInput } from "../components/api-keys/pollen-budget-input.tsx";
+import { AppAttribution } from "../components/auth/app-attribution.tsx";
+import {
+    AuthInfoCard,
+    AuthModal,
+    AuthModalHeader,
+    AuthModalLoading,
+    ErrorBanner,
+} from "../components/auth/auth-modal.tsx";
 import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
+import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
-
-const SECONDS_PER_DAY = 24 * 60 * 60;
+import {
+    AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
+    getAuthorizeInitialPermissions,
+    parseScopeList,
+    sanitizeAuthorizeAccountPermissions,
+    withBaselinePermissions,
+} from "../lib/authorize-config.ts";
+import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import { formatPollen } from "../lib/format-pollen.ts";
 
 type Attribution = {
     found: boolean;
+    clientId?: string;
     userId?: string;
     userName?: string;
     githubUsername?: string;
@@ -50,26 +73,36 @@ export const Route = createFileRoute("/authorize")({
         const result: {
             redirect_url?: string;
             user_code?: string;
-            device_scope?: string;
             app_key?: string;
+            state?: string;
             models?: string[] | null;
             budget?: number | null;
             expiry?: number | null;
-            permissions?: string[] | null;
+            scope?: string[] | null;
         } = {
-            redirect_url: (search.redirect_url as string) || "",
+            // Canonical OAuth name is `redirect_uri`; keep `redirect_url`
+            // as a legacy alias so existing apps keep working.
+            redirect_url:
+                (search.redirect_uri as string) ||
+                (search.redirect_url as string) ||
+                "",
         };
 
         if (search.user_code && typeof search.user_code === "string") {
             result.user_code = search.user_code;
         }
 
-        if (search.device_scope && typeof search.device_scope === "string") {
-            result.device_scope = search.device_scope;
+        // Canonical OAuth name is `client_id`; `app_key` is a legacy alias.
+        const appKey =
+            (search.client_id as string) || (search.app_key as string);
+        if (appKey && typeof appKey === "string") {
+            result.app_key = appKey;
         }
 
-        if (search.app_key && typeof search.app_key === "string") {
-            result.app_key = search.app_key;
+        // OAuth `state` — echoed back on the callback so the caller can
+        // correlate the response and defeat CSRF.
+        if (search.state && typeof search.state === "string") {
+            result.state = search.state;
         }
 
         const models = parseList(search.models);
@@ -81,8 +114,12 @@ export const Route = createFileRoute("/authorize")({
         const expiry = parseNumber(search.expiry);
         if (expiry !== null) result.expiry = expiry;
 
-        const permissions = parseList(search.permissions);
-        if (permissions !== null) result.permissions = permissions;
+        // Canonical OAuth name is `scope` (space-separated); `permissions`
+        // (comma-separated) is a legacy alias. parseScopeList accepts either
+        // separator. Router normalizes the URL to the canonical `scope` name.
+        const scope =
+            parseScopeList(search.scope) ?? parseList(search.permissions);
+        if (scope !== null) result.scope = scope;
 
         return result;
     },
@@ -92,12 +129,12 @@ function AuthorizeComponent() {
     const {
         redirect_url,
         user_code,
-        device_scope,
         app_key,
+        state,
         models,
         budget,
         expiry,
-        permissions: urlPermissions,
+        scope: urlScope,
     } = Route.useSearch();
     const navigate = useNavigate();
 
@@ -107,42 +144,53 @@ function AuthorizeComponent() {
     const user = session?.user;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const [isSigningIn, setIsSigningIn] = useState(false);
+    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
-
-    const [deviceScopes, setDeviceScopes] = useState<string[]>([]);
+    const [totalBalance, setTotalBalance] = useState<number | null>(null);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
-    const canAuthorize = isDeviceMode || parsedRedirectUrl !== null;
 
-    const keyPermissions = useKeyPermissions({
-        allowedModels: models,
-        pollenBudget: budget,
-        expiryDays: expiry ?? 30,
-        accountPermissions: urlPermissions ?? ["profile"],
-    });
+    const keyPermissions = useKeyPermissions(
+        getAuthorizeInitialPermissions({
+            models,
+            budget,
+            expiry,
+            permissions: urlScope,
+        }),
+    );
+    const { setAccountPermissions } = keyPermissions;
+
+    const modalities = computeCategoryModalities(
+        keyPermissions.permissions.allowedModels,
+    );
+    // Which optional scopes the caller requested. Stays constant once set —
+    // unaffected by the user toggling a scope off in the Advanced panel.
+    // Sources: `scope` URL param (both flows) and /api/device/info fallback.
+    const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
+        () => new Set(urlScope ?? []),
+    );
+    const visibleOptionalPermissions =
+        AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS.filter((p) =>
+            requestedScopes.has(p),
+        );
+    const hasBudget = keyPermissions.permissions.pollenBudget !== null;
+    const canAuthorize =
+        (isDeviceMode || parsedRedirectUrl !== null) && hasBudget;
 
     useScrollLock();
 
-    // Sync device scopes into key permissions when they arrive
-    useEffect(() => {
-        if (deviceScopes.length > 0) {
-            // Always include "profile", merge with device-requested scopes
-            const perms = Array.from(new Set(["profile", ...deviceScopes]));
-            keyPermissions.setAccountPermissions(perms);
-        }
-    }, [deviceScopes, keyPermissions.setAccountPermissions]);
-
     useEffect(() => {
         if (isDeviceMode) {
-            if (device_scope) {
-                setDeviceScopes(device_scope.split(" ").filter(Boolean));
-            } else {
+            // device.tsx forwards the server-stored scope as `scope=` in the
+            // URL, which flows into `urlScope` and preselects the
+            // Advanced toggles. Fallback for direct-link device URLs that
+            // skipped /device: fetch scope from the server and apply it.
+            if (!urlScope?.length) {
                 fetch(
                     `${config.baseUrl}/api/device/info?user_code=${encodeURIComponent(user_code)}`,
                     { credentials: "include" },
@@ -157,8 +205,12 @@ function AuthorizeComponent() {
                     })
                     .then((data) => {
                         if (data.scope) {
-                            setDeviceScopes(
-                                data.scope.split(" ").filter(Boolean),
+                            const scopes = data.scope
+                                .split(" ")
+                                .filter(Boolean);
+                            setRequestedScopes(new Set(scopes));
+                            setAccountPermissions(
+                                sanitizeAuthorizeAccountPermissions(scopes),
                             );
                         }
                     })
@@ -183,91 +235,38 @@ function AuthorizeComponent() {
 
             const params = new URLSearchParams();
             if (app_key) params.set("app_key", app_key);
-            else params.set("redirect_url", redirect_url);
+            else params.set("redirect_uri", redirect_url);
 
             fetch(`/api/app-lookup?${params}`)
                 .then((r) => r.json())
                 .then((data) => setAttribution(data as Attribution))
                 .catch(() => {});
         }
-    }, [isDeviceMode, user_code, device_scope, app_key, redirect_url]);
+    }, [
+        isDeviceMode,
+        user_code,
+        urlScope,
+        app_key,
+        redirect_url,
+        setAccountPermissions,
+    ]);
 
-    async function handleSignIn(): Promise<void> {
-        setIsSigningIn(true);
-        const { error } = await authClient.signIn.social({
-            provider: "github",
-            callbackURL: window.location.href,
-        });
-        if (error) {
-            setIsSigningIn(false);
-            setError("Sign in failed. Please try again.");
-        }
-    }
+    useEffect(() => {
+        if (!user) return;
 
-    async function createKeyAndSetPermissions(): Promise<{
-        key: string;
-        id: string;
-        expiresIn: number | null;
-    }> {
-        const displayName = isDeviceMode
-            ? `Device ${user_code}`
-            : attribution?.appName || redirectHostname;
-
-        const expiryDays = keyPermissions.permissions.expiryDays;
-        const result = await authClient.apiKey.create({
-            name: displayName,
-            ...(expiryDays !== null && {
-                expiresIn: expiryDays * SECONDS_PER_DAY,
-            }),
-            prefix: "sk",
-            metadata: {
-                keyType: "secret",
-                createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
-                ...(isDeviceMode && { deviceUserCode: user_code }),
-                ...(attribution?.found && {
-                    createdForUserId: attribution.userId,
-                    createdForApp: attribution.appName,
-                }),
-            },
-        });
-
-        if (result.error || !result.data?.key) {
-            throw new Error(
-                result.error?.message || "Failed to create API key",
-            );
-        }
-
-        const { key, id } = result.data;
-
-        const { allowedModels, pollenBudget, accountPermissions } =
-            keyPermissions.permissions;
-        const updates = {
-            ...(allowedModels !== null && { allowedModels }),
-            ...(pollenBudget !== null && { pollenBudget }),
-            ...(accountPermissions?.length && { accountPermissions }),
-        };
-        if (Object.keys(updates).length > 0) {
-            const response = await fetch(`/api/api-keys/${id}/update`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(updates),
-            });
-            if (!response.ok) {
-                const errBody = await response.json();
-                throw new Error(
-                    `Key created but failed to set permissions: ${(errBody as { message?: string }).message || "Unknown error"}`,
+        apiClient.customer.balance
+            .$get()
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                if (!data) return;
+                setTotalBalance(
+                    (data.tierBalance ?? 0) +
+                        (data.packBalance ?? 0) +
+                        (data.cryptoBalance ?? 0),
                 );
-            }
-        }
-
-        return {
-            key,
-            id,
-            expiresIn:
-                expiryDays !== null ? expiryDays * SECONDS_PER_DAY : null,
-        };
-    }
+            })
+            .catch(() => {});
+    }, [user]);
 
     async function handleAuthorize(): Promise<void> {
         if (!canAuthorize || isAuthorizing) return;
@@ -276,7 +275,32 @@ function AuthorizeComponent() {
         setError(null);
 
         try {
-            const { key, id, expiresIn } = await createKeyAndSetPermissions();
+            const { allowedModels, pollenBudget, accountPermissions } =
+                keyPermissions.permissions;
+            const { key, id, expiresIn } = await createKeyWithPermissions({
+                name: isDeviceMode
+                    ? `Device ${user_code}`
+                    : attribution?.appName || redirectHostname,
+                prefix: "sk",
+                expiryDays: keyPermissions.permissions.expiryDays,
+                metadata: {
+                    keyType: "secret",
+                    createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
+                    ...(isDeviceMode && { deviceUserCode: user_code }),
+                    ...(attribution?.found && {
+                        clientId: attribution.clientId,
+                        createdForUserId: attribution.userId,
+                        createdForApp: attribution.appName,
+                    }),
+                },
+                permissions: {
+                    allowedModels,
+                    pollenBudget,
+                    accountPermissions: withBaselinePermissions(
+                        sanitizeAuthorizeAccountPermissions(accountPermissions),
+                    ),
+                },
+            });
 
             if (isDeviceMode) {
                 const res = await fetch(
@@ -302,8 +326,13 @@ function AuthorizeComponent() {
                 }
                 setDeviceOutcome("approved");
             } else {
-                const url = new URL(redirect_url!);
-                url.hash = `api_key=${key}`;
+                if (!parsedRedirectUrl) {
+                    throw new Error("Invalid redirect URL format");
+                }
+                const url = new URL(parsedRedirectUrl.href);
+                const hash = new URLSearchParams({ api_key: key });
+                if (state) hash.set("state", state);
+                url.hash = hash.toString();
                 window.location.href = url.toString();
             }
         } catch (e) {
@@ -328,7 +357,11 @@ function AuthorizeComponent() {
             }
             setDeviceOutcome("denied");
         } else if (parsedRedirectUrl) {
-            window.location.href = redirect_url!;
+            const url = new URL(parsedRedirectUrl.href);
+            const hash = new URLSearchParams({ error: "access_denied" });
+            if (state) hash.set("state", state);
+            url.hash = hash.toString();
+            window.location.href = url.toString();
         } else {
             navigate({ to: "/" });
         }
@@ -337,362 +370,295 @@ function AuthorizeComponent() {
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";
         return (
-            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
+            <AuthModal>
+                <AuthModalHeader />
+                <div className="px-8 pb-8 pt-2 text-center">
                     <div className="text-4xl mb-4">
                         {denied ? "\u{1F6AB}" : "\u{2705}"}
                     </div>
-                    <h2 className="text-lg font-semibold text-green-950 mb-2">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
                         {denied ? "Access Denied" : "Device Authorized"}
                     </h2>
-                    <p className="text-sm text-green-800">
+                    <p className="text-sm text-amber-900">
                         You can close this tab and return to your device.
                     </p>
                 </div>
-            </div>
+            </AuthModal>
         );
     }
 
     if (isPending) {
-        return (
-            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg p-8 text-center max-w-lg w-full">
-                    <p className="text-green-950">Loading...</p>
-                </div>
-            </div>
-        );
+        return <AuthModalLoading />;
     }
 
     if (!user) {
+        const displayedError = error ?? signInError;
         return (
-            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-                <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg flex flex-col max-w-lg w-full">
-                    <div className="shrink-0 p-6 pb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">
-                            Connect to pollinations.ai
-                        </h2>
-                        <img
-                            src="/logo_text_black.svg"
-                            alt="pollinations.ai"
-                            className="h-8 object-contain"
-                        />
-                    </div>
-
-                    <div className="px-6 pb-6 space-y-4">
-                        {error ? (
-                            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                                <p className="text-red-800 text-sm">{error}</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="bg-green-200 rounded-lg p-4">
-                                    {isDeviceMode ? (
-                                        attribution?.appName ? (
-                                            <>
-                                                <p className="font-bold text-green-950 text-lg">
-                                                    {attribution.appName}
-                                                </p>
-                                                {attribution.githubUsername && (
-                                                    <p className="text-sm text-green-700 mt-0.5">
-                                                        by{" "}
-                                                        <a
-                                                            href={`https://github.com/${attribution.githubUsername}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="font-medium underline hover:text-green-950"
-                                                        >
-                                                            @
-                                                            {
-                                                                attribution.githubUsername
-                                                            }
-                                                        </a>
-                                                    </p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="font-semibold text-green-950">
-                                                A device is requesting access to
-                                                your account
-                                            </p>
-                                        )
-                                    ) : attribution?.appName ? (
-                                        <>
-                                            <p className="font-bold text-green-950 text-lg">
-                                                {attribution.appName}
-                                            </p>
-                                            {attribution.githubUsername && (
-                                                <p className="text-sm text-green-700 mt-0.5">
-                                                    by{" "}
-                                                    <a
-                                                        href={`https://github.com/${attribution.githubUsername}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="font-medium underline hover:text-green-950"
-                                                    >
-                                                        @
-                                                        {
-                                                            attribution.githubUsername
-                                                        }
-                                                    </a>
-                                                </p>
-                                            )}
-                                            <p className="text-xs text-green-800 font-mono mt-1">
-                                                {redirectHostname}
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <p className="font-semibold text-green-950">
-                                            {redirectHostname}
-                                        </p>
-                                    )}
-                                    <p className="text-xs text-green-800 mt-1">
-                                        wants to connect to your account
-                                    </p>
-                                </div>
-
-                                <p className="text-green-800 text-sm">
-                                    Sign in to continue
-                                </p>
-                            </>
-                        )}
-
-                        <Button
-                            as="button"
-                            onClick={handleSignIn}
-                            disabled={isSigningIn || !!error}
-                            color="dark"
-                            className="w-full"
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Sign in with GitHub"}
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="fixed inset-0 flex items-center justify-center p-4 overflow-hidden bg-green-950/50">
-            <div className="bg-green-100 border-4 border-green-950 rounded-lg shadow-lg max-h-[85vh] max-w-lg w-full flex flex-col">
-                <div className="shrink-0 p-6 pb-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">
-                            {isDeviceMode
-                                ? "Authorize Device"
-                                : "Authorize Application"}
-                        </h2>
-                        <img
-                            src="/logo_text_black.svg"
-                            alt="pollinations.ai"
-                            className="h-8 object-contain"
-                        />
-                    </div>
-                    <p className="text-sm text-green-800 mt-1">
-                        Signed in as{" "}
-                        <strong>{user.githubUsername || user.email}</strong>
-                    </p>
-                </div>
-
-                <div
-                    className="flex-1 overflow-y-auto px-6 py-2 space-y-4 scrollbar-subtle"
-                    style={{
-                        scrollbarWidth: "thin",
-                        overscrollBehavior: "contain",
-                    }}
-                >
-                    {error ? (
-                        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                            <p className="text-red-800 text-sm">{error}</p>
-                        </div>
+            <AuthModal dialog={{ label: "Sign in to authorize" }}>
+                <AuthModalHeader />
+                <div className="px-6 pb-6 pt-4 space-y-4">
+                    {displayedError ? (
+                        <ErrorBanner>{displayedError}</ErrorBanner>
                     ) : (
-                        <>
-                            <div className="bg-green-200 rounded-lg p-4">
-                                {isDeviceMode ? (
-                                    <>
-                                        {attribution?.appName ? (
-                                            <>
-                                                <p className="text-xs text-green-700 mb-1">
-                                                    A device is requesting
-                                                    access via
-                                                </p>
-                                                <p className="font-bold text-green-950 text-lg">
-                                                    {attribution.appName}
-                                                </p>
-                                                {attribution.githubUsername && (
-                                                    <p className="text-sm text-green-700 mt-0.5">
-                                                        by{" "}
-                                                        <a
-                                                            href={`https://github.com/${attribution.githubUsername}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="font-medium underline hover:text-green-950"
-                                                        >
-                                                            @
-                                                            {
-                                                                attribution.githubUsername
-                                                            }
-                                                        </a>
-                                                    </p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-sm text-green-950 font-medium">
-                                                A device is requesting access to
-                                                your account
-                                            </p>
-                                        )}
-                                        <p className="text-xs text-green-800 mt-1 font-mono">
-                                            Code: {user_code}
-                                        </p>
-                                    </>
-                                ) : attribution?.appName ? (
-                                    <>
-                                        <p className="text-xs text-green-700 mb-1">
-                                            Share your API key with
-                                        </p>
-                                        <p className="font-bold text-green-950 text-lg">
-                                            {attribution.appName}
-                                        </p>
-                                        {attribution.githubUsername && (
-                                            <p className="text-sm text-green-700 mt-0.5">
-                                                by{" "}
-                                                <a
-                                                    href={`https://github.com/${attribution.githubUsername}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="font-medium underline hover:text-green-950"
-                                                >
-                                                    @
-                                                    {attribution.githubUsername}
-                                                </a>
-                                            </p>
-                                        )}
-                                        <p className="text-xs text-green-800 font-mono mt-1">
-                                            {redirectHostname}
-                                        </p>
-                                    </>
-                                ) : (
-                                    <p className="font-semibold text-green-950 mb-1">
-                                        Create and share my API key with{" "}
-                                        <span className="font-mono bg-green-300 rounded px-1.5 py-0.5 text-green-950">
-                                            {redirectHostname}
-                                        </span>
-                                    </p>
-                                )}
-                                {!isDeviceMode && (
-                                    <p className="text-xs text-green-800 mt-2">
-                                        Same as copy-pasting your key into their
-                                        app. Only share with apps you trust.
-                                    </p>
-                                )}
-                            </div>
-
-                            {deviceScopes.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium text-green-950 mb-2">
-                                        This will allow the device to:
-                                    </p>
-                                    <ul className="text-sm text-green-900 space-y-2">
-                                        {deviceScopes.map((s) => (
-                                            <li
-                                                key={s}
-                                                className="flex items-start gap-2"
-                                            >
-                                                <span className="text-green-600">
-                                                    &#x2713;
-                                                </span>
-                                                <span>
-                                                    {SCOPE_LABELS[s] || s}
-                                                </span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {!isDeviceMode && (
-                                <ul className="text-sm text-green-900 space-y-2">
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-green-600">
-                                            &#x2713;
-                                        </span>
-                                        <span>
-                                            Generate text, images, audio & video
-                                        </span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-green-600">
-                                            &#x2713;
-                                        </span>
-                                        <span>Use your pollen balance</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-green-800">
-                                            &#x23F1;
-                                        </span>
-                                        <span>
-                                            Revoke anytime from{" "}
-                                            <a
-                                                href="https://enter.pollinations.ai"
-                                                className="text-green-950 font-medium underline"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                enter.pollinations.ai
-                                            </a>
-                                        </span>
-                                    </li>
-                                </ul>
-                            )}
-
-                            <KeyPermissionsInputs
-                                value={keyPermissions}
-                                inline
+                        <AuthInfoCard>
+                            <AppAttribution
+                                attribution={attribution}
+                                isDeviceMode={isDeviceMode}
+                                userCode={user_code}
+                                redirectHostname={redirectHostname}
                             />
-
-                            {!isDeviceMode && (
-                                <div className="bg-green-200 rounded-lg p-3">
-                                    <p className="text-green-900 text-xs mb-1 font-medium">
-                                        You will be redirected to:
-                                    </p>
-                                    <p className="text-green-950 text-sm font-mono break-all">
-                                        {redirect_url}
-                                    </p>
-                                </div>
-                            )}
-                        </>
+                            <p className="text-sm text-amber-900 mt-3">
+                                Sign in to review and approve the requested
+                                access.
+                            </p>
+                        </AuthInfoCard>
                     )}
-                </div>
 
-                <div className="flex items-center justify-between p-6 pt-4 shrink-0">
-                    <a
-                        href="/terms"
-                        className="text-xs text-green-700 hover:text-green-950 hover:underline"
-                    >
-                        Terms & Conditions
-                    </a>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-end">
                         <Button
                             as="button"
                             onClick={handleDeny}
                             weight="outline"
-                            disabled={isAuthorizing}
+                            color="dark"
+                            disabled={isSigningIn}
                         >
-                            {isDeviceMode ? "Deny" : "Cancel"}
+                            Deny
                         </Button>
                         <Button
                             as="button"
-                            onClick={handleAuthorize}
-                            disabled={!canAuthorize || isAuthorizing || !!error}
-                            color="green"
+                            onClick={signIn}
+                            disabled={isSigningIn || !!error}
+                            color="dark"
                         >
-                            {isAuthorizing ? "Authorizing..." : "Allow"}
+                            {isSigningIn
+                                ? "Signing in..."
+                                : "Continue with GitHub"}
                         </Button>
                     </div>
                 </div>
+            </AuthModal>
+        );
+    }
+
+    return (
+        <AuthModal dialog={{ labelledBy: "authorize-dialog-title" }}>
+            <AuthModalHeader>
+                <div className="flex items-center gap-3 min-w-0">
+                    <a
+                        href="https://enter.pollinations.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 min-w-0"
+                    >
+                        {user.image && (
+                            <img
+                                src={user.image}
+                                alt=""
+                                className="w-6 h-6 rounded-full shrink-0"
+                            />
+                        )}
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                            {user.githubUsername || user.email}
+                        </span>
+                    </a>
+                    <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden shrink-0">
+                        {totalBalance !== null && (
+                            <span className="flex items-center px-3 text-amber-900 whitespace-nowrap">
+                                {formatPollen(totalBalance)} pollen
+                            </span>
+                        )}
+                        <a
+                            href="https://enter.pollinations.ai/#buy-pollen"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(
+                                "flex items-center px-3 py-1 font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 transition-colors cursor-pointer",
+                                totalBalance !== null &&
+                                    "border-l border-amber-300",
+                            )}
+                        >
+                            Top up
+                        </a>
+                    </div>
+                </div>
+            </AuthModalHeader>
+
+            <div className="px-6 py-2 space-y-4">
+                {error ? (
+                    <ErrorBanner>{error}</ErrorBanner>
+                ) : (
+                    <div>
+                        <div className="-mx-6 px-6 py-4 bg-amber-100 border-y border-amber-300">
+                            <p
+                                id="authorize-dialog-title"
+                                className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2"
+                            >
+                                Authorize
+                            </p>
+                            <AppAttribution
+                                attribution={attribution}
+                                isDeviceMode={isDeviceMode}
+                                userCode={user_code}
+                                redirectHostname={redirectHostname}
+                            />
+                        </div>
+
+                        <div className="p-4">
+                            <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-3">
+                                To
+                            </p>
+                            <ul className="text-sm text-amber-900 space-y-3">
+                                <li className="flex items-start gap-2">
+                                    <span className="w-4 shrink-0 text-amber-800">
+                                        &#x1F464;
+                                    </span>
+                                    <span>See username and budget.</span>
+                                </li>
+                                {keyPermissions.permissions.accountPermissions?.includes(
+                                    "usage",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-amber-800">
+                                            &#x1F4CA;
+                                        </span>
+                                        <span>
+                                            See{" "}
+                                            {
+                                                ACCOUNT_PERMISSIONS.find(
+                                                    (p) => p.id === "usage",
+                                                )?.tooltip
+                                            }
+                                            .
+                                        </span>
+                                    </li>
+                                )}
+                                {keyPermissions.permissions.accountPermissions?.includes(
+                                    "keys",
+                                ) && (
+                                    <li className="flex items-start gap-2">
+                                        <span className="w-4 shrink-0 text-amber-800">
+                                            &#x1F511;
+                                        </span>
+                                        <span>
+                                            Create, list, and revoke API keys.
+                                        </span>
+                                    </li>
+                                )}
+                                <li className="flex items-start gap-2">
+                                    <span
+                                        className={`w-4 shrink-0 ${
+                                            modalities.length === 0
+                                                ? "text-red-600"
+                                                : "text-amber-700"
+                                        }`}
+                                    >
+                                        {modalities.length === 0
+                                            ? "\u2717"
+                                            : "\u2713"}
+                                    </span>
+                                    {modalities.length === 0 ? (
+                                        <span>No AI models are enabled.</span>
+                                    ) : (
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span>Generate</span>
+                                            <div className="flex items-center gap-1 flex-nowrap">
+                                                {modalities.map((m) => (
+                                                    <span
+                                                        key={m}
+                                                        className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${getPermissionPillClasses(m)}`}
+                                                    >
+                                                        {m}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div className="-mx-6 px-10 py-4 border-t border-amber-300">
+                            <PollenBudgetInput
+                                value={keyPermissions.permissions.pollenBudget}
+                                onChange={keyPermissions.setPollenBudget}
+                                inline
+                                theme="amber"
+                            />
+                        </div>
+
+                        <div className="-mx-6 px-10 py-4 border-t border-amber-300">
+                            <ExpiryDaysInput
+                                value={keyPermissions.permissions.expiryDays}
+                                onChange={keyPermissions.setExpiryDays}
+                                inline
+                                theme="amber"
+                            />
+                        </div>
+
+                        <details className="group -mx-6 border-t border-amber-300">
+                            <summary className="cursor-pointer list-none px-3 py-3 flex items-center justify-end select-none">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-amber-800 hover:bg-amber-100 hover:text-amber-950 transition-colors">
+                                    Permissions
+                                    <span className="text-amber-700 transition-transform group-open:rotate-180">
+                                        &#x25BE;
+                                    </span>
+                                </span>
+                            </summary>
+                            <div className="px-3 pb-3 pt-1 space-y-6">
+                                <AccountPermissionsInput
+                                    value={
+                                        keyPermissions.permissions
+                                            .accountPermissions
+                                    }
+                                    onChange={
+                                        keyPermissions.setAccountPermissions
+                                    }
+                                    allowedModels={
+                                        keyPermissions.permissions.allowedModels
+                                    }
+                                    onModelsChange={
+                                        keyPermissions.setAllowedModels
+                                    }
+                                    visiblePermissions={
+                                        visibleOptionalPermissions
+                                    }
+                                    theme="amber"
+                                    showApiName={false}
+                                    modelsInitiallyExpanded
+                                />
+                            </div>
+                        </details>
+                    </div>
+                )}
             </div>
-        </div>
+
+            <div className="flex items-center justify-between p-6 pt-4">
+                <a
+                    href="/terms"
+                    className="text-xs text-amber-800 hover:text-gray-900 hover:underline"
+                >
+                    Terms & Conditions
+                </a>
+                <div className="flex gap-2">
+                    <Button
+                        as="button"
+                        onClick={handleDeny}
+                        weight="outline"
+                        color="dark"
+                        disabled={isAuthorizing}
+                    >
+                        Deny
+                    </Button>
+                    <Button
+                        as="button"
+                        onClick={handleAuthorize}
+                        disabled={!canAuthorize || isAuthorizing || !!error}
+                        color="dark"
+                    >
+                        {isAuthorizing ? "Authorizing..." : "Authorize"}
+                    </Button>
+                </div>
+            </div>
+        </AuthModal>
     );
 }

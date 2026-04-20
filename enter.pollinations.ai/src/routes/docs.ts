@@ -1091,6 +1091,7 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
     "get /account/profile": {
         name: "Jane Developer",
         email: "jane@example.com",
+        githubUsername: "janedeveloper",
         image: "https://avatars.example.com/jane.jpg",
         tier: "seed",
         displayTier: "Seed",

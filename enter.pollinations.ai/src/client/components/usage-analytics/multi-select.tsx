@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/util.ts";
+import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
 
 type MultiSelectProps = {
     options: { value: string; label: string }[];
@@ -27,6 +28,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
     const ref = useRef<HTMLDivElement>(null);
+    const scrollAreaRef = useAutoHideScrollbar<HTMLDivElement>(open);
     const isAllSelected = selected.length === 0;
 
     const calculatePosition = () => {
@@ -165,7 +167,10 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     )}
                     style={dropdownStyle}
                 >
-                    <div className="max-h-64 overflow-y-auto overflow-x-hidden">
+                    <div
+                        ref={scrollAreaRef}
+                        className="max-h-64 overflow-y-auto overflow-x-hidden scrollbar-subtle scrollbar-theme-amber"
+                    >
                         <button
                             type="button"
                             onClick={selectAll}

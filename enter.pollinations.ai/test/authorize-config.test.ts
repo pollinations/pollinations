@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAllowedModelSelection } from "@/client/components/api-keys/model-selection.ts";
 import {
-    AUTHORIZE_ALLOWED_ACCOUNT_PERMISSIONS,
-    BASELINE_CONSENT_PERMISSIONS,
+    CONSENT_PERMISSIONS,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     getAuthorizeInitialPermissions,
-    OPTIONAL_CONSENT_PERMISSIONS,
     sanitizeAuthorizeAccountPermissions,
-    withBaselinePermissions,
 } from "@/client/lib/authorize-config.ts";
 
 describe("normalizeAllowedModelSelection", () => {
@@ -104,8 +101,8 @@ describe("getAuthorizeInitialPermissions", () => {
 });
 
 describe("sanitizeAuthorizeAccountPermissions", () => {
-    it("allows only the authorize-safe permission set", () => {
-        expect(AUTHORIZE_ALLOWED_ACCOUNT_PERMISSIONS).toEqual([
+    it("allows only the consent permission set", () => {
+        expect(CONSENT_PERMISSIONS).toEqual([
             "profile",
             "balance",
             "usage",
@@ -126,29 +123,5 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
         expect(
             sanitizeAuthorizeAccountPermissions(["admin", "offline_access"]),
         ).toBeNull();
-    });
-});
-
-describe("withBaselinePermissions", () => {
-    it("returns empty when baseline is empty and optional is null", () => {
-        expect(withBaselinePermissions(null)).toEqual([]);
-    });
-
-    it("passes optional permissions through", () => {
-        expect(withBaselinePermissions(["usage"])).toEqual(["usage"]);
-    });
-
-    it("dedupes duplicate optionals", () => {
-        expect(
-            withBaselinePermissions(["balance", "usage", "balance"]),
-        ).toEqual(["balance", "usage"]);
-    });
-});
-
-describe("consent permission sets", () => {
-    it("baseline and optional sets do not overlap", () => {
-        for (const p of BASELINE_CONSENT_PERMISSIONS) {
-            expect(OPTIONAL_CONSENT_PERMISSIONS).not.toContain(p);
-        }
     });
 });

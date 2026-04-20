@@ -22,11 +22,10 @@ import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
 import {
-    AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS,
+    CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
     parseScopeList,
     sanitizeAuthorizeAccountPermissions,
-    withBaselinePermissions,
 } from "../lib/authorize-config.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { formatPollen } from "../lib/format-pollen.ts";
@@ -171,10 +170,9 @@ function AuthorizeComponent() {
     const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
         () => new Set(urlScope ?? []),
     );
-    const visibleOptionalPermissions =
-        AUTHORIZE_VISIBLE_ACCOUNT_PERMISSIONS.filter((p) =>
-            requestedScopes.has(p),
-        );
+    const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
+        requestedScopes.has(p),
+    );
     const hasBudget = keyPermissions.permissions.pollenBudget !== null;
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) && hasBudget;
@@ -293,9 +291,10 @@ function AuthorizeComponent() {
                 permissions: {
                     allowedModels,
                     pollenBudget,
-                    accountPermissions: withBaselinePermissions(
-                        sanitizeAuthorizeAccountPermissions(accountPermissions),
-                    ),
+                    accountPermissions:
+                        sanitizeAuthorizeAccountPermissions(
+                            accountPermissions,
+                        ) ?? [],
                 },
             });
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10255,
+  "title": "[codex] fix account profile payload",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10255",
+  "merged_at": "2026-04-20T12:39:41Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Traveling light",
+    "blurb": "We've streamlined the account profile API to keep things simple and privacy-focused. Now returning just the essentials: your GitHub username and avatar!",
+    "summary": "Streamlined the account profile API endpoint to return only essential public fields, updating the SDK and documentation to match.",
+    "impact": "Developers get a cleaner, privacy-focused profile payload that makes integrations simpler and more secure.",
+    "keywords": [
+      "api",
+      "profile",
+      "sdk",
+      "privacy",
+      "refactor"
+    ],
+    "visual_concept": "Polly the bee holding a clean, minimalist ID card with just a picture and username, having discarded unnecessary heavy paperwork. Represents the streamlined, lighter API payload.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a clean, minimalist digital ID card showing just a pixelated avatar and username. She is happily tossing away heavy, unnecessary paper forms into a lime green (#ecf874) bin. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-20/PR-10255.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a clean, minimalist digital ID card showing just a pixelated avatar and username. She is happily tossing away heavy, unnecessary paper forms into a lime green (#ecf874) bin. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-20T12:40:37.161631+00:00"
+}

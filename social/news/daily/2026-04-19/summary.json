@@ -1,0 +1,51 @@
+{
+  "date": "2026-04-19",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-19",
+  "title": "Bigger brains, larger context windows",
+  "summary": "A massive influx of community apps, a much-needed SDK update for device auth, and a 262K context window for Qwen Vision.\n\nWe bumped MiniMax to version 2.7 and migrated Qwen Vision to a new Fireworks endpoint. The latter now lets you stuff up to 262K tokens into the context window, which is probably more than you need but exactly what you want. Existing API calls won't break.\n\nThe NPM package got a solid upgrade. You can now handle device login flows and CRUD operations for account keys directly through the SDK. We also wired up image reasoning flags. Less boilerplate, more building.\n\nSeven new community apps dropped into the showcase today. Highlights include PollenHours running AI video pipelines in Termux on Android, Akhbaar parsing PDFs into JSON news feeds, and Aureon hooking into Flux and LTX-2.3. We also welcomed ManhwaGen, G-Pai, What If?, and Deals King. You all are busy.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 10328,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10329,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10331,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10333,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10334,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10335,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10339,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10341,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10345,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10346,
+      "date": "2026-04-19"
+    }
+  ],
+  "generated_at": "2026-04-20T06:41:37.001187+00:00"
+}

@@ -67,7 +67,7 @@ describe("Account Key Management API", () => {
                         name: "restricted-child",
                         allowedModels: ["flux", "openai"],
                         pollenBudget: 50,
-                        accountPermissions: ["balance", "usage"],
+                        accountPermissions: ["profile", "usage"],
                     }),
                 },
             );
@@ -76,7 +76,7 @@ describe("Account Key Management API", () => {
             const data = await response.json();
             expect(data.permissions).toEqual({
                 models: ["flux", "openai"],
-                account: ["balance", "usage"],
+                account: ["profile", "usage"],
             });
             expect(data.pollenBudget).toBe(50);
         });
@@ -94,7 +94,7 @@ describe("Account Key Management API", () => {
                     },
                     body: JSON.stringify({
                         name: "escalation-attempt",
-                        accountPermissions: ["balance", "keys", "usage"],
+                        accountPermissions: ["profile", "keys", "usage"],
                     }),
                 },
             );
@@ -102,7 +102,7 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(200);
             const data = await response.json();
             // "keys" should be stripped
-            expect(data.permissions.account).toEqual(["balance", "usage"]);
+            expect(data.permissions.account).toEqual(["profile", "usage"]);
             expect(data.permissions.account).not.toContain("keys");
         });
 

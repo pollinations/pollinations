@@ -13,6 +13,7 @@ SQL >
         event_id as cursor_event_id,
         event_type as type,
         model_used as model,
+        api_key_id as api_key_id,
         api_key_name as api_key,
         api_key_type as api_key_type,
         splitByChar(':', selected_meter_slug)[-1] as meter_source,

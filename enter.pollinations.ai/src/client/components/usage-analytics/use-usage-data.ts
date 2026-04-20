@@ -14,7 +14,6 @@ type UsageDataResult = {
     error: string | null;
     fetchUsage: () => void;
     usedModels: { id: string; label: string }[];
-    usedKeys: string[];
     chartData: DataPoint[];
     stats: {
         totalRequests: number;
@@ -29,13 +28,16 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
     const fetchUsage = useCallback(() => {
         setLoading(true);
         setError(null);
         const params = new URLSearchParams({
             days: TIME_RANGE_DAYS[filters.timeRange].toString(),
-            granularity: "api_key",
         });
+        if (filters.selectedKeyIds.length > 0) {
+            params.set("api_key_ids", filters.selectedKeyIds.join(","));
+        }
 
         fetch(`/api/account/usage/daily?${params.toString()}`)
             .then((r) => {
@@ -52,24 +54,21 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 setDailyUsage([]);
             })
             .finally(() => setLoading(false));
-    }, [filters.timeRange]);
+    }, [filters.timeRange, filters.selectedKeyIds]);
 
-    // Fetch on mount
     useEffect(() => {
         fetchUsage();
     }, [fetchUsage]);
 
-    // Compute cutoff date based on time range
     const cutoff = useMemo(() => {
         const now = new Date();
         return filters.timeRange === "7d"
             ? new Date(now.getTime() - MS_PER_WEEK)
             : filters.timeRange === "30d"
               ? new Date(now.getTime() - MS_PER_30_DAYS)
-              : new Date(0); // "all" - no cutoff
+              : new Date(0);
     }, [filters.timeRange]);
 
-    // Time-filtered data (without model/key filters)
     const timeFilteredData = useMemo(() => {
         return dailyUsage.filter((r) => {
             const recordDate = new Date(`${r.date}T00:00:00`);
@@ -77,7 +76,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         });
     }, [dailyUsage, cutoff]);
 
-    // Models that appear in time-filtered usage data
     const usedModels = useMemo(() => {
         const modelIds = new Set<string>();
         for (const r of timeFilteredData) {
@@ -92,20 +90,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [timeFilteredData]);
 
-    // API keys that appear in time-filtered usage data
-    const usedKeys = useMemo(() => {
-        const keyNames = new Set<string>();
-        for (const r of timeFilteredData) {
-            if (r.api_key_names) {
-                for (const name of r.api_key_names) {
-                    if (name) keyNames.add(name);
-                }
-            }
-        }
-        return Array.from(keyNames).sort();
-    }, [timeFilteredData]);
-
-    // Filter and aggregate daily usage data
     const { chartData, stats, filteredData } = useMemo(() => {
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
             const recordDate = new Date(`${r.date}T00:00:00`);
@@ -114,14 +98,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 filters.selectedModels.length > 0 &&
                 r.model &&
                 !filters.selectedModels.includes(r.model)
-            )
-                return false;
-            if (
-                filters.selectedKeys.length > 0 &&
-                (!r.api_key_names ||
-                    !filters.selectedKeys.some((k) =>
-                        r.api_key_names.includes(k),
-                    ))
             )
                 return false;
             return true;
@@ -157,7 +133,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 cur.tierRequests += r.requests || 0;
                 cur.tierPollen += r.cost_usd || 0;
             } else {
-                // pack + crypto = paid
                 cur.paidRequests += r.requests || 0;
                 cur.paidPollen += r.cost_usd || 0;
             }
@@ -270,7 +245,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             },
             filteredData: filtered,
         };
-    }, [dailyUsage, filters, cutoff]);
+    }, [dailyUsage, filters.selectedModels, filters.metric, cutoff]);
 
     return {
         dailyUsage,
@@ -278,7 +253,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         error,
         fetchUsage,
         usedModels,
-        usedKeys,
         chartData,
         stats,
         filteredData,

@@ -1,11 +1,26 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
-import { Badge } from "../ui/badge.tsx";
+import {
+    audioModelIds,
+    imageModelIds,
+    textModelIds,
+    videoModelIds,
+} from "./model-categories.ts";
+import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import { getModelDisplayName } from "./model-utils.ts";
+import {
+    getPermissionPillClasses,
+    getPermissionUiTheme,
+    type PermissionUiTheme,
+} from "./permission-ui.ts";
+
+type AccountPermissionOption = {
+    id: "profile" | "balance" | "usage" | "keys";
+    label: string;
+    shortLabel?: string;
+    tooltip: string;
+};
 
 type AccountPermissionsInputProps = {
     value: string[] | null;
@@ -13,64 +28,85 @@ type AccountPermissionsInputProps = {
     disabled?: boolean;
     allowedModels: string[] | null;
     onModelsChange: (models: string[] | null) => void;
+    visiblePermissions?: readonly AccountPermissionOption["id"][];
+    theme?: PermissionUiTheme;
+    showApiName?: boolean;
+    /** Whether the Models section starts expanded. Always collapsible. */
+    modelsInitiallyExpanded?: boolean;
 };
 
-const ACCOUNT_PERMISSIONS = [
+export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
     {
         id: "profile",
         label: "Profile",
-        tooltip: "Read name, email, image, tier",
+        tooltip: "username and profile image",
     },
     {
         id: "balance",
         label: "Balance",
-        tooltip: "Read pollen balance and key budget",
+        tooltip: "remaining spending limit",
     },
     {
         id: "usage",
         label: "Usage",
-        tooltip: "Read usage history",
+        tooltip: "account usage history",
     },
     {
         id: "keys",
         label: "Key Management",
-        tooltip: "Create, list, and revoke API keys via API",
+        shortLabel: "Keys",
+        tooltip: "create, list, and revoke API keys",
     },
+];
+
+const textModels = textModelIds
+    .map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+const imageModels = imageModelIds
+    .map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+const videoModels = videoModelIds
+    .map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+const audioModels = audioModelIds
+    .map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+const MODEL_CATEGORIES = [
+    { label: "Text", models: textModels },
+    { label: "Image", models: imageModels },
+    { label: "Video", models: videoModels },
+    { label: "Audio", models: audioModels },
 ] as const;
 
-const textModels = Object.keys(TEXT_SERVICES)
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+const MODEL_CATEGORY_TEXT_CLASSES = {
+    Text: "text-blue-800",
+    Image: "text-rose-800",
+    Video: "text-teal-800",
+    Audio: "text-violet-800",
+} as const;
 
-const imageModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("image"),
-    )
-    .map(([id]) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const videoModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("video"),
-    )
-    .map(([id]) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const audioModels = Object.keys(AUDIO_SERVICES)
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+const MODEL_CATEGORY_HOVER_CLASSES = {
+    Text: "hover:bg-blue-50 hover:text-blue-900 hover:border-blue-300",
+    Image: "hover:bg-rose-50 hover:text-rose-900 hover:border-rose-300",
+    Video: "hover:bg-teal-50 hover:text-teal-900 hover:border-teal-300",
+    Audio: "hover:bg-violet-50 hover:text-violet-900 hover:border-violet-300",
+} as const;
 
 /**
  * Unified permissions input for API keys.
@@ -82,20 +118,23 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     disabled = false,
     allowedModels,
     onModelsChange,
+    visiblePermissions,
+    theme = "green",
+    showApiName = true,
+    modelsInitiallyExpanded = false,
 }) => {
+    const themeConfig = getPermissionUiTheme(theme);
+    const { row: rowTheme } = themeConfig;
+    const permissionOptions =
+        visiblePermissions === undefined
+            ? ACCOUNT_PERMISSIONS
+            : ACCOUNT_PERMISSIONS.filter((p) =>
+                  visiblePermissions.includes(p.id),
+              );
     const isUnrestricted = allowedModels === null;
-    const [isExpanded, setIsExpanded] = useState(!isUnrestricted);
-
-    const totalModels =
-        textModels.length +
-        imageModels.length +
-        videoModels.length +
-        audioModels.length;
-    const selectedCount = isUnrestricted
-        ? totalModels
-        : (allowedModels ?? []).length;
 
     const handleToggle = (permissionId: string) => {
+        if (disabled) return;
         const currentPermissions = value ?? [];
         const hasPermission = currentPermissions.includes(permissionId);
 
@@ -109,239 +148,209 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         }
     };
 
+    const allModelIds = [
+        ...textModels,
+        ...imageModels,
+        ...videoModels,
+        ...audioModels,
+    ].map((m) => m.id);
+
+    const commitSelection = (next: string[]) => {
+        onModelsChange(normalizeAllowedModelSelection(next, allModelIds));
+    };
+
     const toggleModel = (modelId: string) => {
-        if (disabled || isUnrestricted) return;
-        const currentModels = allowedModels ?? [];
-        if (currentModels.includes(modelId)) {
-            onModelsChange(currentModels.filter((id) => id !== modelId));
-        } else {
-            onModelsChange([...currentModels, modelId]);
+        if (disabled) return;
+        if (isUnrestricted) {
+            commitSelection(allModelIds.filter((id) => id !== modelId));
+            return;
         }
+        const currentModels = allowedModels ?? [];
+        const next = currentModels.includes(modelId)
+            ? currentModels.filter((id) => id !== modelId)
+            : [...currentModels, modelId];
+        commitSelection(next);
     };
 
     const isModelSelected = (modelId: string) =>
-        (allowedModels ?? []).includes(modelId);
+        isUnrestricted || (allowedModels ?? []).includes(modelId);
 
     const toggleCategory = (categoryModels: { id: string }[]) => {
-        if (disabled || isUnrestricted) return;
+        if (disabled) return;
         const categoryIds = categoryModels.map((m) => m.id);
+        if (isUnrestricted) {
+            commitSelection(
+                allModelIds.filter((id) => !categoryIds.includes(id)),
+            );
+            return;
+        }
         const currentModels = allowedModels ?? [];
         const allSelected = categoryIds.every((id) =>
             currentModels.includes(id),
         );
         if (allSelected) {
-            onModelsChange(
+            commitSelection(
                 currentModels.filter((id) => !categoryIds.includes(id)),
             );
         } else {
-            const newModels = [...currentModels];
+            const next = [...currentModels];
             for (const id of categoryIds) {
-                if (!newModels.includes(id)) newModels.push(id);
+                if (!next.includes(id)) next.push(id);
             }
-            onModelsChange(newModels);
+            commitSelection(next);
         }
     };
 
     const isCategoryAllSelected = (categoryModels: { id: string }[]) =>
+        isUnrestricted ||
         categoryModels.every((m) => (allowedModels ?? []).includes(m.id));
 
-    const handleHeaderClick = () => {
-        if (disabled) return;
-        setIsExpanded((prev) => !prev);
-    };
+    const selectedCount = isUnrestricted
+        ? allModelIds.length
+        : (allowedModels ?? []).length;
 
-    const handleRestrictionToggle = (
-        e: React.MouseEvent<HTMLButtonElement>,
-    ) => {
-        e.stopPropagation();
-        if (disabled) return;
-        if (isUnrestricted) {
-            onModelsChange([]);
-            setIsExpanded(true);
-        } else {
-            onModelsChange(null);
-        }
-    };
+    // Start open if caller requested, or if the key is already restricted.
+    const [modelsExpanded, setModelsExpanded] = useState(
+        modelsInitiallyExpanded || !isUnrestricted,
+    );
 
     return (
         <div>
-            <div className="text-sm font-semibold mb-4">Permissions</div>
-            <div className="space-y-2">
-                {/* Model Permission */}
+            <div className="space-y-4">
+                {/* Other Permissions - Profile, Balance, Usage */}
+                {permissionOptions.map((permission) => {
+                    const isChecked = value?.includes(permission.id) ?? false;
+                    return (
+                        <div key={permission.id}>
+                            {/* biome-ignore lint/a11y/useSemanticElements: full-row toggle with separate InfoTip keeps the whole row clickable without nesting interactive elements */}
+                            <div
+                                role="button"
+                                tabIndex={disabled ? -1 : 0}
+                                aria-pressed={isChecked}
+                                aria-label={`Toggle ${permission.label} permission`}
+                                onClick={() => handleToggle(permission.id)}
+                                onKeyDown={(event) => {
+                                    if (disabled) return;
+                                    if (
+                                        event.key === "Enter" ||
+                                        event.key === " "
+                                    ) {
+                                        event.preventDefault();
+                                        handleToggle(permission.id);
+                                    }
+                                }}
+                                className={cn(
+                                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
+                                    isChecked
+                                        ? rowTheme.selectedClasses
+                                        : "border-gray-200",
+                                    rowTheme.focusRingClasses,
+                                    !disabled &&
+                                        (isChecked
+                                            ? rowTheme.selectedHoverClasses
+                                            : rowTheme.rowHoverClasses),
+                                    !disabled && "cursor-pointer",
+                                    disabled && "opacity-50 cursor-not-allowed",
+                                )}
+                            >
+                                <div className="flex flex-1 items-baseline gap-1">
+                                    <span className="text-sm font-medium">
+                                        {permission.shortLabel ? (
+                                            <>
+                                                <span className="sm:hidden">
+                                                    {permission.shortLabel}
+                                                </span>
+                                                <span className="hidden sm:inline">
+                                                    {permission.label}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            permission.label
+                                        )}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                        – {permission.tooltip}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+
+                {/* Models */}
                 <div
                     className={cn(
                         "rounded-lg border transition-all",
-                        isUnrestricted
-                            ? "border-green-400 bg-green-50"
-                            : "border-gray-200 hover:border-gray-300",
+                        rowTheme.selectedClasses,
                         disabled && "opacity-50 cursor-not-allowed",
                     )}
                 >
-                    <button
-                        type="button"
-                        onClick={handleHeaderClick}
-                        disabled={disabled}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-left cursor-pointer"
-                    >
-                        <div className="flex-1">
-                            <span className="text-sm font-medium">Model</span>
-                            <span className="text-sm text-gray-500">
-                                {" "}
-                                –{" "}
-                                {isUnrestricted
-                                    ? "All models allowed"
-                                    : "Limited to selected models"}
-                            </span>
-                        </div>
-                        <Badge
-                            color={
-                                isUnrestricted
-                                    ? "green"
-                                    : selectedCount === 0
-                                      ? "gray"
-                                      : "amber"
-                            }
-                        >
-                            {isUnrestricted
-                                ? "All"
-                                : `${selectedCount} selected`}
-                        </Badge>
-                        <span
-                            className={cn(
-                                "text-gray-400 text-sm leading-none transition-transform duration-200",
-                                isExpanded && "rotate-180",
-                            )}
-                        >
-                            ▾
-                        </span>
-                    </button>
-
-                    {/* Expandable model panel */}
+                    {/* biome-ignore lint/a11y/useSemanticElements: full-row toggle with nested interactive children */}
                     <div
+                        role="button"
+                        tabIndex={disabled ? -1 : 0}
+                        aria-expanded={modelsExpanded}
+                        aria-label="Toggle model list"
+                        onClick={() =>
+                            !disabled && setModelsExpanded((v) => !v)
+                        }
+                        onKeyDown={(e) => {
+                            if (disabled) return;
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setModelsExpanded((v) => !v);
+                            }
+                        }}
                         className={cn(
-                            "overflow-hidden transition-all duration-200 ease-in-out",
-                            isExpanded
-                                ? "max-h-[2000px] opacity-100"
-                                : "max-h-0 opacity-0",
+                            "flex items-center gap-3 px-3 py-2",
+                            rowTheme.focusRingClasses,
+                            !disabled &&
+                                (!isUnrestricted
+                                    ? rowTheme.selectedHoverClasses
+                                    : rowTheme.rowHoverClasses),
+                            !disabled && "cursor-pointer",
                         )}
                     >
-                        <div
-                            className="px-3 pb-3 space-y-3 border-t border-gray-200 pt-3 overflow-y-auto"
-                            style={{
-                                maxHeight: "50vh",
-                                scrollbarWidth: "thin",
-                            }}
-                        >
-                            {/* Restriction toggle */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500">
-                                    {isUnrestricted
-                                        ? "This key can access all models"
-                                        : "Select which models this key can access"}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={handleRestrictionToggle}
-                                    disabled={disabled}
-                                    className={cn(
-                                        "text-xs px-2 py-1 rounded-md transition-colors cursor-pointer",
-                                        isUnrestricted
-                                            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                                            : "bg-green-100 text-green-700 hover:bg-green-200",
-                                    )}
-                                >
-                                    {isUnrestricted
-                                        ? "Restrict models"
-                                        : "Allow all"}
-                                </button>
-                            </div>
-
-                            {/* Model chips when restricted */}
-                            {!isUnrestricted && (
-                                <>
-                                    <ModelCategory
-                                        label="Text"
-                                        models={textModels}
-                                        disabled={disabled}
-                                        isModelSelected={isModelSelected}
-                                        toggleModel={toggleModel}
-                                        toggleCategory={toggleCategory}
-                                        isCategoryAllSelected={
-                                            isCategoryAllSelected
-                                        }
-                                    />
-                                    <ModelCategory
-                                        label="Image"
-                                        models={imageModels}
-                                        disabled={disabled}
-                                        isModelSelected={isModelSelected}
-                                        toggleModel={toggleModel}
-                                        toggleCategory={toggleCategory}
-                                        isCategoryAllSelected={
-                                            isCategoryAllSelected
-                                        }
-                                    />
-                                    <ModelCategory
-                                        label="Video"
-                                        models={videoModels}
-                                        disabled={disabled}
-                                        isModelSelected={isModelSelected}
-                                        toggleModel={toggleModel}
-                                        toggleCategory={toggleCategory}
-                                        isCategoryAllSelected={
-                                            isCategoryAllSelected
-                                        }
-                                    />
-                                    <ModelCategory
-                                        label="Audio"
-                                        models={audioModels}
-                                        disabled={disabled}
-                                        isModelSelected={isModelSelected}
-                                        toggleModel={toggleModel}
-                                        toggleCategory={toggleCategory}
-                                        isCategoryAllSelected={
-                                            isCategoryAllSelected
-                                        }
-                                    />
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Other Permissions - Profile, Balance, Usage */}
-                {ACCOUNT_PERMISSIONS.map((permission) => {
-                    const isChecked = value?.includes(permission.id) ?? false;
-                    return (
-                        <button
-                            key={permission.id}
-                            type="button"
-                            onClick={() => handleToggle(permission.id)}
-                            disabled={disabled}
-                            className={cn(
-                                "w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-all text-left",
-                                isChecked
-                                    ? "border-green-400 bg-green-50"
-                                    : "border-gray-200 hover:border-gray-300",
-                                !disabled && "cursor-pointer",
-                                disabled && "opacity-50 cursor-not-allowed",
-                            )}
-                        >
-                            <div className="flex-1">
-                                <span className="text-sm font-medium">
-                                    {permission.label}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                    {" "}
-                                    – {permission.tooltip}
-                                </span>
-                            </div>
-                            <span className="text-gray-400 text-lg leading-none">
-                                {isChecked ? "✕" : "+"}
+                        <div className="flex flex-1 items-baseline gap-1">
+                            <span className="text-sm font-medium">Models</span>
+                            <span className="text-sm text-gray-500">
+                                –{" "}
+                                {isUnrestricted
+                                    ? "all models allowed"
+                                    : `restricted to ${selectedCount} selected model${selectedCount === 1 ? "" : "s"}`}
                             </span>
-                        </button>
-                    );
-                })}
+                        </div>
+                        <span
+                            className={cn(
+                                "text-gray-500 text-xs transition-transform",
+                                modelsExpanded && "rotate-180",
+                            )}
+                            aria-hidden="true"
+                        >
+                            ▼
+                        </span>
+                    </div>
+                    {modelsExpanded && (
+                        <div className="px-3 pb-3 pt-3 space-y-3 border-t border-gray-200">
+                            {MODEL_CATEGORIES.map(({ label, models }) => (
+                                <ModelCategory
+                                    key={label}
+                                    label={label}
+                                    models={models}
+                                    disabled={disabled}
+                                    isModelSelected={isModelSelected}
+                                    toggleModel={toggleModel}
+                                    toggleCategory={toggleCategory}
+                                    isCategoryAllSelected={
+                                        isCategoryAllSelected
+                                    }
+                                    showApiName={showApiName}
+                                    theme={theme}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -356,6 +365,8 @@ const ModelCategory: FC<{
     toggleModel: (id: string) => void;
     toggleCategory: (models: { id: string }[]) => void;
     isCategoryAllSelected: (models: { id: string }[]) => boolean;
+    showApiName?: boolean;
+    theme?: PermissionUiTheme;
 }> = ({
     label,
     models,
@@ -364,22 +375,34 @@ const ModelCategory: FC<{
     toggleModel,
     toggleCategory,
     isCategoryAllSelected,
+    showApiName = true,
+    theme = "green",
 }) => (
     <div>
         <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-gray-500 tracking-wide">
+            <span
+                className={cn(
+                    "text-sm font-semibold",
+                    MODEL_CATEGORY_TEXT_CLASSES[
+                        label as keyof typeof MODEL_CATEGORY_TEXT_CLASSES
+                    ],
+                )}
+            >
                 {label}
             </span>
             <button
                 type="button"
                 onClick={() => toggleCategory(models)}
                 disabled={disabled}
-                className="text-[10px] text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer"
+                className={cn(
+                    "text-[10px] disabled:opacity-50 cursor-pointer",
+                    getPermissionUiTheme(theme).accent.actionTextClasses,
+                )}
             >
                 {isCategoryAllSelected(models) ? "Deselect all" : "Select all"}
             </button>
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap gap-1.5">
             {models.map((model) => (
                 <ModelChip
                     key={model.id}
@@ -388,6 +411,9 @@ const ModelCategory: FC<{
                     selected={isModelSelected(model.id)}
                     onClick={() => toggleModel(model.id)}
                     disabled={disabled}
+                    showApiName={showApiName}
+                    theme={theme}
+                    category={label}
                 />
             ))}
         </div>
@@ -400,21 +426,44 @@ const ModelChip: FC<{
     selected: boolean;
     onClick: () => void;
     disabled?: boolean;
-}> = ({ apiName, officialName, selected, onClick, disabled }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className={cn(
-            "px-2.5 py-1 rounded-lg text-xs transition-all text-left",
-            selected
-                ? "bg-blue-100 text-blue-700 border border-blue-300"
-                : "bg-gray-100 text-gray-500 border border-gray-200",
-            !disabled && "hover:scale-105 cursor-pointer",
-            disabled && "opacity-50 cursor-not-allowed",
-        )}
-    >
-        {selected && "✓ "}
-        {officialName} <span className="font-mono opacity-70">- {apiName}</span>
-    </button>
-);
+    showApiName?: boolean;
+    theme?: PermissionUiTheme;
+    category?: string;
+}> = ({
+    apiName,
+    officialName,
+    selected,
+    onClick,
+    disabled,
+    showApiName = true,
+    theme = "green",
+    category,
+}) => {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                "px-2.5 py-1 rounded-lg text-xs transition-colors text-left border",
+                selected
+                    ? getPermissionPillClasses(category ?? "") ||
+                          "bg-gray-100 text-gray-800 border-gray-400"
+                    : "bg-transparent text-gray-600 border-gray-300",
+                !disabled &&
+                    !selected &&
+                    MODEL_CATEGORY_HOVER_CLASSES[
+                        (category ??
+                            "Text") as keyof typeof MODEL_CATEGORY_HOVER_CLASSES
+                    ],
+                !disabled && "cursor-pointer",
+                disabled && "opacity-50 cursor-not-allowed",
+            )}
+        >
+            {officialName}
+            {showApiName && (
+                <span className="font-mono opacity-70"> - {apiName}</span>
+            )}
+        </button>
+    );
+};

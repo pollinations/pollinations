@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **694** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **695** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -805,7 +805,7 @@
 | [🛒 THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | [@web](https://github.com/web) |  | 🫧 |
 | [🛠️ SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 41 apps</summary>
+<details><summary>Show all 42 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -835,6 +835,7 @@
 | [🍳 MASala](75165772) | Multi-agent AI recipe generator that creates personalized meals from available ingredients | [@api](https://github.com/api) |  | 🫧 |
 | [🧬 Strain Navigator](https://www.strainnavigator.com/) | Open-source toolkit for growers, breeders, and seed banks | [@web](https://github.com/web) |  |  |
 | [🏋️ Goalani](https://goalani.com) | Voice-first AI fitness coach for workouts, food, and weight tracking | [@web](https://github.com/web) |  |  |
+| [🧠 Reporay](https://repo-ray.vercel.app) | Reporay is an AI-powered GitHub repository analyzer. Paste a GitHub URL to get insights into the technology stack, project architecture, and smart summaries. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 Deals King & Radar Ai](https://deal.pm/en/extension) | Deals King & Radar Ai supports viewing deals and running radar AI functions. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |
 | [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 kre8.info](https://kre8.info) | Helps you create end to end shorts and faceless videos in under 10 min using one prompt. | [@web](https://github.com/web) |  | 🫧 |

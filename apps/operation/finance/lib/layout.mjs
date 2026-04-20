@@ -154,7 +154,7 @@ function computeKpis(runningCashValues, months, currentMonth, config) {
 export function buildLayout(
     matrix,
     config,
-    { currentMonth, pools = {}, poolHistory = {} } = {},
+    { currentMonth, pools = {}, poolHistory = {}, unmatched = null } = {},
 ) {
     const cells = [];
     const formats = [];
@@ -243,7 +243,30 @@ export function buildLayout(
         },
     });
 
-    // --- row 2: blank spacer ---
+    // --- optional warn row: unmatched Wise counterparties ---
+    if (unmatched && unmatched.count > 0) {
+        const sumStr = `${unmatched.sumEur.toFixed(2)} EUR`;
+        const warnText = `⚠ Unmatched: ${unmatched.count} transaction${unmatched.count === 1 ? "" : "s"}, ${sumStr} — see update-live.err`;
+        cells.push([warnText, ...Array(totalCol).fill("")]);
+        const warnRowIdx = cells.length - 1;
+        formats.push({
+            label: "unmatchedWarn",
+            range: sheetRange(warnRowIdx, 0, warnRowIdx, totalCol),
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.fontSize,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment",
+            format: {
+                textFormat: {
+                    bold: true,
+                    italic: false,
+                    fontSize: 11,
+                    foregroundColor: { red: 0.5, green: 0.2, blue: 0 },
+                },
+                backgroundColor: { red: 1, green: 0.94, blue: 0.65 },
+                verticalAlignment: "MIDDLE",
+            },
+        });
+    }
+
+    // --- blank spacer row ---
     cells.push(Array(totalCol + 1).fill(""));
 
     // Pre-compute expense/revenue vendor lists for summary rows.

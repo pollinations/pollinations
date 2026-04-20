@@ -1,22 +1,31 @@
 import type {
     AccountBalance,
+    AccountKey,
     AccountProfile,
     AudioBinaryResponse,
     AudioGenerateOptions,
+    AuthorizeDeviceOptions,
     AuthorizeOptions,
     ChatOptions,
     ChatResponse,
     ChatStreamChunk,
+    CreatedKey,
+    CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DeviceAuthorization,
+    DeviceCodeResponse,
+    DeviceTokenResponse,
     ImageEditOptions,
     ImageGenerateOptions,
+    ImageGenerateV1Options,
     ImageResponse,
     KeyInfo,
     Message,
     ModelInfo,
     PollinationsConfig,
     PollinationsErrorDetails,
+    RequestOptions,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -25,12 +34,16 @@ import type {
     UploadResponse,
     UsageOptions,
     UsageResponse,
+    UserInfo,
     VideoGenerateOptions,
     VideoResponse,
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+const AUTH_BASE_URL = "https://enter.pollinations.ai";
+const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
+const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys balance usage";
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
 // Default timeouts in milliseconds
@@ -360,6 +373,7 @@ export class Pollinations {
             image: options.referenceImage,
             transparent: options.transparent,
             guidance_scale: options.guidanceScale,
+            reasoning: options.reasoning,
         };
 
         const queryString = this.buildQueryParams(params);
@@ -558,6 +572,137 @@ export class Pollinations {
     }
 
     // ============================================================================
+    // Image Generation (OpenAI-compatible POST /v1/images/generations)
+    // ============================================================================
+
+    /**
+     * Generate image(s) via the OpenAI-compatible POST endpoint.
+     * Supports multi-image requests (`n > 1`) and both `url` / `b64_json`
+     * response formats.
+     *
+     * Returns a single `ImageResponse` when `n === 1`, or an array otherwise.
+     *
+     * @example
+     * ```ts
+     * // Single image, size string (OpenAI style)
+     * const img = await pollinations.imageGenerate('A cute robot', {
+     *   size: '1024x1024',
+     *   model: 'flux',
+     * });
+     *
+     * // Multiple images
+     * const imgs = await pollinations.imageGenerate('A cute robot', { n: 3 });
+     * ```
+     */
+    async imageGenerate(
+        prompt: string,
+        options: ImageGenerateV1Options = {},
+    ): Promise<ImageResponse | ImageResponse[]> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        // Resolve size: prefer explicit `size`, otherwise compose from width/height
+        let size = options.size;
+        if (!size && options.width && options.height) {
+            size = `${options.width}x${options.height}`;
+        }
+
+        const body: Record<string, unknown> = {
+            prompt,
+            model: options.model || "zimage",
+        };
+        if (size) body.size = size;
+        if (options.n !== undefined) body.n = options.n;
+        if (options.responseFormat)
+            body.response_format = options.responseFormat;
+        if (options.reasoning !== undefined) body.reasoning = options.reasoning;
+        if (options.seed !== undefined) body.seed = resolveSeed(options.seed);
+        if (options.quality) body.quality = options.quality;
+        if (options.negativePrompt)
+            body.negative_prompt = options.negativePrompt;
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/images/generations`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.imageTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        const json = (await response.json()) as {
+            data: Array<{ url?: string; b64_json?: string }>;
+        };
+
+        const items = json.data || [];
+        if (items.length === 0) {
+            throw new PollinationsError(
+                "No image data in response",
+                "NO_IMAGE",
+                500,
+            );
+        }
+
+        const results = await Promise.all(
+            items.map((item) => this.resolveImageItem(item, options.signal)),
+        );
+
+        // Unwrap when a single image was produced (most common case)
+        if (results.length === 1) {
+            const [single] = results;
+            if (single) return single;
+        }
+        return results;
+    }
+
+    /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
+    private async resolveImageItem(
+        item: { url?: string; b64_json?: string },
+        signal?: AbortSignal,
+    ): Promise<ImageResponse> {
+        if (item.url) {
+            const imgResponse = await fetchWithTimeout(
+                item.url,
+                {},
+                this.imageTimeout,
+                signal,
+            );
+            const buffer = await imgResponse.arrayBuffer();
+            const contentType =
+                imgResponse.headers.get("content-type") || "image/png";
+            return { buffer, contentType, url: item.url };
+        }
+        if (item.b64_json) {
+            const binary = atob(item.b64_json);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return {
+                buffer: bytes.buffer as ArrayBuffer,
+                contentType: "image/png",
+                url: "",
+            };
+        }
+        throw new PollinationsError(
+            "Unexpected image item shape in response",
+            "INVALID_RESPONSE",
+            500,
+        );
+    }
+
+    // ============================================================================
     // Video Generation
     // ============================================================================
 
@@ -597,7 +742,7 @@ export class Pollinations {
         const queryString = this.buildQueryParams(params);
         const encodedPrompt = encodeURIComponent(prompt);
 
-        return `${this.baseUrl}/image/${encodedPrompt}${queryString ? `?${queryString}` : ""}`;
+        return `${this.baseUrl}/video/${encodedPrompt}${queryString ? `?${queryString}` : ""}`;
     }
 
     /**
@@ -1550,7 +1695,138 @@ export class Pollinations {
         if (options.permissions?.length)
             params.set("permissions", options.permissions.join(","));
 
-        return `https://enter.pollinations.ai/authorize?${params.toString()}`;
+        return `${AUTH_BASE_URL}/authorize?${params.toString()}`;
+    }
+
+    // ============================================================================
+    // Device Flow (OAuth) — headless / CLI authentication
+    // ============================================================================
+
+    /**
+     * Start an OAuth device-code flow for headless or CLI authentication.
+     *
+     * Returns a handle immediately containing a short `userCode` and a
+     * `verificationUri` the user opens in their browser. Call `poll()` to
+     * block until the user approves (or rejects / the code expires) — it
+     * resolves to the access token.
+     *
+     * Static: does NOT require an existing SDK instance or API key. Use
+     * the returned access token to construct a `Pollinations` client.
+     *
+     * @example
+     * ```ts
+     * const auth = await Pollinations.authorizeDevice();
+     * console.log(`Visit ${auth.verificationUri} and enter: ${auth.userCode}`);
+     * const accessToken = await auth.poll();
+     * const client = new Pollinations({ apiKey: accessToken });
+     * ```
+     */
+    static async authorizeDevice(
+        options: AuthorizeDeviceOptions = {},
+    ): Promise<DeviceAuthorization> {
+        const clientId = options.clientId || DEVICE_FLOW_CLIENT_ID;
+        const scope = options.scope || DEVICE_FLOW_DEFAULT_SCOPE;
+
+        const response = await fetch(`${AUTH_BASE_URL}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ client_id: clientId, scope }),
+            signal: options.signal,
+        });
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            throw new PollinationsError(
+                `Failed to start device flow: ${response.status} ${text}`,
+                "DEVICE_FLOW_START_FAILED",
+                response.status,
+            );
+        }
+
+        const code = (await response.json()) as DeviceCodeResponse;
+        const expiresAt = new Date(Date.now() + code.expires_in * 1000);
+        const pollMs = Math.max(code.interval, 5) * 1000;
+
+        const poll = async (): Promise<string> => {
+            while (Date.now() < expiresAt.getTime()) {
+                await sleep(pollMs);
+                if (options.signal?.aborted) {
+                    throw new PollinationsError(
+                        "Device authorization cancelled",
+                        "CANCELLED",
+                        499,
+                    );
+                }
+
+                const tokenRes = await fetch(
+                    `${AUTH_BASE_URL}/api/device/token`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            device_code: code.device_code,
+                            grant_type:
+                                "urn:ietf:params:oauth:grant-type:device_code",
+                        }),
+                    },
+                );
+
+                const body = (await tokenRes
+                    .json()
+                    .catch(() => ({}))) as DeviceTokenResponse;
+
+                if (tokenRes.ok && body.access_token) {
+                    return body.access_token;
+                }
+                if (
+                    body.error === "authorization_pending" ||
+                    body.error === "slow_down"
+                ) {
+                    continue;
+                }
+                throw new PollinationsError(
+                    body.error_description ||
+                        body.error ||
+                        "Device flow failed",
+                    body.error || "DEVICE_FLOW_ERROR",
+                    400,
+                );
+            }
+            throw new PollinationsError(
+                "Device code expired. Call Pollinations.authorizeDevice() again.",
+                "EXPIRED_TOKEN",
+                400,
+            );
+        };
+
+        return {
+            userCode: code.user_code,
+            verificationUri: code.verification_uri_complete,
+            expiresAt,
+            poll,
+        };
+    }
+
+    /**
+     * Get the authenticated user's identity via GET /api/device/userinfo.
+     * Uses the API key on this client instance.
+     *
+     * @example
+     * ```ts
+     * const user = await pollinations.userInfo();
+     * console.log(user.name, user.tier);
+     * ```
+     */
+    async userInfo(options: RequestOptions = {}): Promise<UserInfo> {
+        const response = await fetchWithTimeout(
+            `${AUTH_BASE_URL}/api/device/userinfo`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<UserInfo>;
     }
 
     // ============================================================================
@@ -1675,5 +1951,113 @@ export class Pollinations {
 
         if (!response.ok) await this.handleErrorResponse(response);
         return response.json() as Promise<KeyInfo>;
+    }
+
+    // ============================================================================
+    // Account Keys (CRUD)
+    // ============================================================================
+
+    /**
+     * List all API keys on the authenticated account.
+     *
+     * @example
+     * ```ts
+     * const keys = await pollinations.listKeys();
+     * keys.forEach(k => console.log(k.name, k.prefix, k.enabled));
+     * ```
+     */
+    async listKeys(options: RequestOptions = {}): Promise<AccountKey[]> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        const body = (await response.json()) as { data?: AccountKey[] };
+        return body.data || [];
+    }
+
+    /**
+     * Create a new API key. The returned `key` field is ONLY shown once
+     * at creation — store it immediately.
+     *
+     * @example
+     * ```ts
+     * const created = await pollinations.createKey({
+     *   name: 'my-bot',
+     *   type: 'secret',
+     *   pollenBudget: 1000,
+     *   accountPermissions: ['balance', 'usage'],
+     * });
+     * console.log('Save this now — it will not be shown again:', created.key);
+     * ```
+     */
+    async createKey(
+        options: CreateKeyOptions & RequestOptions,
+    ): Promise<CreatedKey> {
+        if (!options.name) {
+            throw new PollinationsError(
+                "name is required when creating a key",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body: Record<string, unknown> = {
+            name: options.name,
+            type: options.type || "secret",
+        };
+        if (options.expiresIn !== undefined) body.expiresIn = options.expiresIn;
+        if (options.allowedModels) body.allowedModels = options.allowedModels;
+        if (options.pollenBudget !== undefined)
+            body.pollenBudget = options.pollenBudget;
+        if (options.accountPermissions)
+            body.accountPermissions = options.accountPermissions;
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<CreatedKey>;
+    }
+
+    /**
+     * Revoke an API key by ID. The id comes from `listKeys()`.
+     *
+     * @example
+     * ```ts
+     * await pollinations.revokeKey('key_abc123');
+     * ```
+     */
+    async revokeKey(id: string, options: RequestOptions = {}): Promise<void> {
+        if (!id || typeof id !== "string") {
+            throw new PollinationsError(
+                "Key id is required",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/keys/${encodeURIComponent(id)}`,
+            {
+                method: "DELETE",
+                headers: this.getHeaders(),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
     }
 }

@@ -85,7 +85,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-6"],
     },
     {
-        name: "claude-xlarge",
+        name: "claude-opus-4.7",
         config: portkeyConfig["claude-opus-4-7"],
     },
     {

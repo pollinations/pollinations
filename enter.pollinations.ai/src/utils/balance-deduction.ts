@@ -132,6 +132,25 @@ export function identifyDeductionSource(
 }
 
 /**
+ * Atomically credits pollen to a creator's pack_balance.
+ * Used by BYOP markup billing — the app owner (resolved from the pk_ clientId
+ * on the BYOP sk_ token) earns a share of every billed request.
+ */
+export async function atomicCreditCreatorPack(
+    db: DrizzleD1Database,
+    creatorUserId: string,
+    amount: number,
+): Promise<void> {
+    if (amount <= 0) return;
+
+    await db.run(sql`
+        UPDATE ${userTable}
+        SET pack_balance = COALESCE(pack_balance, 0) + ${amount}
+        WHERE id = ${creatorUserId}
+    `);
+}
+
+/**
  * Atomically deducts pollen from paid balances only (excluding tier_balance).
  * Picks the first positive bucket: crypto → pack. Full amount from one bucket.
  *

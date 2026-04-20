@@ -1,9 +1,12 @@
 import { getLogger } from "@logtape/logtape";
 import type { ModelName } from "@shared/registry/registry.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
+import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { BYOP_MARKUP_PCT, computeCreatorCredit } from "@/billing-config.ts";
 import { apikey as apikeyTable } from "@/db/schema/better-auth.ts";
 import {
+    atomicCreditCreatorPack,
     atomicDeductApiKeyBalance,
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
@@ -13,6 +16,12 @@ import {
 
 const log = getLogger(["track", "helpers"]);
 
+export type MarkupResolution = {
+    creatorUserId: string;
+    creatorCredit: number;
+    markupPct: number;
+};
+
 interface DeductionParams {
     db: DrizzleD1Database;
     isBilledUsage: boolean;
@@ -20,15 +29,48 @@ interface DeductionParams {
     userId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
+    apiKeyClientId?: string;
     modelResolved?: string;
 }
 
 /**
- * Handles balance deduction for both API keys and users after billable requests
+ * Resolves the creator user id from a BYOP sk_ token's clientId (= pk_ row id).
+ * Returns null if the clientId is missing, invalid, or the pk_ row can't be found.
+ */
+export async function resolveCreatorMarkup(
+    db: DrizzleD1Database,
+    apiKeyClientId: string | undefined,
+    baselinePrice: number,
+): Promise<MarkupResolution | null> {
+    if (!apiKeyClientId) return null;
+    const credit = computeCreatorCredit(baselinePrice);
+    if (credit <= 0) return null;
+
+    const [clientRow] = await db
+        .select({ userId: apikeyTable.userId })
+        .from(apikeyTable)
+        .where(eq(apikeyTable.id, apiKeyClientId))
+        .limit(1);
+
+    if (!clientRow?.userId) return null;
+
+    return {
+        creatorUserId: clientRow.userId,
+        creatorCredit: credit,
+        markupPct: BYOP_MARKUP_PCT,
+    };
+}
+
+/**
+ * Handles balance deduction and BYOP creator credit for billable requests.
+ *
+ * Non-BYOP: deduct baseline from payer + api key budget.
+ * BYOP (apiKeyClientId present): deduct billed (baseline × 1+markup) from payer
+ * and api key budget; credit markup to creator's pack_balance.
  */
 export async function handleBalanceDeduction(
     params: DeductionParams,
-): Promise<void> {
+): Promise<{ markup: MarkupResolution | null }> {
     const {
         db,
         isBilledUsage,
@@ -36,20 +78,51 @@ export async function handleBalanceDeduction(
         userId,
         apiKeyId,
         apiKeyPollenBalance,
+        apiKeyClientId,
         modelResolved,
     } = params;
 
-    if (!isBilledUsage || !totalPrice) return;
+    if (!isBilledUsage || !totalPrice) return { markup: null };
 
-    // Handle API key budget deduction
+    const markup = await resolveCreatorMarkup(db, apiKeyClientId, totalPrice);
+    const billedPrice = totalPrice + (markup?.creatorCredit ?? 0);
+
+    // Handle API key budget deduction (docks the full billed amount — the user
+    // authorized the app to spend up to this budget, so markup counts against it)
     if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
-        await deductApiKeyBalance(db, apiKeyId, totalPrice);
+        await deductApiKeyBalance(db, apiKeyId, billedPrice);
     }
 
-    // Handle user balance deduction
+    // Handle user balance deduction (full billed amount)
     if (userId) {
-        await deductUserBalance(db, userId, totalPrice, modelResolved);
+        await deductUserBalance(db, userId, billedPrice, modelResolved);
     }
+
+    // Credit creator for BYOP requests
+    if (markup) {
+        try {
+            await atomicCreditCreatorPack(
+                db,
+                markup.creatorUserId,
+                markup.creatorCredit,
+            );
+            log.debug(
+                "Credited {credit} pollen to creator {creatorUserId} (markup={pct}%)",
+                {
+                    credit: markup.creatorCredit,
+                    creatorUserId: markup.creatorUserId,
+                    pct: (markup.markupPct * 100).toFixed(0),
+                },
+            );
+        } catch (error) {
+            log.error("Failed to credit creator {creatorUserId}: {error}", {
+                creatorUserId: markup.creatorUserId,
+                error: error instanceof Error ? error.message : error,
+            });
+        }
+    }
+
+    return { markup };
 }
 
 function hasApiKeyBudget(

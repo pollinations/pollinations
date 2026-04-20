@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { BYOP_MARKUP_PCT } from "@/billing-config.ts";
 import { cn } from "../../util.ts";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
@@ -587,6 +588,12 @@ function AuthorizeComponent() {
                                 inline
                                 theme="amber"
                             />
+                            {attribution?.found && (
+                                <p className="mt-2 text-xs text-amber-800/80">
+                                    {Math.round(BYOP_MARKUP_PCT * 100)}% of the
+                                    pollen spent here supports the app creator.
+                                </p>
+                            )}
                         </div>
 
                         <div className="-mx-6 px-10 py-4 border-t border-amber-300">

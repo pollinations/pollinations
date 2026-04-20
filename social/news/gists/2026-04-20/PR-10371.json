@@ -1,0 +1,34 @@
+{
+  "pr_number": 10371,
+  "title": "feat(attribution): migrate BYOP pipes to client_id + fix openclaw",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10371",
+  "merged_at": "2026-04-20T21:27:35Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pipes, crabs, and proper credit",
+    "blurb": "We rewired the analytics pipes to use stable client IDs instead of legacy app names. Openclaw is the first to get the upgrade, meaning its tokens finally know exactly where they came from.",
+    "summary": "Upgraded BYOP analytics pipelines to join on stable client IDs and updated the Openclaw app to pass the correct attribution metadata.",
+    "impact": "App developers get more reliable usage tracking and attribution, starting with Openclaw.",
+    "keywords": [
+      "analytics",
+      "attribution",
+      "openclaw",
+      "api",
+      "byop"
+    ],
+    "visual_concept": "Polly the bee and the OpenClaw crab mascot working together on some glowing pipes (representing the analytics data pipes). The crab is a cute pixel crab, not a claw machine. They are routing data and making sure things connect properly.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, working alongside a cute little red crab mascot. They are happily connecting glowing lime green (#ecf874) pipes in a cozy wooden garden shed. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-20/PR-10371.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny tool belt, working alongside a cute little red crab mascot. They are happily connecting glowing lime green (#ecf874) pipes in a cozy wooden garden shed. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-20T21:29:44.253430+00:00"
+}

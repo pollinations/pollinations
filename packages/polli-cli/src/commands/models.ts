@@ -42,8 +42,11 @@ function capabilities(m: ModelEntry): string {
 }
 
 function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
+    const name = chalk.level > 0 ? chalk.hex("#a78bfa").bold(m.name) : m.name;
+    // Keep full description intact so pipes and redirects preserve data.
+    // printTable handles TTY-aware truncation of the last column.
     const row: Record<string, unknown> = {
-        name: m.name,
+        name,
         type: mType,
         capabilities: capabilities(m),
         description: m.description ?? "-",

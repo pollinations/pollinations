@@ -1,16 +1,48 @@
-import { type FC, useState } from "react";
+import { type FC, useId, useState } from "react";
 
 type InfoTipProps = {
     text: string;
     label?: string;
+    tone?: "pink" | "amber" | "blue" | "violet";
+    placement?: "top" | "bottom";
+    icon?: "i" | "!";
 };
+
+const TONES = {
+    pink: {
+        badge: "bg-pink-100 border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400",
+        popup: "bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200",
+    },
+    amber: {
+        badge: "bg-amber-200 border-amber-400 text-amber-800 hover:bg-amber-300 hover:border-amber-500",
+        popup: "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300",
+    },
+    blue: {
+        badge: "bg-blue-100 border-blue-300 text-blue-600 hover:bg-blue-200 hover:border-blue-400",
+        popup: "bg-gradient-to-r from-blue-50 to-sky-50 border-blue-200",
+    },
+    violet: {
+        badge: "bg-violet-100 border-violet-300 text-violet-600 hover:bg-violet-200 hover:border-violet-400",
+        popup: "bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200",
+    },
+} as const;
 
 /**
  * Small "i" button with a tooltip popup on hover/click.
  * Used next to form labels to provide contextual help.
  */
-export const InfoTip: FC<InfoTipProps> = ({ text, label = "More info" }) => {
+export const InfoTip: FC<InfoTipProps> = ({
+    text,
+    label = "More info",
+    tone = "pink",
+    placement = "bottom",
+    icon = "i",
+}) => {
     const [show, setShow] = useState(false);
+    const tooltipId = useId();
+    const classes = TONES[tone];
+    const placementClasses =
+        placement === "top" ? "bottom-full mb-1" : "top-full mt-1";
 
     return (
         <button
@@ -23,13 +55,21 @@ export const InfoTip: FC<InfoTipProps> = ({ text, label = "More info" }) => {
             }}
             onMouseEnter={() => setShow(true)}
             onMouseLeave={() => setShow(false)}
+            onFocus={() => setShow(true)}
+            onBlur={() => setShow(false)}
             aria-label={label}
+            aria-expanded={show}
+            aria-describedby={show ? tooltipId : undefined}
         >
-            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
-                i
+            <span
+                className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border transition-colors text-[10px] font-bold cursor-pointer ${classes.badge}`}
+            >
+                {icon}
             </span>
             <span
-                className={`${show ? "visible" : "invisible"} absolute right-0 sm:left-0 sm:right-auto top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs font-normal rounded-lg shadow-lg border border-pink-200 w-[200px] sm:w-[280px] z-50 pointer-events-none`}
+                id={tooltipId}
+                role="tooltip"
+                className={`${show ? "visible" : "invisible"} absolute right-0 sm:left-0 sm:right-auto ${placementClasses} px-3 py-2 text-gray-800 text-xs font-normal rounded-lg shadow-lg border w-[200px] sm:w-[280px] z-50 pointer-events-none ${classes.popup}`}
             >
                 {text}
             </span>

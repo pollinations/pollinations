@@ -14,7 +14,7 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
+                completionImageTokens: 0.04, // per image
             },
         ],
         description: "FLUX.1 Kontext - In-context editing & generation",
@@ -30,9 +30,9 @@ export const IMAGE_SERVICES = {
             // Gemini 2.5 Flash Image via Vertex AI
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3), // $0.30 per 1M input tokens
-                promptImageTokens: perMillion(0.3), // $0.30 per 1M input tokens
-                completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
+                promptTextTokens: perMillion(0.3), // per 1M tokens
+                promptImageTokens: perMillion(0.3), // per 1M tokens
+                completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
             },
         ],
         description: "NanoBanana - Gemini 2.5 Flash Image",
@@ -48,9 +48,9 @@ export const IMAGE_SERVICES = {
             // Gemini 3.1 Flash Image via Vertex AI
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.5), // $0.50 per 1M input tokens
-                promptImageTokens: perMillion(0.5), // $0.50 per 1M input tokens
-                completionImageTokens: perMillion(60), // $60 per 1M tokens × 2520 tokens/image = $0.151 per image
+                promptTextTokens: perMillion(0.5), // per 1M tokens
+                promptImageTokens: perMillion(0.5), // per 1M tokens
+                completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
             },
         ],
         description: "NanoBanana 2 - Gemini 3.1 Flash Image",
@@ -68,9 +68,9 @@ export const IMAGE_SERVICES = {
             // 4K image: 2000 tokens = $0.24/image
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25), // $1.25 per 1M input tokens
-                promptImageTokens: perMillion(1.25), // $1.25 per 1M input tokens
-                completionImageTokens: perMillion(120), // $120 per 1M tokens = $0.134 per 1K image
+                promptTextTokens: perMillion(1.25), // per 1M tokens
+                promptImageTokens: perMillion(1.25), // per 1M tokens
+                completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
             },
         ],
         description: "NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)",
@@ -83,10 +83,15 @@ export const IMAGE_SERVICES = {
         provider: "bytedance",
         paidOnly: true,
         cost: [
-            // ByteDance ARK Seedream 5.0 Lite - $0.035 per image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.035, // $0.035 per image (3.5 cents)
+                completionImageTokens: 0.035, // per image
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.0525, // per image
             },
         ],
         description:
@@ -103,7 +108,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.03, // $0.03 per image (real 4.0)
+                completionImageTokens: 0.03, // per image
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.045, // per image
             },
         ],
         description: "Seedream 4.0 - ByteDance ARK (legacy)",
@@ -119,7 +130,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.04, // $0.04 per image (real 4.5)
+                completionImageTokens: 0.04, // per image
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.06, // per image
             },
         ],
         description: "Seedream 4.5 Pro - ByteDance ARK (legacy)",
@@ -131,13 +148,12 @@ export const IMAGE_SERVICES = {
         modelId: "gptimage",
         provider: "azure",
         cost: [
-            // Azure gpt-image-1-mini
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(2.0), // $2.00 per 1M text input tokens
-                promptCachedTokens: perMillion(0.2), // $0.20 per 1M cached text input tokens
-                promptImageTokens: perMillion(2.5), // $2.50 per 1M image input tokens
-                completionImageTokens: perMillion(8), // $8.00 per 1M output tokens
+                promptTextTokens: perMillion(2.0), // per 1M tokens
+                promptCachedTokens: perMillion(0.2), // per 1M tokens
+                promptImageTokens: perMillion(2.5), // per 1M tokens
+                completionImageTokens: perMillion(8), // per 1M tokens
             },
         ],
         description: "GPT Image 1 Mini - OpenAI's image generation model",
@@ -149,14 +165,13 @@ export const IMAGE_SERVICES = {
         modelId: "gptimage-large",
         provider: "azure",
         cost: [
-            // Azure GPT Image 1.5 (via AI Foundry)
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(5), // $5.00 per 1M text input tokens (Azure)
-                promptCachedTokens: perMillion(1.25), // $1.25 per 1M cached text input tokens (Azure)
-                promptImageTokens: perMillion(8), // $8.00 per 1M image input tokens (Azure)
-                completionImageTokens: perMillion(32), // $32.00 per 1M output tokens (Azure)
+                promptTextTokens: perMillion(5), // per 1M tokens
+                promptCachedTokens: perMillion(1.25), // per 1M tokens
+                promptImageTokens: perMillion(8), // per 1M tokens
+                completionImageTokens: perMillion(32), // per 1M tokens
             },
         ],
         description: "GPT Image 1.5 - OpenAI's advanced image generation model",
@@ -170,7 +185,7 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.001,
+                completionImageTokens: 0.001, // per image
             },
         ],
         description: "Flux Schnell - Fast high-quality image generation",
@@ -184,7 +199,7 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.002,
+                completionImageTokens: 0.002, // per image
             },
         ],
         description: "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
@@ -197,11 +212,9 @@ export const IMAGE_SERVICES = {
         provider: "google",
         paidOnly: true,
         cost: [
-            // Veo 3.1 Fast - $0.15 per second of video
-            // We bill by "video seconds" - each second is counted like a token
             {
                 date: COST_START_DATE,
-                completionVideoSeconds: 0.15, // $0.15 per second of video
+                completionVideoSeconds: 0.15, // per sec
             },
         ],
         description: "Veo 3.1 Fast - Google's video generation model (preview)",
@@ -214,11 +227,16 @@ export const IMAGE_SERVICES = {
         provider: "bytedance",
         paidOnly: true,
         cost: [
-            // Seedance Lite - $1.8/M tokens
             // Token formula: (height × width × FPS × duration) / 1024
             {
                 date: COST_START_DATE,
-                completionVideoTokens: perMillion(1.8), // $1.8 per 1M tokens
+                completionVideoTokens: perMillion(1.8), // per 1M tokens
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                completionVideoTokens: perMillion(2.7), // per 1M tokens
             },
         ],
         description:
@@ -232,11 +250,16 @@ export const IMAGE_SERVICES = {
         provider: "bytedance",
         paidOnly: true,
         cost: [
-            // Seedance Pro-Fast - $1/M tokens
             // Token formula: (height × width × FPS × duration) / 1024
             {
                 date: COST_START_DATE,
-                completionVideoTokens: perMillion(1.0), // $1.0 per 1M tokens
+                completionVideoTokens: perMillion(1.0), // per 1M tokens
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                completionVideoTokens: perMillion(1.5), // per 1M tokens
             },
         ],
         description:
@@ -250,14 +273,18 @@ export const IMAGE_SERVICES = {
         provider: "alibaba",
         paidOnly: true,
         cost: [
-            // Wan 2.6 - Alibaba DashScope international pricing (720P)
-            // T2V: $0.10/sec, I2V+audio: $0.05/sec, I2V no audio: $0.025/sec
-            // Using I2V+audio rate as base since T2V also generates audio
-            // Audio cost split out separately for tracking
+            // Using I2V+audio rate as base since T2V also generates audio; audio cost split out separately for tracking
             {
                 date: new Date("2026-02-20").getTime(),
-                completionVideoSeconds: 0.05, // $0.05 per second (video)
-                completionAudioSeconds: 0.05, // $0.05 per second (audio)
+                completionVideoSeconds: 0.05, // per sec
+                completionAudioSeconds: 0.05, // per sec
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-02-20").getTime(),
+                completionVideoSeconds: 0.075, // per sec
+                completionAudioSeconds: 0.075, // per sec
             },
         ],
         description:
@@ -273,8 +300,15 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-23").getTime(),
-                completionVideoSeconds: 0.01, // $0.01/sec (video)
-                completionAudioSeconds: 0.01, // $0.01/sec (audio)
+                completionVideoSeconds: 0.01, // per sec
+                completionAudioSeconds: 0.01, // per sec
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-23").getTime(),
+                completionVideoSeconds: 0.015, // per sec
+                completionAudioSeconds: 0.015, // per sec
             },
         ],
         description:
@@ -289,7 +323,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),
-                completionImageTokens: 0.035, // $0.035 per image (international)
+                completionImageTokens: 0.035, // per image
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionImageTokens: 0.0525, // per image
             },
         ],
         description:
@@ -305,7 +345,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),
-                completionImageTokens: 0.075, // $0.075 per image (international)
+                completionImageTokens: 0.075, // per image
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-04-02").getTime(),
+                completionImageTokens: 0.1125, // per image
             },
         ],
         description:
@@ -325,7 +371,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
-                completionImageTokens: 0.03, // $0.03 per image (international)
+                completionImageTokens: 0.03, // per image
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.045, // per image
             },
         ],
         description:
@@ -341,7 +393,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
-                completionImageTokens: 0.02, // $0.02 per image
+                completionImageTokens: 0.02, // per image
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.03, // per image
             },
         ],
         description: "Grok Imagine - xAI official image generation",
@@ -356,7 +414,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
-                completionImageTokens: 0.07, // $0.07 per image (pro)
+                completionImageTokens: 0.07, // per image
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionImageTokens: 0.105, // per image
             },
         ],
         description:
@@ -372,7 +436,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
-                completionVideoSeconds: 0.05, // $0.05 per second at 720p
+                completionVideoSeconds: 0.05, // per sec at 720p
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                completionVideoSeconds: 0.075, // per sec at 720p
             },
         ],
         description:
@@ -418,7 +488,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-13").getTime(),
-                completionImageTokens: 0.005, // $0.005 per image
+                completionImageTokens: 0.005, // per image
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.0075, // per image
             },
         ],
         description: "Pruna p-image - Fast text-to-image generation",
@@ -433,7 +509,13 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-13").getTime(),
-                completionImageTokens: 0.01, // $0.01 per image
+                completionImageTokens: 0.01, // per image
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionImageTokens: 0.015, // per image
             },
         ],
         description: "Pruna p-image-edit - Image-to-image editing",
@@ -446,9 +528,16 @@ export const IMAGE_SERVICES = {
         provider: "pruna",
         paidOnly: true,
         cost: [
+            // $0.12 per run / 5s default = $0.024/sec
             {
                 date: new Date("2026-03-13").getTime(),
-                completionVideoSeconds: 0.024, // $0.12 per run / 5s default = $0.024/sec
+                completionVideoSeconds: 0.024, // per sec
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-13").getTime(),
+                completionVideoSeconds: 0.036, // per sec
             },
         ],
         description:
@@ -464,10 +553,10 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.04, // $0.04 per image
+                completionImageTokens: 0.04, // per image
             },
         ],
-        description: "Amazon Nova Canvas - Bedrock Image Generation & Editing",
+        description: "Nova Canvas - Bedrock Image Generation & Editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -478,11 +567,10 @@ export const IMAGE_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                completionVideoSeconds: 0.08, // $0.08 per second of video
+                completionVideoSeconds: 0.08, // per sec
             },
         ],
-        description:
-            "Amazon Nova Reel - Bedrock Video Generation (6-60s, 720p)",
+        description: "Nova Reel - Bedrock Video Generation (6-60s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

@@ -102,6 +102,51 @@ Or set the environment variable:
 export POLLINATIONS_API_KEY=your_api_key
 ```
 
+### OAuth device flow (CLI / headless)
+
+For CLI tools, scripts, or any environment without a browser redirect, use the OAuth device flow to let the user approve access without pasting a key:
+
+```javascript
+import { authorizeDevice, configure, userInfo } from '@pollinations_ai/sdk';
+
+const auth = await authorizeDevice();
+console.log(`Open ${auth.verificationUri} and enter code: ${auth.userCode}`);
+
+const accessToken = await auth.poll(); // blocks until user approves
+configure({ apiKey: accessToken });
+
+const me = await userInfo();
+console.log(`Logged in as ${me.name} (${me.tier})`);
+```
+
+`authorizeDevice()` does NOT require an API key — it's how you get one.
+
+### Managing API keys
+
+Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
+
+```javascript
+import { listKeys, createKey, revokeKey } from '@pollinations_ai/sdk';
+
+// List all keys on the account
+const keys = await listKeys();
+keys.forEach(k => console.log(k.name, k.prefix, k.enabled));
+
+// Create a scoped key (the raw value is only shown at creation)
+const created = await createKey({
+  name: 'my-bot',
+  type: 'secret',
+  pollenBudget: 1000,
+  accountPermissions: ['balance', 'usage'],
+});
+console.log('Save now — will not be shown again:', created.key);
+
+// Revoke by id
+await revokeKey(created.id);
+```
+
+Without `accountPermissions`, scoped keys can generate media but cannot read account state (balance, usage).
+
 ## Image Generation
 
 ```javascript
@@ -144,6 +189,7 @@ const url = await imageUrl('a sunset');
 | `referenceImage` | string | - | URL for image-to-image |
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
+| `reasoning` | boolean | `false` | Enable reasoning (nanobanana-pro, gptimage). Ignored by other models. |
 | `n` | number | `1` | Number of images |
 
 ## Image Editing
@@ -162,6 +208,27 @@ const result2 = await editImage('Combine these two scenes', {
   image: ['https://example.com/a.jpg', 'https://example.com/b.jpg'],
 });
 ```
+
+## Image Generation (OpenAI-compatible)
+
+The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `n`, `response_format`) or want multiple images from a single call.
+
+```javascript
+import { imageGenerate } from '@pollinations_ai/sdk';
+
+// Single image with OpenAI-style size string
+const img = await imageGenerate('A robot reading a book', {
+  size: '1024x1024',
+  model: 'flux',
+});
+await img.saveToFile('robot.png');
+
+// Multiple images in one request
+const imgs = await imageGenerate('A robot reading a book', { n: 3 });
+imgs.forEach((img, i) => img.saveToFile(`robot-${i}.png`));
+```
+
+For the simpler GET-based endpoint, see `generateImage` above.
 
 ## Text Generation
 

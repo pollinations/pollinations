@@ -9,20 +9,8 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
-import { getTierCadence, tierNames } from "@/tier-config.ts";
+import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import type { Env } from "../env.ts";
-
-// Calculate next tier refill time (null for tiers with no refill)
-function getNextRefillAt(tier?: string | null): string | null {
-    const cadence = tier ? getTierCadence(tier) : "none";
-    if (cadence === "none") return null;
-    const now = new Date();
-    const nextHour = new Date(now);
-    nextHour.setUTCMinutes(0, 0, 0);
-    nextHour.setUTCHours(nextHour.getUTCHours() + 1);
-    return nextHour.toISOString();
-}
-
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
@@ -126,7 +114,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions (e.g. ["balance", "usage"]). "keys" is auto-stripped.',
+            'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
         ),
 });
 
@@ -253,7 +241,21 @@ const usageDailyQuerySchema = z.object({
         .max(MAX_USAGE_DAYS)
         .optional()
         .default(DEFAULT_DAILY_USAGE_DAYS),
-    granularity: z.enum(["summary", "api_key"]).optional().default("summary"),
+    api_key_ids: z
+        .string()
+        .optional()
+        .transform((value) =>
+            value
+                ? Array.from(
+                      new Set(
+                          value
+                              .split(",")
+                              .map((id) => id.trim())
+                              .filter((id) => id.length > 0),
+                      ),
+                  ).sort()
+                : [],
+        ),
 });
 
 type DailyUsageRecord = {
@@ -262,17 +264,13 @@ type DailyUsageRecord = {
     meter_source: string | null;
     requests: number;
     cost_usd: number;
-    api_key_names?: string[];
-};
-
-type KeyedDailyUsageRecord = Omit<DailyUsageRecord, "api_key_names"> & {
-    api_key_name: string | null;
 };
 
 type UsageRecord = {
     timestamp: string;
     type: string;
     model: string | null;
+    api_key_id: string | null;
     api_key: string | null;
     api_key_type: string | null;
     meter_source: string | null;
@@ -302,12 +300,6 @@ const dailyUsageRecordSchema = z.object({
         .describe("Billing source ('tier', 'pack', 'crypto')"),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
-    api_key_names: z
-        .array(z.string())
-        .optional()
-        .describe(
-            "API key names included in this bucket. Present for dashboard usage data.",
-        ),
 });
 
 const dailyUsageResponseSchema = z.object({
@@ -317,26 +309,7 @@ const dailyUsageResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
-function normalizeKeyedDailyUsage(
-    usage: KeyedDailyUsageRecord[],
-): DailyUsageRecord[] {
-    return usage.map((row) => ({
-        date: row.date,
-        model: row.model,
-        meter_source: row.meter_source,
-        requests: row.requests,
-        cost_usd: row.cost_usd,
-        api_key_names:
-            row.api_key_name && row.api_key_name !== "undefined"
-                ? [row.api_key_name]
-                : [],
-    }));
-}
-
-function sortDailyUsageRecords(
-    usage: DailyUsageRecord[],
-    granularity: "summary" | "api_key",
-): DailyUsageRecord[] {
+function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
     return usage.toSorted((left, right) => {
         if (left.date !== right.date) {
             return right.date.localeCompare(left.date);
@@ -347,17 +320,9 @@ function sortDailyUsageRecords(
         if ((left.model || "") !== (right.model || "")) {
             return (left.model || "").localeCompare(right.model || "");
         }
-        if ((left.meter_source || "") !== (right.meter_source || "")) {
-            return (left.meter_source || "").localeCompare(
-                right.meter_source || "",
-            );
-        }
-        if (granularity === "api_key") {
-            return (left.api_key_names?.[0] || "").localeCompare(
-                right.api_key_names?.[0] || "",
-            );
-        }
-        return 0;
+        return (left.meter_source || "").localeCompare(
+            right.meter_source || "",
+        );
     });
 }
 
@@ -374,6 +339,7 @@ async function fetchDetailedUsagePage(
     token: string,
     params: {
         userId: string;
+        apiKeyId?: string;
         limit: number;
         since: string;
         until: string;
@@ -387,6 +353,7 @@ async function fetchDetailedUsagePage(
         token,
         {
             user_id: params.userId,
+            api_key_id: params.apiKeyId,
             limit: params.limit.toString(),
             since: params.since,
             until: params.until,
@@ -403,23 +370,25 @@ function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
 
 // Response schemas for OpenAPI documentation
 const profileResponseSchema = z.object({
-    name: z.string().nullable().describe("User's display name"),
-    email: z.email().nullable().describe("User's email address"),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
     image: z
         .string()
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
-    tier: z
-        .enum(["anonymous", ...tierNames])
-        .describe("User's current tier level"),
-    createdAt: z.iso
-        .datetime()
-        .describe("Account creation timestamp (ISO 8601)"),
-    nextResetAt: z.iso
-        .datetime()
+    name: z
+        .string()
         .nullable()
-        .describe("Next pollen refill timestamp (ISO 8601)"),
+        .optional()
+        .describe(
+            "User's display name (only returned when the key has `account:profile`)",
+        ),
+    email: z
+        .email()
+        .nullable()
+        .optional()
+        .describe(
+            "User's email address (only returned when the key has `account:profile`)",
+        ),
 });
 
 const balanceResponseSchema = z.object({
@@ -485,7 +454,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile including name, email, tier level, and account creation date. Requires `account:profile` permission when using API keys.",
+                "Returns your account profile. GitHub username and profile image are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",
@@ -496,36 +465,22 @@ export const accountRoutes = new Hono<Env>()
                     },
                 },
                 401: { description: "Unauthorized" },
-                403: {
-                    description:
-                        "Permission denied - API key missing `account:profile` permission",
-                },
             },
         }),
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
+            const includeProfilePII =
+                !apiKey || !!apiKey.permissions?.account?.includes("profile");
 
-            // Check permission for API key access
-            if (apiKey && !apiKey.permissions?.account?.includes("profile")) {
-                throw new HTTPException(403, {
-                    message:
-                        "API key does not have 'account:profile' permission",
-                });
-            }
-
-            // Get user profile from D1
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
-                    name: userTable.name,
-                    email: userTable.email,
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
-                    tier: userTable.tier,
-                    createdAt: userTable.createdAt,
-                    lastTierGrant: userTable.lastTierGrant,
+                    name: userTable.name,
+                    email: userTable.email,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -536,16 +491,13 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "User not found" });
             }
 
-            const nextResetAt = getNextRefillAt(profile.tier);
-
             return c.json({
-                name: profile.name,
-                email: profile.email,
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
-                tier: profile.tier,
-                createdAt: profile.createdAt,
-                nextResetAt,
+                ...(includeProfilePII && {
+                    name: profile.name ?? null,
+                    email: profile.email ?? null,
+                }),
             });
         },
     )
@@ -555,7 +507,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns your current pollen balance. If the API key has a budget limit, returns the key's remaining budget instead. Requires `account:balance` permission when using API keys.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -568,7 +520,7 @@ export const accountRoutes = new Hono<Env>()
                 401: { description: "Unauthorized" },
                 403: {
                     description:
-                        "Permission denied - API key missing `account:balance` permission",
+                        "Permission denied - API key has no budget and is missing the `account:usage` scope",
                 },
             },
         }),
@@ -577,20 +529,19 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            // Check permission for API key access
-            if (apiKey && !apiKey.permissions?.account?.includes("balance")) {
-                throw new HTTPException(403, {
-                    message:
-                        "API key does not have 'account:balance' permission",
-                });
-            }
-
-            // If API key has a budget, return that
+            // Keys with a budget always see their own budget — no scope needed.
             if (apiKey?.pollenBalance != null) {
                 return c.json({ balance: apiKey.pollenBalance });
             }
 
-            // Otherwise return user's total balance
+            // Beyond that, reading account balance requires the `usage` scope.
+            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+                throw new HTTPException(403, {
+                    message:
+                        "API key does not have 'account:usage' scope and no budget of its own. Add `account:usage` to read account balance, or set a budget on the key.",
+                });
+            }
+
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({
@@ -761,7 +712,11 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const { format, days, granularity } = c.req.valid("query");
+            const {
+                format,
+                days,
+                api_key_ids: apiKeyIds,
+            } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -770,7 +725,7 @@ export const accountRoutes = new Hono<Env>()
             const cacheKeyPrefix = usageUserOverridden
                 ? `usage:daily:debug:${usageUserId}`
                 : `usage:daily:${usageUserId}`;
-            const cacheKey = `${cacheKeyPrefix}:${granularity}:${days}`;
+            const cacheKey = `${cacheKeyPrefix}:${days}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
             const windows = buildUsageWindows(days);
 
             try {
@@ -788,29 +743,25 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 if (!usage) {
-                    const endpointPath =
-                        granularity === "api_key"
-                            ? "/v0/pipes/user_usage_daily_by_api_key.json"
-                            : "/v0/pipes/user_usage_daily.json";
                     const chunkResults = await Promise.all(
                         windows.map((window) =>
-                            fetchTinybirdRows<
-                                DailyUsageRecord | KeyedDailyUsageRecord
-                            >(tinybirdOrigin, endpointPath, tinybirdToken, {
-                                user_id: usageUserId,
-                                since: window.since,
-                                until: window.until,
-                            }),
+                            fetchTinybirdRows<DailyUsageRecord>(
+                                tinybirdOrigin,
+                                "/v0/pipes/user_usage_daily_filtered.json",
+                                tinybirdToken,
+                                {
+                                    user_id: usageUserId,
+                                    since: window.since,
+                                    until: window.until,
+                                    api_key_ids:
+                                        apiKeyIds.length > 0
+                                            ? apiKeyIds.join(",")
+                                            : undefined,
+                                },
+                            ),
                         ),
                     );
-                    const rows = chunkResults.flat();
-                    usage =
-                        granularity === "api_key"
-                            ? normalizeKeyedDailyUsage(
-                                  rows as KeyedDailyUsageRecord[],
-                              )
-                            : (rows as DailyUsageRecord[]);
-                    usage = sortDailyUsageRecords(usage, granularity);
+                    usage = sortDailyUsageRecords(chunkResults.flat());
 
                     try {
                         await kv.put(cacheKey, JSON.stringify(usage), {
@@ -822,28 +773,21 @@ export const accountRoutes = new Hono<Env>()
                 }
 
                 log.debug(
-                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} granularity={granularity} count={count} cached={cached}",
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count} cached={cached}",
                     {
                         requesterUserId: user.id,
                         targetUserId: usageUserId,
                         override: usageUserOverridden,
                         days,
-                        granularity,
+                        apiKeyIds,
                         count: usage.length,
                         cached,
                     },
                 );
 
                 if (format === "csv") {
-                    const header =
-                        granularity === "api_key"
-                            ? "date,model,meter_source,api_key_names,requests,cost_usd"
-                            : "date,model,meter_source,requests,cost_usd";
-                    const rows = usage.map((row) =>
-                        granularity === "api_key"
-                            ? `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${escapeCSV(row.api_key_names?.join("|") || "")},${row.requests},${row.cost_usd}`
-                            : dailyUsageRecordToCsvRow(row),
-                    );
+                    const header = "date,model,meter_source,requests,cost_usd";
+                    const rows = usage.map(dailyUsageRecordToCsvRow);
                     const csv = [header, ...rows].join("\n");
 
                     return new Response(csv, {
@@ -958,10 +902,12 @@ export const accountRoutes = new Hono<Env>()
             const isPublishable = type === "publishable";
             const prefix = isPublishable ? "pk" : "sk";
 
-            // Strip "keys" from child account permissions to prevent escalation
-            const safeAccountPerms = accountPermissions
-                ? accountPermissions.filter((p) => p !== "keys")
-                : accountPermissions;
+            // Whitelist to known scopes (drops unknown / legacy names like "balance").
+            // Then strip "keys" to prevent escalation via the BYOP flow.
+            const safeAccountPerms =
+                sanitizeAuthorizeAccountPermissions(accountPermissions)?.filter(
+                    (p) => p !== "keys",
+                ) ?? null;
 
             // Build permissions object
             const permissions: Record<string, string[]> = {};
@@ -1225,6 +1171,86 @@ export const accountRoutes = new Hono<Env>()
                 // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
                 rateLimitEnabled: keyType === "publishable",
             });
+        },
+    )
+    .get(
+        "/key/usage",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get API Key Usage",
+            description:
+                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.",
+            responses: {
+                200: {
+                    description: "Usage records for this key",
+                    content: {
+                        "application/json": {
+                            schema: resolver(usageResponseSchema),
+                        },
+                    },
+                },
+                401: {
+                    description:
+                        "API key required (this endpoint is key-auth only)",
+                },
+            },
+        }),
+        validator("query", usageQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("key-usage");
+            const apiKey = c.var.auth.apiKey;
+            if (!apiKey) {
+                throw new HTTPException(401, {
+                    message:
+                        "API key required. This endpoint is authenticated by API key only.",
+                });
+            }
+            const user = c.var.auth.requireUser();
+
+            const { format, limit, before, days } = c.req.valid("query");
+            const usageWindow = buildUsageWindow(days);
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const header =
+                "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
+
+            log.debug(
+                "Fetching key usage: userId={userId} keyId={keyId} days={days}",
+                { userId: user.id, keyId: apiKey.id, days },
+            );
+
+            try {
+                const usage = (
+                    await fetchDetailedUsagePage(
+                        tinybirdOrigin,
+                        tinybirdToken,
+                        {
+                            userId: user.id,
+                            apiKeyId: apiKey.id,
+                            limit,
+                            since: usageWindow.since,
+                            until: usageWindow.until,
+                            before,
+                        },
+                    )
+                ).map(stripUsageCursor);
+
+                if (format === "csv") {
+                    const rows = usage.map(usageRecordToCsvRow);
+                    const csv = [header, ...rows].join("\n");
+                    return new Response(csv, {
+                        headers: {
+                            "Content-Type": "text/csv",
+                            "Content-Disposition": `attachment; filename="pollinations-key-usage-${usage.length}-rows-${days}d-${new Date().toISOString().split("T")[0]}.csv"`,
+                        },
+                    });
+                }
+
+                return c.json({ usage, count: usage.length });
+            } catch (error) {
+                log.error("Error fetching key usage: {error}", { error });
+                return c.json({ error: "Failed to fetch usage data" }, 500);
+            }
         },
     );
 

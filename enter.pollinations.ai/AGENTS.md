@@ -730,7 +730,7 @@ OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
 
 ### Regenerating APIDOCS.md
 
-- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs on push to `main`
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy enter.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
 - **Manual**: `npm run docs:generate` (fetches from production `enter.pollinations.ai`, so changes must be deployed first)
 
 ### Where to Make Changes

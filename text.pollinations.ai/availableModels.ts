@@ -47,7 +47,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-vision",
-        config: portkeyConfig["qwen3-vl-plus"],
+        config: portkeyConfig[
+            "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking"
+        ],
     },
     {
         name: "openclaw",
@@ -185,7 +187,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "minimax",
-        config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
     },
     {
         name: "mistral-large",

@@ -30,22 +30,23 @@ export type UsageType =
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
 
-// UsageCost is Usage with dollar amounts and a total
+// Dollar amounts per usage type, plus a total cost (what Pollinations pays the provider)
 export type UsageCost = Usage & {
     totalCost: number;
 };
 
-// UsagePrice is Usage with dollar amounts and a total (currently same as cost)
+// Dollar amounts per usage type, plus a total price (what the user is billed)
 export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-// CostDefinition defines conversion rates from usage to dollars
+// Conversion rates (dollars per usage unit) used to compute provider cost
 export type CostDefinition = {
     date: number;
 } & { [K in UsageType]?: number };
 
-// PriceDefinition defines conversion rates for pricing (currently same as cost)
+// Conversion rates used to compute user-facing price; must cover the same
+// usage keys as the cost definition at the same date (enforced at registry build).
 export type PriceDefinition = CostDefinition;
 
 export type ModelId = ImageModelId | TextModelId | AudioModelId;
@@ -56,6 +57,7 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     modelId: TModelId;
     provider: string;
     cost: CostDefinition[];
+    price?: PriceDefinition[];
     // User-facing metadata
     description?: string;
     inputModalities?: string[];
@@ -108,18 +110,52 @@ type ModelRegistryEntry = ModelDefinition & {
     price: PriceDefinition[];
 };
 
+function usageKeys(def: CostDefinition): UsageType[] {
+    return Object.keys(def).filter((k): k is UsageType => k !== "date");
+}
+
+/**
+ * When a model defines `price`, each price entry must cover the same usage
+ * keys as the cost entry with the same date — otherwise `calculatePrice` throws
+ * at runtime for any usage type missing a conversion rate.
+ */
+function validatePriceShape(
+    name: string,
+    cost: CostDefinition[],
+    price: PriceDefinition[],
+): void {
+    for (const priceDef of price) {
+        const matchingCost = cost.find((c) => c.date === priceDef.date);
+        if (!matchingCost) {
+            throw new Error(
+                `[registry:${name}] price entry at date=${priceDef.date} has no matching cost entry`,
+            );
+        }
+        const costKeys = new Set(usageKeys(matchingCost));
+        const priceKeysSet = new Set(usageKeys(priceDef));
+        const missing = [...costKeys].filter((k) => !priceKeysSet.has(k));
+        if (missing.length > 0) {
+            throw new Error(
+                `[registry:${name}] price entry at date=${priceDef.date} missing usage keys: ${missing.join(", ")}`,
+            );
+        }
+    }
+}
+
 const MODEL_REGISTRY = Object.fromEntries(
     Object.entries({
         ...TEXT_SERVICES,
         ...IMAGE_SERVICES,
         ...AUDIO_SERVICES,
-    }).map(([name, service]) => [
-        name,
-        {
-            ...service,
-            price: sortDefinitions([...service.cost]),
-        } as ModelRegistryEntry,
-    ]),
+    }).map(([name, service]) => {
+        const cost = sortDefinitions([...service.cost]);
+        const explicitPrice = (service as ModelDefinition).price;
+        if (explicitPrice) {
+            validatePriceShape(name, cost, explicitPrice);
+        }
+        const price = sortDefinitions([...(explicitPrice ?? cost)]);
+        return [name, { ...service, cost, price } as ModelRegistryEntry];
+    }),
 ) as Record<ModelName, ModelRegistryEntry>;
 
 /**

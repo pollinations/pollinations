@@ -15,14 +15,12 @@ import {
 import { flavor } from "../lib/quotes.js";
 
 interface ProfileResponse {
-    name?: string;
-    email?: string;
-    tier?: string;
+    githubUsername?: string | null;
+    image?: string | null;
 }
 
 interface BalanceResponse {
     balance?: number;
-    cadence?: string;
 }
 
 interface DeviceCodeResponse {
@@ -82,7 +80,7 @@ async function fetchProfileLabel(key: string): Promise<string | null> {
         apiKey: key,
     }).catch(() => null);
     if (!profile) return null;
-    return `Logged in as ${profile.name ?? profile.email ?? "unknown"} (${profile.tier ?? "unknown"} tier)`;
+    return `Logged in as ${profile.githubUsername ?? "unknown"}`;
 }
 
 const login = new Command("login")
@@ -119,7 +117,7 @@ const login = new Command("login")
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 client_id: "pk_NgBAArhUeGvSRFba",
-                scope: "generate keys balance usage",
+                scope: "generate keys usage",
             }),
         }).catch((err) => {
             printError(
@@ -235,15 +233,13 @@ export async function showAuthStatus(): Promise<void> {
     printResult({
         authenticated: true,
         key: masked,
-        name: profile.name ?? profile.email ?? "unknown",
-        tier: profile.tier ?? "unknown",
+        name: profile.githubUsername ?? "unknown",
         pollen: balance?.balance ?? "unknown",
-        cadence: balance?.cadence ?? "unknown",
     });
 }
 
 const status = new Command("status")
-    .description("Show current auth status, tier, and balance")
+    .description("Show current auth status and balance")
     .action(showAuthStatus);
 
 export const authCommand = new Command("auth")

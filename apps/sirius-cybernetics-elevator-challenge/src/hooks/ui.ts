@@ -17,11 +17,8 @@ export const AVAILABLE_MODELS = [
 ] as const;
 
 export interface UserProfile {
-    name: string;
-    email: string;
     githubUsername: string | null;
     image: string | null;
-    tier: "seed" | "flower" | "nectar" | null;
 }
 
 export interface UserBalance {
@@ -107,11 +104,8 @@ export function useBYOP() {
                 if (!res.ok) return;
                 const data = await res.json();
                 setProfile({
-                    name: data.name,
-                    email: data.email,
                     githubUsername: data.githubUsername,
                     image: data.image ?? null,
-                    tier: data.tier ?? null,
                 });
             } catch {
                 // Profile fetch failed silently

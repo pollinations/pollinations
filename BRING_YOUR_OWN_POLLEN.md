@@ -31,7 +31,7 @@ To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → 
 
 ![Create New App Key](https://media.pollinations.ai/aa8ca9fe3110aff7)
 
-Set the **Name** (shows on the consent screen) and **App URL** (your app's domain). The key you get back is your `app_key`.
+Set the **Name** (shows on the consent screen) and **App URL** (your app's domain). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
 When users authorize, this is what they see:
 
@@ -41,29 +41,32 @@ When users authorize, this is what they see:
 
 ### 1. Build the Auth Link
 
-With `app_key` (consent screen shows your app name + your GitHub):
+With `client_id` (consent screen shows your app name + your GitHub):
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com&app_key=pk_yourkey
+https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id=pk_yourkey
 ```
 
 Without (still works, just shows the hostname):
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com
+https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com
 ```
 
 With restrictions:
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com&app_key=pk_yourkey&models=flux,openai&expiry=7&budget=10
+https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id=pk_yourkey&scope=usage&models=flux,openai&expiry=7&budget=10
 ```
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `app_key` | Your publishable key — shows app name + author on consent screen, tracks traffic for tier upgrades | `pk_abc123` |
-| `redirect_url` | Where users return after authorizing — receives the temp API key in the URL fragment | `https://myapp.com` |
+| `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic for tier upgrades | `pk_abc123` |
+| `redirect_uri` | Where users return after authorizing — receives the temp API key in the URL fragment | `https://myapp.com` |
+| `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
+| `scope` | Account access (space or comma separated) | `usage keys` |
 | `models` | Restrict to specific models | `flux,openai,gptimage` |
 | `budget` | Pollen cap | `10` |
 | `expiry` | Key lifetime in days (default: 30) | `7` |
-| `permissions` | Account access | `profile,balance,usage` |
+
+Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.
 
 ### 2. Handle the Redirect
 
@@ -72,15 +75,15 @@ User comes back with a key in the URL fragment:
 https://myapp.com#api_key=sk_abc123xyz
 ```
 
-Fragment, not query param — never hits server logs. 🔒
+Fragment, not query param — never hits server logs. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
 
 ### 💻 Code
 
 ```javascript
 // Send user to auth
 const params = new URLSearchParams({
-  redirect_url: location.href,
-  app_key: 'pk_yourkey', // optional — shows app name + author
+  redirect_uri: location.href,
+  client_id: 'pk_yourkey', // optional — shows app name + author
 });
 window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
 

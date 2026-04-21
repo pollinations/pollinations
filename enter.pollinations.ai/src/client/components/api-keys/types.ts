@@ -36,7 +36,7 @@ export type CreateApiKey = {
     pollenBudget?: number | null;
     /** Days until expiry. null = no expiry */
     expiryDays?: number | null;
-    /** Account permissions: ["balance", "usage"]. null = no permissions */
+    /** Account permissions: ["profile", "usage", "keys"]. null = no permissions */
     accountPermissions?: string[] | null;
     /** App URL for publishable keys (optional, for consent screen attribution) */
     appUrl?: string;

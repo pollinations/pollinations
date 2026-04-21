@@ -37,11 +37,65 @@ function currentMonthFromClock() {
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+function prevMonth(ym) {
+    const [y, m] = ym.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 1, 1));
+    d.setUTCMonth(d.getUTCMonth() - 1);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function formatUnmatchedTable(stats) {
+    const cpWidth = Math.max(12, ...stats.map((s) => s.counterparty.length));
+    const header = `  ${"COUNTERPARTY".padEnd(cpWidth)}   COUNT   SUM EUR`;
+    const sep = `  ${"-".repeat(cpWidth)}   -----   ---------`;
+    const rows = stats.map(
+        (s) =>
+            `  ${s.counterparty.padEnd(cpWidth)}   ${String(s.count).padStart(5)}   ${s.sumEur.toFixed(2).padStart(9)}`,
+    );
+    return [header, sep, ...rows].join("\n");
+}
+
 async function resolveVendorsInteractively(rawRows) {
     const vendors = await loadVendors();
     for (;;) {
-        const { canonical, unknown } = normalize(rawRows, vendors);
-        if (unknown.length === 0) return { vendors, canonicalRows: canonical };
+        const { canonical, unknown, unknownStats } = normalize(
+            rawRows,
+            vendors,
+        );
+        if (unknown.length === 0) {
+            return { vendors, canonicalRows: canonical, unmatched: null };
+        }
+
+        // Non-interactive (cron/launchd): print a clear summary to stderr so
+        // the break is visible in update-live.err. Return the summary so the
+        // caller can still render the sheet (with a warn row) and then exit
+        // non-zero at the very end. Hanging on readline in launchd would
+        // silently hide missing data.
+        if (!process.stdin.isTTY) {
+            const count = unknownStats.reduce((s, r) => s + r.count, 0);
+            const sumEur = Number(
+                unknownStats.reduce((s, r) => s + r.sumEur, 0).toFixed(2),
+            );
+            console.error(
+                [
+                    "",
+                    `⚠ ${unknown.length} unmatched counterparty(ies) in Wise feed (non-interactive run).`,
+                    `  Total unmatched transactions: ${count}  (sum: ${sumEur.toFixed(2)} EUR)`,
+                    "",
+                    formatUnmatchedTable(unknownStats),
+                    "",
+                    "  Fix: run `node bin/rebuild-sheet.mjs` from an interactive shell to classify these vendors,",
+                    "       or add them manually to secrets/vendors.json.",
+                    "",
+                ].join("\n"),
+            );
+            return {
+                vendors,
+                canonicalRows: canonical,
+                unmatched: { count, sumEur, stats: unknownStats },
+            };
+        }
+
         console.log(
             `\n${unknown.length} unknown vendor(s) — resolving interactively.`,
         );
@@ -82,8 +136,10 @@ async function main() {
     const rawRows = await fetchMonths(startMonth, endMonth);
     console.log(`Loaded ${rawRows.length} transactions from Wise API.`);
 
-    // Resolve unknown vendors interactively
-    const { vendors, canonicalRows } =
+    // Resolve unknown vendors interactively. In non-interactive mode,
+    // unmatched rows are skipped with a stderr table; the sheet still gets
+    // built with a visible warn row, and we exit 1 at the end.
+    const { vendors, canonicalRows, unmatched } =
         await resolveVendorsInteractively(rawRows);
 
     // Aggregate → forecast → layout
@@ -164,15 +220,65 @@ async function main() {
         }
     }
 
-    // Revenue forecast: use the last actual month's revenue (including
-    // the current month if it has Wise data) for all future months.
+    // Stripe revenue re-attribution (must run BEFORE the revenue forecast
+    // block so the forecast's extrapolation base picks up the shifted March
+    // value, not the pre-shift Wise value):
+    //
+    //  - Historical months (Jan–Mar) get shifted payouts: the payout arriving
+    //    on day 1-2 of month M actually reflects month M-1's activity, so we
+    //    move it back one column. Feb-2 payout → Jan column, Mar-2 → Feb,
+    //    Apr-1 → Mar. The Wise-sourced Stripe row for those months is
+    //    cleared first so we don't double-count.
+    //
+    //  - Current month (Apr) gets the live MTD net from the Stripe API —
+    //    the activity happening right now, which will pay out next month.
+    //
+    // Running-cash reconciliation will drift slightly vs the actual bank
+    // because the shift decouples "cash arrived" from "revenue shown". The
+    // trade-off buys a cleaner runway projection. Explicit design choice.
+    const stripePool = pools.Stripe;
+    if (stripePool?.role === "revenue" && stripePool.mtd_stale !== true) {
+        const canonical = stripePool.vendor_canonical ?? "Stripe";
+
+        // Clear Wise-sourced Stripe values in all historical months (we're
+        // about to repopulate them with shifted values).
+        for (const m of extended.months) {
+            if (extended.forecastMonths.has(m)) continue;
+            if (m === nowMonth) continue;
+            if (extended.data[m]?.[canonical] !== undefined) {
+                extended.data[m][canonical] = 0;
+            }
+        }
+
+        // Inject shifted historical payouts into the activity month.
+        const payouts = stripePool.monthly_payouts ?? {};
+        for (const [arrivalMonth, eurValue] of Object.entries(payouts)) {
+            const activityMonth = prevMonth(arrivalMonth);
+            if (!extended.data[activityMonth]) continue;
+            if (activityMonth === nowMonth) continue; // live override below
+            if (extended.forecastMonths.has(activityMonth)) continue;
+            extended.data[activityMonth][canonical] = eurValue;
+        }
+
+        // Current-month live MTD net.
+        if (
+            typeof stripePool.mtd_live_net_eur === "number" &&
+            extended.data[nowMonth]
+        ) {
+            extended.data[nowMonth][canonical] = stripePool.mtd_live_net_eur;
+        }
+    }
+
+    // Revenue forecast: extrapolate from the last FINISHED month (excluding
+    // the current month). The current month holds live MTD revenue (partial
+    // activity) so it's not a stable base for extrapolation. For Stripe this
+    // picks up the shifted Mar value (= Apr-1 payout = March's activity).
     const revenueVendors = ["Stripe", "Polar.sh"];
-    const actualMonths = extended.months.filter(
-        (m) => !extended.forecastMonths.has(m),
+    const finishedMonths = extended.months.filter(
+        (m) => !extended.forecastMonths.has(m) && m !== nowMonth,
     );
-    const latestRevenueMonth = actualMonths.at(-1);
+    const latestRevenueMonth = finishedMonths.at(-1);
     if (latestRevenueMonth) {
-        // Collect per-vendor revenue from the last completed month
         const lastRevenue = {};
         for (const v of revenueVendors) {
             const amt = extended.data[latestRevenueMonth]?.[v] ?? 0;
@@ -180,8 +286,8 @@ async function main() {
         }
         for (const m of extended.months) {
             if (m <= latestRevenueMonth) continue;
+            if (m === nowMonth) continue; // current month already set above
             if (!extended.data[m]) continue;
-            // Only set forecast if no actual data exists for this month
             const existing = revenueVendors.reduce(
                 (s, v) => s + (extended.data[m][v] ?? 0),
                 0,
@@ -198,6 +304,7 @@ async function main() {
         currentMonth: nowMonth,
         pools,
         poolHistory,
+        unmatched,
     });
 
     // Write to sheet
@@ -345,6 +452,13 @@ async function main() {
         (r) => typeof r[0] === "string" && r[0].startsWith("Cash:"),
     );
     if (kpiRow) console.log(kpiRow[0]);
+
+    // Non-interactive run with unmatched rows: the sheet is written with a
+    // visible warn banner; signal failure to the caller (launchd/cron) so the
+    // break is flagged in the run status too.
+    if (unmatched) {
+        process.exitCode = 1;
+    }
 }
 
 main().catch((err) => {

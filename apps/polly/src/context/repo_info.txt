@@ -21,15 +21,14 @@ Image (default: zimage): flux, zimage, gptimage, klein|klein-large, imagen-4, gr
 Video: seedance (free default), veo (audio), seedance-pro, wan (audio), ltx-2 (audio), grok-video
 Audio: elevenlabs (TTS), elevenmusic, whisper (STT alpha), scribe (STT 90+ lang)
 
-Paid-only models (require purchased/crypto pollen, tier grants won't work): claude, claude-large, claude-legacy, gemini, gemini-large, gemini-legacy, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
+Paid-only models (require purchased/crypto pollen, tier grants won't work): claude, claude-large, claude-opus-4.7, gemini, gemini-large, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
 
 Tool calling supported: openai (all), claude (all), gemini (non-search), deepseek, kimi, glm, minimax, mistral, qwen-coder, nova-fast, grok. NOT supported: perplexity-*, gemini-search
 
 ## Tiers (must progress in order — CANNOT skip)
 
-Microbe(0)→Spore(0.01/hr)→Seed(0.15/hr)→Flower(0.4/hr)
-- Spore: log in at enter.pollinations.ai | Seed: auto (age+activity+commits) | Flower: submit app OR merged PR (requires Seed!)
-- Nectar(0.8/hr) is a legacy tier — still supported for existing users but no longer granted. Do not promote it.
+Microbe(0)→Spore(0.01/hr)→Seed(0.15/hr)→Flower(0.4/hr)→Nectar(0.8/hr)→Router(10/hr)
+- Spore: log in at enter.pollinations.ai | Seed: auto (age+activity+commits) | Flower: submit app OR merged PR (requires Seed!) | Nectar: significant contributions (requires Flower!)
 - Grant pollen spent BEFORE purchased | Unused grants EXPIRE each period | Purchased pollen NEVER expires
 - Paid-only models CANNOT use tier grant pollen — only purchased/crypto
 

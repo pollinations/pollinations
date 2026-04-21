@@ -38,16 +38,16 @@ const OPENCODE_CONFIG = {
             },
             "models": {
                 "claude-large": {
-                    "name": "Claude Opus 4.5 - Most Intelligent (Sisyphus)",
+                    "name": "Anthropic Claude Haiku Opus 4.6",
                 },
                 "claude": {
-                    "name": "Claude Sonnet 4.5 - Balanced (Librarian)",
+                    "name": "Anthropic Claude Haiku 4.6",
                 },
-                "claude-fast": { "name": "Claude Haiku 4.5 - Fast" },
+                "claude-fast": { "name": "Anthropic Claude Haiku 4.5" },
                 "openai-large": {
-                    "name": "GPT-5.2 - Strategic Reasoning (Oracle)",
+                    "name": "GPT-5.4 - Strategic Reasoning (Oracle)",
                 },
-                "openai": { "name": "GPT-5 Mini - Balanced" },
+                "openai": { "name": "GPT-5.4 Nano - Balanced" },
                 "openai-fast": { "name": "GPT-5 Nano - Ultra Fast" },
                 "gemini-large": { "name": "Gemini 3 Pro - 1M Context" },
                 "gemini": { "name": "Gemini 3 Flash - UI/UX Expert" },

@@ -29,7 +29,7 @@ export const Route = createFileRoute("/sign-in")({
                         models: null,
                         budget: null,
                         expiry: null,
-                        permissions: null,
+                        scope: null,
                     },
                 });
             }

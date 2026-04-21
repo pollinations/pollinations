@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
+import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
@@ -104,7 +105,7 @@ async function updateKeyMetadata(
  *
  * Permissions format: { models?: string[], account?: string[] }
  * - models: ["flux", "openai"] = restrict to specific models
- * - account: ["balance", "usage"] = allow access to account endpoints
+ * - account: ["profile", "usage", "keys"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
@@ -122,7 +123,9 @@ const UpdateApiKeySchema = z.object({
         .array(z.string())
         .nullable()
         .optional()
-        .describe('Account permissions: ["balance", "usage"]. null = none'),
+        .describe(
+            'Account permissions: ["profile", "usage", "keys"]. null = none',
+        ),
     expiresAt: z
         .string()
         .datetime()
@@ -224,10 +227,17 @@ export const apiKeysRoutes = new Hono<Env>()
                 ? JSON.parse(existingKey.permissions as string)
                 : {};
 
+            // Whitelist to known scopes (drops unknown / legacy names like "balance").
+            // Dashboard-only endpoint, so "keys" is allowed here.
+            const sanitizedAccountPerms =
+                accountPermissions === undefined
+                    ? undefined
+                    : sanitizeAuthorizeAccountPermissions(accountPermissions);
+
             const updatedPermissions = buildUpdatedPermissions(
                 existingPermissions,
                 allowedModels,
-                accountPermissions,
+                sanitizedAccountPerms,
             );
 
             if (updatedPermissions) {

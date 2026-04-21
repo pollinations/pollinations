@@ -4,7 +4,8 @@
     "default_repo": "pollinations/pollinations"
   },
   "discord": {
-    "admin_role_ids": [911279121307414558, 1340339234065744006]
+    "admin_role_ids": [911279121307414558, 1340339234065744006],
+    "collaborator_role_ids": [1492562906665980105]
   },
   "github": {
     "bot_username": "polly-bot-pollinations-ai",

@@ -24,6 +24,7 @@ export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
+    appsResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -32,6 +33,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         events: [],
         dailyResponse: [],
         usageResponse: [],
+        appsResponse: [],
         pipeCalls: [],
     };
 
@@ -67,6 +69,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         .get("/v0/pipes/user_usage_daily_filtered.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.dailyResponse }, 200);
+        })
+        .get("/v0/pipes/user_apps.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.appsResponse }, 200);
         });
 
     const handlerMap = {
@@ -77,6 +83,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.events = [];
         state.dailyResponse = [];
         state.usageResponse = [];
+        state.appsResponse = [];
         state.pipeCalls = [];
     };
 

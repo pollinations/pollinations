@@ -7,6 +7,7 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/api-keys";
+import { AccountApps } from "../components/apps/account-apps.tsx";
 import { PollenBalance, TierPanel } from "../components/balance";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
@@ -29,21 +30,25 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [tierData, apiKeysResult, d1BalanceResult, profileResult] =
-            await Promise.all([
-                apiClient.tiers.view
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient["api-keys"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : { data: [] })),
-                apiClient.customer.balance
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient.account.profile
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-            ]);
+        const [
+            tierData,
+            apiKeysResult,
+            d1BalanceResult,
+            profileResult,
+            appsResult,
+        ] = await Promise.all([
+            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            apiClient.account.profile
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            apiClient.account.apps.$get().then((r) => (r.ok ? r.json() : [])),
+        ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
@@ -55,6 +60,7 @@ export const Route = createFileRoute("/")({
         return {
             user: context.user,
             githubUsername,
+            ownedApps: appsResult,
             apiKeys,
             tierData,
             tierBalance,
@@ -69,6 +75,7 @@ function RouteComponent() {
     const {
         user,
         githubUsername,
+        ownedApps,
         apiKeys,
         tierData,
         tierBalance,
@@ -304,6 +311,7 @@ function RouteComponent() {
                         <TierPanel {...tierData} />
                     </div>
                 )}
+                <AccountApps apps={ownedApps} githubUsername={githubUsername} />
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}

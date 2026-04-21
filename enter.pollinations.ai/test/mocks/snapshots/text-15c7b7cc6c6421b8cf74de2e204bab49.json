@@ -1,0 +1,80 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Describe this image in one word."
+              },
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "https://picsum.photos/id/237/200/300"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 50
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "432",
+      "content-type": "application/json",
+      "date": "Sun, 05 Apr 2026 17:49:25 GMT",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-sonnet-4-6",
+      "x-usage-completion-text-tokens": "8",
+      "x-usage-prompt-text-tokens": "106"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_741b6b6b840236d3af8976d43dc3bc37",
+        "object": "chat.completion",
+        "created": 1775411365,
+        "model": "us.anthropic.claude-sonnet-4-6",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "**Adorable**",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "**Adorable**"
+                }
+              ]
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 106,
+          "completion_tokens": 8,
+          "total_tokens": 114,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

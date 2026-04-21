@@ -1,0 +1,73 @@
+DESCRIPTION >
+    Get community apps from APPS.md.
+    When a GitHub user filter is provided, returns apps for that user.
+    When no filter is provided, returns the full deduplicated app directory.
+
+TOKEN tinybird_read READ
+
+NODE user_apps_node
+SQL >
+    %
+    WITH ranked AS (
+        SELECT
+            emoji,
+            name,
+            web_url AS webUrl,
+            description,
+            language,
+            category,
+            platform,
+            github_username AS githubUsername,
+            github_user_id AS githubUserId,
+            github_repository_url AS repoUrl,
+            github_repository_stars AS repoStars,
+            discord_username AS discordUsername,
+            other,
+            submitted_date AS submittedDate,
+            issue_url AS issueUrl,
+            approved_date AS approvedDate,
+            byop,
+            toInt32OrZero(requests_24h) AS requests24h,
+            row_number() OVER (
+                PARTITION BY lower(name)
+                ORDER BY
+                    coalesce(nullIf(approved_date, ''), nullIf(submitted_date, ''), '0000-00-00') DESC,
+                    lower(name) ASC
+            ) AS row_num
+        FROM app_directory
+        WHERE
+        {% if defined(github_user_id) %}
+            github_user_id = {{String(github_user_id)}}
+        {% elif defined(github_username) %}
+            lower(replaceRegexpOne(github_username, '^@', '')) = lower({{String(github_username)}})
+        {% else %}
+            1
+        {% end %}
+    )
+    SELECT
+        emoji,
+        name,
+        webUrl,
+        description,
+        language,
+        category,
+        platform,
+        githubUsername,
+        githubUserId,
+        repoUrl,
+        repoStars,
+        discordUsername,
+        other,
+        submittedDate,
+        issueUrl,
+        approvedDate,
+        byop,
+        requests24h
+    FROM ranked
+    WHERE row_num = 1
+    ORDER BY
+        coalesce(nullIf(approvedDate, ''), nullIf(submittedDate, ''), '0000-00-00') DESC,
+        lower(name) ASC
+    LIMIT {{Int32(limit, 1000)}}
+
+TYPE endpoint

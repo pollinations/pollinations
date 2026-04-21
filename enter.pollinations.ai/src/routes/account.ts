@@ -84,6 +84,17 @@ function requireKeysPermission(apiKey?: {
     }
 }
 
+function requireProfilePermission(apiKey?: {
+    permissions?: Record<string, string[]>;
+}): void {
+    if (!apiKey) return; // session auth — always allowed
+    if (!apiKey.permissions?.account?.includes("profile")) {
+        throw new HTTPException(403, {
+            message: "API key does not have 'account:profile' permission",
+        });
+    }
+}
+
 // Schema for creating an API key via the API
 const CreateKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
@@ -391,6 +402,29 @@ const profileResponseSchema = z.object({
         ),
 });
 
+const accountAppSchema = z.object({
+    emoji: z.string(),
+    name: z.string(),
+    webUrl: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    language: z.string().nullable().optional(),
+    category: z.string().nullable().optional(),
+    platform: z.string().nullable().optional(),
+    githubUsername: z.string().nullable().optional(),
+    githubUserId: z.string().nullable().optional(),
+    repoUrl: z.string().nullable().optional(),
+    repoStars: z.string().nullable().optional(),
+    discordUsername: z.string().nullable().optional(),
+    other: z.string().nullable().optional(),
+    submittedDate: z.string().nullable().optional(),
+    issueUrl: z.string().nullable().optional(),
+    approvedDate: z.string().nullable().optional(),
+    byop: z.union([z.string(), z.boolean()]).nullable().optional(),
+    requests24h: z.number().int().nonnegative().nullable().optional(),
+});
+
+const appsResponseSchema = z.array(accountAppSchema);
+
 const balanceResponseSchema = z.object({
     balance: z
         .number()
@@ -441,6 +475,27 @@ const usageResponseSchema = z.object({
     usage: z.array(usageRecordSchema).describe("Array of usage records"),
     count: z.number().describe("Number of records returned"),
 });
+
+type TinybirdUserAppRow = {
+    emoji: string;
+    name: string;
+    webUrl?: string | null;
+    description?: string | null;
+    language?: string | null;
+    category?: string | null;
+    platform?: string | null;
+    githubUsername?: string | null;
+    githubUserId?: string | null;
+    repoUrl?: string | null;
+    repoStars?: string | null;
+    discordUsername?: string | null;
+    other?: string | null;
+    submittedDate?: string | null;
+    issueUrl?: string | null;
+    approvedDate?: string | null;
+    byop?: string | boolean | null;
+    requests24h?: number | string | null;
+};
 
 /**
  * Account routes - profile, balance and usage endpoints.
@@ -499,6 +554,68 @@ export const accountRoutes = new Hono<Env>()
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .get(
+        "/apps",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Registered Apps",
+            description:
+                "Returns apps from APPS.md that match your linked GitHub account. Session auth is allowed. API keys require the `account:profile` permission.",
+            responses: {
+                200: {
+                    description: "Apps linked to the current account",
+                    content: {
+                        "application/json": {
+                            schema: resolver(appsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key is missing the `account:profile` scope",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireProfilePermission(c.var.auth.apiKey);
+
+            const db = drizzle(c.env.DB);
+            const users = await db
+                .select({
+                    githubId: userTable.githubId,
+                    githubUsername: userTable.githubUsername,
+                })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+
+            const profile = users[0];
+            const githubUserId = profile?.githubId
+                ? String(profile.githubId)
+                : undefined;
+            const githubUsername = profile?.githubUsername?.trim() || undefined;
+
+            if (!githubUserId && !githubUsername) {
+                return c.json([]);
+            }
+
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const rows = await fetchTinybirdRows<TinybirdUserAppRow>(
+                tinybirdOrigin,
+                "/v0/pipes/user_apps.json",
+                tinybirdToken,
+                githubUserId
+                    ? { github_user_id: githubUserId }
+                    : { github_username: githubUsername },
+            );
+
+            return c.json(rows);
         },
     )
     .get(

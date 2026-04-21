@@ -518,8 +518,6 @@ export const TEXT_SERVICES = {
     },
     "kimi": {
         aliases: [
-            "kimi-k2.6",
-            "kimi-k2p6",
             "kimi-k2.5",
             "kimi-k2p5",
             "kimi-reasoning",
@@ -527,7 +525,7 @@ export const TEXT_SERVICES = {
             "kimi-k2-thinking",
             "kimi-thinking",
         ],
-        modelId: "accounts/fireworks/models/kimi-k2p6",
+        modelId: "accounts/fireworks/models/kimi-k2p5",
         provider: "fireworks",
         cost: [
             {
@@ -536,6 +534,21 @@ export const TEXT_SERVICES = {
                 promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(3.0),
             },
+        ],
+        description:
+            "Moonshot Kimi K2.5 - Flagship Agentic Model with CoT Reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262000,
+        isSpecialized: false,
+    },
+    "kimi-k2.6": {
+        aliases: ["kimi-k2p6"],
+        modelId: "accounts/fireworks/models/kimi-k2p6",
+        provider: "fireworks",
+        cost: [
             {
                 date: new Date("2026-04-21").getTime(),
                 promptTextTokens: perMillion(0.95),

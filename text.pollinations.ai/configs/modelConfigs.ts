@@ -91,6 +91,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v3p2",
         }),
+    "accounts/fireworks/models/kimi-k2p5": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p5",
+        }),
     "accounts/fireworks/models/kimi-k2p6": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p6",

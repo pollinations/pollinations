@@ -36,7 +36,7 @@ flowchart TD
 | Role | Model | Purpose |
 |------|-------|---------|
 | Default | GLM | Code generation and fixes |
-| Thinking | Kimi K2.6 | Reasoning and planning |
+| Thinking | Kimi K2.5 | Reasoning and planning |
 | Web Search | Perplexity Reasoning | Web lookups |
 
 ## Project Management

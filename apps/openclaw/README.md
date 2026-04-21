@@ -2,7 +2,7 @@
 
 Use **25+ AI models** as your OpenClaw brain through a single API.
 
-**Kimi K2.6** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM-4.7, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
+**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM-4.7, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
 
 ## Setup
 
@@ -17,7 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps
 This works for both fresh installs and existing OpenClaw setups. It:
 - Runs `openclaw onboard` for fresh installs (creates config + workspace)
 - Adds the Pollinations provider with 7 models to `~/.openclaw/openclaw.json`
-- Sets Kimi K2.6 as default with DeepSeek + GLM fallbacks
+- Sets Kimi K2.5 as default with DeepSeek + GLM fallbacks
 
 **Step 3 (fresh install only):** Start the gateway:
 
@@ -31,7 +31,7 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 
 | Model | ID | Best for |
 |---|---|---|
-| **Kimi K2.6** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+| **Kimi K2.5** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
 | **DeepSeek V3.2** | `pollinations/deepseek` | Strong reasoning & tool calling |
 | **GLM-4.7** | `pollinations/glm` | Coding, reasoning, agentic workflows |
 | **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
@@ -54,7 +54,7 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
         "models": [
           {
             "id": "kimi",
-            "name": "Kimi K2.6",
+            "name": "Kimi K2.5",
             "reasoning": true,
             "input": ["text", "image"],
             "contextWindow": 256000,

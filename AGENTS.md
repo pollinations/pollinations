@@ -30,19 +30,21 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations_ai/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations_ai/model-context-protocol` (MCP server; see `packages/mcp/AGENTS.md`)
-- `packages/skills/` — Shared agent-agnostic skills (SKILL.md format). Consumable by any harness; symlinked back into `.claude/skills/` for Claude Code. See `packages/skills/README.md`.
+- `packages/skills/` — Curated agent-agnostic skills (SKILL.md format) useful to agents *outside* the Pollinations team. Symlinked back into `.claude/skills/` for Claude Code. See `packages/skills/README.md`.
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Community apps + `APPS.md`
 - `social/` — Discord/Reddit/GitHub automation
 
 ### Skills
 
-Two homes, one format:
+Two homes, one format. This is not a general Claude-skills repo — we only keep skills that help Pollinations.
 
-- `packages/skills/` — agent-agnostic skills (wrap public APIs/CLIs, no harness coupling). Any agent that understands `SKILL.md` can use them. Add new general-purpose skills here.
-- `.claude/skills/` — Pollinations-internal or Claude-Code-harness-specific skills (tier management, Tinybird deploys, permission tuning, etc.). Also contains symlinks to the shared skills in `packages/skills/` so Claude Code discovers both sets in one place.
+- `packages/skills/` — curated, agent-agnostic skills that are also **useful to agents outside our team** (e.g. anyone building on our public API). Consumable by Claude Code, Cursor, Cline, Codex, and any other harness that understands `SKILL.md`.
+- `.claude/skills/` — everything else that helps Pollinations: Claude-Code-harness-specific skills (hooks, settings.json, permission tuning) *and* Pollinations-team-internal workflows (issue conventions, tier management, Tinybird deploys, app review, API probes against our own infra). Also contains symlinks to the shared skills in `packages/skills/` so Claude Code discovers both sets in one place.
 
-When authoring a new skill, ask: does it depend on internal infra/credentials or Claude-Code-only features (hooks, settings.json, keybindings)? If no, put it in `packages/skills/` and symlink into `.claude/skills/`.
+When authoring a new skill, ask: *would an agent working outside the Pollinations team benefit from this?* If yes → `packages/skills/` + symlink. If no (it encodes our team's workflow or needs Claude-Code-only features) → `.claude/skills/` as a real directory.
+
+Skills can move between the two folders as scope becomes clearer — that is curation, not a regression.
 
 ## API Gateway
 

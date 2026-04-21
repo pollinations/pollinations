@@ -1,0 +1,34 @@
+{
+  "pr_number": 10378,
+  "title": "[PATCH] Check existing version locks for the MCP package",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10378",
+  "merged_at": "2026-04-21T08:18:17Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Version locks secured",
+    "blurb": "We've updated our CI/CD pipeline to check for existing version locks before publishing the MCP package. This keeps our release process smooth and prevents duplicate publish errors.",
+    "summary": "Added a version check to the publish workflow to prevent attempting to publish an MCP package version that already exists on npm or GitHub Packages.",
+    "impact": "The CI pipeline will now cleanly skip publishing if a version is already live, reducing failed runs and keeping the release process tidy.",
+    "keywords": [
+      "ci-cd",
+      "github-actions",
+      "mcp",
+      "publishing",
+      "infrastructure"
+    ],
+    "visual_concept": "The PR is about checking versions and locking them before publishing (packages/boxes). Characters: Polly the bee and the Monitor Robot. They are inspecting a package or a lock on a shipping box.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot inspecting a glowing digital padlock on a cardboard shipping box. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-21/PR-10378.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot inspecting a glowing digital padlock on a cardboard shipping box. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-21T08:19:06.581544+00:00"
+}

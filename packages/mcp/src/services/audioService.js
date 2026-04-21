@@ -366,6 +366,7 @@ export const audioTools = [
             format: formatEnum
                 .optional()
                 .describe("Audio format (default: mp3)"),
+            model: audioModelSchema,
             voiceInstructions: z
                 .string()
                 .optional()
@@ -387,6 +388,7 @@ export const audioTools = [
             format: formatEnum
                 .optional()
                 .describe("Audio format (default: mp3)"),
+            model: audioModelSchema,
             voiceInstructions: z
                 .string()
                 .optional()

@@ -12,7 +12,26 @@ import {
     createTextContent,
     fetchBinaryWithAuth,
 } from "../utils/coreUtils.js";
-import { getAudioVoices } from "../utils/models.js";
+import {
+    getAudioModels,
+    getAudioVoices,
+    validateVoice,
+} from "../utils/models.js";
+
+const DEFAULT_AUDIO_MODEL = "openai-audio";
+
+async function resolveAudioModel(requested) {
+    if (requested) return requested;
+    try {
+        const models = await getAudioModels();
+        const tts = models.find((m) =>
+            m.output_modalities?.includes("audio"),
+        );
+        return tts?.name || DEFAULT_AUDIO_MODEL;
+    } catch {
+        return DEFAULT_AUDIO_MODEL;
+    }
+}
 
 async function respondAudio(params) {
     requireApiKey();
@@ -21,6 +40,7 @@ async function respondAudio(params) {
         prompt,
         voice = "alloy",
         format = "mp3",
+        model,
         voiceInstructions,
         audioPlayer,
         tempDir,
@@ -30,13 +50,21 @@ async function respondAudio(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
+    const voiceCheck = await validateVoice(voice);
+    if (!voiceCheck.valid) {
+        throw new Error(
+            `${voiceCheck.error} Did you mean: ${voiceCheck.suggestions.join(", ")}? ` +
+                `Use listAudioVoices to see all ${voiceCheck.availableCount} available voices.`,
+        );
+    }
+
     let finalPrompt = prompt;
     if (voiceInstructions) {
         finalPrompt = `${voiceInstructions}\n\n${prompt}`;
     }
 
     const queryParams = {
-        model: "openai-audio",
+        model: await resolveAudioModel(model),
         voice,
         format,
     };

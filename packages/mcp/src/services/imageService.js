@@ -827,13 +827,12 @@ const videoParamsSchema = {
         .string()
         .describe("Text description of the video to generate (required)"),
     model: z
-        .enum(["veo", "seedance", "seedance-pro"])
+        .string()
         .optional()
         .describe(
-            "Video model (default: 'veo'):\n" +
-                "- veo: Google's model, text/image-to-video, 4/6/8 sec, supports audio, single image input\n" +
-                "- seedance: ByteDance, text/image-to-video, 2-10 sec, multi-image support\n" +
-                "- seedance-pro: ByteDance Pro, text/image-to-video, 2-10 sec, multi-image, best prompt adherence",
+            "Video model (default: 'veo'). Common options: veo (4/6/8s, audio, single image input), " +
+                "seedance (2-10s, multi-image), seedance-pro (2-10s, multi-image, best quality). " +
+                "Use listImageModels to see the full live list — models are validated against the registry.",
         ),
     duration: z
         .number()

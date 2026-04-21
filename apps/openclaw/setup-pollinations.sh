@@ -64,7 +64,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
   "models": [
     {
       "id": "kimi",
-      "name": "Kimi K2.5 — 256K context, vision, tools, reasoning",
+      "name": "Kimi K2.6 — 256K context, vision, tools, reasoning",
       "reasoning": true,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},

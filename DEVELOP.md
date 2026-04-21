@@ -124,7 +124,7 @@ graph LR
 
     subgraph MORE_TEXT["📡 More Text APIs"]
         NOVA["Bedrock Nova Micro v1"]:::textModel
-        FIRE_M["Fireworks\nDeepSeek V3.2 · Kimi K2.5\nGLM-5 · MiniMax M2.5"]:::textModel
+        FIRE_M["Fireworks\nDeepSeek V3.2 · Kimi K2.6\nGLM-5 · MiniMax M2.5"]:::textModel
         OVH_T["OVHcloud\nQwen3 Coder 30B\nMistral Small 3.2"]:::textModel
         PERP["Perplexity\nSonar · Sonar Reasoning Pro"]:::textModel
         AIR_T["api.airforce"]:::textModel

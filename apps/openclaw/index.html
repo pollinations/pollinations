@@ -6,7 +6,7 @@
     <title>pollinations.ai × OpenClaw — AI Models for Your Agent</title>
 
     <meta property="og:title" content="pollinations.ai × OpenClaw — AI Models for Your Agent">
-    <meta property="og:description" content="Use 25+ AI models as your OpenClaw brain through a single API. Kimi K2.5, DeepSeek, Claude, Gemini and more — set up in 30 seconds.">
+    <meta property="og:description" content="Use 25+ AI models as your OpenClaw brain through a single API. Kimi K2.6, DeepSeek, Claude, Gemini and more — set up in 30 seconds.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://openclaw.pollinations.ai">
     <meta property="og:image" content="https://pollinations.ai/og-image.png">
@@ -631,7 +631,7 @@
   | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
                     <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                         <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
-                        <li>🤖 Adds 7 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
+                        <li>🤖 Adds 7 models: Kimi K2.6, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
                         <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
                     </ul>
 
@@ -647,7 +647,7 @@
         "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
       },
       "models": {
-        "pollinations/kimi": { "alias": "Kimi K2.5" },
+        "pollinations/kimi": { "alias": "Kimi K2.6" },
         "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
         "pollinations/glm": { "alias": "GLM-4.7" },
         "pollinations/gemini-search": { "alias": "Gemini + Search" },
@@ -665,7 +665,7 @@
         "apiKey": "${POLLINATIONS_API_KEY}",
         "api": "openai-completions",
         "models": [
-          { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
+          { "id": "kimi", "name": "Kimi K2.6", "reasoning": true,
             "input": ["text","image"], "contextLength": 256000 },
           { "id": "deepseek", "name": "DeepSeek V3.2",
             "input": ["text"], "contextLength": 128000 },
@@ -716,7 +716,7 @@ The script will restart the gateway automatically. After that, switch to the new
 
             <div class="model-table">
                 <div class="model-row recommended">
-                    <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
+                    <div class="model-label">Kimi K2.6 <span class="model-tag">default</span></div>
                     <div class="model-id">pollinations/kimi</div>
                     <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
                 </div>

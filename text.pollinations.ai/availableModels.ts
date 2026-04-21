@@ -145,7 +145,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "kimi",
-        config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
     },
     {
         name: "gemini-large",

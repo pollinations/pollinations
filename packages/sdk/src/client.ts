@@ -43,7 +43,7 @@ import { PollinationsError } from "./types.js";
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
-const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys balance usage";
+const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
 // Default timeouts in milliseconds
@@ -1839,7 +1839,7 @@ export class Pollinations {
      * @example
      * ```ts
      * const profile = await pollinations.accountProfile();
-     * console.log(profile.name, profile.tier);
+     * console.log(profile.githubUsername);
      * ```
      */
     async accountProfile(): Promise<AccountProfile> {
@@ -1917,6 +1917,8 @@ export class Pollinations {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
+        if (options.api_key_ids && options.api_key_ids.length > 0)
+            params.set("api_key_ids", options.api_key_ids.join(","));
 
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;

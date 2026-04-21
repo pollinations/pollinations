@@ -132,10 +132,10 @@ polli usage --daily      # daily cost summary
 ```bash
 polli keys list                                                    # list all keys on the account
 polli keys info                                                    # details about the CURRENTLY AUTHENTICATED key only (takes no id)
-polli keys create --name "my-bot" --type secret --budget 1000 --permissions balance usage   # scoped key
+polli keys create --name "my-bot" --type secret --budget 1000 --permissions profile usage   # scoped key
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--permissions <perms...>` scopes what the new key can do on the account (e.g. `balance usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+`--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Read API docs
 ```bash
@@ -165,6 +165,6 @@ polli docs --open                   # open in browser
 
 - Forgetting `--output` on binary generators (image/audio/video) — the file goes to a default path, which may not be what the user wants.
 - Using `polli gen text --json` expecting OpenAI chat-completions shape — the CLI's `--json` wraps its own structure. Use `polli docs /v1/chat/completions` to see the raw API shape if you need it.
-- Running commands without auth — `polli auth status` tells you the tier and balance in one call.
+- Running commands without auth — `polli auth status` tells you who you're logged in as and your balance in one call.
 - **`gen text` streams to a TTY, buffers when piped.** The default now auto-detects — a human at the terminal sees tokens tick in, a pipe/redirect gets the full response once. Force either mode with `--stream` or `--no-stream`. For scripts and chains like `polli gen text … | polli gen audio …`, you don't need to do anything; buffering happens automatically.
 - **Translating a `polli` workflow into a browser app.** `gen.pollinations.ai` requires a bearer token, so a plain client-side `fetch` with no auth returns 401. The only anonymous escape hatch is the legacy `https://text.pollinations.ai/openai` endpoint, which accepts exactly `openai` and `openai-fast` — the healthy-model advice from `--stats` does not carry over. For anything beyond those two text models in the browser, mint a scoped key with `polli keys create` and proxy via your own backend.

@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [📚 ManhwaGen](https://manhwagen.vercel.app/) | ManhwaGen provides a way to work with Manhwa content. | [@web](https://github.com/web) |
-| [🖼️ Aureon](https://aureon.gold) | Use Pollinations API in Aureon to generate images via gen.pollinations.ai/image/ (Flux model) in generateMediaForAgent, and integrate video via gen.pollinations.ai/video/ (LTX-2.3, Seedance). | [@web](https://github.com/web) |
-| [📝 What If? Scenario Explorer](https://whatif.pythonanywhere.com) | Explore interactive speculative storytelling scenarios with What If? Scenario Explorer. Use it to create and navigate what-if narratives. | [@web](https://github.com/web) |
-| [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@web](https://github.com/web) |
-| [🧠 G-Pai](https://g-pai.vercel.app/) | G-Pai is an app for students with some glitches. The developer is working to fix issues. | [@web](https://github.com/web) |
-| [🕒 PollenHours](https://aghartavault-ship-it.github.io/PollenHours/) | PollenHours is a mobile-first AI video pipeline built for Termux on Android. It runs on Android devices. | [@android](https://github.com/android) |
-| [🌙 DREAMMELD](https://dreammeld-1.vercel.app/) | AI dream interpretation with visual imagery and ambient soundscapes, powered by Pollinations. | [@web](https://github.com/web) |
-| [🖼️ Multimodal Image Generator](https://mowenyun.github.io/multimodal-image-generator/) | Generates images via the pollinations.ai API using httpsgen.pollinations.aiimage... from an open-source CLI GitHub Pages demo with configurable parameters and model size in Multimodal Image Generator. | [@web](https://github.com/web) |
-| [🌤️ Ciel AI](https://ciel-ai-v1.netlify.app) | Ciel AI is a mobile-first AI assistant powered entirely by Pollinations.ai, integrating Pollinations in three major ways. | [@web](https://github.com/web) |
-| [🧠 Flashlearn](http://flashlearn.asquareportal.com/) | Create true/false flashcards from documents in Flashlearn and generate an AI audio lesson for desktop study. | [@desktop](https://github.com/desktop) |
+| [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@tatn](https://github.com/tatn) |
+| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@OSK0020](https://github.com/OSK0020) |
+| [🧠 Reporay](https://repo-ray.vercel.app) | Reporay is an AI-powered GitHub repository analyzer. Paste a GitHub URL to get insights into the technology stack, project architecture, and smart summaries. | [@Jadu07](https://github.com/Jadu07) |
+| [🧠 Insight Engine](https://erbharatmalhotra.github.io/Insight_Engine/) | Requests re-approval for Insight Engine after temporary removal during endpoint migration and update to current gen.pollinations.ai endpoints; previously approved as Flower tier. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |
+| [🧠 Deals King & Radar Ai](https://deal.pm/en/extension) | Deals King & Radar Ai supports viewing deals and running radar AI functions. | [@MrAhmedElkady](https://github.com/MrAhmedElkady) |
+| [📚 ManhwaGen](https://manhwagen.vercel.app/) | ManhwaGen provides a way to work with Manhwa content. | [@AmanAutomates](https://github.com/AmanAutomates) |
+| [🖼️ Aureon](https://aureon.gold) | Use Pollinations API in Aureon to generate images via gen.pollinations.ai/image/ (Flux model) in generateMediaForAgent, and integrate video via gen.pollinations.ai/video/ (LTX-2.3, Seedance). | [@quantumquantara-arch](https://github.com/quantumquantara-arch) |
+| [📝 What If? Scenario Explorer](https://whatif.pythonanywhere.com) | Explore interactive speculative storytelling scenarios with What If? Scenario Explorer. Use it to create and navigate what-if narratives. | [@sixfingerdev](https://github.com/sixfingerdev) |
+| [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@niteshmandall](https://github.com/niteshmandall) |
+| [🧠 G-Pai](https://g-pai.vercel.app/) | G-Pai is an app for students with some glitches. The developer is working to fix issues. | [@Harhsit](https://github.com/Harhsit) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-04-17** – **🚀 Polli CLI hits v0.1.0** The terminal client is officially stable. It now streams text by default, formats tables without breaking your terminal, and plays audio directly via the new `--play` flag.
-- **2026-04-17** – **🧠 Flashlearn** Turn your documents into true/false flashcards and AI audio lessons. Because reading is hard. [Try it](http://flashlearn.asquareportal.com/) <!-- app -->
-- **2026-04-17** – **📱 Ciel AI** A full-featured, mobile-first AI assistant powered entirely by our API. Good inspiration for your own mobile builds. [Try it](https://ciel-ai-v1.netlify.app) <!-- app -->
-- **2026-04-16** – **🚀 The hive mind in your terminal** We shipped an official CLI (`@pollinations_ai/cli`). Generate images, text, audio, and video directly from the command line. Includes colored tables for humans and JSON output for your agentic workflows.
-- **2026-04-16** – **✨ Shorts in a snap** Generate end-to-end shorts and faceless videos from a single prompt with kre8.info, the latest addition to the community showcase. [Try it](https://kre8.info) <!-- app -->
-- **2026-04-15** – **🎮 Neon Runner** Play a real-time AI-generated infinite runner game with a 90s retro-anime aesthetic, fresh in the community showcase. [Try it](https://neon-runnerai.netlify.app/) <!-- app -->
-- **2026-04-14** – **🧠 Gemini Image Reasoning** Gemini can now think before it draws. Append `?reasoning=true` to your [image requests](https://gen.pollinations.ai/image/{prompt}) to enable native reasoning modes for complex prompts.
-- **2026-04-13** – **🔗 ComfyUI Nodes** Overtli Studio Suite built custom nodes to route generations through our API directly inside your local ComfyUI workflows. [View repo](https://github.com/OvertliDS/overtli-studio-suite) <!-- app -->
-- **2026-04-13** – **🎨 Brand Generation** StyleOps joined the showcase, wrapping our image models into a dedicated tool for spitting out cohesive brand assets. [Try it](https://styleops.co) <!-- app -->
-- **2026-04-13** – **💡 The Institute of Everything** A new community app that generates highly detailed, deadpan academic museum exhibits for completely absurd concepts. [Try it](https://rizperdana.github.io/institute-ai/) <!-- app -->
+- **2026-04-20** – **🔐 The golden handshake** The BYOP authorization screen got a complete redesign. Upfront spending limits and a cleaner flow so you actually know what you're agreeing to when handing over your pollen.
+- **2026-04-20** – **📊 Dashboard spring cleaning** We simplified the API key filter in the [Dashboard](https://enter.pollinations.ai) and added direct key filtering to the SDK. Track your usage without fighting the UI.
+- **2026-04-20** – **🌟 Insight Engine blooms again** Insight Engine has been rewired to use the latest endpoints and is back in the community showcase. [Try it](https://erbharatmalhotra.github.io/Insight_Engine/) <!-- app -->
+- **2026-04-20** – **🔍 X-Ray vision for repos** Reporay joins the community showcase. Feed it a GitHub URL, get architectural insights and summaries back. [Try it](https://repo-ray.vercel.app) <!-- app -->
+- **2026-04-19** – **🚀 Upgraded Vision Models** MiniMax is now on version 2.7, and Qwen Vision got migrated to a new Fireworks model with a massive 262K context window. Stuff more pixels into the prompt. Check the [available models](https://gen.pollinations.ai/v1/models).
+- **2026-04-19** – **🔐 SDK 4.3.0** Added device login flow and key management CRUD operations to the [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk). Manage your account keys without leaving the terminal.
+- **2026-04-19** – **📱 PollenHours** A mobile-first AI video pipeline built for Termux on Android. Generate video directly from your pocket. [Try it](https://aghartavault-ship-it.github.io/PollenHours/) <!-- app -->
+- **2026-04-19** – **📰 Akhbaar** Converts dense daily tech report PDFs into structured JSON insights for live news feeds. [Try it](https://akhbaar.hoxlabs.com/) <!-- app -->
+- **2026-04-19** – **🎨 ManhwaGen** A community-built tool for generating Manhwa-style comic content. [Try it](https://manhwagen.vercel.app/) <!-- app -->
+- **2026-04-19** – **✍️ What If? Scenario Explorer** An interactive tool for speculative storytelling and narrative exploration. [Try it](https://whatif.pythonanywhere.com) <!-- app -->
 ---
 
 ## 🌱 Introduction

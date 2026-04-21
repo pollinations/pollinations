@@ -46,7 +46,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-vision",
-        config: portkeyConfig["qwen3-vl-plus"],
+        config: portkeyConfig[
+            "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking"
+        ],
     },
     {
         name: "mistral",
@@ -146,6 +148,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
     },
     {
+        name: "kimi-k2.6",
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
+    },
+    {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
@@ -169,7 +175,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "minimax",
-        config: portkeyConfig["accounts/fireworks/models/minimax-m2p5"],
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
     },
     {
         name: "mistral-large",

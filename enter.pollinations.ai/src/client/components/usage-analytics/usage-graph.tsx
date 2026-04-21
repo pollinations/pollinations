@@ -24,36 +24,39 @@ type UsageGraphProps = {
     tier?: TierStatus;
     timeRange: TimeRange;
     onTimeRangeChange: (timeRange: TimeRange) => void;
+    apiKeys: Array<{ id: string; name: string }>;
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
     tier,
     timeRange,
     onTimeRangeChange,
+    apiKeys,
 }) => {
     const [filters, setFilters] = useState<Omit<FilterState, "timeRange">>({
         metric: "pollen",
-        selectedKeys: [],
+        selectedKeyIds: [],
         selectedModels: [],
     });
 
-    const {
-        loading,
-        error,
-        fetchUsage,
-        usedModels,
-        usedKeys,
-        chartData,
-        stats,
-    } = useUsageData({
-        ...filters,
-        timeRange,
-    });
+    useEffect(() => {
+        const validIds = new Set(apiKeys.map((k) => k.id));
+        const pruned = filters.selectedKeyIds.filter((id) => validIds.has(id));
+        if (pruned.length !== filters.selectedKeyIds.length) {
+            setFilters((f) => ({ ...f, selectedKeyIds: pruned }));
+        }
+    }, [apiKeys, filters.selectedKeyIds]);
 
-    const keySelectOptions = usedKeys.map((name) => ({
-        value: name,
-        label: name,
+    const keySelectOptions = apiKeys.map((k) => ({
+        value: k.id,
+        label: k.name,
     }));
+
+    const { loading, error, fetchUsage, usedModels, chartData, stats } =
+        useUsageData({
+            ...filters,
+            timeRange,
+        });
 
     const modelSelectOptions = usedModels.map((m) => ({
         value: m.id,
@@ -188,15 +191,15 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             />
                             <MultiSelect
                                 options={keySelectOptions}
-                                selected={filters.selectedKeys}
+                                selected={filters.selectedKeyIds}
                                 onChange={(v) =>
                                     setFilters((f) => ({
                                         ...f,
-                                        selectedKeys: v,
+                                        selectedKeyIds: v,
                                     }))
                                 }
                                 placeholder="All"
-                                disabled={usedKeys.length === 0}
+                                disabled={keySelectOptions.length === 0}
                                 disabledText="None"
                                 align="end"
                                 label="API Keys"

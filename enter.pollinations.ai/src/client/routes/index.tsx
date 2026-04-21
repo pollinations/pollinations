@@ -334,8 +334,8 @@ function RouteComponent() {
         },
         {
             key: "pricing",
-            emoji: "🧾",
-            label: "Pricing",
+            emoji: "🤖",
+            label: "Models",
             render: () => (
                 <Pricing
                     tierBalance={tierBalance}

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **695** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **696** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -40,7 +40,7 @@
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@web](https://github.com/web) |  | 🫧 |
 | [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 162 apps</summary>
+<details><summary>Show all 163 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -187,6 +187,7 @@
 | [🖼️ Zelos AI image generator](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) | Generates images using Pollinations for prompt enhancement and image synthesis. | [@web](https://github.com/web) |  |  |
 | [🖼️ Aureon](https://aureon.gold) | Use Pollinations API in Aureon to generate images via gen.pollinations.ai/image/ (Flux model) in generateMediaForAgent, and integrate video via gen.pollinations.ai/video/ (LTX-2.3, Seedance). | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 StyleOps](https://styleops.co) | Generate cohesive brand assets from detailed style guides using StyleOps, an AI-powered brand visual generator powered by Pollinations.ai (Flux model). | [@web](https://github.com/web) |  | 🫧 |
+| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ 7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | [@web](https://github.com/web) |  |  |
 | [™ SHICoPIC](https://shicopic.netlify.app) | AI-powered creative image generation tool. Simple interface for creating images ... | [@web](https://github.com/web) |  |  |
 | [🔬 Micro Pollinations AI](166749819) | Lightweight, minimal Pollinations AI interface. A tiny but powerful frontend for... | [@api](https://github.com/api) |  |  |

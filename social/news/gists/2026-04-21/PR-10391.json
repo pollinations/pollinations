@@ -1,0 +1,34 @@
+{
+  "pr_number": 10391,
+  "title": "docs(sdk): update accountPermissions example",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/10391",
+  "merged_at": "2026-04-21T23:39:51Z",
+  "labels": [
+    "API",
+    ".DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Reading the manual",
+    "blurb": "Updated the SDK documentation to reflect the latest account permission scopes. Because guessing API permissions is only fun for the first hour.",
+    "summary": "Updated the SDK README to reflect the recently merged account permission scopes.",
+    "impact": "Developers referencing the SDK documentation will now see the correct, up-to-date scope examples for account permissions.",
+    "keywords": [
+      "docs",
+      "sdk",
+      "permissions",
+      "scopes"
+    ],
+    "visual_concept": "The bee mascot reading a manual or documentation, holding a small key representing permissions. A robot companion looking over her shoulder. Focus on documentation, reading, and permissions.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a small glowing key while reading a chunky pixelated manual. A cute robot with a CRT monitor head looks over her shoulder, screen glowing lime green (#ecf874). Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-21/PR-10391.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a small glowing key while reading a chunky pixelated manual. A cute robot with a CRT monitor head looks over her shoulder, screen glowing lime green (#ecf874). Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-04-21T23:40:45.707960+00:00"
+}

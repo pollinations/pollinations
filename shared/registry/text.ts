@@ -190,6 +190,15 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(3.0),
             },
         ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.75),
+                promptCachedTokens: perMillion(0.075),
+                promptAudioTokens: perMillion(0.75),
+                completionTextTokens: perMillion(4.5),
+            },
+        ],
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
@@ -584,6 +593,14 @@ export const TEXT_SERVICES = {
                 promptTextTokens: perMillion(2.0),
                 promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(12.0),
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(3.0),
+                promptCachedTokens: perMillion(0.3),
+                completionTextTokens: perMillion(18.0),
             },
         ],
         description:

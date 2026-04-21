@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-20",
+  "period_start": "2026-04-20",
+  "period_end": "2026-04-20",
+  "generated_at": "2026-04-21T06:34:59.169341+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-20/images/reddit.jpg"
+    }
+  ],
+  "title": "6 PRs merged: redesigned BYOP auth flow and simplified analytics payloads",
+  "text": "Merged 6 PRs today across the stack. The main focus was un-cluttering a few things that have been bugging us, specifically around the BYOP (Bring Your Own Provider) flow and how we handle analytics payloads.\n\nFirst, the BYOP authorization consent screen got a complete redesign (#10229). The old flow was functional but rough around the edges. Alongside this, we migrated the BYOP pipes to use client_id for better attribution and patched an issue with openclaw (#10371). It's a much cleaner flow now if you are routing your own keys through the infrastructure.\n\nSecond, we did some janitorial work on the backend. We simplified the daily usage pipe and dashboard key filters (#10239), and fixed a bug in the codex account profile payload (#10255). The payloads are now strictly what they need to be, which is better for privacy and much easier to debug when things go sideways.\n\nFinally, the community showcase is growing. Insight Engine was added to the image category (#10368) and Reporay to business (#10369). Always interesting to see what people actually build when they don't have to worry about the underlying infrastructure.\n\nCode is open as always: https://github.com/pollinations/pollinations. If the new BYOP flow breaks anything in your current setup, open an issue."
+}

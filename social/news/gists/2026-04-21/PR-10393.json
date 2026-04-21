@@ -1,0 +1,34 @@
+{
+  "pr_number": 10393,
+  "title": "bump kimi to k2.6 on fireworks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10393",
+  "merged_at": "2026-04-21T22:17:48Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Kimi levels up to 2.6",
+    "blurb": "We've wired up Kimi 2.6 via Fireworks for sharper text generation. The default endpoint gets the shiny new version, but we kept the old aliases around so your existing code won't break.",
+    "summary": "Upgraded the default Kimi text generation model to version 2.6 via the Fireworks API.",
+    "impact": "Text generation requests using the default Kimi model will now use the smarter 2.6 version, with backward compatibility preserved for older aliases.",
+    "keywords": [
+      "text",
+      "models",
+      "kimi",
+      "fireworks",
+      "api"
+    ],
+    "visual_concept": "The PR updates the Kimi text model to version 2.6 via the Fireworks provider. Visuals should include Polly the bee interacting with a glowing text terminal while soft fireworks go off in the background (referencing the provider). Polly could be wearing a tiny wizard hat to represent the 'smarter' model.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny wizard hat, happily typing on a retro computer terminal that displays glowing text and the number '2.6'. Outside a nearby window, soft pixelated fireworks are blooming in the night sky. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-21/PR-10393.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny wizard hat, happily typing on a retro computer terminal that displays glowing text and the number '2.6'. Outside a nearby window, soft pixelated fireworks are blooming in the night sky. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-21T22:18:48.201526+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "date": "2026-04-20",
+  "period_start": "2026-04-20",
+  "period_end": "2026-04-20",
+  "title": "A much cleaner BYOP authorization flow",
+  "summary": "A solid day of tuning the engine: a redesigned BYOP auth screen, cleaner analytics pipelines, and fresh apps in the community showcase.\n\nBring Your Own Pollen just got a lot prettier. We completely redesigned the authorization consent screen. It's now mobile-friendly, makes model selection simpler, and puts your spending limits front and center so you know exactly what you're agreeing to when connecting third-party apps.\n\nA cluster of under-the-hood API and analytics tuning. The account profile payload now only returns essential public fields for better privacy. We also refactored the daily usage pipeline, giving you a cleaner single-select API key filter in the dashboard, direct key filtering in the SDK, and more reliable BYOP attribution via stable client IDs.\n\nThe community directory keeps growing. We added Reporay, an AI-powered GitHub repository analyzer that generates architectural insights from repo URLs, and welcomed back Insight Engine, which has been updated to use the latest generation endpoints.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 10229,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10239,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10255,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10368,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10369,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10371,
+      "date": "2026-04-20"
+    }
+  ],
+  "generated_at": "2026-04-21T06:34:59.169341+00:00"
+}

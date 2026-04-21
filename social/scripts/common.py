@@ -373,18 +373,19 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None) -> tuple[Optional[bytes], Optional[str]]:
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None, skip_style_suffix: bool = False) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API."""
     use_model = model or IMAGE_MODEL
 
-    # Append character descriptions if not already present (loaded from prompt file)
-    if "bee mascot" not in prompt.lower():
-        bee_desc = load_shared("bee")
-        if bee_desc:
-            prompt = f"{prompt} {bee_desc}"
+    if not skip_style_suffix:
+        # Append character descriptions if not already present (loaded from prompt file)
+        if "bee mascot" not in prompt.lower():
+            bee_desc = load_shared("bee")
+            if bee_desc:
+                prompt = f"{prompt} {bee_desc}"
 
-    # Always append style suffix — forces consistent pixel art rendering
-    prompt = f"{prompt} {IMAGE_STYLE_SUFFIX}"
+        # Always append style suffix — forces consistent pixel art rendering
+        prompt = f"{prompt} {IMAGE_STYLE_SUFFIX}"
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
     sanitized = prompt.replace("'", "")
@@ -408,8 +409,10 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "nofeed": "true",
             "seed": seed,
             "key": token,
-            "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg",
         }
+
+        if not skip_style_suffix:
+            params["image"] = "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg"
 
         if attempt == 0:
             print(f"  Using seed: {seed}")

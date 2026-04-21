@@ -46,6 +46,7 @@ from common import (
     OWNER,
     REPO,
 )
+from generate_instagram_meme import generate_instagram_meme_post, MEME_IMAGE_MODEL
 
 # ── Constants ────────────────────────────────────────────────────────
 
@@ -264,9 +265,8 @@ def generate_twitter_post(summary: Dict, token: str) -> Optional[Dict]:
     return generate_platform_post("twitter", summary, token,
         "Write a tweet about today's shipped work.", temperature=0.8)
 
-def generate_instagram_post(summary: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("instagram", summary, token,
-        "Create a cozy pixel art post about these updates.")
+def generate_instagram_post(summary: Dict, token: str) -> Dict:
+    return generate_instagram_meme_post(summary, token)
 
 def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
     return generate_platform_post("reddit", summary, token,
@@ -308,15 +308,18 @@ def generate_platform_images(
         urls["twitter"].append(url)
         twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
 
-    # Instagram: up to 3 images (carousel)
+    # Instagram: 1-10 meme images rendered via nanobanana-pro (trend-driven, no pixel art)
     if instagram_post and instagram_post.get("images"):
-        for i, img_info in enumerate(instagram_post["images"][:3]):
+        for i, img_info in enumerate(instagram_post["images"]):
             prompt = img_info.get("prompt", "")
             if not prompt:
                 print(f"  FATAL: Daily Instagram image {i+1} is missing a prompt")
                 sys.exit(1)
-            print(f"  Generating Instagram image {i+1}...")
-            img_bytes, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, i)
+            print(f"  Generating Instagram image {i+1}/{len(instagram_post['images'])}...")
+            img_bytes, _ = generate_image(
+                prompt, token, IMAGE_SIZE, IMAGE_SIZE, i,
+                model=MEME_IMAGE_MODEL, skip_style_suffix=True,
+            )
             if not img_bytes:
                 print(f"  FATAL: Daily Instagram image {i+1} generation failed")
                 sys.exit(1)
@@ -524,11 +527,11 @@ def main():
     if not instagram_images:
         print("  FATAL: Daily Instagram post is missing images")
         sys.exit(1)
-    if any(not img.get("prompt") for img in instagram_images[:3]):
+    if any(not img.get("prompt") for img in instagram_images):
         print("  FATAL: Daily Instagram post has an image without a prompt")
         sys.exit(1)
     img_count = len(instagram_images)
-    print(f"  Instagram: {img_count} images")
+    print(f"  Instagram: {img_count} meme image(s) via {MEME_IMAGE_MODEL}")
 
     print("  Reddit...")
     reddit_post = generate_reddit_post(summary, pollinations_token)

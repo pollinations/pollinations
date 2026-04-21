@@ -206,9 +206,43 @@ function RouteComponent() {
         anchor.remove();
     }
 
-    const [activeSection, setActiveSection] = useState("balance");
+    const [activeSection, setActiveSection] = useState("overview");
 
     const tabs = [
+        {
+            key: "overview",
+            emoji: "🏡",
+            label: "Overview",
+            render: () => (
+                <div className="flex flex-col gap-6">
+                    <NewsBanner />
+                    <div className="flex flex-wrap gap-3">
+                        <a
+                            href="https://discord.gg/pollinations-ai-885844321461485618"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors no-underline"
+                        >
+                            💬 Join Discord
+                        </a>
+                        <a
+                            href="https://github.com/pollinations/pollinations"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-700 transition-colors no-underline"
+                        >
+                            ⭐ GitHub
+                        </a>
+                        <a
+                            href="/api/docs"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-stone-300 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors no-underline"
+                        >
+                            📖 API Docs
+                        </a>
+                    </div>
+                </div>
+            ),
+        },
         {
             key: "balance",
             emoji: "💎",
@@ -342,13 +376,11 @@ function RouteComponent() {
                     API Reference
                 </Button>
             </Header>
-            <NewsBanner />
-
             {/* Pill tab bar */}
             <div
                 role="tablist"
                 aria-label="Sections"
-                className="flex gap-1 flex-wrap sm:flex-nowrap sm:overflow-x-auto scrollbar-hide"
+                className="flex gap-1.5 flex-wrap sm:flex-nowrap sm:overflow-x-auto scrollbar-hide"
             >
                 {tabs.map((t) => {
                     const isActive = t.key === activeSection;
@@ -362,7 +394,7 @@ function RouteComponent() {
                             aria-controls={`panel-${t.key}`}
                             tabIndex={isActive ? 0 : -1}
                             onClick={() => setActiveSection(t.key)}
-                            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-base font-medium border transition-colors whitespace-nowrap cursor-pointer ${
                                 isActive
                                     ? "bg-white border-green-300 text-green-950 font-semibold shadow-sm"
                                     : "bg-transparent border-transparent text-stone-500 hover:bg-white/60 hover:text-stone-900"

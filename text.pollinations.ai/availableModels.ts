@@ -87,8 +87,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-6"],
     },
     {
-        name: "claude-legacy",
-        config: portkeyConfig["claude-opus-4-5"],
+        name: "claude-opus-4.7",
+        config: portkeyConfig["claude-opus-4-7"],
     },
     {
         name: "gemini",
@@ -148,6 +148,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
     },
     {
+        name: "kimi-k2.6",
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
+    },
+    {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
@@ -155,16 +159,6 @@ const models: ModelDefinition[] = [
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
-        name: "gemini-legacy",
-        config: portkeyConfig["gemini-2.5-pro"],
-        transform: pipe(
-            sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
-            removeToolsForJsonResponse,
-            createGeminiThinkingTransform("v2.5"),
         ),
     },
     {

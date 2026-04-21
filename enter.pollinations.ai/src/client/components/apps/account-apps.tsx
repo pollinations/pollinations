@@ -113,10 +113,8 @@ export function AccountApps({
         <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h2 className="font-heading text-4xl text-green-950 sm:text-5xl">
-                        Your Apps
-                    </h2>
-                    <p className="mt-1 text-sm text-stone-600">
+                    <h2 className="font-bold">Your Apps</h2>
+                    <p className="text-sm text-stone-500">
                         Panels tint with each app's primary modality.
                     </p>
                 </div>

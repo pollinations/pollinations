@@ -213,6 +213,17 @@ function RouteComponent() {
         anchor.remove();
     }
 
+    const navSections = [
+        { key: "balance", emoji: "💎", label: "Balance" },
+        ...(tierData ? [{ key: "tier", emoji: "🌱", label: "Tier" }] : []),
+        ...(ownedApps.length > 0
+            ? [{ key: "apps", emoji: "🌼", label: "Apps" }]
+            : []),
+        { key: "keys", emoji: "🔑", label: "Keys" },
+        { key: "pricing", emoji: "🧾", label: "Pricing" },
+        { key: "faq", emoji: "❓", label: "FAQ" },
+    ];
+
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-20">
@@ -231,99 +242,154 @@ function RouteComponent() {
                     </Button>
                 </Header>
                 <NewsBanner />
-                <div className="flex flex-col gap-2">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                        <h2 className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab("balance")}
-                                className={`font-bold ${
-                                    activeTab === "balance"
-                                        ? "text-amber-900"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
-                                }`}
-                            >
-                                Balance
-                            </button>
-                            <span className="text-gray-300">·</span>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab("usage")}
-                                className={`font-bold ${
-                                    activeTab === "usage"
-                                        ? "text-amber-900"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
-                                }`}
-                            >
-                                Usage
-                            </button>
-                        </h2>
-                        <div className="flex flex-wrap items-center gap-2">
-                            {activeTab === "usage" && (
-                                <Button
-                                    as="button"
-                                    color="amber"
-                                    weight="light"
-                                    onClick={downloadDetailedUsage}
-                                    className="flex items-center gap-1.5"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
+
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_160px] gap-8 items-start">
+                    {/* Main content */}
+                    <div className="flex flex-col gap-20">
+                        <div
+                            id="section-balance"
+                            className="flex flex-col gap-2"
+                        >
+                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                                <h2 className="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab("balance")}
+                                        className={`font-bold ${
+                                            activeTab === "balance"
+                                                ? "text-amber-900"
+                                                : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                        }`}
                                     >
-                                        <title>Download</title>
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    Download CSV
-                                </Button>
+                                        Balance
+                                    </button>
+                                    <span className="text-gray-300">·</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab("usage")}
+                                        className={`font-bold ${
+                                            activeTab === "usage"
+                                                ? "text-amber-900"
+                                                : "text-gray-400 hover:text-gray-600 cursor-pointer"
+                                        }`}
+                                    >
+                                        Usage
+                                    </button>
+                                </h2>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {activeTab === "usage" && (
+                                        <Button
+                                            as="button"
+                                            color="amber"
+                                            weight="light"
+                                            onClick={downloadDetailedUsage}
+                                            className="flex items-center gap-1.5"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            >
+                                                <title>Download</title>
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                <polyline points="7 10 12 15 17 10" />
+                                                <line
+                                                    x1="12"
+                                                    y1="15"
+                                                    x2="12"
+                                                    y2="3"
+                                                />
+                                            </svg>
+                                            Download CSV
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                            {activeTab === "balance" && (
+                                <PollenBalance
+                                    tierBalance={tierBalance}
+                                    packBalance={packBalance}
+                                    cryptoBalance={cryptoBalance}
+                                    tier={tierData?.active?.tier}
+                                />
+                            )}
+                            {activeTab === "usage" && (
+                                <UsageGraph
+                                    tier={tierData?.active?.tier}
+                                    timeRange={usageTimeRange}
+                                    onTimeRangeChange={setUsageTimeRange}
+                                    apiKeys={selectableKeys}
+                                />
                             )}
                         </div>
+                        {tierData && (
+                            <div
+                                id="section-tier"
+                                className="flex flex-col gap-2"
+                            >
+                                <h2 className="font-bold">Tier</h2>
+                                <TierPanel {...tierData} />
+                            </div>
+                        )}
+                        {ownedApps.length > 0 && (
+                            <div id="section-apps">
+                                <AccountApps
+                                    apps={ownedApps}
+                                    githubUsername={githubUsername}
+                                />
+                            </div>
+                        )}
+                        <div id="section-keys">
+                            <ApiKeyList
+                                apiKeys={apiKeys}
+                                onCreate={handleCreateApiKey}
+                                onUpdate={handleUpdateApiKey}
+                                onDelete={handleDeleteApiKey}
+                            />
+                        </div>
+                        <div id="section-pricing">
+                            <Pricing
+                                tierBalance={tierBalance}
+                                packBalance={packBalance}
+                                cryptoBalance={cryptoBalance}
+                            />
+                        </div>
+                        <div id="section-faq">
+                            <FAQ />
+                        </div>
                     </div>
-                    {activeTab === "balance" && (
-                        <PollenBalance
-                            tierBalance={tierBalance}
-                            packBalance={packBalance}
-                            cryptoBalance={cryptoBalance}
-                            tier={tierData?.active?.tier}
-                        />
-                    )}
-                    {activeTab === "usage" && (
-                        <UsageGraph
-                            tier={tierData?.active?.tier}
-                            timeRange={usageTimeRange}
-                            onTimeRangeChange={setUsageTimeRange}
-                            apiKeys={selectableKeys}
-                        />
-                    )}
+
+                    {/* Sticky right rail */}
+                    <nav aria-label="Sections" className="hidden lg:block">
+                        <div className="sticky top-4 bg-white border border-stone-200 rounded-2xl p-3">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 px-2 pb-2 border-b border-dashed border-stone-200 mb-1.5">
+                                Sections
+                            </div>
+                            <ul className="flex flex-col gap-0.5 list-none p-0 m-0">
+                                {navSections.map((s) => (
+                                    <li key={s.key}>
+                                        <a
+                                            href={`#section-${s.key}`}
+                                            className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[13px] text-stone-500 hover:bg-stone-50 hover:text-stone-900 transition-colors no-underline"
+                                        >
+                                            <span className="w-4 text-sm">
+                                                {s.emoji}
+                                            </span>
+                                            <span>{s.label}</span>
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </nav>
                 </div>
-                {tierData && (
-                    <div className="flex flex-col gap-2">
-                        <h2 className="font-bold">Tier</h2>
-                        <TierPanel {...tierData} />
-                    </div>
-                )}
-                <AccountApps apps={ownedApps} githubUsername={githubUsername} />
-                <ApiKeyList
-                    apiKeys={apiKeys}
-                    onCreate={handleCreateApiKey}
-                    onUpdate={handleUpdateApiKey}
-                    onDelete={handleDeleteApiKey}
-                />
-                <Pricing
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                    cryptoBalance={cryptoBalance}
-                />
-                <FAQ />
+
                 <Footer />
             </div>
         </div>

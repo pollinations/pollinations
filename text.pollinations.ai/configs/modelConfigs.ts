@@ -126,11 +126,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "us.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "claude-opus-4-5": () =>
-        createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-5-20251101-v1:0",
-            defaultOptions: { max_tokens: 64000 },
-        }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -177,7 +172,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
-    "gemini-2.5-pro": createVertexGeminiConfig("gemini-2.5-pro", "us-central1"),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),

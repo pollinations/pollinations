@@ -89,10 +89,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-7"],
     },
     {
-        name: "claude-legacy",
-        config: portkeyConfig["claude-opus-4-5"],
-    },
-    {
         name: "gemini",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
@@ -157,16 +153,6 @@ const models: ModelDefinition[] = [
             createGeminiToolsTransform(["code_execution"]),
             removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
-        ),
-    },
-    {
-        name: "gemini-legacy",
-        config: portkeyConfig["gemini-2.5-pro"],
-        transform: pipe(
-            sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
-            removeToolsForJsonResponse,
-            createGeminiThinkingTransform("v2.5"),
         ),
     },
     {

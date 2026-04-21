@@ -141,8 +141,9 @@ export async function startMcpServer() {
         process.on("SIGTERM", () => process.exit(0));
 
         // Windows does not deliver SIGTERM when the MCP client exits.
-        // EOF on stdin is the reliable signal that the client is gone.
-        process.stdin.on("end",   () => process.exit(0));
+        // stdin `close` fires whenever the parent's end of the pipe goes
+        // away (graceful EOF or abrupt fd close), so it's the reliable
+        // one-stop signal that the client is gone.
         process.stdin.on("close", () => process.exit(0));
 
         // Create and connect STDIO transport

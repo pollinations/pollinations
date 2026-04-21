@@ -28,7 +28,7 @@ const allTools = [
 /**
  * Server instructions shown to MCP clients
  */
-const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.0
+const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.1
 
 ## Authentication
 Set your API key first using the setApiKey tool:
@@ -99,7 +99,7 @@ export async function startMcpServer() {
         const server = new McpServer(
             {
                 name: "pollinations-mcp",
-                version: "2.0.0",
+                version: "2.1.0",
                 instructions: SERVER_INSTRUCTIONS,
             },
             {
@@ -160,7 +160,7 @@ export async function startMcpServer() {
         const transport = new StdioServerTransport();
         await server.connect(transport);
 
-        console.error("Pollinations MCP Server v2.0.0 running on stdio");
+        console.error("Pollinations MCP Server v2.1.0 running on stdio");
         console.error("API: https://gen.pollinations.ai");
     } catch (error) {
         console.error(`Failed to start MCP server: ${error.message}`);

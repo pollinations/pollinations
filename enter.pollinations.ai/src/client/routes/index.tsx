@@ -213,8 +213,46 @@ function RouteComponent() {
         anchor.remove();
     }
 
+    const navSections = [
+        { key: "balance", emoji: "💎", label: "Balance" },
+        ...(tierData ? [{ key: "tier", emoji: "🌱", label: "Tier" }] : []),
+        ...(ownedApps.length > 0
+            ? [{ key: "apps", emoji: "🌼", label: "Apps" }]
+            : []),
+        { key: "keys", emoji: "🔑", label: "Keys" },
+        { key: "pricing", emoji: "🧾", label: "Pricing" },
+        { key: "faq", emoji: "❓", label: "FAQ" },
+    ];
+
     return (
         <div className="flex flex-col gap-6">
+            {/* Fixed right-rail nav — only visible on XL screens where there's space beside the 800px body */}
+            <nav
+                aria-label="Sections"
+                className="fixed top-8 right-[max(1rem,calc((100vw-800px)/2-168px))] hidden xl:block w-36 z-10"
+            >
+                <div className="bg-white/90 backdrop-blur border border-stone-200 rounded-2xl p-3 shadow-sm">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 px-2 pb-2 border-b border-dashed border-stone-200 mb-1.5">
+                        Sections
+                    </div>
+                    <ul className="flex flex-col gap-0.5 list-none p-0 m-0">
+                        {navSections.map((s) => (
+                            <li key={s.key}>
+                                <a
+                                    href={`#section-${s.key}`}
+                                    className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[13px] text-stone-500 hover:bg-stone-50 hover:text-stone-900 transition-colors no-underline"
+                                >
+                                    <span className="w-4 text-sm">
+                                        {s.emoji}
+                                    </span>
+                                    <span>{s.label}</span>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </nav>
+
             <div className="flex flex-col gap-20">
                 <Header>
                     <User
@@ -231,7 +269,7 @@ function RouteComponent() {
                     </Button>
                 </Header>
                 <NewsBanner />
-                <div className="flex flex-col gap-2">
+                <div id="section-balance" className="flex flex-col gap-2">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                         <h2 className="flex items-center gap-3">
                             <button
@@ -306,24 +344,35 @@ function RouteComponent() {
                     )}
                 </div>
                 {tierData && (
-                    <div className="flex flex-col gap-2">
+                    <div id="section-tier" className="flex flex-col gap-2">
                         <h2 className="font-bold">Tier</h2>
                         <TierPanel {...tierData} />
                     </div>
                 )}
-                <AccountApps apps={ownedApps} githubUsername={githubUsername} />
-                <ApiKeyList
-                    apiKeys={apiKeys}
-                    onCreate={handleCreateApiKey}
-                    onUpdate={handleUpdateApiKey}
-                    onDelete={handleDeleteApiKey}
-                />
-                <Pricing
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                    cryptoBalance={cryptoBalance}
-                />
-                <FAQ />
+                <div id="section-apps">
+                    <AccountApps
+                        apps={ownedApps}
+                        githubUsername={githubUsername}
+                    />
+                </div>
+                <div id="section-keys">
+                    <ApiKeyList
+                        apiKeys={apiKeys}
+                        onCreate={handleCreateApiKey}
+                        onUpdate={handleUpdateApiKey}
+                        onDelete={handleDeleteApiKey}
+                    />
+                </div>
+                <div id="section-pricing">
+                    <Pricing
+                        tierBalance={tierBalance}
+                        packBalance={packBalance}
+                        cryptoBalance={cryptoBalance}
+                    />
+                </div>
+                <div id="section-faq">
+                    <FAQ />
+                </div>
                 <Footer />
             </div>
         </div>

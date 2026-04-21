@@ -111,6 +111,7 @@ async function sayText(params) {
         text,
         voice = "alloy",
         format = "mp3",
+        model,
         voiceInstructions,
         audioPlayer,
         tempDir,
@@ -120,13 +121,21 @@ async function sayText(params) {
         throw new Error("Text is required and must be a string");
     }
 
+    const voiceCheck = await validateVoice(voice);
+    if (!voiceCheck.valid) {
+        throw new Error(
+            `${voiceCheck.error} Did you mean: ${voiceCheck.suggestions.join(", ")}? ` +
+                `Use listAudioVoices to see all ${voiceCheck.availableCount} available voices.`,
+        );
+    }
+
     let finalPrompt = `Say verbatim: ${text}`;
     if (voiceInstructions) {
         finalPrompt = `${voiceInstructions}\n\n${finalPrompt}`;
     }
 
     const queryParams = {
-        model: "openai-audio",
+        model: await resolveAudioModel(model),
         voice,
         format,
     };
@@ -168,34 +177,40 @@ async function sayText(params) {
 
 async function listAudioVoices(_params) {
     try {
-        const voices = await getAudioVoices();
+        const audioModels = await getAudioModels();
+        const byModel = audioModels
+            .filter((m) => Array.isArray(m.voices) && m.voices.length > 0)
+            .map((m) => ({
+                model: m.name,
+                aliases: m.aliases || [],
+                description: m.description,
+                voices: m.voices,
+            }));
+        const allVoices = Array.from(
+            new Set(byModel.flatMap((m) => m.voices)),
+        );
 
-        const result = {
-            voices,
-            model: "openai-audio",
-            formats: ["wav", "mp3", "flac", "opus", "pcm16"],
-            total: voices.length,
-        };
-
-        return createMCPResponse([createTextContent(result, true)]);
-    } catch (error) {
-        console.error("Error listing audio voices:", error);
-        const defaultVoices = [
-            "alloy",
-            "echo",
-            "fable",
-            "onyx",
-            "nova",
-            "shimmer",
-        ];
         return createMCPResponse([
             createTextContent(
                 {
-                    voices: defaultVoices,
-                    model: "openai-audio",
+                    voices: allVoices,
+                    byModel,
                     formats: ["wav", "mp3", "flac", "opus", "pcm16"],
-                    total: defaultVoices.length,
-                    note: "Using default voice list (API unavailable)",
+                    total: allVoices.length,
+                },
+                true,
+            ),
+        ]);
+    } catch (error) {
+        console.error("Error listing audio voices:", error);
+        const voices = await getAudioVoices();
+        return createMCPResponse([
+            createTextContent(
+                {
+                    voices,
+                    formats: ["wav", "mp3", "flac", "opus", "pcm16"],
+                    total: voices.length,
+                    note: "Using fallback voice list (registry unavailable)",
                 },
                 true,
             ),
@@ -320,23 +335,22 @@ function getFormatFromMimeType(mimeType) {
     return formats[mimeType] || "mp3";
 }
 
-const voiceEnum = z.enum([
-    "alloy",
-    "echo",
-    "fable",
-    "onyx",
-    "nova",
-    "shimmer",
-    "coral",
-    "verse",
-    "ballad",
-    "ash",
-    "sage",
-    "amuch",
-    "dan",
-]);
+const voiceSchema = z
+    .string()
+    .describe(
+        "Voice name from the registry (e.g. alloy, nova, rachel, matilda). " +
+            "Use listAudioVoices to see the full live list.",
+    );
 
 const formatEnum = z.enum(["wav", "mp3", "flac", "opus", "pcm16"]);
+
+const audioModelSchema = z
+    .string()
+    .optional()
+    .describe(
+        "Audio model override (e.g. 'elevenlabs', 'openai-audio'). " +
+            "Defaults to the current primary TTS model from the registry.",
+    );
 
 export const audioTools = [
     [
@@ -346,7 +360,7 @@ export const audioTools = [
             prompt: z
                 .string()
                 .describe("The text prompt to respond to with audio"),
-            voice: voiceEnum
+            voice: voiceSchema
                 .optional()
                 .describe("Voice to use (default: alloy)"),
             format: formatEnum
@@ -367,7 +381,7 @@ export const audioTools = [
         "Generate speech that says the provided text verbatim. Direct text-to-speech.",
         {
             text: z.string().describe("The text to speak verbatim"),
-            voice: voiceEnum
+            voice: voiceSchema
                 .optional()
                 .describe("Voice to use (default: alloy)"),
             format: formatEnum

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **695** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **697** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -40,7 +40,7 @@
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@web](https://github.com/web) |  | 🫧 |
 | [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 162 apps</summary>
+<details><summary>Show all 163 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -187,6 +187,7 @@
 | [🖼️ Zelos AI image generator](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) | Generates images using Pollinations for prompt enhancement and image synthesis. | [@web](https://github.com/web) |  |  |
 | [🖼️ Aureon](https://aureon.gold) | Use Pollinations API in Aureon to generate images via gen.pollinations.ai/image/ (Flux model) in generateMediaForAgent, and integrate video via gen.pollinations.ai/video/ (LTX-2.3, Seedance). | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 StyleOps](https://styleops.co) | Generate cohesive brand assets from detailed style guides using StyleOps, an AI-powered brand visual generator powered by Pollinations.ai (Flux model). | [@web](https://github.com/web) |  | 🫧 |
+| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ 7Studio](https://7studio.edgeone.app) | AI image generation studio with prompt input, model selection, and gallery display. | [@web](https://github.com/web) |  |  |
 | [™ SHICoPIC](https://shicopic.netlify.app) | AI-powered creative image generation tool. Simple interface for creating images ... | [@web](https://github.com/web) |  |  |
 | [🔬 Micro Pollinations AI](166749819) | Lightweight, minimal Pollinations AI interface. A tiny but powerful frontend for... | [@api](https://github.com/api) |  |  |
@@ -265,7 +266,7 @@
 | [🤔 The Shape of Meaning](https://signals.pinecone.website/) | Generate personalized philosophical analysis with The Shape of Meaning by answering questions about how you experience meaning, handle uncertainty, and navigate paradox. | [@web](https://github.com/web) |  | 🫧 |
 | [📚 NovelCraft AI](https://mrlearner1606.github.io/novelcraftai/) | Write novels in your browser using NovelCraft AI; it runs entirely on your device with no account, no installation, and no server. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 73 apps</summary>
+<details><summary>Show all 74 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -324,6 +325,7 @@
 | [🎨 The Promised Pen](https://promisedpen.app) | Organize stories, characters, and worldbuilding in a novel-writing app that combines drafts, outlines, notes, and project management tools. | [@web](https://github.com/web) |  |  |
 | [📖 StoryMagic: Interactive Kids Stories](https://storyai-wizard.vercel.app) | Creates interactive, personalized children's stories with branching choices and simple visuals for reading and play. | [@api](https://github.com/api) |  |  |
 | [📚 AI 儿童故事](https://kidss.netlify.app/) | 基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's sto... | [@web](https://github.com/web) |  |  |
+| [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@web](https://github.com/web) |  | 🫧 |
 | [📝 What If? Scenario Explorer](https://whatif.pythonanywhere.com) | Explore interactive speculative storytelling scenarios with What If? Scenario Explorer. Use it to create and navigate what-if narratives. | [@web](https://github.com/web) |  | 🫧 |
 | [🏛️ The Institute of Everything](https://rizperdana.github.io/institute-ai/) | Generate a complete fake museum exhibit from any concept, absurd, niche, or mundane, presented with straight-faced academic seriousness using The Institute of Everything. | [@web](https://github.com/web) |  | 🫧 |
 | [📖 PDF-to-Speech](43525222) | Convert PDFs into natural-sounding audio with an open-source Python tool | [@api](https://github.com/api) |  |  |

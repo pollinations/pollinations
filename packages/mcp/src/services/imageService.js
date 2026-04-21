@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
     arrayBufferToBase64,
     buildShareableUrl,
     buildUrl,
+    chatWithMedia,
     createImageContent,
     createMCPResponse,
     createTextContent,
@@ -534,55 +534,20 @@ async function describeImage(params) {
         throw new Error("imageUrl is required and must be a string");
     }
 
-    const requestBody = {
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: prompt,
-                    },
-                    {
-                        type: "image_url",
-                        image_url: {
-                            url: imageUrl,
-                        },
-                    },
-                ],
-            },
-        ],
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
+        const { content, model: respondedModel } = await chatWithMedia({
+            model,
+            prompt,
+            mediaType: "image_url",
+            mediaUrl: imageUrl,
         });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(
-                `Failed to analyze image (${response.status}): ${errorText}`,
-            );
-        }
-
-        const result = await response.json();
-        const description = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([
             createTextContent(
                 {
-                    description,
+                    description: content,
                     imageUrl,
-                    model: result.model || model,
+                    model: respondedModel,
                     prompt,
                 },
                 true,
@@ -607,55 +572,20 @@ async function analyzeVideo(params) {
         throw new Error("videoUrl is required and must be a string");
     }
 
-    const requestBody = {
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: prompt,
-                    },
-                    {
-                        type: "video_url",
-                        video_url: {
-                            url: videoUrl,
-                        },
-                    },
-                ],
-            },
-        ],
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
+        const { content, model: respondedModel } = await chatWithMedia({
+            model,
+            prompt,
+            mediaType: "video_url",
+            mediaUrl: videoUrl,
         });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(
-                `Failed to analyze video (${response.status}): ${errorText}`,
-            );
-        }
-
-        const result = await response.json();
-        const analysis = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([
             createTextContent(
                 {
-                    analysis,
+                    analysis: content,
                     videoUrl,
-                    model: result.model || model,
+                    model: respondedModel,
                     prompt,
                 },
                 true,

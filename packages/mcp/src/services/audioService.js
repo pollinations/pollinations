@@ -2,11 +2,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
-import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
+import { requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
     arrayBufferToBase64,
     buildUrl,
+    chatWithMedia,
     createAudioContent,
     createMCPResponse,
     createTextContent,
@@ -231,55 +231,20 @@ async function transcribeAudio(params) {
         throw new Error("audioUrl is required and must be a string");
     }
 
-    const requestBody = {
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: prompt,
-                    },
-                    {
-                        type: "input_audio",
-                        input_audio: {
-                            url: audioUrl,
-                        },
-                    },
-                ],
-            },
-        ],
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
+        const { content, model: respondedModel } = await chatWithMedia({
+            model,
+            prompt,
+            mediaType: "input_audio",
+            mediaUrl: audioUrl,
         });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(
-                `Failed to transcribe audio (${response.status}): ${errorText}`,
-            );
-        }
-
-        const result = await response.json();
-        const transcription = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([
             createTextContent(
                 {
-                    transcription,
+                    transcription: content,
                     audioUrl,
-                    model: result.model || model,
+                    model: respondedModel,
                     prompt,
                 },
                 true,

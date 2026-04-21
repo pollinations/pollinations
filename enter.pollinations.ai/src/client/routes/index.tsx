@@ -206,35 +206,21 @@ function RouteComponent() {
         anchor.remove();
     }
 
-    return (
-        <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-20">
-                <Header>
-                    <User
-                        githubUsername={githubUsername}
-                        githubAvatarUrl={user?.image || ""}
-                        onSignOut={handleSignOut}
-                    />
-                    <Button
-                        as="a"
-                        href="/api/docs"
-                        className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap"
-                    >
-                        API Reference
-                    </Button>
-                </Header>
-                <NewsBanner />
-                <div className="flex flex-col gap-2">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                        <h2 className="flex items-center gap-3">
+    const [activeSection, setActiveSection] = useState("balance");
+
+    const tabs = [
+        {
+            key: "balance",
+            emoji: "💎",
+            label: "Balance",
+            render: () => (
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
                             <button
                                 type="button"
                                 onClick={() => setActiveTab("balance")}
-                                className={`font-bold ${
-                                    activeTab === "balance"
-                                        ? "text-amber-900"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
-                                }`}
+                                className={`font-bold ${activeTab === "balance" ? "text-amber-900" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
                             >
                                 Balance
                             </button>
@@ -242,44 +228,38 @@ function RouteComponent() {
                             <button
                                 type="button"
                                 onClick={() => setActiveTab("usage")}
-                                className={`font-bold ${
-                                    activeTab === "usage"
-                                        ? "text-amber-900"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
-                                }`}
+                                className={`font-bold ${activeTab === "usage" ? "text-amber-900" : "text-gray-400 hover:text-gray-600 cursor-pointer"}`}
                             >
                                 Usage
                             </button>
-                        </h2>
-                        <div className="flex flex-wrap items-center gap-2">
-                            {activeTab === "usage" && (
-                                <Button
-                                    as="button"
-                                    color="amber"
-                                    weight="light"
-                                    onClick={downloadDetailedUsage}
-                                    className="flex items-center gap-1.5"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <title>Download</title>
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    Download CSV
-                                </Button>
-                            )}
                         </div>
+                        {activeTab === "usage" && (
+                            <Button
+                                as="button"
+                                color="amber"
+                                weight="light"
+                                onClick={downloadDetailedUsage}
+                                className="flex items-center gap-1.5"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <title>Download</title>
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Download CSV
+                            </Button>
+                        )}
                     </div>
                     {activeTab === "balance" && (
                         <PollenBalance
@@ -298,26 +278,119 @@ function RouteComponent() {
                         />
                     )}
                 </div>
-                {tierData && (
-                    <div className="flex flex-col gap-2">
-                        <h2 className="font-bold">Tier</h2>
-                        <TierPanel {...tierData} />
-                    </div>
-                )}
+            ),
+        },
+        ...(tierData
+            ? [
+                  {
+                      key: "tier",
+                      emoji: "🌱",
+                      label: "Tier",
+                      render: () => <TierPanel {...tierData} />,
+                  },
+              ]
+            : []),
+        {
+            key: "keys",
+            emoji: "🔑",
+            label: "Keys",
+            badge: apiKeys.length || undefined,
+            render: () => (
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
+            ),
+        },
+        {
+            key: "pricing",
+            emoji: "🧾",
+            label: "Pricing",
+            render: () => (
                 <Pricing
                     tierBalance={tierBalance}
                     packBalance={packBalance}
                     cryptoBalance={cryptoBalance}
                 />
-                <FAQ />
-                <Footer />
+            ),
+        },
+        {
+            key: "faq",
+            emoji: "❓",
+            label: "FAQ",
+            render: () => <FAQ />,
+        },
+    ];
+
+    const activeTabData = tabs.find((t) => t.key === activeSection) ?? tabs[0];
+
+    return (
+        <div className="flex flex-col gap-4">
+            <Header>
+                <User
+                    githubUsername={githubUsername}
+                    githubAvatarUrl={user?.image || ""}
+                    onSignOut={handleSignOut}
+                />
+                <Button
+                    as="a"
+                    href="/api/docs"
+                    className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap"
+                >
+                    API Reference
+                </Button>
+            </Header>
+            <NewsBanner />
+
+            {/* Pill tab bar */}
+            <div
+                role="tablist"
+                aria-label="Sections"
+                className="flex gap-1 flex-wrap sm:flex-nowrap sm:overflow-x-auto scrollbar-hide"
+            >
+                {tabs.map((t) => {
+                    const isActive = t.key === activeSection;
+                    return (
+                        <button
+                            key={t.key}
+                            type="button"
+                            role="tab"
+                            id={`tab-${t.key}`}
+                            aria-selected={isActive}
+                            aria-controls={`panel-${t.key}`}
+                            tabIndex={isActive ? 0 : -1}
+                            onClick={() => setActiveSection(t.key)}
+                            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium border-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                                isActive
+                                    ? "bg-white border-green-300 text-green-950 font-semibold shadow-sm"
+                                    : "bg-transparent border-transparent text-stone-500 hover:bg-white/60 hover:text-stone-900"
+                            }`}
+                        >
+                            <span aria-hidden="true">{t.emoji}</span>
+                            {t.label}
+                            {t.badge != null && (
+                                <span className="ml-1 bg-green-950 text-green-50 text-[10px] font-mono px-1.5 py-0.5 rounded-full">
+                                    {t.badge}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
             </div>
+
+            {/* Active panel */}
+            <main
+                role="tabpanel"
+                id={`panel-${activeTabData.key}`}
+                aria-labelledby={`tab-${activeTabData.key}`}
+                className="bg-white border border-stone-200 rounded-2xl p-6"
+            >
+                {activeTabData.render()}
+            </main>
+
+            <Footer />
         </div>
     );
 }

@@ -95,6 +95,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",
         }),
+    "accounts/fireworks/models/kimi-k2p6": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p6",
+        }),
 
     // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
     "mistral-small-3.2-24b-instruct-2506": () =>

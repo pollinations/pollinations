@@ -544,6 +544,27 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
+    "kimi-k2.6": {
+        aliases: ["kimi-k2p6"],
+        modelId: "accounts/fireworks/models/kimi-k2p6",
+        provider: "fireworks",
+        cost: [
+            {
+                date: new Date("2026-04-21").getTime(),
+                promptTextTokens: perMillion(0.95),
+                promptCachedTokens: perMillion(0.16),
+                completionTextTokens: perMillion(4.0),
+            },
+        ],
+        description:
+            "Moonshot Kimi K2.6 - Flagship Agentic Model with CoT Reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262000,
+        isSpecialized: false,
+    },
     "gemini-large": {
         aliases: ["gemini-3.1-pro"],
         modelId: "gemini-3.1-pro-preview",

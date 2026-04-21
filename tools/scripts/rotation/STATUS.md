@@ -19,6 +19,32 @@ After it succeeds, what we'll know:
 
 If anything breaks mid-cycle, perplexity revert is one curl call.
 
+### 1b. SOPS CI key rotation — script exists, `--execute` unproven
+
+`rotate-infra-sops-ci.sh` codifies the manual CI-key split we did on 2026-04-19
+(PR #10337 + GH Actions secret swap). Dry-run passes. The `--execute` path has
+not been run end-to-end yet:
+
+- Phase 1 PR (add new recipient) + auto-merge — reuses the same mechanics as
+  the provider scripts, should work
+- `gh secret set SOPS_AGE_KEY` — proven manually already
+- `gh workflow run deploy-enter-services.yml -f environment=staging` + `gh run
+  watch` — the decrypt-step-green gate is new; behaviour on failure is unverified
+- Phase 3 PR (remove old recipient) — same mechanics as Phase 1
+
+Before running `--execute`, confirm the new CI key actually decrypts on main —
+#10255 regression proved the recipient set can drift unnoticed.
+
+### 1c. SOPS personal key rotation — script exists, no valid operator today
+
+`rotate-infra-sops-personal.sh` works for any single-holder age recipient.
+Refuses to run against `core` (shared) or `ci` (wrong script). Usable today
+only by Itachi. Elliot/Thomas can't use it until the `core` identity is split
+per-person (deferred).
+
+Dry-run on an operator with a non-`core` local key would print the plan; we
+have not exercised that path from any developer machine.
+
 ### 2. Then validate the harder cycles
 
 Each of these has a structural unknown the perplexity run can't answer:
@@ -71,3 +97,5 @@ Community-tier models in `text.ts` (provider `community`) have no key to rotate 
 | `rotate-infra-gpu-token.sh` | yes | — |
 | `rotate-genai-azure.sh` | east + sweden yes; safety + all no | safety needs `az account set --subscription <other>` |
 | `rotate-genai-gcp.sh` | yes | authenticates from SOPS via dedicated `key-rotator` SA — no interactive `gcloud auth login` needed |
+| `rotate-infra-sops-ci.sh` | yes (pending first end-to-end run) | — |
+| `rotate-infra-sops-personal.sh` | only for operators whose local key is a personal recipient | today: Itachi only; Elliot/Thomas need `core` identity split first |

@@ -25,6 +25,15 @@ No CI workflows — operators run scripts from their own machine with admin cred
 | `rotate-infra-enter-token.sh` | `PLN_ENTER_TOKEN` | Generates new token → SOPS → GitHub secrets → Wrangler → PR → prod → deploy → health check |
 | `rotate-infra-gpu-token.sh` | `PLN_GPU_TOKEN` | Generates new token → SSH to each GPU worker → SOPS → Wrangler → PR → prod → deploy → health check |
 
+### SOPS encryption keys (operator identities)
+
+| Script | Key | What it does |
+|--------|-----|-------------|
+| `rotate-infra-sops-ci.sh` | `ci` recipient + GH Actions `SOPS_AGE_KEY` | Two-phase: add new age recipient → PR → merge → swap GH secret → trigger staging deploy → verify decrypt step → remove old recipient → PR → merge |
+| `rotate-infra-sops-personal.sh` | Whichever personal recipient matches the operator's local key | Two-phase: add new age recipient → PR → merge → install new private key locally → verify decrypt → remove old recipient → PR → merge. Refuses to run against `core` (shared) or `ci` recipients |
+
+Recipient roles are labelled in `sops-recipients.yaml` (`core`, `itachi`, `ci`) so the rotation scripts know which pubkey corresponds to which identity.
+
 ### GenAI provider keys (external)
 
 | Script | Provider | Rotation strategy | Downtime |
@@ -230,6 +239,43 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Health check | `POST gen.pollinations.ai/v1/audio/speech` (worker calls ElevenLabs) → 200 |
 | Failure handling | On first rotation, old runtime key may be Thomas's personal (not under SA) → skip delete, warn operator to revoke manually |
 | Cleanup | Restore original branch at end |
+
+### `rotate-infra-sops-ci.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | Tools present, gh authed, `.sops.yaml` + `sops-recipients.yaml` readable, labelled `ci` recipient exists in `.sops.yaml`, current `SOPS_AGE_KEY` decrypts, GH Actions secret `SOPS_AGE_KEY` exists on repo |
+| Rotation mechanism | Two-phase with overlap window: Phase 1 adds new pubkey → `sops updatekeys` → PR; Phase 2 swaps GH secret + staging-deploy verify; Phase 3 removes old pubkey → PR |
+| Create-before-delete | ✅ (old recipient stays in `.sops.yaml` until after new key proven in CI) |
+| Branch naming | `rotate/sops-ci-add-new-<timestamp>`, `rotate/sops-ci-remove-old-<timestamp>` |
+| PR body | Mentions automation, phase, and that old key stays valid until next phase |
+| Auto-merge | `gh pr merge --auto --squash` (both PRs) |
+| Merge wait | Poll PR state, 15min timeout per phase |
+| main→production | n/a — this is a CI-identity rotation, not a deploy. Staging deploy is used only to verify the new key decrypts; production unaffected |
+| Deploy wait | `deploy-enter-services.yml` triggered via `workflow_dispatch -f environment=staging` between Phase 1 and Phase 3 |
+| Health check | "Decrypt .env files with SOPS" step green in staging run |
+| Failure handling | Old recipient is still a valid decryptor until Phase 3 — revert GH secret with old key if staging fails, abort before Phase 3 |
+| Cleanup | Shred temp new-key file via EXIT trap; print new private key one last time for the operator to back up |
+
+### `rotate-infra-sops-personal.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | Tools present, gh authed, `.sops.yaml` + `sops-recipients.yaml` readable, exactly one local age private key matches a `.sops.yaml` recipient, matched role is not `core` (shared) and not `ci` (use other script), SOPS files decryptable |
+| Rotation mechanism | Two-phase with overlap window: Phase 1 adds new pubkey → `sops updatekeys` → PR; Phase 2 installs new private key locally + verifies; Phase 3 removes old pubkey → PR |
+| Create-before-delete | ✅ (old recipient stays until operator has confirmed new key works post-merge) |
+| Branch naming | `rotate/sops-personal-<role>-add-<timestamp>`, `rotate/sops-personal-<role>-remove-<timestamp>` |
+| PR body | Mentions automation, phase, new pubkey |
+| Auto-merge | `gh pr merge --auto --squash` (both PRs) |
+| Merge wait | Poll PR state, 15min timeout per phase |
+| main→production | n/a |
+| Deploy wait | n/a (personal identities are not consumed by CI) |
+| Health check | Decrypt smoke test: `sops -d <file>` using only the new private key, between Phases 1 and 3 |
+| Failure handling | Old key still a valid recipient until Phase 3 PR merges — if local key install breaks, roll back by deleting the new key block from `~/.config/sops/age/keys.txt` and keeping old |
+| Cleanup | Append new key to `~/.config/sops/age/keys.txt`, prune old key from same file. If operator uses `SOPS_AGE_KEY` env var, prints manual instructions instead (shell config can't be edited programmatically) |
+| Refuses against | `core` (would invalidate Thomas's access), `ci` (wrong script — use rotate-infra-sops-ci.sh) |
 
 ### `rotate-ops-tinybird.sh`
 

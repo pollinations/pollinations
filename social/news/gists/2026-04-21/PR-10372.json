@@ -1,0 +1,36 @@
+{
+  "pr_number": 10372,
+  "title": "fix(mcp): stop orphan processes from busy-looping on parent exit (Windows)",
+  "author": "Project12x",
+  "url": "https://github.com/pollinations/pollinations/pull/10372",
+  "merged_at": "2026-04-21T07:32:14Z",
+  "labels": [
+    "TEXT",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Exorcising the ghost processes",
+    "blurb": "Fixed a pesky bug where our MCP server would leave behind ghost processes on Windows that chewed up CPU. Your computer's fans can finally take a break!",
+    "summary": "Resolved an issue in the MCP server where orphaned processes on Windows would fail to shut down and consume excessive CPU.",
+    "impact": "Windows users running the Pollinations MCP server will no longer experience runaway background processes eating up their CPU after closing their client.",
+    "keywords": [
+      "mcp",
+      "windows",
+      "bugfix",
+      "performance",
+      "cpu"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot working together to cool down an overheated retro computer tower, turning it back to a healthy state.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sweatband, using a lime green (#ecf874) leaf fan to cool down a chunky retro computer tower. A cute chunky pixel robot with a monitor head gives a thumbs up as the computer cools down. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-21/PR-10372.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sweatband, using a lime green (#ecf874) leaf fan to cool down a chunky retro computer tower. A cute chunky pixel robot with a monitor head gives a thumbs up as the computer cools down. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-04-21T07:33:08.963993+00:00"
+}

@@ -24,9 +24,7 @@ async function resolveAudioModel(requested) {
     if (requested) return requested;
     try {
         const models = await getAudioModels();
-        const tts = models.find((m) =>
-            m.output_modalities?.includes("audio"),
-        );
+        const tts = models.find((m) => m.output_modalities?.includes("audio"));
         return tts?.name || DEFAULT_AUDIO_MODEL;
     } catch {
         return DEFAULT_AUDIO_MODEL;
@@ -186,9 +184,7 @@ async function listAudioVoices(_params) {
                 description: m.description,
                 voices: m.voices,
             }));
-        const allVoices = Array.from(
-            new Set(byModel.flatMap((m) => m.voices)),
-        );
+        const allVoices = Array.from(new Set(byModel.flatMap((m) => m.voices)));
 
         return createMCPResponse([
             createTextContent(

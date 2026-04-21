@@ -151,19 +151,22 @@ export async function chatWithMedia({ model, prompt, mediaType, mediaUrl }) {
             ? { type: "input_audio", input_audio: { url: mediaUrl } }
             : { type: mediaType, [mediaType]: { url: mediaUrl } };
 
-    const response = await fetchWithAuth(`${API_BASE_URL}/v1/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            model,
-            messages: [
-                {
-                    role: "user",
-                    content: [{ type: "text", text: prompt }, mediaBlock],
-                },
-            ],
-        }),
-    });
+    const response = await fetchWithAuth(
+        `${API_BASE_URL}/v1/chat/completions`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model,
+                messages: [
+                    {
+                        role: "user",
+                        content: [{ type: "text", text: prompt }, mediaBlock],
+                    },
+                ],
+            }),
+        },
+    );
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");

@@ -48,7 +48,7 @@ export type TinybirdEvent = {
 
     // Model
     modelRequested?: string | null;
-    resolvedModelRequested?: string;
+    resolvedModelRequested?: string | null;
     modelUsed?: string;
     modelProviderUsed?: string;
     isBilledUsage: boolean;

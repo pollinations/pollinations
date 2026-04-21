@@ -10,8 +10,11 @@ export type ModelVariables = {
     model: {
         /** The model string from the request (before resolution) */
         requested: string;
-        /** The resolved canonical model name */
-        resolved: ModelName;
+        /** The resolved canonical model name, or null if the request could
+         * not be resolved to a model in this endpoint's family. */
+        resolved: ModelName | null;
+        /** Present when resolved is null — the reason resolution failed. */
+        error?: string;
     };
     formData?: FormData;
 };
@@ -27,8 +30,11 @@ const MODEL_REGISTRIES_BY_EVENT_TYPE = {
 } as const;
 
 /**
- * Middleware that extracts, defaults, and resolves the model from the request.
- * Must run before auth and track middlewares.
+ * Extracts the model from the request and tries to resolve it to a canonical
+ * name belonging to the endpoint's family. On failure (unknown alias or
+ * family mismatch) it records the error on c.var.model and continues so that
+ * `track` can still log the malformed request. The `enforceModel` middleware,
+ * which must run after `track`, is what turns the failure into a 400.
  */
 export function resolveModel(
     eventType: EventType,
@@ -71,33 +77,46 @@ export function resolveModel(
                   : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
 
-        // Resolve alias to canonical model name
-        // If resolution fails, throw a 400 error with the original error message
-        let resolved: ModelName;
+        let resolved: ModelName | null = null;
+        let error: string | undefined;
+
         try {
-            resolved = resolveModelName(model);
-        } catch (error) {
-            throw new HTTPException(400, {
-                message:
-                    error instanceof Error
-                        ? error.message
-                        : `Invalid model: ${model}`,
-            });
+            const candidate = resolveModelName(model);
+            if (
+                Object.hasOwn(
+                    MODEL_REGISTRIES_BY_EVENT_TYPE[eventType],
+                    candidate,
+                )
+            ) {
+                resolved = candidate;
+            } else {
+                error = `Model "${candidate}" is not valid for this endpoint.`;
+            }
+        } catch (err) {
+            error =
+                err instanceof Error ? err.message : `Invalid model: ${model}`;
         }
 
-        if (
-            !Object.hasOwn(MODEL_REGISTRIES_BY_EVENT_TYPE[eventType], resolved)
-        ) {
-            throw new HTTPException(400, {
-                message: `Model "${resolved}" is not valid for this endpoint.`,
-            });
-        }
-
-        c.set("model", {
-            requested: model,
-            resolved,
-        });
+        c.set("model", { requested: model, resolved, error });
 
         await next();
     });
 }
+
+/**
+ * Rejects requests whose model could not be resolved for the endpoint's
+ * family. Registered AFTER `track` so the rejected request is logged to
+ * Tinybird before the 400 propagates. The Tinybird row carries
+ * `resolvedModelRequested: null`, which the datasource schema coerces to the
+ * literal string 'undefined' — the existing "gateway-health" bucket.
+ */
+export const enforceModel = () =>
+    createMiddleware<{ Variables: ModelVariables }>(async (c, next) => {
+        const model = c.var.model;
+        if (model.resolved === null) {
+            throw new HTTPException(400, {
+                message: model.error ?? `Invalid model: ${model.requested}`,
+            });
+        }
+        await next();
+    });

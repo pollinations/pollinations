@@ -172,8 +172,14 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
     }, [aggregationWindow]);
 
-    // Separate gateway stats (undefined model = auth/validation failures before model resolution)
-    const gatewayStats = healthStats.filter((s) => s.model === "undefined");
+    // Separate gateway stats: rows with no resolved model. These are the
+    // family-mismatch / invalid-model requests rejected before the endpoint
+    // could resolve them to a model (see enforceModel middleware). Comment
+    // below keeps the name short — the actual 401/402/403 flows happen
+    // further down the middleware stack and stay on per-model rows.
+    const gatewayStats = healthStats
+        .filter((s) => s.model === "undefined")
+        .map(enrichStats);
     const modelStats = healthStats.filter((s) => s.model !== "undefined");
 
     // Get history and compute trends for a model

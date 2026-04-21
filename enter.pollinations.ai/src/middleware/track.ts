@@ -61,9 +61,9 @@ export type ModelUsage = {
 
 type RequestTrackingData = {
     modelRequested: string | null;
-    resolvedModelRequested: ModelName;
+    resolvedModelRequested: ModelName | null;
     modelProvider?: string;
-    modelPriceDefinition: PriceDefinition;
+    modelPriceDefinition?: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
 };
@@ -83,7 +83,7 @@ type ResponseTrackingData = {
 export type TrackVariables = {
     track: {
         modelRequested: string | null;
-        resolvedModelRequested: ModelName;
+        resolvedModelRequested: ModelName | null;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
     };
@@ -148,102 +148,119 @@ export const track = (eventType: EventType) =>
             },
         });
 
-        await next();
+        try {
+            await next();
+        } finally {
+            // Always run tracking — including for downstream middlewares
+            // (e.g. enforceModel) that throw a 400 after setup. Hono's
+            // onError populates c.res with the error response before control
+            // returns here.
+            const endTime = new Date();
 
-        const endTime = new Date();
+            c.executionCtx.waitUntil(
+                (async () => {
+                    const response = responseOverride || c.res.clone();
+                    const responseTracking = await trackResponse(
+                        eventType,
+                        requestTracking,
+                        response,
+                    );
 
-        c.executionCtx.waitUntil(
-            (async () => {
-                const response = responseOverride || c.res.clone();
-                const responseTracking = await trackResponse(
-                    eventType,
-                    requestTracking,
-                    response,
-                );
+                    // register pollen consumption with rate limiter
+                    await c.var.frontendKeyRateLimit?.consumePollen(
+                        responseTracking.price?.totalPrice || 0,
+                    );
 
-                // register pollen consumption with rate limiter
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.price?.totalPrice || 0,
-                );
+                    // Capture balance tracking AFTER next() so balanceCheckResult is set
+                    const balanceTracking = {
+                        selectedMeterId:
+                            c.var.balance.balanceCheckResult?.selectedMeterId,
+                        selectedMeterSlug:
+                            c.var.balance.balanceCheckResult?.selectedMeterSlug,
+                        balances:
+                            c.var.balance.balanceCheckResult?.balances || {},
+                    } satisfies BalanceData;
 
-                // Capture balance tracking AFTER next() so balanceCheckResult is set
-                const balanceTracking = {
-                    selectedMeterId:
-                        c.var.balance.balanceCheckResult?.selectedMeterId,
-                    selectedMeterSlug:
-                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
-                    balances: c.var.balance.balanceCheckResult?.balances || {},
-                } satisfies BalanceData;
+                    const ipHash = await hashIp(
+                        clientIp,
+                        c.env.BETTER_AUTH_SECRET,
+                    );
 
-                const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
+                    const finalEvent = createTrackingEvent({
+                        id: generateRandomId(),
+                        requestId: c.get("requestId"),
+                        requestPath: `${routePath(c)}`,
+                        startTime,
+                        endTime,
+                        environment: c.env.ENVIRONMENT,
+                        eventType,
+                        ipSubnet,
+                        ipHash,
+                        userTracking,
+                        balanceTracking,
+                        requestTracking,
+                        responseTracking,
+                        errorTracking: collectErrorData(
+                            response,
+                            c.get("error"),
+                        ),
+                    });
 
-                const finalEvent = createTrackingEvent({
-                    id: generateRandomId(),
-                    requestId: c.get("requestId"),
-                    requestPath: `${routePath(c)}`,
-                    startTime,
-                    endTime,
-                    environment: c.env.ENVIRONMENT,
-                    eventType,
-                    ipSubnet,
-                    ipHash,
-                    userTracking,
-                    balanceTracking,
-                    requestTracking,
-                    responseTracking,
-                    errorTracking: collectErrorData(response, c.get("error")),
-                });
+                    log.trace(
+                        [
+                            "Tracking event:",
+                            "  isBilledUsage={event.isBilledUsage}",
+                            "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
+                            "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
+                            '  selectedMeterSlug="{event.selectedMeterSlug}"',
+                            "  totalCost={event.totalCost}",
+                            "  totalPrice={event.totalPrice}",
+                        ].join("\n"),
+                        { event: finalEvent },
+                    );
 
-                log.trace(
-                    [
-                        "Tracking event:",
-                        "  isBilledUsage={event.isBilledUsage}",
-                        "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
-                        "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
-                        '  selectedMeterSlug="{event.selectedMeterSlug}"',
-                        "  totalCost={event.totalCost}",
-                        "  totalPrice={event.totalPrice}",
-                    ].join("\n"),
-                    { event: finalEvent },
-                );
+                    await sendToTinybird(
+                        finalEvent,
+                        c.env.TINYBIRD_INGEST_URL,
+                        c.env.TINYBIRD_INGEST_TOKEN,
+                        log,
+                    );
 
-                await sendToTinybird(
-                    finalEvent,
-                    c.env.TINYBIRD_INGEST_URL,
-                    c.env.TINYBIRD_INGEST_TOKEN,
-                    log,
-                );
-
-                // Handle balance deduction for both API keys and users
-                await handleBalanceDeduction({
-                    db,
-                    isBilledUsage: responseTracking.isBilledUsage,
-                    totalPrice: responseTracking.price?.totalPrice,
-                    userId: userTracking.userId,
-                    apiKeyId: c.var.auth?.apiKey?.id,
-                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                    modelResolved: c.var.model?.resolved,
-                });
-            })(),
-        );
+                    // Handle balance deduction for both API keys and users
+                    await handleBalanceDeduction({
+                        db,
+                        isBilledUsage: responseTracking.isBilledUsage,
+                        totalPrice: responseTracking.price?.totalPrice,
+                        userId: userTracking.userId,
+                        apiKeyId: c.var.auth?.apiKey?.id,
+                        apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                        modelResolved: c.var.model?.resolved,
+                    });
+                })(),
+            );
+        }
     });
 
 async function trackRequest(
     modelInfo: ModelVariables["model"],
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
-    // Model is already resolved by the resolveModel middleware
     const modelRequested = modelInfo.requested;
     const resolvedModelRequested = modelInfo.resolved;
 
-    const modelProvider = getModelDefinition(resolvedModelRequested).provider;
-    const modelPriceDefinition = getActivePriceDefinition(
-        resolvedModelRequested,
-    );
-    if (!modelPriceDefinition) {
-        throw new Error(
-            `Failed to get price definition for model: ${resolvedModelRequested}`,
-        );
+    // When resolved is null (enforceModel will 400), skip provider/price
+    // lookups — the request never reaches a model and isn't billed.
+    let modelProvider: string | undefined;
+    let modelPriceDefinition: PriceDefinition | undefined;
+    if (resolvedModelRequested !== null) {
+        modelProvider = getModelDefinition(resolvedModelRequested).provider;
+        modelPriceDefinition =
+            getActivePriceDefinition(resolvedModelRequested) ?? undefined;
+        if (!modelPriceDefinition) {
+            throw new Error(
+                `Failed to get price definition for model: ${resolvedModelRequested}`,
+            );
+        }
     }
     const streamRequested = await extractStreamRequested(request);
     const referrerData = extractReferrerHeader(request);
@@ -266,7 +283,8 @@ async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
-    if (!response.ok || cacheInfo.cacheHit) {
+    // Unresolved (enforceModel 400) or non-2xx: nothing to bill or parse.
+    if (!response.ok || cacheInfo.cacheHit || resolvedModelRequested === null) {
         return {
             responseOk: response.ok,
             responseStatus: response.status,

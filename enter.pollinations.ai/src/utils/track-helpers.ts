@@ -20,7 +20,7 @@ interface DeductionParams {
     userId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
-    modelResolved?: string;
+    modelResolved?: string | null;
 }
 
 /**
@@ -81,7 +81,7 @@ async function deductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
-    modelResolved?: string,
+    modelResolved?: string | null,
 ): Promise<void> {
     try {
         const isPaidOnly = modelResolved

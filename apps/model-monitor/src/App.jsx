@@ -273,56 +273,44 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
 }
 
 // ── Gateway health ───────────────────────────────────────────────────
-
+//
+// Shows requests that were rejected at the gateway before a model could be
+// resolved for the endpoint's family — these carry resolved_model_requested
+// = null (coerced to 'undefined' at ingest). This is the "family-mismatch"
+// bucket: e.g. `gptimage` sent to `/v1/chat/completions`. Auth/billing
+// failures (401/402/403) are NOT here — they happen after model resolution
+// and stay on the per-model rows.
 function GatewayHealth({ stats }) {
     if (!stats || stats.length === 0) return null;
 
-    const totals = stats.reduce(
-        (acc, s) => ({
-            requests: acc.requests + (s.total_requests || 0),
-            err400: acc.err400 + (s.errors_400 || 0),
-            err401: acc.err401 + (s.errors_401 || 0),
-            err402: acc.err402 + (s.errors_402 || 0),
-            err403: acc.err403 + (s.errors_403 || 0),
-            err429: acc.err429 + (s.errors_429 || 0),
-            err4xxOther: acc.err4xxOther + (s.errors_4xx_other || 0),
-        }),
-        {
-            requests: 0,
-            err400: 0,
-            err401: 0,
-            err402: 0,
-            err403: 0,
-            err429: 0,
-            err4xxOther: 0,
-        },
-    );
+    const byEndpoint = new Map();
+    let totalRequests = 0;
+    let total4xx = 0;
 
-    if (totals.requests === 0) return null;
+    for (const row of stats) {
+        const requests = row.total_requests || 0;
+        const err4xx = row.total_4xx || 0;
+        if (requests === 0) continue;
 
-    const total4xx =
-        totals.err400 +
-        totals.err401 +
-        totals.err402 +
-        totals.err403 +
-        totals.err429 +
-        totals.err4xxOther;
+        const family = row.event_type?.replace("generate.", "") || "unknown";
+        const existing = byEndpoint.get(family) || { requests: 0, err4xx: 0 };
+        existing.requests += requests;
+        existing.err4xx += err4xx;
+        byEndpoint.set(family, existing);
+
+        totalRequests += requests;
+        total4xx += err4xx;
+    }
+
     if (total4xx === 0) return null;
 
-    const fmtPct = (n) => {
-        const p = totals.requests > 0 ? (n / totals.requests) * 100 : 0;
-        if (p === 0) return "0%";
-        return p < 1 ? `${p.toFixed(1)}%` : `${Math.round(p)}%`;
-    };
-
-    const errors = [
-        { code: "400", count: totals.err400, label: "Bad Request" },
-        { code: "401", count: totals.err401, label: "No API Key" },
-        { code: "402", count: totals.err402, label: "Billing" },
-        { code: "403", count: totals.err403, label: "Access Denied" },
-        { code: "429", count: totals.err429, label: "Rate Limited" },
-        { code: "4xx", count: totals.err4xxOther, label: "Other" },
-    ].filter((e) => e.count > 0);
+    const pct = totalRequests > 0 ? (total4xx / totalRequests) * 100 : 0;
+    const fmtPct =
+        pct === 0
+            ? "0%"
+            : pct < 1
+              ? `${pct.toFixed(1)}%`
+              : `${Math.round(pct)}%`;
 
     return (
         <div className="bg-tan border-r-4 border-b-4 border-border overflow-hidden">
@@ -330,32 +318,33 @@ function GatewayHealth({ stats }) {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-dark">
-                            Auth & Validation
+                            Unresolved Model Requests
                         </span>
                         <span className="text-[10px] text-dark bg-cream px-1.5 py-0.5 border border-dark font-bold">
-                            {fmtPct(total4xx)} rejected
+                            {total4xx} × 400
                         </span>
                     </div>
                     <span className="text-xs text-muted">
-                        {totals.requests} unresolved
+                        {fmtPct} of {totalRequests} gateway-rejected
                     </span>
                 </div>
             </div>
             <div className="px-4 py-2 flex flex-wrap gap-3">
-                {errors.map(({ code, count, label }) => (
-                    <div
-                        key={code}
-                        className="flex items-center gap-2 bg-cream border border-border px-2 py-1"
-                    >
-                        <span className="text-xs font-mono font-bold text-dark">
-                            {code}
-                        </span>
-                        <span className="text-xs font-bold text-muted">
-                            {fmtPct(count)}
-                        </span>
-                        <span className="text-[10px] text-subtle">{label}</span>
-                    </div>
-                ))}
+                {Array.from(byEndpoint.entries())
+                    .sort((a, b) => b[1].err4xx - a[1].err4xx)
+                    .map(([family, counts]) => (
+                        <div
+                            key={family}
+                            className="flex items-center gap-2 bg-cream border border-border px-2 py-1"
+                        >
+                            <span className="text-xs font-mono font-bold text-dark">
+                                generate.{family}
+                            </span>
+                            <span className="text-xs font-bold text-muted">
+                                {counts.err4xx} × 400
+                            </span>
+                        </div>
+                    ))}
             </div>
         </div>
     );

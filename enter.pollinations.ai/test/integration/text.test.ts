@@ -304,25 +304,30 @@ test(
     { timeout: 30000 },
     async ({ paidApiKey, mocks }) => {
         await mocks.enable("polar", "tinybird");
-        const response = await SELF.fetch(
-            "http://localhost:3000/api/generate/v1/chat/completions",
-            {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "authorization": `Bearer ${paidApiKey}`,
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "http://localhost:3000/api/generate/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${paidApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gptimage",
+                        messages: [
+                            {
+                                role: "user",
+                                content: TEST_MESSAGE_CONTENT,
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
                 },
-                body: JSON.stringify({
-                    model: "gptimage",
-                    messages: [
-                        {
-                            role: "user",
-                            content: TEST_MESSAGE_CONTENT,
-                        },
-                    ],
-                    seed: testSeed(),
-                }),
-            },
+            ),
+            env,
+            ctx,
         );
 
         expect(response.status).toBe(400);
@@ -332,7 +337,20 @@ test(
         expect(error.error.message).toBe(
             'Model "gptimage" is not valid for this endpoint.',
         );
-        expect(mocks.tinybird.state.events).toHaveLength(0);
+
+        await waitOnExecutionContext(ctx);
+
+        // Family-mismatch should still land in Tinybird so we can see which
+        // apps are sending wrong models to wrong endpoints. resolved_model is
+        // stripped from the payload (the datasource DEFAULT coerces it to
+        // the 'undefined' bucket used by the gateway-health panel).
+        const events = mocks.tinybird.state.events;
+        expect(events).toHaveLength(1);
+        expect(events[0].eventType).toBe("generate.text");
+        expect(events[0].modelRequested).toBe("gptimage");
+        expect(events[0].resolvedModelRequested).toBeUndefined();
+        expect(events[0].responseStatus).toBe(400);
+        expect(events[0].isBilledUsage).toBe(false);
     },
 );
 

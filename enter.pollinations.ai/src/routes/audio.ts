@@ -20,7 +20,7 @@ import {
 } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import { resolveModel } from "@/middleware/model.ts";
+import { enforceModel, resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
@@ -593,6 +593,7 @@ export const audioRoutes = new Hono<Env>()
         validator("json", CreateSpeechRequestSchema),
         resolveModel("generate.audio"),
         track("generate.audio"),
+        enforceModel(),
         async (c) => {
             const log = c.get("log").getChild("tts");
             await requireGenerationAccess(c.var, c.env);
@@ -728,6 +729,7 @@ export const audioRoutes = new Hono<Env>()
             defaultModel: "whisper-large-v3",
         }),
         track("generate.audio"),
+        enforceModel(),
         async (c) => {
             const log = c.get("log").getChild("transcription");
             await requireGenerationAccess(c.var, c.env);
@@ -811,7 +813,7 @@ export const audioRoutes = new Hono<Env>()
             const responseBody = await response.text();
             const duration = extractWhisperUsage(responseBody, log);
             const usageHeaders = buildUsageHeaders(
-                c.var.model.resolved,
+                c.var.model.resolved as string,
                 createAudioSecondsUsage(duration),
             );
 

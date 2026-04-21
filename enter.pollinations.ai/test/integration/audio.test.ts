@@ -1,8 +1,14 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
+import worker from "@/index.ts";
 import { test } from "../fixtures.ts";
 
 type AudioChatCompletionResponse = {
@@ -83,14 +89,19 @@ describe("ElevenLabs TTS", () => {
         { timeout: 30000 },
         async ({ paidApiKey, mocks }) => {
             await mocks.enable("polar", "tinybird");
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/generate/audio/Hello%20world?model=openai-audio&voice=alloy",
-                {
-                    method: "GET",
-                    headers: {
-                        authorization: `Bearer ${paidApiKey}`,
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "http://localhost:3000/api/generate/audio/Hello%20world?model=openai-audio&voice=alloy",
+                    {
+                        method: "GET",
+                        headers: {
+                            authorization: `Bearer ${paidApiKey}`,
+                        },
                     },
-                },
+                ),
+                env,
+                ctx,
             );
 
             expect(response.status).toBe(400);
@@ -100,7 +111,16 @@ describe("ElevenLabs TTS", () => {
             expect(body.error.message).toBe(
                 'Model "openai-audio" is not valid for this endpoint.',
             );
-            expect(mocks.tinybird.state.events).toHaveLength(0);
+
+            await waitOnExecutionContext(ctx);
+
+            const events = mocks.tinybird.state.events;
+            expect(events).toHaveLength(1);
+            expect(events[0].eventType).toBe("generate.audio");
+            expect(events[0].modelRequested).toBe("openai-audio");
+            expect(events[0].resolvedModelRequested).toBeUndefined();
+            expect(events[0].responseStatus).toBe(400);
+            expect(events[0].isBilledUsage).toBe(false);
         },
     );
 
@@ -376,15 +396,20 @@ describe("Whisper Transcription", () => {
             );
             formData.append("model", "openai-audio");
 
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/generate/v1/audio/transcriptions",
-                {
-                    method: "POST",
-                    headers: {
-                        authorization: `Bearer ${paidApiKey}`,
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "http://localhost:3000/api/generate/v1/audio/transcriptions",
+                    {
+                        method: "POST",
+                        headers: {
+                            authorization: `Bearer ${paidApiKey}`,
+                        },
+                        body: formData,
                     },
-                    body: formData,
-                },
+                ),
+                env,
+                ctx,
             );
 
             expect(response.status).toBe(400);
@@ -394,7 +419,16 @@ describe("Whisper Transcription", () => {
             expect(body.error.message).toBe(
                 'Model "openai-audio" is not valid for this endpoint.',
             );
-            expect(mocks.tinybird.state.events).toHaveLength(0);
+
+            await waitOnExecutionContext(ctx);
+
+            const events = mocks.tinybird.state.events;
+            expect(events).toHaveLength(1);
+            expect(events[0].eventType).toBe("generate.audio");
+            expect(events[0].modelRequested).toBe("openai-audio");
+            expect(events[0].resolvedModelRequested).toBeUndefined();
+            expect(events[0].responseStatus).toBe(400);
+            expect(events[0].isBilledUsage).toBe(false);
         },
     );
 });

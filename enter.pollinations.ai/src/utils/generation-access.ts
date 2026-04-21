@@ -20,12 +20,15 @@ export async function checkBalance(
 ): Promise<void> {
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
+    // enforceModel guarantees resolved is non-null by the time we reach here.
+    const { resolved } = model;
+    if (!resolved) return;
 
-    const serviceDefinition = getModelDefinition(model.resolved);
+    const serviceDefinition = getModelDefinition(resolved);
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 
     const stats = await getModelStats(env.KV, log);
-    let estimatedCost = getEstimatedPrice(stats, model.resolved);
+    let estimatedCost = getEstimatedPrice(stats, resolved);
 
     if (estimatedCost > 5) {
         log.warn(

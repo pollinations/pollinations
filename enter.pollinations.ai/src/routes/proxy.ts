@@ -4,7 +4,7 @@ import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
-import { resolveModel } from "@/middleware/model.ts";
+import { enforceModel, resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
@@ -77,6 +77,7 @@ const factory = createFactory<Env>();
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
     track("generate.image"),
+    enforceModel(),
     async (c) => {
         const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
@@ -127,6 +128,7 @@ const chatCompletionHandlers = factory.createHandlers(
     validator("json", CreateChatCompletionRequestSchema),
     resolveModel("generate.text"),
     track("generate.text"),
+    enforceModel(),
     async (c) => {
         const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
@@ -509,6 +511,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
         track("generate.text"),
+        enforceModel(),
         async (c) => {
             const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
@@ -516,8 +519,8 @@ export const proxyRoutes = new Hono<Env>()
             c.var.auth.requireKeyBudget();
             await checkBalance(c.var, c.env);
 
-            // Use resolved model from middleware
-            const model = c.var.model.resolved;
+            // Use resolved model from middleware (enforceModel guarantees non-null)
+            const model = c.var.model.resolved as string;
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -738,6 +741,7 @@ export const proxyRoutes = new Hono<Env>()
         ),
         resolveModel("generate.audio"),
         track("generate.audio"),
+        enforceModel(),
         async (c) => {
             const log = c.get("log").getChild("generate");
             await requireGenerationAccess(c.var, c.env);
@@ -820,6 +824,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
+        enforceModel(),
         handleImageGeneration(checkBalance, proxyHeaders),
     )
     .post(
@@ -849,6 +854,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         resolveModel("generate.image"),
         track("generate.image"),
+        enforceModel(),
         handleImageEdit(checkBalance, proxyHeaders),
     );
 

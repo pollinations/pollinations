@@ -172,7 +172,7 @@ export const auth = (options: AuthOptions) =>
             if (!apiKey || !apiKey.permissions?.models) return;
 
             const model = c.var.model;
-            if (!model) return;
+            if (!model?.resolved) return;
 
             if (!apiKey.permissions.models.includes(model.resolved)) {
                 throw new HTTPException(403, {

@@ -5,16 +5,15 @@
  * Supports image, video, text, and audio generation via gen.pollinations.ai
  */
 
+import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import player from "play-sound";
-import { pathToFileURL } from "node:url";
-
+import { audioTools } from "./services/audioService.js";
+import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
-import { audioTools } from "./services/audioService.js";
-import { authTools } from "./services/authService.js";
 
 // Combine all tools
 const allTools = [...imageTools, ...textTools, ...audioTools, ...authTools];
@@ -161,6 +160,9 @@ export async function startMcpServer() {
 // Only start the server when this module is the Node entry point.
 // The bin wrapper (pollinations-mcp.js) imports startMcpServer and calls
 // it explicitly; an unconditional call here would start a second instance.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+    process.argv[1] &&
+    import.meta.url === pathToFileURL(process.argv[1]).href
+) {
     startMcpServer();
 }

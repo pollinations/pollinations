@@ -1,40 +1,53 @@
 # @pollinations_ai/skills
 
-Shared, agent-agnostic skills for Pollinations. Each subdirectory is a self-contained skill: a `SKILL.md` describing when and how to use it, plus any supporting scripts.
+Curated, agent-agnostic skills for working with Pollinations from *outside* the Pollinations team. Each subdirectory is a self-contained skill: a `SKILL.md` in the open format, plus any supporting scripts.
 
-## Why this folder exists
+## What belongs here
 
-Skills under `.claude/skills/` are only discoverable by Claude Code. The skills here follow the same `SKILL.md` format but have no dependency on any specific agent harness — they wrap public Pollinations APIs or generic dev tooling, so any agent that understands SKILL.md can consume them.
+A skill lives in `packages/skills/` only if **both** are true:
 
-Pollinations-internal or Claude-Code-harness-specific skills (tier management, Tinybird deploys, permission-prompt tuning, etc.) stay under `.claude/skills/`. The agent-agnostic ones live here and are symlinked back into `.claude/skills/` so Claude Code keeps finding them.
+1. It helps agents working with the Pollinations public ecosystem (our API, our CLIs, our docs).
+2. It is valuable to an agent **outside the Pollinations team** — working on its own project or helping its own user.
+
+This is not a general Claude skills dump, and it is not a mirror of everything in `.claude/skills/`. The bar is deliberately high so that a non-Claude agent pointed at this folder gets a tight, high-signal set.
+
+Everything else that helps Pollinations — Claude-Code-harness-specific skills (hooks, settings.json, permission tuning) *and* Pollinations-team-internal workflows (issue conventions, tier management, Tinybird deploys, app-review pipelines, API probes against our own infra) — lives under `.claude/skills/`, which is where the team runs day-to-day.
+
+Skills can move between the two folders as the criterion becomes clearer. Moving a skill from `packages/skills/` → `.claude/skills/` is not a regression — it is curation.
 
 ## Layout
 
 ```
 packages/skills/
   <skill-name>/
-    SKILL.md          # frontmatter + prose
+    SKILL.md          # required — frontmatter + prose
     scripts/ …        # optional supporting scripts
     example/ …        # optional examples
 ```
 
-`SKILL.md` frontmatter:
+`SKILL.md` frontmatter (open format, also consumed by Claude Code, Cursor, Cline, Codex, Gemini, etc.):
 
 ```yaml
 ---
-name: <skill-name>
-description: <one sentence: what it does and when to use it>
+name: <skill-name>                  # must match directory name
+description: <one sentence: what it does AND when to use it — this is the trigger>
 allowed-tools: <optional, agent-specific>
 ---
 ```
 
 ## Consuming from another agent
 
-- **Claude Code** — already works via the symlinks in `.claude/skills/`.
-- **Other harnesses** — point your skill-loader at `packages/skills/` (or a specific subdirectory). The SKILL.md format is the contract; no runtime coupling.
+- **Claude Code** — the team's primary harness; discovers these via symlinks at `.claude/skills/<name>` pointing back into this folder.
+- **Other harnesses** (Cursor, Cline, Codex, custom) — point your skill-loader at `packages/skills/` directly, or pick individual subdirectories. The SKILL.md format is the contract; no runtime coupling to any harness.
 
 ## Adding a new skill
 
+Before adding anything, apply the criterion above. If the skill is really about *our* team's internal workflow (even if mechanically written as a bash script), it belongs in `.claude/skills/`.
+
+If it passes:
+
 1. Create `packages/skills/<your-skill>/SKILL.md` with the frontmatter above.
-2. If Claude Code should also pick it up, add a symlink: `ln -s ../../packages/skills/<your-skill> .claude/skills/<your-skill>`.
-3. Keep the skill agent-agnostic: wrap public CLIs/APIs, avoid harness-specific features (hooks, settings.json, keybindings). If it needs those, it belongs in `.claude/skills/` instead.
+2. Symlink back for Claude Code: `ln -s ../../packages/skills/<your-skill> .claude/skills/<your-skill>`.
+3. Verify: `ls -la .claude/skills/<your-skill>` shows the symlink resolving.
+
+The `skill-creator` skill (in `.claude/skills/`) has the full recipe.

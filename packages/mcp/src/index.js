@@ -5,15 +5,15 @@
  * Supports image, video, text, and audio generation via gen.pollinations.ai
  */
 
+import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import player from "play-sound";
-
+import { audioTools } from "./services/audioService.js";
+import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
-import { audioTools } from "./services/audioService.js";
-import { authTools } from "./services/authService.js";
 
 // Combine all tools
 const allTools = [...imageTools, ...textTools, ...audioTools, ...authTools];
@@ -122,13 +122,28 @@ export async function startMcpServer() {
             console.error(`Server error: ${error.message}`);
         };
 
+        // Exit the process if we reach uncaughtException — by definition the
+        // program is already in an unknown state, and the existing log-only
+        // handler left a dead event loop running on orphan.
         process.on("uncaughtException", (error) => {
             console.error(`Uncaught exception: ${error.message}`);
+            process.exit(1);
         });
 
         process.on("unhandledRejection", (reason) => {
             console.error(`Unhandled rejection: ${reason}`);
         });
+
+        // Handle graceful shutdown. Register BEFORE connect so an early
+        // disconnect during startup is still observed.
+        process.on("SIGINT", () => process.exit(0));
+        process.on("SIGTERM", () => process.exit(0));
+
+        // Windows does not deliver SIGTERM when the MCP client exits.
+        // stdin `close` fires whenever the parent's end of the pipe goes
+        // away (graceful EOF or abrupt fd close), so it's the reliable
+        // one-stop signal that the client is gone.
+        process.stdin.on("close", () => process.exit(0));
 
         // Create and connect STDIO transport
         const transport = new StdioServerTransport();
@@ -136,15 +151,18 @@ export async function startMcpServer() {
 
         console.error("Pollinations MCP Server v2.0.0 running on stdio");
         console.error("API: https://gen.pollinations.ai");
-
-        // Handle graceful shutdown
-        process.on("SIGINT", () => process.exit(0));
-        process.on("SIGTERM", () => process.exit(0));
     } catch (error) {
         console.error(`Failed to start MCP server: ${error.message}`);
         process.exit(1);
     }
 }
 
-// Start the server
-startMcpServer();
+// Only start the server when this module is the Node entry point.
+// The bin wrapper (pollinations-mcp.js) imports startMcpServer and calls
+// it explicitly; an unconditional call here would start a second instance.
+if (
+    process.argv[1] &&
+    import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+    startMcpServer();
+}

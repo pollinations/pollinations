@@ -43,7 +43,6 @@ const OPENCODE_CONFIG = {
                 "claude": {
                     "name": "Anthropic Claude Haiku 4.6",
                 },
-                "claude-legacy": { "name": "Anthropic Claude Opus 4.5" },
                 "claude-fast": { "name": "Anthropic Claude Haiku 4.5" },
                 "openai-large": {
                     "name": "GPT-5.4 - Strategic Reasoning (Oracle)",

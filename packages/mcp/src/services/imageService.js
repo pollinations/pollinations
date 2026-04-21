@@ -10,7 +10,12 @@ import {
     createTextContent,
     fetchBinaryWithAuth,
 } from "../utils/coreUtils.js";
-import { getImageModels, validateImageModel } from "../utils/models.js";
+import {
+    getImageModels,
+    getVideoModels,
+    validateImageModel,
+    validateVideoModel,
+} from "../utils/models.js";
 
 function buildQueryParams(params) {
     const result = {};
@@ -339,13 +344,11 @@ async function generateVideo(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    const videoModels = ["veo", "seedance", "seedance-pro"];
-    if (!videoModels.includes(model)) {
+    const validation = await validateVideoModel(model);
+    if (!validation.valid) {
         throw new Error(
-            `Invalid video model "${model}". Available video models: ${videoModels.join(", ")}\n` +
-                `- veo: text-to-video, 4/6/8 seconds, supports audio\n` +
-                `- seedance: text/image-to-video, 2-10 seconds\n` +
-                `- seedance-pro: text/image-to-video, 2-10 seconds, better quality`,
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available video models.`,
         );
     }
 
@@ -439,10 +442,11 @@ async function generateVideoUrl(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    const videoModels = ["veo", "seedance", "seedance-pro"];
-    if (!videoModels.includes(model)) {
+    const validation = await validateVideoModel(model);
+    if (!validation.valid) {
         throw new Error(
-            `Invalid video model "${model}". Available video models: ${videoModels.join(", ")}`,
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available video models.`,
         );
     }
 
@@ -665,15 +669,15 @@ async function analyzeVideo(params) {
 
 async function listImageModels(_params) {
     try {
-        const models = await getImageModels();
+        const [models, videoModels] = await Promise.all([
+            getImageModels(),
+            getVideoModels(),
+        ]);
 
         const imageOnlyModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("image") &&
                 !m.output_modalities?.includes("video"),
-        );
-        const videoModels = models.filter((m) =>
-            m.output_modalities?.includes("video"),
         );
         const imageToImageModels = models.filter((m) =>
             m.input_modalities?.includes("image"),

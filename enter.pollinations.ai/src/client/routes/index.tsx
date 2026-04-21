@@ -216,30 +216,24 @@ function RouteComponent() {
             render: () => (
                 <div className="flex flex-col gap-6">
                     <NewsBanner />
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-4 text-sm text-stone-600">
                         <a
                             href="https://discord.gg/pollinations-ai-885844321461485618"
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors no-underline"
                         >
-                            💬 Join Discord
+                            💬 Discord
                         </a>
                         <a
                             href="https://github.com/pollinations/pollinations"
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900 text-white text-sm font-medium hover:bg-stone-700 transition-colors no-underline"
                         >
                             ⭐ GitHub
                         </a>
-                        <a
-                            href="/api/docs"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-stone-300 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors no-underline"
-                        >
-                            📖 API Docs
-                        </a>
+                        <a href="/api/docs">📖 API Docs</a>
                     </div>
+                    <FAQ />
                 </div>
             ),
         },
@@ -349,12 +343,6 @@ function RouteComponent() {
                     cryptoBalance={cryptoBalance}
                 />
             ),
-        },
-        {
-            key: "faq",
-            emoji: "❓",
-            label: "FAQ",
-            render: () => <FAQ />,
         },
     ];
 

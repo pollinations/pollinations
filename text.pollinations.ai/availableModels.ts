@@ -148,6 +148,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
     },
     {
+        name: "kimi-k2.6",
+        config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
+    },
+    {
         name: "gemini-large",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(

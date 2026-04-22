@@ -1,0 +1,34 @@
+{
+  "pr_number": 10308,
+  "title": "fix(gptimage): remap Azure 403 to 502",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10308",
+  "merged_at": "2026-04-22T04:54:58Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Blame the gateway, not the user",
+    "blurb": "We fixed a sneaky bug where Azure's internal blocks were returning a 403 error, making it look like you did something wrong. It now correctly returns a 502 Bad Gateway so you know it's an upstream hiccup.",
+    "summary": "Remaps Azure's 403 errors for gptimage to 502 Bad Gateway so clients correctly identify upstream blocks rather than client-side authentication issues.",
+    "impact": "Developers will now receive a 502 status code instead of a 403 when Azure blocks an image generation request, making debugging much clearer.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "azure",
+      "gptimage",
+      "bug-fix"
+    ],
+    "visual_concept": "The Nomnom creature eating a bad '403' error log while the bee mascot happily holds up a shiny new '502' sign. Represents fixing the error code routing.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a red '403' error document while the cute bee mascot holds up a shiny new '502' sign. A retro server rack glows softly in the background. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-22/PR-10308.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a red '403' error document while the cute bee mascot holds up a shiny new '502' sign. A retro server rack glows softly in the background. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-04-22T04:55:47.132238+00:00"
+}

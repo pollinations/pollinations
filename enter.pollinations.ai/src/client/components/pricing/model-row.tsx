@@ -137,7 +137,10 @@ export const ModelRow: FC<ModelRowProps> = ({
     ]);
 
     const copyModelName = async () => {
-        await navigator.clipboard.writeText(publicModelName);
+        // Copy the registry key (model.name), not the display name — the display
+        // name is often a provider-internal string (e.g. "flux-schnell") that
+        // isn't a valid model or alias and would 404 in API requests.
+        await navigator.clipboard.writeText(model.name);
         setCopied(true);
         setTimeout(() => setCopied(false), 900);
     };

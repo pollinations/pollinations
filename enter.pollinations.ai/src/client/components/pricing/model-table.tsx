@@ -266,7 +266,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
     const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
-        await navigator.clipboard.writeText(publicModelName);
+        // Copy the registry key, not the display name — see model-row.tsx.
+        await navigator.clipboard.writeText(model.name);
         setCopied(true);
         setTimeout(() => setCopied(false), 900);
     };

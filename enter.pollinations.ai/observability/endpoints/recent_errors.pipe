@@ -1,0 +1,35 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Recent server errors (5xx/upstream) for the last N hours. Agent-queryable rolling window.
+
+NODE recent_errors
+SQL >
+    SELECT
+        timestamp,
+        request_id,
+        environment,
+        route_path,
+        method,
+        response_status,
+        duration_ms,
+        error_class,
+        error_code,
+        error_message,
+        error_stack,
+        fingerprint,
+        upstream_host,
+        upstream_status,
+        upstream_body,
+        model_requested,
+        event_type,
+        user_id,
+        user_tier
+    FROM error_event
+    WHERE
+        timestamp >= now() - toIntervalHour({{Int32(hours, 3)}})
+        AND environment = {{String(environment, 'production')}}
+    ORDER BY timestamp DESC
+    LIMIT {{Int32(limit, 100)}}
+
+TYPE endpoint

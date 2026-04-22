@@ -21,6 +21,7 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
+        TINYBIRD_ERROR_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=error_event";
         IMAGE_SERVICE_URL: "http://localhost:16384";
         TEXT_SERVICE_URL: "http://localhost:16385";
         NOWPAYMENTS_ENV: "sandbox";
@@ -65,6 +66,7 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
+        TINYBIRD_ERROR_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=error_event";
         IMAGE_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
         TEXT_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         POLLEN_REFILL_PER_HOUR: 1;
@@ -111,6 +113,7 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
+        TINYBIRD_ERROR_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=error_event";
         IMAGE_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
         TEXT_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         STRIPE_MODE: "sandbox";
@@ -154,6 +157,7 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event";
+        TINYBIRD_ERROR_INGEST_URL: "https://api.europe-west2.gcp.tinybird.co/v0/events?name=error_event";
         IMAGE_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
         TEXT_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         STRIPE_MODE: "sandbox";
@@ -198,6 +202,7 @@ declare namespace Cloudflare {
         TINYBIRD_CRYPTO_INGEST_URL: "http://localhost:7181/v0/events?name=crypto_event";
         TINYBIRD_TIER_INGEST_URL: "http://localhost:7181/v0/events?name=tier_event";
         TINYBIRD_STRIPE_INGEST_URL: "http://localhost:7181/v0/events?name=stripe_event";
+        TINYBIRD_ERROR_INGEST_URL: "http://localhost:7181/v0/events?name=error_event";
         IMAGE_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
         TEXT_SERVICE_URL: "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385";
         BETTER_AUTH_SECRET: string;
@@ -278,6 +283,9 @@ declare namespace Cloudflare {
         TINYBIRD_STRIPE_INGEST_URL:
             | "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
             | "http://localhost:7181/v0/events?name=stripe_event";
+        TINYBIRD_ERROR_INGEST_URL:
+            | "https://api.europe-west2.gcp.tinybird.co/v0/events?name=error_event"
+            | "http://localhost:7181/v0/events?name=error_event";
         IMAGE_SERVICE_URL:
             | "http://localhost:16384"
             | "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384";
@@ -320,6 +328,7 @@ declare namespace NodeJS {
                 | "TINYBIRD_CRYPTO_INGEST_URL"
                 | "TINYBIRD_TIER_INGEST_URL"
                 | "TINYBIRD_STRIPE_INGEST_URL"
+                | "TINYBIRD_ERROR_INGEST_URL"
                 | "IMAGE_SERVICE_URL"
                 | "TEXT_SERVICE_URL"
                 | "NOWPAYMENTS_ENV"

@@ -5,6 +5,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import { ValidationError } from "@/middleware/validator";
 import type { Env } from "./env.ts";
+import { buildErrorFingerprint, sendErrorEventToTinybird } from "./events.ts";
 
 type UpstreamErrorOptions = {
     res?: Response;
@@ -98,6 +99,47 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
         log.trace("HttpException: {message}", {
             message: err.message || getDefaultErrorMessage(err.status),
         });
+
+        if (status >= 500 && err instanceof UpstreamError) {
+            const routePath = c.req.routePath ?? c.req.path;
+            const topFrame = err.stack?.split("\n")[1]?.trim() ?? "";
+            const user = (c.var as any).auth?.user;
+            c.executionCtx.waitUntil(
+                sendErrorEventToTinybird(
+                    {
+                        timestamp,
+                        requestId: c.get("requestId") ?? "",
+                        environment: c.env.ENVIRONMENT,
+                        routePath,
+                        method: c.req.method,
+                        responseStatus: status,
+                        durationMs: 0,
+                        errorClass: "UpstreamError",
+                        errorCode: getErrorCode(status),
+                        errorMessage: err.message ?? "",
+                        errorStack: err.stack ?? "",
+                        fingerprint: buildErrorFingerprint(
+                            routePath,
+                            "UpstreamError",
+                            err.message ?? "",
+                            topFrame,
+                        ),
+                        upstreamHost: err.requestUrl?.hostname ?? "",
+                        upstreamStatus: status,
+                        upstreamBody: "",
+                        modelRequested: (c.var as any).modelRequested ?? "",
+                        eventType: (c.var as any).eventType ?? "",
+                        userId: user?.id ?? "",
+                        userTier: user?.tier ?? "",
+                        apiKeyId: (c.var as any).apiKeyId ?? "",
+                    },
+                    c.env.TINYBIRD_ERROR_INGEST_URL,
+                    c.env.TINYBIRD_INGEST_TOKEN,
+                    log,
+                ),
+            );
+        }
+
         return c.json(createErrorResponse(err, status, timestamp), status);
     }
 
@@ -128,6 +170,47 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
             cause: err.cause,
         },
     });
+
+    const topFrame = err.stack?.split("\n")[1]?.trim() ?? "";
+    const routePath = c.req.routePath ?? c.req.path;
+    c.executionCtx.waitUntil(
+        sendErrorEventToTinybird(
+            {
+                timestamp,
+                requestId: c.get("requestId") ?? "",
+                environment: c.env.ENVIRONMENT,
+                routePath,
+                method: c.req.method,
+                responseStatus: status,
+                durationMs: 0,
+                errorClass: err.name ?? "Error",
+                errorCode: getErrorCode(status),
+                errorMessage: err.message ?? "",
+                errorStack: err.stack ?? "",
+                fingerprint: buildErrorFingerprint(
+                    routePath,
+                    err.name ?? "Error",
+                    err.message ?? "",
+                    topFrame,
+                ),
+                upstreamHost:
+                    err instanceof UpstreamError
+                        ? (err.requestUrl?.hostname ?? "")
+                        : "",
+                upstreamStatus: 0,
+                upstreamBody: "",
+                modelRequested: (c.var as any).modelRequested ?? "",
+                eventType: (c.var as any).eventType ?? "",
+                userId: user?.id ?? "",
+                userTier: user?.tier ?? "",
+                apiKeyId: (c.var as any).apiKeyId ?? "",
+            },
+            c.env.TINYBIRD_ERROR_INGEST_URL,
+            c.env.TINYBIRD_INGEST_TOKEN,
+            log,
+        ),
+    );
+
     const response = createInternalErrorResponse(err, status, timestamp);
     return c.json(response, status);
 };

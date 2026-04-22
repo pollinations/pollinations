@@ -102,6 +102,101 @@ export function flattenBalances(balances: Record<string, number> | null) {
     );
 }
 
+// Error event for Tinybird error_event datasource (server-side 5xx, upstream failures)
+export type ErrorEvent = {
+    timestamp: string;
+    requestId: string;
+    environment: string;
+    routePath: string;
+    method: string;
+    responseStatus: number;
+    durationMs: number;
+    errorClass: string;
+    errorCode: string;
+    errorMessage: string;
+    errorStack: string;
+    fingerprint: string;
+    upstreamHost: string;
+    upstreamStatus: number;
+    upstreamBody: string;
+    modelRequested: string;
+    eventType: string;
+    userId: string;
+    userTier: string;
+    apiKeyId: string;
+};
+
+export function buildErrorFingerprint(
+    routePath: string,
+    errorClass: string,
+    errorMessage: string,
+    topStackFrame: string,
+): string {
+    // Normalize message: strip dynamic parts (UUIDs, IDs, numbers)
+    const normalized = errorMessage
+        .replace(/[0-9a-f-]{8,}/gi, "*")
+        .slice(0, 100);
+    return `${routePath}|${errorClass}|${normalized}|${topStackFrame}`;
+}
+
+export async function sendErrorEventToTinybird(
+    event: ErrorEvent,
+    tinybirdErrorIngestUrl: string | undefined,
+    tinybirdIngestToken: string | undefined,
+    log: Logger,
+): Promise<void> {
+    if (!tinybirdErrorIngestUrl || !tinybirdIngestToken) return;
+
+    const body = JSON.stringify(removeUnset(event));
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await fetch(tinybirdErrorIngestUrl, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${tinybirdIngestToken}`,
+                    "Content-Type": "application/x-ndjson",
+                },
+                body,
+            });
+
+            if (response.ok) return;
+
+            const errorText = await response.text();
+            const isRetryable =
+                response.status >= 500 || response.status === 429;
+            if (!isRetryable || attempt === MAX_RETRIES) {
+                log.error(
+                    "Tinybird error_event ingest failed: status={status} error={error}",
+                    {
+                        status: response.status,
+                        error: errorText,
+                    },
+                );
+                return;
+            }
+            await retryWithBackoff(
+                attempt,
+                log,
+                "Tinybird error_event retry",
+                response.status,
+            );
+        } catch (err) {
+            if (attempt === MAX_RETRIES) {
+                log.error("Failed to send error_event to Tinybird: {error}", {
+                    error: err,
+                });
+                return;
+            }
+            await retryWithBackoff(
+                attempt,
+                log,
+                "Tinybird error_event network error",
+            );
+        }
+    }
+}
+
 // Tier event types for Tinybird tier_event datasource
 export type TierEventType = "tier_refill" | "tier_change" | "user_registration";
 

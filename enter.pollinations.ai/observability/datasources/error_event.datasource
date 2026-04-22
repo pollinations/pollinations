@@ -1,0 +1,42 @@
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Server-side error events (5xx, upstream failures, uncaught exceptions) with full context.
+Short retention window for operational monitoring.
+
+SCHEMA >
+`timestamp`       DateTime               `json:$.timestamp`,
+`request_id`      String                 `json:$.requestId` DEFAULT '',
+`environment`     LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
+
+-- Request
+`route_path`      String                 `json:$.routePath` DEFAULT '',
+`method`          LowCardinality(String) `json:$.method` DEFAULT '',
+`response_status` UInt32                 `json:$.responseStatus` DEFAULT 0,
+`duration_ms`     UInt32                 `json:$.durationMs` DEFAULT 0,
+
+-- Error
+`error_class`     LowCardinality(String) `json:$.errorClass` DEFAULT '',
+`error_code`      LowCardinality(String) `json:$.errorCode` DEFAULT '',
+`error_message`   String                 `json:$.errorMessage` DEFAULT '',
+`error_stack`     String                 `json:$.errorStack` DEFAULT '',
+`fingerprint`     String                 `json:$.fingerprint` DEFAULT '',
+
+-- Upstream (for UpstreamError / 502/503/504)
+`upstream_host`   LowCardinality(String) `json:$.upstreamHost` DEFAULT '',
+`upstream_status` UInt32                 `json:$.upstreamStatus` DEFAULT 0,
+`upstream_body`   String                 `json:$.upstreamBody` DEFAULT '',
+
+-- Context
+`model_requested` LowCardinality(String) `json:$.modelRequested` DEFAULT '',
+`event_type`      LowCardinality(String) `json:$.eventType` DEFAULT '',
+`user_id`         String                 `json:$.userId` DEFAULT '',
+`user_tier`       LowCardinality(String) `json:$.userTier` DEFAULT '',
+`api_key_id`      String                 `json:$.apiKeyId` DEFAULT '',
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMMDD(timestamp)"
+ENGINE_SORTING_KEY "timestamp, environment, error_class, fingerprint"
+ENGINE_PRIMARY_KEY "timestamp, environment"
+ENGINE_TTL "timestamp + toIntervalHour(3)"

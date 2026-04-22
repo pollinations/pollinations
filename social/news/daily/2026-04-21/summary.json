@@ -1,0 +1,39 @@
+{
+  "date": "2026-04-21",
+  "period_start": "2026-04-21",
+  "period_end": "2026-04-21",
+  "title": "Heavyweight model drops across text and audio",
+  "summary": "A heavy day for the model registry with Claude Opus 4.7 and Qwen3-TTS, plus a critical CPU fix for Windows MCP users.\n\nA dense day for the model registry. We wired up Anthropic's Claude Opus 4.7 (aliased as `claude-xlarge`) via Bedrock, bumped the default Kimi text model to 2.6, and added Qwen3-TTS for audio generation. The Qwen integration includes the instruct variant, which accepts custom emotion and style parameters. More brains, better voices, same endpoints.\n\nIf you were running the Pollinations MCP server on Windows, you might have noticed orphaned background processes quietly eating your CPU after you closed the client. We fixed the exit logic so child processes actually die when the parent exits. Your laptop fans can spin down now.\n\nTwo new community builds landed in the app showcase: AI Models Laboratory (a Three.js and Next.js generative sandbox for high-res digital artifacts) and Scene2Text. The ecosystem keeps expanding.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 10342,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10343,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10372,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10374,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10375,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10393,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10395,
+      "date": "2026-04-21"
+    }
+  ],
+  "generated_at": "2026-04-22T06:35:12.500271+00:00"
+}

@@ -160,7 +160,7 @@ describe("API Key Management", () => {
                     },
                     body: JSON.stringify({
                         allowedModels: ["flux", "openai"],
-                        accountPermissions: ["balance", "usage"],
+                        accountPermissions: ["profile", "usage"],
                     }),
                 },
             );
@@ -182,7 +182,7 @@ describe("API Key Management", () => {
             const updatedKey = keys.data.find((k: any) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
                 models: ["flux", "openai"],
-                account: ["balance", "usage"],
+                account: ["profile", "usage"],
             });
         });
 
@@ -404,7 +404,7 @@ describe("API Key Management", () => {
                     },
                     body: JSON.stringify({
                         allowedModels: ["flux"],
-                        accountPermissions: ["balance"],
+                        accountPermissions: ["usage"],
                     }),
                 },
             );

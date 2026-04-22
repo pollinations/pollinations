@@ -21,12 +21,13 @@ mv /path/to/keys.txt $HOME/.config/sops/age/
 
 By default, sops will look for your key file in `$HOME/.config/sops/age/keys.txt`. If you want to use a different location, set `SOPS_AGE_KEY_FILE` to your preferred path.
 
-To decrypt `.env` files for services, run:
+To decrypt service env files, run the command that matches the service:
 ```bash
-sops --output-type dotenv decrypt secrets/env.json > .env
+sops --output-type dotenv decrypt secrets/dev.vars.json > .dev.vars   # enter.pollinations.ai
+sops --output-type dotenv decrypt secrets/env.json > .env             # image/text services
 ``` 
 
-The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
+The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets; `tools/scripts/rotation/secrets.vars.json` is only for local operator admin credentials used by rotation scripts. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
 
 
 ###### Common SOPS commands:

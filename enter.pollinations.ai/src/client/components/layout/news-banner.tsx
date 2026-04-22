@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-03-26",
-        emoji: "⏱️",
-        title: "Flower & Nectar: Daily → Hourly Refills",
+        date: "2026-04-17",
+        emoji: "💰",
+        title: "Transparent Pricing: Cost vs Price",
         description:
-            "Starting Thursday, March 26 — Flower 0.4p/hr, Nectar 0.8p/hr. Need more? Grab a Pollen Pack below!",
+            "The registry now tracks provider cost separately from user price. See the [pricing table](/#pricing) for the rates you pay.",
     },
 ];
 

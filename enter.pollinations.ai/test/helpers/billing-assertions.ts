@@ -100,6 +100,4 @@ export function assertTrackedBillingEvent(
 
     expect(event.totalCost).toBeCloseTo(expectedCost.totalCost, 8);
     expect(event.totalPrice).toBeCloseTo(expectedPrice.totalPrice, 8);
-    // Current invariant: price still falls through to cost everywhere.
-    expect(event.totalPrice).toBeCloseTo(event.totalCost, 8);
 }

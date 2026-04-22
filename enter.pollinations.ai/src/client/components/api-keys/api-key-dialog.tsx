@@ -43,9 +43,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [description, setDescription] = useState(
         `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
     );
-    const [keyType, setKeyType] = useState<"secret" | "publishable">(
-        simplified ? "publishable" : "secret",
-    );
+    const keyType: "secret" | "publishable" = simplified
+        ? "publishable"
+        : "secret";
     const [appUrl, setAppUrl] = useState("");
     const [safe, setSafe] = useState("");
     const keyPermissions = useKeyPermissions(
@@ -67,19 +67,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [error, setError] = useState<string | null>(null);
 
     useScrollLock(isOpen);
-
-    function handleKeyTypeChange(newKeyType: "secret" | "publishable"): void {
-        setKeyType(newKeyType);
-        setName(generateFunName());
-        const dateStr = new Date().toLocaleDateString("en-US", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-        });
-        setDescription(
-            newKeyType === "publishable" ? "" : `Created on ${dateStr}`,
-        );
-    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -128,6 +115,18 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         allowedModels.length === 0;
     const isCreateDisabled =
         !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
+    const keyTypeStyles =
+        keyType === "publishable"
+            ? {
+                  editableInputClasses:
+                      "border-blue-300 focus:outline-none focus-visible:border-blue-500 focus-visible:ring-1 focus-visible:ring-blue-500/60",
+                  readOnlyInputClasses: "border-blue-300 bg-blue-100",
+              }
+            : {
+                  editableInputClasses:
+                      "border-violet-300 focus:outline-none focus-visible:border-violet-500 focus-visible:ring-1 focus-visible:ring-violet-500/60",
+                  readOnlyInputClasses: "border-violet-300 bg-violet-100",
+              };
 
     function getButtonText(): string {
         if (copied) return "Copied! Closing...";
@@ -147,7 +146,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setName(generateFunName());
                     setAppUrl("");
                     setSafe("");
-                    setKeyType(simplified ? "publishable" : "secret");
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
                         month: "2-digit",
@@ -164,18 +162,16 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 </Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-            <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
+            <Dialog.Positioner className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto z-[100]">
                 <Dialog.Content
                     className={cn(
-                        "border-4 rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col",
-                        "bg-green-100 border-green-950",
+                        "border-4 rounded-lg shadow-lg max-w-2xl w-full my-auto",
+                        "bg-white border-green-950",
                     )}
                 >
                     <div className="shrink-0 p-6 pb-4">
                         <Dialog.Title className="text-lg font-semibold">
-                            {simplified
-                                ? "Create New App Key"
-                                : "Create New API Key"}
+                            {simplified ? "Create App Key" : "Create API Key"}
                         </Dialog.Title>
                         <p className="text-sm text-gray-500 mt-1">
                             {simplified ? (
@@ -200,119 +196,18 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                     <form
                         onSubmit={handleSubmit}
-                        className="flex flex-col flex-1 min-h-0"
+                        className="flex flex-col flex-1 min-h-0 overflow-hidden"
                     >
-                        <div
-                            className="flex-1 overflow-y-auto px-6 py-2 space-y-4 scrollbar-subtle"
-                            style={{
-                                scrollbarWidth: "thin",
-                                overscrollBehavior: "contain",
-                            }}
-                        >
-                            {error && (
+                        {error && (
+                            <div className="px-6 pt-2 pb-4 shrink-0">
                                 <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                                     {error}
                                 </p>
-                            )}
-                            {!simplified && (
-                                <Field.Root>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <label
-                                            className={cn(
-                                                "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
-                                                keyType === "publishable"
-                                                    ? "bg-blue-100 ring-2 ring-blue-500"
-                                                    : "bg-gray-50 hover:bg-gray-100",
-                                                createdKey &&
-                                                    keyType !== "publishable" &&
-                                                    "opacity-40",
-                                            )}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="keyType"
-                                                value="publishable"
-                                                checked={
-                                                    keyType === "publishable"
-                                                }
-                                                onChange={(e) =>
-                                                    handleKeyTypeChange(
-                                                        e.target
-                                                            .value as "publishable",
-                                                    )
-                                                }
-                                                className="sr-only"
-                                                disabled={
-                                                    isSubmitting || !!createdKey
-                                                }
-                                            />
-                                            <div className="font-semibold text-sm mb-2">
-                                                🌐 Publishable Key
-                                            </div>
-                                            <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
-                                                <li>
-                                                    Always visible in dashboard
-                                                </li>
-                                                <li>
-                                                    For client-side code (React,
-                                                    Vue)
-                                                </li>
-                                                <li>
-                                                    Rate limited: 1p/hour per IP
-                                                </li>
-                                            </ul>
-                                            <div className="mt-3 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded">
-                                                ⚠️ Beta – still working out bugs
-                                            </div>
-                                        </label>
-                                        <label
-                                            className={cn(
-                                                "relative flex flex-col p-4 rounded-xl cursor-pointer transition-all",
-                                                keyType === "secret"
-                                                    ? "bg-purple-100 ring-2 ring-purple-500"
-                                                    : "bg-gray-50 hover:bg-gray-100",
-                                                createdKey &&
-                                                    keyType !== "secret" &&
-                                                    "opacity-40",
-                                            )}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="keyType"
-                                                value="secret"
-                                                checked={keyType === "secret"}
-                                                onChange={(e) =>
-                                                    handleKeyTypeChange(
-                                                        e.target
-                                                            .value as "secret",
-                                                    )
-                                                }
-                                                className="sr-only"
-                                                disabled={
-                                                    isSubmitting || !!createdKey
-                                                }
-                                            />
-                                            <div className="font-semibold text-sm mb-2">
-                                                🔒 Secret Key
-                                            </div>
-                                            <ul className="text-xs text-gray-600 space-y-1 flex-1 list-disc pl-4">
-                                                <li className="text-amber-700 font-medium">
-                                                    Only shown once – copy it!
-                                                </li>
-                                                <li>
-                                                    Never expose publicly (must
-                                                    be hidden in your backend)
-                                                </li>
-                                                <li>No rate limits</li>
-                                            </ul>
-                                            <div className="mt-3 text-[10px] text-green-700 bg-green-50 px-2 py-1 rounded">
-                                                ✓ Recommended for production
-                                            </div>
-                                        </label>
-                                    </div>
-                                </Field.Root>
-                            )}
+                            </div>
+                        )}
 
+                        <div className="px-6 pb-2 space-y-4">
+                            <hr className="border-gray-200" />
                             <Field.Root className="flex items-center gap-3">
                                 <Field.Label className="text-sm font-semibold shrink-0">
                                     {createdKey
@@ -328,8 +223,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     className={cn(
                                         "flex-1 px-3 py-2 border rounded-lg",
                                         createdKey
-                                            ? "border-green-300 bg-green-200 font-mono text-xs"
-                                            : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-600",
+                                            ? `${keyTypeStyles.readOnlyInputClasses} font-mono text-xs`
+                                            : keyTypeStyles.editableInputClasses,
                                     )}
                                     placeholder={
                                         createdKey ? "" : "Enter API key name"
@@ -339,6 +234,43 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     readOnly={!!createdKey}
                                 />
                             </Field.Root>
+
+                            {!simplified && !createdKey && (
+                                <p className="text-xs text-gray-500">
+                                    Publishable keys (<code>pk_</code>)
+                                    deprecated – create via{" "}
+                                    <a
+                                        href="https://enter.pollinations.ai/api/docs#tag/-account/POST/account/keys"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 underline hover:text-blue-800"
+                                    >
+                                        API
+                                    </a>{" "}
+                                    or{" "}
+                                    <a
+                                        href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 underline hover:text-blue-800"
+                                    >
+                                        polli CLI
+                                    </a>
+                                    .
+                                </p>
+                            )}
+
+                            {!simplified && createdKey && (
+                                <ul className="text-xs text-gray-700 space-y-1 list-disc pl-5">
+                                    <li className="text-amber-700 font-medium">
+                                        Only shown once – copy it now.
+                                    </li>
+                                    <li>
+                                        Never expose publicly – keep it in your
+                                        backend.
+                                    </li>
+                                </ul>
+                            )}
 
                             {simplified && !createdKey && (
                                 <PublishableKeySettings
@@ -353,6 +285,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     value={keyPermissions}
                                     disabled={isSubmitting}
                                     inline
+                                    theme="violet"
                                     safe={safe}
                                     onSafeChange={setSafe}
                                 />

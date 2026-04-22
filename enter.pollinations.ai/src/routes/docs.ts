@@ -69,6 +69,9 @@ function generateLLMDoc(): string {
     lines.push("Base URL: https://gen.pollinations.ai");
     lines.push("API Keys: https://enter.pollinations.ai");
     lines.push("Docs: https://gen.pollinations.ai/api/docs");
+    lines.push(
+        "CLI: `npx @pollinations_ai/cli` (binary: `polli`) — agent-friendly, `--json` everywhere",
+    );
     lines.push("");
 
     // Quick Start
@@ -116,6 +119,29 @@ function generateLLMDoc(): string {
     );
     lines.push('  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3');
     lines.push("```");
+    lines.push("");
+
+    // CLI
+    lines.push("## CLI");
+    lines.push("");
+    lines.push(
+        "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+    );
+    lines.push("");
+    lines.push("```bash");
+    lines.push("npm install -g @pollinations_ai/cli");
+    lines.push("polli auth login");
+    lines.push(
+        'polli gen image "a cat in space" --model flux --output cat.png',
+    );
+    lines.push('polli gen text "summarize this" < notes.md');
+    lines.push("polli models --type image");
+    lines.push("polli usage");
+    lines.push("```");
+    lines.push("");
+    lines.push(
+        "Source: https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
+    );
     lines.push("");
 
     // Auth
@@ -173,11 +199,11 @@ function generateLLMDoc(): string {
     lines.push("- negative_prompt (string): Only flux, zimage");
     lines.push("- safe (boolean, default: false): Safety filter");
     lines.push(
-        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large',
+        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large, gpt-image-2',
     );
     lines.push("- image (string): Reference image URL(s), | or , separated");
     lines.push(
-        "- transparent (boolean, default: false): gptimage, gptimage-large",
+        "- transparent (boolean, default: false): gptimage, gptimage-large, gpt-image-2",
     );
     lines.push(
         "- reasoning (boolean, default: false): Enable thinking for improved text/layout. nanobanana, nanobanana-2, nanobanana-pro",
@@ -317,16 +343,17 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /api/account/profile");
     lines.push(
-        "Returns user profile: name, email, githubUsername, image, tier, createdAt, nextResetAt.",
+        "Returns user profile. `githubUsername` and `image` are always included. `name` and `email` are included only when the API key has the `account:profile` permission.",
     );
-    lines.push("Requires `account:profile` permission.");
     lines.push("");
 
     lines.push("### GET /api/account/balance");
     lines.push(
         "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
     );
-    lines.push("Requires `account:balance` permission.");
+    lines.push(
+        "Requires `account:usage` permission when using an API key without a budget of its own.",
+    );
     lines.push("");
 
     lines.push("### GET /api/account/usage");
@@ -372,7 +399,7 @@ function generateLLMDoc(): string {
         "- pollenBudget (number, optional): Pollen budget cap. null = unlimited",
     );
     lines.push(
-        '- accountPermissions (string[], optional): e.g. ["balance","usage"]. "keys" is auto-stripped',
+        '- accountPermissions (string[], optional): e.g. ["profile","usage"]. "keys" is auto-stripped',
     );
     lines.push(
         "Returns full key value once: { id, key, name, type, prefix, start, expiresAt, permissions, pollenBudget }",
@@ -436,6 +463,10 @@ function generateLLMDoc(): string {
     lines.push("- 402: Insufficient balance");
     lines.push("- 403: Permission denied");
     lines.push("- 500: Server error");
+    lines.push("");
+
+    // BYOP content carries its own `# Bring Your Own Pollen` H1 heading.
+    lines.push(BYOP_DOCS);
 
     return lines.join("\n");
 }
@@ -767,7 +798,7 @@ response = requests.get(
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 profile = response.json()
-print(f"{profile['name']} ({profile['tier']})")`,
+print(profile["githubUsername"])`,
         },
         {
             label: "JavaScript",
@@ -777,7 +808,7 @@ print(f"{profile['name']} ({profile['tier']})")`,
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const profile = await response.json();
-console.log(\`\${profile.name} (\${profile.tier})\`);`,
+console.log(profile.githubUsername);`,
         },
     ],
     "get /account/key": [
@@ -1059,26 +1090,21 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
         balance: 42.5,
     },
     "get /account/profile": {
+        githubUsername: "janedeveloper",
+        image: "https://avatars.example.com/jane.jpg",
         name: "Jane Developer",
         email: "jane@example.com",
-        image: "https://avatars.example.com/jane.jpg",
-        tier: "seed",
-        displayTier: "Seed",
-        createdAt: "2024-01-15T10:30:00.000Z",
-        nextResetAt: "2024-02-15T14:00:00.000Z",
     },
     "get /account/key": {
         valid: true,
         type: "secret",
-        prefix: "sk_",
+        name: "my-bot",
         expiresAt: null,
-        permissions: [
-            "generate:text",
-            "generate:image",
-            "generate:audio",
-            "account:balance",
-            "account:usage",
-        ],
+        expiresIn: null,
+        permissions: {
+            models: null,
+            account: ["usage"],
+        },
         pollenBudget: null,
         rateLimitEnabled: false,
     },
@@ -1266,6 +1292,20 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             '  -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3',
                             "```",
                             "",
+                            "## 🖥️ CLI",
+                            "",
+                            "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
+                            "",
+                            "```bash",
+                            "npm install -g @pollinations_ai/cli",
+                            "polli auth login",
+                            'polli gen image "a cat in space" --model flux --output cat.png',
+                            'polli gen text "summarize this" < notes.md',
+                            "polli models --type image",
+                            "```",
+                            "",
+                            "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
+                            "",
                             "## 🔐 Authentication",
                             "",
                             "All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.",
@@ -1405,13 +1445,13 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "",
                                 "| Endpoint | Description |",
                                 "|----------|-------------|",
-                                "| `GET /account/profile` | Name, email, tier, creation date |",
+                                "| `GET /account/profile` | GitHub username and profile image |",
                                 "| `GET /account/balance` | Current pollen balance |",
                                 "| `GET /account/usage` | Per-request history with costs |",
                                 "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",
                                 "| `GET /account/key` | API key validity, type, and permissions |",
                                 "",
-                                "When using API keys, specific permissions may be required (e.g., `account:balance`, `account:usage`).",
+                                "When using API keys, specific permissions may be required (e.g., `account:usage`, `account:profile`).",
                             ].join("\n"),
                         },
                         {

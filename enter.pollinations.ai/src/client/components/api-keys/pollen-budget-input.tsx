@@ -1,14 +1,19 @@
 import { Field } from "@ark-ui/react";
 import type { FC } from "react";
+import { cn } from "@/util.ts";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Input } from "../ui/input.tsx";
+import {
+    getPermissionUiTheme,
+    type PermissionUiTheme,
+} from "./permission-ui.ts";
 
 type PollenBudgetInputProps = {
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
-    compact?: boolean;
     inline?: boolean;
+    theme?: PermissionUiTheme;
 };
 
 /**
@@ -20,22 +25,26 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     value,
     onChange,
     disabled = false,
-    compact = false,
     inline = false,
+    theme = "green",
 }) => {
+    const {
+        input: { classes: inputClasses },
+        accent: { tipTone },
+    } = getPermissionUiTheme(theme);
+
     return (
         <Field.Root className={inline ? "flex items-center gap-3" : ""}>
-            {!compact && (
-                <Field.Label
-                    className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0" : "mb-2"}`}
-                >
-                    Budget
-                    <InfoTip
-                        text="Set a spending limit for this key. Leave empty for unlimited."
-                        label="Budget information"
-                    />
-                </Field.Label>
-            )}
+            <Field.Label
+                className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0 w-20" : "mb-2"}`}
+            >
+                Budget
+                <InfoTip
+                    text="Set a spending limit for this key. Leave empty for unlimited."
+                    label="Budget information"
+                    tone={tipTone}
+                />
+            </Field.Label>
             <div className="flex items-center gap-2">
                 <Input
                     id="pollen-budget-input"
@@ -48,11 +57,11 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                         const val = e.target.value;
                         onChange(val === "" ? null : Number(val));
                     }}
-                    className={`w-32 ${compact ? "text-sm" : ""}`}
+                    className={cn("input-number-clean w-[97px]", inputClasses)}
                     placeholder="Unlimited"
                     disabled={disabled}
                 />
-                <span className="text-sm text-gray-500">pollen</span>
+                <span className="text-sm text-gray-500 w-12">pollen</span>
             </div>
         </Field.Root>
     );

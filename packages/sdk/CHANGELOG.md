@@ -9,7 +9,7 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 - **Media Upload**: `upload()` method for uploading images, audio, and video to `media.pollinations.ai` with content-addressed deduplication
 - **BYOP (Bring Your Own Pollen)**: `authorizeUrl()` to build authorization URLs that let users grant apps access to their Pollen balance with model/budget/permission scoping
 - **Account endpoints**:
-  - `accountProfile()` / `getProfile()` - Get user profile (name, email, tier)
+  - `accountProfile()` / `getProfile()` - Get user profile (GitHub username, image)
   - `accountBalance()` / `getBalance()` - Get pollen balance
   - `accountUsage()` / `getUsage()` - Get detailed usage history with pagination
   - `accountUsageDaily()` / `getDailyUsage()` - Get daily aggregated usage

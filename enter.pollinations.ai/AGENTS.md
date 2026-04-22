@@ -598,13 +598,12 @@ https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL&app_key=pk_you
 | `models` | Comma-separated allowed models | `flux,openai,gptimage` |
 | `budget` | Pollen budget limit | `10` |
 | `expiry` | Expiry in days (default: 30) | `7` |
-| `permissions` | Account permissions | `profile,balance,usage` |
+| `permissions` | Account permissions | `profile,usage` |
 
 ### Account Permissions
 
 - `profile`: Read user's name, email, GitHub username
-- `balance`: Read pollen balance
-- `usage`: Read usage history
+- `usage`: Read usage history and pollen balance
 
 ### App Registration
 
@@ -613,7 +612,7 @@ Register a `pk_` key at enter.pollinations.ai with **App URL** + **BYOP** toggle
 ### Example
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,balance&expiry=7
+https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,usage&expiry=7
 ```
 
 After authorization, the user is redirected back with an `sk_` key in the URL fragment:
@@ -641,7 +640,7 @@ https://myapp.com/callback#api_key=sk_xxxxx
 | spore  | 🍄    | 0.01     | hourly  | Verified accounts        |
 | seed   | 🌱    | 0.15     | hourly  | GitHub engagement        |
 | flower | 🌸    | 0.4      | hourly  | Contributor              |
-| nectar | 🍯    | 0.8      | hourly  | Coming soon              |
+| nectar | 🍯    | 0.8      | hourly  | Legacy — still supported for existing users, no longer granted |
 
 ### Quick Tier Update
 
@@ -730,7 +729,7 @@ OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
 
 ### Regenerating APIDOCS.md
 
-- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs on push to `main`
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy enter.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
 - **Manual**: `npm run docs:generate` (fetches from production `enter.pollinations.ai`, so changes must be deployed first)
 
 ### Where to Make Changes

@@ -37,7 +37,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.25),
             },
         ],
-        description: "OpenAI GPT-5.4 Nano - Fast & Balanced",
+        description: "GPT-5.4 Nano - Fast & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -56,7 +56,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.4),
             },
         ],
-        description: "OpenAI GPT-5 Nano - Ultra Fast & Affordable",
+        description: "GPT-5 Nano - Ultra Fast & Affordable",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -81,7 +81,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(15.0),
             },
         ],
-        description: "OpenAI GPT-5.4 - Most Powerful & Intelligent",
+        description: "GPT-5.4 - Most Powerful & Intelligent",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -147,7 +147,7 @@ export const TEXT_SERVICES = {
                 completionAudioTokens: perMillion(20.0),
             },
         ],
-        description: "OpenAI GPT Audio Mini - Voice Input & Output",
+        description: "GPT Audio Mini - Voice Input & Output",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
@@ -168,7 +168,7 @@ export const TEXT_SERVICES = {
                 completionAudioTokens: perMillion(80.0),
             },
         ],
-        description: "OpenAI GPT Audio 1.5 - Premium Voice Input & Output",
+        description: "GPT Audio 1.5 - Premium Voice Input & Output",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
@@ -190,8 +190,16 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(3.0),
             },
         ],
-        description:
-            "Google Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.75),
+                promptCachedTokens: perMillion(0.075),
+                promptAudioTokens: perMillion(0.75),
+                completionTextTokens: perMillion(4.5),
+            },
+        ],
+        description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: true,
@@ -218,7 +226,16 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.5),
             },
         ],
-        description: "Google Gemini 3.1 Flash Lite - Fast & Cost-Effective",
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.375),
+                promptCachedTokens: perMillion(0.0375),
+                promptAudioTokens: perMillion(0.75),
+                completionTextTokens: perMillion(2.25),
+            },
+        ],
+        description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["text"],
         tools: true,
@@ -234,14 +251,22 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.3), // Google rate: $0.10 — marked up for margin
-                promptCachedTokens: perMillion(0.03),
-                promptAudioTokens: perMillion(0.3), // Audio billed at same rate as text
-                completionTextTokens: perMillion(1.2), // Google rate: $0.40 — marked up for margin
+                promptTextTokens: perMillion(0.1), // per 1M tokens
+                promptCachedTokens: perMillion(0.01), // per 1M tokens
+                promptAudioTokens: perMillion(0.3), // per 1M tokens
+                completionTextTokens: perMillion(0.4), // per 1M tokens
             },
         ],
-        description:
-            "Google Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.3), // per 1M tokens
+                promptCachedTokens: perMillion(0.03), // per 1M tokens
+                promptAudioTokens: perMillion(0.3), // per 1M tokens
+                completionTextTokens: perMillion(1.2), // per 1M tokens
+            },
+        ],
+        description: "Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -284,11 +309,11 @@ export const TEXT_SERVICES = {
             {
                 date: new Date("2026-03-22").getTime(),
                 promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.05), // $0.05 per 1M cached input tokens
+                promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(0.5),
             },
         ],
-        description: "xAI Grok 4.1 Fast - High Speed & Real-Time",
+        description: "Grok 4.1 Fast - High Speed & Real-Time",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -312,7 +337,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(6.0),
             },
         ],
-        description: "xAI Grok 4.20 Reasoning - Most Powerful Grok",
+        description: "Grok 4.20 Reasoning - Most Powerful Grok",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -327,13 +352,23 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.02),
-                promptAudioTokens: perMillion(0.2), // Audio billed at same rate as text
-                completionTextTokens: perMillion(0.8),
+                promptTextTokens: perMillion(0.2), // per 1M tokens
+                promptCachedTokens: perMillion(0.02), // per 1M tokens
+                promptAudioTokens: perMillion(0.2), // per 1M tokens (audio billed at same rate as text)
+                completionTextTokens: perMillion(0.8), // per 1M tokens
             },
         ],
-        description: "Google Gemini 2.5 Flash Lite - With Google Search",
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.3), // per 1M tokens, matches gemini-fast
+                promptCachedTokens: perMillion(0.03), // per 1M tokens, matches gemini-fast
+                promptAudioTokens: perMillion(0.3), // per 1M tokens, matches gemini-fast
+                completionTextTokens: perMillion(1.2), // per 1M tokens, matches gemini-fast
+            },
+        ],
+        description:
+            "Google Gemini 2.5 Flash Lite Search - Web-grounded answers via Google Search",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,
@@ -391,7 +426,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(5.5),
             },
         ],
-        description: "Anthropic Claude Haiku 4.5 - Fast & Intelligent",
+        description: "Claude Haiku 4.5 - Fast & Intelligent",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -411,7 +446,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(16.5),
             },
         ],
-        description: "Anthropic Claude Sonnet 4.6 - Most Capable & Balanced",
+        description: "Claude Sonnet 4.6 - Most Capable & Balanced",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -419,7 +454,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.6", "claude-opus"],
+        aliases: ["claude-opus-4.6", "claude-opus", "claude-opus-4.5"],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
         paidOnly: true,
@@ -431,19 +466,18 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(27.5),
             },
         ],
-        description: "Anthropic Claude Opus 4.6 - Most Intelligent Model",
+        description: "Claude Opus 4.6 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-legacy": {
-        aliases: ["claude-opus-4.5", "claude-large-legacy"],
-        modelId: "claude-opus-4-5-20251101",
+    "claude-opus-4.7": {
+        aliases: [],
+        modelId: "claude-opus-4-7",
         provider: "bedrock",
         paidOnly: true,
-        hidden: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -452,7 +486,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(27.5),
             },
         ],
-        description: "Anthropic Claude Opus 4.5 - Legacy",
+        description: "Claude Opus 4.7 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -527,8 +561,29 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
+    "kimi-k2.6": {
+        aliases: ["kimi-k2p6"],
+        modelId: "accounts/fireworks/models/kimi-k2p6",
+        provider: "fireworks",
+        cost: [
+            {
+                date: new Date("2026-04-21").getTime(),
+                promptTextTokens: perMillion(0.95),
+                promptCachedTokens: perMillion(0.16),
+                completionTextTokens: perMillion(4.0),
+            },
+        ],
+        description:
+            "Moonshot Kimi K2.6 - Flagship Agentic Model with CoT Reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262000,
+        isSpecialized: false,
+    },
     "gemini-large": {
-        aliases: ["gemini-3.1-pro"],
+        aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
         modelId: "gemini-3.1-pro-preview",
         provider: "google",
         paidOnly: true,
@@ -540,39 +595,22 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(12.0),
             },
         ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(3.0),
+                promptCachedTokens: perMillion(0.3),
+                completionTextTokens: perMillion(18.0),
+            },
+        ],
         description:
-            "Google Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
+            "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         search: true,
         codeExecution: false, // Disabled - was breaking gemini-large
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
-    "gemini-legacy": {
-        aliases: ["gemini-2.5-pro"],
-        modelId: "gemini-2.5-pro",
-        provider: "google",
-        paidOnly: true,
-        hidden: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25),
-                promptCachedTokens: perMillion(0.31), // Google rate: $0.125 — marked up for margin
-                completionTextTokens: perMillion(10.0),
-            },
-        ],
-        description:
-            "Google Gemini 2.5 Pro - Stable Reasoning Model with 1M Context",
-        inputModalities: ["text", "image", "audio", "video"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -587,7 +625,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.14),
             },
         ],
-        description: "Amazon Nova Micro - Ultra Fast & Ultra Cheap",
+        description: "Nova Micro - Ultra Fast & Ultra Cheap",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -605,7 +643,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(2.75),
             },
         ],
-        description: "Amazon Nova 2 Lite - 1M Context with Reasoning",
+        description: "Nova 2 Lite - 1M Context with Reasoning",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -635,18 +673,23 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "minimax": {
-        aliases: ["minimax-m2.5", "minimax-m2p5"],
-        modelId: "accounts/fireworks/models/minimax-m2p5",
+        aliases: [
+            "minimax-m2.7",
+            "minimax-m2p7",
+            "minimax-m2.5",
+            "minimax-m2p5",
+        ],
+        modelId: "accounts/fireworks/models/minimax-m2p7",
         provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-04-12").getTime(),
+                date: new Date("2026-04-19").getTime(),
                 promptTextTokens: perMillion(0.3),
-                promptCachedTokens: perMillion(0.03),
+                promptCachedTokens: perMillion(0.06),
                 completionTextTokens: perMillion(1.2),
             },
         ],
-        description: "MiniMax M2.5 - Coding, Agentic & Multi-Language",
+        description: "MiniMax M2.7 - Coding, Agentic & Multi-Language",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -701,8 +744,15 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.3),
-                completionTextTokens: perMillion(1.5),
+                promptTextTokens: perMillion(0.3), // per 1M tokens
+                completionTextTokens: perMillion(1.5), // per 1M tokens
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-03-22").getTime(),
+                promptTextTokens: perMillion(0.45), // per 1M tokens
+                completionTextTokens: perMillion(2.25), // per 1M tokens
             },
         ],
         description:
@@ -735,23 +785,30 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-vision": {
-        aliases: ["qwen3-vl", "qwen3-vl-plus", "qwen-vl"],
-        modelId: "qwen3-vl-plus",
-        provider: "alibaba",
+        aliases: [
+            "qwen3-vl",
+            "qwen3-vl-30b-a3b-thinking",
+            "qwen3-vl-thinking",
+            "qwen3-vl-plus",
+            "qwen-vl",
+        ],
+        modelId: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
+        provider: "fireworks",
         cost: [
             {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.2),
-                completionTextTokens: perMillion(1.6),
+                date: new Date("2026-04-19").getTime(),
+                promptTextTokens: perMillion(0.15),
+                promptCachedTokens: perMillion(0.08),
+                completionTextTokens: perMillion(0.6),
             },
         ],
         description:
-            "Qwen3 VL Plus - Vision-Language Understanding with Reasoning via DashScope",
+            "Qwen3 VL 30B A3B Thinking - Vision-Language Reasoning (Fireworks)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 131072,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "qwen-safety": {

@@ -46,12 +46,6 @@ function HelloPage() {
             desc: pageCopy.tierFlowerDescription,
             grant: pageCopy.tierFlowerGrant,
         },
-        {
-            emoji: pageCopy.tierNectarEmoji,
-            title: pageCopy.tierNectarTitle,
-            desc: pageCopy.tierNectarDescription,
-            grant: pageCopy.tierNectarGrant,
-        },
     ];
 
     return (
@@ -208,7 +202,7 @@ function HelloPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-1 mt-6 md:-mt-8">
+                    <div className="flex flex-col gap-1 mt-6">
                         <span className="font-body text-sm text-muted">
                             {pageCopy.tierHowText}
                         </span>

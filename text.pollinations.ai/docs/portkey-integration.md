@@ -101,9 +101,10 @@ AWS_REGION=us-east-1
 
 | Model | Bedrock Model ID |
 |-------|------------------|
-| claude-large | global.anthropic.claude-opus-4-5-20251101-v1:0 |
-| claude-sonnet-4 | us.anthropic.claude-sonnet-4-20250514-v1:0 |
-| claude-sonnet-4.5 | us.anthropic.claude-sonnet-4-5-20250929-v1:0 |
+| claude-large | us.anthropic.claude-opus-4-6-v1 |
+| claude-opus-4.7 | us.anthropic.claude-opus-4-7 |
+| claude | us.anthropic.claude-sonnet-4-6 |
+| claude-fast | us.anthropic.claude-haiku-4-5-20251001-v1:0 |
 
 ### Benefits vs Fargate Proxy (Deprecated)
 

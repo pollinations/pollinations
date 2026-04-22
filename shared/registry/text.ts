@@ -197,6 +197,12 @@ export const TEXT_SERVICES = {
             promptAudioTokens: 0.0000005,
             completionTextTokens: 0.000003,
         },
+        price: {
+            promptTextTokens: 0.00000075,
+            promptCachedTokens: 0.000000075,
+            promptAudioTokens: 0.00000075,
+            completionTextTokens: 0.0000045,
+        },
     },
     "gemini-flash-lite-3.1": {
         brand: "Google",
@@ -223,6 +229,12 @@ export const TEXT_SERVICES = {
             promptAudioTokens: 0.0000005,
             completionTextTokens: 0.0000015,
         },
+        price: {
+            promptTextTokens: 0.000000375,
+            promptCachedTokens: 0.0000000375,
+            promptAudioTokens: 0.00000075,
+            completionTextTokens: 0.00000225,
+        },
     },
     "gemini-fast": {
         brand: "Google",
@@ -238,6 +250,12 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         introducedAt: 1753999200000,
         cost: {
+            promptTextTokens: 0.0000001,
+            promptCachedTokens: 0.00000001,
+            promptAudioTokens: 0.0000003,
+            completionTextTokens: 0.0000004,
+        },
+        price: {
             promptTextTokens: 0.0000003,
             promptCachedTokens: 0.00000003,
             promptAudioTokens: 0.0000003,
@@ -329,6 +347,12 @@ export const TEXT_SERVICES = {
             promptCachedTokens: 0.00000002,
             promptAudioTokens: 0.0000002,
             completionTextTokens: 0.0000008,
+        },
+        price: {
+            promptTextTokens: 0.0000003,
+            promptCachedTokens: 0.00000003,
+            promptAudioTokens: 0.0000003,
+            completionTextTokens: 0.0000012,
         },
     },
     "midijourney": {
@@ -550,6 +574,11 @@ export const TEXT_SERVICES = {
             promptCachedTokens: 0.0000002,
             completionTextTokens: 0.000012,
         },
+        price: {
+            promptTextTokens: 0.000003,
+            promptCachedTokens: 0.0000003,
+            completionTextTokens: 0.000018,
+        },
     },
     "nova-fast": {
         brand: "Amazon",
@@ -607,18 +636,23 @@ export const TEXT_SERVICES = {
     "minimax": {
         brand: "MiniMax",
         provider: "fireworks",
-        model: "minimax-m2.5",
-        aliases: ["minimax-m2.5", "minimax-m2p5"],
+        model: "minimax-m2.7",
+        aliases: [
+            "minimax-m2.7",
+            "minimax-m2p7",
+            "minimax-m2.5",
+            "minimax-m2p5",
+        ],
         description: "Text generation with reasoning.",
         category: "text",
         inputModalities: ["text"],
         outputModalities: ["text"],
         capabilities: ["tools", "reasoning"],
         contextLength: 200000,
-        introducedAt: 1775952000000,
+        introducedAt: new Date("2026-04-19").getTime(),
         cost: {
             promptTextTokens: 0.0000003,
-            promptCachedTokens: 0.00000003,
+            promptCachedTokens: 0.00000006,
             completionTextTokens: 0.0000012,
         },
     },
@@ -673,6 +707,10 @@ export const TEXT_SERVICES = {
             promptTextTokens: 0.0000003,
             completionTextTokens: 0.0000015,
         },
+        price: {
+            promptTextTokens: 0.00000045,
+            completionTextTokens: 0.00000225,
+        },
     },
     "qwen-large": {
         brand: "Qwen",
@@ -695,19 +733,26 @@ export const TEXT_SERVICES = {
     },
     "qwen-vision": {
         brand: "Qwen",
-        provider: "alibaba",
-        model: "qwen3-vl-plus",
-        aliases: ["qwen3-vl", "qwen3-vl-plus", "qwen-vl"],
+        provider: "fireworks",
+        model: "qwen3-vl-30b-a3b-thinking",
+        aliases: [
+            "qwen3-vl",
+            "qwen3-vl-30b-a3b-thinking",
+            "qwen3-vl-thinking",
+            "qwen3-vl-plus",
+            "qwen-vl",
+        ],
         description: "Multimodal text generation with reasoning.",
         category: "text",
-        inputModalities: ["text", "image", "video"],
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         capabilities: ["tools", "reasoning"],
-        contextLength: 131072,
-        introducedAt: 1774137600000,
+        contextLength: 262144,
+        introducedAt: new Date("2026-04-19").getTime(),
         cost: {
-            promptTextTokens: 0.0000002,
-            completionTextTokens: 0.0000016,
+            promptTextTokens: 0.00000015,
+            promptCachedTokens: 0.00000008,
+            completionTextTokens: 0.0000006,
         },
     },
     "qwen-safety": {

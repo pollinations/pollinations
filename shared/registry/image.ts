@@ -88,6 +88,9 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.035,
         },
+        price: {
+            completionImageTokens: 0.0525,
+        },
     },
     "seedream": {
         brand: "ByteDance",
@@ -103,6 +106,9 @@ export const IMAGE_SERVICES = {
         introducedAt: 1753999200000,
         cost: {
             completionImageTokens: 0.03,
+        },
+        price: {
+            completionImageTokens: 0.045,
         },
     },
     "seedream-pro": {
@@ -120,6 +126,9 @@ export const IMAGE_SERVICES = {
         introducedAt: 1753999200000,
         cost: {
             completionImageTokens: 0.04,
+        },
+        price: {
+            completionImageTokens: 0.06,
         },
     },
     "gptimage": {
@@ -236,6 +245,9 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoTokens: 0.0000018,
         },
+        price: {
+            completionVideoTokens: 0.0000027,
+        },
     },
     "seedance-pro": {
         brand: "ByteDance",
@@ -252,6 +264,9 @@ export const IMAGE_SERVICES = {
         cost: {
             completionVideoTokens: 0.000001,
         },
+        price: {
+            completionVideoTokens: 0.0000015,
+        },
     },
     "wan": {
         brand: "Alibaba",
@@ -267,6 +282,10 @@ export const IMAGE_SERVICES = {
         cost: {
             completionAudioSeconds: 0.05,
             completionVideoSeconds: 0.05,
+        },
+        price: {
+            completionAudioSeconds: 0.075,
+            completionVideoSeconds: 0.075,
         },
     },
     "wan-fast": {
@@ -285,6 +304,10 @@ export const IMAGE_SERVICES = {
             completionAudioSeconds: 0.01,
             completionVideoSeconds: 0.01,
         },
+        price: {
+            completionAudioSeconds: 0.015,
+            completionVideoSeconds: 0.015,
+        },
     },
     "wan-image": {
         brand: "Alibaba",
@@ -298,6 +321,9 @@ export const IMAGE_SERVICES = {
         introducedAt: 1775088000000,
         cost: {
             completionImageTokens: 0.035,
+        },
+        price: {
+            completionImageTokens: 0.0525,
         },
     },
     "wan-image-pro": {
@@ -314,6 +340,9 @@ export const IMAGE_SERVICES = {
         introducedAt: 1775088000000,
         cost: {
             completionImageTokens: 0.075,
+        },
+        price: {
+            completionImageTokens: 0.1125,
         },
     },
     "qwen-image": {
@@ -334,6 +363,9 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.03,
         },
+        price: {
+            completionImageTokens: 0.045,
+        },
     },
     "grok-imagine": {
         brand: "xAI",
@@ -348,6 +380,9 @@ export const IMAGE_SERVICES = {
         introducedAt: 1774137600000,
         cost: {
             completionImageTokens: 0.02,
+        },
+        price: {
+            completionImageTokens: 0.03,
         },
     },
     "grok-imagine-pro": {
@@ -365,6 +400,9 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.07,
         },
+        price: {
+            completionImageTokens: 0.105,
+        },
     },
     "grok-video-pro": {
         brand: "xAI",
@@ -380,6 +418,9 @@ export const IMAGE_SERVICES = {
         introducedAt: 1774137600000,
         cost: {
             completionVideoSeconds: 0.05,
+        },
+        price: {
+            completionVideoSeconds: 0.075,
         },
     },
     "klein": {
@@ -426,6 +467,9 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.005,
         },
+        price: {
+            completionImageTokens: 0.0075,
+        },
     },
     "p-image-edit": {
         brand: "Pruna",
@@ -441,6 +485,9 @@ export const IMAGE_SERVICES = {
         cost: {
             completionImageTokens: 0.01,
         },
+        price: {
+            completionImageTokens: 0.015,
+        },
     },
     "p-video": {
         brand: "Pruna",
@@ -455,6 +502,9 @@ export const IMAGE_SERVICES = {
         introducedAt: 1773360000000,
         cost: {
             completionVideoSeconds: 0.024,
+        },
+        price: {
+            completionVideoSeconds: 0.036,
         },
     },
     "nova-canvas": {

@@ -90,8 +90,8 @@ export const IMAGE_CONFIG = {
     },
 
     // Azure GPT Image 2 - next-gen image generation
-    "gptimage-2": {
-        type: "azure-gptimage-2",
+    "gpt-image-2": {
+        type: "azure-gpt-image-2",
         enhance: false,
         defaultSideLength: 1024,
     },

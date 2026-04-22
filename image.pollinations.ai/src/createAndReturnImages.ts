@@ -345,7 +345,7 @@ const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
             "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
         modelName: "gpt-image-1.5",
     },
-    "gptimage-2": {
+    "gpt-image-2": {
         baseUrl:
             "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
         modelName: "gpt-image-2",
@@ -715,7 +715,7 @@ const generateImage = async (
     switch (safeParams.model) {
         case "gptimage":
         case "gptimage-large":
-        case "gptimage-2": {
+        case "gpt-image-2": {
             const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,

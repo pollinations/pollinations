@@ -178,9 +178,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
-    "gptimage-2": {
-        aliases: ["gpt-image-2"],
-        modelId: "gptimage-2",
+    "gpt-image-2": {
+        aliases: [],
+        modelId: "gpt-image-2",
         provider: "azure",
         cost: [
             {

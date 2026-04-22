@@ -1,0 +1,34 @@
+{
+  "pr_number": 10342,
+  "title": "feat: register qwen3-tts audio models (dashscope)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10342",
+  "merged_at": "2026-04-21T23:58:45Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive learns to speak Qwen",
+    "blurb": "We've added Qwen3-TTS models to our audio endpoints. Now you can generate speech with fine-grained emotion and style controls, giving your apps a whole new voice.",
+    "summary": "Integrated Qwen3-TTS and Qwen3-TTS-Instruct audio models into the /v1/audio/speech endpoint via DashScope.",
+    "impact": "Developers can now generate high-quality text-to-speech using Qwen models, including an instruct variant that supports custom emotion and style parameters.",
+    "keywords": [
+      "audio",
+      "tts",
+      "qwen",
+      "api",
+      "models"
+    ],
+    "visual_concept": "The pollinations.ai bee mascot wearing a tiny director's beret, holding a megaphone and directing a cute chunky robot with a CRT monitor head that is speaking into a retro microphone. Pixel sound waves and musical notes floating around.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a megaphone while directing a chunky robot with a CRT monitor head speaking into a retro microphone. Colorful pixel sound waves and musical notes float in the air. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-21/PR-10342.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, holding a megaphone while directing a chunky robot with a CRT monitor head speaking into a retro microphone. Colorful pixel sound waves and musical notes float in the air. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-21T23:59:42.839864+00:00"
+}

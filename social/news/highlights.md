@@ -1,3 +1,8 @@
+- **2026-04-21** – **🎵 Qwen3-TTS Audio Models** The hive learns to speak Qwen. Hit the [Audio API](https://gen.pollinations.ai/audio/{text}) with the new instruct variant to control emotion and style parameters.
+- **2026-04-21** – **🧠 Claude Opus 4.7** Anthropic's heavy hitter is now wired up via Bedrock. Pass `claude-xlarge` or `claude-opus-4.7` to the [Text API](https://gen.pollinations.ai/v1/chat/completions) for state-of-the-art reasoning.
+- **2026-04-21** – **🚀 Kimi 2.6 Upgrade** The default Kimi text model just got smarter. We bumped it to v2.6 under the hood, keeping your old aliases intact.
+- **2026-04-21** – **🧪 AI Models Laboratory** A new Next.js/Three.js playground for real-time generative creation just dropped in the community showcase. [Try it](https://iamge-lab-website.vercel.app/) <!-- app -->
+- **2026-04-21** – **✍️ Scene2Text** A picture is worth a thousand tokens. Turn scenes into text with this new community-built app. [Try it](https://scene2text.static.jp/) <!-- app -->
 - **2026-04-20** – **🔐 The golden handshake** The BYOP authorization screen got a complete redesign. Upfront spending limits and a cleaner flow so you actually know what you're agreeing to when handing over your pollen.
 - **2026-04-20** – **📊 Dashboard spring cleaning** We simplified the API key filter in the [Dashboard](https://enter.pollinations.ai) and added direct key filtering to the SDK. Track your usage without fighting the UI.
 - **2026-04-20** – **🌟 Insight Engine blooms again** Insight Engine has been rewired to use the latest endpoints and is back in the community showcase. [Try it](https://erbharatmalhotra.github.io/Insight_Engine/) <!-- app -->

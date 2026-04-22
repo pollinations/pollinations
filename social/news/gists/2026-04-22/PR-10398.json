@@ -1,0 +1,33 @@
+{
+  "pr_number": 10398,
+  "title": "fix(gptimage): migrate to eastus2 after Sweden Central content policy block",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10398",
+  "merged_at": "2026-04-22T05:19:43Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "New horizons for GPT images",
+    "blurb": "We've migrated our GPT image generation models to a new region to ensure reliable, uninterrupted service. Keep those prompts flowing!",
+    "summary": "Migrated the GPT image generation backend to a new Azure region to restore service availability.",
+    "impact": "Users can once again generate images using the GPT models reliably.",
+    "keywords": [
+      "infrastructure",
+      "azure",
+      "gptimage",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee moving a glowing image-generating server or a potted code-plant to a new, sunny location, representing the migration to a new region.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny explorer's hat, carrying a glowing lime green (#ecf874) server box to a new sunny garden plot. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-22/PR-10398.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny explorer's hat, carrying a glowing lime green (#ecf874) server box to a new sunny garden plot. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-22T05:20:44.888609+00:00"
+}

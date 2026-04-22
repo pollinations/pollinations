@@ -1,0 +1,35 @@
+{
+  "pr_number": 10397,
+  "title": "chore: update app metrics 2026-04-22",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10397",
+  "merged_at": "2026-04-22T05:07:01Z",
+  "labels": [
+    "API",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the metrics",
+    "blurb": "Our automated bot just watered the garden, updating the latest app metrics and health checks across the ecosystem.",
+    "summary": "Automated daily update of application metrics, health checks, and greenhouse statistics in the repository documentation.",
+    "impact": "Keeps the community showcase and README up-to-date with the latest usage numbers and app statuses.",
+    "keywords": [
+      "metrics",
+      "automated",
+      "chore",
+      "greenhouse",
+      "apps"
+    ],
+    "visual_concept": "The Monitor Robot acting as an automated gardener, watering a garden of data and numbers while Polly the bee checks off a daily task list.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering a digital garden where glowing numbers and code-plants sprout from lime green (#ecf874) flower pots. The cute bee mascot hovers nearby with a tiny clipboard checking off tasks. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-22/PR-10397.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering a digital garden where glowing numbers and code-plants sprout from lime green (#ecf874) flower pots. The cute bee mascot hovers nearby with a tiny clipboard checking off tasks. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-04-22T05:08:04.630134+00:00"
+}

@@ -1,9 +1,4 @@
-<svg 
-xmlns="http://www.w3.org/2000/svg" 
-width="80" 
-height="80" 
-viewBox="0 0 48 48">
-<path 
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" fill="currentColor"><g transform="translate(0.0374 0.0374) scale(0.4984)"><path 
 fill="none" 
 stroke="#20808d" 
 stroke-linecap="round" 
@@ -20,5 +15,4 @@ fill="none"
 stroke="#20808d" 
 stroke-linecap="round" 
 stroke-linejoin="round" 
-d="M24 16.573L34.27 27.01v14.407L24 31.073"/>
-</svg> 
+d="M24 16.573L34.27 27.01v14.407L24 31.073"/></g></svg>

@@ -528,7 +528,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             size="small"
             className={cn(
                 "px-3",
-                activeTab !== section.type && "!bg-white/80 text-gray-500",
+                activeTab === section.type
+                    ? "!bg-gray-900 !text-white hover:!bg-gray-800"
+                    : "!bg-white/80 text-gray-500",
             )}
             onClick={() => setActiveTab(section.type)}
         >
@@ -538,11 +540,11 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
     return (
         <div>
-            {/* Tabs + column headers - single responsive row */}
-            <div className="flex items-center py-2 pr-4 md:pr-8 gap-y-2">
-                <div className="grid grid-cols-2 min-[500px]:flex gap-1.5 min-w-0 shrink-0">
-                    {tabButtons}
-                </div>
+            {/* Row 1: tab selectors on their own line */}
+            <div className="flex flex-wrap gap-1.5 pt-2 pb-5">{tabButtons}</div>
+
+            {/* Row 2: column headers */}
+            <div className="flex items-center pb-2 pr-4 md:pr-8">
                 <div className="flex-1 min-w-6" />
                 <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
                     <div className="cursor-help text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px]">

@@ -151,40 +151,48 @@ export const ModelRow: FC<ModelRowProps> = ({
                     : "bg-white/80 hover:bg-white/90 transition-colors",
             )}
         >
+            {/* Brand logo — fixed width column */}
+            <div className="w-10 shrink-0 flex items-center justify-center">
+                {brandLogoPath && (
+                    <span
+                        aria-hidden="true"
+                        className="h-8 w-8 bg-current opacity-55 text-gray-900"
+                        style={{
+                            maskImage: `url(${brandLogoPath})`,
+                            WebkitMaskImage: `url(${brandLogoPath})`,
+                            maskRepeat: "no-repeat",
+                            WebkitMaskRepeat: "no-repeat",
+                            maskPosition: "center",
+                            WebkitMaskPosition: "center",
+                            maskSize: "contain",
+                            WebkitMaskSize: "contain",
+                        }}
+                    />
+                )}
+            </div>
+
             {/* Model info — flexible width */}
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 min-w-0">
+            <div className="flex-1 min-w-0 pl-3">
+                <div className="flex min-w-0 flex-col gap-1.5">
                     <button
                         type="button"
                         onClick={copyModelName}
                         className={cn(
-                            "inline-flex shrink-0 items-center gap-2 text-sm text-left transition-colors",
-                            showNew ? "font-bold" : "font-medium",
+                            "inline-flex self-start shrink-0 items-center text-base font-medium leading-none text-left transition-colors",
                             copied ? "text-gray-500" : "hover:text-gray-700",
                         )}
                         aria-label={`Copy model name ${publicModelName}`}
                         style={{ cursor: MODEL_COPY_CURSOR }}
                     >
-                        {brandLogoPath && (
-                            <span
-                                aria-hidden="true"
-                                className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
-                                style={{
-                                    maskImage: `url(${brandLogoPath})`,
-                                    WebkitMaskImage: `url(${brandLogoPath})`,
-                                    maskRepeat: "no-repeat",
-                                    WebkitMaskRepeat: "no-repeat",
-                                    maskPosition: "center",
-                                    WebkitMaskPosition: "center",
-                                    maskSize: "contain",
-                                    WebkitMaskSize: "contain",
-                                }}
-                            />
-                        )}
                         <span>{publicModelName}</span>
                     </button>
-                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-                        <div className="flex min-w-0 flex-wrap items-center gap-2 min-h-6">
+                    {(modalityIcons.length > 0 ||
+                        capabilityIcons.length > 0 ||
+                        modelProfile ||
+                        showNew ||
+                        showAlpha ||
+                        showPaidOnly) && (
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
                             {modalityIcons.length > 0 && (
                                 <Tooltip content={modalityLabel}>
                                     <Badge
@@ -211,8 +219,6 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     </Badge>
                                 </Tooltip>
                             )}
-                        </div>
-                        <div className="flex min-w-0 flex-wrap items-center gap-2 min-h-6">
                             {modelProfile && (
                                 <Badge
                                     color={
@@ -252,7 +258,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Tooltip>
                             )}
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 

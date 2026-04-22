@@ -574,7 +574,12 @@ const callAzureGPTImageWithEndpoint = async (
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new HttpError(errorText, response.status);
+        // Azure 403 = provider blocked us (content policy, key disabled,
+        // deployment quota) — not a client auth problem. Remap to 502 so the
+        // caller sees an upstream failure instead of being told they're
+        // forbidden.
+        const status = response.status === 403 ? 502 : response.status;
+        throw new HttpError(errorText, status);
     }
 
     const data = await response.json();

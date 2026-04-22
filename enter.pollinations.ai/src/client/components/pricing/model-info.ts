@@ -39,7 +39,6 @@ const BRAND_LOGOS: Record<string, string> = {
 const MODEL_LOGOS: Record<string, string> = {
     midijourney: "pollinations",
     "midijourney-large": "pollinations",
-    zimage: "alibaba",
 };
 
 export const getModalities = (modelName: string): Modalities => {

@@ -200,7 +200,7 @@ export const IMAGE_SERVICES = {
         },
     },
     "zimage": {
-        brand: "Pollinations",
+        brand: "Alibaba",
         provider: "runpod",
         model: "z-image-turbo",
         aliases: ["z-image", "z-image-turbo"],

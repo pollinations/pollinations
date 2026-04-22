@@ -199,11 +199,11 @@ function generateLLMDoc(): string {
     lines.push("- negative_prompt (string): Only flux, zimage");
     lines.push("- safe (boolean, default: false): Safety filter");
     lines.push(
-        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large',
+        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large, gpt-image-2',
     );
     lines.push("- image (string): Reference image URL(s), | or , separated");
     lines.push(
-        "- transparent (boolean, default: false): gptimage, gptimage-large",
+        "- transparent (boolean, default: false): gptimage, gptimage-large, gpt-image-2",
     );
     lines.push(
         "- reasoning (boolean, default: false): Enable thinking for improved text/layout. nanobanana, nanobanana-2, nanobanana-pro",

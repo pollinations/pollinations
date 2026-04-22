@@ -304,13 +304,13 @@ def call_pollinations_api(
         print(f"  [VERBOSE] Model: {use_model}")
         print(f"  [VERBOSE] Temperature: {temperature}")
         print(f"  [VERBOSE] System prompt ({len(system_prompt)} chars):")
-        print(f"  ---BEGIN SYSTEM PROMPT---")
+        print("  ---BEGIN SYSTEM PROMPT---")
         print(system_prompt[:2000] + ("..." if len(system_prompt) > 2000 else ""))
-        print(f"  ---END SYSTEM PROMPT---")
+        print("  ---END SYSTEM PROMPT---")
         print(f"  [VERBOSE] User prompt ({len(user_prompt)} chars):")
-        print(f"  ---BEGIN USER PROMPT---")
+        print("  ---BEGIN USER PROMPT---")
         print(user_prompt[:2000] + ("..." if len(user_prompt) > 2000 else ""))
-        print(f"  ---END USER PROMPT---")
+        print("  ---END USER PROMPT---")
 
     for attempt in range(retries):
         seed = random.randint(0, MAX_SEED)
@@ -347,9 +347,9 @@ def call_pollinations_api(
                     content = result['choices'][0]['message']['content']
                     if verbose:
                         print(f"  [VERBOSE] Response ({len(content)} chars):")
-                        print(f"  ---BEGIN RESPONSE---")
+                        print("  ---BEGIN RESPONSE---")
                         print(content[:3000] + ("..." if len(content) > 3000 else ""))
-                        print(f"  ---END RESPONSE---")
+                        print("  ---END RESPONSE---")
                     return content
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
                     last_error = f"Error parsing API response: {e}"
@@ -373,18 +373,24 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None) -> tuple[Optional[bytes], Optional[str]]:
-    """Generate a single image via the pollinations.ai image API."""
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None, skip_style_suffix: bool = False) -> tuple[Optional[bytes], Optional[str]]:
+    """Generate a single image via the pollinations.ai image API.
+
+    skip_style_suffix=True drops the bee mascot description, pixel-art style suffix,
+    and character reference image — used by channels (LinkedIn, Instagram) that
+    need a cleaner, more professional aesthetic.
+    """
     use_model = model or IMAGE_MODEL
 
-    # Append character descriptions if not already present (loaded from prompt file)
-    if "bee mascot" not in prompt.lower():
-        bee_desc = load_shared("bee")
-        if bee_desc:
-            prompt = f"{prompt} {bee_desc}"
+    if not skip_style_suffix:
+        # Append character descriptions if not already present (loaded from prompt file)
+        if "bee mascot" not in prompt.lower():
+            bee_desc = load_shared("bee")
+            if bee_desc:
+                prompt = f"{prompt} {bee_desc}"
 
-    # Always append style suffix — forces consistent pixel art rendering
-    prompt = f"{prompt} {IMAGE_STYLE_SUFFIX}"
+        # Always append style suffix — forces consistent pixel art rendering
+        prompt = f"{prompt} {IMAGE_STYLE_SUFFIX}"
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
     sanitized = prompt.replace("'", "")
@@ -408,8 +414,10 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "nofeed": "true",
             "seed": seed,
             "key": token,
-            "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg",
         }
+
+        if not skip_style_suffix:
+            params["image"] = "https://raw.githubusercontent.com/pollinations/pollinations/main/social/prompts/brand/characters-ref.jpg"
 
         if attempt == 0:
             print(f"  Using seed: {seed}")
@@ -437,7 +445,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
                     is_webp = image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP'
 
                     if not (is_jpeg or is_png or is_webp):
-                        last_error = f"Invalid image format"
+                        last_error = "Invalid image format"
                         print(f"  {last_error}")
                         continue
 

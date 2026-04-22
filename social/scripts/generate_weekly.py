@@ -48,6 +48,17 @@ from common import (
 
 WEEKLY_REL_DIR = "social/news/weekly"
 
+# LinkedIn cover image uses a text-rendering model with no pixel-art suffix —
+# posts compete with Anthropic, Cloudflare, HuggingFace in the feed and need
+# a scroll-stopping visual, not the bee mascot.
+# gpt-image-2 caps at 2K max dimension and supports any aspect ratio between
+# 3:1 and 1:3. LinkedIn feed favours 4:5 portrait — 1638x2048 maxes out the
+# API limit at that ratio.
+LINKEDIN_IMAGE_MODEL = "gpt-image-2"
+LINKEDIN_IMAGE_WIDTH = 1638
+LINKEDIN_IMAGE_HEIGHT = 2048
+
+
 def _weekly_image_context() -> str:
     """Load weekly image identity from weekly.md (everything after '## Weekly Image Identity')."""
     content = load_prompt("weekly")
@@ -57,6 +68,7 @@ def _weekly_image_context() -> str:
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
+
 
 def get_week_dates(override_start: Optional[str] = None):
     """Return (week_start, week_end, publish_date) as YYYY-MM-DD strings.
@@ -81,7 +93,6 @@ def get_week_dates(override_start: Optional[str] = None):
     )
 
 
-
 def build_weekly_summary_artifact(
     digest: Dict,
     gists: List[Dict],
@@ -94,7 +105,11 @@ def build_weekly_summary_artifact(
     arcs = digest.get("arcs") or []
     theme = (digest.get("theme") or "").strip()
     headline = next(
-        ((arc.get("headline") or "").strip() for arc in arcs if (arc.get("headline") or "").strip()),
+        (
+            (arc.get("headline") or "").strip()
+            for arc in arcs
+            if (arc.get("headline") or "").strip()
+        ),
         "",
     )
     title = headline or theme or f"Week ending {week_end}"
@@ -147,8 +162,10 @@ def read_gists_for_week(week_start: str, week_end: str) -> List[Dict]:
 
 # ── Step 1: Generate weekly summary ─────────────────────────────────
 
-def generate_digest(gists: List[Dict], week_start: str, week_end: str,
-                    token: str) -> Optional[Dict]:
+
+def generate_digest(
+    gists: List[Dict], week_start: str, week_end: str, token: str
+) -> Optional[Dict]:
     """Synthesize PR gists into weekly summary."""
     system_prompt = load_prompt("weekly")
 
@@ -157,24 +174,31 @@ def generate_digest(gists: List[Dict], week_start: str, week_end: str,
     for g in gists:
         date = g.get("merged_at", "")[:10] or "unknown"
         ai = g.get("gist", {})
-        by_date[date].append({
-            "pr_number": g.get("pr_number"),
-            "title": g.get("title"),
-            "author": g.get("author"),
-            "category": ai.get("category"),
-            "importance": ai.get("importance"),
-            "summary": ai.get("summary"),
-            "impact": ai.get("impact"),
-            "keywords": ai.get("keywords"),
-        })
+        by_date[date].append(
+            {
+                "pr_number": g.get("pr_number"),
+                "title": g.get("title"),
+                "author": g.get("author"),
+                "category": ai.get("category"),
+                "importance": ai.get("importance"),
+                "summary": ai.get("summary"),
+                "impact": ai.get("impact"),
+                "keywords": ai.get("keywords"),
+            }
+        )
 
     gist_context = []
     for date in sorted(by_date.keys()):
-        gist_context.append(json.dumps({
-            "date": date,
-            "pr_count": len(by_date[date]),
-            "prs": by_date[date],
-        }, indent=2))
+        gist_context.append(
+            json.dumps(
+                {
+                    "date": date,
+                    "pr_count": len(by_date[date]),
+                    "prs": by_date[date],
+                },
+                indent=2,
+            )
+        )
 
     user_prompt = f"""Week: {week_start} to {week_end}
 Total PRs: {len(gists)}
@@ -184,8 +208,7 @@ PR gists by date:
 {chr(10).join(gist_context)}"""
 
     response = call_pollinations_api(
-        system_prompt, user_prompt, token,
-        temperature=0.3, exit_on_failure=False
+        system_prompt, user_prompt, token, temperature=0.3, exit_on_failure=False
     )
     if not response:
         return None
@@ -194,10 +217,17 @@ PR gists by date:
 
 # ── Step 2: Generate platform posts ─────────────────────────────────
 
+
 def generate_twitter_post(digest: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("twitter", digest, token,
+    return generate_platform_post(
+        "twitter",
+        digest,
+        token,
         "Write a tweet about this week's shipped work.",
-        temperature=0.8, extra_context=_weekly_image_context())
+        temperature=0.8,
+        extra_context=_weekly_image_context(),
+    )
+
 
 def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
     post = generate_platform_post(
@@ -214,9 +244,13 @@ def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
     if not post:
         return None
 
-    missing_fields = [field for field in ("hook", "body", "closing") if not post.get(field)]
+    missing_fields = [
+        field for field in ("hook", "body", "closing") if not post.get(field)
+    ]
     if missing_fields:
-        print(f"  FATAL: Weekly LinkedIn post is missing required fields: {', '.join(missing_fields)}")
+        print(
+            f"  FATAL: Weekly LinkedIn post is missing required fields: {', '.join(missing_fields)}"
+        )
         return None
 
     full_post = build_linkedin_post_text(post)
@@ -235,15 +269,25 @@ def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
 
     return post
 
+
 def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("instagram", digest, token,
+    return generate_platform_post(
+        "instagram",
+        digest,
+        token,
         "Create a cozy pixel art post about this week's updates.",
-        extra_context=_weekly_image_context())
+        extra_context=_weekly_image_context(),
+    )
+
 
 def generate_reddit_post(digest: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("reddit", digest, token,
+    return generate_platform_post(
+        "reddit",
+        digest,
+        token,
         "Create a Reddit post for this week's update.",
-        extra_context=_weekly_image_context())
+        extra_context=_weekly_image_context(),
+    )
 
 
 def generate_discord_post(
@@ -261,7 +305,9 @@ def generate_discord_post(
         task += f"\nTotal PRs merged: {pr_count}"
     task += "\n\n" + fmt + _weekly_image_context()
 
-    response = call_pollinations_api(voice, task, token, temperature=0.7, exit_on_failure=False)
+    response = call_pollinations_api(
+        voice, task, token, temperature=0.7, exit_on_failure=False
+    )
     if not response:
         return None
 
@@ -273,6 +319,7 @@ def generate_discord_post(
 
 
 # ── Step 3: Generate images ────────────────────────────────────────
+
 
 def generate_platform_images(
     twitter_post: Optional[Dict],
@@ -293,29 +340,40 @@ def generate_platform_images(
     # Twitter: 1 image
     if twitter_post and twitter_post.get("image_prompt"):
         print("  Generating Twitter image...")
-        img_bytes, _ = generate_image(twitter_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
+        img_bytes, _ = generate_image(
+            twitter_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE
+        )
         if not img_bytes:
             print("  FATAL: Weekly Twitter image generation failed")
             sys.exit(1)
         url = commit_image_to_branch(
-            img_bytes, f"{image_dir}/twitter.jpg", branch,
-            github_token, owner, repo
+            img_bytes, f"{image_dir}/twitter.jpg", branch, github_token, owner, repo
         )
         if not url:
             print("  FATAL: Weekly Twitter image commit failed")
             sys.exit(1)
         twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
 
-    # LinkedIn: 1 image
+    # LinkedIn: 1 cover image — scroll-stopper, uses gpt-image-2 for text rendering
+    # and skips the pixel-art bee suffix. LinkedIn's feed competes with Anthropic/
+    # Cloudflare/HuggingFace — mascot art underperforms clean typographic covers.
     if linkedin_post and linkedin_post.get("image_prompt"):
-        print("  Generating LinkedIn image...")
-        img_bytes, _ = generate_image(linkedin_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
+        print(
+            f"  Generating LinkedIn cover ({LINKEDIN_IMAGE_MODEL}, {LINKEDIN_IMAGE_WIDTH}x{LINKEDIN_IMAGE_HEIGHT})..."
+        )
+        img_bytes, _ = generate_image(
+            linkedin_post["image_prompt"],
+            token,
+            LINKEDIN_IMAGE_WIDTH,
+            LINKEDIN_IMAGE_HEIGHT,
+            model=LINKEDIN_IMAGE_MODEL,
+            skip_style_suffix=True,
+        )
         if not img_bytes:
             print("  FATAL: Weekly LinkedIn image generation failed")
             sys.exit(1)
         url = commit_image_to_branch(
-            img_bytes, f"{image_dir}/linkedin.jpg", branch,
-            github_token, owner, repo
+            img_bytes, f"{image_dir}/linkedin.jpg", branch, github_token, owner, repo
         )
         if not url:
             print("  FATAL: Weekly LinkedIn image commit failed")
@@ -327,19 +385,23 @@ def generate_platform_images(
         for i, img_info in enumerate(instagram_post["images"][:3]):
             prompt = img_info.get("prompt", "")
             if not prompt:
-                print(f"  FATAL: Weekly Instagram image {i+1} is missing a prompt")
+                print(f"  FATAL: Weekly Instagram image {i + 1} is missing a prompt")
                 sys.exit(1)
-            print(f"  Generating Instagram image {i+1}...")
+            print(f"  Generating Instagram image {i + 1}...")
             img_bytes, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, i)
             if not img_bytes:
-                print(f"  FATAL: Weekly Instagram image {i+1} generation failed")
+                print(f"  FATAL: Weekly Instagram image {i + 1} generation failed")
                 sys.exit(1)
             url = commit_image_to_branch(
-                img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
-                github_token, owner, repo
+                img_bytes,
+                f"{image_dir}/instagram-{i + 1}.jpg",
+                branch,
+                github_token,
+                owner,
+                repo,
             )
             if not url:
-                print(f"  FATAL: Weekly Instagram image {i+1} commit failed")
+                print(f"  FATAL: Weekly Instagram image {i + 1} commit failed")
                 sys.exit(1)
             img_info["url"] = url
             time.sleep(3)
@@ -347,13 +409,14 @@ def generate_platform_images(
     # Reddit: 1 image
     if reddit_post and reddit_post.get("image_prompt"):
         print("  Generating Reddit image...")
-        img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
+        img_bytes, _ = generate_image(
+            reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE
+        )
         if not img_bytes:
             print("  FATAL: Weekly Reddit image generation failed")
             sys.exit(1)
         url = commit_image_to_branch(
-            img_bytes, f"{image_dir}/reddit.jpg", branch,
-            github_token, owner, repo
+            img_bytes, f"{image_dir}/reddit.jpg", branch, github_token, owner, repo
         )
         if not url:
             print("  FATAL: Weekly Reddit image commit failed")
@@ -363,13 +426,14 @@ def generate_platform_images(
     # Discord: 1 image
     if discord_post and discord_post.get("image_prompt"):
         print("  Generating Discord image...")
-        img_bytes, _ = generate_image(discord_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
+        img_bytes, _ = generate_image(
+            discord_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE
+        )
         if not img_bytes:
             print("  FATAL: Weekly Discord image generation failed")
             sys.exit(1)
         url = commit_image_to_branch(
-            img_bytes, f"{image_dir}/discord.jpg", branch,
-            github_token, owner, repo
+            img_bytes, f"{image_dir}/discord.jpg", branch, github_token, owner, repo
         )
         if not url:
             print("  FATAL: Weekly Discord image commit failed")
@@ -378,6 +442,7 @@ def generate_platform_images(
 
 
 # ── Step 4: Commit to news branch ─────────────────────────────────
+
 
 def commit_weekly_to_news(
     weekly_date: str,
@@ -401,9 +466,15 @@ def commit_weekly_to_news(
     # Generate images (commits them directly to news branch)
     print("\n  Generating platform images...")
     generate_platform_images(
-        twitter_post, linkedin_post, instagram_post,
-        weekly_date, pollinations_token,
-        github_token, owner, repo, GISTS_BRANCH,
+        twitter_post,
+        linkedin_post,
+        instagram_post,
+        weekly_date,
+        pollinations_token,
+        github_token,
+        owner,
+        repo,
+        GISTS_BRANCH,
         reddit_post=reddit_post,
         discord_post=discord_post,
     )
@@ -428,18 +499,20 @@ def commit_weekly_to_news(
                     f"  FATAL: Weekly LinkedIn post is {len(full_post)} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
                 )
                 sys.exit(1)
-        files_to_commit.append((
-            f"{base_path}/{filename}",
-            normalize_platform_post(
-                platform=platform,
-                scope="weekly",
-                date=weekly_date,
-                period_start=week_start,
-                period_end=week_end,
-                generated_at=generated_at,
-                raw_post=post,
-            ),
-        ))
+        files_to_commit.append(
+            (
+                f"{base_path}/{filename}",
+                normalize_platform_post(
+                    platform=platform,
+                    scope="weekly",
+                    date=weekly_date,
+                    period_start=week_start,
+                    period_end=week_end,
+                    generated_at=generated_at,
+                    raw_post=post,
+                ),
+            )
+        )
 
     if not files_to_commit:
         print("  No files to commit")
@@ -459,6 +532,7 @@ def commit_weekly_to_news(
 
 # ── Main ─────────────────────────────────────────────────────────────
 
+
 def main():
     print("=== Tier 3: Weekly Digest Generator ===")
 
@@ -476,7 +550,9 @@ def main():
     print(f"\n[1/4] Reading gists for {week_start} to {week_end}...")
     all_gists = read_gists_for_week(week_start, week_end)
     daily_gists = filter_daily_gists(all_gists)
-    print(f"  Found {len(all_gists)} total gists, {len(daily_gists)} with publish_tier=daily")
+    print(
+        f"  Found {len(all_gists)} total gists, {len(daily_gists)} with publish_tier=daily"
+    )
 
     if not daily_gists:
         print("  No daily-tier gists found. Skipping.")
@@ -484,7 +560,7 @@ def main():
         return
 
     # ── Generate summary ─────────────────────────────────────────────
-    print(f"\n[2/4] Generating weekly summary...")
+    print("\n[2/4] Generating weekly summary...")
     digest = generate_digest(daily_gists, week_start, week_end, pollinations_token)
     if not digest:
         print("  Digest generation failed!")
@@ -497,7 +573,7 @@ def main():
     )
 
     # ── Generate platform posts ──────────────────────────────────────
-    print(f"\n[3/4] Generating platform posts...")
+    print("\n[3/4] Generating platform posts...")
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(digest, pollinations_token)
@@ -552,15 +628,20 @@ def main():
         sys.exit(1)
 
     # ── Commit to news branch ────────────────────────────────────────
-    print(f"\n[4/4] Committing weekly content to news branch...")
+    print("\n[4/4] Committing weekly content to news branch...")
     success = commit_weekly_to_news(
         publish_date,
         week_start,
         week_end,
         summary_artifact,
-        twitter_post, linkedin_post, instagram_post, discord_post,
+        twitter_post,
+        linkedin_post,
+        instagram_post,
+        discord_post,
         generated_at,
-        github_token, owner, repo,
+        github_token,
+        owner,
+        repo,
         reddit_post=reddit_post,
     )
 

@@ -35,6 +35,7 @@ section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
 source "$SCRIPT_DIR/_load-admin-secrets.sh"
 
+REPO="pollinations/pollinations"
 TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 API_BASE="https://api.fireworks.ai/v1"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
@@ -163,14 +164,14 @@ if [ -z "$NEW_KEY" ] || [ "$NEW_KEY" = "null" ]; then
     error "No key in response: $CREATE_RESPONSE"
     exit 1
 fi
-log "New key: ${NEW_KEY:0:8}..."
+log "New key: ${NEW_KEY:0:4}..."
 
 #######################################
 # 3. Update SOPS
 #######################################
 section "Updating SOPS"
 
-sops --set "[\"FIREWORKS_API_KEY\"] \"$NEW_KEY\"" "$TEXT_SOPS"
+sops --set "[\"FIREWORKS_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$TEXT_SOPS"
 log "  text.pollinations.ai/env.json updated"
 
 #######################################
@@ -197,14 +198,14 @@ git add "$TEXT_SOPS"
 git commit -m "rotate: Fireworks API key"
 git push -u origin "$BRANCH"
 
-gh pr create \
+gh pr create --repo "$REPO" \
     --base main \
     --head "$BRANCH" \
     --title "rotate: Fireworks API key" \
     --body "Rotates \`FIREWORKS_API_KEY\`. Old key stays valid until this PR merges, production is promoted, services are redeployed, and health check passes. Automated by \`rotate-genai-fireworks.sh\`."
 
 log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --auto --squash
+gh pr merge "$BRANCH" --repo "$REPO" --auto --squash
 
 #######################################
 # 6. Poll until PR merged
@@ -214,7 +215,7 @@ section "Waiting for PR to merge"
 MERGE_TIMEOUT=900
 MERGE_ELAPSED=0
 while true; do
-    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    STATE=$(gh pr view "$BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
     case "$STATE" in
         MERGED) log "PR merged."; break ;;
         CLOSED) error "PR was closed without merging."; exit 1 ;;
@@ -234,19 +235,24 @@ section "Promoting main → production"
 
 git checkout main
 git pull --ff-only origin main
+PROD_SHA=$(git rev-parse main)
 git fetch origin production
 git push origin main:production
-log "production advanced to main."
+log "production advanced to main ($PROD_SHA)."
 
 #######################################
 # 8. Watch deploy workflow
 #######################################
 section "Waiting for $DEPLOY_WORKFLOW"
 
-sleep 10
-RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+RUN_ID=""
+for _ in $(seq 1 12); do
+    sleep 10
+    RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --commit="$PROD_SHA" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+    [ -n "$RUN_ID" ] && break
+done
 if [ -z "$RUN_ID" ]; then
-    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    error "No deploy run found for $DEPLOY_WORKFLOW on production at $PROD_SHA."
     exit 1
 fi
 log "Watching run $RUN_ID..."
@@ -309,7 +315,7 @@ git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout main
 
 section "Fireworks Key Rotation Complete"
 echo ""
-log "Old key: ${OLD_KEY:0:8}... (deleted)"
-log "New key: ${NEW_KEY:0:8}..."
+log "Old key: ${OLD_KEY:0:4}... (deleted)"
+log "New key: ${NEW_KEY:0:4}..."
 echo ""
 log "SOPS + production + EC2 text service now using the new key."

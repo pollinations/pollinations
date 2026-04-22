@@ -51,6 +51,7 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
+REPO="pollinations/pollinations"
 SOPS_FILES=(
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
     "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
@@ -157,8 +158,8 @@ for f in "${SOPS_FILES[@]}"; do
         warn "Skipping $fname — file not found"
         continue
     fi
-    sops --set "[\"AWS_ACCESS_KEY_ID\"] \"$NEW_KEY_ID\"" "$f"
-    sops --set "[\"AWS_SECRET_ACCESS_KEY\"] \"$NEW_SECRET\"" "$f"
+    sops --set "[\"AWS_ACCESS_KEY_ID\"] $(printf '%s' "$NEW_KEY_ID" | jq -Rs .)" "$f"
+    sops --set "[\"AWS_SECRET_ACCESS_KEY\"] $(printf '%s' "$NEW_SECRET" | jq -Rs .)" "$f"
     log "  $fname updated"
 done
 
@@ -189,14 +190,14 @@ git add "${SOPS_FILES[@]}"
 git commit -m "rotate: AWS access keys ($IAM_USER)"
 git push -u origin "$BRANCH"
 
-gh pr create \
+gh pr create --repo "$REPO" \
     --base main \
     --head "$BRANCH" \
     --title "rotate: AWS access keys ($IAM_USER)" \
     --body "Rotates AWS IAM access keys for \`$IAM_USER\`. Old key \`$OLD_KEY_ID\` stays valid until this PR merges, production is promoted, services are redeployed, and health check passes. Automated by \`rotate-genai-aws.sh\`."
 
 log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --auto --squash
+gh pr merge "$BRANCH" --repo "$REPO" --auto --squash
 
 #######################################
 # 5. Poll until PR merged
@@ -206,7 +207,7 @@ section "Waiting for PR to merge"
 MERGE_TIMEOUT=900  # 15 minutes
 MERGE_ELAPSED=0
 while true; do
-    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    STATE=$(gh pr view "$BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
     case "$STATE" in
         MERGED) log "PR merged."; break ;;
         CLOSED) error "PR was closed without merging."; exit 1 ;;
@@ -226,19 +227,24 @@ section "Promoting main → production"
 
 git checkout main
 git pull --ff-only origin main
+PROD_SHA=$(git rev-parse main)
 git fetch origin production
 git push origin main:production
-log "production advanced to main."
+log "production advanced to main ($PROD_SHA)."
 
 #######################################
 # 7. Watch deploy workflow
 #######################################
 section "Waiting for $DEPLOY_WORKFLOW"
 
-sleep 10  # give GH a moment to register the run
-RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+RUN_ID=""
+for _ in $(seq 1 12); do
+    sleep 10
+    RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --commit="$PROD_SHA" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+    [ -n "$RUN_ID" ] && break
+done
 if [ -z "$RUN_ID" ]; then
-    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    error "No deploy run found for $DEPLOY_WORKFLOW on production at $PROD_SHA."
     exit 1
 fi
 log "Watching run $RUN_ID..."

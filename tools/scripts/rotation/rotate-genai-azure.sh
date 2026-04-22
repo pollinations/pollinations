@@ -44,6 +44,7 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
+REPO="pollinations/pollinations"
 IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
@@ -61,8 +62,15 @@ extract_resource_name() {
 
 find_resource_group() {
     local resource_name=$1
-    az cognitiveservices account list \
-        --query "[?name=='$resource_name'].resourceGroup | [0]" -o tsv 2>/dev/null
+    local out
+    out=$(az cognitiveservices account list \
+        --query "[?name=='$resource_name'].resourceGroup | [0]" -o tsv 2>&1) || {
+        error "az account list failed while resolving resource group for $resource_name:"
+        echo "$out" | head -5
+        error "If the resource lives in a different subscription, run: az account set --subscription <id>"
+        return 1
+    }
+    echo "$out"
 }
 
 # Process one Azure resource: detect active slot, regenerate other slot,
@@ -93,21 +101,32 @@ rotate_resource() {
 
     local resource_name resource_group
     resource_name=$(extract_resource_name "$endpoint")
-    resource_group=$(find_resource_group "$resource_name")
+    resource_group=$(find_resource_group "$resource_name") || return 1
     if [ -z "$resource_group" ]; then
-        error "Could not find resource group for $resource_name."
+        error "Resource $resource_name not visible in current az subscription ($(az account show --query id -o tsv 2>/dev/null || echo unknown))."
+        error "If it lives elsewhere, run: az account set --subscription <id>"
         return 1
     fi
     log "  endpoint: $endpoint"
     log "  resource: $resource_name (rg: $resource_group)"
 
+    local keys_json
+    keys_json=$(az cognitiveservices account keys list \
+        --name "$resource_name" --resource-group "$resource_group" \
+        -o json 2>&1) || {
+        error "az keys list failed for $resource_name (rg: $resource_group):"
+        echo "$keys_json" | head -5
+        error "If the resource lives in a different subscription, run: az account set --subscription <id>"
+        return 1
+    }
     local key1 key2
-    key1=$(az cognitiveservices account keys list \
-        --name "$resource_name" --resource-group "$resource_group" \
-        --query "key1" -o tsv 2>/dev/null)
-    key2=$(az cognitiveservices account keys list \
-        --name "$resource_name" --resource-group "$resource_group" \
-        --query "key2" -o tsv 2>/dev/null)
+    key1=$(echo "$keys_json" | jq -r '.key1 // empty')
+    key2=$(echo "$keys_json" | jq -r '.key2 // empty')
+    if [ -z "$key1" ] || [ -z "$key2" ]; then
+        error "az returned empty key1/key2 for $resource_name. Raw response:"
+        echo "$keys_json" | head -5
+        return 1
+    fi
 
     local active_slot regenerate_slot
     if [ "$current_key" = "$key1" ]; then
@@ -146,7 +165,7 @@ rotate_resource() {
             warn "  skipping $fname — file not found"
             continue
         fi
-        sops --set "[\"$api_key_name\"] \"$new_key\"" "$f"
+        sops --set "[\"$api_key_name\"] $(printf '%s' "$new_key" | jq -Rs .)" "$f"
         log "  SOPS: $fname updated"
     done
 }
@@ -254,14 +273,14 @@ git add "$TEXT_SOPS" "$IMAGE_SOPS"
 git commit -m "rotate: Azure Cognitive Services keys ($TARGET)"
 git push -u origin "$BRANCH"
 
-gh pr create \
+gh pr create --repo "$REPO" \
     --base main \
     --head "$BRANCH" \
     --title "rotate: Azure Cognitive Services keys ($TARGET)" \
     --body "Rotates Azure Cognitive Services keys via key1/key2 alternation. Previously-active slot stays valid in Azure during the deploy window — zero downtime. Automated by \`rotate-genai-azure.sh\`."
 
 log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --auto --squash
+gh pr merge "$BRANCH" --repo "$REPO" --auto --squash
 
 #######################################
 # Poll until PR merged
@@ -271,7 +290,7 @@ section "Waiting for PR to merge"
 MERGE_TIMEOUT=900
 MERGE_ELAPSED=0
 while true; do
-    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    STATE=$(gh pr view "$BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
     case "$STATE" in
         MERGED) log "PR merged."; break ;;
         CLOSED) error "PR was closed without merging."; exit 1 ;;
@@ -291,19 +310,24 @@ section "Promoting main → production"
 
 git checkout main
 git pull --ff-only origin main
+PROD_SHA=$(git rev-parse main)
 git fetch origin production
 git push origin main:production
-log "production advanced to main."
+log "production advanced to main ($PROD_SHA)."
 
 #######################################
 # Watch deploy workflow
 #######################################
 section "Waiting for $DEPLOY_WORKFLOW"
 
-sleep 10
-RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+RUN_ID=""
+for _ in $(seq 1 12); do
+    sleep 10
+    RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --commit="$PROD_SHA" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+    [ -n "$RUN_ID" ] && break
+done
 if [ -z "$RUN_ID" ]; then
-    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    error "No deploy run found for $DEPLOY_WORKFLOW on production at $PROD_SHA."
     exit 1
 fi
 log "Watching run $RUN_ID..."

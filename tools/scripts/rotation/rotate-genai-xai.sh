@@ -41,6 +41,7 @@ section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
 source "$SCRIPT_DIR/_load-admin-secrets.sh"
 
+REPO="pollinations/pollinations"
 IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
 MGMT_API="https://management-api.x.ai"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
@@ -93,16 +94,25 @@ LIST_RESPONSE=$(curl -sS --fail-with-body --max-time 15 \
     exit 1
 }
 
-OLD_KEY_ID=$(echo "$LIST_RESPONSE" | jq -r \
+MATCHING_IDS=$(echo "$LIST_RESPONSE" | jq -r \
     --arg suffix "$OLD_SUFFIX" \
-    '.apiKeys[] | select(.redactedApiKey | endswith($suffix)) | .apiKeyId' | head -1)
+    '.apiKeys[] | select(.redactedApiKey | endswith($suffix)) | .apiKeyId')
+MATCH_COUNT=$(echo "$MATCHING_IDS" | grep -c . || true)
 
-if [ -z "$OLD_KEY_ID" ]; then
+if [ "$MATCH_COUNT" -eq 0 ]; then
     error "Could not find apiKeyId matching suffix ...$OLD_SUFFIX in team $XAI_TEAM_ID."
     echo "Listed keys:"
     echo "$LIST_RESPONSE" | jq '.apiKeys[].redactedApiKey' 2>/dev/null
     exit 1
 fi
+if [ "$MATCH_COUNT" -gt 1 ]; then
+    error "Multiple xAI keys share suffix ...$OLD_SUFFIX — refusing to guess which to delete:"
+    echo "$LIST_RESPONSE" | jq --arg suffix "$OLD_SUFFIX" \
+        '.apiKeys[] | select(.redactedApiKey | endswith($suffix)) | {apiKeyId, name, redactedApiKey}'
+    error "Resolve manually: delete the correct old key in the xAI console, or rename colliding keys."
+    exit 1
+fi
+OLD_KEY_ID="$MATCHING_IDS"
 log "Old apiKeyId: $OLD_KEY_ID"
 
 OLD_NAME=$(echo "$LIST_RESPONSE" | jq -r --arg id "$OLD_KEY_ID" \
@@ -168,14 +178,14 @@ if [ -z "$NEW_KEY" ] || [ -z "$NEW_KEY_ID" ]; then
     error "Response missing apiKey or apiKeyId: $CREATE_RESPONSE"
     exit 1
 fi
-log "New key: ${NEW_KEY:0:12}... (ID: $NEW_KEY_ID)"
+log "New key: ${NEW_KEY:0:4}... (ID: $NEW_KEY_ID)"
 
 #######################################
 # 2. Update SOPS
 #######################################
 section "Updating SOPS"
 
-sops --set "[\"XAI_API_KEY\"] \"$NEW_KEY\"" "$IMAGE_SOPS"
+sops --set "[\"XAI_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$IMAGE_SOPS"
 log "  image.pollinations.ai/env.json updated"
 
 #######################################
@@ -189,14 +199,14 @@ git add "$IMAGE_SOPS"
 git commit -m "rotate: xAI API key"
 git push -u origin "$BRANCH"
 
-gh pr create \
+gh pr create --repo "$REPO" \
     --base main \
     --head "$BRANCH" \
     --title "rotate: xAI API key" \
     --body "Rotates \`XAI_API_KEY\` via create-new + delete-old (replaces the old in-place /rotate endpoint). Old key \`$OLD_KEY_ID\` stays valid until this PR merges, production deploys, and health check passes. Automated by \`rotate-genai-xai.sh\`."
 
 log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --auto --squash
+gh pr merge "$BRANCH" --repo "$REPO" --auto --squash
 
 #######################################
 # 4. Poll until PR merged
@@ -206,7 +216,7 @@ section "Waiting for PR to merge"
 MERGE_TIMEOUT=900
 MERGE_ELAPSED=0
 while true; do
-    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    STATE=$(gh pr view "$BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
     case "$STATE" in
         MERGED) log "PR merged."; break ;;
         CLOSED) error "PR was closed without merging."; exit 1 ;;
@@ -226,19 +236,24 @@ section "Promoting main → production"
 
 git checkout main
 git pull --ff-only origin main
+PROD_SHA=$(git rev-parse main)
 git fetch origin production
 git push origin main:production
-log "production advanced to main."
+log "production advanced to main ($PROD_SHA)."
 
 #######################################
 # 6. Watch deploy workflow
 #######################################
 section "Waiting for $DEPLOY_WORKFLOW"
 
-sleep 10
-RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+RUN_ID=""
+for _ in $(seq 1 12); do
+    sleep 10
+    RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --commit="$PROD_SHA" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+    [ -n "$RUN_ID" ] && break
+done
 if [ -z "$RUN_ID" ]; then
-    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    error "No deploy run found for $DEPLOY_WORKFLOW on production at $PROD_SHA."
     exit 1
 fi
 log "Watching run $RUN_ID..."
@@ -292,7 +307,7 @@ git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout main
 
 section "xAI Key Rotation Complete"
 echo ""
-log "Old key: ${OLD_KEY:0:12}... (deleted, ID: $OLD_KEY_ID)"
-log "New key: ${NEW_KEY:0:12}... (ID: $NEW_KEY_ID)"
+log "Old key: ${OLD_KEY:0:4}... (deleted, ID: $OLD_KEY_ID)"
+log "New key: ${NEW_KEY:0:4}... (ID: $NEW_KEY_ID)"
 echo ""
 log "SOPS + production + EC2 image service now using the new key."

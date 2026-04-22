@@ -76,6 +76,8 @@ for f in "$SOPS_YAML" "$RECIPIENTS_FILE"; do
     [ -f "$f" ] || { error "Required file missing: $f"; exit 1; }
 done
 
+source "$SCRIPT_DIR/_check-sops-recipients.sh"
+
 # Read labeled recipients. Same parser as rotate-infra-sops-ci.sh.
 read_recipient() {
     local role="$1"
@@ -229,8 +231,8 @@ PHASE1_BRANCH="rotate/sops-personal-${OLD_ROLE:-unlabeled}-add-${TS}"
 git checkout -b "$PHASE1_BRANCH"
 
 # Build the new recipient list: all current recipients + the new pubkey.
-# We read the existing list from .sops.yaml so we don't miss any labels.
-CURRENT_LIST=$(grep -E '^\s+age1' "$SOPS_YAML" | head -1 | sed 's/^\s*//')
+# Extract every age1* token regardless of folded-line wrapping.
+CURRENT_LIST=$(grep -oE 'age1[a-z0-9]+' "$SOPS_YAML" | paste -sd, -)
 [ -z "$CURRENT_LIST" ] && { error "Could not parse recipient list from .sops.yaml"; exit 1; }
 NEW_AGE_LIST="${CURRENT_LIST},${NEW_PUBKEY}"
 
@@ -238,9 +240,14 @@ python3 - "$SOPS_YAML" "$NEW_AGE_LIST" <<'PYEOF'
 import sys, re
 path, new_list = sys.argv[1], sys.argv[2]
 with open(path) as f: txt = f.read()
-new_txt = re.sub(r'(age:\s*>-\s*\n\s*)[^\n]+', lambda m: m.group(1) + new_list, txt, count=1)
-if new_txt == txt:
-    print("ERROR: age block not matched in .sops.yaml", file=sys.stderr); sys.exit(1)
+m = re.search(r'^([ \t]+)age:\s*>-\s*\n((?:\1[ \t]+\S[^\n]*\n)+)', txt, re.MULTILINE)
+if not m:
+    print("ERROR: folded age: >- block not matched in .sops.yaml", file=sys.stderr); sys.exit(1)
+parent_indent = m.group(1)
+first_cont = re.match(r'([ \t]+)', m.group(2))
+cont_indent = first_cont.group(1) if first_cont else parent_indent + '    '
+replacement = f"{parent_indent}age: >-\n{cont_indent}{new_list}\n"
+new_txt = txt[:m.start()] + replacement + txt[m.end():]
 with open(path, 'w') as f: f.write(new_txt)
 PYEOF
 
@@ -248,7 +255,11 @@ log ".sops.yaml updated with new personal pubkey (overlap window)"
 
 log "Re-wrapping DEK on $SOPS_FILE_COUNT files..."
 for f in $SOPS_FILES; do
-    sops updatekeys -y "$f" >/dev/null 2>&1 || { error "updatekeys failed on $f"; exit 1; }
+    if ! UPDATEKEYS_OUT=$(sops updatekeys -y "$f" 2>&1); then
+        error "updatekeys failed on $f:"
+        echo "$UPDATEKEYS_OUT" | head -10
+        exit 1
+    fi
 done
 
 # Sanity: new key can decrypt after updatekeys.
@@ -309,8 +320,10 @@ section "Phase 3: remove old personal recipient"
 PHASE3_BRANCH="rotate/sops-personal-${OLD_ROLE:-unlabeled}-remove-${TS}"
 git checkout -b "$PHASE3_BRANCH"
 
-# Drop the old pubkey from the recipient list.
-FINAL_LIST=$(echo "$NEW_AGE_LIST" | tr ',' '\n' | grep -v "$OLD_PUBKEY" | paste -sd, -)
+# Drop the old pubkey from the recipient list. Re-read from .sops.yaml so we
+# pick up any recipients added concurrently between Phase 1 and Phase 3.
+CURRENT_LIST=$(grep -oE 'age1[a-z0-9]+' "$SOPS_YAML" | paste -sd, -)
+FINAL_LIST=$(echo "$CURRENT_LIST" | tr ',' '\n' | grep -v "$OLD_PUBKEY" | paste -sd, -)
 if [ -z "$FINAL_LIST" ] || ! echo "$FINAL_LIST" | grep -q "$NEW_PUBKEY"; then
     error "Recipient list would be empty or missing new key after dropping old. Aborting."
     exit 1
@@ -329,7 +342,11 @@ PYEOF
 log ".sops.yaml updated: old recipient removed"
 
 for f in $SOPS_FILES; do
-    sops updatekeys -y "$f" >/dev/null 2>&1 || { error "updatekeys failed on $f"; exit 1; }
+    if ! UPDATEKEYS_OUT=$(sops updatekeys -y "$f" 2>&1); then
+        error "updatekeys failed on $f:"
+        echo "$UPDATEKEYS_OUT" | head -10
+        exit 1
+    fi
 done
 
 # Update recipient metadata if we have a labeled role.

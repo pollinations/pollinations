@@ -81,6 +81,8 @@ if [ ! -f "$RECIPIENTS_FILE" ]; then
     exit 1
 fi
 
+source "$SCRIPT_DIR/_check-sops-recipients.sh"
+
 read_recipient() {
     # Reads `<role>: <age-pubkey>` from sops-recipients.yaml. Simple file,
     # known shape — a grep is more portable than depending on yq.
@@ -196,10 +198,16 @@ python3 - "$SOPS_YAML" "$NEW_AGE_LIST" <<'PYEOF'
 import sys, re
 path, new_list = sys.argv[1], sys.argv[2]
 with open(path) as f: txt = f.read()
-# Replace the value of the first `age: >-` block
-new_txt = re.sub(r'(age:\s*>-\s*\n\s*)[^\n]+', lambda m: m.group(1) + new_list, txt, count=1)
-if new_txt == txt:
-    print("ERROR: age block not matched in .sops.yaml", file=sys.stderr); sys.exit(1)
+# Match the full folded `age: >-` block: header line, then all indented
+# continuation lines until the next yaml key at a lower/equal indent.
+m = re.search(r'^([ \t]+)age:\s*>-\s*\n((?:\1[ \t]+\S[^\n]*\n)+)', txt, re.MULTILINE)
+if not m:
+    print("ERROR: folded age: >- block not matched in .sops.yaml", file=sys.stderr); sys.exit(1)
+parent_indent = m.group(1)
+first_cont = re.match(r'([ \t]+)', m.group(2))
+cont_indent = first_cont.group(1) if first_cont else parent_indent + '    '
+replacement = f"{parent_indent}age: >-\n{cont_indent}{new_list}\n"
+new_txt = txt[:m.start()] + replacement + txt[m.end():]
 with open(path, 'w') as f: f.write(new_txt)
 PYEOF
 
@@ -207,7 +215,11 @@ log ".sops.yaml updated: 4 recipients (core, itachi, old-CI, new-CI)"
 
 log "Re-wrapping DEK on $SOPS_FILE_COUNT files..."
 for f in $SOPS_FILES; do
-    sops updatekeys -y "$f" >/dev/null 2>&1 || { error "updatekeys failed on $f"; exit 1; }
+    if ! UPDATEKEYS_OUT=$(sops updatekeys -y "$f" 2>&1); then
+        error "updatekeys failed on $f:"
+        echo "$UPDATEKEYS_OUT" | head -10
+        exit 1
+    fi
 done
 
 # Sanity: new key can decrypt
@@ -307,7 +319,11 @@ PYEOF
 log ".sops.yaml updated: 3 recipients (core, itachi, new-CI only)"
 
 for f in $SOPS_FILES; do
-    sops updatekeys -y "$f" >/dev/null 2>&1 || { error "updatekeys failed on $f"; exit 1; }
+    if ! UPDATEKEYS_OUT=$(sops updatekeys -y "$f" 2>&1); then
+        error "updatekeys failed on $f:"
+        echo "$UPDATEKEYS_OUT" | head -10
+        exit 1
+    fi
 done
 
 # Update recipient metadata

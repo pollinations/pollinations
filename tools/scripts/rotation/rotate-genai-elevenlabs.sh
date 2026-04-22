@@ -39,6 +39,7 @@ section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
 source "$SCRIPT_DIR/_load-admin-secrets.sh"
 
+REPO="pollinations/pollinations"
 ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
 API_BASE="https://api.elevenlabs.io/v1"
 SOPS_FILES=(
@@ -111,7 +112,7 @@ if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "null" ]; then
     error "Could not read ELEVENLABS_API_KEY from SOPS."
     exit 1
 fi
-log "Current runtime key: ${OLD_KEY:0:8}..."
+log "Current runtime key: ${OLD_KEY:0:4}..."
 
 if [ ! -f "$TESTING_TOKENS_FILE" ]; then
     error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
@@ -177,7 +178,7 @@ if [ -z "$NEW_KEY" ]; then
     error "No key in response: $CREATE_RESPONSE"
     exit 1
 fi
-log "New key: ${NEW_KEY:0:8}... (ID: $NEW_KEY_ID)"
+log "New key: ${NEW_KEY:0:4}... (ID: $NEW_KEY_ID)"
 
 #######################################
 # 3. Update SOPS
@@ -186,7 +187,7 @@ section "Updating SOPS"
 
 for f in "${SOPS_FILES[@]}"; do
     fname=$(basename "$f")
-    sops --set "[\"ELEVENLABS_API_KEY\"] \"$NEW_KEY\"" "$f"
+    sops --set "[\"ELEVENLABS_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$f"
     log "  $fname updated"
 done
 
@@ -214,14 +215,14 @@ git add "${SOPS_FILES[@]}"
 git commit -m "rotate: ElevenLabs API key"
 git push -u origin "$BRANCH"
 
-gh pr create \
+gh pr create --repo "$REPO" \
     --base main \
     --head "$BRANCH" \
     --title "rotate: ElevenLabs API key" \
     --body "Rotates \`ELEVENLABS_API_KEY\` runtime key (new SA key). Wrangler already has the new value live. This PR syncs SOPS + triggers a worker redeploy via production. Automated by \`rotate-genai-elevenlabs.sh\`."
 
 log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --auto --squash
+gh pr merge "$BRANCH" --repo "$REPO" --auto --squash
 
 #######################################
 # 6. Poll until PR merged
@@ -231,7 +232,7 @@ section "Waiting for PR to merge"
 MERGE_TIMEOUT=900
 MERGE_ELAPSED=0
 while true; do
-    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    STATE=$(gh pr view "$BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
     case "$STATE" in
         MERGED) log "PR merged."; break ;;
         CLOSED) error "PR was closed without merging."; exit 1 ;;
@@ -251,19 +252,24 @@ section "Promoting main → production"
 
 git checkout main
 git pull --ff-only origin main
+PROD_SHA=$(git rev-parse main)
 git fetch origin production
 git push origin main:production
-log "production advanced to main."
+log "production advanced to main ($PROD_SHA)."
 
 #######################################
 # 8. Watch deploy workflow
 #######################################
 section "Waiting for $DEPLOY_WORKFLOW"
 
-sleep 10
-RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+RUN_ID=""
+for _ in $(seq 1 12); do
+    sleep 10
+    RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --commit="$PROD_SHA" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+    [ -n "$RUN_ID" ] && break
+done
 if [ -z "$RUN_ID" ]; then
-    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    error "No deploy run found for $DEPLOY_WORKFLOW on production at $PROD_SHA."
     exit 1
 fi
 log "Watching run $RUN_ID..."
@@ -323,7 +329,7 @@ git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout main
 
 section "ElevenLabs Key Rotation Complete"
 echo ""
-log "Old runtime key: ${OLD_KEY:0:8}..."
-log "New runtime key: ${NEW_KEY:0:8}..."
+log "Old runtime key: ${OLD_KEY:0:4}..."
+log "New runtime key: ${NEW_KEY:0:4}..."
 echo ""
 log "SOPS + Wrangler + production worker now using the new key."

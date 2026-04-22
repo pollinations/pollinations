@@ -171,6 +171,7 @@ ORIGINAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 declare -a ROTATED_TOKENS
 declare -a ROTATED_VALUES
+declare -a TOUCHED_SOPS_FILES
 
 for token_name in "${TARGET_LIST[@]}"; do
     entry=$(find_entry "$token_name")
@@ -190,7 +191,7 @@ for token_name in "${TARGET_LIST[@]}"; do
         error "Refresh response missing .token for $token_name."
         exit 1
     fi
-    log "  refreshed: ${NEW_VALUE:0:8}..."
+    log "  refreshed: ${NEW_VALUE:0:4}..."
 
     ROTATED_TOKENS+=("$token_name")
     ROTATED_VALUES+=("$NEW_VALUE")
@@ -203,8 +204,9 @@ for token_name in "${TARGET_LIST[@]}"; do
             warn "  skipping $f — file not found"
             continue
         fi
-        sops --set "[\"$env_var\"] \"$NEW_VALUE\"" "$full_path"
+        sops --set "[\"$env_var\"] $(printf '%s' "$NEW_VALUE" | jq -Rs .)" "$full_path"
         log "  SOPS: $f"
+        TOUCHED_SOPS_FILES+=("$full_path")
     done
 
     # Fan-out to sinks (wrangler + github secrets)
@@ -233,18 +235,20 @@ section "Opening PR to main"
 
 BRANCH="rotate/tinybird-$(date +%Y%m%d-%H%M%S)"
 git checkout -b "$BRANCH"
-git add -A
+if [ "${#TOUCHED_SOPS_FILES[@]}" -gt 0 ]; then
+    git add "${TOUCHED_SOPS_FILES[@]}"
+fi
 git commit -m "rotate: Tinybird tokens (${TARGET_LIST[*]})"
 git push -u origin "$BRANCH"
 
-gh pr create \
+gh pr create --repo "$GITHUB_REPO" \
     --base main \
     --head "$BRANCH" \
     --title "rotate: Tinybird tokens (${TARGET_LIST[*]})" \
     --body "Rotates Tinybird tokens via the refresh API (in-place, immediate invalidation). Worker already has new values via live \`wrangler secret put\` inside the script. This PR syncs SOPS + GitHub secrets for audit trail and next deploy consistency. Tokens rotated: ${TARGET_LIST[*]}. Automated by \`rotate-ops-tinybird.sh\`."
 
 log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --auto --squash
+gh pr merge "$BRANCH" --repo "$GITHUB_REPO" --auto --squash
 
 #######################################
 # Poll until PR merged
@@ -254,7 +258,7 @@ section "Waiting for PR to merge"
 MERGE_TIMEOUT=900
 MERGE_ELAPSED=0
 while true; do
-    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    STATE=$(gh pr view "$BRANCH" --repo "$GITHUB_REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
     case "$STATE" in
         MERGED) log "PR merged."; break ;;
         CLOSED) error "PR was closed without merging."; exit 1 ;;

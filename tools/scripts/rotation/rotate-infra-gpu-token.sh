@@ -23,18 +23,30 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
+REPO="pollinations/pollinations"
 ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
 
 DRY_RUN=true
 PROVIDED_TOKEN=""
-while [[ "$1" == --* ]]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         --execute) DRY_RUN=false; shift ;;
-        *) echo "Unknown flag: $1"; exit 1 ;;
+        --*) echo "Unknown flag: $1"; exit 1 ;;
+        *)
+            if [ -n "$PROVIDED_TOKEN" ]; then
+                echo "Multiple positional args: '$PROVIDED_TOKEN' and '$1'"
+                exit 1
+            fi
+            PROVIDED_TOKEN="$1"
+            shift
+            ;;
     esac
 done
-if [ -n "$1" ]; then
-    PROVIDED_TOKEN="$1"
+
+if [ -n "$PROVIDED_TOKEN" ] && ! [[ "$PROVIDED_TOKEN" =~ ^[A-Za-z0-9_-]{16,128}$ ]]; then
+    echo "PROVIDED_TOKEN must be 16-128 chars of [A-Za-z0-9_-] (got ${#PROVIDED_TOKEN} chars)."
+    echo "Reject shell-metacharacter tokens — they're interpolated into remote sed commands."
+    exit 1
 fi
 
 RED='\033[0;31m'
@@ -255,7 +267,7 @@ else
     section "Generating new PLN_GPU_TOKEN"
     NEW_TOKEN=$(openssl rand -hex 32)
 fi
-log "Token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
+log "Token: ${NEW_TOKEN:0:4}...${NEW_TOKEN: -4}"
 
 #######################################
 # 2. Update SOPS
@@ -264,7 +276,7 @@ section "Updating SOPS-encrypted files"
 
 for f in "${SOPS_FILES[@]}"; do
     fname=$(basename "$(dirname "$(dirname "$f")")")/$(basename "$f")
-    sops --set "[\"PLN_GPU_TOKEN\"] \"$NEW_TOKEN\"" "$f"
+    sops --set "[\"PLN_GPU_TOKEN\"] $(printf '%s' "$NEW_TOKEN" | jq -Rs .)" "$f"
     log "  $fname updated"
 done
 
@@ -279,14 +291,14 @@ git add "${SOPS_FILES[@]}"
 git commit -m "rotate: PLN_GPU_TOKEN"
 git push -u origin "$BRANCH"
 
-gh pr create \
+gh pr create --repo "$REPO" \
     --base main \
     --head "$BRANCH" \
     --title "rotate: PLN_GPU_TOKEN" \
     --body "Rotates \`PLN_GPU_TOKEN\` (EC2 image + enter worker → GPU workers). Updates 4 SOPS files. After merge, main→production triggers EC2 image deploy; the script then SSH-fans-out to GPU hosts, then updates the Wrangler secret so the worker switches too. Automated by \`rotate-infra-gpu-token.sh\`."
 
 log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --auto --squash
+gh pr merge "$BRANCH" --repo "$REPO" --auto --squash
 
 #######################################
 # 4. Poll until PR merged
@@ -296,7 +308,7 @@ section "Waiting for PR to merge"
 MERGE_TIMEOUT=900
 MERGE_ELAPSED=0
 while true; do
-    STATE=$(gh pr view "$BRANCH" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    STATE=$(gh pr view "$BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
     case "$STATE" in
         MERGED) log "PR merged."; break ;;
         CLOSED) error "PR was closed without merging."; exit 1 ;;
@@ -316,19 +328,24 @@ section "Promoting main → production"
 
 git checkout main
 git pull --ff-only origin main
+PROD_SHA=$(git rev-parse main)
 git fetch origin production
 git push origin main:production
-log "production advanced to main."
+log "production advanced to main ($PROD_SHA)."
 
 #######################################
 # 6. Watch deploy-enter-services (image EC2 picks up new token)
 #######################################
 section "Waiting for $DEPLOY_WORKFLOW"
 
-sleep 10
-RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --limit=1 --json databaseId -q '.[0].databaseId')
+RUN_ID=""
+for _ in $(seq 1 12); do
+    sleep 10
+    RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --commit="$PROD_SHA" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+    [ -n "$RUN_ID" ] && break
+done
 if [ -z "$RUN_ID" ]; then
-    error "No deploy run found for $DEPLOY_WORKFLOW on production."
+    error "No deploy run found for $DEPLOY_WORKFLOW on production at $PROD_SHA."
     exit 1
 fi
 log "Watching run $RUN_ID..."
@@ -399,6 +416,6 @@ git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout main
 
 section "PLN_GPU_TOKEN Rotation Complete"
 echo ""
-log "New token: ${NEW_TOKEN:0:8}...${NEW_TOKEN: -4}"
+log "New token: ${NEW_TOKEN:0:4}...${NEW_TOKEN: -4}"
 echo ""
 log "SOPS + EC2 image + GPU hosts (3) + enter worker now aligned on the new token."

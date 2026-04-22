@@ -342,8 +342,8 @@ const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     },
     "gptimage-large": {
         baseUrl:
-            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
-        modelName: "gpt-image-1-mini",
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+        modelName: "gpt-image-1.5",
     },
 };
 

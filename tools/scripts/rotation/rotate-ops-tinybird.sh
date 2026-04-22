@@ -23,7 +23,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 ENTER_DIR="$REPO_ROOT/enter.pollinations.ai"
-GITHUB_REPO="pollinations/pollinations"
+REPO="pollinations/pollinations"
 
 DRY_RUN=true
 TARGET=""
@@ -37,16 +37,8 @@ while [[ "$1" == --* ]]; do
     esac
 done
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-log() { echo -e "${GREEN}[INFO]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; }
-section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
+source "$SCRIPT_DIR/_log.sh"
+source "$SCRIPT_DIR/_pr-deploy.sh"
 
 source "$SCRIPT_DIR/_load-admin-secrets.sh"
 
@@ -214,7 +206,7 @@ for token_name in "${TARGET_LIST[@]}"; do
         case "$sink" in
             github:*)
                 secret_name="${sink#github:}"
-                echo "$NEW_VALUE" | gh secret set "$secret_name" --repo "$GITHUB_REPO"
+                echo "$NEW_VALUE" | gh secret set "$secret_name" --repo "$REPO"
                 log "  gh secret: $secret_name"
                 ;;
             wrangler:*)
@@ -239,40 +231,14 @@ if [ "${#TOUCHED_SOPS_FILES[@]}" -gt 0 ]; then
     git add "${TOUCHED_SOPS_FILES[@]}"
 fi
 git commit -m "rotate: Tinybird tokens (${TARGET_LIST[*]})"
-git push -u origin "$BRANCH"
 
-gh pr create --repo "$GITHUB_REPO" \
-    --base main \
-    --head "$BRANCH" \
-    --title "rotate: Tinybird tokens (${TARGET_LIST[*]})" \
-    --body "Rotates Tinybird tokens via the refresh API (in-place, immediate invalidation). Worker already has new values via live \`wrangler secret put\` inside the script. This PR syncs SOPS + GitHub secrets for audit trail and next deploy consistency. Tokens rotated: ${TARGET_LIST[*]}. Automated by \`rotate-ops-tinybird.sh\`."
-
-log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --repo "$GITHUB_REPO" --auto --squash
+open_pr_and_merge "$BRANCH" \
+    "rotate: Tinybird tokens (${TARGET_LIST[*]})" \
+    "Rotates Tinybird tokens via the refresh API (in-place, immediate invalidation). Worker already has new values via live \`wrangler secret put\` inside the script. This PR syncs SOPS + GitHub secrets for audit trail and next deploy consistency. Tokens rotated: ${TARGET_LIST[*]}. Automated by \`rotate-ops-tinybird.sh\`." \
+    || exit 1
 
 #######################################
-# Poll until PR merged
-#######################################
-section "Waiting for PR to merge"
-
-MERGE_TIMEOUT=900
-MERGE_ELAPSED=0
-while true; do
-    STATE=$(gh pr view "$BRANCH" --repo "$GITHUB_REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
-    case "$STATE" in
-        MERGED) log "PR merged."; break ;;
-        CLOSED) error "PR was closed without merging."; exit 1 ;;
-    esac
-    if [ "$MERGE_ELAPSED" -ge "$MERGE_TIMEOUT" ]; then
-        error "Timed out waiting for PR merge after ${MERGE_TIMEOUT}s."
-        exit 1
-    fi
-    sleep 15
-    MERGE_ELAPSED=$((MERGE_ELAPSED + 15))
-done
-
-#######################################
-# Push main → production (audit sync)
+# Push main → production (audit sync; no deploy workflow to watch)
 #######################################
 section "Promoting main → production"
 

@@ -49,16 +49,8 @@ if [ -n "$PROVIDED_TOKEN" ] && ! [[ "$PROVIDED_TOKEN" =~ ^[A-Za-z0-9_-]{16,128}$
     exit 1
 fi
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-log() { echo -e "${GREEN}[INFO]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; }
-section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
+source "$SCRIPT_DIR/_log.sh"
+source "$SCRIPT_DIR/_pr-deploy.sh"
 
 wrangler_cmd() {
     if [ -x "$REPO_ROOT/node_modules/.bin/wrangler" ]; then
@@ -281,75 +273,21 @@ for f in "${SOPS_FILES[@]}"; do
 done
 
 #######################################
-# 3. Open PR to main, auto-merge
+# 3. PR + deploy (image EC2 picks up new token)
 #######################################
-section "Opening PR to main"
+section "Opening PR and deploying"
 
 BRANCH="rotate/gpu-token-$(date +%Y%m%d-%H%M%S)"
 git checkout -b "$BRANCH"
 git add "${SOPS_FILES[@]}"
 git commit -m "rotate: PLN_GPU_TOKEN"
-git push -u origin "$BRANCH"
 
-gh pr create --repo "$REPO" \
-    --base main \
-    --head "$BRANCH" \
-    --title "rotate: PLN_GPU_TOKEN" \
-    --body "Rotates \`PLN_GPU_TOKEN\` (EC2 image + enter worker → GPU workers). Updates 4 SOPS files. After merge, main→production triggers EC2 image deploy; the script then SSH-fans-out to GPU hosts, then updates the Wrangler secret so the worker switches too. Automated by \`rotate-infra-gpu-token.sh\`."
+open_pr_and_merge "$BRANCH" \
+    "rotate: PLN_GPU_TOKEN" \
+    "Rotates \`PLN_GPU_TOKEN\` (EC2 image + enter worker → GPU workers). Updates 4 SOPS files. After merge, main→production triggers EC2 image deploy; the script then SSH-fans-out to GPU hosts, then updates the Wrangler secret so the worker switches too. Automated by \`rotate-infra-gpu-token.sh\`." \
+    || exit 1
 
-log "Enabling auto-merge..."
-gh pr merge "$BRANCH" --repo "$REPO" --auto --squash
-
-#######################################
-# 4. Poll until PR merged
-#######################################
-section "Waiting for PR to merge"
-
-MERGE_TIMEOUT=900
-MERGE_ELAPSED=0
-while true; do
-    STATE=$(gh pr view "$BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
-    case "$STATE" in
-        MERGED) log "PR merged."; break ;;
-        CLOSED) error "PR was closed without merging."; exit 1 ;;
-    esac
-    if [ "$MERGE_ELAPSED" -ge "$MERGE_TIMEOUT" ]; then
-        error "Timed out waiting for PR merge after ${MERGE_TIMEOUT}s."
-        exit 1
-    fi
-    sleep 15
-    MERGE_ELAPSED=$((MERGE_ELAPSED + 15))
-done
-
-#######################################
-# 5. Push main → production
-#######################################
-section "Promoting main → production"
-
-git checkout main
-git pull --ff-only origin main
-PROD_SHA=$(git rev-parse main)
-git fetch origin production
-git push origin main:production
-log "production advanced to main ($PROD_SHA)."
-
-#######################################
-# 6. Watch deploy-enter-services (image EC2 picks up new token)
-#######################################
-section "Waiting for $DEPLOY_WORKFLOW"
-
-RUN_ID=""
-for _ in $(seq 1 12); do
-    sleep 10
-    RUN_ID=$(gh run list --workflow="$DEPLOY_WORKFLOW" --branch=production --commit="$PROD_SHA" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
-    [ -n "$RUN_ID" ] && break
-done
-if [ -z "$RUN_ID" ]; then
-    error "No deploy run found for $DEPLOY_WORKFLOW on production at $PROD_SHA."
-    exit 1
-fi
-log "Watching run $RUN_ID..."
-gh run watch "$RUN_ID" --exit-status || {
+push_prod_and_watch "$DEPLOY_WORKFLOW" || {
     error "Deploy workflow failed. GPUs still have OLD token, EC2 now has NEW. Production is in a broken state — SSH fan-out not attempted."
     exit 1
 }

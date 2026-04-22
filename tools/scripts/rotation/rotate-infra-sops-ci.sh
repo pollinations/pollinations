@@ -35,16 +35,8 @@ while [[ "$1" == --* ]]; do
     esac
 done
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-log() { echo -e "${GREEN}[INFO]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; }
-section() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
+source "$SCRIPT_DIR/_log.sh"
+source "$SCRIPT_DIR/_pr-deploy.sh"
 
 SOPS_YAML="$REPO_ROOT/.sops.yaml"
 RECIPIENTS_FILE="$SCRIPT_DIR/sops-recipients.yaml"
@@ -238,25 +230,10 @@ and new CI keys can decrypt. No secret values changed.
 
 Part of a two-phase SOPS CI key rotation — old key stays a recipient until
 phase 2 after GH secret + staging verification."
-git push -u origin "$PHASE1_BRANCH"
-
-gh pr create --repo "$REPO" \
-    --base main --head "$PHASE1_BRANCH" \
-    --title "rotate: SOPS CI age key (phase 1/2 — add new recipient)" \
-    --body "Automated by \`rotate-infra-sops-ci.sh\`. Adds new CI recipient; old still valid."
-gh pr merge "$PHASE1_BRANCH" --repo "$REPO" --auto --squash
-
-log "Waiting for Phase 1 PR to merge..."
-MERGE_TIMEOUT=900; ELAPSED=0
-while :; do
-    STATE=$(gh pr view "$PHASE1_BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
-    case "$STATE" in
-        MERGED) log "Phase 1 PR merged."; break ;;
-        CLOSED) error "Phase 1 PR closed without merging."; exit 1 ;;
-    esac
-    [ "$ELAPSED" -ge "$MERGE_TIMEOUT" ] && { error "Timed out waiting for Phase 1 merge."; exit 1; }
-    sleep 15; ELAPSED=$((ELAPSED + 15))
-done
+open_pr_and_merge "$PHASE1_BRANCH" \
+    "rotate: SOPS CI age key (phase 1/2 — add new recipient)" \
+    "Automated by \`rotate-infra-sops-ci.sh\`. Adds new CI recipient; old still valid." \
+    || exit 1
 
 git checkout main
 git pull --ff-only origin main
@@ -344,25 +321,10 @@ Removes the old CI recipient ($OLD_CI_PUBKEY).
 Updates sops-recipients.yaml to reflect the new CI key.
 GH Actions SOPS_AGE_KEY was already swapped to the new key and verified
 via a staging deploy before this PR was opened."
-git push -u origin "$PHASE3_BRANCH"
-
-gh pr create --repo "$REPO" \
-    --base main --head "$PHASE3_BRANCH" \
-    --title "rotate: SOPS CI age key (phase 2/2 — remove old recipient)" \
-    --body "Automated by \`rotate-infra-sops-ci.sh\`. Phase 1 PR already merged; staging deploy already verified new key works in CI. This PR removes the now-unused old CI recipient."
-gh pr merge "$PHASE3_BRANCH" --repo "$REPO" --auto --squash
-
-log "Waiting for Phase 3 PR to merge..."
-ELAPSED=0
-while :; do
-    STATE=$(gh pr view "$PHASE3_BRANCH" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
-    case "$STATE" in
-        MERGED) log "Phase 3 PR merged."; break ;;
-        CLOSED) error "Phase 3 PR closed without merging. New key is live in CI but .sops.yaml still lists the old recipient. Resolve manually."; exit 1 ;;
-    esac
-    [ "$ELAPSED" -ge "$MERGE_TIMEOUT" ] && { error "Timed out waiting for Phase 3 merge."; exit 1; }
-    sleep 15; ELAPSED=$((ELAPSED + 15))
-done
+open_pr_and_merge "$PHASE3_BRANCH" \
+    "rotate: SOPS CI age key (phase 2/2 — remove old recipient)" \
+    "Automated by \`rotate-infra-sops-ci.sh\`. Phase 1 PR already merged; staging deploy already verified new key works in CI. This PR removes the now-unused old CI recipient." \
+    || { error "Phase 3 PR did not merge. New key is live in CI but .sops.yaml still lists the old recipient. Resolve manually."; exit 1; }
 
 git checkout main
 git pull --ff-only origin main

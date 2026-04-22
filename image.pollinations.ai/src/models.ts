@@ -24,14 +24,14 @@ type ImageModelsConfig = {
 
 export const IMAGE_CONFIG = {
     // Azure Flux Kontext - general purpose model
-    kontext: {
+    "flux-1-kontext": {
         type: "kontext",
         enhance: true,
         defaultSideLength: 1024,
     },
 
     // ByteDance ARK Seedream 5.0 Lite - web search, reasoning
-    seedream5: {
+    "seedream-5-lite": {
         type: "seedream5",
         enhance: false,
         defaultSideLength: 2048,
@@ -39,14 +39,14 @@ export const IMAGE_CONFIG = {
     },
 
     // Legacy (hidden): real Seedream 4.0
-    seedream: {
+    "seedream-4": {
         type: "seedream",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Legacy (hidden): real Seedream 4.5 Pro
-    "seedream-pro": {
+    "seedream-4.5-pro": {
         type: "seedream-pro",
         enhance: false,
         defaultSideLength: 2048,
@@ -54,14 +54,14 @@ export const IMAGE_CONFIG = {
     },
 
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
-    nanobanana: {
+    "nanobanana-2.5": {
         type: "vertex-ai",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Gemini 3.1 Flash Image via Vertex AI - faster flash with pro-level quality (Nano Banana 2)
-    "nanobanana-2": {
+    "nanobanana-3.1": {
         type: "vertex-ai-2",
         enhance: false,
         defaultSideLength: 1024,
@@ -69,21 +69,21 @@ export const IMAGE_CONFIG = {
 
     // Gemini 3 Pro Image via Vertex AI - high quality image generation (Nano Banana Pro)
     // Supports 1K, 2K, and 4K output resolutions
-    "nanobanana-pro": {
+    "nanobanana-pro-3": {
         type: "vertex-ai-pro",
         enhance: false,
         defaultSideLength: 2048, // Default to 2K, supports up to 4K (3840x2160)
     },
 
     // Azure GPT Image model - gpt-image-1-mini
-    gptimage: {
+    "gpt-image-1-mini": {
         type: "azure",
         enhance: false,
         defaultSideLength: 1021, // Prime number to detect default size for "auto" mode
     },
 
     // Azure GPT Image 1.5 - advanced image generation
-    "gptimage-large": {
+    "gpt-image-1.5": {
         type: "azure-gptimage-large",
         enhance: false,
         defaultSideLength: 1024,
@@ -97,7 +97,7 @@ export const IMAGE_CONFIG = {
     },
 
     // Veo 3.1 Fast - Video generation via Vertex AI
-    veo: {
+    "veo-3.1-fast": {
         type: "vertex-ai-video",
         enhance: false,
         isVideo: true,
@@ -107,7 +107,7 @@ export const IMAGE_CONFIG = {
     },
 
     // BytePlus Seedance Lite - Video generation (default, better quality)
-    seedance: {
+    "seedance-lite": {
         type: "bytedance-ark-video",
         enhance: false,
         isVideo: true,
@@ -127,7 +127,7 @@ export const IMAGE_CONFIG = {
     },
 
     // Alibaba Wan 2.6 - Video generation with audio
-    wan: {
+    "wan-2.6": {
         type: "alibaba-dashscope-video",
         enhance: false,
         isVideo: true,
@@ -137,7 +137,7 @@ export const IMAGE_CONFIG = {
     },
 
     // Alibaba Wan 2.2 - Fast/cheap video generation (480P, 5s fixed)
-    "wan-fast": {
+    "wan-2.2": {
         type: "alibaba-dashscope-video",
         enhance: false,
         isVideo: true,
@@ -147,21 +147,21 @@ export const IMAGE_CONFIG = {
     },
 
     // Alibaba Wan 2.7 Image - Text-to-image and image editing (up to 2K)
-    "wan-image": {
+    "wan-2.7-image": {
         type: "alibaba-dashscope-image",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Alibaba Wan 2.7 Image Pro - Text-to-image and editing (4K, thinking mode)
-    "wan-image-pro": {
+    "wan-2.7-image-pro": {
         type: "alibaba-dashscope-image",
         enhance: false,
         defaultSideLength: 2048,
     },
 
     // Alibaba Qwen Image Plus - Text-to-image and image editing
-    "qwen-image": {
+    "qwen-image-plus": {
         type: "alibaba-dashscope-image",
         enhance: false,
         defaultSideLength: 1024,
@@ -192,28 +192,28 @@ export const IMAGE_CONFIG = {
     },
 
     // Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling (IO.net)
-    zimage: {
+    "z-image-turbo": {
         type: "zimage",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Flux Schnell - Fast high-quality image generation (IO.net, nunchaku-quantized)
-    flux: {
+    "flux-1-schnell": {
         type: "flux",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Klein - Fast 4B parameter model on RunPod (text-to-image + image editing)
-    klein: {
+    "flux-2-klein-4b": {
         type: "runpod-klein",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // LTX-2 - Fast video generation on Lambda Labs GH200
-    "ltx-2": {
+    "ltx-video-2.3": {
         type: "vastai-ltx2",
         enhance: false,
         isVideo: true,
@@ -223,21 +223,21 @@ export const IMAGE_CONFIG = {
     },
 
     // Pruna p-image - Text-to-image generation
-    "p-image": {
+    "pruna-image": {
         type: "pruna",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Pruna p-image-edit - Image-to-image editing
-    "p-image-edit": {
+    "pruna-image-edit": {
         type: "pruna-edit",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Pruna p-video - Text/image-to-video generation
-    "p-video": {
+    "pruna-video": {
         type: "pruna-video",
         enhance: false,
         isVideo: true,

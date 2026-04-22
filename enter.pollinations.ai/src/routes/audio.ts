@@ -720,7 +720,7 @@ export const audioRoutes = new Hono<Env>()
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            if (c.var.model.resolved === "acestep") {
+            if (c.var.model.resolved === "ace-step-1.5-turbo") {
                 const { duration, style } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
@@ -734,7 +734,7 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            if (c.var.model.resolved === "elevenmusic") {
+            if (c.var.model.resolved === "eleven-music-v1") {
                 const { duration, instrumental } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
@@ -748,14 +748,14 @@ export const audioRoutes = new Hono<Env>()
             }
 
             if (
-                c.var.model.resolved === "qwen-tts" ||
-                c.var.model.resolved === "qwen-tts-instruct"
+                c.var.model.resolved === "qwen3-tts-flash" ||
+                c.var.model.resolved === "qwen3-tts-instruct-flash"
             ) {
                 const { instruct } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
                 const modelId =
-                    c.var.model.resolved === "qwen-tts-instruct"
+                    c.var.model.resolved === "qwen3-tts-instruct-flash"
                         ? "qwen3-tts-instruct-flash"
                         : "qwen3-tts-flash";
                 return generateQwenTts({
@@ -886,7 +886,7 @@ export const audioRoutes = new Hono<Env>()
             }
 
             // Route to ElevenLabs Scribe or Whisper based on model
-            if (c.var.model.resolved === "scribe") {
+            if (c.var.model.resolved === "scribe-v2") {
                 const elevenLabsApiKey = (
                     c.env as unknown as { ELEVENLABS_API_KEY: string }
                 ).ELEVENLABS_API_KEY;

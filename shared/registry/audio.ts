@@ -45,15 +45,22 @@ export const VOICE_MAPPING: Record<string, string> = {
 
 export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
-export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
+export const DEFAULT_AUDIO_MODEL = "eleven-v3" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
 export const AUDIO_SERVICES = {
-    elevenlabs: {
+    "eleven-v3": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
         model: "eleven-v3",
-        aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
+        aliases: [
+            "elevenlabs",
+            "tts",
+            "text-to-speech",
+            "eleven",
+            "tts-1",
+            "tts-1-hd",
+        ],
         description: "Text-to-speech generation.",
         category: "audio",
         inputModalities: ["text"],
@@ -64,11 +71,11 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.18 / 1000,
         },
     },
-    elevenmusic: {
+    "eleven-music-v1": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
         model: "music-v1",
-        aliases: ["music"],
+        aliases: ["elevenmusic", "music"],
         description: "Music generation from text prompts.",
         category: "audio",
         inputModalities: ["text"],
@@ -79,11 +86,11 @@ export const AUDIO_SERVICES = {
             completionAudioSeconds: 0.005,
         },
     },
-    whisper: {
+    "whisper-large-v3": {
         brand: "OpenAI",
         provider: "ovhcloud",
         model: "whisper-large-v3",
-        aliases: ["whisper-1", "whisper-large-v3"],
+        aliases: ["whisper", "whisper-1"],
         description: "Speech transcription to text.",
         category: "audio",
         inputModalities: ["audio"],
@@ -94,11 +101,11 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.0000445,
         },
     },
-    scribe: {
+    "scribe-v2": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
         model: "scribe-v2",
-        aliases: ["scribe_v2", "scribe-v2"],
+        aliases: ["scribe", "scribe_v2"],
         description: "Speech transcription to text.",
         category: "audio",
         inputModalities: ["audio"],
@@ -108,11 +115,11 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.0001111,
         },
     },
-    acestep: {
+    "ace-step-1.5-turbo": {
         brand: "ACE-Step",
         provider: "lambda",
         model: "acestep-1.5-turbo",
-        aliases: ["ace-step", "acestep-music"],
+        aliases: ["acestep", "ace-step", "acestep-music"],
         description: "Music generation from text prompts.",
         category: "audio",
         inputModalities: ["text"],
@@ -123,11 +130,11 @@ export const AUDIO_SERVICES = {
             completionAudioSeconds: 0.0005,
         },
     },
-    "qwen-tts": {
+    "qwen3-tts-flash": {
         brand: "Qwen",
         provider: "alibaba",
         model: "qwen3-tts-flash",
-        aliases: ["qwen3-tts", "qwen3-tts-flash"],
+        aliases: ["qwen-tts", "qwen3-tts"],
         description: "Text-to-speech generation.",
         category: "audio",
         inputModalities: ["text"],
@@ -140,11 +147,11 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: (0.013 * 1.5) / 1000,
         },
     },
-    "qwen-tts-instruct": {
+    "qwen3-tts-instruct-flash": {
         brand: "Qwen",
         provider: "alibaba",
         model: "qwen3-tts-instruct-flash",
-        aliases: ["qwen3-tts-instruct", "qwen3-tts-instruct-flash"],
+        aliases: ["qwen-tts-instruct", "qwen3-tts-instruct"],
         description:
             "Text-to-speech generation with emotion and style control.",
         category: "audio",

@@ -207,7 +207,7 @@ export const callSelfHostedServer = async (
         try {
             // Route to appropriate server pool based on model
             const fetchFunction =
-                safeParams.model === "zimage"
+                safeParams.model === "z-image-turbo"
                     ? (opts: RequestInit) =>
                           fetchFromLeastBusyServer("zimage", opts)
                     : fetchFromLeastBusyFluxServer;
@@ -713,8 +713,8 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
-        case "gptimage":
-        case "gptimage-large":
+        case "gpt-image-1-mini":
+        case "gpt-image-1.5":
         case "gpt-image-2": {
             const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
             logError(
@@ -760,9 +760,9 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana":
-        case "nanobanana-2":
-        case "nanobanana-pro": {
+        case "nanobanana-2.5":
+        case "nanobanana-3.1":
+        case "nanobanana-pro-3": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -786,9 +786,9 @@ const generateImage = async (
                 }
 
                 const modelDisplayName =
-                    safeParams.model === "nanobanana-pro"
+                    safeParams.model === "nanobanana-pro-3"
                         ? "Nano Banana Pro"
-                        : safeParams.model === "nanobanana-2"
+                        : safeParams.model === "nanobanana-3.1"
                           ? "Nano Banana 2"
                           : "Nano Banana";
                 progress.updateBar(
@@ -809,7 +809,7 @@ const generateImage = async (
             }
         }
 
-        case "kontext": {
+        case "flux-1-kontext": {
             try {
                 progress.updateBar(
                     requestId,
@@ -835,7 +835,7 @@ const generateImage = async (
             }
         }
 
-        case "seedream5": {
+        case "seedream-5-lite": {
             try {
                 return await callSeedream5API(
                     prompt,
@@ -850,7 +850,7 @@ const generateImage = async (
             }
         }
 
-        case "seedream": {
+        case "seedream-4": {
             // Hidden legacy model -- routes to real Seedream 4.0 endpoint
             try {
                 return await callSeedreamAPI(
@@ -869,7 +869,7 @@ const generateImage = async (
             }
         }
 
-        case "seedream-pro": {
+        case "seedream-4.5-pro": {
             // Hidden legacy model -- routes to real Seedream 4.5 endpoint
             try {
                 return await callSeedreamProAPI(
@@ -888,7 +888,7 @@ const generateImage = async (
             }
         }
 
-        case "klein": {
+        case "flux-2-klein-4b": {
             try {
                 return await callFluxKleinAPI(
                     prompt,
@@ -903,7 +903,7 @@ const generateImage = async (
             }
         }
 
-        case "p-image": {
+        case "pruna-image": {
             try {
                 return await callPrunaImageAPI(
                     prompt,
@@ -950,7 +950,7 @@ const generateImage = async (
             }
         }
 
-        case "p-image-edit": {
+        case "pruna-image-edit": {
             try {
                 return await callPrunaImageEditAPI(
                     prompt,
@@ -983,7 +983,7 @@ const generateImage = async (
             }
         }
 
-        case "wan-image": {
+        case "wan-2.7-image": {
             try {
                 return await callWanImageAPI(
                     prompt,
@@ -999,7 +999,7 @@ const generateImage = async (
             }
         }
 
-        case "wan-image-pro": {
+        case "wan-2.7-image-pro": {
             try {
                 return await callWanImageAPI(
                     prompt,
@@ -1015,7 +1015,7 @@ const generateImage = async (
             }
         }
 
-        case "qwen-image": {
+        case "qwen-image-plus": {
             try {
                 return await callQwenImageAPI(
                     prompt,
@@ -1030,7 +1030,7 @@ const generateImage = async (
             }
         }
 
-        case "flux":
+        case "flux-1-schnell":
             progress.updateBar(
                 requestId,
                 25,

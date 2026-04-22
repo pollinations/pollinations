@@ -21,15 +21,15 @@ const errorLog = debug("pollinations:vertex-ai-generator:error");
 
 /** Mapping from pollinations model names to Vertex AI model IDs and display names */
 const NANOBANANA_MODELS: Record<string, { vertex: string; name: string }> = {
-    "nanobanana-pro": {
+    "nanobanana-pro-3": {
         vertex: "gemini-3-pro-image-preview",
         name: "Vertex AI Gemini 3 Pro Image Preview",
     },
-    "nanobanana-2": {
+    "nanobanana-3.1": {
         vertex: "gemini-3.1-flash-image-preview",
         name: "Vertex AI Gemini 3.1 Flash Image Preview",
     },
-    "nanobanana": {
+    "nanobanana-2.5": {
         vertex: "gemini-2.5-flash-image",
         name: "Vertex AI Gemini 2.5 Flash Image",
     },

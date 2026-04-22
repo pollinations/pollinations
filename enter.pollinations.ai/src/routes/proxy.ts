@@ -746,7 +746,7 @@ export const proxyRoutes = new Hono<Env>()
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
-            if (c.var.model.resolved === "acestep") {
+            if (c.var.model.resolved === "ace-step-1.5-turbo") {
                 const { duration, style } = c.req.valid("query" as never) as {
                     duration?: number;
                     style?: string;
@@ -761,7 +761,7 @@ export const proxyRoutes = new Hono<Env>()
                 });
             }
 
-            if (c.var.model.resolved === "elevenmusic") {
+            if (c.var.model.resolved === "eleven-music-v1") {
                 const { duration, instrumental } = c.req.valid(
                     "query" as never,
                 ) as {

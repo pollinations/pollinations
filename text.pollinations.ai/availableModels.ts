@@ -31,39 +31,39 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.4"],
     },
     {
-        name: "qwen-coder",
+        name: "qwen3-coder-30b",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
-        name: "qwen-coder-large",
+        name: "qwen3-coder-next",
         config: portkeyConfig["qwen3-coder-next"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
-        name: "qwen-large",
+        name: "qwen3.6-plus",
         config: portkeyConfig["accounts/fireworks/models/qwen3p6-plus"],
     },
     {
-        name: "qwen-vision",
+        name: "qwen3-vl-thinking",
         config: portkeyConfig[
             "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking"
         ],
     },
     {
-        name: "mistral",
+        name: "mistral-small-3.2",
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
     },
     {
-        name: "deepseek",
+        name: "deepseek-v3.2",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
     },
     {
-        name: "grok",
+        name: "grok-4.1-fast",
         config: portkeyConfig["grok-4-1-fast-non-reasoning"],
     },
     {
-        name: "grok-large",
+        name: "grok-4.20-reasoning",
         config: portkeyConfig["grok-4-20-reasoning"],
     },
     {
@@ -75,15 +75,15 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-audio-1.5"],
     },
     {
-        name: "claude-fast",
+        name: "claude-haiku-4.5",
         config: portkeyConfig["claude-haiku-4-5"],
     },
     {
-        name: "claude",
+        name: "claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
     },
     {
-        name: "claude-large",
+        name: "claude-opus-4.6",
         config: portkeyConfig["claude-opus-4-6"],
     },
     {
@@ -91,7 +91,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-7"],
     },
     {
-        name: "gemini",
+        name: "gemini-3-flash",
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
             sanitizeToolSchemas(),
@@ -109,7 +109,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "gemini-fast",
+        name: "gemini-2.5-flash-lite",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas(),
@@ -131,20 +131,20 @@ const models: ModelDefinition[] = [
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
-        name: "midijourney-large",
+        name: "midijourney-pro",
         config: portkeyConfig["claude-opus-4-6"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
-        name: "perplexity-fast",
+        name: "perplexity-sonar",
         config: portkeyConfig["sonar"],
     },
     {
-        name: "perplexity-reasoning",
+        name: "perplexity-sonar-reasoning-pro",
         config: portkeyConfig["sonar-reasoning-pro"],
     },
     {
-        name: "kimi",
+        name: "kimi-k2.5",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
     },
     {
@@ -152,7 +152,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
     },
     {
-        name: "gemini-large",
+        name: "gemini-3.1-pro",
         config: portkeyConfig["gemini-3.1-pro-preview"],
         transform: pipe(
             sanitizeToolSchemas(),
@@ -162,23 +162,23 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "nova-fast",
+        name: "nova-micro-1",
         config: portkeyConfig["nova-micro-fallback"],
     },
     {
-        name: "nova",
+        name: "nova-2-lite",
         config: portkeyConfig["nova-2-lite"],
     },
     {
-        name: "glm",
+        name: "glm-5.1",
         config: portkeyConfig["accounts/fireworks/models/glm-5p1"],
     },
     {
-        name: "minimax",
+        name: "minimax-m2.7",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
     },
     {
-        name: "mistral-large",
+        name: "mistral-large-3",
         config: portkeyConfig["Mistral-Large-3"],
     },
     {
@@ -186,7 +186,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["polly"],
     },
     {
-        name: "qwen-safety",
+        name: "qwen3-guard-8b",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],
     },
 ];

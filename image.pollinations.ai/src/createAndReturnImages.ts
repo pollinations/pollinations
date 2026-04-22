@@ -325,7 +325,7 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
 
 /**
  * Configuration for Azure GPT Image endpoints
- * All models use myceli-prod-swedencentral with a shared API key
+ * All models use myceli-prod-eastus2 with a shared API key
  */
 interface AzureGPTImageConfig {
     baseUrl: string;
@@ -337,13 +337,13 @@ const AZURE_GPTIMAGE_API_VERSION = "2025-04-01-preview";
 const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     gptimage: {
         baseUrl:
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
         modelName: "gpt-image-1-mini",
     },
     "gptimage-large": {
         baseUrl:
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
-        modelName: "gpt-image-1.5",
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+        modelName: "gpt-image-1-mini",
     },
 };
 
@@ -361,11 +361,11 @@ const callAzureGPTImageWithEndpoint = async (
     userInfo: AuthResult,
     config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY;
+    const apiKey = process.env.AZURE_MYCELI_PROD_EASTUS2_API_KEY;
 
     if (!apiKey) {
         throw new Error(
-            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
+            "AZURE_MYCELI_PROD_EASTUS2_API_KEY not found in environment variables",
         );
     }
 

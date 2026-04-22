@@ -189,6 +189,7 @@ const chatCompletionHandlers = factory.createHandlers(
                 throw new UpstreamError(502, {
                     message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
                     requestUrl: targetUrl,
+                    upstreamStatus: response.status,
                     responseBody: contentType,
                 });
             }

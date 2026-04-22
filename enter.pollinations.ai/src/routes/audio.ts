@@ -500,8 +500,13 @@ export async function generateQwenTts(opts: {
 
     const audioResponse = await fetch(audioUrl);
     if (!audioResponse.ok) {
+        const errorText = await audioResponse.text();
         throw new UpstreamError(502 as ContentfulStatusCode, {
-            message: `Failed to fetch generated audio: ${audioResponse.status}`,
+            message:
+                errorText ||
+                `Failed to fetch generated audio: ${audioResponse.status}`,
+            upstreamStatus: audioResponse.status,
+            responseBody: errorText,
         });
     }
     const audioBuffer = await audioResponse.arrayBuffer();
@@ -607,8 +612,13 @@ export async function generateAceStepMusic(opts: {
 
         if (!pollResponse.ok) {
             if (++consecutiveErrors >= 3) {
+                const errorText = await pollResponse.text();
                 throw new UpstreamError(502 as ContentfulStatusCode, {
-                    message: `ACE-Step polling failed: ${pollResponse.status}`,
+                    message:
+                        errorText ||
+                        `ACE-Step polling failed: ${pollResponse.status}`,
+                    upstreamStatus: pollResponse.status,
+                    responseBody: errorText,
                 });
             }
             continue;

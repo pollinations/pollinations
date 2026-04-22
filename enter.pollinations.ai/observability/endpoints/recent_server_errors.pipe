@@ -4,7 +4,7 @@ DESCRIPTION >
 Recent actionable server-side failures from the rolling Tinybird error_event datasource.
 Defaults to the last 3 hours and returns newest failures first.
 
-NODE recent_server_errors
+NODE recent_server_errors_node
 SQL >
     %
     SELECT
@@ -30,6 +30,7 @@ SQL >
         api_key_id
     FROM error_event
     WHERE timestamp >= now() - interval {{Int32(minutes, 180)}} minute
+    AND environment = {{String(environment, 'production')}}
     ORDER BY timestamp DESC
     LIMIT {{Int32(limit, 200)}}
 

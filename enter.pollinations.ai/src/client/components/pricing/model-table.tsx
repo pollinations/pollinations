@@ -1,3 +1,7 @@
+import {
+    getActivePriceDefinition,
+    type ModelName,
+} from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
@@ -48,13 +52,69 @@ const getPerPollenNumeric = (perPollen: string): number => {
     return parseFloat(cleaned) || -1;
 };
 
-const sortModels = (models: ModelPrice[]) => {
+type SortKey = "name" | "perPollen" | "input" | "output";
+type SortDir = "asc" | "desc";
+
+const DEFAULT_DIR: Record<SortKey, SortDir> = {
+    name: "asc",
+    perPollen: "desc",
+    input: "asc",
+    output: "asc",
+};
+
+const getInputSortValue = (modelName: string): number => {
+    const p = getActivePriceDefinition(modelName as ModelName);
+    if (!p) return -1;
+    const sum =
+        (p.promptTextTokens ?? 0) +
+        (p.promptCachedTokens ?? 0) +
+        (p.promptAudioTokens ?? 0) +
+        (p.promptAudioSeconds ?? 0) +
+        (p.promptImageTokens ?? 0);
+    return sum > 0 ? sum : -1;
+};
+
+const getOutputSortValue = (modelName: string): number => {
+    const p = getActivePriceDefinition(modelName as ModelName);
+    if (!p) return -1;
+    const sum =
+        (p.completionTextTokens ?? 0) +
+        (p.completionAudioTokens ?? 0) +
+        (p.completionAudioSeconds ?? 0) +
+        (p.completionImageTokens ?? 0) +
+        (p.completionVideoSeconds ?? 0) +
+        (p.completionVideoTokens ?? 0);
+    return sum > 0 ? sum : -1;
+};
+
+const sortModels = (
+    models: ModelPrice[],
+    sortKey: SortKey,
+    sortDir: SortDir,
+) => {
+    const sign = sortDir === "asc" ? 1 : -1;
     return [...models].sort((a, b) => {
-        const aPerPollen = calculatePerPollen(a);
-        const bPerPollen = calculatePerPollen(b);
-        return (
-            getPerPollenNumeric(bPerPollen) - getPerPollenNumeric(aPerPollen)
-        );
+        if (sortKey === "name") {
+            const an = (getModelDisplayName(a.name) ?? a.name).toLowerCase();
+            const bn = (getModelDisplayName(b.name) ?? b.name).toLowerCase();
+            return an < bn ? -sign : an > bn ? sign : 0;
+        }
+        const av =
+            sortKey === "perPollen"
+                ? getPerPollenNumeric(calculatePerPollen(a))
+                : sortKey === "input"
+                  ? getInputSortValue(a.name)
+                  : getOutputSortValue(a.name);
+        const bv =
+            sortKey === "perPollen"
+                ? getPerPollenNumeric(calculatePerPollen(b))
+                : sortKey === "input"
+                  ? getInputSortValue(b.name)
+                  : getOutputSortValue(b.name);
+        // Missing values always sort last regardless of direction
+        if (av < 0 && bv >= 0) return 1;
+        if (bv < 0 && av >= 0) return -1;
+        return (av - bv) * sign;
     });
 };
 
@@ -77,6 +137,8 @@ const sectionLabels: Record<string, string> = {
 type TabContentProps = {
     type: "text" | "image" | "video" | "audio";
     models: ModelPrice[];
+    sortKey: SortKey;
+    sortDir: SortDir;
     tierBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
@@ -85,11 +147,13 @@ type TabContentProps = {
 const TabContent: FC<TabContentProps> = ({
     type,
     models,
+    sortKey,
+    sortDir,
     tierBalance,
     packBalance,
     cryptoBalance,
 }) => {
-    const sorted = sortModels(models);
+    const sorted = sortModels(models, sortKey, sortDir);
     const regularModels =
         type === "text" ? sorted.filter((m) => !isPersona(m.name)) : sorted;
     const personaModels =
@@ -518,7 +582,21 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     ];
 
     const [activeTab, setActiveTab] = useState<SectionType>("image");
+    const [sortKey, setSortKey] = useState<SortKey>("perPollen");
+    const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
+
+    const onSort = (key: SortKey) => {
+        if (key === sortKey) {
+            setSortDir(sortDir === "asc" ? "desc" : "asc");
+        } else {
+            setSortKey(key);
+            setSortDir(DEFAULT_DIR[key]);
+        }
+    };
+
+    const sortArrow = (key: SortKey) =>
+        sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
     const tabButtons = sections.map((section) => (
         <Button
@@ -543,13 +621,32 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             {/* Row 1: tab selectors on their own line */}
             <div className="flex flex-wrap gap-1.5 pt-2 pb-5">{tabButtons}</div>
 
-            {/* Row 2: column headers */}
+            {/* Row 2: column headers (sortable) */}
             <div className="flex items-center pb-2 pr-4 md:pr-8">
-                <div className="flex-1 min-w-6" />
-                <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
-                    <div className="cursor-help text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px]">
+                <button
+                    type="button"
+                    onClick={() => onSort("name")}
+                    className="flex-1 min-w-6 text-left pl-[52px] cursor-pointer hover:text-gray-700"
+                >
+                    <span className="text-sm font-bold text-gray-900">
+                        Model {sortArrow("name")}
+                    </span>
+                </button>
+                <Tooltip
+                    content={
+                        <span className="block w-[220px] whitespace-normal leading-snug">
+                            Based on average community usage. Actual costs vary
+                            with modality and output.
+                        </span>
+                    }
+                >
+                    <button
+                        type="button"
+                        onClick={() => onSort("perPollen")}
+                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-gray-700"
+                    >
                         <div className="text-sm font-bold text-gray-900">
-                            1 pollen
+                            1 pollen {sortArrow("perPollen")}
                         </div>
                         <div className="text-xs font-normal text-gray-700 opacity-70 italic">
                             ≈{" "}
@@ -557,22 +654,32 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                                 ? unitLabels[activeSection.type]
                                 : ""}
                         </div>
-                    </div>
+                    </button>
                 </Tooltip>
-                <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
-                    <div className="text-sm font-bold text-gray-900">Input</div>
-                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
-                        pollen
-                    </div>
-                </div>
-                <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
+                <button
+                    type="button"
+                    onClick={() => onSort("input")}
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-gray-700"
+                >
                     <div className="text-sm font-bold text-gray-900">
-                        Output
+                        Input {sortArrow("input")}
                     </div>
                     <div className="text-xs font-normal text-gray-700 opacity-70 italic">
                         pollen
                     </div>
-                </div>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onSort("output")}
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-gray-700"
+                >
+                    <div className="text-sm font-bold text-gray-900">
+                        Output {sortArrow("output")}
+                    </div>
+                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                        pollen
+                    </div>
+                </button>
             </div>
 
             {/* Tab content */}
@@ -580,6 +687,8 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <TabContent
                     type={activeSection.type}
                     models={activeSection.models}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
                     tierBalance={tierBalance}
                     packBalance={packBalance}
                     cryptoBalance={cryptoBalance}

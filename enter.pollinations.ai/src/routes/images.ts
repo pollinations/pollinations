@@ -88,6 +88,8 @@ async function postToImageService(
         throw new UpstreamError(response.status as ContentfulStatusCode, {
             message: responseText || getDefaultErrorMessage(response.status),
             requestUrl: targetUrl,
+            upstreamStatus: response.status,
+            responseBody: responseText,
         });
     }
     return response;

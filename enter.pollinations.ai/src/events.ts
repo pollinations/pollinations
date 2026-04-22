@@ -6,6 +6,33 @@ const MAX_RETRIES = 3;
 const MIN_DELAY = 100;
 const MAX_DELAY = 2000;
 
+export type TinybirdErrorEvent = {
+    timestamp: string;
+    kind: "server_error";
+    severity: "error";
+    fingerprint: string;
+    request_id?: string;
+    environment?: string;
+    route_path?: string;
+    method?: string;
+    status: number;
+    duration_ms?: number;
+    error_code?: string;
+    error_class?: string;
+    message?: string;
+    message_normalized?: string;
+    stack?: string;
+    top_stack_frame?: string;
+    upstream_host?: string;
+    upstream_status?: number;
+    upstream_body?: string;
+    model_requested?: string;
+    resolved_model_requested?: string;
+    user_id?: string;
+    user_tier?: string;
+    api_key_id?: string;
+};
+
 export async function sendToTinybird(
     event: TinybirdEvent,
     tinybirdIngestUrl: string,
@@ -65,6 +92,76 @@ export async function sendToTinybird(
             );
         }
     }
+}
+
+export async function sendErrorEventToTinybird(
+    event: TinybirdErrorEvent,
+    tinybirdIngestUrl: string,
+    tinybirdIngestToken: string,
+    log: Logger,
+): Promise<void> {
+    const tinybirdEvent = removeUnset(event);
+    const body = JSON.stringify(tinybirdEvent);
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await fetch(tinybirdIngestUrl, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${tinybirdIngestToken}`,
+                    "Content-Type": "application/x-ndjson",
+                },
+                body,
+            });
+
+            if (response.ok) {
+                return;
+            }
+
+            const errorText = await response.text();
+            const isRetryable =
+                response.status >= 500 || response.status === 429;
+            const isLastAttempt = attempt === MAX_RETRIES;
+
+            if (!isRetryable || isLastAttempt) {
+                log.error(
+                    "Tinybird error event API error: status={status} error={error} attempt={attempt}",
+                    { status: response.status, error: errorText, attempt },
+                );
+                return;
+            }
+
+            await retryWithBackoff(
+                attempt,
+                log,
+                "Tinybird error event retry",
+                response.status,
+            );
+        } catch (error) {
+            if (attempt === MAX_RETRIES) {
+                log.error(
+                    "Failed to send error event to Tinybird: {error} attempt={attempt}",
+                    { error, attempt },
+                );
+                return;
+            }
+
+            await retryWithBackoff(
+                attempt,
+                log,
+                "Tinybird error event network error, retrying",
+            );
+        }
+    }
+}
+
+export function getTinybirdDatasourceIngestUrl(
+    referenceIngestUrl: string,
+    datasourceName: string,
+): string {
+    const url = new URL(referenceIngestUrl);
+    url.searchParams.set("name", datasourceName);
+    return url.toString();
 }
 
 async function retryWithBackoff(

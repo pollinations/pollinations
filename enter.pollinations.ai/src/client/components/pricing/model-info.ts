@@ -55,9 +55,13 @@ export const getModelDescription = (modelName: string): string | undefined => {
 };
 
 export const getModelDisplayName = (modelName: string): string | undefined => {
+    // Return the registry key (public name) rather than the provider-internal
+    // `model` field. The registry key is what users paste into API requests —
+    // showing something different (e.g. "gemini-3-pro-image" for nanobanana-pro)
+    // is misleading.
     const service = getModelDefinition(modelName as ModelName);
     if (!service) return undefined;
-    return service.model;
+    return modelName;
 };
 
 export const getModelProfile = (

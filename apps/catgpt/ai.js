@@ -37,7 +37,7 @@ export function getAuthorizeUrl() {
         redirect_url: redirect,
         budget: "5",
         models: "gptimage,nanobanana,claude-fast",
-        permissions: "profile,balance",
+        permissions: "profile,usage",
     })}`;
 }
 

@@ -43,6 +43,7 @@ new_classes = ["PollenRateLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
+CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
@@ -90,6 +91,7 @@ script_name = "pollinations-enter"
 
 [env.local.vars]
 ENVIRONMENT = "local"
+CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
@@ -158,6 +160,7 @@ new_classes = ["PollenRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
@@ -222,6 +225,7 @@ new_classes = ["PollenRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
@@ -276,6 +280,7 @@ new_classes = ["PollenRateLimiter"]
 
 [env.dev.vars]
 ENVIRONMENT = "dev"
+CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
@@ -329,6 +334,7 @@ class_name = "PollenRateLimiter"
 
 [env.test.vars]
 ENVIRONMENT = "test"
+CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = true

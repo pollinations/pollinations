@@ -1676,7 +1676,7 @@ export class Pollinations {
      *   redirectUrl: 'https://myapp.com/callback',
      *   models: ['flux', 'openai'],
      *   budget: 10,
-     *   permissions: ['profile', 'balance'],
+     *   permissions: ['profile', 'usage'],
      * });
      * // Redirect user to this URL
      * ```
@@ -1989,7 +1989,7 @@ export class Pollinations {
      *   name: 'my-bot',
      *   type: 'secret',
      *   pollenBudget: 1000,
-     *   accountPermissions: ['balance', 'usage'],
+     *   accountPermissions: ['usage'],
      * });
      * console.log('Save this now — it will not be shown again:', created.key);
      * ```

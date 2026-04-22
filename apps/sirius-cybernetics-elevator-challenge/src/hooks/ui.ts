@@ -56,7 +56,7 @@ const APP_KEY = "pk_vbqLj6cwn05D2v5B";
 
 function getAuthorizeUrl(): string {
     const redirect = window.location.href.split("#")[0];
-    return `${ENTER_URL}/authorize?${new URLSearchParams({ redirect_url: redirect, app_key: APP_KEY, permissions: "profile,balance" })}`;
+    return `${ENTER_URL}/authorize?${new URLSearchParams({ redirect_url: redirect, app_key: APP_KEY, permissions: "profile,usage" })}`;
 }
 
 export function useBYOP() {

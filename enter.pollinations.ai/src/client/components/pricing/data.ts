@@ -4,11 +4,7 @@
 
 import { AUDIO_SERVICES } from "../../../../../shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "../../../../../shared/registry/image.ts";
-import {
-    getActivePriceDefinition,
-    type ModelName,
-    type PriceDefinition,
-} from "../../../../../shared/registry/registry.ts";
+import type { CostDefinition } from "../../../../../shared/registry/registry.ts";
 import { TEXT_SERVICES } from "../../../../../shared/registry/text.ts";
 import {
     formatPrice,
@@ -22,95 +18,92 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];
 
     // Add text models
-    for (const serviceName of Object.keys(TEXT_SERVICES)) {
-        const latestPrice = getActivePriceDefinition(serviceName as ModelName);
-        if (!latestPrice) continue;
+    for (const [serviceName, serviceConfig] of Object.entries(TEXT_SERVICES)) {
+        if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
+        const latestCost: CostDefinition = serviceConfig.cost;
 
         prices.push({
             name: serviceName,
-            type: "text",
+            type: serviceConfig.category,
             perToken: true,
             promptTextPrice: formatPrice(
-                latestPrice.promptTextTokens,
+                latestCost.promptTextTokens,
                 formatPricePer1M,
             ),
             promptCachedPrice: formatPrice(
-                latestPrice.promptCachedTokens,
+                latestCost.promptCachedTokens,
                 formatPricePer1M,
             ),
             promptAudioPrice: formatPrice(
-                latestPrice.promptAudioTokens,
+                latestCost.promptAudioTokens,
                 formatPricePer1M,
             ),
             completionTextPrice: formatPrice(
-                latestPrice.completionTextTokens,
+                latestCost.completionTextTokens,
                 formatPricePer1M,
             ),
             completionAudioPrice: formatPrice(
-                latestPrice.completionAudioTokens,
+                latestCost.completionAudioTokens,
                 formatPricePer1M,
             ),
             completionAudioTokens: formatPrice(
-                latestPrice.completionAudioTokens,
+                latestCost.completionAudioTokens,
                 formatPricePer1M,
             ),
         });
     }
 
-    // Add image/video models - use outputModalities to determine type
+    // Add image/video models
     for (const [serviceName, serviceConfig] of Object.entries(IMAGE_SERVICES)) {
-        const latestPrice: PriceDefinition | null = getActivePriceDefinition(
-            serviceName as ModelName,
-        );
-        if (!latestPrice) continue;
-        const outputType = serviceConfig.outputModalities?.[0] || "image";
+        if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
+        const latestCost: CostDefinition = serviceConfig.cost;
 
-        if (outputType === "video") {
+        if (serviceConfig.category === "video") {
             // Check if it's token-based (seedance) or second-based (veo)
-            if (latestPrice.completionVideoTokens) {
+            if (latestCost.completionVideoTokens) {
                 prices.push({
                     name: serviceName,
-                    type: "video",
+                    type: serviceConfig.category,
                     perToken: true,
                     perTokenPrice: formatPrice(
-                        latestPrice.completionVideoTokens,
+                        latestCost.completionVideoTokens,
                         formatPricePer1M,
                     ),
                 });
             } else {
                 prices.push({
                     name: serviceName,
-                    type: "video",
+                    type: serviceConfig.category,
                     perToken: false,
                     perSecondPrice: formatPrice(
-                        latestPrice.completionVideoSeconds,
+                        latestCost.completionVideoSeconds,
                         (v: number) => v.toFixed(3),
                     ),
                     perAudioSecondPrice: formatPrice(
-                        latestPrice.completionAudioSeconds,
+                        latestCost.completionAudioSeconds,
                         (v: number) => v.toFixed(3),
                     ),
                 });
             }
         } else if (
-            latestPrice.promptTextTokens ||
-            latestPrice.promptImageTokens
+            latestCost.promptTextTokens ||
+            latestCost.promptImageTokens
         ) {
             // Token-based image pricing (e.g., gptimage, nanobanana)
             prices.push({
                 name: serviceName,
-                type: "image",
+                type: serviceConfig.category,
                 perToken: true,
                 promptTextPrice: formatPrice(
-                    latestPrice.promptTextTokens,
+                    latestCost.promptTextTokens,
                     formatPricePer1M,
                 ),
                 promptImagePrice: formatPrice(
-                    latestPrice.promptImageTokens,
+                    latestCost.promptImageTokens,
                     formatPricePer1M,
                 ),
                 completionImagePrice: formatPrice(
-                    latestPrice.completionImageTokens,
+                    latestCost.completionImageTokens,
                     formatPricePer1M,
                 ),
             });
@@ -118,10 +111,10 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
             // Per-image pricing (e.g., flux, turbo, kontext, seedream)
             prices.push({
                 name: serviceName,
-                type: "image",
+                type: serviceConfig.category,
                 perToken: false,
                 perImagePrice: formatPrice(
-                    latestPrice.completionImageTokens,
+                    latestCost.completionImageTokens,
                     formatPricePerImage,
                 ),
             });
@@ -129,29 +122,29 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     }
 
     // Add audio models (TTS and STT)
-    for (const serviceName of Object.keys(AUDIO_SERVICES)) {
-        const latestPrice = getActivePriceDefinition(serviceName as ModelName);
-        if (!latestPrice) continue;
+    for (const [serviceName, serviceConfig] of Object.entries(AUDIO_SERVICES)) {
+        if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
+        const latestCost: CostDefinition = serviceConfig.cost;
 
-        if (latestPrice.promptAudioSeconds) {
+        if (latestCost.promptAudioSeconds) {
             // Speech-to-text (Whisper) — billed per input audio second
             prices.push({
                 name: serviceName,
-                type: "audio",
+                type: serviceConfig.category,
                 perToken: false,
                 perSecondPrice: formatPrice(
-                    latestPrice.promptAudioSeconds,
+                    latestCost.promptAudioSeconds,
                     (v: number) => v.toFixed(5),
                 ),
             });
-        } else if (latestPrice.completionAudioSeconds) {
+        } else if (latestCost.completionAudioSeconds) {
             // Music generation (ElevenLabs Music) — billed per output audio second
             prices.push({
                 name: serviceName,
-                type: "audio",
+                type: serviceConfig.category,
                 perToken: false,
                 perSecondPrice: formatPrice(
-                    latestPrice.completionAudioSeconds,
+                    latestCost.completionAudioSeconds,
                     (v: number) => v.toFixed(4),
                 ),
             });
@@ -159,10 +152,10 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
             // Text-to-speech (ElevenLabs TTS) — billed per character
             prices.push({
                 name: serviceName,
-                type: "audio",
+                type: serviceConfig.category,
                 perToken: false,
                 perCharPrice: formatPrice(
-                    latestPrice.completionAudioTokens,
+                    latestCost.completionAudioTokens,
                     (v: number) => (v * 1000).toFixed(2),
                 ),
             });

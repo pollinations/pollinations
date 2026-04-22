@@ -14,7 +14,13 @@ import {
 //         completionAudioTokens, completionImageTokens, completionVideoSeconds, completionVideoTokens
 export const ModelInfoSchema = z.object({
     name: z.string(),
+    brand: z.string(),
+    provider: z.string(),
+    model: z.string(),
+    version: z.string().optional(),
     aliases: z.array(z.string()),
+    category: z.string(),
+    capabilities: z.array(z.string()).optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
@@ -49,12 +55,10 @@ export function getModelInfo(modelName: ModelName): ModelInfo {
     if (!priceDefinition) {
         throw new Error(`No price definition found for model: ${modelName}`);
     }
-    // Filter out date, zero, and undefined values from price definition
-    const { date: _date, ...priceFields } = priceDefinition;
     const pricing: Record<string, string> & { currency: "pollen" } = {
         currency: "pollen",
     };
-    for (const [key, value] of Object.entries(priceFields)) {
+    for (const [key, value] of Object.entries(priceDefinition)) {
         if (typeof value === "number" && value > 0) {
             pricing[key] = toFixedPoint(value);
         }
@@ -62,7 +66,13 @@ export function getModelInfo(modelName: ModelName): ModelInfo {
 
     return {
         name: modelName as string,
+        brand: service.brand,
+        provider: service.provider,
+        model: service.model,
+        version: service.version,
         aliases: service.aliases,
+        category: service.category,
+        capabilities: service.capabilities,
         pricing,
         // User-facing metadata from service definition
         description: service.description,

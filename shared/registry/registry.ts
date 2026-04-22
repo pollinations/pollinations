@@ -1,17 +1,14 @@
 import { safeRound } from "../utils";
-import {
-    AUDIO_SERVICES,
-    type AudioModelId,
-    type AudioModelName,
-} from "./audio";
-import {
-    IMAGE_SERVICES,
-    type ImageModelId,
-    type ImageModelName,
-} from "./image";
-import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
+import { AUDIO_SERVICES, type AudioModelName } from "./audio";
+import { IMAGE_SERVICES, type ImageModelName } from "./image";
+import { TEXT_SERVICES, type TextModelName } from "./text";
 
 const PRECISION = 8;
+
+export type Category = "text" | "image" | "audio" | "video";
+export type Modality = "text" | "image" | "audio" | "video";
+export type Capability = "tools" | "reasoning" | "search" | "codeExecution";
+export type ModelProfile = "fast" | "pro";
 
 export type UsageType =
     | "promptTextTokens"
@@ -30,54 +27,85 @@ export type UsageType =
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
 
-// Dollar amounts per usage type, plus a total cost (what Pollinations pays the provider)
+// UsageCost is Usage with dollar amounts and a total
 export type UsageCost = Usage & {
     totalCost: number;
 };
 
-// Dollar amounts per usage type, plus a total price (what the user is billed)
+// UsagePrice is Usage with dollar amounts and a total
 export type UsagePrice = Usage & {
     totalPrice: number;
 };
 
-// Conversion rates (dollars per usage unit) used to compute provider cost
-export type CostDefinition = {
-    date: number;
-} & { [K in UsageType]?: number };
+// CostDefinition defines conversion rates from usage to dollars
+export type CostDefinition = { [K in UsageType]?: number };
 
-// Conversion rates used to compute user-facing price; must cover the same
-// usage keys as the cost definition at the same date (enforced at registry build).
+// PriceDefinition defines conversion rates for customer pricing
 export type PriceDefinition = CostDefinition;
 
-export type ModelId = ImageModelId | TextModelId | AudioModelId;
 export type ModelName = ImageModelName | TextModelName | AudioModelName;
 
-export type ModelDefinition<TModelId extends string = ModelId> = {
-    aliases: string[];
-    modelId: TModelId;
+export type ModelDefinition = {
+    brand: string;
     provider: string;
-    cost: CostDefinition[];
-    price?: PriceDefinition[];
-    // User-facing metadata
+    model: string;
+    version?: string;
+    aliases: string[];
     description?: string;
-    inputModalities?: string[];
-    outputModalities?: string[];
+    category: Category;
+    profile?: ModelProfile;
+    inputModalities?: Modality[];
+    outputModalities?: Modality[];
+    capabilities?: Capability[];
+    contextLength?: number;
+    voices?: string[];
+    alpha?: boolean;
+    hidden?: boolean;
+    cost: CostDefinition;
+    price?: PriceDefinition;
+    introducedAt?: number;
+    // Compatibility fields that still drive existing product behavior.
+    paidOnly?: boolean;
+    isSpecialized?: boolean;
+    persona?: boolean;
+};
+
+export type ModelRegistryEntry = ModelDefinition & {
+    price: PriceDefinition;
     tools?: boolean;
     reasoning?: boolean;
     search?: boolean;
     codeExecution?: boolean;
-    contextLength?: number;
-    voices?: string[];
-    isSpecialized?: boolean;
-    persona?: boolean;
-    paidOnly?: boolean; // Models that require paid balance only
-    alpha?: boolean; // Experimental models with potential instability
-    hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
 };
 
-/** Sorts the cost and price definitions by date, in descending order */
-function sortDefinitions<T extends CostDefinition>(definitions: T[]): T[] {
-    return definitions.sort((a, b) => b.date - a.date);
+type CapabilityCarrier = {
+    capabilities?: readonly Capability[];
+};
+
+export function hasCapability(
+    definition: CapabilityCarrier | undefined,
+    capability: Capability,
+): boolean {
+    return definition?.capabilities?.includes(capability) ?? false;
+}
+
+export function buildModelKey(
+    definition: Pick<ModelDefinition, "provider" | "model" | "version">,
+): string {
+    return `${definition.provider}/${definition.model}${
+        definition.version ? `@${definition.version}` : ""
+    }`;
+}
+
+function toRegistryEntry(service: ModelDefinition): ModelRegistryEntry {
+    return {
+        ...service,
+        price: service.price ?? service.cost,
+        tools: hasCapability(service, "tools") || undefined,
+        reasoning: hasCapability(service, "reasoning") || undefined,
+        search: hasCapability(service, "search") || undefined,
+        codeExecution: hasCapability(service, "codeExecution") || undefined,
+    };
 }
 
 // Helper: Convert usage to dollar amounts
@@ -106,56 +134,12 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-type ModelRegistryEntry = ModelDefinition & {
-    price: PriceDefinition[];
-};
-
-function usageKeys(def: CostDefinition): UsageType[] {
-    return Object.keys(def).filter((k): k is UsageType => k !== "date");
-}
-
-/**
- * When a model defines `price`, each price entry must cover the same usage
- * keys as the cost entry with the same date — otherwise `calculatePrice` throws
- * at runtime for any usage type missing a conversion rate.
- */
-function validatePriceShape(
-    name: string,
-    cost: CostDefinition[],
-    price: PriceDefinition[],
-): void {
-    for (const priceDef of price) {
-        const matchingCost = cost.find((c) => c.date === priceDef.date);
-        if (!matchingCost) {
-            throw new Error(
-                `[registry:${name}] price entry at date=${priceDef.date} has no matching cost entry`,
-            );
-        }
-        const costKeys = new Set(usageKeys(matchingCost));
-        const priceKeysSet = new Set(usageKeys(priceDef));
-        const missing = [...costKeys].filter((k) => !priceKeysSet.has(k));
-        if (missing.length > 0) {
-            throw new Error(
-                `[registry:${name}] price entry at date=${priceDef.date} missing usage keys: ${missing.join(", ")}`,
-            );
-        }
-    }
-}
-
 const MODEL_REGISTRY = Object.fromEntries(
     Object.entries({
         ...TEXT_SERVICES,
         ...IMAGE_SERVICES,
         ...AUDIO_SERVICES,
-    }).map(([name, service]) => {
-        const cost = sortDefinitions([...service.cost]);
-        const explicitPrice = (service as ModelDefinition).price;
-        if (explicitPrice) {
-            validatePriceShape(name, cost, explicitPrice);
-        }
-        const price = sortDefinitions([...(explicitPrice ?? cost)]);
-        return [name, { ...service, cost, price } as ModelRegistryEntry];
-    }),
+    }).map(([name, service]) => [name, toRegistryEntry(service)]),
 ) as Record<ModelName, ModelRegistryEntry>;
 
 /**
@@ -234,6 +218,17 @@ export function getModelDefinition(model: ModelName): ModelRegistryEntry {
     return definition;
 }
 
+export function getModelKey(model: ModelName): string {
+    return buildModelKey(getModelDefinition(model));
+}
+
+export function modelHasCapability(
+    model: ModelName,
+    capability: Capability,
+): boolean {
+    return hasCapability(getModelDefinition(model), capability);
+}
+
 /**
  * Get aliases for a model
  */
@@ -247,14 +242,8 @@ export function getModelAliases(model: ModelName): readonly string[] {
  */
 export function getActiveCostDefinition(
     model: ModelName,
-    date: Date = new Date(),
 ): CostDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[model]?.cost;
-    if (!modelDefinition) return null;
-    for (const definition of modelDefinition) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
+    return MODEL_REGISTRY[model]?.cost ?? null;
 }
 
 /**
@@ -262,14 +251,8 @@ export function getActiveCostDefinition(
  */
 export function getActivePriceDefinition(
     model: ModelName,
-    date: Date = new Date(),
 ): PriceDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[model]?.price;
-    if (!modelDefinition) return null;
-    for (const definition of modelDefinition) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
+    return MODEL_REGISTRY[model]?.price ?? null;
 }
 
 /**

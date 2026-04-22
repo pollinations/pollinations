@@ -272,13 +272,13 @@ function generateLLMDoc(): string {
     lines.push("## Text Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(TEXT_SERVICES)) {
-        const svc = rawSvc as ModelDefinition<string>;
+        const svc = rawSvc as ModelDefinition;
         if (svc.hidden) continue;
         const caps: string[] = [];
-        if (svc.tools) caps.push("tools");
-        if (svc.reasoning) caps.push("reasoning");
-        if (svc.search) caps.push("search");
-        if (svc.codeExecution) caps.push("code-exec");
+        if (svc.capabilities?.includes("tools")) caps.push("tools");
+        if (svc.capabilities?.includes("reasoning")) caps.push("reasoning");
+        if (svc.capabilities?.includes("search")) caps.push("search");
+        if (svc.capabilities?.includes("codeExecution")) caps.push("code-exec");
         const capsStr = caps.length ? ` [${caps.join(", ")}]` : "";
         const flags: string[] = [];
         if (svc.alpha) flags.push("alpha");
@@ -291,7 +291,7 @@ function generateLLMDoc(): string {
     lines.push("## Image Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ModelDefinition<string>;
+        const svc = rawSvc as ModelDefinition;
         if (svc.hidden) continue;
         if (svc.outputModalities?.includes("video")) continue;
         const flags: string[] = [];
@@ -305,7 +305,7 @@ function generateLLMDoc(): string {
     lines.push("## Video Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(IMAGE_SERVICES)) {
-        const svc = rawSvc as ModelDefinition<string>;
+        const svc = rawSvc as ModelDefinition;
         if (svc.hidden) continue;
         if (!svc.outputModalities?.includes("video")) continue;
         const flags: string[] = [];
@@ -318,7 +318,7 @@ function generateLLMDoc(): string {
     lines.push("## Audio Models");
     lines.push("");
     for (const [id, rawSvc] of Object.entries(AUDIO_SERVICES)) {
-        const svc = rawSvc as ModelDefinition<string>;
+        const svc = rawSvc as ModelDefinition;
         if (svc.hidden) continue;
         const flags: string[] = [];
         if (svc.alpha) flags.push("alpha");

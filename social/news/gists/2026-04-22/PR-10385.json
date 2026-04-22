@@ -1,0 +1,34 @@
+{
+  "pr_number": 10385,
+  "title": "feat(rotation): local-operator rotation scripts for provider + infra + SOPS keys",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10385",
+  "merged_at": "2026-04-22T00:36:51Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh locks for the hive",
+    "blurb": "We've upgraded our internal security with a brand new set of key rotation scripts. Keeping the hive safe and secure, one cryptographic key at a time!",
+    "summary": "Added self-contained, local-operator scripts for end-to-end rotation of all provider keys, infrastructure tokens, and SOPS identities.",
+    "impact": "This significantly strengthens our security posture by allowing secure, automated key rotations without exposing highly privileged admin credentials to CI environments.",
+    "keywords": [
+      "security",
+      "infrastructure",
+      "sops",
+      "key-rotation",
+      "devops"
+    ],
+    "visual_concept": "The pollinations bee as a locksmith or security expert. Key rings, glowing locks, retro server racks, and a cozy hacker vibe. The robot companion could be helping hold a giant pixelated key.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, turning a glowing golden key in a chunky retro server rack. A cute robot with a CRT monitor head holds a keyring nearby. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-22/PR-10385.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, turning a glowing golden key in a chunky retro server rack. A cute robot with a CRT monitor head holds a keyring nearby. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-22T00:37:45.117978+00:00"
+}

@@ -565,7 +565,7 @@ export interface UploadResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "balance" | "usage";
+export type AccountPermission = "profile" | "usage";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -589,13 +589,12 @@ export interface AuthorizeOptions {
 
 /** User profile information */
 export interface AccountProfile {
-    name: string;
-    email: string;
-    githubUsername?: string;
-    image?: string;
-    tier: string;
-    createdAt: string;
-    nextResetAt?: string;
+    githubUsername: string | null;
+    image: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    name?: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    email?: string | null;
 }
 
 /** Account balance */
@@ -703,7 +702,7 @@ export interface AccountKey {
 }
 
 /** Key-scope permissions that can be granted on created keys. */
-export type KeyAccountPermission = "balance" | "usage" | "models" | string;
+export type KeyAccountPermission = "profile" | "usage" | "keys" | string;
 
 /** Options for POST /account/keys */
 export interface CreateKeyOptions {
@@ -718,9 +717,10 @@ export interface CreateKeyOptions {
     /** Pollen budget cap */
     pollenBudget?: number;
     /**
-     * Account permissions to grant (e.g. `["balance", "usage"]`).
-     * Without this, scoped keys cannot read account state.
-     * `"keys"` is auto-stripped server-side.
+     * Account permissions to grant (e.g. `["profile", "usage"]`).
+     * Without this, scoped keys cannot read account state beyond their
+     * own key metadata, budget, and per-key usage.
+     * `"keys"` is auto-stripped server-side on the BYOP flow.
      */
     accountPermissions?: KeyAccountPermission[];
 }
@@ -805,7 +805,7 @@ export interface DeviceTokenResponse {
 export interface AuthorizeDeviceOptions extends RequestOptions {
     /** OAuth client ID. Defaults to the public polli CLI client. */
     clientId?: string;
-    /** Space-separated scope string (default: "generate keys balance usage") */
+    /** Space-separated scope string (default: "generate keys usage") */
     scope?: string;
 }
 

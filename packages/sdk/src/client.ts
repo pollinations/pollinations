@@ -43,7 +43,7 @@ import { PollinationsError } from "./types.js";
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
-const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys balance usage";
+const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
 // Default timeouts in milliseconds
@@ -1676,7 +1676,7 @@ export class Pollinations {
      *   redirectUrl: 'https://myapp.com/callback',
      *   models: ['flux', 'openai'],
      *   budget: 10,
-     *   permissions: ['profile', 'balance'],
+     *   permissions: ['profile', 'usage'],
      * });
      * // Redirect user to this URL
      * ```
@@ -1839,7 +1839,7 @@ export class Pollinations {
      * @example
      * ```ts
      * const profile = await pollinations.accountProfile();
-     * console.log(profile.name, profile.tier);
+     * console.log(profile.githubUsername);
      * ```
      */
     async accountProfile(): Promise<AccountProfile> {
@@ -1989,7 +1989,7 @@ export class Pollinations {
      *   name: 'my-bot',
      *   type: 'secret',
      *   pollenBudget: 1000,
-     *   accountPermissions: ['balance', 'usage'],
+     *   accountPermissions: ['usage'],
      * });
      * console.log('Save this now — it will not be shown again:', created.key);
      * ```

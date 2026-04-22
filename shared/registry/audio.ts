@@ -134,6 +134,51 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         alpha: true,
     },
+    "qwen-tts": {
+        aliases: ["qwen3-tts", "qwen3-tts-flash"],
+        modelId: "qwen3-tts-flash",
+        provider: "alibaba",
+        cost: [
+            {
+                date: new Date("2026-04-19").getTime(),
+                // DashScope Qwen3-TTS-Flash: ~$0.013 per 1K characters
+                completionAudioTokens: 0.013 / 1000,
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-04-19").getTime(),
+                // 1.5x markup on free tier
+                completionAudioTokens: (0.013 * 1.5) / 1000,
+            },
+        ],
+        description:
+            "Qwen3-TTS Flash - Multilingual text-to-speech via DashScope",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
+    "qwen-tts-instruct": {
+        aliases: ["qwen3-tts-instruct", "qwen3-tts-instruct-flash"],
+        modelId: "qwen3-tts-instruct-flash",
+        provider: "alibaba",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-04-19").getTime(),
+                completionAudioTokens: 0.013 / 1000,
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-04-19").getTime(),
+                completionAudioTokens: 0.013 / 1000,
+            },
+        ],
+        description:
+            "Qwen3-TTS Instruct - TTS with emotion & style control via DashScope",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
 } satisfies Record<string, ModelDefinition<string>>;
 
 export function resolveElevenLabsVoiceId(voice: string): string {

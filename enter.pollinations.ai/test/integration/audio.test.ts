@@ -257,6 +257,95 @@ describe("ElevenLabs Music", () => {
     );
 });
 
+describe("Qwen3 TTS", () => {
+    test(
+        "POST /v1/audio/speech with model=qwen-tts returns audio",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/audio/speech`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "qwen-tts",
+                        input: "Hello from the Pollinations integration test.",
+                        voice: "alloy",
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain("audio/");
+            expect(response.headers.get("x-model-used")).toBe("qwen-tts");
+            expect(response.headers.get("x-tts-voice")).toBe("Chelsie");
+
+            const arrayBuffer = await response.arrayBuffer();
+            expect(arrayBuffer.byteLength).toBeGreaterThan(0);
+        },
+    );
+
+    test(
+        "POST /v1/audio/speech with model=qwen-tts-instruct accepts instruct param",
+        { timeout: 60000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/audio/speech`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "qwen-tts-instruct",
+                        input: "Speak with excitement about this new feature!",
+                        voice: "alloy",
+                        instruct: "excited and cheerful",
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toContain("audio/");
+            expect(response.headers.get("x-model-used")).toBe(
+                "qwen-tts-instruct",
+            );
+
+            const arrayBuffer = await response.arrayBuffer();
+            expect(arrayBuffer.byteLength).toBeGreaterThan(0);
+        },
+    );
+
+    test(
+        "POST /v1/audio/speech with model=qwen-tts-instruct rejects free-tier key",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/audio/speech`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "qwen-tts-instruct",
+                        input: "This should be rejected.",
+                        voice: "alloy",
+                    }),
+                },
+            );
+            expect(response.status).toBeGreaterThanOrEqual(400);
+            expect(response.status).toBeLessThan(500);
+        },
+    );
+});
+
 describe("Whisper Transcription", () => {
     test(
         "POST /v1/audio/transcriptions returns text",

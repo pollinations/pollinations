@@ -114,21 +114,13 @@ All errors return JSON with a consistent format:
 - **Path:** `/account/profile`
 - **Tags:** 👤 Account
 
-Returns your account profile including name, email, tier level, and account creation date. Requires `account:profile` permission when using API keys.
+Returns your account profile including GitHub username and profile image. Requires `account:profile` permission when using API keys.
 
 #### Responses
 
 ##### Status: 200 User profile
 
 ###### Content-Type: application/json
-
-- **`createdAt` (required)**
-
-  `string`, format: `date-time` — Account creation timestamp (ISO 8601)
-
-- **`email` (required)**
-
-  `object` — User's email address
 
 - **`githubUsername` (required)**
 
@@ -138,23 +130,12 @@ Returns your account profile including name, email, tier level, and account crea
 
   `object` — Profile picture URL (e.g. GitHub avatar)
 
-- **`name` (required)**
-
-  `object` — User's display name
-
-- **`nextResetAt` (required)**
-
-  `object` — Next pollen refill timestamp (ISO 8601)
-
-- **`tier` (required)**
-
-  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "router"` — User's current tier level
-
 **Example:**
 
 ```json
 {
-  "tier": "anonymous"
+  "githubUsername": "janedeveloper",
+  "image": "https://avatars.example.com/jane.jpg"
 }
 ```
 
@@ -382,7 +363,7 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
 
 - **`accountPermissions`**
 
-  `object` — Account permissions (e.g. \["balance", "usage"]). "keys" is auto-stripped.
+  `object` — Account permissions (e.g. \["profile", "usage"]). "keys" is auto-stripped.
 
 - **`allowedModels`**
 
@@ -1140,7 +1121,7 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
 - **`user_tier`**
 
-  `string`, possible values: `"anonymous", "seed", "flower"`
+  `string`, possible values: `"anonymous", "seed", "flower", "nectar"`
 
 **Example:**
 

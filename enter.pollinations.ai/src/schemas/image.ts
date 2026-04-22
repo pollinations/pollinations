@@ -73,7 +73,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .default("medium")
         .meta({
             description:
-                "Image quality level. Only supported by `gptimage` and `gptimage-large`.",
+                "Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gptimage-2`.",
         }),
     image: z
         .string()
@@ -104,7 +104,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",
+            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gptimage-2`.",
     }),
 
     // Video-specific params

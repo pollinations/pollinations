@@ -178,6 +178,23 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "gptimage-2": {
+        aliases: ["gpt-image-2"],
+        modelId: "gptimage-2",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5), // per 1M tokens
+                promptCachedTokens: perMillion(1.25), // per 1M tokens
+                promptImageTokens: perMillion(8), // per 1M tokens
+                completionImageTokens: perMillion(30), // per 1M tokens
+            },
+        ],
+        description: "GPT Image 2 - OpenAI's next-gen image generation model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "flux": {
         aliases: [],
         modelId: "flux",

@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = useCallback(() => {
         const currentUrl = window.location.href.split("#")[0];
-        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&app_key=${APP_KEY}&permissions=profile,balance`;
+        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&app_key=${APP_KEY}&permissions=profile,usage`;
         window.location.href = authUrl;
     }, []);
 

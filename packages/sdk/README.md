@@ -137,7 +137,7 @@ const created = await createKey({
   name: 'my-bot',
   type: 'secret',
   pollenBudget: 1000,
-  accountPermissions: ['balance', 'usage'],
+  accountPermissions: ['usage'],
 });
 console.log('Save now — will not be shown again:', created.key);
 

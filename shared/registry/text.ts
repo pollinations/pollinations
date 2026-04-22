@@ -190,6 +190,15 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(3.0),
             },
         ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.75),
+                promptCachedTokens: perMillion(0.075),
+                promptAudioTokens: perMillion(0.75),
+                completionTextTokens: perMillion(4.5),
+            },
+        ],
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
@@ -215,6 +224,15 @@ export const TEXT_SERVICES = {
                 promptCachedTokens: perMillion(0.025),
                 promptAudioTokens: perMillion(0.5),
                 completionTextTokens: perMillion(1.5),
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.375),
+                promptCachedTokens: perMillion(0.0375),
+                promptAudioTokens: perMillion(0.75),
+                completionTextTokens: perMillion(2.25),
             },
         ],
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
@@ -436,7 +454,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.6", "claude-opus"],
+        aliases: ["claude-opus-4.6", "claude-opus", "claude-opus-4.5"],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
         paidOnly: true,
@@ -455,12 +473,11 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-legacy": {
-        aliases: ["claude-opus-4.5", "claude-large-legacy"],
-        modelId: "claude-opus-4-5-20251101",
+    "claude-opus-4.7": {
+        aliases: [],
+        modelId: "claude-opus-4-7",
         provider: "bedrock",
         paidOnly: true,
-        hidden: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -469,7 +486,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(27.5),
             },
         ],
-        description: "Claude Opus 4.5 - Legacy",
+        description: "Claude Opus 4.7 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -544,8 +561,29 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
+    "kimi-k2.6": {
+        aliases: ["kimi-k2p6"],
+        modelId: "accounts/fireworks/models/kimi-k2p6",
+        provider: "fireworks",
+        cost: [
+            {
+                date: new Date("2026-04-21").getTime(),
+                promptTextTokens: perMillion(0.95),
+                promptCachedTokens: perMillion(0.16),
+                completionTextTokens: perMillion(4.0),
+            },
+        ],
+        description:
+            "Moonshot Kimi K2.6 - Flagship Agentic Model with CoT Reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262000,
+        isSpecialized: false,
+    },
     "gemini-large": {
-        aliases: ["gemini-3.1-pro"],
+        aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
         modelId: "gemini-3.1-pro-preview",
         provider: "google",
         paidOnly: true,
@@ -557,6 +595,14 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(12.0),
             },
         ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(3.0),
+                promptCachedTokens: perMillion(0.3),
+                completionTextTokens: perMillion(18.0),
+            },
+        ],
         description:
             "Gemini 3.1 Pro - Most Intelligent Model with 1M Context (Preview)",
         inputModalities: ["text", "image", "audio", "video"],
@@ -565,30 +611,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         search: true,
         codeExecution: false, // Disabled - was breaking gemini-large
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
-    "gemini-legacy": {
-        aliases: ["gemini-2.5-pro"],
-        modelId: "gemini-2.5-pro",
-        provider: "google",
-        paidOnly: true,
-        hidden: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25),
-                promptCachedTokens: perMillion(0.31), // Google rate: $0.125 — marked up for margin
-                completionTextTokens: perMillion(10.0),
-            },
-        ],
-        description: "Gemini 2.5 Pro - Stable Reasoning Model with 1M Context",
-        inputModalities: ["text", "image", "audio", "video"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        search: true,
-        codeExecution: true,
         contextLength: 1048576,
         isSpecialized: false,
     },

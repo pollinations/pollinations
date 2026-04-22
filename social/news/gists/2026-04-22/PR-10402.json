@@ -1,0 +1,34 @@
+{
+  "pr_number": 10402,
+  "title": "feat(gptimage-2): add gpt-image-2 via Azure eastus2",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10402",
+  "merged_at": "2026-04-22T10:08:58Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh pixels from gptimage-2",
+    "blurb": "We just wired up gptimage-2 to the image API. Grab your digital brushes and start prompting—it's available right now using your standard Pollen balance.",
+    "summary": "Added OpenAI's gptimage-2 model to the image generation API, routed efficiently through our Azure infrastructure.",
+    "impact": "Developers and creators can now generate images using the new `gptimage-2` model with zero price markup.",
+    "keywords": [
+      "image-generation",
+      "models",
+      "gptimage-2",
+      "api",
+      "azure"
+    ],
+    "visual_concept": "A new image model means new art capabilities. Depict Polly the bee as an artist (wearing a beret) collaborating with the Monitor Robot on a glowing digital canvas, symbolizing the new gptimage-2 model.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting on a glowing digital canvas alongside a chunky monitor-head robot. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'GPTIMAGE-2'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-22/PR-10402.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting on a glowing digital canvas alongside a chunky monitor-head robot. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'GPTIMAGE-2'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-22T10:10:09.857502+00:00"
+}

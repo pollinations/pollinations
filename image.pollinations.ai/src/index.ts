@@ -465,10 +465,13 @@ const server = http.createServer((req, res) => {
     const pathname = parsedUrl.pathname;
 
     // IP logging for security investigation
-    // Use socket.remoteAddress to get the DIRECT connecting IP (not forwarded headers)
+    // Use forwarded headers for the real client IP; also log socket IP when it differs
+    // (divergence means the request bypassed the normal gateway path)
+    const clientIp = getIp(req) || "unknown";
     const socketIp = req.socket?.remoteAddress || "unknown";
     const model = (parsedUrl.query?.model as string) || "unknown";
-    logIp(socketIp, "image", `path=${pathname} model=${model}`);
+    const extra = clientIp !== socketIp ? ` socket=${socketIp}` : "";
+    logIp(clientIp, "image", `path=${pathname} model=${model}${extra}`);
 
     // Handle deprecated /models endpoint BEFORE auth check
     if (pathname === "/models") {

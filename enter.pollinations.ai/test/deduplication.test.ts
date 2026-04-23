@@ -234,8 +234,8 @@ test(
         expect(body2).toBeTruthy();
 
         // Both should contain the error message about invalid model
-        expect(body1).toContain("Invalid option");
-        expect(body2).toContain("Invalid option");
+        expect(body1).toContain("nonexistent-model-12345");
+        expect(body2).toContain("nonexistent-model-12345");
 
         log.info(
             `✓ Error handling works: both requests got 400 with proper error message`,

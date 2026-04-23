@@ -1,49 +1,8 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { FC } from "react";
 import { cn } from "@/util.ts";
 import { Badge } from "../ui/badge.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
-import { getModelDisplayName } from "./model-utils.ts";
-
-// Build model lists from the shared registry (same source as pricing table)
-const textModels = Object.keys(TEXT_SERVICES)
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-// Image models - filter by outputModalities
-const imageModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("image"),
-    )
-    .map(([id]) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-// Video models - filter by outputModalities
-const videoModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) =>
-        (config.outputModalities as readonly string[]).includes("video"),
-    )
-    .map(([id]) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-// Audio models
-const audioModels = Object.keys(AUDIO_SERVICES)
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+import { MODEL_CATEGORIES } from "./model-categories.ts";
 
 type ModelPermissionsProps = {
     /** Selected model IDs. null = all models allowed, [] = restricted but none selected */
@@ -94,11 +53,10 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
     const isModelSelected = (modelId: string) =>
         (value ?? []).includes(modelId);
 
-    const totalModels =
-        textModels.length +
-        imageModels.length +
-        videoModels.length +
-        audioModels.length;
+    const totalModels = MODEL_CATEGORIES.reduce(
+        (sum, { models }) => sum + models.length,
+        0,
+    );
     const selectedCount = isUnrestricted ? totalModels : (value ?? []).length;
 
     return (
@@ -156,81 +114,27 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                 {/* Show model chips when restricting to specific models */}
                 {!isUnrestricted && (
                     <div className="space-y-4">
-                        {/* Text models */}
-                        <div>
-                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                Text
+                        {MODEL_CATEGORIES.map(({ label, models }) => (
+                            <div key={label}>
+                                <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
+                                    {label}
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    {models.map((model) => (
+                                        <ModelChip
+                                            key={model.id}
+                                            apiName={model.id}
+                                            officialName={model.label}
+                                            selected={isModelSelected(model.id)}
+                                            onClick={() =>
+                                                toggleModel(model.id)
+                                            }
+                                            disabled={disabled}
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                            <div className="flex flex-col gap-1">
-                                {textModels.map((model) => (
-                                    <ModelChip
-                                        key={model.id}
-                                        apiName={model.id}
-                                        officialName={model.label}
-                                        selected={isModelSelected(model.id)}
-                                        onClick={() => toggleModel(model.id)}
-                                        disabled={disabled}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Image models */}
-                        <div>
-                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                Image
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                {imageModels.map((model) => (
-                                    <ModelChip
-                                        key={model.id}
-                                        apiName={model.id}
-                                        officialName={model.label}
-                                        selected={isModelSelected(model.id)}
-                                        onClick={() => toggleModel(model.id)}
-                                        disabled={disabled}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Video models */}
-                        <div>
-                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                Video
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                {videoModels.map((model) => (
-                                    <ModelChip
-                                        key={model.id}
-                                        apiName={model.id}
-                                        officialName={model.label}
-                                        selected={isModelSelected(model.id)}
-                                        onClick={() => toggleModel(model.id)}
-                                        disabled={disabled}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Audio models */}
-                        <div>
-                            <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
-                                Audio
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                {audioModels.map((model) => (
-                                    <ModelChip
-                                        key={model.id}
-                                        apiName={model.id}
-                                        officialName={model.label}
-                                        selected={isModelSelected(model.id)}
-                                        onClick={() => toggleModel(model.id)}
-                                        disabled={disabled}
-                                    />
-                                ))}
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 )}
             </div>

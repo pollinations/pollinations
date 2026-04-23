@@ -29,6 +29,8 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-5.4-nano", "gpt-5-mini"],
         modelId: "gpt-5.4-nano",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -48,6 +50,8 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
         modelId: "gpt-5-nano-2025-08-07",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -73,6 +77,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "gpt-5.4",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -93,6 +99,8 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         modelId: "qwen3-coder-30b-a3b-instruct",
         provider: "ovhcloud",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),
@@ -115,6 +123,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "Mistral-Small-3.2-24B-Instruct-2506",
         provider: "ovhcloud",
+        brand: "Mistral",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -138,6 +148,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "gpt-audio-mini-2025-12-15",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -159,6 +171,8 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
         modelId: "gpt-audio-1.5",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -180,6 +194,8 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
+        brand: "Google",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -216,6 +232,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "gemini-3.1-flash-lite-preview",
         provider: "google",
+        brand: "Google",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -248,6 +266,8 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
         provider: "google",
+        brand: "Google",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -279,6 +299,8 @@ export const TEXT_SERVICES = {
         aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
         modelId: "accounts/fireworks/models/deepseek-v3p2",
         provider: "fireworks",
+        brand: "DeepSeek",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -305,6 +327,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "grok-4-1-fast-non-reasoning",
         provider: "azure",
+        brand: "xAI",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -329,6 +353,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "grok-4-20-reasoning",
         provider: "azure",
+        brand: "xAI",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-08").getTime(),
@@ -349,6 +375,8 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
         modelId: "gemini-2.5-flash-lite",
         provider: "google",
+        brand: "Google",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -381,6 +409,8 @@ export const TEXT_SERVICES = {
         aliases: [],
         modelId: "claude-haiku-4-5-20251001",
         provider: "bedrock",
+        brand: "Pollinations",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -399,6 +429,8 @@ export const TEXT_SERVICES = {
         aliases: [],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
+        brand: "Pollinations",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -418,6 +450,8 @@ export const TEXT_SERVICES = {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "claude-haiku-4-5-20251001",
         provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -437,6 +471,8 @@ export const TEXT_SERVICES = {
         aliases: ["claude-sonnet-4.6", "claude-sonnet"],
         modelId: "claude-sonnet-4-6",
         provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -457,6 +493,8 @@ export const TEXT_SERVICES = {
         aliases: ["claude-opus-4.6", "claude-opus", "claude-opus-4.5"],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -477,6 +515,8 @@ export const TEXT_SERVICES = {
         aliases: [],
         modelId: "claude-opus-4-7",
         provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -497,6 +537,8 @@ export const TEXT_SERVICES = {
         aliases: ["sonar"],
         modelId: "sonar",
         provider: "perplexity",
+        brand: "Perplexity",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -516,6 +558,8 @@ export const TEXT_SERVICES = {
         aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
         modelId: "sonar-reasoning-pro",
         provider: "perplexity",
+        brand: "Perplexity",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -544,6 +588,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "accounts/fireworks/models/kimi-k2p5",
         provider: "fireworks",
+        brand: "Moonshot AI",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -565,6 +611,8 @@ export const TEXT_SERVICES = {
         aliases: ["kimi-k2p6"],
         modelId: "accounts/fireworks/models/kimi-k2p6",
         provider: "fireworks",
+        brand: "Moonshot AI",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-21").getTime(),
@@ -586,6 +634,8 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
         modelId: "gemini-3.1-pro-preview",
         provider: "google",
+        brand: "Google",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -618,6 +668,8 @@ export const TEXT_SERVICES = {
         aliases: ["amazon-nova-micro", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
         provider: "bedrock",
+        brand: "Amazon",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -636,6 +688,8 @@ export const TEXT_SERVICES = {
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
         modelId: "us.amazon.nova-2-lite-v1:0",
         provider: "bedrock",
+        brand: "Amazon",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -655,6 +709,8 @@ export const TEXT_SERVICES = {
         aliases: ["glm-5", "glm-5.1", "glm-5p1", "glm-4.7", "glm-4p7"],
         modelId: "accounts/fireworks/models/glm-5p1",
         provider: "fireworks",
+        brand: "Z.ai",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -681,6 +737,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "accounts/fireworks/models/minimax-m2p7",
         provider: "fireworks",
+        brand: "MiniMax",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-19").getTime(),
@@ -701,6 +759,8 @@ export const TEXT_SERVICES = {
         aliases: ["mistral-large-3"],
         modelId: "Mistral-Large-3",
         provider: "azure",
+        brand: "Mistral",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-08").getTime(),
@@ -721,6 +781,8 @@ export const TEXT_SERVICES = {
         aliases: ["pollinations-ai", "polly-ai"],
         modelId: "polly",
         provider: "community",
+        brand: "Pollinations",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-02-23").getTime(),
@@ -741,6 +803,8 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3-coder-next"],
         modelId: "qwen3-coder-next",
         provider: "alibaba",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -767,6 +831,8 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3.6", "qwen3.6-plus", "qwen3p6-plus"],
         modelId: "accounts/fireworks/models/qwen3p6-plus",
         provider: "fireworks",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -794,6 +860,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
         provider: "fireworks",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-19").getTime(),
@@ -815,6 +883,8 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3guard-gen-8b"],
         modelId: "Qwen3Guard-Gen-8B",
         provider: "ovhcloud",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-02-15").getTime(),

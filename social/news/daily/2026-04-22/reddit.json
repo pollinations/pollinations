@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-22",
+  "period_start": "2026-04-22",
+  "period_end": "2026-04-22",
+  "generated_at": "2026-04-23T06:35:47.801866+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-22/images/reddit.jpg"
+    }
+  ],
+  "title": "Added gpt-image-2 via Azure eastus2 and fixed upstream error handling",
+  "text": "Merged a couple of infrastructure pull requests today for the image generation API.\n\nFirst, we added gpt-image-2 to the model roster (PR #10402). It is currently being routed through Azure eastus2. If you are building against the image endpoint, you can pass this in the model parameter now to test the output quality.\n\nSecond, we fixed how we handle upstream rejections from Azure (PR #10308). Previously, if Azure blocked a request (usually due to their internal content filters), they would return a 403 Forbidden. We were passing that 403 straight down to the client. This was confusing because it made it look like the client lacked authorization to use the pollinations API, when the actual issue was the upstream provider rejecting the payload. We are now correctly catching those specific Azure blocks and remapping them to a 502 Bad Gateway. It is a minor change, but it should make debugging much less frustrating if your prompts are hitting edge cases.\n\nEverything is open source and the API is open for light usage without keys. You can review the code or open an issue on GitHub: https://github.com/pollinations/pollinations.\n\nLet me know if the new model routing gives anyone unexpected latency spikes."
+}

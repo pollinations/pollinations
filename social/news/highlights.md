@@ -1,3 +1,4 @@
+- **2026-04-22** – **🎨 gptimage-2 is Live** OpenAI's new `gptimage-2` model is now available on the [image generation API](https://gen.pollinations.ai/image/models). Generate fresh pixels with zero price markup.
 - **2026-04-21** – **🎵 Qwen3-TTS Audio Models** The hive learns to speak Qwen. Hit the [Audio API](https://gen.pollinations.ai/audio/{text}) with the new instruct variant to control emotion and style parameters.
 - **2026-04-21** – **🧠 Claude Opus 4.7** Anthropic's heavy hitter is now wired up via Bedrock. Pass `claude-xlarge` or `claude-opus-4.7` to the [Text API](https://gen.pollinations.ai/v1/chat/completions) for state-of-the-art reasoning.
 - **2026-04-21** – **🚀 Kimi 2.6 Upgrade** The default Kimi text model just got smarter. We bumped it to v2.6 under the hood, keeping your old aliases intact.

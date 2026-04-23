@@ -33,6 +33,7 @@ export const user = sqliteTable("user", {
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
   cryptoBalance: real("crypto_balance"),
+  creatorBalance: real("creator_balance"),
   lastTierGrant: integer("last_tier_grant"),
 }, (table) => [
   index("idx_user_email").on(table.email),

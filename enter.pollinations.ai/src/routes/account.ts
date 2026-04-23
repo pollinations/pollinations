@@ -546,6 +546,7 @@ export const accountRoutes = new Hono<Env>()
             const users = await db
                 .select({
                     tierBalance: userTable.tierBalance,
+                    creatorBalance: userTable.creatorBalance,
                     packBalance: userTable.packBalance,
                     cryptoBalance: userTable.cryptoBalance,
                 })
@@ -554,6 +555,7 @@ export const accountRoutes = new Hono<Env>()
                 .limit(1);
 
             const tierBalance = users[0]?.tierBalance ?? 0;
+            const creatorBalance = users[0]?.creatorBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
             const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
@@ -562,6 +564,7 @@ export const accountRoutes = new Hono<Env>()
             return c.json({
                 balance:
                     Math.max(0, tierBalance) +
+                    Math.max(0, creatorBalance) +
                     Math.max(0, packBalance) +
                     Math.max(0, cryptoBalance),
             });

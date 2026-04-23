@@ -1,10 +1,9 @@
 import { getLogger } from "@logtape/logtape";
-import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
+import { atomicCreditUserBalance } from "../utils/balance-deduction.ts";
 
 const log = getLogger(["hono", "webhooks-crypto"]);
 
@@ -265,15 +264,14 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
 
         // Credit pollen to user's crypto balance (separate from fiat pack balance)
         const db = drizzle(c.env.DB);
-        const result = await db
-            .update(userTable)
-            .set({
-                cryptoBalance: sql`COALESCE(${userTable.cryptoBalance}, 0) + ${pollenAmount}`,
-            })
-            .where(eq(userTable.id, userId));
+        const { ok } = await atomicCreditUserBalance(
+            db,
+            userId,
+            "crypto",
+            pollenAmount,
+        );
 
-        // Check if user was found and updated (D1 uses meta.changes)
-        if (result.meta?.changes === 0) {
+        if (!ok) {
             log.error("User not found for crypto credit: {userId}", { userId });
             throw new HTTPException(400, { message: "User not found" });
         }

@@ -48,6 +48,7 @@ import {
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId, removeUnset } from "@/util.ts";
+import type { MarkupResolution } from "@/utils/track-helpers.ts";
 import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
@@ -177,6 +178,21 @@ export const track = (eventType: EventType) =>
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
 
+                // Deduct payer + credit creator BEFORE emitting the event so
+                // creator_credit on the event reflects the ledger, not our intent.
+                // If the credit fails, handleBalanceDeduction returns markup=null
+                // and the event records creator_credit=0.
+                const { markup } = await handleBalanceDeduction({
+                    db,
+                    isBilledUsage: responseTracking.isBilledUsage,
+                    totalPrice: responseTracking.price?.totalPrice,
+                    userId: userTracking.userId,
+                    apiKeyId: c.var.auth?.apiKey?.id,
+                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                    apiKeyClientId: userTracking.apiKeyClientId,
+                    modelResolved: c.var.model?.resolved,
+                });
+
                 const finalEvent = createTrackingEvent({
                     id: generateRandomId(),
                     requestId: c.get("requestId"),
@@ -191,6 +207,7 @@ export const track = (eventType: EventType) =>
                     balanceTracking,
                     requestTracking,
                     responseTracking,
+                    markup,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
@@ -203,6 +220,7 @@ export const track = (eventType: EventType) =>
                         '  selectedMeterSlug="{event.selectedMeterSlug}"',
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
+                        "  creatorCredit={event.creatorCredit}",
                     ].join("\n"),
                     { event: finalEvent },
                 );
@@ -213,17 +231,6 @@ export const track = (eventType: EventType) =>
                     c.env.TINYBIRD_INGEST_TOKEN,
                     log,
                 );
-
-                // Handle balance deduction for both API keys and users
-                await handleBalanceDeduction({
-                    db,
-                    isBilledUsage: responseTracking.isBilledUsage,
-                    totalPrice: responseTracking.price?.totalPrice,
-                    userId: userTracking.userId,
-                    apiKeyId: c.var.auth?.apiKey?.id,
-                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                    modelResolved: c.var.model?.resolved,
-                });
             })(),
         );
     });
@@ -433,6 +440,7 @@ type TrackingEventInput = {
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
+    markup: MarkupResolution | null;
     errorTracking?: ErrorData;
 };
 
@@ -450,6 +458,7 @@ function createTrackingEvent({
     balanceTracking,
     requestTracking,
     responseTracking,
+    markup,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
@@ -483,6 +492,9 @@ function createTrackingEvent({
 
         totalCost: responseTracking.cost?.totalCost || 0,
         totalPrice: responseTracking.price?.totalPrice || 0,
+
+        creatorCredit: markup?.creatorCredit ?? 0,
+        byopMarkupPct: markup?.markupPct ?? 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,

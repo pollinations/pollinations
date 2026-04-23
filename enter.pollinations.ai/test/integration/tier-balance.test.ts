@@ -378,46 +378,64 @@ describe("Tier Balance Management", () => {
         });
 
         test("identifyDeductionSource should pick single bucket", () => {
+            const b = (
+                tier: number,
+                creator: number,
+                crypto: number,
+                pack = 0,
+            ) => ({
+                tierBalance: tier,
+                creatorBalance: creator,
+                cryptoBalance: crypto,
+                packBalance: pack,
+            });
+
             // Tier is positive, has paid balance — tier first
-            const fromTier = identifyDeductionSource(5, 3, 7, 5);
+            const fromTier = identifyDeductionSource(b(5, 0, 3, 5), 7);
             expect(fromTier.fromTier).toBe(7);
+            expect(fromTier.fromCreator).toBe(0);
             expect(fromTier.fromCrypto).toBe(0);
             expect(fromTier.fromPack).toBe(0);
 
-            // Tier zero, crypto positive, has paid — falls to crypto
-            const fromCrypto = identifyDeductionSource(0, 3, 7, 0);
-            expect(fromCrypto.fromTier).toBe(0);
+            // Tier zero, creator positive, has paid — falls to creator
+            const fromCreator = identifyDeductionSource(b(0, 4, 3, 0), 7);
+            expect(fromCreator.fromCreator).toBe(7);
+            expect(fromCreator.fromTier).toBe(0);
+            expect(fromCreator.fromCrypto).toBe(0);
+
+            // Tier/creator zero, crypto positive — falls to crypto
+            const fromCrypto = identifyDeductionSource(b(0, 0, 3, 0), 7);
             expect(fromCrypto.fromCrypto).toBe(7);
+            expect(fromCrypto.fromCreator).toBe(0);
             expect(fromCrypto.fromPack).toBe(0);
 
-            // Tier/crypto zero, pack positive — falls to pack
-            const fromPack = identifyDeductionSource(0, 0, 8, 5);
-            expect(fromPack.fromTier).toBe(0);
-            expect(fromPack.fromCrypto).toBe(0);
+            // Tier/creator/crypto zero, pack positive — falls to pack
+            const fromPack = identifyDeductionSource(b(0, 0, 0, 5), 8);
             expect(fromPack.fromPack).toBe(8);
+            expect(fromPack.fromCrypto).toBe(0);
 
-            // No paid balance (crypto+pack ≤ 0) — always tier, never spills
-            const noPaid = identifyDeductionSource(0, 0, 3);
+            // No paid/creator balance — always tier, never spills
+            const noPaid = identifyDeductionSource(b(0, 0, 0), 3);
             expect(noPaid.fromTier).toBe(3);
             expect(noPaid.fromPack).toBe(0);
 
-            // Negative tier, no paid balance — always tier
-            const negTierNoPaid = identifyDeductionSource(-3, 0, 4);
-            expect(negTierNoPaid.fromTier).toBe(4);
-            expect(negTierNoPaid.fromCrypto).toBe(0);
-            expect(negTierNoPaid.fromPack).toBe(0);
+            // Negative tier, positive creator — falls to creator
+            const negTierPosCreator = identifyDeductionSource(
+                b(-3, 2, 0, 0),
+                4,
+            );
+            expect(negTierPosCreator.fromCreator).toBe(4);
+            expect(negTierPosCreator.fromTier).toBe(0);
 
-            // Negative tier, positive crypto+pack — falls to crypto
-            const negTierPosCrypto = identifyDeductionSource(-3, 2, 4, 0);
-            expect(negTierPosCrypto.fromTier).toBe(0);
+            // Negative tier, no creator, positive crypto — falls to crypto
+            const negTierPosCrypto = identifyDeductionSource(b(-3, 0, 2, 0), 4);
             expect(negTierPosCrypto.fromCrypto).toBe(4);
-            expect(negTierPosCrypto.fromPack).toBe(0);
+            expect(negTierPosCrypto.fromTier).toBe(0);
 
             // All negative — no paid balance, always tier
-            const allNeg = identifyDeductionSource(-3, -1, 5);
+            const allNeg = identifyDeductionSource(b(-3, 0, -1, 0), 5);
             expect(allNeg.fromTier).toBe(5);
             expect(allNeg.fromCrypto).toBe(0);
-            expect(allNeg.fromPack).toBe(0);
         });
 
         test("should deduct from tier when all buckets are negative or zero", async () => {

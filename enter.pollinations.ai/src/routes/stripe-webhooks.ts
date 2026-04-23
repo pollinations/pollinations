@@ -1,10 +1,11 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import { getPollenPack } from "@/pollen-packs.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
+import { atomicCreditUserBalance } from "../utils/balance-deduction.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 
 interface StripeEventData {
@@ -139,12 +140,7 @@ const handleCheckoutSessionCompleted = async (
     }
 
     // Credit pollen to packBalance (cumulative)
-    await db
-        .update(userTable)
-        .set({
-            packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${creditsToAdd}`,
-        })
-        .where(eq(userTable.id, userId));
+    await atomicCreditUserBalance(db, userId, "pack", creditsToAdd);
 
     console.log(
         pack

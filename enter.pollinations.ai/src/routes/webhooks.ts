@@ -6,12 +6,11 @@ import {
     validateEvent,
     WebhookVerificationError,
 } from "@polar-sh/sdk/webhooks";
-import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
+import { atomicCreditUserBalance } from "../utils/balance-deduction.ts";
 
 const log = getLogger(["hono", "webhooks"]);
 
@@ -222,16 +221,12 @@ async function handlePackBenefitGrant(
 
     try {
         // Pack purchase: ADD to pack_balance (cumulative)
-        const result = await db
-            .update(userTable)
-            .set({
-                packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${units}`,
-            })
-            .where(eq(userTable.id, externalId))
-            .returning({
-                id: userTable.id,
-                packBalance: userTable.packBalance,
-            });
+        const { ok, newBalance } = await atomicCreditUserBalance(
+            db,
+            externalId,
+            "pack",
+            units,
+        );
 
         // Structured logging for Cloudflare dashboard filtering via properties.eventType
         log.info(
@@ -242,12 +237,12 @@ async function handlePackBenefitGrant(
                 units,
                 orderId,
                 email: payload.data.customer.email ?? "unknown",
-                newBalance: result[0]?.packBalance ?? null,
-                rowsUpdated: result.length,
+                newBalance,
+                rowsUpdated: ok ? 1 : 0,
             },
         );
 
-        if (result.length === 0) {
+        if (!ok) {
             log.warn(
                 "⚠️ PACK_PURCHASE_NO_USER: user={userId} not found in database orderId={orderId}",
                 {

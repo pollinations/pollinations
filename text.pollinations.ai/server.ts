@@ -268,7 +268,9 @@ function sendErrorResponse(
         requestId: Math.random().toString(36).substring(7),
         requestParameters: requestData || {},
     };
-    if (errorDetails) errorResponse.details = errorDetails;
+    // Only include upstream error details for client errors (4xx), never for 5xx
+    // to avoid leaking internal credential context from upstream providers (e.g. Vertex AI)
+    if (errorDetails && responseStatus < 500) errorResponse.details = errorDetails;
 
     const authResult =
         (c as unknown as { authResult?: Record<string, unknown> }).authResult ||

@@ -96,7 +96,7 @@ export async function genericOpenAIClient(
             ...additionalHeaders,
         };
 
-        log(`[${requestId}] Headers:`, headers);
+        log(`[${requestId}] Headers:`, { ...headers, Authorization: headers.Authorization ? "[REDACTED]" : undefined });
 
         const response = await fetch(endpointUrl, {
             method: "POST",

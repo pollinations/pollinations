@@ -13,6 +13,8 @@ import { TEXT_SERVICES, type TextModelId, type TextModelName } from "./text";
 
 const PRECISION = 8;
 
+export type Category = "text" | "image" | "audio" | "video";
+
 export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
@@ -56,6 +58,8 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     aliases: string[];
     modelId: TModelId;
     provider: string;
+    brand: string;
+    category: Category;
     cost: CostDefinition[];
     price?: PriceDefinition[];
     // User-facing metadata

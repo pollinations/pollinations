@@ -3,7 +3,6 @@ import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
-import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
@@ -34,8 +33,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
     const isAppKey = isPublishable && !!initialAppUrl;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
-
-    useScrollLock();
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -112,12 +109,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     return (
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
-            <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-            <Dialog.Positioner className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto z-[100]">
+            <Dialog.Backdrop className="fixed inset-0 z-[100] bg-green-950/50" />
+            <Dialog.Positioner className="fixed inset-0 z-[110] flex h-dvh items-start justify-center overflow-hidden p-4">
                 <Dialog.Content
                     className={cn(
-                        "border-green-950 border-4 rounded-lg shadow-lg max-w-xl w-full my-auto",
-                        "bg-green-100",
+                        "my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-lg border-4 shadow-lg",
+                        "bg-green-100 border-green-950",
                     )}
                 >
                     <div className="shrink-0 p-6 pb-4">
@@ -163,7 +160,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </div>
                     </div>
 
-                    <div className="p-6 py-4">
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
                         {error && (
                             <Card
                                 color="red"

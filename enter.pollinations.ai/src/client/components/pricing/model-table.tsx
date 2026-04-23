@@ -378,6 +378,16 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                     </span>
                                 )}
                             </button>
+                            {expanded &&
+                                (modalityIcons.length > 0 ||
+                                    capabilityIcons.length > 0) && (
+                                    <div className="mt-2">
+                                        <MobileMetadataBadges
+                                            modalityIcons={modalityIcons}
+                                            capabilityIcons={capabilityIcons}
+                                        />
+                                    </div>
+                                )}
                         </div>
                     </div>
                     <span
@@ -393,26 +403,18 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
             {/* Expanded: capabilities + full pricing */}
             {expanded && (
                 <div className="px-4 pb-4 pt-0">
-                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
-                        <div className="pl-6">
-                            <MobileMetadataBadges
-                                modalityIcons={modalityIcons}
-                                capabilityIcons={capabilityIcons}
-                            />
-                        </div>
-                        <div className="flex w-56 max-w-full flex-col gap-2 justify-self-end">
-                            <MobilePriceGroup
-                                label="In"
-                                model={model}
-                                direction="input"
-                            />
+                    <div className="flex min-w-0 flex-col gap-2 pl-6">
+                        <MobilePriceGroup
+                            label="In"
+                            model={model}
+                            direction="input"
+                        />
 
-                            <MobilePriceGroup
-                                label="Out"
-                                model={model}
-                                direction="output"
-                            />
-                        </div>
+                        <MobilePriceGroup
+                            label="Out"
+                            model={model}
+                            direction="output"
+                        />
                     </div>
                 </div>
             )}
@@ -540,7 +542,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     }
 
     return (
-        <div className="flex min-w-0 flex-col items-start gap-1.5 overflow-hidden">
+        <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
             {modalityIcons.length > 0 && (
                 <Badge
                     color="gray"

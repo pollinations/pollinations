@@ -7,7 +7,7 @@ import {
     useMemo,
     useState,
 } from "react";
-import { APP_KEY, DEFAULT_API_KEY } from "../api.config";
+import { APP_KEY } from "../api.config";
 import { fetchWithRetry } from "../utils/fetchWithRetry";
 
 const STORAGE_KEY = "pollinations_api_key";
@@ -29,7 +29,7 @@ interface UserBalance {
 // - AuthActions: login + logout (stable refs, never changes)
 
 interface AuthStateValue {
-    apiKey: string;
+    apiKey: string | null;
     isLoggedIn: boolean;
 }
 
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const stateValue = useMemo<AuthStateValue>(
         () => ({
-            apiKey: userApiKey || DEFAULT_API_KEY,
+            apiKey: userApiKey,
             isLoggedIn: !!userApiKey,
         }),
         [userApiKey],

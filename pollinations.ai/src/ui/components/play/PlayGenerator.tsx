@@ -16,7 +16,8 @@ interface PlayGeneratorProps {
     imageModels: Model[];
     textModels: Model[];
     audioModels: Model[];
-    apiKey: string;
+    apiKey: string | null;
+    onLoginRequired: () => void;
 }
 
 /** Renders a color-coded GET API URL: base/{type}/{prompt}?params&key=YOUR_API_KEY */
@@ -92,6 +93,7 @@ export function PlayGenerator({
     textModels,
     audioModels,
     apiKey,
+    onLoginRequired,
 }: PlayGeneratorProps) {
     const { copy } = usePageCopy(PLAY_PAGE, PLAY_PAGE_NO_TRANSLATE);
 
@@ -241,6 +243,10 @@ export function PlayGenerator({
 
     const handleGenerate = async () => {
         if (isLoading) return;
+        if (!apiKey) {
+            onLoginRequired();
+            return;
+        }
         setIsLoading(true);
         setError(null);
         setResult(null);
@@ -637,8 +643,8 @@ export function PlayGenerator({
             <div className="relative group/generate inline-block mb-6">
                 <Button
                     type="button"
-                    onClick={handleGenerate}
-                    disabled={!prompt && !isLoading}
+                    onClick={apiKey ? handleGenerate : onLoginRequired}
+                    disabled={!!apiKey && !prompt && !isLoading}
                     variant="generate"
                     size={null}
                     className={
@@ -665,6 +671,8 @@ export function PlayGenerator({
                             </span>
                             {copy.generatingText}
                         </span>
+                    ) : !apiKey ? (
+                        copy.loginToGenerateButton
                     ) : isVideoModel ? (
                         copy.generateVideoButton
                     ) : isAudioModel ? (
@@ -675,7 +683,7 @@ export function PlayGenerator({
                         copy.generateTextButton
                     )}
                 </Button>
-                {!prompt && !isLoading && (
+                {apiKey && !prompt && !isLoading && (
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                         {copy.enterPromptFirst}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
@@ -866,48 +874,6 @@ export function PlayGenerator({
 
             {/* Key type cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                <div className="bg-secondary-light p-4 rounded-sub-card">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="font-mono text-lg font-black text-dark">
-                            pk_
-                        </span>
-                        <Label as="span" spacing="none" display="inline">
-                            {copy.publishableLabel}
-                        </Label>
-                    </div>
-                    <ul className="list-none p-0 m-0 space-y-1">
-                        <li>
-                            <Body
-                                as="span"
-                                size="xs"
-                                spacing="none"
-                                className="text-dark font-bold"
-                            >
-                                {copy.publishableFeature1}
-                            </Body>
-                        </li>
-                        <li>
-                            <Body
-                                as="span"
-                                size="xs"
-                                spacing="none"
-                                className="text-dark font-bold"
-                            >
-                                {copy.publishableFeature2}
-                            </Body>
-                        </li>
-                    </ul>
-                    <div className="mt-3 px-2 py-1 bg-accent-strong/30 rounded-sm">
-                        <Body
-                            size="xs"
-                            spacing="none"
-                            className="text-dark font-bold"
-                        >
-                            {copy.publishableBetaWarning}
-                        </Body>
-                    </div>
-                </div>
-
                 <div className="bg-primary-light p-4 rounded-sub-card">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="font-mono text-lg font-black text-dark">
@@ -946,6 +912,48 @@ export function PlayGenerator({
                             className="text-dark font-bold"
                         >
                             {copy.secretWarning}
+                        </Body>
+                    </div>
+                </div>
+
+                <div className="bg-secondary-light p-4 rounded-sub-card">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="font-mono text-lg font-black text-dark">
+                            pk_
+                        </span>
+                        <Label as="span" spacing="none" display="inline">
+                            {copy.appKeyLabel}
+                        </Label>
+                    </div>
+                    <ul className="list-none p-0 m-0 space-y-1">
+                        <li>
+                            <Body
+                                as="span"
+                                size="xs"
+                                spacing="none"
+                                className="text-dark font-bold"
+                            >
+                                {copy.appKeyFeature1}
+                            </Body>
+                        </li>
+                        <li>
+                            <Body
+                                as="span"
+                                size="xs"
+                                spacing="none"
+                                className="text-dark font-bold"
+                            >
+                                {copy.appKeyFeature2}
+                            </Body>
+                        </li>
+                    </ul>
+                    <div className="mt-3 px-2 py-1 bg-accent-strong/30 rounded-sm">
+                        <Body
+                            size="xs"
+                            spacing="none"
+                            className="text-dark font-bold"
+                        >
+                            {copy.appKeyNote}
                         </Body>
                     </div>
                 </div>

@@ -144,7 +144,7 @@ export const Pricing: FC<PricingProps> = ({
                             <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                                 🧮 Pricing Metrics
                             </div>
-                            <div className="grid gap-x-6 gap-y-1.5 text-gray-500 text-left min-[500px]:grid-cols-2 lg:grid-cols-1">
+                            <div className="grid gap-x-6 gap-y-1.5 text-gray-500 text-left lg:grid-cols-1">
                                 <div>
                                     <strong>/img</strong> = flat rate per image
                                 </div>

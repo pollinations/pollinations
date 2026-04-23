@@ -379,29 +379,27 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
             {/* Expanded: capabilities + full pricing */}
             {expanded && (
-                <div
-                    className={cn(
-                        "px-4 pb-4 pt-0 space-y-2",
-                        brandLogoPath ? "pl-[4.4rem]" : "pl-10",
-                    )}
-                >
-                    <MobileMetadataBadges
-                        modalityIcons={modalityIcons}
-                        capabilityIcons={capabilityIcons}
-                    />
+                <div className="px-4 pb-4 pt-0">
+                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+                        <div className="pl-6">
+                            <MobileMetadataBadges
+                                modalityIcons={modalityIcons}
+                                capabilityIcons={capabilityIcons}
+                            />
+                        </div>
+                        <div className="flex w-56 max-w-full flex-col gap-2 justify-self-end">
+                            <MobilePriceGroup
+                                label="In"
+                                model={model}
+                                direction="input"
+                            />
 
-                    <div className="min-w-0 space-y-2">
-                        <MobilePriceGroup
-                            label="In"
-                            model={model}
-                            direction="input"
-                        />
-
-                        <MobilePriceGroup
-                            label="Out"
-                            model={model}
-                            direction="output"
-                        />
+                            <MobilePriceGroup
+                                label="Out"
+                                model={model}
+                                direction="output"
+                            />
+                        </div>
                     </div>
                 </div>
             )}
@@ -499,11 +497,11 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     if (badges.length === 0) return null;
 
     return (
-        <div className="flex min-w-0 items-center gap-2">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide shrink-0 w-7">
+        <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-1">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                 {label}
             </span>
-            <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+            <div className="flex min-w-0 flex-wrap justify-end gap-1">
                 {badges.map((badge) => (
                     <PriceBadge
                         key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
@@ -529,7 +527,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     }
 
     return (
-        <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+        <div className="flex min-w-0 flex-col items-start gap-1.5 overflow-hidden">
             {modalityIcons.length > 0 && (
                 <Badge
                     color="gray"

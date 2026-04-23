@@ -109,12 +109,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     return (
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
-            <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-            <Dialog.Positioner className="fixed inset-0 z-[100] flex h-dvh touch-pan-y items-start justify-center overflow-y-auto overscroll-contain p-4 [-webkit-overflow-scrolling:touch]">
+            <Dialog.Backdrop className="fixed inset-0 z-[100] bg-green-950/50" />
+            <Dialog.Positioner className="fixed inset-0 z-[110] flex h-dvh items-start justify-center overflow-hidden p-4">
                 <Dialog.Content
                     className={cn(
-                        "border-green-950 border-4 rounded-lg shadow-lg max-w-xl w-full my-auto",
-                        "bg-green-100",
+                        "my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-lg border-4 shadow-lg",
+                        "bg-green-100 border-green-950",
                     )}
                 >
                     <div className="shrink-0 p-6 pb-4">
@@ -160,7 +160,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </div>
                     </div>
 
-                    <div className="p-6 py-4">
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
                         {error && (
                             <Card
                                 color="red"

@@ -3,7 +3,6 @@ import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
-import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
@@ -34,8 +33,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
     const isAppKey = isPublishable && !!initialAppUrl;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
-
-    useScrollLock();
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -113,7 +110,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     return (
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-            <Dialog.Positioner className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto z-[100]">
+            <Dialog.Positioner className="fixed inset-0 z-[100] flex h-dvh touch-pan-y items-start justify-center overflow-y-auto overscroll-contain p-4 [-webkit-overflow-scrolling:touch]">
                 <Dialog.Content
                     className={cn(
                         "border-green-950 border-4 rounded-lg shadow-lg max-w-xl w-full my-auto",

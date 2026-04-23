@@ -227,10 +227,13 @@ async function deductUserBalance(
             const error = new Error(
                 `Paid-only user balance deduction affected 0 rows for ${userId}`,
             );
-            log.error("Failed to decrement user balance for {userId}: {error}", {
-                userId,
-                error: error.message,
-            });
+            log.error(
+                "Failed to decrement user balance for {userId}: {error}",
+                {
+                    userId,
+                    error: error.message,
+                },
+            );
             throw error;
         }
         log.debug(

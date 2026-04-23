@@ -1,0 +1,34 @@
+{
+  "pr_number": 10415,
+  "title": "feat: refresh pricing UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10415",
+  "merged_at": "2026-04-23T12:42:20Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The menu got a glow-up",
+    "blurb": "The pricing page got a much-needed visual refresh. We added brand logos, status badges, and copyable API keys so you can spend less time squinting at tables and more time building.",
+    "summary": "The pricing UI has been redesigned to include brand logos, status badges, and one-click copyable API keys for easier model discovery.",
+    "impact": "Users can now easily browse models by brand, quickly copy API keys, and enjoy a much cleaner layout on both desktop and mobile.",
+    "keywords": [
+      "pricing",
+      "ui",
+      "frontend",
+      "models",
+      "registry"
+    ],
+    "visual_concept": "Polly the bee looking at a beautifully organized shop menu board or display case featuring various colorful brand logos, representing the new pricing UI and model registry.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny shop apron, admiring a beautiful wooden menu board filled with colorful glowing brand logos. A chunky retro monitor nearby displays a clean, organized list. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-23/PR-10415.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny shop apron, admiring a beautiful wooden menu board filled with colorful glowing brand logos. A chunky retro monitor nearby displays a clean, organized list. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-23T12:43:30.486231+00:00"
+}

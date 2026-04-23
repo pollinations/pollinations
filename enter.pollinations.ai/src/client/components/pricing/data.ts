@@ -22,13 +22,16 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];
 
     // Add text models
-    for (const serviceName of Object.keys(TEXT_SERVICES)) {
-        const latestPrice = getActivePriceDefinition(serviceName as ModelName);
+    for (const [serviceName, serviceConfig] of Object.entries(TEXT_SERVICES)) {
+        if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
+        const latestPrice = getActivePriceDefinition(
+            serviceName as ModelName,
+        ) as PriceDefinition | null;
         if (!latestPrice) continue;
 
         prices.push({
             name: serviceName,
-            type: "text",
+            type: serviceConfig.category,
             perToken: true,
             promptTextPrice: formatPrice(
                 latestPrice.promptTextTokens,
@@ -57,20 +60,20 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
         });
     }
 
-    // Add image/video models - use outputModalities to determine type
+    // Add image/video models
     for (const [serviceName, serviceConfig] of Object.entries(IMAGE_SERVICES)) {
-        const latestPrice: PriceDefinition | null = getActivePriceDefinition(
+        if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
+        const latestPrice = getActivePriceDefinition(
             serviceName as ModelName,
-        );
+        ) as PriceDefinition | null;
         if (!latestPrice) continue;
-        const outputType = serviceConfig.outputModalities?.[0] || "image";
 
-        if (outputType === "video") {
+        if (serviceConfig.category === "video") {
             // Check if it's token-based (seedance) or second-based (veo)
             if (latestPrice.completionVideoTokens) {
                 prices.push({
                     name: serviceName,
-                    type: "video",
+                    type: serviceConfig.category,
                     perToken: true,
                     perTokenPrice: formatPrice(
                         latestPrice.completionVideoTokens,
@@ -80,7 +83,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
             } else {
                 prices.push({
                     name: serviceName,
-                    type: "video",
+                    type: serviceConfig.category,
                     perToken: false,
                     perSecondPrice: formatPrice(
                         latestPrice.completionVideoSeconds,
@@ -99,7 +102,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
             // Token-based image pricing (e.g., gptimage, nanobanana)
             prices.push({
                 name: serviceName,
-                type: "image",
+                type: serviceConfig.category,
                 perToken: true,
                 promptTextPrice: formatPrice(
                     latestPrice.promptTextTokens,
@@ -118,7 +121,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
             // Per-image pricing (e.g., flux, turbo, kontext, seedream)
             prices.push({
                 name: serviceName,
-                type: "image",
+                type: serviceConfig.category,
                 perToken: false,
                 perImagePrice: formatPrice(
                     latestPrice.completionImageTokens,
@@ -129,15 +132,18 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     }
 
     // Add audio models (TTS and STT)
-    for (const serviceName of Object.keys(AUDIO_SERVICES)) {
-        const latestPrice = getActivePriceDefinition(serviceName as ModelName);
+    for (const [serviceName, serviceConfig] of Object.entries(AUDIO_SERVICES)) {
+        if ("hidden" in serviceConfig && serviceConfig.hidden) continue;
+        const latestPrice = getActivePriceDefinition(
+            serviceName as ModelName,
+        ) as PriceDefinition | null;
         if (!latestPrice) continue;
 
         if (latestPrice.promptAudioSeconds) {
             // Speech-to-text (Whisper) — billed per input audio second
             prices.push({
                 name: serviceName,
-                type: "audio",
+                type: serviceConfig.category,
                 perToken: false,
                 perSecondPrice: formatPrice(
                     latestPrice.promptAudioSeconds,
@@ -148,7 +154,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
             // Music generation (ElevenLabs Music) — billed per output audio second
             prices.push({
                 name: serviceName,
-                type: "audio",
+                type: serviceConfig.category,
                 perToken: false,
                 perSecondPrice: formatPrice(
                     latestPrice.completionAudioSeconds,
@@ -159,7 +165,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
             // Text-to-speech (ElevenLabs TTS) — billed per character
             prices.push({
                 name: serviceName,
-                type: "audio",
+                type: serviceConfig.category,
                 perToken: false,
                 perCharPrice: formatPrice(
                     latestPrice.completionAudioTokens,

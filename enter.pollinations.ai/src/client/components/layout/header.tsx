@@ -6,25 +6,23 @@ type HeaderProps = {
 
 export const Header: FC<HeaderProps> = ({ children }) => {
     return (
-        <div className="flex flex-col gap-4">
-            <div className="flex flex-row justify-between items-center gap-4">
-                <a
-                    href="https://pollinations.ai"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex"
-                >
-                    <img
-                        src="/logo_text_black.svg"
-                        alt="pollinations.ai"
-                        className="h-9 w-auto object-contain shrink-0"
-                    />
-                </a>
-                <div className="flex flex-row gap-4 items-center">
-                    {children}
-                </div>
+        <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-4">
+            <a
+                href="https://pollinations.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="order-1 flex w-full justify-center sm:order-none sm:w-auto sm:justify-self-start"
+            >
+                <img
+                    src="/logo_text_black.svg"
+                    alt="pollinations.ai"
+                    className="h-auto w-3/4 shrink-0 object-contain sm:h-9 sm:w-auto"
+                />
+            </a>
+            <div className="order-3 mt-4 flex flex-row flex-wrap items-center justify-center gap-3 sm:order-none sm:mt-0 sm:justify-self-end sm:gap-4">
+                {children}
             </div>
-            <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 text-xs">
+            <div className="order-2 flex flex-wrap justify-center gap-1.5 text-xs sm:order-none sm:col-span-2 sm:justify-start">
                 <a
                     href="https://discord.gg/pollinations-ai-885844321461485618"
                     target="_blank"

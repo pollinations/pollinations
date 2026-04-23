@@ -36,10 +36,7 @@ const BRAND_LOGOS: Record<string, string> = {
     xAI: "xai",
 };
 
-const MODEL_LOGOS: Record<string, string> = {
-    midijourney: "pollinations",
-    "midijourney-large": "pollinations",
-};
+const MODEL_LOGOS: Record<string, string> = {};
 
 export const getModalities = (modelName: string): Modalities => {
     const service = getModelDefinition(modelName as ModelName);

@@ -358,7 +358,7 @@ export const TEXT_SERVICES = {
         },
     },
     "midijourney": {
-        brand: "MIDIjourney",
+        brand: "Pollinations",
         provider: "bedrock",
         model: "midijourney",
         aliases: [],
@@ -376,9 +376,9 @@ export const TEXT_SERVICES = {
         },
     },
     "midijourney-pro": {
-        brand: "MIDIjourney",
+        brand: "Pollinations",
         provider: "bedrock",
-        model: "midijourney-large",
+        model: "midijourney-pro",
         aliases: ["midijourney-large"],
         description: "Music composition and MIDI assistance.",
         category: "text",

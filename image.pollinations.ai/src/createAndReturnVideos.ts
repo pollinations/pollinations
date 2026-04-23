@@ -53,7 +53,7 @@ export async function createAndReturnVideo(
                 requestId,
             );
             break;
-        case "seedance-pro":
+        case "seedance-pro-fast":
             result = await callSeedanceProAPI(
                 prompt,
                 safeParams,

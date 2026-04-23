@@ -5,10 +5,10 @@ export const DEFAULT_IMAGE_MODEL = "z-image-turbo" as const;
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 export const IMAGE_SERVICES = {
-    "flux-1-kontext": {
+    "flux.1-kontext": {
         brand: "Black Forest Labs",
         provider: "azure",
-        aliases: ["kontext"],
+        aliases: ["flux-1-kontext", "kontext"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         inputModalities: ["text", "image"],
@@ -69,10 +69,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.00012,
         },
     },
-    "seedream-5-lite": {
+    "seedream-5.0-lite": {
         brand: "ByteDance",
         provider: "bytedance",
-        aliases: ["seedream5"],
+        aliases: ["seedream-5-lite", "seedream5"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         profile: "fast",
@@ -87,10 +87,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.0525,
         },
     },
-    "seedream-4": {
+    "seedream-4.0": {
         brand: "ByteDance",
         provider: "bytedance",
-        aliases: ["seedream"],
+        aliases: ["seedream-4", "seedream"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         inputModalities: ["text", "image"],
@@ -235,10 +235,10 @@ export const IMAGE_SERVICES = {
             completionVideoTokens: 0.0000027,
         },
     },
-    "seedance-pro": {
+    "seedance-pro-fast": {
         brand: "ByteDance",
         provider: "bytedance",
-        aliases: [],
+        aliases: ["seedance-pro"],
         description: "Video generation from text and image input.",
         category: "video",
         profile: "pro",
@@ -347,10 +347,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.045,
         },
     },
-    "grok-imagine": {
+    "grok-imagine-image": {
         brand: "xAI",
         provider: "xai",
-        aliases: ["grok-imagine-image"],
+        aliases: ["grok-imagine"],
         description: "Image generation from text prompts.",
         category: "image",
         inputModalities: ["text"],
@@ -364,10 +364,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.03,
         },
     },
-    "grok-imagine-pro": {
+    "grok-imagine-image-pro": {
         brand: "xAI",
         provider: "xai",
-        aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
+        aliases: ["grok-imagine-pro", "grok-aurora", "aurora"],
         description: "Image generation from text prompts.",
         category: "image",
         profile: "pro",
@@ -400,10 +400,10 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.075,
         },
     },
-    "flux-2-klein-4b": {
+    "flux.2-klein-4b": {
         brand: "Black Forest Labs",
         provider: "runpod",
-        aliases: ["klein", "flux-klein"],
+        aliases: ["flux-2-klein-4b", "klein", "flux-klein"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         inputModalities: ["text", "image"],

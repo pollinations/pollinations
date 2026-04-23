@@ -45,14 +45,15 @@ export const VOICE_MAPPING: Record<string, string> = {
 
 export const ELEVENLABS_VOICES = Object.keys(VOICE_MAPPING);
 
-export const DEFAULT_AUDIO_MODEL = "eleven-v3" as const;
+export const DEFAULT_AUDIO_MODEL = "eleven_v3" as const;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
 export const AUDIO_SERVICES = {
-    "eleven-v3": {
+    "eleven_v3": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
         aliases: [
+            "eleven-v3",
             "elevenlabs",
             "tts",
             "text-to-speech",
@@ -70,10 +71,10 @@ export const AUDIO_SERVICES = {
             completionAudioTokens: 0.18 / 1000,
         },
     },
-    "eleven-music-v1": {
+    "music_v1": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
-        aliases: ["elevenmusic", "music"],
+        aliases: ["eleven-music-v1", "elevenmusic", "music"],
         description: "Music generation from text prompts.",
         category: "audio",
         inputModalities: ["text"],
@@ -98,10 +99,10 @@ export const AUDIO_SERVICES = {
             promptAudioSeconds: 0.0000445,
         },
     },
-    "scribe-v2": {
+    "scribe_v2": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
-        aliases: ["scribe", "scribe_v2"],
+        aliases: ["scribe-v2", "scribe"],
         description: "Speech transcription to text.",
         category: "audio",
         inputModalities: ["audio"],

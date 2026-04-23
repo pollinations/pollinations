@@ -41,11 +41,11 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.00000125,
         },
     },
-    "gpt-5-nano": {
+    "gpt-5-nano-2025-08-07": {
         brand: "OpenAI",
         provider: "azure",
         version: "2025-08-07",
-        aliases: ["openai-fast", "gpt-5-nano-2025-08-07"],
+        aliases: ["gpt-5-nano", "openai-fast"],
         description: "Text generation with image input.",
         category: "text",
         profile: "fast",
@@ -85,10 +85,10 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.000015,
         },
     },
-    "qwen3-coder-30b": {
+    "qwen3-coder-30b-a3b-instruct": {
         brand: "Qwen",
         provider: "ovhcloud",
-        aliases: ["qwen-coder", "qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
+        aliases: ["qwen3-coder-30b", "qwen-coder", "qwen3-coder"],
         description: "Code generation and editing.",
         category: "text",
         inputModalities: ["text"],
@@ -101,15 +101,11 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.00000022,
         },
     },
-    "mistral-small-3.2": {
+    "mistral-small-3.2-24b-instruct-2506": {
         brand: "Mistral",
         provider: "ovhcloud",
         version: "2506",
-        aliases: [
-            "mistral",
-            "mistral-small",
-            "mistral-small-3.2-24b-instruct-2506",
-        ],
+        aliases: ["mistral-small-3.2", "mistral", "mistral-small"],
         description: "Text generation with image input.",
         category: "text",
         inputModalities: ["text", "image"],
@@ -122,14 +118,13 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000003,
         },
     },
-    "gpt-audio-mini": {
+    "gpt-audio-mini-2025-12-15": {
         brand: "OpenAI",
         provider: "azure",
         version: "2025-12-15",
         aliases: [
-            "openai-audio",
             "gpt-audio-mini",
-            "gpt-audio-mini-2025-12-15",
+            "openai-audio",
             "gpt-4o-mini-audio-preview",
             "gpt-4o-mini-audio-preview-2024-12-17",
         ],
@@ -169,11 +164,11 @@ export const TEXT_SERVICES = {
             completionAudioTokens: 0.00008,
         },
     },
-    "gemini-3-flash": {
+    "gemini-3-flash-preview": {
         brand: "Google",
         provider: "google",
         version: "preview",
-        aliases: ["gemini", "gemini-3-flash-preview"],
+        aliases: ["gemini-3-flash", "gemini"],
         description: "Multimodal text generation with web search.",
         category: "text",
         profile: "fast",
@@ -196,13 +191,13 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000045,
         },
     },
-    "gemini-flash-lite-3.1": {
+    "gemini-3.1-flash-lite-preview": {
         brand: "Google",
         provider: "google",
         version: "preview",
         aliases: [
+            "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
-            "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
         ],
         description: "Multimodal text generation with web search.",
@@ -269,10 +264,11 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.00000168,
         },
     },
-    "grok-4.1-fast": {
+    "grok-4-1-fast-non-reasoning": {
         brand: "xAI",
         provider: "azure",
         aliases: [
+            "grok-4.1-fast",
             "grok",
             "grok-fast",
             "grok-4-1-fast",
@@ -294,10 +290,11 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000005,
         },
     },
-    "grok-4.20-reasoning": {
+    "grok-4.20-0309-reasoning": {
         brand: "xAI",
         provider: "azure",
         aliases: [
+            "grok-4.20-reasoning",
             "grok-large",
             "grok-4-20",
             "grok-4-20-reasoning",
@@ -379,11 +376,11 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000275,
         },
     },
-    "claude-haiku-4.5": {
+    "claude-haiku-4-5": {
         brand: "Anthropic",
         provider: "bedrock",
         version: "2025-10-01",
-        aliases: ["claude-fast", "claude-haiku"],
+        aliases: ["claude-haiku-4.5", "claude-fast", "claude-haiku"],
         description: "Text generation with image input.",
         category: "text",
         profile: "fast",
@@ -398,10 +395,10 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000055,
         },
     },
-    "claude-sonnet-4.6": {
+    "claude-sonnet-4-6": {
         brand: "Anthropic",
         provider: "bedrock",
-        aliases: ["claude", "claude-sonnet"],
+        aliases: ["claude-sonnet-4.6", "claude", "claude-sonnet"],
         description: "Text generation with image input.",
         category: "text",
         profile: "pro",
@@ -417,10 +414,15 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000165,
         },
     },
-    "claude-opus-4.6": {
+    "claude-opus-4-6": {
         brand: "Anthropic",
         provider: "bedrock",
-        aliases: ["claude-large", "claude-opus", "claude-opus-4.5"],
+        aliases: [
+            "claude-opus-4.6",
+            "claude-large",
+            "claude-opus",
+            "claude-opus-4.5",
+        ],
         description: "Text generation with image input.",
         category: "text",
         profile: "pro",
@@ -436,10 +438,10 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000275,
         },
     },
-    "claude-opus-4.7": {
+    "claude-opus-4-7": {
         brand: "Anthropic",
         provider: "bedrock",
-        aliases: [],
+        aliases: ["claude-opus-4.7"],
         description: "Text generation with image input.",
         category: "text",
         profile: "pro",
@@ -455,10 +457,10 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000275,
         },
     },
-    "perplexity-sonar": {
+    "sonar": {
         brand: "Perplexity",
         provider: "perplexity",
-        aliases: ["perplexity-fast", "sonar"],
+        aliases: ["perplexity-sonar", "perplexity-fast"],
         description: "Text generation with web search.",
         category: "text",
         profile: "fast",
@@ -472,13 +474,13 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.000001,
         },
     },
-    "perplexity-sonar-reasoning-pro": {
+    "sonar-reasoning-pro": {
         brand: "Perplexity",
         provider: "perplexity",
         aliases: [
+            "perplexity-sonar-reasoning-pro",
             "perplexity-reasoning",
             "sonar-reasoning",
-            "sonar-reasoning-pro",
         ],
         description: "Text generation with web search.",
         category: "text",
@@ -536,11 +538,11 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.000004,
         },
     },
-    "gemini-3.1-pro": {
+    "gemini-3.1-pro-preview": {
         brand: "Google",
         provider: "google",
         version: "preview",
-        aliases: ["gemini-large", "gemini-2.5-pro"],
+        aliases: ["gemini-3.1-pro", "gemini-large", "gemini-2.5-pro"],
         description: "Multimodal text generation with web search.",
         category: "text",
         profile: "pro",
@@ -561,10 +563,15 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.000018,
         },
     },
-    "nova-micro-1": {
+    "nova-micro-v1": {
         brand: "Amazon",
         provider: "bedrock",
-        aliases: ["nova-fast", "amazon-nova-micro", "nova-micro"],
+        aliases: [
+            "nova-micro-1",
+            "nova-fast",
+            "amazon-nova-micro",
+            "nova-micro",
+        ],
         description: "Text generation.",
         category: "text",
         profile: "fast",
@@ -699,13 +706,13 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.000003,
         },
     },
-    "qwen3-vl-thinking": {
+    "qwen3-vl-30b-a3b-thinking": {
         brand: "Qwen",
         provider: "fireworks",
         aliases: [
+            "qwen3-vl-thinking",
             "qwen-vision",
             "qwen3-vl",
-            "qwen3-vl-30b-a3b-thinking",
             "qwen3-vl-plus",
             "qwen-vl",
         ],
@@ -722,10 +729,10 @@ export const TEXT_SERVICES = {
             completionTextTokens: 0.0000006,
         },
     },
-    "qwen3-guard-8b": {
+    "qwen3guard-gen-8b": {
         brand: "Qwen",
         provider: "ovhcloud",
-        aliases: ["qwen-safety", "qwen3guard-gen-8b"],
+        aliases: ["qwen3-guard-8b", "qwen-safety"],
         description: "Content safety and moderation.",
         category: "text",
         inputModalities: ["text"],

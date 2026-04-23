@@ -761,7 +761,7 @@ export const proxyRoutes = new Hono<Env>()
                 });
             }
 
-            if (c.var.model.resolved === "eleven-music-v1") {
+            if (c.var.model.resolved === "music_v1") {
                 const { duration, instrumental } = c.req.valid(
                     "query" as never,
                 ) as {

@@ -24,14 +24,14 @@ type ImageModelsConfig = {
 
 export const IMAGE_CONFIG = {
     // Azure Flux Kontext - general purpose model
-    "flux-1-kontext": {
+    "flux.1-kontext": {
         type: "kontext",
         enhance: true,
         defaultSideLength: 1024,
     },
 
     // ByteDance ARK Seedream 5.0 Lite - web search, reasoning
-    "seedream-5-lite": {
+    "seedream-5.0-lite": {
         type: "seedream5",
         enhance: false,
         defaultSideLength: 2048,
@@ -39,7 +39,7 @@ export const IMAGE_CONFIG = {
     },
 
     // Legacy (hidden): real Seedream 4.0
-    "seedream-4": {
+    "seedream-4.0": {
         type: "seedream",
         enhance: false,
         defaultSideLength: 1024,
@@ -117,7 +117,7 @@ export const IMAGE_CONFIG = {
     },
 
     // BytePlus Seedance Pro-Fast - Video generation (better prompt adherence)
-    "seedance-pro": {
+    "seedance-pro-fast": {
         type: "bytedance-ark-video-pro",
         enhance: false,
         isVideo: true,
@@ -168,14 +168,14 @@ export const IMAGE_CONFIG = {
     },
 
     // Grok Imagine - xAI official image generation
-    "grok-imagine": {
+    "grok-imagine-image": {
         type: "xai-image",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Grok Imagine Pro - xAI official pro image generation (Aurora)
-    "grok-imagine-pro": {
+    "grok-imagine-image-pro": {
         type: "xai-image-pro",
         enhance: false,
         defaultSideLength: 1024,
@@ -206,7 +206,7 @@ export const IMAGE_CONFIG = {
     },
 
     // Klein - Fast 4B parameter model on RunPod (text-to-image + image editing)
-    "flux-2-klein-4b": {
+    "flux.2-klein-4b": {
         type: "runpod-klein",
         enhance: false,
         defaultSideLength: 1024,

@@ -734,7 +734,7 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            if (c.var.model.resolved === "eleven-music-v1") {
+            if (c.var.model.resolved === "music_v1") {
                 const { duration, instrumental } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
@@ -886,7 +886,7 @@ export const audioRoutes = new Hono<Env>()
             }
 
             // Route to ElevenLabs Scribe or Whisper based on model
-            if (c.var.model.resolved === "scribe-v2") {
+            if (c.var.model.resolved === "scribe_v2") {
                 const elevenLabsApiKey = (
                     c.env as unknown as { ELEVENLABS_API_KEY: string }
                 ).ELEVENLABS_API_KEY;

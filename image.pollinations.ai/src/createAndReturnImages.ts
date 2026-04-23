@@ -809,7 +809,7 @@ const generateImage = async (
             }
         }
 
-        case "flux-1-kontext": {
+        case "flux.1-kontext": {
             try {
                 progress.updateBar(
                     requestId,
@@ -835,7 +835,7 @@ const generateImage = async (
             }
         }
 
-        case "seedream-5-lite": {
+        case "seedream-5.0-lite": {
             try {
                 return await callSeedream5API(
                     prompt,
@@ -850,7 +850,7 @@ const generateImage = async (
             }
         }
 
-        case "seedream-4": {
+        case "seedream-4.0": {
             // Hidden legacy model -- routes to real Seedream 4.0 endpoint
             try {
                 return await callSeedreamAPI(
@@ -888,7 +888,7 @@ const generateImage = async (
             }
         }
 
-        case "flux-2-klein-4b": {
+        case "flux.2-klein-4b": {
             try {
                 return await callFluxKleinAPI(
                     prompt,
@@ -918,7 +918,7 @@ const generateImage = async (
             }
         }
 
-        case "grok-imagine": {
+        case "grok-imagine-image": {
             try {
                 return await callXaiImageAPI(
                     prompt,
@@ -934,7 +934,7 @@ const generateImage = async (
             }
         }
 
-        case "grok-imagine-pro": {
+        case "grok-imagine-image-pro": {
             try {
                 return await callXaiImageAPI(
                     prompt,

@@ -1,0 +1,19 @@
+{
+  "date": "2026-04-22",
+  "period_start": "2026-04-22",
+  "period_end": "2026-04-22",
+  "title": "gptimage-2 joins the model roster",
+  "summary": "OpenAI's gptimage-2 model is now live on the API, alongside some much-needed clarity for upstream error codes.\n\nOpenAI's gptimage-2 is now wired up and available on the image generation API. Routed through Azure, ready for prompts, and as always, zero markup.\n\nAzure occasionally blocks image requests. Previously, this threw a 403, making it look like you messed up your auth. We now remap this to a 502 Bad Gateway, correctly pointing the finger at the upstream provider where it belongs.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 10308,
+      "date": "2026-04-22"
+    },
+    {
+      "number": 10402,
+      "date": "2026-04-22"
+    }
+  ],
+  "generated_at": "2026-04-23T06:35:47.801866+00:00"
+}

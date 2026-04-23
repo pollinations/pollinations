@@ -605,7 +605,7 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(402);
             const error = await response.json();
             expect(error.error?.message).toMatch(
-                /requires a paid balance|Insufficient balance/,
+                /requires Top-up Pollen or Dev earnings|Insufficient balance/,
             );
         });
 
@@ -701,7 +701,7 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(402);
             const error = await response.json();
             expect(error.error?.message).toMatch(
-                /requires a paid balance|Insufficient balance/,
+                /requires Top-up Pollen or Dev earnings|Insufficient balance/,
             );
         });
 
@@ -896,6 +896,7 @@ describe("Tier Balance Management", () => {
                     name: "Paid Deduct Test",
                     tier: "flower",
                     tierBalance: 10,
+                    creatorBalance: 2,
                     packBalance: 5,
                     cryptoBalance: 3,
                     createdAt: new Date(),
@@ -905,25 +906,28 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 10,
+                        creatorBalance: 2,
                         packBalance: 5,
                         cryptoBalance: 3,
                     },
                 });
 
-            // Deduct 2 pollen using paid-only deduction (all from crypto)
+            // Deduct 2 pollen using paid-only deduction (all from Dev earnings)
             await atomicDeductPaidBalance(db, userId, 2);
 
             let balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Unchanged - tier is skipped
-            expect(balances.cryptoBalance).toBe(1); // 3 - 2
+            expect(balances.creatorBalance).toBe(0); // 2 - 2
+            expect(balances.cryptoBalance).toBe(3); // Unchanged
             expect(balances.packBalance).toBe(5); // Unchanged
 
-            // Deduct 4 more (crypto still positive → all from crypto, goes negative)
+            // Deduct 4 more (crypto positive → all from crypto, goes negative)
             await atomicDeductPaidBalance(db, userId, 4);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.cryptoBalance).toBe(-3); // 1 - 4 (goes negative)
+            expect(balances.creatorBalance).toBe(0); // Unchanged
+            expect(balances.cryptoBalance).toBe(-1); // 3 - 4 (goes negative)
             expect(balances.packBalance).toBe(5); // Unchanged
 
             // Deduct 7 more (crypto is negative → all from pack)
@@ -931,7 +935,8 @@ describe("Tier Balance Management", () => {
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.cryptoBalance).toBe(-3); // Unchanged
+            expect(balances.creatorBalance).toBe(0); // Unchanged
+            expect(balances.cryptoBalance).toBe(-1); // Unchanged
             expect(balances.packBalance).toBe(-2); // 5 - 7 (goes negative)
         });
 
@@ -985,6 +990,46 @@ describe("Tier Balance Management", () => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/generate/text/models",
                 { headers: { authorization: `Bearer ${paidApiKey}` } },
+            );
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as any[];
+
+            const claudeLarge = models.find(
+                (m: any) => m.name === "claude-large",
+            );
+            expect(claudeLarge).toBeDefined();
+            expect(claudeLarge.paid_only).toBe(true);
+        });
+
+        test("should show paid_only models when user has Dev earnings", async ({
+            apiKey,
+            sessionToken,
+        }) => {
+            const db = drizzle(env.DB);
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 0,
+                    creatorBalance: 2,
+                    packBalance: 0,
+                    cryptoBalance: 0,
+                })
+                .where(sql`${userTable.id} = ${userId}`);
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/text/models",
+                { headers: { authorization: `Bearer ${apiKey}` } },
             );
             expect(response.status).toBe(200);
             const models = (await response.json()) as any[];

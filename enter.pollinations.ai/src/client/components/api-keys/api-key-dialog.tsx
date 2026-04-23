@@ -182,8 +182,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     >
                                         BYOP
                                     </a>
-                                    <br />🪷 Let your users connect and use
-                                    their own pollen in your app.
+                                    <br />
+                                    BYOP app requests include a 25% markup. App
+                                    developers receive 20% of the total Pollen
+                                    charged.
                                 </>
                             ) : (
                                 "Access AI models for text, image, and audio generation."

@@ -13,7 +13,7 @@ describe("getAvailableBalance", () => {
         ).toBeCloseTo(0.75);
     });
 
-    it("excludes tier AND creator for paid-only models", () => {
+    it("excludes only tier for paid-only models", () => {
         expect(
             getAvailableBalance(
                 {
@@ -24,7 +24,7 @@ describe("getAvailableBalance", () => {
                 },
                 true,
             ),
-        ).toBeCloseTo(0.5);
+        ).toBeCloseTo(2.5);
     });
 
     it("ignores negative buckets", () => {

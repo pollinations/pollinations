@@ -3,6 +3,7 @@ import {
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
+import { toFinitePollen } from "@/client/lib/format-pollen.ts";
 import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
@@ -256,9 +257,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
-    const totalBalance = (tierBalance ?? 0) + (creatorBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+    const nonTierBalance =
+        toFinitePollen(creatorBalance) +
+        toFinitePollen(packBalance) +
+        toFinitePollen(cryptoBalance);
+    const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;
+    const effectiveBalance = showPaidOnly ? nonTierBalance : totalBalance;
 
     const perPollen = calculatePerPollen(model);
     const balanceRequests = isSignedIn

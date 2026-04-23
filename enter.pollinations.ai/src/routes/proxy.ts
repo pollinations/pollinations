@@ -210,7 +210,7 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
-// Helper to filter models by API key permissions and paid balance
+// Helper to filter models by API key permissions and paid-only visibility.
 function filterModelsByPermissions<
     T extends { name: string; paid_only?: boolean },
 >(
@@ -226,14 +226,18 @@ function filterModelsByPermissions<
     });
 }
 
-// Check if authenticated user has paid balance (pack or crypto > 0)
+// Check if authenticated user has non-tier balance.
 // Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
 // Returns undefined if no user (unauthenticated), true/false otherwise.
 // biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
 function hasPaidBalance(c: any): boolean | undefined {
     const user = c.var?.auth?.user;
     if (!user) return undefined;
-    return (user.packBalance ?? 0) > 0 || (user.cryptoBalance ?? 0) > 0;
+    return (
+        (user.creatorBalance ?? 0) > 0 ||
+        (user.packBalance ?? 0) > 0 ||
+        (user.cryptoBalance ?? 0) > 0
+    );
 }
 
 export const proxyRoutes = new Hono<Env>()

@@ -40,6 +40,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 - **Unified endpoint** — single API at `gen.pollinations.ai` for all generation
 - **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
+- **🌻 Dev earnings** — BYOP app requests include a 25% markup, and app developers receive 20% of the total Pollen charged
 - **All models, one place** — Flux, GPT-5, Claude, Gemini, Seedream, and more
 - **API keys** — publishable keys for frontend, secret keys for backend
 - **CLI** — `npx @pollinations_ai/cli` for humans and AI agents ([source](packages/polli-cli))
@@ -48,6 +49,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-04-23** – **🌻 Dev earnings for BYOP** BYOP app requests include a 25% markup for 🌻 Dev earnings. App developers receive 20% of the total Pollen charged. [Create an App Key](https://enter.pollinations.ai/#keys)
 - **2026-04-22** – **🎨 gptimage-2 is Live** OpenAI's new `gptimage-2` model is now available on the [image generation API](https://gen.pollinations.ai/image/models). Generate fresh pixels with zero price markup.
 - **2026-04-21** – **🎵 Qwen3-TTS Audio Models** The hive learns to speak Qwen. Hit the [Audio API](https://gen.pollinations.ai/audio/{text}) with the new instruct variant to control emotion and style parameters.
 - **2026-04-21** – **🧠 Claude Opus 4.7** Anthropic's heavy hitter is now wired up via Bedrock. Pass `claude-xlarge` or `claude-opus-4.7` to the [Text API](https://gen.pollinations.ai/v1/chat/completions) for state-of-the-art reasoning.
@@ -68,7 +70,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
-- 🌱 **Pollen Tiers** — earn credits by contributing (tiers in beta)
+- 🌱 **Pollen Tiers** — earn credits by contributing and shipping apps (tiers in beta)
 - 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext
 - 🎬 **Video Generation** — Seedance, Veo (alpha)
 - 🎵 **Audio** — Text-to-speech and speech-to-text
@@ -188,7 +190,7 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
-> 💡 **Building an app?** Use [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md) — users pay for their own usage, you pay $0
+> 💡 **Building an app?** Use [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md) — users pay for their own usage, you pay $0, and your app receives 🌻 Dev earnings
 
 ### Model Restrictions
 
@@ -343,7 +345,7 @@ pollinations.ai envisions a future where AI technology is:
 
 - **Transparent & Ethical**: Our open-source approach ensures transparency in how our models work and behave
 
-- **Community-Driven**: We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate
+- **Community-Driven**: We're building a platform where developers, builders, and AI enthusiasts can collaborate and innovate
 
 - **Interconnected**: We're creating an ecosystem where AI services can seamlessly work together, fostering innovation through composability
 

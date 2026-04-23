@@ -1,9 +1,11 @@
 import { type FC, useState } from "react";
+import { toFinitePollen } from "@/client/lib/format-pollen.ts";
 import { cn } from "../../../util.ts";
 import { Badge } from "../ui/badge.tsx";
 import {
     calculateForBalance,
     calculatePerPollen,
+    PAID_ONLY_TOOLTIP,
     TOP_UP_TOOLTIP,
 } from "./calculations.ts";
 import {
@@ -49,9 +51,12 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
-    const totalBalance = (tierBalance ?? 0) + (creatorBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+    const nonTierBalance =
+        toFinitePollen(creatorBalance) +
+        toFinitePollen(packBalance) +
+        toFinitePollen(cryptoBalance);
+    const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;
+    const effectiveBalance = showPaidOnly ? nonTierBalance : totalBalance;
 
     const genPerPollen = calculatePerPollen(model);
     const balanceRequests = isSignedIn
@@ -234,13 +239,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Tooltip>
                             )}
                             {showPaidOnly && (
-                                <Tooltip
-                                    content={
-                                        isDisabled
-                                            ? TOP_UP_TOOLTIP
-                                            : "This model uses purchased pollen only."
-                                    }
-                                >
+                                <Tooltip content={PAID_ONLY_TOOLTIP}>
                                     <Badge color="purple" size="sm">
                                         PAID
                                     </Badge>
@@ -258,7 +257,9 @@ export const ModelRow: FC<ModelRowProps> = ({
                         content={
                             <span className="text-xs">
                                 {isDisabled
-                                    ? TOP_UP_TOOLTIP
+                                    ? showPaidOnly
+                                        ? PAID_ONLY_TOOLTIP
+                                        : TOP_UP_TOOLTIP
                                     : `≈ ${balanceRequests} with current balance`}
                             </span>
                         }

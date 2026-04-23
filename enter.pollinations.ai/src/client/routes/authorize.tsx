@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BYOP_MARKUP_PCT } from "@/billing-config.ts";
 import { cn } from "../../util.ts";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
@@ -29,7 +28,7 @@ import {
     sanitizeAuthorizeAccountPermissions,
 } from "../lib/authorize-config.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
-import { formatPollen } from "../lib/format-pollen.ts";
+import { formatPollen, toFinitePollen } from "../lib/format-pollen.ts";
 
 type Attribution = {
     found: boolean;
@@ -256,10 +255,10 @@ function AuthorizeComponent() {
             .then((data) => {
                 if (!data) return;
                 setTotalBalance(
-                    (data.tierBalance ?? 0) +
-                        (data.creatorBalance ?? 0) +
-                        (data.packBalance ?? 0) +
-                        (data.cryptoBalance ?? 0),
+                    toFinitePollen(data.tierBalance) +
+                        toFinitePollen(data.creatorBalance) +
+                        toFinitePollen(data.packBalance) +
+                        toFinitePollen(data.cryptoBalance),
                 );
             })
             .catch(() => {});
@@ -591,8 +590,9 @@ function AuthorizeComponent() {
                             />
                             {attribution?.found && (
                                 <p className="mt-2 text-xs text-amber-800/80">
-                                    {Math.round(BYOP_MARKUP_PCT * 100)}% of the
-                                    pollen spent here supports the app creator.
+                                    BYOP app requests include a 25% markup. App
+                                    developers receive 20% of the total Pollen
+                                    charged.
                                 </p>
                             )}
                         </div>

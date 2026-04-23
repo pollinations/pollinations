@@ -21,6 +21,7 @@ import {
     UsageGraph,
 } from "../components/usage-analytics";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import { toFinitePollen } from "../lib/format-pollen.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
@@ -45,10 +46,10 @@ export const Route = createFileRoute("/")({
                     .then((r) => (r.ok ? r.json() : null)),
             ]);
         const apiKeys = apiKeysResult.data || [];
-        const tierBalance = d1BalanceResult?.tierBalance ?? 0;
-        const creatorBalance = d1BalanceResult?.creatorBalance ?? 0;
-        const packBalance = d1BalanceResult?.packBalance ?? 0;
-        const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
+        const tierBalance = toFinitePollen(d1BalanceResult?.tierBalance);
+        const creatorBalance = toFinitePollen(d1BalanceResult?.creatorBalance);
+        const packBalance = toFinitePollen(d1BalanceResult?.packBalance);
+        const cryptoBalance = toFinitePollen(d1BalanceResult?.cryptoBalance);
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
@@ -290,7 +291,6 @@ function RouteComponent() {
                             creatorBalance={creatorBalance}
                             packBalance={packBalance}
                             cryptoBalance={cryptoBalance}
-                            tier={tierData?.active?.tier}
                         />
                     )}
                     {activeTab === "usage" && (

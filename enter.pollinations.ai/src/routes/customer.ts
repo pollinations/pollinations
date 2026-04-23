@@ -18,8 +18,7 @@ export const customerRoutes = new Hono<Env>()
         "/balance",
         describeRoute({
             tags: ["👤 Account"],
-            description:
-                "Get detailed balance breakdown for the current user (tier, creator, pack, crypto).",
+            description: "Get detailed balance fields for the current user.",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {

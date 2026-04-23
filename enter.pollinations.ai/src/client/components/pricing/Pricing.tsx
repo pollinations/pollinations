@@ -82,24 +82,18 @@ export const Pricing: FC<PricingProps> = ({
                             className="text-xs !border-transparent"
                         >
                             <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
-                                💡 How Pollen is Spent
+                                💡 How Pollen Works
                             </div>
                             <div className="space-y-1 text-xs text-gray-500">
                                 <div>
-                                    1. Tier grants (refilled hourly) are used
-                                    first
+                                    - Spending order: 🌱 Tier Pollen (skipped
+                                    for paid-only models) → 🌻 Dev earnings → 💳
+                                    Top-up Pollen
                                 </div>
                                 <div>
-                                    2. Creator earnings are used after tier
-                                    grants are depleted
-                                </div>
-                                <div>
-                                    3. Purchased pollen is used after creator
-                                    earnings
-                                </div>
-                                <div className="text-purple-700 mt-2">
-                                    ⚠️ <strong>Exception:</strong> 🪷 Paid Only
-                                    models require purchased pollen only
+                                    - BYOP app requests include a 25% markup and
+                                    developers receive 20% of the total Pollen
+                                    charged
                                 </div>
                             </div>
                         </Card>

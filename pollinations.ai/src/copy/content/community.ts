@@ -10,7 +10,7 @@ export const COMMUNITY_PAGE = {
         "🌸 pollinations.ai is open source — the code, the roadmap, the conversations.",
     subtitleBold: "Contributors shape the platform directly.",
     subtitleSuffix:
-        " Your PR can land in production tomorrow, and starting Q2, every contribution earns you Pollen. 🌿",
+        " Your PR can land in production tomorrow, and BYOP apps can receive 🌻 Dev earnings. 🌿",
     heroStat1: "17K+",
     heroStat1Label: "Discord members",
     heroStat2: "4K+",

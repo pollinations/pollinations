@@ -17,9 +17,8 @@ type BalanceCheckResult = {
 
 /**
  * Get the total available balance across relevant buckets.
- * For paid-only models: crypto + pack only (creator earnings don't count as
- * "paid" for paid-only admission — earnings are spendable but not purchased).
- * For regular models: tier + creator + crypto + pack (only positive buckets).
+ * For paid-only models: all non-tier balances.
+ * For regular models: tier + non-tier balances (only positive buckets).
  */
 export function getAvailableBalance(
     balances: UserBalance,
@@ -27,6 +26,7 @@ export function getAvailableBalance(
 ): number {
     if (isPaidOnly) {
         return (
+            Math.max(0, balances.creatorBalance) +
             Math.max(0, balances.cryptoBalance) +
             Math.max(0, balances.packBalance)
         );
@@ -101,12 +101,15 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     };
 
     // Mirror the priority used by atomicDeductUserBalance:
-    // tier → creator → crypto → pack (paid-only skips tier + creator).
+    // tier → creator → crypto → pack (paid-only skips only tier).
     const determineBalanceSource = (
         balances: UserBalance,
         isPaidOnly = false,
     ): { source: string; slug: string } => {
         if (isPaidOnly) {
+            if (balances.creatorBalance > 0) {
+                return { source: "creator", slug: "v1:meter:creator" };
+            }
             if (balances.cryptoBalance > 0) {
                 return { source: "crypto", slug: "v1:meter:crypto" };
             }
@@ -171,15 +174,16 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const requirePaidBalance = async (userId: string, message?: string) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
-        // "Paid" = purchased. Creator earnings are spendable but not purchased,
-        // so they don't satisfy paid-only admission.
         const hasPositivePaidBalance =
-            balances.cryptoBalance > 0 || balances.packBalance > 0;
+            balances.creatorBalance > 0 ||
+            balances.cryptoBalance > 0 ||
+            balances.packBalance > 0;
 
         log.debug(
-            "Paid balance check for user {userId}: crypto={cryptoBalance}, pack={packBalance}",
+            "Non-tier balance check for user {userId}: creator={creatorBalance}, crypto={cryptoBalance}, pack={packBalance}",
             {
                 userId,
+                creatorBalance: balances.creatorBalance,
                 cryptoBalance: balances.cryptoBalance,
                 packBalance: balances.packBalance,
             },
@@ -192,7 +196,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
                 selectedMeterSlug: slug,
                 balances: {
                     "v1:meter:tier": 0,
-                    "v1:meter:creator": 0,
+                    "v1:meter:creator": balances.creatorBalance,
                     "v1:meter:crypto": balances.cryptoBalance,
                     "v1:meter:pack": balances.packBalance,
                 },
@@ -203,7 +207,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         throw new HTTPException(402, {
             message:
                 message ||
-                "This model requires a paid balance. Tier balance cannot be used.",
+                "This model requires 💳 Top-up Pollen or 🌻 Dev earnings. 🌱 Tier Pollen cannot be used.",
         });
     };
 

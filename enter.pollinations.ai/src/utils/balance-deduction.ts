@@ -25,18 +25,16 @@ const BUCKET_COLUMNS = {
 /**
  * Atomically deducts pollen from user balance.
  *
- * Priority when paid balance is positive: tier → creator → crypto → pack.
- * If no positive paid balance (crypto + pack ≤ 0), always deducts from tier —
+ * Priority when non-tier balance is positive: tier → creator → crypto → pack.
+ * If no positive non-tier balance, always deducts from tier —
  * tier refills hourly so going negative is fine and prevents spillover into
- * purchased buckets. Creator earnings are treated as "paid" for this check,
- * since they shouldn't be silently drained when the user's purchased balance
- * is empty.
+ * non-tier buckets.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
-) : Promise<{ ok: boolean }> {
+): Promise<{ ok: boolean }> {
     if (amount <= 0) return { ok: true };
 
     const result = await db.run(sql`
@@ -78,7 +76,7 @@ export async function atomicDeductApiKeyBalance(
     apiKeyTable: any,
     apiKeyId: string,
     amount: number,
-) : Promise<{ ok: boolean }> {
+): Promise<{ ok: boolean }> {
     if (amount <= 0) return { ok: true };
 
     const result = await db.run(sql`
@@ -165,7 +163,7 @@ export type DeductionSource = Record<`from${Capitalize<Bucket>}`, number>;
 /**
  * Identifies which single balance bucket a deduction comes from.
  * Mirrors the CASE logic in atomicDeductUserBalance:
- * - If no positive paid balance → always tier
+ * - If no positive non-tier balance → always tier
  * - Otherwise: tier → creator → crypto → pack
  */
 export function identifyDeductionSource(
@@ -190,9 +188,9 @@ export function identifyDeductionSource(
 }
 
 /**
- * Atomically deducts pollen from paid balances only (excluding tier_balance
- * and creator_balance — earnings are not "paid" for paid-only-model purposes).
- * Picks the first positive bucket: crypto → pack. Full amount from one bucket.
+ * Atomically deducts pollen from non-tier balances only.
+ * Picks the first positive bucket: creator → crypto → pack.
+ * Full amount from one bucket.
  */
 export async function atomicDeductPaidBalance(
     db: DrizzleD1Database,
@@ -204,12 +202,16 @@ export async function atomicDeductPaidBalance(
     const result = await db.run(sql`
 		UPDATE ${userTable}
 		SET
+			creator_balance = CASE
+				WHEN COALESCE(creator_balance, 0) > 0 THEN COALESCE(creator_balance, 0) - ${amount}
+				ELSE creator_balance
+			END,
 			crypto_balance = CASE
-				WHEN COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
+				WHEN COALESCE(creator_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
 				ELSE crypto_balance
 			END,
 			pack_balance = CASE
-				WHEN COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
+				WHEN COALESCE(creator_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 				ELSE pack_balance
 			END
 		WHERE id = ${userId}

@@ -16,14 +16,14 @@ export const APPS_PAGE = {
     submitCtaTitle: "Built something cool?",
     submitCtaDescription: "Get featured in the showcase and level up!",
     submitCtaButton: "Submit App",
-    pollenCtaTitle: "🏵️ Add Pollen to Your App",
+    pollenCtaTitle: "🌻 Dev earnings with your app",
     pollenCtaDescription:
-        "Let users sign in with their own Pollinations account.",
+        "BYOP app requests include a 25% markup for 🌻 Dev earnings. App developers receive 20% of the total Pollen charged.",
     pollenCtaButton: "Learn More",
 
     // Badges & tooltips
     pollenBadge: "🏵️ POLLEN",
-    pollenTooltip: "Sign in with Pollinations — Pollen covers usage",
+    pollenTooltip: "Sign in with Pollinations — users cover usage",
     buzzBadge: "🐝 BUZZ",
     buzzTooltip: "100+ API requests in the last 24 hours",
     newBadge: "🫧 FRESH",
@@ -36,7 +36,7 @@ export const APPS_PAGE = {
     sortLabel: "Sort by",
 
     // Legend
-    pollenLegendDesc: "In-app user sign in",
+    pollenLegendDesc: "BYOP user sign in",
     pollenDocsLink: "</> Docs",
     buzzLegendDesc: "100+ requests / 24h",
     newLegendDesc: "Recently added",

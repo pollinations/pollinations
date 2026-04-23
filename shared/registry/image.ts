@@ -8,7 +8,6 @@ export const IMAGE_SERVICES = {
     "flux-1-kontext": {
         brand: "Black Forest Labs",
         provider: "azure",
-        model: "flux.1-kontext",
         aliases: ["kontext"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -19,11 +18,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.04,
         },
     },
-    "nanobanana": {
+    "nano-banana": {
         brand: "Google",
         provider: "google",
-        model: "gemini-2.5-flash-image",
-        aliases: ["nanobanana-2.5"],
+        aliases: ["nanobanana", "nanobanana-2.5"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         profile: "fast",
@@ -37,11 +35,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.00003,
         },
     },
-    "nanobanana-2": {
+    "nano-banana-2": {
         brand: "Google",
         provider: "google",
-        model: "gemini-3.1-flash-image",
-        aliases: ["nanobanana-3.1", "nanobanana2"],
+        aliases: ["nanobanana-2", "nanobanana-3.1", "nanobanana2"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         profile: "fast",
@@ -55,11 +52,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.00006,
         },
     },
-    "nanobanana-pro": {
+    "nano-banana-pro": {
         brand: "Google",
         provider: "google",
-        model: "gemini-3-pro-image",
-        aliases: ["nanobanana-pro-3"],
+        aliases: ["nanobanana-pro", "nanobanana-pro-3"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         profile: "pro",
@@ -76,7 +72,6 @@ export const IMAGE_SERVICES = {
     "seedream-5-lite": {
         brand: "ByteDance",
         provider: "bytedance",
-        model: "seedream-5.0-lite",
         aliases: ["seedream5"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -95,7 +90,6 @@ export const IMAGE_SERVICES = {
     "seedream-4": {
         brand: "ByteDance",
         provider: "bytedance",
-        model: "seedream-4.0",
         aliases: ["seedream"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -114,7 +108,6 @@ export const IMAGE_SERVICES = {
     "seedream-4.5-pro": {
         brand: "ByteDance",
         provider: "bytedance",
-        model: "seedream-4.5-pro",
         aliases: ["seedream-pro"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -134,7 +127,6 @@ export const IMAGE_SERVICES = {
     "gpt-image-1-mini": {
         brand: "OpenAI",
         provider: "azure",
-        model: "gpt-image-1-mini",
         aliases: ["gptimage", "gpt-image"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -152,7 +144,6 @@ export const IMAGE_SERVICES = {
     "gpt-image-1.5": {
         brand: "OpenAI",
         provider: "azure",
-        model: "gpt-image-1.5",
         aliases: ["gptimage-large", "gpt-image-large"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -170,7 +161,6 @@ export const IMAGE_SERVICES = {
     "gpt-image-2": {
         brand: "OpenAI",
         provider: "azure",
-        model: "gpt-image-2",
         aliases: [],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -188,7 +178,6 @@ export const IMAGE_SERVICES = {
     "flux-1-schnell": {
         brand: "Black Forest Labs",
         provider: "runpod",
-        model: "flux-schnell",
         aliases: ["flux", "flux-schnell"],
         description: "Image generation from text prompts.",
         category: "image",
@@ -202,7 +191,6 @@ export const IMAGE_SERVICES = {
     "z-image-turbo": {
         brand: "Alibaba",
         provider: "runpod",
-        model: "z-image-turbo",
         aliases: ["zimage", "z-image"],
         description: "Image generation from text prompts.",
         category: "image",
@@ -216,7 +204,6 @@ export const IMAGE_SERVICES = {
     "veo-3.1-fast": {
         brand: "Google",
         provider: "google",
-        model: "veo-3.1-fast",
         version: "preview",
         aliases: ["veo", "video"],
         description: "Video generation from text and image input.",
@@ -233,7 +220,6 @@ export const IMAGE_SERVICES = {
     "seedance-lite": {
         brand: "ByteDance",
         provider: "bytedance",
-        model: "seedance-lite",
         aliases: ["seedance"],
         description: "Video generation from text and image input.",
         category: "video",
@@ -252,7 +238,6 @@ export const IMAGE_SERVICES = {
     "seedance-pro": {
         brand: "ByteDance",
         provider: "bytedance",
-        model: "seedance-pro-fast",
         aliases: [],
         description: "Video generation from text and image input.",
         category: "video",
@@ -271,7 +256,6 @@ export const IMAGE_SERVICES = {
     "wan-2.6": {
         brand: "Alibaba",
         provider: "alibaba",
-        model: "wan-2.6",
         aliases: ["wan", "wan2.6", "wan-i2v"],
         description: "Video generation from text and image input.",
         category: "video",
@@ -291,7 +275,6 @@ export const IMAGE_SERVICES = {
     "wan-2.2": {
         brand: "Alibaba",
         provider: "alibaba",
-        model: "wan-2.2",
         aliases: ["wan-fast", "wan2.2"],
         description: "Video generation from text and image input.",
         category: "video",
@@ -312,7 +295,6 @@ export const IMAGE_SERVICES = {
     "wan-2.7-image": {
         brand: "Alibaba",
         provider: "alibaba",
-        model: "wan-2.7-image",
         aliases: ["wan-image", "wan2.7-image", "wan-img"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -329,7 +311,6 @@ export const IMAGE_SERVICES = {
     "wan-2.7-image-pro": {
         brand: "Alibaba",
         provider: "alibaba",
-        model: "wan-2.7-image-pro",
         aliases: ["wan-image-pro", "wan2.7-image-pro", "wan-img-pro"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -348,7 +329,6 @@ export const IMAGE_SERVICES = {
     "qwen-image-plus": {
         brand: "Qwen",
         provider: "alibaba",
-        model: "qwen-image-plus",
         aliases: [
             "qwen-image",
             "qwen-image-2512",
@@ -370,7 +350,6 @@ export const IMAGE_SERVICES = {
     "grok-imagine": {
         brand: "xAI",
         provider: "xai",
-        model: "grok-imagine",
         aliases: ["grok-imagine-image"],
         description: "Image generation from text prompts.",
         category: "image",
@@ -388,7 +367,6 @@ export const IMAGE_SERVICES = {
     "grok-imagine-pro": {
         brand: "xAI",
         provider: "xai",
-        model: "grok-imagine-pro",
         aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
         description: "Image generation from text prompts.",
         category: "image",
@@ -407,7 +385,6 @@ export const IMAGE_SERVICES = {
     "grok-video-pro": {
         brand: "xAI",
         provider: "xai",
-        model: "grok-video-pro",
         aliases: ["grok-imagine-video"],
         description: "Video generation from text and image input.",
         category: "video",
@@ -426,7 +403,6 @@ export const IMAGE_SERVICES = {
     "flux-2-klein-4b": {
         brand: "Black Forest Labs",
         provider: "runpod",
-        model: "flux.2-klein-4b",
         aliases: ["klein", "flux-klein"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -441,7 +417,6 @@ export const IMAGE_SERVICES = {
     "ltx-video-2.3": {
         brand: "Lightricks",
         provider: "lambda",
-        model: "ltx-video-2.3",
         aliases: ["ltx-2", "ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
         description: "Video generation from text prompts.",
         category: "video",
@@ -453,11 +428,10 @@ export const IMAGE_SERVICES = {
             completionVideoSeconds: 0.005,
         },
     },
-    "pruna-image": {
+    "p-image": {
         brand: "Pruna",
         provider: "pruna",
-        model: "p-image",
-        aliases: ["p-image", "pruna"],
+        aliases: ["pruna-image", "pruna"],
         description: "Image generation from text prompts.",
         category: "image",
         inputModalities: ["text"],
@@ -471,11 +445,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.0075,
         },
     },
-    "pruna-image-edit": {
+    "p-image-edit": {
         brand: "Pruna",
         provider: "pruna",
-        model: "p-image-edit",
-        aliases: ["p-image-edit", "pruna-edit"],
+        aliases: ["pruna-image-edit", "pruna-edit"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         inputModalities: ["text", "image"],
@@ -489,11 +462,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.015,
         },
     },
-    "pruna-video": {
+    "p-video": {
         brand: "Pruna",
         provider: "pruna",
-        model: "p-video",
-        aliases: ["p-video"],
+        aliases: ["pruna-video"],
         description: "Video generation from text and image input.",
         category: "video",
         inputModalities: ["text", "image"],
@@ -510,7 +482,6 @@ export const IMAGE_SERVICES = {
     "nova-canvas": {
         brand: "Amazon",
         provider: "aws",
-        model: "nova-canvas",
         aliases: ["amazon-nova-canvas"],
         description: "Image generation and editing from text and image input.",
         category: "image",
@@ -525,7 +496,6 @@ export const IMAGE_SERVICES = {
     "nova-reel": {
         brand: "Amazon",
         provider: "aws",
-        model: "nova-reel",
         aliases: ["amazon-nova-reel"],
         description: "Video generation from text and image input.",
         category: "video",

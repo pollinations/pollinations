@@ -760,9 +760,9 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana":
-        case "nanobanana-2":
-        case "nanobanana-pro": {
+        case "nano-banana":
+        case "nano-banana-2":
+        case "nano-banana-pro": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -786,9 +786,9 @@ const generateImage = async (
                 }
 
                 const modelDisplayName =
-                    safeParams.model === "nanobanana-pro"
+                    safeParams.model === "nano-banana-pro"
                         ? "Nano Banana Pro"
-                        : safeParams.model === "nanobanana-2"
+                        : safeParams.model === "nano-banana-2"
                           ? "Nano Banana 2"
                           : "Nano Banana";
                 progress.updateBar(
@@ -903,7 +903,7 @@ const generateImage = async (
             }
         }
 
-        case "pruna-image": {
+        case "p-image": {
             try {
                 return await callPrunaImageAPI(
                     prompt,
@@ -950,7 +950,7 @@ const generateImage = async (
             }
         }
 
-        case "pruna-image-edit": {
+        case "p-image-edit": {
             try {
                 return await callPrunaImageEditAPI(
                     prompt,

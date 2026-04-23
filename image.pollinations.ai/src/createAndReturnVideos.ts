@@ -75,7 +75,7 @@ export async function createAndReturnVideo(
         case "ltx-video-2.3":
             result = await callLtx2API(prompt, safeParams, progress, requestId);
             break;
-        case "pruna-video":
+        case "p-video":
             result = await callPrunaVideoAPI(
                 prompt,
                 safeParams,

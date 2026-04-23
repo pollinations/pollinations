@@ -26,7 +26,6 @@ export const TEXT_SERVICES = {
     "gpt-5.4-nano": {
         brand: "OpenAI",
         provider: "azure",
-        model: "gpt-5.4-nano",
         aliases: ["openai", "gpt-5-mini"],
         description: "Text generation with image input.",
         category: "text",
@@ -45,7 +44,6 @@ export const TEXT_SERVICES = {
     "gpt-5-nano": {
         brand: "OpenAI",
         provider: "azure",
-        model: "gpt-5-nano",
         version: "2025-08-07",
         aliases: ["openai-fast", "gpt-5-nano-2025-08-07"],
         description: "Text generation with image input.",
@@ -65,7 +63,6 @@ export const TEXT_SERVICES = {
     "gpt-5.4": {
         brand: "OpenAI",
         provider: "azure",
-        model: "gpt-5.4",
         aliases: [
             "openai-large",
             "gpt-5.4",
@@ -91,7 +88,6 @@ export const TEXT_SERVICES = {
     "qwen3-coder-30b": {
         brand: "Qwen",
         provider: "ovhcloud",
-        model: "qwen3-coder-30b-a3b-instruct",
         aliases: ["qwen-coder", "qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         description: "Code generation and editing.",
         category: "text",
@@ -108,7 +104,6 @@ export const TEXT_SERVICES = {
     "mistral-small-3.2": {
         brand: "Mistral",
         provider: "ovhcloud",
-        model: "mistral-small-3.2-24b-instruct",
         version: "2506",
         aliases: [
             "mistral",
@@ -130,7 +125,6 @@ export const TEXT_SERVICES = {
     "gpt-audio-mini": {
         brand: "OpenAI",
         provider: "azure",
-        model: "gpt-audio-mini",
         version: "2025-12-15",
         aliases: [
             "openai-audio",
@@ -158,7 +152,6 @@ export const TEXT_SERVICES = {
     "gpt-audio-1.5": {
         brand: "OpenAI",
         provider: "azure",
-        model: "gpt-audio-1.5",
         aliases: ["openai-audio-large", "gpt-audio", "gpt-audio-2025-12-15"],
         description: "Multimodal generation with text and audio output.",
         category: "audio",
@@ -179,7 +172,6 @@ export const TEXT_SERVICES = {
     "gemini-3-flash": {
         brand: "Google",
         provider: "google",
-        model: "gemini-3-flash",
         version: "preview",
         aliases: ["gemini", "gemini-3-flash-preview"],
         description: "Multimodal text generation with web search.",
@@ -207,7 +199,6 @@ export const TEXT_SERVICES = {
     "gemini-flash-lite-3.1": {
         brand: "Google",
         provider: "google",
-        model: "gemini-3.1-flash-lite",
         version: "preview",
         aliases: [
             "gemini-3.1-flash-lite",
@@ -239,7 +230,6 @@ export const TEXT_SERVICES = {
     "gemini-2.5-flash-lite": {
         brand: "Google",
         provider: "google",
-        model: "gemini-2.5-flash-lite",
         aliases: ["gemini-fast"],
         description: "Multimodal text generation with web search.",
         category: "text",
@@ -265,7 +255,6 @@ export const TEXT_SERVICES = {
     "deepseek-v3.2": {
         brand: "DeepSeek",
         provider: "fireworks",
-        model: "deepseek-v3.2",
         aliases: ["deepseek", "deepseek-v3", "deepseek-reasoning"],
         description: "Text generation with reasoning.",
         category: "text",
@@ -283,7 +272,6 @@ export const TEXT_SERVICES = {
     "grok-4.1-fast": {
         brand: "xAI",
         provider: "azure",
-        model: "grok-4.1-fast",
         aliases: [
             "grok",
             "grok-fast",
@@ -309,7 +297,6 @@ export const TEXT_SERVICES = {
     "grok-4.20-reasoning": {
         brand: "xAI",
         provider: "azure",
-        model: "grok-4.20-reasoning",
         aliases: [
             "grok-large",
             "grok-4-20",
@@ -334,7 +321,6 @@ export const TEXT_SERVICES = {
     "gemini-search": {
         brand: "Google",
         provider: "google",
-        model: "gemini-2.5-flash-lite",
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
         description: "Multimodal text generation with web search.",
         category: "text",
@@ -360,7 +346,6 @@ export const TEXT_SERVICES = {
     "midijourney": {
         brand: "Pollinations",
         provider: "bedrock",
-        model: "midijourney",
         aliases: [],
         description: "Music composition and MIDI assistance.",
         category: "text",
@@ -378,7 +363,6 @@ export const TEXT_SERVICES = {
     "midijourney-pro": {
         brand: "Pollinations",
         provider: "bedrock",
-        model: "midijourney-pro",
         aliases: ["midijourney-large"],
         description: "Music composition and MIDI assistance.",
         category: "text",
@@ -398,7 +382,6 @@ export const TEXT_SERVICES = {
     "claude-haiku-4.5": {
         brand: "Anthropic",
         provider: "bedrock",
-        model: "claude-haiku-4.5",
         version: "2025-10-01",
         aliases: ["claude-fast", "claude-haiku"],
         description: "Text generation with image input.",
@@ -418,7 +401,6 @@ export const TEXT_SERVICES = {
     "claude-sonnet-4.6": {
         brand: "Anthropic",
         provider: "bedrock",
-        model: "claude-sonnet-4.6",
         aliases: ["claude", "claude-sonnet"],
         description: "Text generation with image input.",
         category: "text",
@@ -438,7 +420,6 @@ export const TEXT_SERVICES = {
     "claude-opus-4.6": {
         brand: "Anthropic",
         provider: "bedrock",
-        model: "claude-opus-4.6",
         aliases: ["claude-large", "claude-opus", "claude-opus-4.5"],
         description: "Text generation with image input.",
         category: "text",
@@ -458,7 +439,6 @@ export const TEXT_SERVICES = {
     "claude-opus-4.7": {
         brand: "Anthropic",
         provider: "bedrock",
-        model: "claude-opus-4.7",
         aliases: [],
         description: "Text generation with image input.",
         category: "text",
@@ -478,7 +458,6 @@ export const TEXT_SERVICES = {
     "perplexity-sonar": {
         brand: "Perplexity",
         provider: "perplexity",
-        model: "sonar",
         aliases: ["perplexity-fast", "sonar"],
         description: "Text generation with web search.",
         category: "text",
@@ -496,7 +475,6 @@ export const TEXT_SERVICES = {
     "perplexity-sonar-reasoning-pro": {
         brand: "Perplexity",
         provider: "perplexity",
-        model: "sonar-reasoning-pro",
         aliases: [
             "perplexity-reasoning",
             "sonar-reasoning",
@@ -518,7 +496,6 @@ export const TEXT_SERVICES = {
     "kimi-k2.5": {
         brand: "Moonshot AI",
         provider: "fireworks",
-        model: "kimi-k2.5",
         aliases: [
             "kimi",
             "kimi-k2p5",
@@ -544,7 +521,6 @@ export const TEXT_SERVICES = {
     "kimi-k2.6": {
         brand: "Moonshot AI",
         provider: "fireworks",
-        model: "kimi-k2.6",
         aliases: ["kimi-k2p6"],
         description: "Multimodal text generation with reasoning.",
         category: "text",
@@ -563,7 +539,6 @@ export const TEXT_SERVICES = {
     "gemini-3.1-pro": {
         brand: "Google",
         provider: "google",
-        model: "gemini-3.1-pro",
         version: "preview",
         aliases: ["gemini-large", "gemini-2.5-pro"],
         description: "Multimodal text generation with web search.",
@@ -589,7 +564,6 @@ export const TEXT_SERVICES = {
     "nova-micro-1": {
         brand: "Amazon",
         provider: "bedrock",
-        model: "nova-micro-v1",
         aliases: ["nova-fast", "amazon-nova-micro", "nova-micro"],
         description: "Text generation.",
         category: "text",
@@ -607,7 +581,6 @@ export const TEXT_SERVICES = {
     "nova-2-lite": {
         brand: "Amazon",
         provider: "bedrock",
-        model: "nova-2-lite-v1",
         aliases: ["nova", "amazon-nova-2-lite", "nova-2"],
         description: "Text generation with reasoning.",
         category: "text",
@@ -624,7 +597,6 @@ export const TEXT_SERVICES = {
     "glm-5.1": {
         brand: "Z.ai",
         provider: "fireworks",
-        model: "glm-5.1",
         aliases: ["glm", "glm-5", "glm-5p1", "glm-4.7", "glm-4p7"],
         description: "Text generation with reasoning.",
         category: "text",
@@ -642,7 +614,6 @@ export const TEXT_SERVICES = {
     "minimax-m2.7": {
         brand: "MiniMax",
         provider: "fireworks",
-        model: "minimax-m2.7",
         aliases: ["minimax", "minimax-m2p7", "minimax-m2.5", "minimax-m2p5"],
         description: "Text generation with reasoning.",
         category: "text",
@@ -660,7 +631,6 @@ export const TEXT_SERVICES = {
     "mistral-large-3": {
         brand: "Mistral",
         provider: "azure",
-        model: "mistral-large-3",
         aliases: ["mistral-large"],
         description: "Multimodal text generation with reasoning.",
         category: "text",
@@ -679,7 +649,6 @@ export const TEXT_SERVICES = {
     "polly": {
         brand: "Pollinations",
         provider: "community",
-        model: "polly",
         aliases: ["pollinations-ai", "polly-ai"],
         description:
             "Assistant-style text generation with tools, search, and code execution.",
@@ -694,7 +663,6 @@ export const TEXT_SERVICES = {
     "qwen3-coder-next": {
         brand: "Qwen",
         provider: "alibaba",
-        model: "qwen3-coder-next",
         aliases: ["qwen-coder-large"],
         description: "Code generation and editing.",
         category: "text",
@@ -716,7 +684,6 @@ export const TEXT_SERVICES = {
     "qwen3.6-plus": {
         brand: "Qwen",
         provider: "fireworks",
-        model: "qwen3.6-plus",
         aliases: ["qwen-large", "qwen3.6", "qwen3p6-plus"],
         description: "Multimodal text generation with reasoning.",
         category: "text",
@@ -735,7 +702,6 @@ export const TEXT_SERVICES = {
     "qwen3-vl-thinking": {
         brand: "Qwen",
         provider: "fireworks",
-        model: "qwen3-vl-30b-a3b-thinking",
         aliases: [
             "qwen-vision",
             "qwen3-vl",
@@ -759,7 +725,6 @@ export const TEXT_SERVICES = {
     "qwen3-guard-8b": {
         brand: "Qwen",
         provider: "ovhcloud",
-        model: "qwen3guard-gen-8b",
         aliases: ["qwen-safety", "qwen3guard-gen-8b"],
         description: "Content safety and moderation.",
         category: "text",

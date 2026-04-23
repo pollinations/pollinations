@@ -52,7 +52,6 @@ export const AUDIO_SERVICES = {
     "eleven-v3": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
-        model: "eleven-v3",
         aliases: [
             "elevenlabs",
             "tts",
@@ -74,7 +73,6 @@ export const AUDIO_SERVICES = {
     "eleven-music-v1": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
-        model: "music-v1",
         aliases: ["elevenmusic", "music"],
         description: "Music generation from text prompts.",
         category: "audio",
@@ -89,7 +87,6 @@ export const AUDIO_SERVICES = {
     "whisper-large-v3": {
         brand: "OpenAI",
         provider: "ovhcloud",
-        model: "whisper-large-v3",
         aliases: ["whisper", "whisper-1"],
         description: "Speech transcription to text.",
         category: "audio",
@@ -104,7 +101,6 @@ export const AUDIO_SERVICES = {
     "scribe-v2": {
         brand: "ElevenLabs",
         provider: "elevenlabs",
-        model: "scribe-v2",
         aliases: ["scribe", "scribe_v2"],
         description: "Speech transcription to text.",
         category: "audio",
@@ -118,7 +114,6 @@ export const AUDIO_SERVICES = {
     "ace-step-1.5-turbo": {
         brand: "ACE-Step",
         provider: "lambda",
-        model: "acestep-1.5-turbo",
         aliases: ["acestep", "ace-step", "acestep-music"],
         description: "Music generation from text prompts.",
         category: "audio",
@@ -133,7 +128,6 @@ export const AUDIO_SERVICES = {
     "qwen3-tts-flash": {
         brand: "Qwen",
         provider: "alibaba",
-        model: "qwen3-tts-flash",
         aliases: ["qwen-tts", "qwen3-tts"],
         description: "Text-to-speech generation.",
         category: "audio",
@@ -150,7 +144,6 @@ export const AUDIO_SERVICES = {
     "qwen3-tts-instruct-flash": {
         brand: "Qwen",
         provider: "alibaba",
-        model: "qwen3-tts-instruct-flash",
         aliases: ["qwen-tts-instruct", "qwen3-tts-instruct"],
         description:
             "Text-to-speech generation with emotion and style control.",

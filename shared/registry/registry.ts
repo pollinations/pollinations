@@ -48,7 +48,6 @@ export type ModelName = ImageModelName | TextModelName | AudioModelName;
 export type ModelDefinition = {
     brand: string;
     provider: string;
-    model: string;
     version?: string;
     aliases: string[];
     description?: string;
@@ -87,14 +86,6 @@ export function hasCapability(
     capability: Capability,
 ): boolean {
     return definition?.capabilities?.includes(capability) ?? false;
-}
-
-export function buildModelKey(
-    definition: Pick<ModelDefinition, "provider" | "model" | "version">,
-): string {
-    return `${definition.provider}/${definition.model}${
-        definition.version ? `@${definition.version}` : ""
-    }`;
 }
 
 function toRegistryEntry(service: ModelDefinition): ModelRegistryEntry {
@@ -216,10 +207,6 @@ export function getModelDefinition(model: ModelName): ModelRegistryEntry {
         throw new Error(`Invalid model: "${model}"`);
     }
     return definition;
-}
-
-export function getModelKey(model: ModelName): string {
-    return buildModelKey(getModelDefinition(model));
 }
 
 export function modelHasCapability(

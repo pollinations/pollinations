@@ -4,7 +4,6 @@
 
 import {
     getModelDefinition,
-    getModelKey,
     type ModelName,
     type ModelProfile,
 } from "@shared/registry/registry.ts";
@@ -165,14 +164,6 @@ export const isNewModel = (modelName: string): boolean => {
     if (!service?.introducedAt) return false;
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
     return service.introducedAt > thirtyDaysAgo;
-};
-
-export const getTextModelId = (modelName: string): string | undefined => {
-    return getModelKey(modelName as ModelName);
-};
-
-export const getImageModelId = (modelName: string): string | undefined => {
-    return getModelKey(modelName as ModelName);
 };
 
 /**

@@ -148,7 +148,6 @@ function createErrorResponse(
             code: getErrorCode(status),
             timestamp,
             ...(details && { details }),
-            ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };

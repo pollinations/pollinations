@@ -149,7 +149,7 @@ export const TEXT_SERVICES = {
         modelId: "gpt-audio-mini-2025-12-15",
         provider: "azure",
         brand: "OpenAI",
-        category: "audio",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -172,7 +172,7 @@ export const TEXT_SERVICES = {
         modelId: "gpt-audio-1.5",
         provider: "azure",
         brand: "OpenAI",
-        category: "audio",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,

@@ -1,0 +1,33 @@
+{
+  "pr_number": 10420,
+  "title": "[PATHC] Fix the Code of Conduct contact mechanism.",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10420",
+  "merged_at": "2026-04-23T13:49:22Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "New hotline for the hive",
+    "blurb": "We've updated the contact details in our Code of Conduct to make sure your messages always reach the right bees.",
+    "summary": "Updated the enforcement contact email and attribution ladder in the Code of Conduct.",
+    "impact": "Community members now have the correct, up-to-date email address for reporting Code of Conduct inquiries.",
+    "keywords": [
+      "docs",
+      "community",
+      "code-of-conduct",
+      "email"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly community helper, interacting with a cozy mailbox in a garden. Represents communication, safety, and community guidelines.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot putting a pixelated letter into a lime green (#ecf874) garden mailbox. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-23/PR-10420.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot putting a pixelated letter into a lime green (#ecf874) garden mailbox. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-23T13:50:17.713991+00:00"
+}

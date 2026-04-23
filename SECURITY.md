@@ -75,9 +75,9 @@ for general questions, hop into a github discussion—but **never** share sensit
 
 ---
 
-## 🙏 thanks
+## 🙏 Thanks
 
-we can’t say this enough: **thank you** for helping make pollinations.ai a safer hub for creative ai. every tip, every report, every patch makes a real difference!
+We can’t say this enough: **thank you** for helping make pollinations.ai a safer hub for creative ai. every tip, every report, every patch makes a real difference!
 
 — with gratitude,  
 the pollinations.ai maintainers & community team

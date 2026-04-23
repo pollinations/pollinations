@@ -19,11 +19,11 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.04,
         },
     },
-    "nanobanana-2.5": {
+    "nanobanana": {
         brand: "Google",
         provider: "google",
         model: "gemini-2.5-flash-image",
-        aliases: ["nanobanana"],
+        aliases: ["nanobanana-2.5"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         profile: "fast",
@@ -37,11 +37,11 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.00003,
         },
     },
-    "nanobanana-3.1": {
+    "nanobanana-2": {
         brand: "Google",
         provider: "google",
         model: "gemini-3.1-flash-image",
-        aliases: ["nanobanana-2", "nanobanana2"],
+        aliases: ["nanobanana-3.1", "nanobanana2"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         profile: "fast",
@@ -55,11 +55,11 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.00006,
         },
     },
-    "nanobanana-pro-3": {
+    "nanobanana-pro": {
         brand: "Google",
         provider: "google",
         model: "gemini-3-pro-image",
-        aliases: ["nanobanana-pro"],
+        aliases: ["nanobanana-pro-3"],
         description: "Image generation and editing from text and image input.",
         category: "image",
         profile: "pro",

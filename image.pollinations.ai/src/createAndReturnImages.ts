@@ -760,9 +760,9 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana-2.5":
-        case "nanobanana-3.1":
-        case "nanobanana-pro-3": {
+        case "nanobanana":
+        case "nanobanana-2":
+        case "nanobanana-pro": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -786,9 +786,9 @@ const generateImage = async (
                 }
 
                 const modelDisplayName =
-                    safeParams.model === "nanobanana-pro-3"
+                    safeParams.model === "nanobanana-pro"
                         ? "Nano Banana Pro"
-                        : safeParams.model === "nanobanana-3.1"
+                        : safeParams.model === "nanobanana-2"
                           ? "Nano Banana 2"
                           : "Nano Banana";
                 progress.updateBar(

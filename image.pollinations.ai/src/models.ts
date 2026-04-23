@@ -54,14 +54,14 @@ export const IMAGE_CONFIG = {
     },
 
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
-    "nanobanana-2.5": {
+    "nanobanana": {
         type: "vertex-ai",
         enhance: false,
         defaultSideLength: 1024,
     },
 
     // Gemini 3.1 Flash Image via Vertex AI - faster flash with pro-level quality (Nano Banana 2)
-    "nanobanana-3.1": {
+    "nanobanana-2": {
         type: "vertex-ai-2",
         enhance: false,
         defaultSideLength: 1024,
@@ -69,7 +69,7 @@ export const IMAGE_CONFIG = {
 
     // Gemini 3 Pro Image via Vertex AI - high quality image generation (Nano Banana Pro)
     // Supports 1K, 2K, and 4K output resolutions
-    "nanobanana-pro-3": {
+    "nanobanana-pro": {
         type: "vertex-ai-pro",
         enhance: false,
         defaultSideLength: 2048, // Default to 2K, supports up to 4K (3840x2160)

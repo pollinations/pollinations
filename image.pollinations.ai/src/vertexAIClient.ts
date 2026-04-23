@@ -46,6 +46,7 @@ export interface VertexAIResponse {
         promptTokenCount: number;
         candidatesTokenCount: number;
         totalTokenCount: number;
+        thoughtsTokenCount?: number;
     };
 }
 
@@ -186,17 +187,16 @@ export async function generateImageWithVertexAI(
 
         const getThinkingConfig = (mode: string | undefined, model: string) => {
             if (!mode || mode === "balanced") return {};
-            const is3x = model.includes("3.1") || model.includes("3-pro");
-            if (mode === "fast") {
-                if (is3x) {
-                    return model.includes("3.1")
-                        ? { thinkingConfig: { thinkingLevel: "MINIMAL" } }
-                        : {};
+            if (model.includes("3.1")) {
+                if (mode === "fast") {
+                    return { thinkingConfig: { thinkingLevel: "MINIMAL" } };
                 }
-                return { thinkingConfig: { thinkingBudget: 1024 } };
+                return { thinkingConfig: { thinkingLevel: "HIGH" } };
             }
-            if (is3x) return { thinkingConfig: { thinkingLevel: "HIGH" } };
-            return { thinkingConfig: { thinkingBudget: 24576 } };
+            // For all other models (e.g. gemini-2.5-flash-image, gemini-3-pro-image-preview)
+            // we do NOT send an explicit thinkingConfig to avoid 400 errors,
+            // relying on the provider's defaults instead.
+            return {};
         };
 
         const thinkingConfig = getThinkingConfig(request.reasoning, modelId);

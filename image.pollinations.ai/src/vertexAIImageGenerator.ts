@@ -340,6 +340,7 @@ export async function callVertexAIGemini(
                         result.usage?.candidatesTokenCount || 1,
                     promptTokenCount: result.usage?.promptTokenCount,
                     totalTokenCount: result.usage?.totalTokenCount,
+                    completionReasoningTokens: result.usage?.thoughtsTokenCount,
                 },
             },
         };

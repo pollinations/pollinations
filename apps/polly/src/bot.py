@@ -50,6 +50,16 @@ def is_admin(user: discord.User | discord.Member) -> bool:
     return False
 
 
+def is_collaborator(user: discord.User | discord.Member) -> bool:
+    """Check if a user has any of the configured collaborator roles."""
+    if not config.collaborator_role_ids:
+        return False
+    if isinstance(user, discord.Member):
+        user_role_ids = [r.id for r in user.roles]
+        return any(role_id in config.collaborator_role_ids for role_id in user_role_ids)
+    return False
+
+
 # Video file extensions and domains
 VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".avi", ".mkv", ".gif", ".apng"}
 VIDEO_DOMAINS = {"youtube.com", "youtu.be", "vimeo.com", "twitch.tv", "streamable.com"}
@@ -429,10 +439,11 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
             if is_first:
                 is_first = False
                 continue  # Skip the current message (newest)
+            content = msg.content or "[attachment/embed]"
             if msg.author.bot:
-                fetched.append({"role": "assistant", "content": msg.content})
+                fetched.append({"role": "assistant", "content": content})
             else:
-                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
+                fetched.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
         # Reverse to chronological order (oldest to newest)
         # Add starter message FIRST, then thread messages
         if starter_msg:
@@ -1031,22 +1042,25 @@ async def handle_inline_polly_mention(message: discord.Message):
             if msg.id == message.id:
                 continue  # Skip current message
 
+            content = msg.content or "[attachment/embed]"
             if msg.author.bot:
-                channel_history.append({"role": "assistant", "content": msg.content})
+                channel_history.append({"role": "assistant", "content": content})
             else:
-                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {msg.content}"})
+                channel_history.append({"role": "user", "content": f"[{msg.author.name}]: {content}"})
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
     except Exception as e:
         logger.warning(f"Failed to fetch channel history for inline mention: {e}")
 
-    # Check if user is admin
+    # Check if user is admin or collaborator
     user_is_admin = is_admin(message.author)
+    user_is_collaborator = is_collaborator(message.author)
 
     # Build tool context (same structure as normal processing)
     tool_context = {
         "is_admin": user_is_admin,
+        "is_collaborator": user_is_collaborator,
         "user_id": message.author.id,
         "user_name": str(message.author),
         "reporter": str(message.author),
@@ -1182,9 +1196,12 @@ async def process_message(
 
     All tool calls happen in parallel when possible.
     """
-    # Check if user is admin (has admin role)
+    # Check if user is admin or collaborator (has relevant role)
     user_is_admin = is_admin(user)
-    logger.info(f"process_message: user={user}, user_is_admin={user_is_admin}")
+    user_is_collaborator = is_collaborator(user)
+    logger.info(
+        f"process_message: user={user}, user_is_admin={user_is_admin}, user_is_collaborator={user_is_collaborator}"
+    )
 
     # Build tool context - this is passed to ALL tool handlers for permission checks
     # This is thread-safe because it's created per-request, not globally registered
@@ -1198,6 +1215,7 @@ async def process_message(
 
     tool_context = {
         "is_admin": user_is_admin,
+        "is_collaborator": user_is_collaborator,
         "user_id": user.id,
         "user_name": str(user),
         "reporter": session.original_author_name,

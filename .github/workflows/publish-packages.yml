@@ -56,13 +56,28 @@ jobs:
           npm ci
           npm run build
 
+      - name: Check if version already published
+        id: check
+        working-directory: packages/sdk
+        run: |
+          name=$(node -p "require('./package.json').name")
+          v=$(node -p "require('./package.json').version")
+          if npm view "$name@$v" version >/dev/null 2>&1; then
+            echo "Version $v already on npm — skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to NPM
+        if: steps.check.outputs.skip != 'true'
         working-directory: packages/sdk
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
+        if: steps.check.outputs.skip != 'true'
         working-directory: packages/sdk
         run: |
           # GitHub Packages requires scope matching the repo owner
@@ -97,13 +112,28 @@ jobs:
         working-directory: packages/mcp
         run: npm ci --ignore-scripts
 
+      - name: Check if version already published
+        id: check
+        working-directory: packages/mcp
+        run: |
+          name=$(node -p "require('./package.json').name")
+          v=$(node -p "require('./package.json').version")
+          if npm view "$name@$v" version >/dev/null 2>&1; then
+            echo "Version $v already on npm — skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to NPM
+        if: steps.check.outputs.skip != 'true'
         working-directory: packages/mcp
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
+        if: steps.check.outputs.skip != 'true'
         working-directory: packages/mcp
         run: |
           node -e "
@@ -137,13 +167,28 @@ jobs:
         working-directory: packages/ompc
         run: npm ci --ignore-scripts
 
+      - name: Check if version already published
+        id: check
+        working-directory: packages/ompc
+        run: |
+          name=$(node -p "require('./package.json').name")
+          v=$(node -p "require('./package.json').version")
+          if npm view "$name@$v" version >/dev/null 2>&1; then
+            echo "Version $v already on npm — skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to NPM
+        if: steps.check.outputs.skip != 'true'
         working-directory: packages/ompc
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
       - name: Publish to GitHub Packages
+        if: steps.check.outputs.skip != 'true'
         working-directory: packages/ompc
         run: |
           node -e "
@@ -179,13 +224,27 @@ jobs:
           npm ci
           npm run build
 
-      - name: Publish to NPM (alpha)
+      - name: Check if version already published
+        id: check
         working-directory: packages/polli-cli
-        run: npm publish --access public --tag alpha
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if npm view "@pollinations_ai/cli@$v" version >/dev/null 2>&1; then
+            echo "Version $v already on npm — skipping publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to NPM
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/polli-cli
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_KEY }}
 
-      - name: Publish to GitHub Packages (alpha)
+      - name: Publish to GitHub Packages
+        if: steps.check.outputs.skip != 'true'
         working-directory: packages/polli-cli
         run: |
           node -e "
@@ -196,6 +255,6 @@ jobs:
           "
           echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
           echo "@pollinations:registry=https://npm.pkg.github.com" >> .npmrc
-          npm publish --access public --tag alpha
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

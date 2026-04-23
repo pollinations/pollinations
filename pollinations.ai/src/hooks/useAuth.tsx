@@ -7,7 +7,7 @@ import {
     useMemo,
     useState,
 } from "react";
-import { APP_KEY, DEFAULT_API_KEY } from "../api.config";
+import { APP_KEY } from "../api.config";
 import { fetchWithRetry } from "../utils/fetchWithRetry";
 
 const STORAGE_KEY = "pollinations_api_key";
@@ -15,11 +15,8 @@ const ENTER_URL = "https://enter.pollinations.ai";
 const ACCOUNT_API_BASE = "https://enter.pollinations.ai/api";
 
 interface UserProfile {
-    name: string;
-    email: string;
     githubUsername: string | null;
     image: string | null;
-    tier: "seed" | "flower" | "nectar" | null;
 }
 
 interface UserBalance {
@@ -32,7 +29,7 @@ interface UserBalance {
 // - AuthActions: login + logout (stable refs, never changes)
 
 interface AuthStateValue {
-    apiKey: string;
+    apiKey: string | null;
     isLoggedIn: boolean;
 }
 
@@ -112,11 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 );
                 const data = await response.json();
                 setProfile({
-                    name: data.name,
-                    email: data.email,
                     githubUsername: data.githubUsername,
                     image: data.image ?? null,
-                    tier: data.tier ?? null,
                 });
             } catch (err) {
                 const message = err instanceof Error ? err.message : "";
@@ -162,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = useCallback(() => {
         const currentUrl = window.location.href.split("#")[0];
-        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&app_key=${APP_KEY}&permissions=profile,balance`;
+        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&app_key=${APP_KEY}&permissions=profile,usage`;
         window.location.href = authUrl;
     }, []);
 
@@ -175,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const stateValue = useMemo<AuthStateValue>(
         () => ({
-            apiKey: userApiKey || DEFAULT_API_KEY,
+            apiKey: userApiKey,
             isLoggedIn: !!userApiKey,
         }),
         [userApiKey],

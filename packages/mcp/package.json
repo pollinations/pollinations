@@ -1,6 +1,6 @@
 {
     "name": "@pollinations_ai/mcp",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "description": "Model Context Protocol (MCP) server for pollinations.ai - image, text, audio & video generation",
     "type": "module",
     "bin": {
@@ -69,8 +69,6 @@
     "url": "https://github.com/sponsors/pollinations"
     },
     "devDependencies": {
-        "@types/node": "^22.14.1",
-        "typescript": "^5.8.3",
         "vitest": "^3.1.2"
     }
 }

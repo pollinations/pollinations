@@ -199,11 +199,11 @@ function generateLLMDoc(): string {
     lines.push("- negative_prompt (string): Only flux, zimage");
     lines.push("- safe (boolean, default: false): Safety filter");
     lines.push(
-        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large',
+        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large, gpt-image-2',
     );
     lines.push("- image (string): Reference image URL(s), | or , separated");
     lines.push(
-        "- transparent (boolean, default: false): gptimage, gptimage-large",
+        "- transparent (boolean, default: false): gptimage, gptimage-large, gpt-image-2",
     );
     lines.push(
         "- reasoning (boolean, default: false): Enable thinking for improved text/layout. nanobanana, nanobanana-2, nanobanana-pro",
@@ -346,16 +346,17 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /api/account/profile");
     lines.push(
-        "Returns user profile: name, email, githubUsername, image, tier, createdAt, nextResetAt.",
+        "Returns user profile. `githubUsername` and `image` are always included. `name` and `email` are included only when the API key has the `account:profile` permission.",
     );
-    lines.push("Requires `account:profile` permission.");
     lines.push("");
 
     lines.push("### GET /api/account/balance");
     lines.push(
         "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
     );
-    lines.push("Requires `account:balance` permission.");
+    lines.push(
+        "Requires `account:usage` permission when using an API key without a budget of its own.",
+    );
     lines.push("");
 
     lines.push("### GET /api/account/usage");
@@ -401,7 +402,7 @@ function generateLLMDoc(): string {
         "- pollenBudget (number, optional): Pollen budget cap. null = unlimited",
     );
     lines.push(
-        '- accountPermissions (string[], optional): e.g. ["balance","usage"]. "keys" is auto-stripped',
+        '- accountPermissions (string[], optional): e.g. ["profile","usage"]. "keys" is auto-stripped',
     );
     lines.push(
         "Returns full key value once: { id, key, name, type, prefix, start, expiresAt, permissions, pollenBudget }",
@@ -800,7 +801,7 @@ response = requests.get(
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 profile = response.json()
-print(f"{profile['name']} ({profile['tier']})")`,
+print(profile["githubUsername"])`,
         },
         {
             label: "JavaScript",
@@ -810,7 +811,7 @@ print(f"{profile['name']} ({profile['tier']})")`,
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const profile = await response.json();
-console.log(\`\${profile.name} (\${profile.tier})\`);`,
+console.log(profile.githubUsername);`,
         },
     ],
     "get /account/key": [
@@ -1092,26 +1093,21 @@ const RESPONSE_EXAMPLES: Record<string, unknown> = {
         balance: 42.5,
     },
     "get /account/profile": {
+        githubUsername: "janedeveloper",
+        image: "https://avatars.example.com/jane.jpg",
         name: "Jane Developer",
         email: "jane@example.com",
-        image: "https://avatars.example.com/jane.jpg",
-        tier: "seed",
-        displayTier: "Seed",
-        createdAt: "2024-01-15T10:30:00.000Z",
-        nextResetAt: "2024-02-15T14:00:00.000Z",
     },
     "get /account/key": {
         valid: true,
         type: "secret",
-        prefix: "sk_",
+        name: "my-bot",
         expiresAt: null,
-        permissions: [
-            "generate:text",
-            "generate:image",
-            "generate:audio",
-            "account:balance",
-            "account:usage",
-        ],
+        expiresIn: null,
+        permissions: {
+            models: null,
+            account: ["usage"],
+        },
         pollenBudget: null,
         rateLimitEnabled: false,
     },
@@ -1452,13 +1448,13 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "",
                                 "| Endpoint | Description |",
                                 "|----------|-------------|",
-                                "| `GET /account/profile` | Name, email, tier, creation date |",
+                                "| `GET /account/profile` | GitHub username and profile image |",
                                 "| `GET /account/balance` | Current pollen balance |",
                                 "| `GET /account/usage` | Per-request history with costs |",
                                 "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",
                                 "| `GET /account/key` | API key validity, type, and permissions |",
                                 "",
-                                "When using API keys, specific permissions may be required (e.g., `account:balance`, `account:usage`).",
+                                "When using API keys, specific permissions may be required (e.g., `account:usage`, `account:profile`).",
                             ].join("\n"),
                         },
                         {

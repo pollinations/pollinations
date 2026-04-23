@@ -95,6 +95,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",
         }),
+    "accounts/fireworks/models/kimi-k2p6": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p6",
+        }),
 
     // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
     "mistral-small-3.2-24b-instruct-2506": () =>
@@ -121,10 +125,10 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "us.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "claude-opus-4-5": () =>
+    "claude-opus-4-7": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-5-20251101-v1:0",
-            defaultOptions: { max_tokens: 64000 },
+            model: "us.anthropic.claude-opus-4-7",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
@@ -172,7 +176,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
-    "gemini-2.5-pro": createVertexGeminiConfig("gemini-2.5-pro", "us-central1"),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
@@ -188,16 +191,20 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p1",
         }),
-    "accounts/fireworks/models/minimax-m2p5": () =>
+    "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p5",
+            model: "accounts/fireworks/models/minimax-m2p7",
         }),
 
     // -- Alibaba DashScope (Qwen) ---------------------------------------------
     "qwen3-coder-next": () =>
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),
-    "qwen3-vl-plus": () =>
-        createDashScopeModelConfig({ model: "qwen3-vl-plus" }),
+
+    // -- Fireworks AI (Qwen VL) -----------------------------------------------
+    "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
+        }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------
     "qwen3-coder-30b-a3b-instruct": () =>

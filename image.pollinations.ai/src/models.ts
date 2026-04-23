@@ -89,6 +89,13 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
+    // Azure GPT Image 2 - next-gen image generation
+    "gpt-image-2": {
+        type: "azure-gpt-image-2",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Veo 3.1 Fast - Video generation via Vertex AI
     veo: {
         type: "vertex-ai-video",

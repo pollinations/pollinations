@@ -13,13 +13,26 @@ type TinybirdGenerationEvent = Omit<
     | "updatedAt"
 >;
 
+type UsageRow = Record<string, unknown>;
+
+type PipeCall = {
+    url: string;
+    query: Record<string, string>;
+};
+
 export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
+    dailyResponse: UsageRow[];
+    usageResponse: UsageRow[];
+    pipeCalls: PipeCall[];
 };
 
 export function createMockTinybird(): MockAPI<MockTinybirdState> {
     const state: MockTinybirdState = {
         events: [],
+        dailyResponse: [],
+        usageResponse: [],
+        pipeCalls: [],
     };
 
     const tinybirdAPI = new Hono()
@@ -28,10 +41,8 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             const body = await c.req.text();
             const rows = parseNdjson(body);
 
-            // Only track generation_event in state (other event types are accepted silently)
             if (eventName === "generation_event") {
                 const events: TinybirdGenerationEvent[] = rows;
-                // simulate failure if id starts with "simulate_error"
                 if (
                     events.find((event) =>
                         event.id.includes("simulate_tinybird_error"),
@@ -45,69 +56,17 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             }
 
             return c.json(
-                {
-                    successful_rows: rows.length,
-                    quarantined_rows: 0,
-                },
+                { successful_rows: rows.length, quarantined_rows: 0 },
                 200,
             );
         })
-        .get("/v0/pipes/user_usage.json", async (c) => {
-            const userId = c.req.query("user_id") || "";
-            const limit = Number(c.req.query("limit") || "100");
-            const before = c.req.query("before");
-            const beforeEventId = c.req.query("before_event_id");
-            const since = c.req.query("since");
-            const until = c.req.query("until");
-
-            const rows = state.events
-                .filter((event) => isBilledUsage(event, userId))
-                .filter((event) => isWithinRange(event, since, until))
-                .sort(compareEventsNewestFirst)
-                .filter((event) => isBeforeCursor(event, before, beforeEventId))
-                .slice(0, limit)
-                .map((event) => ({
-                    timestamp: formatTimestamp(event.startTime),
-                    cursor_event_id: event.id,
-                    type: event.eventType,
-                    model: event.modelUsed ?? null,
-                    api_key: event.apiKeyName ?? null,
-                    api_key_type: event.apiKeyType ?? null,
-                    meter_source: getMeterSource(event.selectedMeterSlug),
-                    input_text_tokens: event.tokenCountPromptText ?? 0,
-                    input_cached_tokens: event.tokenCountPromptCached ?? 0,
-                    input_audio_tokens: event.tokenCountPromptAudio ?? 0,
-                    input_image_tokens: event.tokenCountPromptImage ?? 0,
-                    output_text_tokens: event.tokenCountCompletionText ?? 0,
-                    output_reasoning_tokens:
-                        event.tokenCountCompletionReasoning ?? 0,
-                    output_audio_tokens: event.tokenCountCompletionAudio ?? 0,
-                    output_image_tokens: event.tokenCountCompletionImage ?? 0,
-                    cost_usd: Number(event.totalPrice ?? 0),
-                    response_time_ms: event.responseTime ?? null,
-                }));
-
-            return c.json({ data: rows }, 200);
+        .get("/v0/pipes/user_usage.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.usageResponse }, 200);
         })
-        .get("/v0/pipes/user_usage_daily.json", async (c) => {
-            const rows = aggregateDailyUsage(
-                state.events,
-                c.req.query("user_id") || "",
-                c.req.query("since"),
-                c.req.query("until"),
-                false,
-            );
-            return c.json({ data: rows }, 200);
-        })
-        .get("/v0/pipes/user_usage_daily_by_api_key.json", async (c) => {
-            const rows = aggregateDailyUsage(
-                state.events,
-                c.req.query("user_id") || "",
-                c.req.query("since"),
-                c.req.query("until"),
-                true,
-            );
-            return c.json({ data: rows }, 200);
+        .get("/v0/pipes/user_usage_daily_filtered.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.dailyResponse }, 200);
         });
 
     const handlerMap = {
@@ -116,13 +75,12 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
 
     const reset = () => {
         state.events = [];
+        state.dailyResponse = [];
+        state.usageResponse = [];
+        state.pipeCalls = [];
     };
 
-    return {
-        state,
-        reset,
-        handlerMap,
-    };
+    return { state, reset, handlerMap };
 }
 
 function parseNdjson(input: string): unknown[] {
@@ -130,146 +88,4 @@ function parseNdjson(input: string): unknown[] {
         .split("\n")
         .filter((line) => line.trim().length > 0)
         .map((line) => JSON.parse(line));
-}
-
-function isBilledUsage(
-    event: TinybirdGenerationEvent,
-    userId: string,
-): boolean {
-    return event.userId === userId && Number(event.totalPrice ?? 0) > 0;
-}
-
-function parseDateTime(value?: string | Date | null): number {
-    if (!value) return Number.NaN;
-    if (value instanceof Date) return value.getTime();
-    return new Date(
-        value.includes("T") ? value : `${value.replace(" ", "T")}Z`,
-    ).getTime();
-}
-
-function isWithinRange(
-    event: TinybirdGenerationEvent,
-    since?: string | null,
-    until?: string | null,
-): boolean {
-    const eventTime = parseDateTime(event.startTime);
-    if (since && eventTime < parseDateTime(since)) {
-        return false;
-    }
-    if (until && eventTime >= parseDateTime(until)) {
-        return false;
-    }
-    return true;
-}
-
-function compareEventsNewestFirst(
-    left: TinybirdGenerationEvent,
-    right: TinybirdGenerationEvent,
-): number {
-    const timeDiff =
-        parseDateTime(right.startTime) - parseDateTime(left.startTime);
-    if (timeDiff !== 0) return timeDiff;
-    return right.id.localeCompare(left.id);
-}
-
-function isBeforeCursor(
-    event: TinybirdGenerationEvent,
-    before?: string | null,
-    beforeEventId?: string | null,
-): boolean {
-    if (!before) return true;
-
-    const eventTime = parseDateTime(event.startTime);
-    const beforeTime = parseDateTime(before);
-    if (eventTime < beforeTime) return true;
-    if (eventTime > beforeTime) return false;
-    if (!beforeEventId) return false;
-    return event.id < beforeEventId;
-}
-
-function formatTimestamp(value: string | Date): string {
-    return new Date(value).toISOString().slice(0, 19).replace("T", " ");
-}
-
-function getMeterSource(selectedMeterSlug?: string | null): string | null {
-    if (!selectedMeterSlug) return null;
-    const parts = selectedMeterSlug.split(":");
-    return parts.at(-1) || null;
-}
-
-function aggregateDailyUsage(
-    events: TinybirdGenerationEvent[],
-    userId: string,
-    since?: string | null,
-    until?: string | null,
-    byApiKey = false,
-) {
-    const buckets = new Map<
-        string,
-        {
-            date: string;
-            model: string | null;
-            meter_source: string | null;
-            requests: number;
-            cost_usd: number;
-            api_key_names: Set<string>;
-            api_key_name?: string | null;
-        }
-    >();
-
-    for (const event of events) {
-        if (
-            !isBilledUsage(event, userId) ||
-            !isWithinRange(event, since, until)
-        ) {
-            continue;
-        }
-
-        const date = new Date(event.startTime).toISOString().slice(0, 10);
-        const model = event.resolvedModelRequested ?? null;
-        const meterSource = getMeterSource(event.selectedMeterSlug);
-        const apiKeyName =
-            event.apiKeyName && event.apiKeyName !== "undefined"
-                ? event.apiKeyName
-                : null;
-        const key = byApiKey
-            ? [date, model ?? "", meterSource ?? "", apiKeyName ?? ""].join("|")
-            : [date, model ?? "", meterSource ?? ""].join("|");
-
-        const current = buckets.get(key) || {
-            date,
-            model,
-            meter_source: meterSource,
-            requests: 0,
-            cost_usd: 0,
-            api_key_names: new Set<string>(),
-            ...(byApiKey ? { api_key_name: apiKeyName } : {}),
-        };
-        current.requests += 1;
-        current.cost_usd += Number(event.totalPrice ?? 0);
-        if (apiKeyName) {
-            current.api_key_names.add(apiKeyName);
-        }
-        buckets.set(key, current);
-    }
-
-    return Array.from(buckets.values())
-        .map((value) => ({
-            date: value.date,
-            model: value.model,
-            meter_source: value.meter_source,
-            requests: value.requests,
-            cost_usd: value.cost_usd,
-            ...(byApiKey
-                ? { api_key_name: value.api_key_name ?? null }
-                : {
-                      api_key_names: Array.from(value.api_key_names).sort(),
-                  }),
-        }))
-        .sort((left, right) => {
-            if (left.date !== right.date) {
-                return right.date.localeCompare(left.date);
-            }
-            return right.requests - left.requests;
-        });
 }

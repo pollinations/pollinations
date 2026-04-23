@@ -1,5 +1,5 @@
 /* eslint-disable */
-// Runtime types generated with workerd@1.20251217.0 2025-11-01 nodejs_als,nodejs_compat
+// Runtime types generated with workerd@1.20260305.0 2025-11-01 nodejs_als,nodejs_compat
 // Begin runtime types
 /*! *****************************************************************************
 Copyright (c) Cloudflare. All rights reserved.
@@ -485,8 +485,10 @@ interface DurableObjectNamespaceNewUniqueIdOptions {
     jurisdiction?: DurableObjectJurisdiction;
 }
 type DurableObjectLocationHint = "wnam" | "enam" | "sam" | "weur" | "eeur" | "apac" | "oc" | "afr" | "me";
+type DurableObjectRoutingMode = "primary-only";
 interface DurableObjectNamespaceGetDurableObjectOptions {
     locationHint?: DurableObjectLocationHint;
+    routingMode?: DurableObjectRoutingMode;
 }
 interface DurableObjectClass<_T extends Rpc.DurableObjectBranded | undefined = undefined> {
 }
@@ -1378,6 +1380,12 @@ declare class FormData {
      *
      * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/append)
      */
+    append(name: string, value: string | Blob): void;
+    /**
+     * The **`append()`** method of the FormData interface appends a new value onto an existing key inside a `FormData` object, or adds the key if it does not already exist.
+     *
+     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/append)
+     */
     append(name: string, value: string): void;
     /**
      * The **`append()`** method of the FormData interface appends a new value onto an existing key inside a `FormData` object, or adds the key if it does not already exist.
@@ -1409,6 +1417,12 @@ declare class FormData {
      * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/has)
      */
     has(name: string): boolean;
+    /**
+     * The **`set()`** method of the FormData interface sets a new value for an existing key inside a `FormData` object, or adds the key/value if it does not already exist.
+     *
+     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/set)
+     */
+    set(name: string, value: string | Blob): void;
     /**
      * The **`set()`** method of the FormData interface sets a new value for an existing key inside a `FormData` object, or adds the key/value if it does not already exist.
      *
@@ -1735,7 +1749,7 @@ interface Request<CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>> e
      * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/signal)
      */
     signal: AbortSignal;
-    cf: Cf | undefined;
+    cf?: Cf;
     /**
      * The **`integrity`** read-only property of the Request interface contains the subresource integrity value of the request.
      *
@@ -2070,6 +2084,8 @@ interface Transformer<I = any, O = any> {
     expectedLength?: number;
 }
 interface StreamPipeOptions {
+    preventAbort?: boolean;
+    preventCancel?: boolean;
     /**
      * Pipes this readable stream to a given writable stream destination. The way in which the piping process behaves under various error conditions can be customized with a number of passed options. It returns a promise that fulfills when the piping process completes successfully, or rejects if any errors were encountered.
      *
@@ -2088,8 +2104,6 @@ interface StreamPipeOptions {
      * The signal option can be set to an AbortSignal to allow aborting an ongoing pipe operation via the corresponding AbortController. In this case, this source readable stream will be canceled, and destination aborted, unless the respective options preventCancel or preventAbort are set.
      */
     preventClose?: boolean;
-    preventAbort?: boolean;
-    preventCancel?: boolean;
     signal?: AbortSignal;
 }
 type ReadableStreamReadResult<R = any> = {
@@ -2364,13 +2378,13 @@ declare abstract class TransformStreamDefaultController<O = any> {
     terminate(): void;
 }
 interface ReadableWritablePair<R = any, W = any> {
+    readable: ReadableStream<R>;
     /**
      * Provides a convenient, chainable way of piping this readable stream through a transform stream (or any other { writable, readable } pair). It simply pipes the stream into the writable side of the supplied pair, and returns the readable side for further use.
      *
      * Piping a stream will lock it for the duration of the pipe, preventing any other consumer from acquiring a reader.
      */
     writable: WritableStream<W>;
-    readable: ReadableStream<R>;
 }
 /**
  * The **`WritableStream`** interface of the Streams API provides a standard abstraction for writing streaming data to a destination, known as a sink.
@@ -3300,6 +3314,185 @@ declare abstract class Performance {
     get timeOrigin(): number;
     /* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/#performancenow) */
     now(): number;
+}
+// AI Search V2 API Error Interfaces
+interface AiSearchInternalError extends Error {
+}
+interface AiSearchNotFoundError extends Error {
+}
+interface AiSearchNameNotSetError extends Error {
+}
+// Filter types (shared with AutoRAG for compatibility)
+type ComparisonFilter = {
+    key: string;
+    type: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte';
+    value: string | number | boolean;
+};
+type CompoundFilter = {
+    type: 'and' | 'or';
+    filters: ComparisonFilter[];
+};
+// AI Search V2 Request Types
+type AiSearchSearchRequest = {
+    messages: Array<{
+        role: 'system' | 'developer' | 'user' | 'assistant' | 'tool';
+        content: string | null;
+    }>;
+    ai_search_options?: {
+        retrieval?: {
+            retrieval_type?: 'vector' | 'keyword' | 'hybrid';
+            /** Match threshold (0-1, default 0.4) */
+            match_threshold?: number;
+            /** Maximum number of results (1-50, default 10) */
+            max_num_results?: number;
+            filters?: CompoundFilter | ComparisonFilter;
+            /** Context expansion (0-3, default 0) */
+            context_expansion?: number;
+            [key: string]: unknown;
+        };
+        query_rewrite?: {
+            enabled?: boolean;
+            model?: string;
+            rewrite_prompt?: string;
+            [key: string]: unknown;
+        };
+        reranking?: {
+            /** Enable reranking (default false) */
+            enabled?: boolean;
+            model?: '@cf/baai/bge-reranker-base' | '';
+            /** Match threshold (0-1, default 0.4) */
+            match_threshold?: number;
+            [key: string]: unknown;
+        };
+        [key: string]: unknown;
+    };
+};
+type AiSearchChatCompletionsRequest = {
+    messages: Array<{
+        role: 'system' | 'developer' | 'user' | 'assistant' | 'tool';
+        content: string | null;
+    }>;
+    model?: string;
+    stream?: boolean;
+    ai_search_options?: {
+        retrieval?: {
+            retrieval_type?: 'vector' | 'keyword' | 'hybrid';
+            match_threshold?: number;
+            max_num_results?: number;
+            filters?: CompoundFilter | ComparisonFilter;
+            context_expansion?: number;
+            [key: string]: unknown;
+        };
+        query_rewrite?: {
+            enabled?: boolean;
+            model?: string;
+            rewrite_prompt?: string;
+            [key: string]: unknown;
+        };
+        reranking?: {
+            enabled?: boolean;
+            model?: '@cf/baai/bge-reranker-base' | '';
+            match_threshold?: number;
+            [key: string]: unknown;
+        };
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
+};
+// AI Search V2 Response Types
+type AiSearchSearchResponse = {
+    search_query: string;
+    chunks: Array<{
+        id: string;
+        type: string;
+        /** Match score (0-1) */
+        score: number;
+        text: string;
+        item: {
+            timestamp?: number;
+            key: string;
+            metadata?: Record<string, unknown>;
+        };
+        scoring_details?: {
+            /** Keyword match score (0-1) */
+            keyword_score?: number;
+            /** Vector similarity score (0-1) */
+            vector_score?: number;
+        };
+    }>;
+};
+type AiSearchListResponse = Array<{
+    id: string;
+    internal_id?: string;
+    account_id?: string;
+    account_tag?: string;
+    /** Whether the instance is enabled (default true) */
+    enable?: boolean;
+    type?: 'r2' | 'web-crawler';
+    source?: string;
+    [key: string]: unknown;
+}>;
+type AiSearchConfig = {
+    /** Instance ID (1-32 chars, pattern: ^[a-z0-9_]+(?:-[a-z0-9_]+)*$) */
+    id: string;
+    type: 'r2' | 'web-crawler';
+    source: string;
+    source_params?: object;
+    /** Token ID (UUID format) */
+    token_id?: string;
+    ai_gateway_id?: string;
+    /** Enable query rewriting (default false) */
+    rewrite_query?: boolean;
+    /** Enable reranking (default false) */
+    reranking?: boolean;
+    embedding_model?: string;
+    ai_search_model?: string;
+};
+type AiSearchInstance = {
+    id: string;
+    enable?: boolean;
+    type?: 'r2' | 'web-crawler';
+    source?: string;
+    [key: string]: unknown;
+};
+// AI Search Instance Service - Instance-level operations
+declare abstract class AiSearchInstanceService {
+    /**
+     * Search the AI Search instance for relevant chunks.
+     * @param params Search request with messages and AI search options
+     * @returns Search response with matching chunks
+     */
+    search(params: AiSearchSearchRequest): Promise<AiSearchSearchResponse>;
+    /**
+     * Generate chat completions with AI Search context.
+     * @param params Chat completions request with optional streaming
+     * @returns Response object (if streaming) or chat completion result
+     */
+    chatCompletions(params: AiSearchChatCompletionsRequest): Promise<Response | object>;
+    /**
+     * Delete this AI Search instance.
+     */
+    delete(): Promise<void>;
+}
+// AI Search Account Service - Account-level operations
+declare abstract class AiSearchAccountService {
+    /**
+     * List all AI Search instances in the account.
+     * @returns Array of AI Search instances
+     */
+    list(): Promise<AiSearchListResponse>;
+    /**
+     * Get an AI Search instance by ID.
+     * @param name Instance ID
+     * @returns Instance service for performing operations
+     */
+    get(name: string): AiSearchInstanceService;
+    /**
+     * Create a new AI Search instance.
+     * @param config Instance configuration
+     * @returns Instance service for performing operations
+     */
+    create(config: AiSearchConfig): Promise<AiSearchInstanceService>;
 }
 type AiImageClassificationInput = {
     image: number[];
@@ -5489,7 +5682,7 @@ interface Ai_Cf_Qwen_Qwq_32B_Messages {
         };
     })[];
     /**
-     * JSON schema that should be fufilled for the response.
+     * JSON schema that should be fulfilled for the response.
      */
     guided_json?: object;
     /**
@@ -5755,7 +5948,7 @@ interface Ai_Cf_Mistralai_Mistral_Small_3_1_24B_Instruct_Messages {
         };
     })[];
     /**
-     * JSON schema that should be fufilled for the response.
+     * JSON schema that should be fulfilled for the response.
      */
     guided_json?: object;
     /**
@@ -5846,7 +6039,7 @@ interface Ai_Cf_Google_Gemma_3_12B_It_Prompt {
      */
     prompt: string;
     /**
-     * JSON schema that should be fufilled for the response.
+     * JSON schema that should be fulfilled for the response.
      */
     guided_json?: object;
     /**
@@ -6005,7 +6198,7 @@ interface Ai_Cf_Google_Gemma_3_12B_It_Messages {
         };
     })[];
     /**
-     * JSON schema that should be fufilled for the response.
+     * JSON schema that should be fulfilled for the response.
      */
     guided_json?: object;
     /**
@@ -6277,7 +6470,7 @@ interface Ai_Cf_Meta_Llama_4_Scout_17B_16E_Instruct_Messages {
     })[];
     response_format?: Ai_Cf_Meta_Llama_4_Scout_17B_16E_Instruct_JSON_Mode;
     /**
-     * JSON schema that should be fufilled for the response.
+     * JSON schema that should be fulfilled for the response.
      */
     guided_json?: object;
     /**
@@ -6507,7 +6700,7 @@ interface Ai_Cf_Meta_Llama_4_Scout_17B_16E_Instruct_Messages_Inner {
     })[];
     response_format?: Ai_Cf_Meta_Llama_4_Scout_17B_16E_Instruct_JSON_Mode;
     /**
-     * JSON schema that should be fufilled for the response.
+     * JSON schema that should be fulfilled for the response.
      */
     guided_json?: object;
     /**
@@ -7557,7 +7750,7 @@ interface Ai_Cf_Ai4Bharat_Indictrans2_En_Indic_1B_Input {
      */
     text: string | string[];
     /**
-     * Target langauge to translate to
+     * Target language to translate to
      */
     target_language: "asm_Beng" | "awa_Deva" | "ben_Beng" | "bho_Deva" | "brx_Deva" | "doi_Deva" | "eng_Latn" | "gom_Deva" | "gon_Deva" | "guj_Gujr" | "hin_Deva" | "hne_Deva" | "kan_Knda" | "kas_Arab" | "kas_Deva" | "kha_Latn" | "lus_Latn" | "mag_Deva" | "mai_Deva" | "mal_Mlym" | "mar_Deva" | "mni_Beng" | "mni_Mtei" | "npi_Deva" | "ory_Orya" | "pan_Guru" | "san_Deva" | "sat_Olck" | "snd_Arab" | "snd_Deva" | "tam_Taml" | "tel_Telu" | "urd_Arab" | "unr_Deva";
 }
@@ -8488,6 +8681,48 @@ type AiModelListType = Record<string, any>;
 declare abstract class Ai<AiModelList extends AiModelListType = AiModels> {
     aiGatewayLogId: string | null;
     gateway(gatewayId: string): AiGateway;
+    /**
+     * Access the AI Search API for managing AI-powered search instances.
+     *
+     * This is the new API that replaces AutoRAG with better namespace separation:
+     * - Account-level operations: `list()`, `create()`
+     * - Instance-level operations: `get(id).search()`, `get(id).chatCompletions()`, `get(id).delete()`
+     *
+     * @example
+     * ```typescript
+     * // List all AI Search instances
+     * const instances = await env.AI.aiSearch.list();
+     *
+     * // Search an instance
+     * const results = await env.AI.aiSearch.get('my-search').search({
+     *   messages: [{ role: 'user', content: 'What is the policy?' }],
+     *   ai_search_options: {
+     *     retrieval: { max_num_results: 10 }
+     *   }
+     * });
+     *
+     * // Generate chat completions with AI Search context
+     * const response = await env.AI.aiSearch.get('my-search').chatCompletions({
+     *   messages: [{ role: 'user', content: 'What is the policy?' }],
+     *   model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+     * });
+     * ```
+     */
+    aiSearch(): AiSearchAccountService;
+    /**
+     * @deprecated AutoRAG has been replaced by AI Search.
+     * Use `env.AI.aiSearch` instead for better API design and new features.
+     *
+     * Migration guide:
+     * - `env.AI.autorag().list()` → `env.AI.aiSearch.list()`
+     * - `env.AI.autorag('id').search({ query: '...' })` → `env.AI.aiSearch.get('id').search({ messages: [{ role: 'user', content: '...' }] })`
+     * - `env.AI.autorag('id').aiSearch(...)` → `env.AI.aiSearch.get('id').chatCompletions(...)`
+     *
+     * Note: The old API continues to work for backwards compatibility, but new projects should use AI Search.
+     *
+     * @see AiSearchAccountService
+     * @param autoragId Optional instance ID (omit for account-level operations)
+     */
     autorag(autoragId: string): AutoRAG;
     run<Name extends keyof AiModelList, Options extends AiOptions, InputOptions extends AiModelList[Name]["inputs"]>(model: Name, inputs: InputOptions, options?: Options): Promise<Options extends {
         returnRawResponse: true;
@@ -8596,23 +8831,34 @@ declare abstract class AiGateway {
     }): Promise<Response>;
     getUrl(provider?: AIGatewayProviders | string): Promise<string>; // eslint-disable-line
 }
+/**
+ * @deprecated AutoRAG has been replaced by AI Search. Use AiSearchInternalError instead.
+ * @see AiSearchInternalError
+ */
 interface AutoRAGInternalError extends Error {
 }
+/**
+ * @deprecated AutoRAG has been replaced by AI Search. Use AiSearchNotFoundError instead.
+ * @see AiSearchNotFoundError
+ */
 interface AutoRAGNotFoundError extends Error {
 }
+/**
+ * @deprecated This error type is no longer used in the AI Search API.
+ */
 interface AutoRAGUnauthorizedError extends Error {
 }
+/**
+ * @deprecated AutoRAG has been replaced by AI Search. Use AiSearchNameNotSetError instead.
+ * @see AiSearchNameNotSetError
+ */
 interface AutoRAGNameNotSetError extends Error {
 }
-type ComparisonFilter = {
-    key: string;
-    type: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte';
-    value: string | number | boolean;
-};
-type CompoundFilter = {
-    type: 'and' | 'or';
-    filters: ComparisonFilter[];
-};
+/**
+ * @deprecated AutoRAG has been replaced by AI Search.
+ * Use AiSearchSearchRequest with the new API instead.
+ * @see AiSearchSearchRequest
+ */
 type AutoRagSearchRequest = {
     query: string;
     filters?: CompoundFilter | ComparisonFilter;
@@ -8627,13 +8873,28 @@ type AutoRagSearchRequest = {
     };
     rewrite_query?: boolean;
 };
+/**
+ * @deprecated AutoRAG has been replaced by AI Search.
+ * Use AiSearchChatCompletionsRequest with the new API instead.
+ * @see AiSearchChatCompletionsRequest
+ */
 type AutoRagAiSearchRequest = AutoRagSearchRequest & {
     stream?: boolean;
     system_prompt?: string;
 };
+/**
+ * @deprecated AutoRAG has been replaced by AI Search.
+ * Use AiSearchChatCompletionsRequest with stream: true instead.
+ * @see AiSearchChatCompletionsRequest
+ */
 type AutoRagAiSearchRequestStreaming = Omit<AutoRagAiSearchRequest, 'stream'> & {
     stream: true;
 };
+/**
+ * @deprecated AutoRAG has been replaced by AI Search.
+ * Use AiSearchSearchResponse with the new API instead.
+ * @see AiSearchSearchResponse
+ */
 type AutoRagSearchResponse = {
     object: 'vector_store.search_results.page';
     search_query: string;
@@ -8650,6 +8911,11 @@ type AutoRagSearchResponse = {
     has_more: boolean;
     next_page: string | null;
 };
+/**
+ * @deprecated AutoRAG has been replaced by AI Search.
+ * Use AiSearchListResponse with the new API instead.
+ * @see AiSearchListResponse
+ */
 type AutoRagListResponse = {
     id: string;
     enable: boolean;
@@ -8659,14 +8925,51 @@ type AutoRagListResponse = {
     paused: boolean;
     status: string;
 }[];
+/**
+ * @deprecated AutoRAG has been replaced by AI Search.
+ * The new API returns different response formats for chat completions.
+ */
 type AutoRagAiSearchResponse = AutoRagSearchResponse & {
     response: string;
 };
+/**
+ * @deprecated AutoRAG has been replaced by AI Search.
+ * Use the new AI Search API instead: `env.AI.aiSearch`
+ *
+ * Migration guide:
+ * - `env.AI.autorag().list()` → `env.AI.aiSearch.list()`
+ * - `env.AI.autorag('id').search(...)` → `env.AI.aiSearch.get('id').search(...)`
+ * - `env.AI.autorag('id').aiSearch(...)` → `env.AI.aiSearch.get('id').chatCompletions(...)`
+ *
+ * @see AiSearchAccountService
+ * @see AiSearchInstanceService
+ */
 declare abstract class AutoRAG {
+    /**
+     * @deprecated Use `env.AI.aiSearch.list()` instead.
+     * @see AiSearchAccountService.list
+     */
     list(): Promise<AutoRagListResponse>;
+    /**
+     * @deprecated Use `env.AI.aiSearch.get(id).search(...)` instead.
+     * Note: The new API uses a messages array instead of a query string.
+     * @see AiSearchInstanceService.search
+     */
     search(params: AutoRagSearchRequest): Promise<AutoRagSearchResponse>;
+    /**
+     * @deprecated Use `env.AI.aiSearch.get(id).chatCompletions(...)` instead.
+     * @see AiSearchInstanceService.chatCompletions
+     */
     aiSearch(params: AutoRagAiSearchRequestStreaming): Promise<Response>;
+    /**
+     * @deprecated Use `env.AI.aiSearch.get(id).chatCompletions(...)` instead.
+     * @see AiSearchInstanceService.chatCompletions
+     */
     aiSearch(params: AutoRagAiSearchRequest): Promise<AutoRagAiSearchResponse>;
+    /**
+     * @deprecated Use `env.AI.aiSearch.get(id).chatCompletions(...)` instead.
+     * @see AiSearchInstanceService.chatCompletions
+     */
     aiSearch(params: AutoRagAiSearchRequest): Promise<AutoRagAiSearchResponse | Response>;
 }
 interface BasicImageTransformations {
@@ -9418,6 +9721,10 @@ interface D1Meta {
      */
     served_by_region?: string;
     /**
+     * The three letters airport code of the colo that executed the query.
+     */
+    served_by_colo?: string;
+    /**
      * True if-and-only-if the database instance that executed the query was the primary.
      */
     served_by_primary?: boolean;
@@ -9506,6 +9813,15 @@ declare abstract class D1PreparedStatement {
 interface Disposable {
 }
 /**
+ * The returned data after sending an email
+ */
+interface EmailSendResult {
+    /**
+     * The Email Message ID
+     */
+    messageId: string;
+}
+/**
  * An email message that can be sent from a Worker.
  */
 interface EmailMessage {
@@ -9546,19 +9862,50 @@ interface ForwardableEmailMessage extends EmailMessage {
      * @param headers A [Headers object](https://developer.mozilla.org/en-US/docs/Web/API/Headers).
      * @returns A promise that resolves when the email message is forwarded.
      */
-    forward(rcptTo: string, headers?: Headers): Promise<void>;
+    forward(rcptTo: string, headers?: Headers): Promise<EmailSendResult>;
     /**
      * Reply to the sender of this email message with a new EmailMessage object.
      * @param message The reply message.
      * @returns A promise that resolves when the email message is replied.
      */
-    reply(message: EmailMessage): Promise<void>;
+    reply(message: EmailMessage): Promise<EmailSendResult>;
+}
+/** A file attachment for an email message */
+type EmailAttachment = {
+    disposition: 'inline';
+    contentId: string;
+    filename: string;
+    type: string;
+    content: string | ArrayBuffer | ArrayBufferView;
+} | {
+    disposition: 'attachment';
+    contentId?: undefined;
+    filename: string;
+    type: string;
+    content: string | ArrayBuffer | ArrayBufferView;
+};
+/** An Email Address */
+interface EmailAddress {
+    name: string;
+    email: string;
 }
 /**
  * A binding that allows a Worker to send email messages.
  */
 interface SendEmail {
-    send(message: EmailMessage): Promise<void>;
+    send(message: EmailMessage): Promise<EmailSendResult>;
+    send(builder: {
+        from: string | EmailAddress;
+        to: string | string[];
+        subject: string;
+        replyTo?: string | EmailAddress;
+        cc?: string | string[];
+        bcc?: string | string[];
+        headers?: Record<string, string>;
+        text?: string;
+        html?: string;
+        attachments?: EmailAttachment[];
+    }): Promise<EmailSendResult>;
 }
 declare abstract class EmailEvent extends ExtendableEvent {
     readonly message: ForwardableEmailMessage;
@@ -9591,7 +9938,7 @@ interface Hyperdrive {
     /**
      * Connect directly to Hyperdrive as if it's your database, returning a TCP socket.
      *
-     * Calling this method returns an idential socket to if you call
+     * Calling this method returns an identical socket to if you call
      * `connect("host:port")` using the `host` and `port` fields from this object.
      * Pick whichever approach works better with your preferred DB client library.
      *
@@ -9704,6 +10051,83 @@ type ImageOutputOptions = {
     background?: string;
     anim?: boolean;
 };
+interface ImageMetadata {
+    id: string;
+    filename?: string;
+    uploaded?: string;
+    requireSignedURLs: boolean;
+    meta?: Record<string, unknown>;
+    variants: string[];
+    draft?: boolean;
+    creator?: string;
+}
+interface ImageUploadOptions {
+    id?: string;
+    filename?: string;
+    requireSignedURLs?: boolean;
+    metadata?: Record<string, unknown>;
+    creator?: string;
+    encoding?: 'base64';
+}
+interface ImageUpdateOptions {
+    requireSignedURLs?: boolean;
+    metadata?: Record<string, unknown>;
+    creator?: string;
+}
+interface ImageListOptions {
+    limit?: number;
+    cursor?: string;
+    sortOrder?: 'asc' | 'desc';
+    creator?: string;
+}
+interface ImageList {
+    images: ImageMetadata[];
+    cursor?: string;
+    listComplete: boolean;
+}
+interface HostedImagesBinding {
+    /**
+     * Get detailed metadata for a hosted image
+     * @param imageId The ID of the image (UUID or custom ID)
+     * @returns Image metadata, or null if not found
+     */
+    details(imageId: string): Promise<ImageMetadata | null>;
+    /**
+     * Get the raw image data for a hosted image
+     * @param imageId The ID of the image (UUID or custom ID)
+     * @returns ReadableStream of image bytes, or null if not found
+     */
+    image(imageId: string): Promise<ReadableStream<Uint8Array> | null>;
+    /**
+     * Upload a new hosted image
+     * @param image The image file to upload
+     * @param options Upload configuration
+     * @returns Metadata for the uploaded image
+     * @throws {@link ImagesError} if upload fails
+     */
+    upload(image: ReadableStream<Uint8Array> | ArrayBuffer, options?: ImageUploadOptions): Promise<ImageMetadata>;
+    /**
+     * Update hosted image metadata
+     * @param imageId The ID of the image
+     * @param options Properties to update
+     * @returns Updated image metadata
+     * @throws {@link ImagesError} if update fails
+     */
+    update(imageId: string, options: ImageUpdateOptions): Promise<ImageMetadata>;
+    /**
+     * Delete a hosted image
+     * @param imageId The ID of the image
+     * @returns True if deleted, false if not found
+     */
+    delete(imageId: string): Promise<boolean>;
+    /**
+     * List hosted images with pagination
+     * @param options List configuration
+     * @returns List of images with pagination info
+     * @throws {@link ImagesError} if list fails
+     */
+    list(options?: ImageListOptions): Promise<ImageList>;
+}
 interface ImagesBinding {
     /**
      * Get image metadata (type, width and height)
@@ -9717,6 +10141,10 @@ interface ImagesBinding {
      * @returns A transform handle
      */
     input(stream: ReadableStream<Uint8Array>, options?: ImageInputOptions): ImageTransformer;
+    /**
+     * Access hosted images CRUD operations
+     */
+    readonly hosted: HostedImagesBinding;
 }
 interface ImageTransformer {
     /**
@@ -9783,7 +10211,13 @@ interface MediaTransformer {
      * @param transform - Configuration for how the media should be transformed
      * @returns A generator for producing the transformed media output
      */
-    transform(transform: MediaTransformationInputOptions): MediaTransformationGenerator;
+    transform(transform?: MediaTransformationInputOptions): MediaTransformationGenerator;
+    /**
+     * Generates the final media output with specified options.
+     * @param output - Configuration for the output format and parameters
+     * @returns The final transformation result containing the transformed media
+     */
+    output(output?: MediaTransformationOutputOptions): MediaTransformationResult;
 }
 /**
  * Generator for producing media transformation results.
@@ -9795,7 +10229,7 @@ interface MediaTransformationGenerator {
      * @param output - Configuration for the output format and parameters
      * @returns The final transformation result containing the transformed media
      */
-    output(output: MediaTransformationOutputOptions): MediaTransformationResult;
+    output(output?: MediaTransformationOutputOptions): MediaTransformationResult;
 }
 /**
  * Result of a media transformation operation.
@@ -9804,19 +10238,19 @@ interface MediaTransformationGenerator {
 interface MediaTransformationResult {
     /**
      * Returns the transformed media as a readable stream of bytes.
-     * @returns A stream containing the transformed media data
+     * @returns A promise containing a readable stream with the transformed media
      */
-    media(): ReadableStream<Uint8Array>;
+    media(): Promise<ReadableStream<Uint8Array>>;
     /**
      * Returns the transformed media as an HTTP response object.
-     * @returns The transformed media as a Response, ready to store in cache or return to users
+     * @returns The transformed media as a Promise<Response>, ready to store in cache or return to users
      */
-    response(): Response;
+    response(): Promise<Response>;
     /**
      * Returns the MIME type of the transformed media.
-     * @returns The content type string (e.g., 'image/jpeg', 'video/mp4')
+     * @returns A promise containing the content type string (e.g., 'image/jpeg', 'video/mp4')
      */
-    contentType(): string;
+    contentType(): Promise<string>;
 }
 /**
  * Configuration options for transforming media input.
@@ -9924,7 +10358,7 @@ declare module "cloudflare:pipelines" {
         protected ctx: ExecutionContext;
         constructor(ctx: ExecutionContext, env: Env);
         /**
-         * run recieves an array of PipelineRecord which can be
+         * run receives an array of PipelineRecord which can be
          * transformed and returned to the pipeline
          * @param records Incoming records from the pipeline to be transformed
          * @param metadata Information about the specific pipeline calling the transformation entrypoint
@@ -10205,6 +10639,7 @@ declare namespace CloudflareWorkersModule {
             timeout?: WorkflowTimeoutDuration | number;
         }): Promise<WorkflowStepEvent<T>>;
     }
+    export type WorkflowInstanceStatus = 'queued' | 'running' | 'paused' | 'errored' | 'terminated' | 'complete' | 'waiting' | 'waitingForPause' | 'unknown';
     export abstract class WorkflowEntrypoint<Env = unknown, T extends Rpc.Serializable<T> | unknown = unknown> implements Rpc.WorkflowEntrypointBranded {
         [Rpc.__WORKFLOW_ENTRYPOINT_BRAND]: never;
         protected ctx: ExecutionContext;
@@ -10238,12 +10673,14 @@ type MarkdownDocument = {
     blob: Blob;
 };
 type ConversionResponse = {
+    id: string;
     name: string;
     mimeType: string;
     format: 'markdown';
     tokens: number;
     data: string;
 } | {
+    id: string;
     name: string;
     mimeType: string;
     format: 'error';
@@ -10261,6 +10698,7 @@ type ConversionOptions = {
         images?: EmbeddedImageConversionOptions & {
             convertOGImage?: boolean;
         };
+        hostname?: string;
     };
     docx?: {
         images?: EmbeddedImageConversionOptions;
@@ -10398,6 +10836,15 @@ declare namespace TailStream {
         readonly level: "debug" | "error" | "info" | "log" | "warn";
         readonly message: object;
     }
+    interface DroppedEventsDiagnostic {
+        readonly diagnosticsType: "droppedEvents";
+        readonly count: number;
+    }
+    interface StreamDiagnostic {
+        readonly type: 'streamDiagnostic';
+        // To add new diagnostic types, define a new interface and add it to this union type.
+        readonly diagnostic: DroppedEventsDiagnostic;
+    }
     // This marks the worker handler return information.
     // This is separate from Outcome because the worker invocation can live for a long time after
     // returning. For example - Websockets that return an http upgrade response but then continue
@@ -10414,7 +10861,7 @@ declare namespace TailStream {
         readonly type: "attributes";
         readonly info: Attribute[];
     }
-    type EventType = Onset | Outcome | SpanOpen | SpanClose | DiagnosticChannelEvent | Exception | Log | Return | Attributes;
+    type EventType = Onset | Outcome | SpanOpen | SpanClose | DiagnosticChannelEvent | Exception | Log | StreamDiagnostic | Return | Attributes;
     // Context in which this trace event lives.
     interface SpanContext {
         // Single id for the entire top-level invocation
@@ -10428,7 +10875,7 @@ declare namespace TailStream {
         // For Hibernate and Mark this would be the span under which they were emitted.
         // spanId is not set ONLY if:
         //  1. This is an Onset event
-        //  2. We are not inherting any SpanContext. (e.g. this is a cross-account service binding or a new top-level invocation)
+        //  2. We are not inheriting any SpanContext. (e.g. this is a cross-account service binding or a new top-level invocation)
         readonly spanId?: string;
     }
     interface TailEvent<Event extends EventType> {

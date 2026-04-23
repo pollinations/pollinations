@@ -77,6 +77,11 @@ const CreateSpeechRequestSchema = z
                 "Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.",
             example: "brazilian berimbau instrumental",
         }),
+        instruct: z.string().optional().meta({
+            description:
+                "Emotion/style instruction (qwen-tts-instruct only). e.g. 'excited and cheerful'.",
+            example: "speak softly and warmly",
+        }),
     })
     .meta({ $id: "CreateSpeechRequest" });
 
@@ -416,6 +421,118 @@ export async function generateMusic(opts: {
     });
 }
 
+const QWEN_TTS_ENDPOINT =
+    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
+
+const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
+    alloy: "Chelsie",
+    echo: "Ethan",
+    fable: "Cherry",
+    onyx: "Ryan",
+    nova: "Serena",
+    shimmer: "Jada",
+    coral: "Cherry",
+    verse: "Ethan",
+    ballad: "Ryan",
+    ash: "Ethan",
+    sage: "Serena",
+};
+
+function resolveQwenVoice(voice: string): string {
+    return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
+}
+
+export async function generateQwenTts(opts: {
+    model: string;
+    text: string;
+    voice: string;
+    instruct?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { model, text, voice, instruct, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Qwen TTS is not configured (missing DASHSCOPE_API_KEY)",
+        });
+    }
+
+    const qwenVoice = resolveQwenVoice(voice);
+
+    log.info("Qwen TTS request: model={model}, voice={voice}, chars={chars}", {
+        model,
+        voice: qwenVoice,
+        chars: text.length,
+    });
+
+    const body: Record<string, unknown> = {
+        model,
+        input: { text, voice: qwenVoice },
+        parameters: instruct ? { instruct } : {},
+    };
+
+    const response = await fetch(QWEN_TTS_ENDPOINT, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        log.warn("Qwen TTS error {status}: {body}", {
+            status: response.status,
+            body: errorText,
+        });
+        throw new UpstreamError(remapUpstreamStatus(response.status), {
+            message: errorText || getDefaultErrorMessage(response.status),
+        });
+    }
+
+    const data = (await response.json()) as {
+        output?: { audio?: { url?: string } };
+        usage?: { characters?: number };
+    };
+    const audioUrl = data.output?.audio?.url;
+    if (!audioUrl) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Qwen TTS response missing audio URL",
+        });
+    }
+
+    const audioResponse = await fetch(audioUrl);
+    if (!audioResponse.ok) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: `Failed to fetch generated audio: ${audioResponse.status}`,
+        });
+    }
+    const audioBuffer = await audioResponse.arrayBuffer();
+
+    const serviceId = model.includes("instruct")
+        ? "qwen-tts-instruct"
+        : "qwen-tts";
+    const usageHeaders = {
+        ...buildUsageHeaders(
+            serviceId,
+            createAudioTokenUsage(data.usage?.characters ?? text.length),
+        ),
+        "x-tts-voice": qwenVoice,
+    };
+
+    log.info("Qwen TTS success: {bytes} bytes, {chars} chars", {
+        bytes: audioBuffer.byteLength,
+        chars: data.usage?.characters ?? text.length,
+    });
+
+    return new Response(audioBuffer, {
+        status: 200,
+        headers: { "Content-Type": "audio/wav", ...usageHeaders },
+    });
+}
+
 export async function generateAceStepMusic(opts: {
     prompt: string;
     style?: string;
@@ -647,6 +764,27 @@ export const audioRoutes = new Hono<Env>()
             const { seed } = c.req.valid(
                 "json" as never,
             ) as CreateSpeechRequest;
+            if (
+                c.var.model.resolved === "qwen-tts" ||
+                c.var.model.resolved === "qwen-tts-instruct"
+            ) {
+                const { instruct } = c.req.valid(
+                    "json" as never,
+                ) as CreateSpeechRequest;
+                const modelId =
+                    c.var.model.resolved === "qwen-tts-instruct"
+                        ? "qwen3-tts-instruct-flash"
+                        : "qwen3-tts-flash";
+                return generateQwenTts({
+                    model: modelId,
+                    text: input,
+                    voice,
+                    instruct,
+                    apiKey: c.env.DASHSCOPE_API_KEY,
+                    log,
+                });
+            }
+
             return generateSpeech({
                 text: input,
                 voice,

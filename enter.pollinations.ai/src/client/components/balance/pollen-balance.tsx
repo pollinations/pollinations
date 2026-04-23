@@ -1,4 +1,5 @@
 import { type FC, useState } from "react";
+import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { getTierColor, getTierEmoji } from "@/tier-config.ts";
 import { Button } from "../button.tsx";
@@ -6,9 +7,6 @@ import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-
-const isFractional = (v: number) => v > 0 && v < 1;
-const formatPollen = (v: number) => v.toFixed(isFractional(v) ? 3 : 2);
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -158,52 +156,56 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <Card
-                color="amber"
-                bg="bg-gradient-to-br from-white via-amber-50/90 to-orange-50/80"
-                className="mt-4 !border-transparent shadow-[0_18px_50px_-32px_rgba(180,83,9,0.28)]"
-            >
-                <div className="space-y-4">
-                    <div className="space-y-1 text-center">
-                        <h3 className="text-lg font-semibold text-amber-950 sm:text-xl">
-                            Buy Pollen
-                        </h3>
-                        <p className="text-sm text-amber-800">
-                            Choose a pack below. 🧪 Beta bonus is already
-                            included, with larger packs getting more.
-                        </p>
-                    </div>
+            <div id="buy-pollen" className="scroll-mt-6">
+                <Card
+                    color="amber"
+                    bg="bg-gradient-to-br from-white via-amber-50/90 to-orange-50/80"
+                    className="mt-4 !border-transparent shadow-[0_18px_50px_-32px_rgba(180,83,9,0.28)]"
+                >
+                    <div className="space-y-4">
+                        <div className="space-y-1 text-center">
+                            <h3 className="text-lg font-semibold text-amber-950 sm:text-xl">
+                                Buy Pollen
+                            </h3>
+                            <p className="text-sm text-amber-800">
+                                Choose a pack below. 🧪 Beta bonus is already
+                                included, with larger packs getting more.
+                            </p>
+                        </div>
 
-                    <div
-                        id="buy-pollen"
-                        className="mx-auto grid w-full grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:w-fit sm:[grid-template-columns:repeat(3,max-content)]"
-                    >
-                        {POLLEN_PACKS.map((pack) => (
-                            <Button
-                                key={pack.amountUsd}
-                                as="a"
-                                href={`/api/stripe/checkout/${pack.amountUsd}`}
-                                color="amber"
-                                weight="light"
-                                title={`Buy $${pack.amountUsd} pollen pack`}
-                                className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:w-[132px] sm:justify-self-center sm:text-sm"
-                            >
-                                <span className="font-semibold text-amber-900">
-                                    ${pack.amountUsd}
-                                </span>
-                                <span className="mx-2 text-amber-400">/</span>
-                                <span className="font-medium text-amber-900">
-                                    🪷 {formatPollenPackValue(pack.pollenGrant)}
-                                </span>
-                            </Button>
-                        ))}
-                    </div>
+                        <div className="mx-auto grid w-full grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:w-fit sm:[grid-template-columns:repeat(3,max-content)]">
+                            {POLLEN_PACKS.map((pack) => (
+                                <Button
+                                    key={pack.amountUsd}
+                                    as="a"
+                                    href={`/api/stripe/checkout/${pack.amountUsd}`}
+                                    color="amber"
+                                    weight="light"
+                                    title={`Buy $${pack.amountUsd} pollen pack`}
+                                    className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:w-[132px] sm:justify-self-center sm:text-sm"
+                                >
+                                    <span className="font-semibold text-amber-900">
+                                        ${pack.amountUsd}
+                                    </span>
+                                    <span className="mx-2 text-amber-400">
+                                        /
+                                    </span>
+                                    <span className="font-medium text-amber-900">
+                                        🪷{" "}
+                                        {formatPollenPackValue(
+                                            pack.pollenGrant,
+                                        )}
+                                    </span>
+                                </Button>
+                            ))}
+                        </div>
 
-                    <div className="pt-2">
-                        <PaymentTrustBadge className="mt-0 pt-0" />
+                        <div className="pt-2">
+                            <PaymentTrustBadge className="mt-0 pt-0" />
+                        </div>
                     </div>
-                </div>
-            </Card>
+                </Card>
+            </div>
             <div className="mt-4 space-y-3 text-sm text-amber-900">
                 <p className="font-medium">
                     💳 Want to pay with a different method?{" "}

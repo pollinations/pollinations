@@ -1,0 +1,33 @@
+{
+  "pr_number": 10427,
+  "title": "fix: improve mobile header layout",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10427",
+  "merged_at": "2026-04-23T21:06:20Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pocket-sized polish",
+    "blurb": "We've tidied up the mobile header so the logo sits front and center, with links and profile neatly organized below. Browsing the hive from your phone just got a little cozier.",
+    "summary": "Improved the mobile header layout by centering the logo and reorganizing the navigation links for better readability.",
+    "impact": "Mobile users will experience a cleaner, more intuitive navigation menu with better spacing and a prominent logo.",
+    "keywords": [
+      "ui",
+      "mobile",
+      "frontend",
+      "layout"
+    ],
+    "visual_concept": "A smartphone or small screen being organized. Polly the bee acting as a UI designer, moving chunky pixel blocks around on a mobile display.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, carefully arranging glowing UI blocks on a giant retro smartphone screen. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-23/PR-10427.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, carefully arranging glowing UI blocks on a giant retro smartphone screen. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-23T21:07:28.049281+00:00"
+}

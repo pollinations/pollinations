@@ -46,7 +46,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
             type="button"
             className={`absolute inset-y-0 ${barClassName} cursor-default appearance-none border-0 p-0 text-center transition-all duration-500 ease-out focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/45`}
             style={{ left: `${offset}%`, width: `${percentage}%` }}
-            aria-label={title.replace("\n", ". ")}
+            aria-label={title.replace(/\n/g, ". ")}
             aria-describedby={isTooltipActive ? tooltipId : undefined}
             onBlur={onTooltipClose}
             onClick={(event) => {

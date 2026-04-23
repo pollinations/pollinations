@@ -1,0 +1,34 @@
+{
+  "pr_number": 10379,
+  "title": "feat(mcp): overhaul — dynamic registry, account tools, single-gateway cleanup (v2.1.0)",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10379",
+  "merged_at": "2026-04-23T12:19:28Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "New tools for the swarm",
+    "blurb": "Our MCP server just leveled up with dynamic model registries and account tools. Your AI agents can now access dozens of new voices and video models without breaking a sweat.",
+    "summary": "The MCP server has been upgraded to v2.1.0, introducing dynamic model registries, expanded voice and video model access, and new account management tools.",
+    "impact": "Developers building AI agents can now access 9 video models, over 35 voices, and check their Pollen balance directly through the MCP tools.",
+    "keywords": [
+      "mcp",
+      "agents",
+      "models",
+      "api",
+      "registry"
+    ],
+    "visual_concept": "Polly the bee (wearing a tiny toolbelt) and the Monitor Robot looking at a glowing, expanding list of models (dynamic registry) on a retro terminal, representing the new tools and expanded model access for AI agents.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny toolbelt, standing next to a chunky monitor-headed robot in a warm hackerspace. The robot's CRT screen displays a glowing, scrolling list of new voices and video models. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-23/PR-10379.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny toolbelt, standing next to a chunky monitor-headed robot in a warm hackerspace. The robot's CRT screen displays a glowing, scrolling list of new voices and video models. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-23T12:20:22.844612+00:00"
+}

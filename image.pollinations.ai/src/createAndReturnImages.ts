@@ -325,7 +325,7 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
 
 /**
  * Configuration for Azure GPT Image endpoints
- * All models use myceli-prod-swedencentral with a shared API key
+ * All models use myceli-prod-eastus2 with a shared API key
  */
 interface AzureGPTImageConfig {
     baseUrl: string;
@@ -337,13 +337,18 @@ const AZURE_GPTIMAGE_API_VERSION = "2025-04-01-preview";
 const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     gptimage: {
         baseUrl:
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
         modelName: "gpt-image-1-mini",
     },
     "gptimage-large": {
         baseUrl:
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
         modelName: "gpt-image-1.5",
+    },
+    "gpt-image-2": {
+        baseUrl:
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
+        modelName: "gpt-image-2",
     },
 };
 
@@ -361,11 +366,11 @@ const callAzureGPTImageWithEndpoint = async (
     userInfo: AuthResult,
     config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY;
+    const apiKey = process.env.AZURE_MYCELI_PROD_EASTUS2_API_KEY;
 
     if (!apiKey) {
         throw new Error(
-            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
+            "AZURE_MYCELI_PROD_EASTUS2_API_KEY not found in environment variables",
         );
     }
 
@@ -574,7 +579,12 @@ const callAzureGPTImageWithEndpoint = async (
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new HttpError(errorText, response.status);
+        // Azure 403 = provider blocked us (content policy, key disabled,
+        // deployment quota) — not a client auth problem. Remap to 502 so the
+        // caller sees an upstream failure instead of being told they're
+        // forbidden.
+        const status = response.status === 403 ? 502 : response.status;
+        throw new HttpError(errorText, status);
     }
 
     const data = await response.json();
@@ -704,7 +714,8 @@ const generateImage = async (
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
         case "gptimage":
-        case "gptimage-large": {
+        case "gptimage-large":
+        case "gpt-image-2": {
             const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,

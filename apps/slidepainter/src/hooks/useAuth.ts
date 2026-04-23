@@ -148,7 +148,7 @@ export function useAuth(): UseAuthReturn {
 
     const login = useCallback(() => {
         const currentUrl = window.location.href.split("#")[0];
-        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&permissions=profile,balance`;
+        const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(currentUrl)}&permissions=profile,usage`;
         window.location.href = authUrl;
     }, []);
 

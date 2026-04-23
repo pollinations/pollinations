@@ -104,7 +104,7 @@ export function UserMenu() {
                             {copy.apiKeyLabel}
                         </span>
                         <span className="font-mono text-base text-muted">
-                            {apiKey.slice(0, 4)}••••••••
+                            {apiKey ? `${apiKey.slice(0, 4)}••••••••` : "—"}
                         </span>
                     </div>
 

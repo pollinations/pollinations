@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-04-22** – **🎨 gptimage-2 is Live** OpenAI's new `gptimage-2` model is now available on the [image generation API](https://gen.pollinations.ai/image/models). Generate fresh pixels with zero price markup.
+- **2026-04-21** – **🎵 Qwen3-TTS Audio Models** The hive learns to speak Qwen. Hit the [Audio API](https://gen.pollinations.ai/audio/{text}) with the new instruct variant to control emotion and style parameters.
+- **2026-04-21** – **🧠 Claude Opus 4.7** Anthropic's heavy hitter is now wired up via Bedrock. Pass `claude-xlarge` or `claude-opus-4.7` to the [Text API](https://gen.pollinations.ai/v1/chat/completions) for state-of-the-art reasoning.
+- **2026-04-21** – **🚀 Kimi 2.6 Upgrade** The default Kimi text model just got smarter. We bumped it to v2.6 under the hood, keeping your old aliases intact.
+- **2026-04-21** – **🧪 AI Models Laboratory** A new Next.js/Three.js playground for real-time generative creation just dropped in the community showcase. [Try it](https://iamge-lab-website.vercel.app/) <!-- app -->
+- **2026-04-21** – **✍️ Scene2Text** A picture is worth a thousand tokens. Turn scenes into text with this new community-built app. [Try it](https://scene2text.static.jp/) <!-- app -->
 - **2026-04-20** – **🔐 The golden handshake** The BYOP authorization screen got a complete redesign. Upfront spending limits and a cleaner flow so you actually know what you're agreeing to when handing over your pollen.
 - **2026-04-20** – **📊 Dashboard spring cleaning** We simplified the API key filter in the [Dashboard](https://enter.pollinations.ai) and added direct key filtering to the SDK. Track your usage without fighting the UI.
 - **2026-04-20** – **🌟 Insight Engine blooms again** Insight Engine has been rewired to use the latest endpoints and is back in the community showcase. [Try it](https://erbharatmalhotra.github.io/Insight_Engine/) <!-- app -->
 - **2026-04-20** – **🔍 X-Ray vision for repos** Reporay joins the community showcase. Feed it a GitHub URL, get architectural insights and summaries back. [Try it](https://repo-ray.vercel.app) <!-- app -->
-- **2026-04-19** – **🚀 Upgraded Vision Models** MiniMax is now on version 2.7, and Qwen Vision got migrated to a new Fireworks model with a massive 262K context window. Stuff more pixels into the prompt. Check the [available models](https://gen.pollinations.ai/v1/models).
-- **2026-04-19** – **🔐 SDK 4.3.0** Added device login flow and key management CRUD operations to the [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk). Manage your account keys without leaving the terminal.
-- **2026-04-19** – **📱 PollenHours** A mobile-first AI video pipeline built for Termux on Android. Generate video directly from your pocket. [Try it](https://aghartavault-ship-it.github.io/PollenHours/) <!-- app -->
-- **2026-04-19** – **📰 Akhbaar** Converts dense daily tech report PDFs into structured JSON insights for live news feeds. [Try it](https://akhbaar.hoxlabs.com/) <!-- app -->
-- **2026-04-19** – **🎨 ManhwaGen** A community-built tool for generating Manhwa-style comic content. [Try it](https://manhwagen.vercel.app/) <!-- app -->
-- **2026-04-19** – **✍️ What If? Scenario Explorer** An interactive tool for speculative storytelling and narrative exploration. [Try it](https://whatif.pythonanywhere.com) <!-- app -->
 ---
 
 ## 🌱 Introduction

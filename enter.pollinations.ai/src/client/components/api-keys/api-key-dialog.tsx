@@ -8,7 +8,6 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
-import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -64,8 +63,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    useScrollLock(isOpen);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -159,7 +156,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 </Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-            <Dialog.Positioner className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto z-[100]">
+            <Dialog.Positioner className="fixed inset-0 z-[100] flex h-dvh touch-pan-y items-start justify-center overflow-y-auto overscroll-contain p-4 [-webkit-overflow-scrolling:touch]">
                 <Dialog.Content
                     className={cn(
                         "border-4 rounded-lg shadow-lg max-w-2xl w-full my-auto",

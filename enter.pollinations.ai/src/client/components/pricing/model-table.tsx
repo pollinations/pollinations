@@ -33,6 +33,7 @@ type UnifiedModelTableProps = {
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
     tierBalance?: number;
+    creatorBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
 };
@@ -134,6 +135,7 @@ type TabContentProps = {
     sortKey: SortKey;
     sortDir: SortDir;
     tierBalance?: number;
+    creatorBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
 };
@@ -144,6 +146,7 @@ const TabContent: FC<TabContentProps> = ({
     sortKey,
     sortDir,
     tierBalance,
+    creatorBalance,
     packBalance,
     cryptoBalance,
 }) => {
@@ -162,6 +165,7 @@ const TabContent: FC<TabContentProps> = ({
                         key={model.name}
                         model={model}
                         tierBalance={tierBalance}
+                        creatorBalance={creatorBalance}
                         packBalance={packBalance}
                         cryptoBalance={cryptoBalance}
                     />
@@ -178,6 +182,7 @@ const TabContent: FC<TabContentProps> = ({
                                 key={model.name}
                                 model={model}
                                 tierBalance={tierBalance}
+                                creatorBalance={creatorBalance}
                                 packBalance={packBalance}
                                 cryptoBalance={cryptoBalance}
                             />
@@ -193,6 +198,7 @@ const TabContent: FC<TabContentProps> = ({
                         key={model.name}
                         model={model}
                         tierBalance={tierBalance}
+                        creatorBalance={creatorBalance}
                         packBalance={packBalance}
                         cryptoBalance={cryptoBalance}
                     />
@@ -209,6 +215,7 @@ const TabContent: FC<TabContentProps> = ({
                                 key={model.name}
                                 model={model}
                                 tierBalance={tierBalance}
+                                creatorBalance={creatorBalance}
                                 packBalance={packBalance}
                                 cryptoBalance={cryptoBalance}
                             />
@@ -225,6 +232,7 @@ const TabContent: FC<TabContentProps> = ({
 type MobileModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
+    creatorBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
 };
@@ -232,6 +240,7 @@ type MobileModelRowProps = {
 const MobileModelRow: FC<MobileModelRowProps> = ({
     model,
     tierBalance,
+    creatorBalance,
     packBalance,
     cryptoBalance,
 }) => {
@@ -248,7 +257,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
     const isSignedIn = packBalance !== undefined;
     const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
+    const totalBalance = (tierBalance ?? 0) + (creatorBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 
     const perPollen = calculatePerPollen(model);
@@ -564,6 +573,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     textModels,
     audioModels,
     tierBalance,
+    creatorBalance,
     packBalance,
     cryptoBalance,
 }) => {
@@ -685,6 +695,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     sortKey={sortKey}
                     sortDir={sortDir}
                     tierBalance={tierBalance}
+                    creatorBalance={creatorBalance}
                     packBalance={packBalance}
                     cryptoBalance={cryptoBalance}
                 />

@@ -36,10 +36,10 @@ export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
-): Promise<void> {
-    if (amount <= 0) return;
+) : Promise<{ ok: boolean }> {
+    if (amount <= 0) return { ok: true };
 
-    await db.run(sql`
+    const result = await db.run(sql`
 		UPDATE ${userTable}
 		SET
 			tier_balance = CASE
@@ -64,6 +64,8 @@ export async function atomicDeductUserBalance(
 			END
 		WHERE id = ${userId}
 	`);
+
+    return { ok: (result.meta.changes ?? 0) > 0 };
 }
 
 /**
@@ -76,31 +78,33 @@ export async function atomicDeductApiKeyBalance(
     apiKeyTable: any,
     apiKeyId: string,
     amount: number,
-): Promise<void> {
-    if (amount <= 0) return;
+) : Promise<{ ok: boolean }> {
+    if (amount <= 0) return { ok: true };
 
-    await db.run(sql`
+    const result = await db.run(sql`
 		UPDATE ${apiKeyTable}
 		SET pollen_balance = pollen_balance - ${amount}
 		WHERE id = ${apiKeyId}
 		AND pollen_balance IS NOT NULL
 	`);
+
+    return { ok: (result.meta.changes ?? 0) > 0 };
 }
 
 /**
- * Atomically credits pollen to any user balance bucket.
+ * Atomically adjusts any user balance bucket by a positive or negative amount.
  *
  * Returns { ok } — false means the user row was missing (UPDATE affected 0
- * rows). `newBalance` is the post-credit value when available. Throws on D1
- * errors — the caller decides how to react.
+ * rows). `newBalance` is the post-adjustment value when available. Throws on
+ * D1 errors — the caller decides how to react.
  */
-export async function atomicCreditUserBalance(
+export async function atomicAdjustUserBalance(
     db: DrizzleD1Database,
     userId: string,
     bucket: Bucket,
     amount: number,
 ): Promise<{ ok: boolean; newBalance: number | null }> {
-    if (amount <= 0) return { ok: true, newBalance: null };
+    if (amount === 0) return { ok: true, newBalance: null };
 
     const column = BUCKET_COLUMNS[bucket];
     const rows = await db
@@ -113,6 +117,19 @@ export async function atomicCreditUserBalance(
         ok: rows.length > 0,
         newBalance: rows[0]?.newBalance ?? null,
     };
+}
+
+/**
+ * Atomically credits pollen to any user balance bucket.
+ */
+export async function atomicCreditUserBalance(
+    db: DrizzleD1Database,
+    userId: string,
+    bucket: Bucket,
+    amount: number,
+): Promise<{ ok: boolean; newBalance: number | null }> {
+    if (amount <= 0) return { ok: true, newBalance: null };
+    return atomicAdjustUserBalance(db, userId, bucket, amount);
 }
 
 /**
@@ -181,10 +198,10 @@ export async function atomicDeductPaidBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
-): Promise<void> {
-    if (amount <= 0) return;
+): Promise<{ ok: boolean }> {
+    if (amount <= 0) return { ok: true };
 
-    await db.run(sql`
+    const result = await db.run(sql`
 		UPDATE ${userTable}
 		SET
 			crypto_balance = CASE
@@ -197,4 +214,6 @@ export async function atomicDeductPaidBalance(
 			END
 		WHERE id = ${userId}
 	`);
+
+    return { ok: (result.meta.changes ?? 0) > 0 };
 }

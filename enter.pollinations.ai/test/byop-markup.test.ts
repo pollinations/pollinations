@@ -390,5 +390,23 @@ describe("BYOP markup", () => {
                 (await getUserBalances(db, payerId)).tierBalance,
             ).toBeCloseTo(2 - 1, 10);
         });
+
+        test("reverts creator credit when payer deduction fails", async () => {
+            const { db, creatorId, pkId } = await setupPayerAndCreator();
+
+            await expect(
+                handleBalanceDeduction({
+                    db,
+                    isBilledUsage: true,
+                    totalPrice: 1,
+                    userId: "missing-payer-row",
+                    apiKeyClientId: pkId,
+                }),
+            ).rejects.toThrow(/affected 0 rows/);
+
+            expect((await getUserBalances(db, creatorId)).creatorBalance).toBe(
+                0,
+            );
+        });
     });
 });

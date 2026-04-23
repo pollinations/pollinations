@@ -8,12 +8,14 @@ import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
     tierBalance?: number;
+    creatorBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
 };
 
 export const Pricing: FC<PricingProps> = ({
     tierBalance,
+    creatorBalance,
     packBalance,
     cryptoBalance,
 }) => {
@@ -67,6 +69,7 @@ export const Pricing: FC<PricingProps> = ({
                         audioModels={audioModels}
                         textModels={textModels}
                         tierBalance={tierBalance}
+                        creatorBalance={creatorBalance}
                         packBalance={packBalance}
                         cryptoBalance={cryptoBalance}
                     />
@@ -87,8 +90,12 @@ export const Pricing: FC<PricingProps> = ({
                                     first
                                 </div>
                                 <div>
-                                    2. Purchased pollen is used after tier
+                                    2. Creator earnings are used after tier
                                     grants are depleted
+                                </div>
+                                <div>
+                                    3. Purchased pollen is used after creator
+                                    earnings
                                 </div>
                                 <div className="text-purple-700 mt-2">
                                     ⚠️ <strong>Exception:</strong> 🪷 Paid Only

@@ -10,6 +10,7 @@ import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
+    creatorBalance: number;
     packBalance: number;
     cryptoBalance: number;
     tier?: string;
@@ -70,6 +71,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
+    creatorBalance,
     packBalance,
     cryptoBalance,
     tier = "spore",
@@ -85,32 +87,38 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     };
     // Clamp at 0 for display — individual buckets can go slightly negative from overage
     const displayTier = Math.max(0, tierBalance);
-    const displayPaid = Math.max(0, packBalance) + Math.max(0, cryptoBalance);
-    const totalPollen = displayTier + displayPaid;
+    const displaySpendable =
+        Math.max(0, creatorBalance) +
+        Math.max(0, packBalance) +
+        Math.max(0, cryptoBalance);
+    const totalPollen = displayTier + displaySpendable;
 
     function calculatePercentage(value: number, total: number): number {
         return total > 0 ? (value / total) * 100 : 0;
     }
 
-    const rawPaidPercentage = calculatePercentage(displayPaid, totalPollen);
+    const rawSpendablePercentage = calculatePercentage(
+        displaySpendable,
+        totalPollen,
+    );
     const gaugeHeightClass = "h-[30px] sm:h-[34px]";
     const hideTierGaugeSegment = tier === "microbe" && displayTier === 0;
 
     // Ensure both segments are always visible (min width to fit labels)
     const MIN_SEGMENT = 20;
-    let paidPercentage: number;
+    let spendablePercentage: number;
     let freePercentage: number;
     if (hideTierGaugeSegment) {
-        paidPercentage = displayPaid > 0 ? 100 : 0;
+        spendablePercentage = displaySpendable > 0 ? 100 : 0;
         freePercentage = 0;
     } else if (totalPollen > 0) {
-        paidPercentage = Math.max(
+        spendablePercentage = Math.max(
             MIN_SEGMENT,
-            Math.min(100 - MIN_SEGMENT, rawPaidPercentage),
+            Math.min(100 - MIN_SEGMENT, rawSpendablePercentage),
         );
-        freePercentage = 100 - paidPercentage;
+        freePercentage = 100 - spendablePercentage;
     } else {
-        paidPercentage = 50;
+        spendablePercentage = 50;
         freePercentage = 50;
     }
 
@@ -128,14 +136,14 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         <div
                             className={`relative ${gaugeHeightClass} bg-gray-200 rounded-full overflow-hidden border-2 border-amber-300`}
                         >
-                            {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
-                            {paidPercentage > 0 && (
+                            {/* Spendable pollen after tier (creator + pack + crypto) */}
+                            {spendablePercentage > 0 && (
                                 <PollenGaugeSegment
-                                    percentage={paidPercentage}
-                                    value={displayPaid}
+                                    percentage={spendablePercentage}
+                                    value={displaySpendable}
                                     label="🪷"
                                     color="amber"
-                                    title={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants for others`}
+                                    title={`🪷 Spendable: ${formatPollen(displaySpendable)} pollen\nIncludes creator earnings and purchased pollen\nUsed after tier grants for regular models; only purchased pollen counts for 🪷 Paid Only models`}
                                     position="left"
                                 />
                             )}
@@ -148,7 +156,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     color={tierColor}
                                     title={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
                                     position="right"
-                                    offset={paidPercentage}
+                                    offset={spendablePercentage}
                                 />
                             )}
                         </div>

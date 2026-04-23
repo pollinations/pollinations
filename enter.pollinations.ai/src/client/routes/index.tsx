@@ -46,6 +46,7 @@ export const Route = createFileRoute("/")({
             ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
+        const creatorBalance = d1BalanceResult?.creatorBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
         const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
@@ -58,6 +59,7 @@ export const Route = createFileRoute("/")({
             apiKeys,
             tierData,
             tierBalance,
+            creatorBalance,
             packBalance,
             cryptoBalance,
         };
@@ -72,6 +74,7 @@ function RouteComponent() {
         apiKeys,
         tierData,
         tierBalance,
+        creatorBalance,
         packBalance,
         cryptoBalance,
     } = Route.useLoaderData();
@@ -284,6 +287,7 @@ function RouteComponent() {
                     {activeTab === "balance" && (
                         <PollenBalance
                             tierBalance={tierBalance}
+                            creatorBalance={creatorBalance}
                             packBalance={packBalance}
                             cryptoBalance={cryptoBalance}
                             tier={tierData?.active?.tier}
@@ -312,6 +316,7 @@ function RouteComponent() {
                 />
                 <Pricing
                     tierBalance={tierBalance}
+                    creatorBalance={creatorBalance}
                     packBalance={packBalance}
                     cryptoBalance={cryptoBalance}
                 />

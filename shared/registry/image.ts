@@ -382,10 +382,10 @@ export const IMAGE_SERVICES = {
             completionImageTokens: 0.105,
         },
     },
-    "grok-video-pro": {
+    "grok-imagine-video": {
         brand: "xAI",
         provider: "xai",
-        aliases: ["grok-imagine-video"],
+        aliases: ["grok-video-pro"],
         description: "Video generation from text and image input.",
         category: "video",
         profile: "pro",

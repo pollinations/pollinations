@@ -181,8 +181,8 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // Grok Video Pro - xAI official video generation (720p)
-    "grok-video-pro": {
+    // Grok Imagine Video - xAI official video generation (720p)
+    "grok-imagine-video": {
         type: "xai-video",
         enhance: false,
         isVideo: true,

@@ -91,7 +91,7 @@ export async function createAndReturnVideo(
                 requestId,
             );
             break;
-        case "grok-video-pro":
+        case "grok-imagine-video":
             result = await callXaiVideoAPI(
                 prompt,
                 safeParams,

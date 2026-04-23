@@ -730,13 +730,15 @@ export const proxyRoutes = new Hono<Env>()
                         "Style/genre tags for music generation (acestep only)",
                     example: "brazilian berimbau instrumental",
                 }),
-                seed: z
-                    .string()
+                seed: z.coerce
+                    .number()
+                    .int()
+                    .min(-1)
+                    .max(4294967295)
                     .optional()
-                    .transform((v) => (v ? parseInt(v, 10) : undefined))
                     .meta({
                         description:
-                            "Seed for deterministic output (0-4294967295). Same seed + params = cached result. Omit for random.",
+                            "Seed for deterministic output (0-4294967295). Same seed + params = best-effort return of the same cached result. Omit for random.",
                         example: "42",
                     }),
                 key: z.string().optional().meta({
@@ -782,7 +784,7 @@ export const proxyRoutes = new Hono<Env>()
                     prompt: text,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
-                    seed,
+                    seed: seed === -1 ? undefined : seed,
                     apiKey,
                     log,
                 });
@@ -800,7 +802,7 @@ export const proxyRoutes = new Hono<Env>()
                 text,
                 voice: voice || "alloy",
                 responseFormat: response_format || "mp3",
-                seed,
+                seed: seed === -1 ? undefined : seed,
                 apiKey,
                 log,
             });

@@ -69,7 +69,7 @@ const CreateSpeechRequestSchema = z
         }),
         seed: z.number().int().min(0).max(4294967295).optional().meta({
             description:
-                "Seed for deterministic output. Same seed + params = same cached result. Omit for random.",
+                "Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.",
             example: 42,
         }),
         style: z.string().optional().meta({

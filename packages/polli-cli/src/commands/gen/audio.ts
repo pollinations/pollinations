@@ -29,7 +29,7 @@ export function createAudioCommand() {
         .option("--speed <n>", "Playback speed (0.25-4)")
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
         .option("--instrumental", "Instrumental only (elevenmusic)")
-        .option("--seed <n>", "Random seed for deterministic output")
+        .option("--seed <n>", "Seed for deterministic output")
         .option("--output <path>", "Save to file", "speech.mp3")
         .option("--play", "Play the audio after saving (platform player)")
         .action(async (textArg, opts) => {

@@ -16,7 +16,6 @@ import {
     isAlpha,
     isNewModel,
     isPaidOnly,
-    MODEL_COPY_CURSOR,
 } from "./model-info.ts";
 import { groupPriceBadges, PriceBadge } from "./price-badge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
@@ -97,12 +96,6 @@ export const ModelRow: FC<ModelRowProps> = ({
             perToken: model.perToken,
         },
         {
-            prices: [model.perCharPrice],
-            emoji: "🔊",
-            subEmojis: ["🔊"],
-            perKChar: true,
-        },
-        {
             prices: [model.perSecondPrice],
             emoji: model.type === "audio" ? "🔊" : "🎬",
             subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
@@ -175,17 +168,24 @@ export const ModelRow: FC<ModelRowProps> = ({
             {/* Model info — flexible width */}
             <div className="flex-1 min-w-0 pl-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
+                    <span className="text-base font-medium leading-none">
+                        <span>{publicModelName}</span>
+                    </span>
                     <button
                         type="button"
                         onClick={copyModelName}
                         className={cn(
-                            "inline-flex self-start shrink-0 items-center text-base font-medium leading-none text-left transition-colors",
-                            copied ? "text-gray-500" : "hover:text-gray-700",
+                            "inline-flex cursor-pointer items-center gap-1.5 self-start text-left text-xs font-medium leading-none text-gray-500 transition-colors",
+                            copied ? "text-teal-700" : "hover:text-gray-700",
                         )}
-                        aria-label={`Copy model name ${publicModelName}`}
-                        style={{ cursor: MODEL_COPY_CURSOR }}
+                        aria-label={`Copy API model name ${model.name}`}
                     >
-                        <span>{publicModelName}</span>
+                        <span>{model.name}</span>
+                        {copied && (
+                            <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+                                copied
+                            </span>
+                        )}
                     </button>
                     {(modalityIcons.length > 0 ||
                         capabilityIcons.length > 0 ||
@@ -278,10 +278,10 @@ export const ModelRow: FC<ModelRowProps> = ({
 
             {/* Input prices — fixed width */}
             <div className="w-[100px] shrink-0">
-                <div className="flex flex-col gap-1 items-center">
+                <div className="flex flex-col gap-1 items-end">
                     {inputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}-${badge.perKChar ? "kchar" : ""}`}
+                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}
@@ -290,10 +290,10 @@ export const ModelRow: FC<ModelRowProps> = ({
 
             {/* Output prices — fixed width */}
             <div className="w-[100px] shrink-0">
-                <div className="flex flex-col gap-1 items-center">
+                <div className="flex flex-col gap-1 items-end">
                     {outputPriceBadges.map((badge) => (
                         <PriceBadge
-                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}-${badge.perKChar ? "kchar" : ""}`}
+                            key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
                             {...badge}
                         />
                     ))}

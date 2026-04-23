@@ -17,6 +17,29 @@ const TOKEN_TYPE_LABELS: Record<string, string> = {
     "🔊": "audio",
 };
 
+const renderAlignedPrice = (price: string) => {
+    const numericParts = price.match(/^(\d+)(?:\.(\d+))?$/);
+    if (!numericParts) {
+        return <span className="tabular-nums">{price}</span>;
+    }
+
+    const [, integerPart, fractionalPart] = numericParts;
+
+    return (
+        <span className="inline-flex items-baseline tabular-nums">
+            <span className="inline-block min-w-[2ch] text-right md:min-w-[3ch]">
+                {integerPart}
+            </span>
+            {fractionalPart !== undefined && (
+                <>
+                    <span>.</span>
+                    <span>{fractionalPart}</span>
+                </>
+            )}
+        </span>
+    );
+};
+
 export type PriceBadgeConfig = {
     prices: (string | undefined)[];
     emoji: string;
@@ -24,7 +47,6 @@ export type PriceBadgeConfig = {
     perImage?: boolean;
     perToken?: boolean;
     perSecond?: boolean;
-    perKChar?: boolean;
     color?: keyof typeof priceBadgeColors;
     className?: string;
 };
@@ -35,7 +57,9 @@ export const groupPriceBadges = (
     const grouped = new Map<string, PriceBadgeConfig>();
 
     for (const badge of badges) {
-        const validPrices = badge.prices.filter((p) => p && p !== "—");
+        const validPrices = badge.prices.filter((p): p is string =>
+            Boolean(p && p !== "—"),
+        );
         if (validPrices.length === 0) continue;
 
         const key = [
@@ -43,7 +67,6 @@ export const groupPriceBadges = (
             badge.perImage ? "img" : "",
             badge.perToken ? "token" : "",
             badge.perSecond ? "sec" : "",
-            badge.perKChar ? "kchar" : "",
             badge.color ?? "",
             badge.className ?? "",
         ].join("|");
@@ -76,11 +99,12 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
     perImage,
     perToken,
     perSecond,
-    perKChar,
     color = "gray",
     className,
 }) => {
-    const validPrices = prices.filter((p) => p && p !== "—");
+    const validPrices = prices.filter((p): p is string =>
+        Boolean(p && p !== "—"),
+    );
     if (validPrices.length === 0) return null;
     const tokenTypes = [
         ...new Set(
@@ -99,28 +123,26 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({
         ? " /sec"
         : perImage
           ? " /img"
-          : perKChar
-            ? " /1K chars"
-            : perToken
-              ? " /M"
-              : "";
+          : perToken
+            ? " /M"
+            : "";
 
     const badge = (
         <span
             className={cn(
-                "inline-flex items-center gap-1.5 px-2 py-0.5 text-xs whitespace-nowrap",
+                "inline-flex items-center gap-px px-2 py-0.5 text-xs whitespace-nowrap",
                 priceBadgeColors[color],
                 className,
             )}
         >
-            <span className="inline-flex items-center gap-0.5">
+            <span className="inline-flex min-w-[1.65rem] items-center justify-end gap-0.5">
                 {(subEmojis.length > 0 ? subEmojis : [emoji]).map((item) => (
                     <span key={item}>{item}</span>
                 ))}
             </span>
-            <span>
-                {validPrices[0]}
-                {suffix}
+            <span className="inline-flex items-baseline">
+                {renderAlignedPrice(validPrices[0])}
+                <span>{suffix}</span>
             </span>
         </span>
     );

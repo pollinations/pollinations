@@ -153,11 +153,8 @@ export const Pricing: FC<PricingProps> = ({
                                 </div>
                                 <div>
                                     <strong>/sec</strong> = per second of
-                                    video/audio
-                                </div>
-                                <div>
-                                    <strong>/1K chars</strong> = per 1000
-                                    characters
+                                    video/audio; TTS is estimated from text
+                                    length
                                 </div>
                             </div>
                         </Card>

@@ -7,11 +7,7 @@ import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 
-import {
-    calculateForBalance,
-    calculatePerPollen,
-    TOP_UP_TOOLTIP,
-} from "./calculations.ts";
+import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
     getModelCapabilityIcons,
@@ -21,7 +17,6 @@ import {
     isNewModel,
     isPaidOnly,
     isPersona,
-    MODEL_COPY_CURSOR,
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
 import {
@@ -264,7 +259,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
     const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
-        // Copy the registry key, not the display name — see model-row.tsx.
         await navigator.clipboard.writeText(model.name);
         setCopied(true);
         setTimeout(() => setCopied(false), 900);
@@ -295,10 +289,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     onClick={() => setExpanded(!expanded)}
                 />
                 <div className="relative z-10 pointer-events-none flex items-start justify-between gap-2 p-4">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
                         <svg
                             className={cn(
-                                "w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
+                                "mt-1 w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
                                 expanded && "rotate-180",
                             )}
                             fill="none"
@@ -314,52 +308,63 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 d="M19 9l-7 7-7-7"
                             />
                         </svg>
-                        <button
-                            type="button"
-                            onClick={copyModelName}
-                            className={cn(
-                                "pointer-events-auto inline-flex shrink-0 items-center gap-2 text-sm font-medium transition-colors",
-                                copied
-                                    ? "text-gray-500"
-                                    : "hover:text-gray-700",
-                            )}
-                            aria-label={`Copy model name ${publicModelName}`}
-                            style={{ cursor: MODEL_COPY_CURSOR }}
-                        >
-                            {brandLogoPath && (
-                                <span
-                                    aria-hidden="true"
-                                    className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
-                                    style={{
-                                        maskImage: `url(${brandLogoPath})`,
-                                        WebkitMaskImage: `url(${brandLogoPath})`,
-                                        maskRepeat: "no-repeat",
-                                        WebkitMaskRepeat: "no-repeat",
-                                        maskPosition: "center",
-                                        WebkitMaskPosition: "center",
-                                        maskSize: "contain",
-                                        WebkitMaskSize: "contain",
-                                    }}
-                                />
-                            )}
-                            <span>{publicModelName}</span>
-                        </button>
-                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 content-center">
-                            {showNew && (
-                                <Badge color="green" size="sm">
-                                    NEW
-                                </Badge>
-                            )}
-                            {showAlpha && (
-                                <Badge color="orange" size="sm">
-                                    ALPHA
-                                </Badge>
-                            )}
-                            {showPaidOnly && (
-                                <Badge color="purple" size="sm">
-                                    PAID
-                                </Badge>
-                            )}
+                        <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                                <span className="inline-flex shrink-0 items-center gap-2 text-sm font-medium">
+                                    {brandLogoPath && (
+                                        <span
+                                            aria-hidden="true"
+                                            className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
+                                            style={{
+                                                maskImage: `url(${brandLogoPath})`,
+                                                WebkitMaskImage: `url(${brandLogoPath})`,
+                                                maskRepeat: "no-repeat",
+                                                WebkitMaskRepeat: "no-repeat",
+                                                maskPosition: "center",
+                                                WebkitMaskPosition: "center",
+                                                maskSize: "contain",
+                                                WebkitMaskSize: "contain",
+                                            }}
+                                        />
+                                    )}
+                                    <span>{publicModelName}</span>
+                                </span>
+                                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 content-center">
+                                    {showNew && (
+                                        <Badge color="green" size="sm">
+                                            NEW
+                                        </Badge>
+                                    )}
+                                    {showAlpha && (
+                                        <Badge color="orange" size="sm">
+                                            ALPHA
+                                        </Badge>
+                                    )}
+                                    {showPaidOnly && (
+                                        <Badge color="purple" size="sm">
+                                            PAID
+                                        </Badge>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={copyModelName}
+                                className={cn(
+                                    "pointer-events-auto mt-1 inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium leading-none text-gray-500 transition-colors",
+                                    copied
+                                        ? "text-teal-700"
+                                        : "hover:text-gray-700",
+                                )}
+                                aria-label={`Copy API model name ${model.name}`}
+                            >
+                                <span>{model.name}</span>
+                                {copied && (
+                                    <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+                                        copied
+                                    </span>
+                                )}
+                            </button>
                         </div>
                     </div>
                     <span
@@ -374,57 +379,29 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
             {/* Expanded: capabilities + full pricing */}
             {expanded && (
-                <div className="px-4 pb-4 pt-0 space-y-2">
-                    {balanceRequests !== null && (
-                        <div className="text-xs text-teal-700">
-                            {isDisabled
-                                ? TOP_UP_TOOLTIP
-                                : `≈ ${balanceRequests} with current balance`}
-                        </div>
+                <div
+                    className={cn(
+                        "px-4 pb-4 pt-0 space-y-2",
+                        brandLogoPath ? "pl-[4.4rem]" : "pl-10",
                     )}
+                >
+                    <MobileMetadataBadges
+                        modalityIcons={modalityIcons}
+                        capabilityIcons={capabilityIcons}
+                    />
 
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1 space-y-2">
-                            <MobilePriceGroup
-                                label="In"
-                                model={model}
-                                direction="input"
-                            />
+                    <div className="min-w-0 space-y-2">
+                        <MobilePriceGroup
+                            label="In"
+                            model={model}
+                            direction="input"
+                        />
 
-                            <MobilePriceGroup
-                                label="Out"
-                                model={model}
-                                direction="output"
-                            />
-                        </div>
-
-                        {(modalityIcons.length > 0 ||
-                            capabilityIcons.length > 0) && (
-                            <div className="flex shrink-0 flex-col items-end gap-1">
-                                {modalityIcons.length > 0 && (
-                                    <Badge
-                                        color="gray"
-                                        size="sm"
-                                        className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
-                                    >
-                                        {modalityIcons.map((emoji) => (
-                                            <span key={emoji}>{emoji}</span>
-                                        ))}
-                                    </Badge>
-                                )}
-                                {capabilityIcons.length > 0 && (
-                                    <Badge
-                                        color="gray"
-                                        size="sm"
-                                        className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
-                                    >
-                                        {capabilityIcons.map((emoji) => (
-                                            <span key={emoji}>{emoji}</span>
-                                        ))}
-                                    </Badge>
-                                )}
-                            </div>
-                        )}
+                        <MobilePriceGroup
+                            label="Out"
+                            model={model}
+                            direction="output"
+                        />
                     </div>
                 </div>
             )}
@@ -487,12 +464,6 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       perToken: model.perToken,
                   },
                   {
-                      prices: [model.perCharPrice],
-                      emoji: "🔊",
-                      subEmojis: ["🔊"],
-                      perKChar: true,
-                  },
-                  {
                       prices: [model.perSecondPrice],
                       emoji: model.type === "audio" ? "🔊" : "🎬",
                       subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
@@ -528,18 +499,59 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     if (badges.length === 0) return null;
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wide shrink-0 w-7">
                 {label}
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
                 {badges.map((badge) => (
                     <PriceBadge
-                        key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}-${badge.perKChar ? "kchar" : ""}`}
+                        key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
                         {...badge}
                     />
                 ))}
             </div>
+        </div>
+    );
+};
+
+type MobileMetadataBadgesProps = {
+    modalityIcons: string[];
+    capabilityIcons: string[];
+};
+
+const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
+    modalityIcons,
+    capabilityIcons,
+}) => {
+    if (modalityIcons.length === 0 && capabilityIcons.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+            {modalityIcons.length > 0 && (
+                <Badge
+                    color="gray"
+                    size="sm"
+                    className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
+                >
+                    {modalityIcons.map((emoji) => (
+                        <span key={emoji}>{emoji}</span>
+                    ))}
+                </Badge>
+            )}
+            {capabilityIcons.length > 0 && (
+                <Badge
+                    color="gray"
+                    size="sm"
+                    className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
+                >
+                    {capabilityIcons.map((emoji) => (
+                        <span key={emoji}>{emoji}</span>
+                    ))}
+                </Badge>
+            )}
         </div>
     );
 };

@@ -18,6 +18,17 @@ import {
 import type { ModelPrice } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
+// Display-only conversion for char-billed TTS. Billing remains character-based
+// in the registry; the pricing UI shows an estimated audio-second equivalent.
+const ESTIMATED_TTS_CHARS_PER_SECOND = 15;
+
+const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
+    const pricePerSecond = pricePerChar * ESTIMATED_TTS_CHARS_PER_SECOND;
+    return pricePerSecond < 0.001
+        ? pricePerSecond.toFixed(5)
+        : pricePerSecond.toFixed(4);
+};
+
 export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];
 
@@ -162,14 +173,14 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                 ),
             });
         } else {
-            // Text-to-speech (ElevenLabs TTS) — billed per character
+            // Text-to-speech is billed per character, shown as estimated output seconds.
             prices.push({
                 name: serviceName,
                 type: serviceConfig.category,
                 perToken: false,
-                perCharPrice: formatPrice(
+                perSecondPrice: formatPrice(
                     latestPrice.completionAudioTokens,
-                    (v: number) => (v * 1000).toFixed(2),
+                    formatEstimatedTtsPricePerSecond,
                 ),
             });
         }

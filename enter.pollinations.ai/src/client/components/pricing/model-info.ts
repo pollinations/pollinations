@@ -8,9 +8,6 @@ import {
 } from "@shared/registry/registry.ts";
 import type { Modalities } from "./types.ts";
 
-export const MODEL_COPY_CURSOR =
-    'url(\'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none"%3E%3Crect x="5" y="5" width="8" height="8" rx="0.75" stroke="%23556370" stroke-width="1.5"/%3E%3Cpath d="M10 5V3.5H3.5V10H5" stroke="%23556370" stroke-width="1.5" stroke-linecap="square"/%3E%3C/svg%3E\') 2 2, pointer';
-
 const BRAND_LOGOS: Record<string, string> = {
     "ACE-Step": "ace-step",
     Alibaba: "alibaba",

@@ -1,80 +1,68 @@
-# Claude Guidelines for MCP Server Development
+# Agent Guidelines for MCP Server Development
 
-## MCP Design Principles
+## Design Principles
 
-1. **Thin Proxy Design**: The MCP server functions as a thin proxy for Pollinations services:
+1. **Thin proxy, single gateway.** All HTTP goes through `gen.pollinations.ai`. Do not add second hostnames (e.g. direct `enter.pollinations.ai` or `media.pollinations.ai`) — use the gateway's rewrites (`/account/*`, `/image/*`, `/text/*`, `/audio/*`, `/v1/*`).
+2. **No hardcoded model or voice enums.** Validate against the live registry via `utils/models.js` (5-minute cache). Tool param schemas should be `z.string()` with a "use listX for the live list" hint.
+3. **Don't transform response data.** Pass through API responses; only reshape when an MCP content-block is required (e.g. wrap binary as base64 image/audio).
+4. **Minimal tool surface.** Every tool is extra context for the LLM to reason over and a chance to pick the wrong one. Add only what's genuinely useful inside a host (Claude Desktop, Cursor, etc.).
 
-   - Minimal processing of data between client and API
-   - No transformation or normalization of responses
-   - Direct pass-through of streams when applicable
-   - No unnecessary logic to verify return types or add metadata
+## File Structure
 
-2. **API Functions**:
+```
+packages/mcp/
+  pollinations-mcp.js            # bin wrapper → calls startMcpServer()
+  src/
+    index.js                     # server bootstrap, tool registration, instructions
+    services/
+      imageService.js            # generateImage(Url|Batch), generateVideo(Url), describeImage, analyzeVideo, listImageModels
+      textService.js             # generateText, chatCompletion, webSearch, listTextModels, getPricing
+      audioService.js            # respondAudio, sayText, transcribeAudio, listAudioVoices
+      authService.js             # setApiKey, getKeyInfo, clearApiKey  (local only — no API calls)
+      accountService.js          # getBalance, getUsage                (via /account/*)
+    utils/
+      authUtils.js               # in-memory key store, header/query builders
+      coreUtils.js               # fetch wrappers, URL builders, chatWithMedia helper, error mapping
+      models.js                  # registry fetchers + validators (cached 5 min)
+```
 
-   - `generateImageUrl`: Returns a URL to the generated image
-   - `generateImage`: Returns the actual image data as base64-encoded string
-   - `generateAudio`: Returns audio data as base64-encoded string
-   - `listModels`: Returns available models for image or text generation
+## Stdio Discipline
 
-3. **Dependencies**:
-   - `@modelcontextprotocol/sdk`: Core MCP SDK (version 1.7.0+)
-   - `play-sound`: For audio playback functionality
-   - `node-fetch`: For making HTTP requests
+The MCP server speaks JSON-RPC over stdio. `console.log` corrupts the protocol.
 
-## MCP Server Implementation Notes
+- **Never** use `console.log` in any module imported by `src/index.js`.
+- Use `console.error` sparingly for diagnostics (goes to stderr, safe).
+- Test scripts run standalone — `console.log` is fine there.
 
-### Important Considerations
+## Adding a Tool
 
-1. **Stdio Communication**: The MCP server communicates with Claude Desktop via stdio. This means:
+1. Add the handler to the relevant service file (or create a new one for a new domain).
+2. Export a `[name, description, zodShape, handler]` entry in a tool array.
+3. Import the array into `src/index.js` and spread it into `allTools`.
+4. Update the `SERVER_INSTRUCTIONS` blurb with a one-line entry.
+5. Update `README.md`'s tool table.
 
-   - Never use `console.log()` in any code that's imported by the MCP server, as it will interfere with the JSON communication protocol
-   - Always use `console.error()` for debugging, but be aware that excessive logging can still cause issues
-   - When testing outside of Claude, you can use `console.log()` freely
+## Validation Pattern
 
-2. **Response Format**:
+```js
+import { validateImageModel } from "../utils/models.js";
 
-   - All tool responses to Claude must be properly formatted JSON
-   - For text responses, wrap them in a JSON structure and use `JSON.stringify()` before returning
-   - Follow the pattern used by existing functions like `generateImageUrl` and `listModels`
+const result = await validateImageModel(model);
+if (!result.valid) {
+    throw new Error(
+        `${result.error} Did you mean: ${result.suggestions.join(", ")}?`,
+    );
+}
+```
 
-3. **Audio Implementation**:
+Cache is shared across all tool calls within a process — don't roll your own fetcher for model lists.
 
-   - Audio is generated via the `gen.pollinations.ai` API
-   - The MCP server plays audio locally on the system rather than trying to return audio data to Claude
-   - The `play-sound` package is used for local audio playback
+## Media-Chat Helper
 
-4. **Thin Proxy Design**:
+`describeImage`, `analyzeVideo`, `transcribeAudio` all call `/v1/chat/completions` with a single media block. Use `chatWithMedia({ model, prompt, mediaType, mediaUrl })` from `coreUtils.js` — do not re-inline the fetch+parse boilerplate.
 
-   - The Pollinations API client should function as a thin proxy
-   - Avoid transforming or processing stream data
-   - Don't add unnecessary metadata or normalizations
-   - Keep the code simple and avoid unnecessary operations
+## Testing
 
-5. **Testing**:
-   - Test MCP functions independently using the test-mcp-client.js script
-
-## Key Components
-
-- `pollinations-api-client.js`: Core API client with functions for image/audio generation and model listing
-- `pollinations-mcp-server.js`: MCP server implementation that handles tool requests
-- `test-mcp-client.js`: Test script for verifying functionality
-
-## Development Guidelines
-
-1. **Testing**:
-
-   - Test with real production code, not mocks
-   - Use the test-mcp-client.js script for independent testing
-   - Always restart Claude Desktop after making changes
-
-2. **Code Style**:
-
-   - Follow the thin proxy principle
-   - Minimize data transformation
-   - Keep functions simple and focused
-   - Use proper error handling
-
-3. **Communication**:
-   - Never use console.log() in MCP server code
-   - Use console.error() sparingly for debugging
-   - Ensure all responses are properly formatted JSON
+- `npm run test` — `test-mcp-client.js` runs the server end-to-end over stdio.
+- `npm run test:integration` — vitest integration suite.
+- Restart Claude Desktop after any change — it caches the running MCP process.

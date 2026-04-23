@@ -1,15 +1,21 @@
-# pollinations.ai MCP Server v2.0
+# pollinations.ai MCP Server v2.1
 
-A Model Context Protocol (MCP) server for pollinations.ai that enables AI assistants to generate images, videos, text, and audio.
+A Model Context Protocol (MCP) server for pollinations.ai that enables AI assistants to generate images, videos, text, and audio — plus check account balance and usage.
 
-## What's New in v2.0
+## What's New in v2.1
+
+- **Fully dynamic registry**: Image, video, text, and audio models/voices all validated against the live `/models` endpoints (no hardcoded enums). Video models expanded from 3 → 9 (veo, seedance, seedance-pro, wan, wan-fast, grok-video-pro, ltx-2, p-video, nova-reel). Voices expanded from 13 → 35+.
+- **Account tools**: New `getBalance` and `getUsage` tools — the LLM can check remaining Pollen and pull per-request or daily usage summaries.
+- **5-minute registry cache**: Model lookups cached per-process so validation doesn't hit the network on every tool call.
+- **Single-layer gateway**: All calls (generation + account) go through `gen.pollinations.ai`.
+
+## What's in v2.0
 
 - **New API endpoint**: Uses `gen.pollinations.ai` - the unified pollinations.ai gateway
 - **Authentication**: API key system (pk*/sk* keys) — get keys via dashboard, BYOP, or OAuth 2.1
-- **Video generation**: New `generateVideo` tool with veo, seedance, seedance-pro
+- **Video generation**: `generateVideo` tool
 - **Chat completions**: OpenAI-compatible `chatCompletion` tool with function calling
-- **Dynamic models**: Models fetched from API - always up to date, no hardcoding!
-- **SDK upgrade**: Updated to MCP SDK 1.25.1 with latest protocol support
+- **SDK**: MCP SDK 1.25.1
 
 ## Quick Start
 
@@ -67,7 +73,7 @@ npx @pollinations_ai/mcp
 
 **Video parameters:**
 
-- `model`: veo (text-to-video), seedance, seedance-pro (image-to-video)
+- `model`: veo, seedance, seedance-pro, wan, wan-fast, grok-video-pro, ltx-2, p-video, nova-reel (validated live against the registry — call `listImageModels` for the current set)
 - `duration`: Video length in seconds
 - `aspectRatio`: 16:9, 9:16, etc.
 - `audio`: Enable audio (veo only)
@@ -97,17 +103,24 @@ npx @pollinations_ai/mcp
 | `sayText`         | Text-to-speech (verbatim) |
 | `listAudioVoices` | List available voices     |
 
-**Voices:** alloy, echo, fable, onyx, nova, shimmer, coral, verse, ballad, ash, sage, amuch, dan
+**Voices:** 35+ voices across providers (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, matilda, charlotte, …). Call `listAudioVoices` for the live list — voices are validated against the registry, not a hardcoded enum.
 
 **Formats:** mp3, wav, flac, opus, pcm16
 
 ### Authentication
 
-| Tool          | Description              |
-| ------------- | ------------------------ |
-| `setApiKey`   | Set API key for requests |
-| `getKeyInfo`  | Check current key status |
-| `clearApiKey` | Remove stored key        |
+| Tool          | Description                             |
+| ------------- | --------------------------------------- |
+| `setApiKey`   | Set API key for requests                |
+| `getKeyInfo`  | Check stored key type/prefix (local)    |
+| `clearApiKey` | Remove stored key                       |
+
+### Account
+
+| Tool         | Description                                                                    |
+| ------------ | ------------------------------------------------------------------------------ |
+| `getBalance` | Remaining Pollen for the authenticated key (requires `account:usage`)          |
+| `getUsage`   | Per-request history, or daily aggregate when `daily: true` (`account:usage`)   |
 
 ## Claude Desktop Integration
 

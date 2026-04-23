@@ -9,6 +9,7 @@ import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import player from "play-sound";
+import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
 import { authTools } from "./services/authService.js";
 // Import tools from services
@@ -16,12 +17,18 @@ import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
 
 // Combine all tools
-const allTools = [...imageTools, ...textTools, ...audioTools, ...authTools];
+const allTools = [
+    ...imageTools,
+    ...textTools,
+    ...audioTools,
+    ...authTools,
+    ...accountTools,
+];
 
 /**
  * Server instructions shown to MCP clients
  */
-const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.0
+const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.1
 
 ## Authentication
 Set your API key first using the setApiKey tool:
@@ -57,8 +64,12 @@ Get your API key at: https://enter.pollinations.ai
 
 ### Authentication
 - **setApiKey** - Set your API key
-- **getKeyInfo** - Check current key status
+- **getKeyInfo** - Check current key status (local)
 - **clearApiKey** - Remove stored key
+
+### Account
+- **getBalance** - Remaining Pollen for the authenticated key (requires account:usage)
+- **getUsage** - Recent usage history; pass daily=true for daily aggregated summary
 
 ## API Endpoint
 All requests go through: https://gen.pollinations.ai
@@ -88,7 +99,7 @@ export async function startMcpServer() {
         const server = new McpServer(
             {
                 name: "pollinations-mcp",
-                version: "2.0.0",
+                version: "2.1.0",
                 instructions: SERVER_INSTRUCTIONS,
             },
             {
@@ -149,7 +160,7 @@ export async function startMcpServer() {
         const transport = new StdioServerTransport();
         await server.connect(transport);
 
-        console.error("Pollinations MCP Server v2.0.0 running on stdio");
+        console.error("Pollinations MCP Server v2.1.0 running on stdio");
         console.error("API: https://gen.pollinations.ai");
     } catch (error) {
         console.error(`Failed to start MCP server: ${error.message}`);

@@ -1,16 +1,21 @@
 import { z } from "zod";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import {
-    API_BASE_URL,
     arrayBufferToBase64,
     buildShareableUrl,
     buildUrl,
+    chatWithMedia,
     createImageContent,
     createMCPResponse,
     createTextContent,
     fetchBinaryWithAuth,
 } from "../utils/coreUtils.js";
-import { getImageModels, validateImageModel } from "../utils/models.js";
+import {
+    getImageModels,
+    getVideoModels,
+    validateImageModel,
+    validateVideoModel,
+} from "../utils/models.js";
 
 function buildQueryParams(params) {
     const result = {};
@@ -339,13 +344,11 @@ async function generateVideo(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    const videoModels = ["veo", "seedance", "seedance-pro"];
-    if (!videoModels.includes(model)) {
+    const validation = await validateVideoModel(model);
+    if (!validation.valid) {
         throw new Error(
-            `Invalid video model "${model}". Available video models: ${videoModels.join(", ")}\n` +
-                `- veo: text-to-video, 4/6/8 seconds, supports audio\n` +
-                `- seedance: text/image-to-video, 2-10 seconds\n` +
-                `- seedance-pro: text/image-to-video, 2-10 seconds, better quality`,
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available video models.`,
         );
     }
 
@@ -439,10 +442,11 @@ async function generateVideoUrl(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    const videoModels = ["veo", "seedance", "seedance-pro"];
-    if (!videoModels.includes(model)) {
+    const validation = await validateVideoModel(model);
+    if (!validation.valid) {
         throw new Error(
-            `Invalid video model "${model}". Available video models: ${videoModels.join(", ")}`,
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available video models.`,
         );
     }
 
@@ -530,55 +534,20 @@ async function describeImage(params) {
         throw new Error("imageUrl is required and must be a string");
     }
 
-    const requestBody = {
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: prompt,
-                    },
-                    {
-                        type: "image_url",
-                        image_url: {
-                            url: imageUrl,
-                        },
-                    },
-                ],
-            },
-        ],
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
+        const { content, model: respondedModel } = await chatWithMedia({
+            model,
+            prompt,
+            mediaType: "image_url",
+            mediaUrl: imageUrl,
         });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(
-                `Failed to analyze image (${response.status}): ${errorText}`,
-            );
-        }
-
-        const result = await response.json();
-        const description = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([
             createTextContent(
                 {
-                    description,
+                    description: content,
                     imageUrl,
-                    model: result.model || model,
+                    model: respondedModel,
                     prompt,
                 },
                 true,
@@ -603,55 +572,20 @@ async function analyzeVideo(params) {
         throw new Error("videoUrl is required and must be a string");
     }
 
-    const requestBody = {
-        model,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: prompt,
-                    },
-                    {
-                        type: "video_url",
-                        video_url: {
-                            url: videoUrl,
-                        },
-                    },
-                ],
-            },
-        ],
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestBody),
+        const { content, model: respondedModel } = await chatWithMedia({
+            model,
+            prompt,
+            mediaType: "video_url",
+            mediaUrl: videoUrl,
         });
-
-        if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => "Unknown error");
-            throw new Error(
-                `Failed to analyze video (${response.status}): ${errorText}`,
-            );
-        }
-
-        const result = await response.json();
-        const analysis = result.choices?.[0]?.message?.content || "";
 
         return createMCPResponse([
             createTextContent(
                 {
-                    analysis,
+                    analysis: content,
                     videoUrl,
-                    model: result.model || model,
+                    model: respondedModel,
                     prompt,
                 },
                 true,
@@ -665,15 +599,15 @@ async function analyzeVideo(params) {
 
 async function listImageModels(_params) {
     try {
-        const models = await getImageModels();
+        const [models, videoModels] = await Promise.all([
+            getImageModels(),
+            getVideoModels(),
+        ]);
 
         const imageOnlyModels = models.filter(
             (m) =>
                 m.output_modalities?.includes("image") &&
                 !m.output_modalities?.includes("video"),
-        );
-        const videoModels = models.filter((m) =>
-            m.output_modalities?.includes("video"),
         );
         const imageToImageModels = models.filter((m) =>
             m.input_modalities?.includes("image"),
@@ -823,13 +757,12 @@ const videoParamsSchema = {
         .string()
         .describe("Text description of the video to generate (required)"),
     model: z
-        .enum(["veo", "seedance", "seedance-pro"])
+        .string()
         .optional()
         .describe(
-            "Video model (default: 'veo'):\n" +
-                "- veo: Google's model, text/image-to-video, 4/6/8 sec, supports audio, single image input\n" +
-                "- seedance: ByteDance, text/image-to-video, 2-10 sec, multi-image support\n" +
-                "- seedance-pro: ByteDance Pro, text/image-to-video, 2-10 sec, multi-image, best prompt adherence",
+            "Video model (default: 'veo'). Common options: veo (4/6/8s, audio, single image input), " +
+                "seedance (2-10s, multi-image), seedance-pro (2-10s, multi-image, best quality). " +
+                "Use listImageModels to see the full live list — models are validated against the registry.",
         ),
     duration: z
         .number()

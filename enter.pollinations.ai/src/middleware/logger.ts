@@ -1,9 +1,10 @@
-import { getLogger, Logger, withContext } from "@logtape/logtape";
+import { getLogger, type Logger, withContext } from "@logtape/logtape";
 import { createMiddleware } from "hono/factory";
 import { ensureConfigured } from "@/logger";
 
 export type LoggerVariables = {
     log: Logger;
+    requestStartedAt: number;
 };
 
 type Env = {
@@ -20,6 +21,9 @@ export const logger = createMiddleware<Env>(async (c, next) => {
     c.set("log", log);
 
     const startTime = Date.now();
+    c.set("requestStartedAt", startTime);
+    const shouldEmitRequestLogs =
+        c.env.ENVIRONMENT === "local" || c.env.ENVIRONMENT === "test";
 
     await withContext(
         {
@@ -32,18 +36,22 @@ export const logger = createMiddleware<Env>(async (c, next) => {
                 c.req.header("x-forwarded-for"),
         },
         async () => {
-            log.info("{method} {url}", {
-                method: c.req.method,
-                url: c.req.url,
-            });
+            if (shouldEmitRequestLogs) {
+                log.info("{method} {url}", {
+                    method: c.req.method,
+                    url: c.req.url,
+                });
+            }
 
             await next();
 
             const duration = Date.now() - startTime;
-            log.info("RESPONSE {status} {duration}ms", {
-                status: c.res.status,
-                duration,
-            });
+            if (shouldEmitRequestLogs) {
+                log.info("RESPONSE {status} {duration}ms", {
+                    status: c.res.status,
+                    duration,
+                });
+            }
         },
     );
 });

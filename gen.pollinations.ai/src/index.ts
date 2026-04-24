@@ -29,7 +29,13 @@ function noIndex(response: Response): Response {
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const url = new URL(request.url);
-        const path = url.pathname;
+        // Normalize trailing slash (except for root) so /docs/ and /docs,
+        // /models/ and /models, etc. route identically instead of falling
+        // through to the default /api/generate/* rewrite.
+        const path =
+            url.pathname.length > 1 && url.pathname.endsWith("/")
+                ? url.pathname.slice(0, -1)
+                : url.pathname;
 
         // Serve robots.txt — block infinite generation paths, allow docs
         if (path === "/robots.txt") {

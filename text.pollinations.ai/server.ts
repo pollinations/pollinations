@@ -236,11 +236,19 @@ function sendContentResponse(c: Context, completion: ChatCompletion): Response {
     if (message.content) {
         let content = String(message.content);
         if (completion.citations?.length > 0) {
-            content += "\n\n---\nSources:\n";
-            content += completion.citations
-                .map((url: string, i: number) => `[${i + 1}] ${url}`)
-                .join("\n");
-            content += "\n";
+            // Some upstreams emit sparse/partial citation arrays — drop
+            // empty entries so we don't render "[N] undefined".
+            const validCitations = completion.citations.filter(
+                (url: unknown): url is string =>
+                    typeof url === "string" && url.length > 0,
+            );
+            if (validCitations.length > 0) {
+                content += "\n\n---\nSources:\n";
+                content += validCitations
+                    .map((url: string, i: number) => `[${i + 1}] ${url}`)
+                    .join("\n");
+                content += "\n";
+            }
         }
         return c.text(content);
     }

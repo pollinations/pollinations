@@ -80,7 +80,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
         if (!latestPrice) continue;
 
         if (serviceConfig.category === "video") {
-            // Check if it's token-based (seedance) or second-based (veo/wan)
+            // Check if it's token-based (seedance) or second-based (veo)
             if (latestPrice.completionVideoTokens) {
                 prices.push({
                     name: serviceName,

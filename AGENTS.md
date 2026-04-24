@@ -139,7 +139,6 @@ npx vitest run test/file.test.ts
 - API docs: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.
 - Security: never expose keys/secrets; use env vars; validate input.
 - Temp scratch files go in `temp/` clearly labeled.
-- Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
 ## Workflow Orchestration
 

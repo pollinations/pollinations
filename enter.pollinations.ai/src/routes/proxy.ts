@@ -155,12 +155,10 @@ const chatCompletionHandlers = factory.createHandlers(
             });
 
             // Try to extract meaningful error message from upstream JSON
-            // Fall back to raw text if parsing fails
             let errorMessage =
                 responseText || getDefaultErrorMessage(response.status);
             try {
                 const parsed = JSON.parse(responseText);
-                // Use the most specific error message available
                 const extracted =
                     parsed?.details?.error?.message ||
                     parsed?.error?.message ||

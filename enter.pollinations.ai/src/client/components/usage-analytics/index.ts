@@ -1,6 +1,7 @@
 export { Chart } from "./chart";
 export { FilterButton } from "./filter-button";
 export { MultiSelect } from "./multi-select";
+export { currentUsagePeriod } from "./period-utils";
 export { Stat } from "./stat";
 export type {
     DailyUsageRecord,
@@ -8,7 +9,7 @@ export type {
     FilterState,
     Metric,
     ModelBreakdown,
-    TimeRange,
+    PeriodGranularity,
+    UsagePeriodSelection,
 } from "./types";
-export { TIME_RANGE_DAYS } from "./types";
 export { UsageGraph } from "./usage-graph";

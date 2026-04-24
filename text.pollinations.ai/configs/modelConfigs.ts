@@ -3,6 +3,7 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
+    createDeepInfraModelConfig,
     createFireworksModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
@@ -86,11 +87,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4-20-reasoning",
         ),
 
-    // -- Fireworks AI (DeepSeek, Kimi, GLM, Qwen) --------------------------------
-    "accounts/fireworks/models/deepseek-v3p2": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v3p2",
+    // -- DeepInfra (DeepSeek) -------------------------------------------------
+    "deepseek-ai/DeepSeek-V4-Flash": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4-Flash",
         }),
+    "deepseek-ai/DeepSeek-V4-Pro": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4-Pro",
+        }),
+
+    // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",

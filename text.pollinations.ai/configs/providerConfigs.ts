@@ -103,6 +103,16 @@ export function createFireworksModelConfig(
     );
 }
 
+export function createDeepInfraModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.deepinfra.com/v1/openai",
+        process.env.DEEPINFRA_API_KEY,
+        overrides,
+    );
+}
+
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

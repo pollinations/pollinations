@@ -87,9 +87,9 @@ test("gptimage-large should calculate costs for text input tokens", () => {
         promptTextTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // $8 per 1M tokens = $0.008 per 1K tokens
-    expect(cost.promptTextTokens).toBeCloseTo(0.008, 4);
-    expect(cost.totalCost).toBeCloseTo(0.008, 4);
+    // $5 per 1M tokens = $0.005 per 1K tokens
+    expect(cost.promptTextTokens).toBeCloseTo(0.005, 4);
+    expect(cost.totalCost).toBeCloseTo(0.005, 4);
 });
 
 test("gptimage-large should calculate costs for image input tokens", () => {
@@ -102,16 +102,28 @@ test("gptimage-large should calculate costs for image input tokens", () => {
     expect(cost.totalCost).toBeCloseTo(0.008, 4);
 });
 
-test("gptimage-large combined input + output costs", () => {
+test("gptimage-large should calculate costs for text output tokens", () => {
+    const usage: Usage = {
+        completionTextTokens: 1000,
+    };
+    const cost = calculateCost("gptimage-large", usage);
+    // $10 per 1M tokens = $0.01 per 1K tokens
+    expect(cost.completionTextTokens).toBeCloseTo(0.01, 4);
+    expect(cost.totalCost).toBeCloseTo(0.01, 4);
+});
+
+test("gptimage-large combined text/image input + output costs", () => {
     const usage: Usage = {
         promptTextTokens: 500,
         promptImageTokens: 3000, // Typical resized input ~3K tokens
+        completionTextTokens: 200,
         completionImageTokens: 1000,
     };
     const cost = calculateCost("gptimage-large", usage);
-    // Input: 500*$8/1M + 3000*$8/1M = $0.028
+    // Input: 500*$5/1M + 3000*$8/1M = $0.0265
+    // Text output: 200*$10/1M = $0.002
     // Output: 1000*$32/1M = $0.032
-    expect(cost.totalCost).toBeCloseTo(0.06, 4);
+    expect(cost.totalCost).toBeCloseTo(0.0605, 4);
 });
 
 test("nanobanana models calculate reasoning token costs", () => {

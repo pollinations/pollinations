@@ -1,0 +1,34 @@
+{
+  "pr_number": 10417,
+  "title": "(security): Update security.md to reflect the latest changes under the scope of our coverage",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10417",
+  "merged_at": "2026-04-24T04:48:22Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Securing the perimeter",
+    "blurb": "Updated our security policy to officially cover the SDK, MCP, and CLI. Keeping the hive safe and sound!",
+    "summary": "Updated the SECURITY.md file to expand vulnerability reporting coverage to include the SDK, MCP, and CLI tools.",
+    "impact": "Security researchers and contributors now have clear guidelines on reporting vulnerabilities for our newer developer tools.",
+    "keywords": [
+      "security",
+      "docs",
+      "sdk",
+      "mcp",
+      "cli"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly security guard or inspector, examining a glowing shield or a secure document. Represents the updated security policy covering new tools.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, inspecting a glowing digital shield that protects a stack of documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-24/PR-10417.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny security guard hat, inspecting a glowing digital shield that protects a stack of documents. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-24T04:49:11.897555+00:00"
+}

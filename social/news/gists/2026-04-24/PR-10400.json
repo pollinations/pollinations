@@ -1,0 +1,34 @@
+{
+  "pr_number": 10400,
+  "title": "feat(enter): structured 5xx error signal in logs + Tinybird",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10400",
+  "merged_at": "2026-04-24T15:47:33Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive's radar gets an upgrade",
+    "blurb": "We've upgraded our internal error tracking with structured logs and Tinybird integration. Now our agents can spot and squash bugs faster than ever.",
+    "summary": "Implemented structured 5xx error signaling in Workers Logs and added a Tinybird datasource for querying recent server errors.",
+    "impact": "This reduces log noise and allows our internal AI agents to quickly query and diagnose server errors, leading to faster bug resolution.",
+    "keywords": [
+      "observability",
+      "logging",
+      "tinybird",
+      "infrastructure",
+      "errors"
+    ],
+    "visual_concept": "The bee mascot and the monitor robot looking at a clean, organized radar screen or a neat stack of glowing error logs. The Nomnom creature could be eating the 'noisy' logs while the robot holds a clean, structured glowing crystal (representing the structured error envelope).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing lime green (#ecf874) radar screen showing clean, organized data points. The round tan nomnom creature happily eats a messy pile of old paper logs nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-24/PR-10400.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing lime green (#ecf874) radar screen showing clean, organized data points. The round tan nomnom creature happily eats a messy pile of old paper logs nearby. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-24T15:48:36.939743+00:00"
+}

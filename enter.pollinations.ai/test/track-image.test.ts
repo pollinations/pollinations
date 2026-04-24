@@ -1,6 +1,10 @@
 import type { ModelName, Usage } from "@shared/registry/registry.ts";
-import { calculateCost } from "@shared/registry/registry.ts";
+import {
+    calculateCost,
+    getActivePriceDefinition,
+} from "@shared/registry/registry.ts";
 import { expect, test } from "vitest";
+import { priceToEventParams } from "@/db/schema/event.ts";
 
 // Test image model cost tracking
 // Tests cost calculation properties without hardcoding specific values
@@ -108,4 +112,38 @@ test("gptimage-large combined input + output costs", () => {
     // Input: 500*$8/1M + 3000*$8/1M = $0.028
     // Output: 1000*$32/1M = $0.032
     expect(cost.totalCost).toBeCloseTo(0.06, 4);
+});
+
+test("nanobanana models calculate reasoning token costs", () => {
+    const usage: Usage = {
+        promptTextTokens: 11,
+        completionImageTokens: 1120,
+        completionReasoningTokens: 335,
+    };
+
+    const flashCost = calculateCost("nanobanana-2", usage);
+    expect(flashCost.completionReasoningTokens).toBeCloseTo(0.001005, 8);
+    expect(flashCost.totalCost).toBeGreaterThan(
+        flashCost.completionImageTokens || 0,
+    );
+
+    const proCost = calculateCost("nanobanana-pro", usage);
+    expect(proCost.completionReasoningTokens).toBeCloseTo(0.00402, 8);
+    expect(proCost.totalCost).toBeGreaterThan(
+        proCost.completionImageTokens || 0,
+    );
+});
+
+test("nanobanana reasoning token event prices use text output rates", () => {
+    const flashPrice = getActivePriceDefinition("nanobanana-2");
+    const flashEventPrices = priceToEventParams(flashPrice);
+    expect(flashEventPrices.tokenPriceCompletionReasoning).toBe(
+        flashPrice?.completionTextTokens,
+    );
+
+    const proPrice = getActivePriceDefinition("nanobanana-pro");
+    const proEventPrices = priceToEventParams(proPrice);
+    expect(proEventPrices.tokenPriceCompletionReasoning).toBe(
+        proPrice?.completionTextTokens,
+    );
 });

@@ -1,0 +1,32 @@
+{
+  "pr_number": 10446,
+  "title": "feat(enter): restore tier + nextResetAt on /account/profile",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10446",
+  "merged_at": "2026-04-24T15:26:51Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive remembers your tier",
+    "blurb": "We put the tier and reset time back in the profile endpoint. Third-party apps can stop guessing when your credits refill.",
+    "summary": "Restored the tier and nextResetAt fields to the /account/profile endpoint, allowing apps to read quota metadata without requiring extra permissions.",
+    "impact": "Third-party plugins can once again accurately display your current tier and exactly when your credits will refill.",
+    "keywords": [
+      "api",
+      "account",
+      "tier",
+      "quota",
+      "developer-tools"
+    ],
+    "visual_concept": "Polly the bee fixing a clock or timer, representing the 'nextResetAt' and 'tier' restoration. A retro terminal displays the quota.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a glowing digital clock next to a chunky retro terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. The bee shares the frame with a small pixelated hourglass. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'QUOTA'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-24/PR-10446.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, fixing a glowing digital clock next to a chunky retro terminal. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. The bee shares the frame with a small pixelated hourglass. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'QUOTA'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-24T15:27:59.555379+00:00"
+}

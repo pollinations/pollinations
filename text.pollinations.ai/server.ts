@@ -252,6 +252,30 @@ function sendContentResponse(c: Context, completion: ChatCompletion): Response {
     return c.text("");
 }
 
+/**
+ * Strip user-content fields from request params before echoing them in an
+ * error response. Keeps diagnostic params (model, seed, temperature, etc.)
+ * so callers can correlate failures, drops anything that could contain
+ * prompts, tool definitions, or audio blobs.
+ */
+function sanitizeRequestParameters(
+    requestData: RequestData | null,
+): Record<string, unknown> {
+    if (!requestData) return {};
+    const {
+        messages: _messages,
+        tools: _tools,
+        tool_choice: _toolChoice,
+        audio: _audio,
+        response_format: _responseFormat,
+        stop: _stop,
+        logit_bias: _logitBias,
+        user: _user,
+        ...safe
+    } = requestData;
+    return safe;
+}
+
 function sendErrorResponse(
     c: Context,
     error: ServiceError,
@@ -266,7 +290,7 @@ function sendErrorResponse(
         error: errorType,
         message: error.message || "An error occurred",
         requestId: Math.random().toString(36).substring(7),
-        requestParameters: requestData || {},
+        requestParameters: sanitizeRequestParameters(requestData),
     };
     if (errorDetails) errorResponse.details = errorDetails;
 

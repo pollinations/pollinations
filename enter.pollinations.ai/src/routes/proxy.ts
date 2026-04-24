@@ -28,11 +28,7 @@ import {
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import {
-    getDefaultErrorMessage,
-    remapUpstreamStatus,
-    UpstreamError,
-} from "@/error.ts";
+import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import {
@@ -105,22 +101,7 @@ const imageVideoHandlers = factory.createHandlers(
             body: c.req.raw.body,
         });
 
-        if (!response.ok) {
-            const responseText = await response.text();
-            log.warn("Image service error {status}: {body}", {
-                status: response.status,
-                body: responseText,
-            });
-            throw new UpstreamError(remapUpstreamStatus(response.status), {
-                message:
-                    responseText || getDefaultErrorMessage(response.status),
-                requestUrl: targetUrl,
-                upstreamStatus: response.status,
-                responseBody: responseText,
-            });
-        }
-
-        return response;
+        return ensureUpstreamOk(response, targetUrl);
     },
 );
 
@@ -130,7 +111,6 @@ const chatCompletionHandlers = factory.createHandlers(
     resolveModel("generate.text"),
     track("generate.text"),
     async (c) => {
-        const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
         c.var.auth.requireKeyBudget();
@@ -143,45 +123,12 @@ const chatCompletionHandlers = factory.createHandlers(
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
         const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-        const response = await proxy(targetUrl, {
+        const rawResponse = await proxy(targetUrl, {
             method: c.req.method,
             headers: proxyHeaders(c),
             body: JSON.stringify(requestBody),
         });
-
-        if (!response.ok) {
-            const responseText = await response.text();
-            log.warn("Chat completions error {status}: {body}", {
-                status: response.status,
-                body: responseText,
-            });
-
-            // Try to extract meaningful error message from upstream JSON
-            // Fall back to raw text if parsing fails
-            let errorMessage =
-                responseText || getDefaultErrorMessage(response.status);
-            try {
-                const parsed = JSON.parse(responseText);
-                // Use the most specific error message available
-                const extracted =
-                    parsed?.details?.error?.message ||
-                    parsed?.error?.message ||
-                    parsed?.message ||
-                    (typeof parsed?.error === "string" ? parsed.error : null);
-                if (extracted) {
-                    errorMessage = extracted;
-                }
-            } catch {
-                // Not JSON or parse failed - use raw text as-is
-            }
-
-            throw new UpstreamError(remapUpstreamStatus(response.status), {
-                message: errorMessage,
-                requestUrl: targetUrl,
-                upstreamStatus: response.status,
-                responseBody: responseText,
-            });
-        }
+        const response = await ensureUpstreamOk(rawResponse, targetUrl);
 
         // Validate streaming responses: if client requested stream but upstream
         // returned non-SSE, throw rather than forwarding broken data.
@@ -518,7 +465,6 @@ export const proxyRoutes = new Hono<Env>()
         resolveModel("generate.text"),
         track("generate.text"),
         async (c) => {
-            const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
             c.var.auth.requireKeyBudget();
@@ -537,25 +483,11 @@ export const proxyRoutes = new Hono<Env>()
             // Add model param after proxyUrl() to ensure it's always present
             targetUrl.searchParams.set("model", model);
 
-            const response = await fetch(targetUrl, {
+            const rawResponse = await fetch(targetUrl, {
                 method: "GET",
                 headers: proxyHeaders(c),
             });
-
-            if (!response.ok) {
-                const responseText = await response.text();
-                log.warn("Text service error {status}: {body}", {
-                    status: response.status,
-                    body: responseText,
-                });
-                throw new UpstreamError(remapUpstreamStatus(response.status), {
-                    message:
-                        responseText || getDefaultErrorMessage(response.status),
-                    requestUrl: targetUrl,
-                    upstreamStatus: response.status,
-                    responseBody: responseText,
-                });
-            }
+            const response = await ensureUpstreamOk(rawResponse, targetUrl);
 
             // Backend returns plain text for text models and raw audio for audio models
             // No JSON parsing needed for GET endpoint - just pass through the response

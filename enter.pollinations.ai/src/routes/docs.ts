@@ -199,14 +199,14 @@ function generateLLMDoc(): string {
     lines.push("- negative_prompt (string): Only flux, zimage");
     lines.push("- safe (boolean, default: false): Safety filter");
     lines.push(
-        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large',
+        '- quality (low|medium|high|hd, default: "medium"): gptimage, gptimage-large, gpt-image-2',
     );
     lines.push("- image (string): Reference image URL(s), | or , separated");
     lines.push(
-        "- transparent (boolean, default: false): gptimage, gptimage-large",
+        "- transparent (boolean, default: false): gptimage, gptimage-large, gpt-image-2",
     );
     lines.push(
-        "- reasoning (boolean, default: false): Enable thinking for improved text/layout. nanobanana, nanobanana-2, nanobanana-pro",
+        '- reasoning (fast|balanced|pro, default: "balanced"): Reasoning depth for nanobanana models. Explicit provider control currently applies to nanobanana-2; other nanobanana models use provider defaults. Also accepts true (-> pro) / false (-> balanced)',
     );
     lines.push("- duration (int, 1-10): Video duration in seconds");
     lines.push('- aspectRatio ("16:9"|"9:16"): Video only');
@@ -246,12 +246,15 @@ function generateLLMDoc(): string {
     lines.push("### GET /audio/{text}");
     lines.push("Text-to-speech or music generation. Returns audio/mpeg.");
     lines.push(
-        "Query params: voice, model (elevenlabs|elevenmusic|acestep), duration",
+        "Query params: voice, model (elevenlabs|elevenmusic|acestep), duration, seed",
+    );
+    lines.push(
+        "- seed (integer, 0-4294967295): Best-effort determinism for ElevenLabs models. -1 bypasses the response cache",
     );
     lines.push("");
 
     lines.push("### POST /v1/audio/speech");
-    lines.push("OpenAI-compatible TTS. Body: {input, voice, model}");
+    lines.push("OpenAI-compatible TTS. Body: {input, voice, model, seed?}");
     lines.push("");
 
     lines.push("### POST /v1/audio/transcriptions");

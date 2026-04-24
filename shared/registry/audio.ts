@@ -54,6 +54,8 @@ export const AUDIO_SERVICES = {
         aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
         modelId: "eleven_v3",
         provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
@@ -71,6 +73,8 @@ export const AUDIO_SERVICES = {
         aliases: ["music"],
         modelId: "music_v1",
         provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
         paidOnly: true,
         cost: [
             {
@@ -89,6 +93,8 @@ export const AUDIO_SERVICES = {
         aliases: ["whisper-1", "whisper-large-v3"],
         modelId: "whisper-large-v3",
         provider: "ovhcloud",
+        brand: "OpenAI",
+        category: "audio",
         cost: [
             {
                 date: new Date("2026-02-08").getTime(),
@@ -106,6 +112,8 @@ export const AUDIO_SERVICES = {
         aliases: ["scribe_v2", "scribe-v2"],
         modelId: "scribe_v2",
         provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "audio",
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
@@ -122,6 +130,8 @@ export const AUDIO_SERVICES = {
         aliases: ["ace-step", "acestep-music"],
         modelId: "acestep_v15_turbo",
         provider: "lambda",
+        brand: "ACE-Step",
+        category: "audio",
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),
@@ -138,6 +148,8 @@ export const AUDIO_SERVICES = {
         aliases: ["qwen3-tts", "qwen3-tts-flash"],
         modelId: "qwen3-tts-flash",
         provider: "alibaba",
+        brand: "Qwen",
+        category: "audio",
         cost: [
             {
                 date: new Date("2026-04-19").getTime(),
@@ -161,6 +173,8 @@ export const AUDIO_SERVICES = {
         aliases: ["qwen3-tts-instruct", "qwen3-tts-instruct-flash"],
         modelId: "qwen3-tts-instruct-flash",
         provider: "alibaba",
+        brand: "Qwen",
+        category: "audio",
         paidOnly: true,
         cost: [
             {

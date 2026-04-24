@@ -189,7 +189,7 @@ const url = await imageUrl('a sunset');
 | `referenceImage` | string | - | URL for image-to-image |
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
-| `reasoning` | boolean | `false` | Enable reasoning (nanobanana-pro, gptimage). Ignored by other models. |
+| `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for nanobanana models. Booleans are accepted for backward compatibility. |
 | `n` | number | `1` | Number of images |
 
 ## Image Editing

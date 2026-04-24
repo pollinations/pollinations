@@ -433,20 +433,12 @@ const checkCacheAndGenerate = async (
             "X-Error-Type": errorType,
         });
 
-        // Create a response object with error information.
-        // Intentionally excludes `prompt` from requestParameters to avoid
-        // echoing user content back in error bodies (flows through to clients
-        // and to Tinybird error_event via enter.pollinations.ai).
         const responseObj = {
             error: errorType,
             message: error.message,
             details: error.details,
             timingInfo: relativeTiming(timingInfo),
             requestId,
-            requestParameters: {
-                ...safeParams,
-                referrer,
-            },
             queueInfo: null,
         };
 

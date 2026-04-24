@@ -69,7 +69,13 @@ export const Chart: FC<ChartProps> = ({
     }, []);
 
     const height = 180;
-    const pad = { top: 24, right: 20, bottom: 32, left: 55 };
+    const isCompact = width < 480;
+    const pad = {
+        top: 24,
+        right: isCompact ? 10 : 20,
+        bottom: 32,
+        left: isCompact ? 36 : 55,
+    };
     const cw = width - pad.left - pad.right;
     const ch = height - pad.top - pad.bottom;
 
@@ -131,9 +137,12 @@ export const Chart: FC<ChartProps> = ({
         }).filter((t) => t.value <= niceMaxVal);
 
         return { bars: barData, yTicks: ticks };
-    }, [data, cw, ch]);
+    }, [data, cw, ch, pad.left, pad.top]);
 
-    const formatVal = (v: number) => {
+    const trimDecimal = (value: string) =>
+        value.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+
+    const formatCompactVal = (v: number) => {
         if (v >= 1e6) {
             const m = v / 1e6;
             return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
@@ -142,6 +151,22 @@ export const Chart: FC<ChartProps> = ({
             const k = v / 1e3;
             return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
         }
+        return null;
+    };
+
+    const formatPollenAxisVal = (v: number) => {
+        const compact = formatCompactVal(v);
+        if (compact) return compact;
+        if (Number.isInteger(v)) return v.toString();
+        const decimals = Math.abs(v) < 1 ? 4 : 2;
+        const formatted = trimDecimal(v.toFixed(decimals));
+        return formatted === "0" ? v.toExponential(1) : formatted;
+    };
+
+    const formatVal = (v: number) => {
+        const compact = formatCompactVal(v);
+        if (compact) return compact;
+        if (metric === "pollen") return formatPollenAxisVal(v);
         return Math.round(v).toString();
     };
 

@@ -36,6 +36,9 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             granularity: filters.period.granularity,
             period: filters.period.period,
         });
+        if (filters.period.granularity === "day") {
+            params.set("grain", "hour");
+        }
         if (filters.selectedKeyIds.length > 0) {
             params.set("api_key_ids", filters.selectedKeyIds.join(","));
         }
@@ -139,7 +142,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const allDates = getPeriodDates(filters.period);
 
         const sorted = allDates.map((dateStr) => {
-            const date = new Date(`${dateStr}T00:00:00.000Z`);
+            const isHourly = dateStr.includes(" ");
+            const date = new Date(`${dateStr.replace(" ", "T")}.000Z`);
             const d = buckets.get(dateStr) || {
                 requests: 0,
                 pollen: 0,
@@ -169,17 +173,29 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 filters.metric === "requests" ? "paidRequests" : "paidPollen";
 
             return {
-                label: date.toLocaleDateString("en-US", {
-                    timeZone: "UTC",
-                    month: "short",
-                    day: "numeric",
-                }),
+                label: isHourly
+                    ? date.toLocaleTimeString("en-US", {
+                          timeZone: "UTC",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                      })
+                    : date.toLocaleDateString("en-US", {
+                          timeZone: "UTC",
+                          month: "short",
+                          day: "numeric",
+                      }),
                 fullDate: date.toLocaleDateString("en-US", {
                     timeZone: "UTC",
                     weekday: "short",
                     year: "numeric",
                     month: "short",
                     day: "numeric",
+                    ...(isHourly && {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                    }),
                 }),
                 value: d[filters.metric],
                 tierValue: d[tierKey],

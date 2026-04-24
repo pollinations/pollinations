@@ -402,6 +402,7 @@ const usageDailyQuerySchema = z.object({
         .default(DEFAULT_DAILY_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
+    grain: z.enum(["day", "hour"]).optional().default("day"),
     api_key_ids: z
         .string()
         .optional()
@@ -900,6 +901,7 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                grain,
                 api_key_ids: apiKeyIds,
             } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
@@ -916,7 +918,7 @@ export const accountRoutes = new Hono<Env>()
                 granularity,
                 period,
             });
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
+            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
             const windows = buildUsageWindows(days, { granularity, period });
 
             try {
@@ -944,6 +946,7 @@ export const accountRoutes = new Hono<Env>()
                                     user_id: usageUserId,
                                     since: window.since,
                                     until: window.until,
+                                    grain,
                                     api_key_ids:
                                         apiKeyIds.length > 0
                                             ? apiKeyIds.join(",")

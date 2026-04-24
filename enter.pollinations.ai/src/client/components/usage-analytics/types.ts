@@ -6,16 +6,17 @@ export type DailyUsageRecord = {
     cost_usd: number;
 };
 
-export type TimeRange = "7d" | "30d" | "all";
-export const TIME_RANGE_DAYS: Record<TimeRange, number> = {
-    "7d": 7,
-    "30d": 30,
-    all: 90,
+export type PeriodGranularity = "day" | "week" | "month";
+
+export type UsagePeriodSelection = {
+    granularity: PeriodGranularity;
+    period: string;
 };
+
 export type Metric = "requests" | "pollen";
 
 export type FilterState = {
-    timeRange: TimeRange;
+    period: UsagePeriodSelection;
     metric: Metric;
     selectedKeyIds: string[];
     selectedModels: string[];

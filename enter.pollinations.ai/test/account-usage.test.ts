@@ -54,6 +54,61 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
     expect(dailyCalls[0].query.until).toMatch(/^\d{4}-\d{2}-\d{2}/);
 });
 
+test("GET /api/account/usage/daily maps selected periods to exact windows", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const day = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-04-24",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(day.status).toBe(200);
+
+    const week = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?granularity=week&period=2026-W17",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(week.status).toBe(200);
+
+    const month = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?granularity=month&period=2026-04",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(month.status).toBe(200);
+
+    const dailyCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
+        call.url.includes("user_usage_daily_filtered.json"),
+    );
+    expect(dailyCalls).toHaveLength(3);
+    expect(dailyCalls[0].query.since).toBe("2026-04-24 00:00:00");
+    expect(dailyCalls[0].query.until).toBe("2026-04-25 00:00:00");
+    expect(dailyCalls[1].query.since).toBe("2026-04-20 00:00:00");
+    expect(dailyCalls[1].query.until).toBe("2026-04-27 00:00:00");
+    expect(dailyCalls[2].query.since).toBe("2026-04-01 00:00:00");
+    expect(dailyCalls[2].query.until).toBe("2026-05-01 00:00:00");
+});
+
+test("GET /api/account/usage/daily rejects periods outside supported bounds", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const beforeUsage = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?granularity=day&period=2025-12-31",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(beforeUsage.status).toBe(400);
+
+    const future = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-05-01",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(future.status).toBe(400);
+});
+
 test("GET /api/account/usage?format=csv renders rows and sets filename from limit", async ({
     sessionToken,
     mocks,

@@ -16,9 +16,9 @@ import { NewsBanner } from "../components/layout/news-banner.tsx";
 import { User } from "../components/layout/user.tsx";
 import { Pricing } from "../components/pricing";
 import {
-    TIME_RANGE_DAYS,
-    type TimeRange,
+    currentUsagePeriod,
     UsageGraph,
+    type UsagePeriodSelection,
 } from "../components/usage-analytics";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
@@ -78,8 +78,8 @@ function RouteComponent() {
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
-    const [usageTimeRange, setUsageTimeRange] = useState<TimeRange>("7d");
-    const usageDays = TIME_RANGE_DAYS[usageTimeRange];
+    const [usagePeriod, setUsagePeriod] =
+        useState<UsagePeriodSelection>(currentUsagePeriod);
 
     const selectableKeys = useMemo(
         () =>
@@ -195,7 +195,8 @@ function RouteComponent() {
     function downloadDetailedUsage(): void {
         const params = new URLSearchParams({
             format: "csv",
-            days: usageDays.toString(),
+            granularity: usagePeriod.granularity,
+            period: usagePeriod.period,
             limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
         });
         const anchor = document.createElement("a");
@@ -292,8 +293,8 @@ function RouteComponent() {
                     {activeTab === "usage" && (
                         <UsageGraph
                             tier={tierData?.active?.tier}
-                            timeRange={usageTimeRange}
-                            onTimeRangeChange={setUsageTimeRange}
+                            period={usagePeriod}
+                            onPeriodChange={setUsagePeriod}
                             apiKeys={selectableKeys}
                         />
                     )}

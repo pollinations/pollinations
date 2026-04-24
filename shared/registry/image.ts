@@ -56,6 +56,7 @@ export const IMAGE_SERVICES = {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.5), // per 1M tokens
                 promptImageTokens: perMillion(0.5), // per 1M tokens
+                completionTextTokens: perMillion(3), // text/reasoning output tokens
                 completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
             },
         ],
@@ -78,6 +79,7 @@ export const IMAGE_SERVICES = {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(1.25), // per 1M tokens
                 promptImageTokens: perMillion(1.25), // per 1M tokens
+                completionTextTokens: perMillion(12), // text/reasoning output tokens
                 completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
             },
         ],

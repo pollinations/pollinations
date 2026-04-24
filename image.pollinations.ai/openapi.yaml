@@ -130,7 +130,7 @@ paths:
             default: false
         - name: reasoning
           in: query
-          description: "Controls Chain of Thought depth for nanobanana models. Accepts: fast (minimal thinking), balanced (model default), pro (maximum reasoning). Also accepts true (→ pro) and false (→ balanced) for backward compatibility"
+          description: "Controls reasoning depth for nanobanana models. Explicit provider control currently applies to nanobanana-2; other nanobanana models use provider defaults. Accepts: fast, balanced, pro. Also accepts true (→ pro) and false (→ balanced) for backward compatibility"
           schema:
             type: string
             enum: [fast, balanced, pro]

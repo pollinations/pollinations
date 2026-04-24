@@ -8,6 +8,7 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
+import { isLoopbackUrl } from "./url-utils.ts";
 
 async function resolveAttribution(
     db: ReturnType<typeof drizzle<typeof schema>>,
@@ -102,7 +103,9 @@ export const appLookupRoutes = new Hono<Env>().get(
         // Strategy 2: Match redirect_uri against registered appUrl values
         // Fetch all publishable keys with appUrl and match in JS
         // (D1 rejects the LIKE pattern at scale with "pattern too complex")
-        if (resolvedRedirect) {
+        // Loopback hostnames are shared by every local dev app, so they must
+        // never resolve to a specific developer's attribution (issue #10020).
+        if (resolvedRedirect && !isLoopbackUrl(resolvedRedirect)) {
             const candidates = await db.query.apikey.findMany({
                 where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
             });

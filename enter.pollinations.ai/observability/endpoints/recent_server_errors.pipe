@@ -9,7 +9,6 @@ SQL >
     %
     SELECT
         timestamp,
-        fingerprint,
         environment,
         route_path,
         method,

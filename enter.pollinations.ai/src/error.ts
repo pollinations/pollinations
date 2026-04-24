@@ -103,7 +103,6 @@ type ServerErrorEnvelope = {
     kind: "server_error";
     severity: "error";
     timestamp: string;
-    fingerprint: string;
     requestId?: string;
     environment?: string;
     routePath: string;
@@ -284,7 +283,7 @@ function emitServerError(
 ): void {
     const envelope = createServerErrorEnvelope(c, error, status, timestamp);
     log.error(
-        "server_error fingerprint={fingerprint} route={routePath} status={status} class={errorClass}",
+        "server_error route={routePath} status={status} class={errorClass}",
         envelope,
     );
 
@@ -327,18 +326,11 @@ function createServerErrorEnvelope(
     const stack = truncateString(error.stack, MAX_STACK_LENGTH);
     const topStackFrame = getTopStackFrame(stack);
     const resolvedRoutePath = routePath(c) || c.req.path;
-    const fingerprint = createServerErrorFingerprint({
-        routePath: resolvedRoutePath,
-        errorClass: error.name,
-        messageNormalized,
-        topStackFrame,
-    });
 
     return {
         kind: "server_error",
         severity: "error",
         timestamp,
-        fingerprint,
         requestId: c.get("requestId"),
         environment: c.env.ENVIRONMENT,
         routePath: resolvedRoutePath,
@@ -379,7 +371,6 @@ function toTinybirdErrorEvent(
         timestamp: envelope.timestamp,
         kind: envelope.kind,
         severity: envelope.severity,
-        fingerprint: envelope.fingerprint,
         request_id: envelope.requestId,
         environment: envelope.environment,
         route_path: envelope.routePath,
@@ -412,31 +403,6 @@ function normalizeErrorMessage(message: string): string {
         )
         .replaceAll(/\b0x[0-9a-f]+\b/gi, "<hex>")
         .replaceAll(/\b\d+\b/g, "<num>");
-}
-
-export function createServerErrorFingerprint(input: {
-    routePath: string;
-    errorClass: string;
-    messageNormalized: string;
-    topStackFrame?: string;
-}): string {
-    return hashFingerprint(
-        [
-            input.routePath,
-            input.errorClass,
-            input.messageNormalized,
-            input.topStackFrame || "no_stack",
-        ].join("|"),
-    );
-}
-
-function hashFingerprint(value: string): string {
-    let hash = 0x811c9dc5;
-    for (let i = 0; i < value.length; i++) {
-        hash ^= value.charCodeAt(i);
-        hash = Math.imul(hash, 0x01000193);
-    }
-    return (hash >>> 0).toString(36);
 }
 
 function getTopStackFrame(stack?: string): string | undefined {

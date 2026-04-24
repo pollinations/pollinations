@@ -9,7 +9,6 @@ SCHEMA >
 `timestamp`                DateTime               `json:$.timestamp`,
 `kind`                     LowCardinality(String) `json:$.kind` DEFAULT 'server_error',
 `severity`                 LowCardinality(String) `json:$.severity` DEFAULT 'error',
-`fingerprint`              String                 `json:$.fingerprint`,
 `request_id`               String                 `json:$.request_id` DEFAULT '',
 `environment`              LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
 `route_path`               String                 `json:$.route_path` DEFAULT '',
@@ -32,6 +31,6 @@ SCHEMA >
 `api_key_id`               String                 `json:$.api_key_id` DEFAULT 'undefined'
 
 ENGINE "MergeTree"
-ENGINE_SORTING_KEY "timestamp, fingerprint"
-ENGINE_PRIMARY_KEY "timestamp, fingerprint"
+ENGINE_SORTING_KEY "timestamp"
+ENGINE_PRIMARY_KEY "timestamp"
 ENGINE_TTL "timestamp + toIntervalHour(3)"

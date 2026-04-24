@@ -131,7 +131,6 @@ test("sendErrorEventToTinybird sends structured error events", async ({
             timestamp: new Date().toISOString(),
             kind: "server_error",
             severity: "error",
-            fingerprint: "fingerprint-123",
             request_id: "req_123",
             route_path: "/api/generate/image",
             method: "POST",
@@ -149,7 +148,7 @@ test("sendErrorEventToTinybird sends structured error events", async ({
 
     expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
     expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
-        fingerprint: "fingerprint-123",
+        route_path: "/api/generate/image",
         status: 502,
         kind: "server_error",
     });

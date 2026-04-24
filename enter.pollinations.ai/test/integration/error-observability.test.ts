@@ -4,34 +4,10 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { describe, expect } from "vitest";
-import { createServerErrorFingerprint } from "@/error.ts";
 import worker from "@/index.ts";
 import { test } from "../fixtures.ts";
 
 describe("Error observability", () => {
-    test("fingerprints include the error signature beyond the route prefix", () => {
-        const common = {
-            routePath: "/api/generate/v1/chat/completions",
-            errorClass: "UpstreamError",
-            topStackFrame:
-                "at /Users/thomash/pollinations/enter.pollinations.ai/src/routes/proxy.ts:189:23",
-        };
-
-        expect(
-            createServerErrorFingerprint({
-                ...common,
-                messageNormalized:
-                    "stream requested for model openai but upstream returned content-type: application/json",
-            }),
-        ).not.toBe(
-            createServerErrorFingerprint({
-                ...common,
-                messageNormalized:
-                    "upstream provider returned status <num> for model openai",
-            }),
-        );
-    });
-
     test(
         "emits structured Tinybird error events for actionable upstream failures",
         { timeout: 30000 },

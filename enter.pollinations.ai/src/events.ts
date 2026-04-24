@@ -10,7 +10,6 @@ export type TinybirdErrorEvent = {
     timestamp: string;
     kind: "server_error";
     severity: "error";
-    fingerprint: string;
     request_id?: string;
     environment?: string;
     route_path?: string;

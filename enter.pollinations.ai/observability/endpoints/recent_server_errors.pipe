@@ -18,7 +18,6 @@ SQL >
         error_class,
         message,
         stack,
-        top_stack_frame,
         upstream_host,
         upstream_status,
         upstream_body,

@@ -113,9 +113,7 @@ type ServerErrorEnvelope = {
     errorCode: string;
     errorClass: string;
     message: string;
-    messageNormalized: string;
     stack?: string;
-    topStackFrame?: string;
     upstreamHost?: string;
     upstreamStatus?: number;
     upstreamBody?: string;
@@ -341,9 +339,7 @@ function createServerErrorEnvelope(
             error.message || getDefaultErrorMessage(status),
             MAX_ERROR_MESSAGE_LENGTH,
         ) || getDefaultErrorMessage(status);
-    const messageNormalized = normalizeErrorMessage(message);
     const stack = truncateString(error.stack, MAX_STACK_LENGTH);
-    const topStackFrame = getTopStackFrame(stack);
     const resolvedRoutePath = routePath(c) || c.req.path;
 
     return {
@@ -362,9 +358,7 @@ function createServerErrorEnvelope(
         errorCode: getErrorCode(status),
         errorClass: error.name,
         message,
-        messageNormalized,
         stack,
-        topStackFrame,
         upstreamHost:
             error instanceof UpstreamError
                 ? error.requestUrl?.hostname
@@ -399,9 +393,7 @@ function toTinybirdErrorEvent(
         error_code: envelope.errorCode,
         error_class: envelope.errorClass,
         message: envelope.message,
-        message_normalized: envelope.messageNormalized,
         stack: envelope.stack,
-        top_stack_frame: envelope.topStackFrame,
         upstream_host: envelope.upstreamHost,
         upstream_status: envelope.upstreamStatus,
         upstream_body: envelope.upstreamBody,
@@ -411,25 +403,6 @@ function toTinybirdErrorEvent(
         user_tier: envelope.userTier,
         api_key_id: envelope.apiKeyId,
     };
-}
-
-function normalizeErrorMessage(message: string): string {
-    return message
-        .toLowerCase()
-        .replaceAll(
-            /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi,
-            "<uuid>",
-        )
-        .replaceAll(/\b0x[0-9a-f]+\b/gi, "<hex>")
-        .replaceAll(/\b\d+\b/g, "<num>");
-}
-
-function getTopStackFrame(stack?: string): string | undefined {
-    if (!stack) return undefined;
-    return stack
-        .split("\n")
-        .map((line) => line.trim())
-        .find((line) => line.startsWith("at "));
 }
 
 function truncateString(

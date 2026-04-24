@@ -138,7 +138,6 @@ test("sendErrorEventToTinybird sends structured error events", async ({
             error_code: "BAD_GATEWAY",
             error_class: "UpstreamError",
             message: "Backend timeout",
-            message_normalized: "backend timeout",
             stack: "Error: Backend timeout",
         },
         getTinybirdDatasourceIngestUrl(env.TINYBIRD_INGEST_URL, "error_event"),

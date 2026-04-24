@@ -19,9 +19,7 @@ export type TinybirdErrorEvent = {
     error_code?: string;
     error_class?: string;
     message?: string;
-    message_normalized?: string;
     stack?: string;
-    top_stack_frame?: string;
     upstream_host?: string;
     upstream_status?: number;
     upstream_body?: string;
@@ -99,58 +97,26 @@ export async function sendErrorEventToTinybird(
     tinybirdIngestToken: string,
     log: Logger,
 ): Promise<void> {
-    const tinybirdEvent = removeUnset(event);
-    const body = JSON.stringify(tinybirdEvent);
+    const body = JSON.stringify(removeUnset(event));
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            const response = await fetch(tinybirdIngestUrl, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${tinybirdIngestToken}`,
-                    "Content-Type": "application/x-ndjson",
-                },
-                body,
+    try {
+        const response = await fetch(tinybirdIngestUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdIngestToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body,
+            signal: AbortSignal.timeout(5000),
+        });
+
+        if (!response.ok) {
+            log.warn("Tinybird error event ingest failed: status={status}", {
+                status: response.status,
             });
-
-            if (response.ok) {
-                return;
-            }
-
-            const errorText = await response.text();
-            const isRetryable =
-                response.status >= 500 || response.status === 429;
-            const isLastAttempt = attempt === MAX_RETRIES;
-
-            if (!isRetryable || isLastAttempt) {
-                log.error(
-                    "Tinybird error event API error: status={status} error={error} attempt={attempt}",
-                    { status: response.status, error: errorText, attempt },
-                );
-                return;
-            }
-
-            await retryWithBackoff(
-                attempt,
-                log,
-                "Tinybird error event retry",
-                response.status,
-            );
-        } catch (error) {
-            if (attempt === MAX_RETRIES) {
-                log.error(
-                    "Failed to send error event to Tinybird: {error} attempt={attempt}",
-                    { error, attempt },
-                );
-                return;
-            }
-
-            await retryWithBackoff(
-                attempt,
-                log,
-                "Tinybird error event network error, retrying",
-            );
         }
+    } catch (error) {
+        log.warn("Tinybird error event ingest failed: {error}", { error });
     }
 }
 

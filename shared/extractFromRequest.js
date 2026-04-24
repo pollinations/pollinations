@@ -16,10 +16,17 @@ export function extractReferrer(req) {
     // First check URL query parameters (highest priority)
     const url = req.url;
     if (url) {
-        const urlObj = new URL(url, "http://x"); // Use dummy base for relative URLs
+        // `new URL()` throws on malformed input — guard so a bad request
+        // URL can't blow up referrer extraction for every other caller.
+        let urlObj = null;
+        try {
+            urlObj = new URL(url, "http://x"); // Use dummy base for relative URLs
+        } catch {
+            urlObj = null;
+        }
         const queryReferrer =
-            urlObj.searchParams.get("referrer") ||
-            urlObj.searchParams.get("referer"); // Support both spellings
+            urlObj?.searchParams.get("referrer") ||
+            urlObj?.searchParams.get("referer"); // Support both spellings
         if (queryReferrer) return queryReferrer;
     }
 
@@ -193,7 +200,14 @@ export function getClientIp(req) {
  * @returns {Object} { value, source } or { value: null, source: null }
  */
 function extractFromQuery(url, fields) {
-    const urlObj = new URL(url, "http://x");
+    // Malformed URLs (e.g. from hand-crafted requests) must not throw
+    // out of the generic token extractor — treat them as no-match.
+    let urlObj;
+    try {
+        urlObj = new URL(url, "http://x");
+    } catch {
+        return { value: null, source: null };
+    }
     for (const field of fields) {
         const value = urlObj.searchParams.get(field);
         if (value) return { value, source: `query:${field}` };
@@ -224,6 +238,9 @@ function extractFromHeaders(headers, fields) {
             if (field === "authorization") {
                 value = value.replace(/^Bearer\s+/i, "");
             }
+            // Reject values that became empty after the Bearer strip
+            // (e.g. an `Authorization: Bearer ` header with no token).
+            if (!value) continue;
             return { value, source: `header:${field}` };
         }
     }

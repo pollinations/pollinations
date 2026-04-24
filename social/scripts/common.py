@@ -22,7 +22,7 @@ POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
 # Models - single source of truth for all social scripts
 MODEL = "gemini-large"  # Text generation model
-IMAGE_MODEL = "nanobanana-2"  # Image generation model
+IMAGE_MODEL = "gpt-image-2"  # Image generation model
 WEBSEARCH_MODEL = "perplexity-reasoning"  # Web search model (used by Instagram)
 
 # Limits and retry settings

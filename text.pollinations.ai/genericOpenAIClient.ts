@@ -32,7 +32,14 @@ function createApiError(
     return error;
 }
 
+// Error-path parser: cap input so a huge upstream error body cannot
+// exhaust memory just by being routed through JSON.parse.
+const MAX_JSON_SAFE_BYTES = 64 * 1024;
+
 function parseJsonSafe(text: string): unknown {
+    if (typeof text !== "string" || text.length > MAX_JSON_SAFE_BYTES) {
+        return null;
+    }
     try {
         return JSON.parse(text);
     } catch {

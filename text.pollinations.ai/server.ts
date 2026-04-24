@@ -125,11 +125,18 @@ function setUsageHeaders(c: Context, completion: ChatCompletion): void {
     }
 }
 
+// Upstream error bodies can be arbitrarily large; cap the string we attempt
+// to JSON-parse so a pathological error response cannot exhaust memory.
+const MAX_ERROR_PARSE_BYTES = 64 * 1024;
+
 function parseErrorDetails(error: ServiceError): unknown {
     if (error.details) return error.details;
     const data = error.response?.data;
     if (!data) return null;
     if (typeof data !== "string") return data;
+    if (data.length > MAX_ERROR_PARSE_BYTES) {
+        return data.slice(0, MAX_ERROR_PARSE_BYTES);
+    }
     try {
         return JSON.parse(data);
     } catch {

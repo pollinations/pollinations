@@ -1,0 +1,36 @@
+{
+  "pr_number": 10314,
+  "title": "fix(audio): add seed param to enable deterministic caching",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/10314",
+  "merged_at": "2026-04-24T08:57:10Z",
+  "labels": [
+    "AUDIO",
+    "API",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Planting audio seeds",
+    "blurb": "Added a seed parameter to our audio endpoints so you can generate the exact same voice or music track on repeat. Perfect for locking in that flawless take.",
+    "summary": "Added an optional seed parameter to the audio generation endpoints to enable deterministic outputs and distinct cache variants for ElevenLabs models.",
+    "impact": "Developers can now pass a seed to reproduce specific audio generations, making it easier to lock in the perfect voice or music track.",
+    "keywords": [
+      "audio",
+      "api",
+      "seed",
+      "caching",
+      "elevenlabs"
+    ],
+    "visual_concept": "The bee mascot planting a glowing musical note seed into a lime green flower pot, representing the new 'seed' parameter for audio generation. The Nomnom creature listening to headphones.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, planting a glowing musical note seed into a lime green (#ecf874) flower pot. The round tan nomnom creature sits nearby, happily listening to a retro boombox. Soft pastel lavender and mint gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-24/PR-10314.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, planting a glowing musical note seed into a lime green (#ecf874) flower pot. The round tan nomnom creature sits nearby, happily listening to a retro boombox. Soft pastel lavender and mint gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-24T08:57:59.337818+00:00"
+}

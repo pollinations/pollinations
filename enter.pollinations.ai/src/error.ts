@@ -11,7 +11,6 @@ import {
     type TinybirdErrorEvent,
 } from "@/events.ts";
 import { ValidationError } from "@/middleware/validator";
-import { simpleHash } from "@/utils/hash.ts";
 import type { Env } from "./env.ts";
 
 type UpstreamErrorOptions = {
@@ -284,7 +283,10 @@ function emitServerError(
     log: Logger,
 ): void {
     const envelope = createServerErrorEnvelope(c, error, status, timestamp);
-    console.error(envelope);
+    log.error(
+        "server_error fingerprint={fingerprint} route={routePath} status={status} class={errorClass}",
+        envelope,
+    );
 
     c.executionCtx.waitUntil(
         sendErrorEventToTinybird(
@@ -325,14 +327,12 @@ function createServerErrorEnvelope(
     const stack = truncateString(error.stack, MAX_STACK_LENGTH);
     const topStackFrame = getTopStackFrame(stack);
     const resolvedRoutePath = routePath(c) || c.req.path;
-    const fingerprint = simpleHash(
-        [
-            resolvedRoutePath,
-            error.name,
-            messageNormalized,
-            topStackFrame || "no_stack",
-        ].join("|"),
-    );
+    const fingerprint = createServerErrorFingerprint({
+        routePath: resolvedRoutePath,
+        errorClass: error.name,
+        messageNormalized,
+        topStackFrame,
+    });
 
     return {
         kind: "server_error",
@@ -412,6 +412,31 @@ function normalizeErrorMessage(message: string): string {
         )
         .replaceAll(/\b0x[0-9a-f]+\b/gi, "<hex>")
         .replaceAll(/\b\d+\b/g, "<num>");
+}
+
+export function createServerErrorFingerprint(input: {
+    routePath: string;
+    errorClass: string;
+    messageNormalized: string;
+    topStackFrame?: string;
+}): string {
+    return hashFingerprint(
+        [
+            input.routePath,
+            input.errorClass,
+            input.messageNormalized,
+            input.topStackFrame || "no_stack",
+        ].join("|"),
+    );
+}
+
+function hashFingerprint(value: string): string {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < value.length; i++) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(36);
 }
 
 function getTopStackFrame(stack?: string): string | undefined {

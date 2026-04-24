@@ -1,0 +1,36 @@
+{
+  "pr_number": 10252,
+  "title": "refactor(image): replace boolean reasoning with fast/balanced/pro modes",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/10252",
+  "merged_at": "2026-04-24T10:58:28Z",
+  "labels": [
+    "IMAGE",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Thinking in three speeds",
+    "blurb": "We've upgraded our image generation reasoning from a simple on/off switch to three distinct gears: fast, balanced, and pro. Now you get precise control over quality and speed without worrying about the messy underlying model configs.",
+    "summary": "Replaced the boolean reasoning toggle for image generation with a new mode-based system (fast, balanced, pro) that correctly maps to model-specific configurations and fixes budget capping issues.",
+    "impact": "Developers can now fine-tune the balance between generation speed and reasoning depth, while backward compatibility ensures existing integrations keep working seamlessly.",
+    "keywords": [
+      "api",
+      "image-generation",
+      "reasoning",
+      "gemini",
+      "performance"
+    ],
+    "visual_concept": "The pollinations bee mascot adjusting a three-speed dial or gear system on a retro computer monitor. The monitor shows a glowing brain or gears. The robot companion is watching excitedly.",
+    "image_prompt": "Cozy pixel art scene of a retro computer terminal with a chunky three-speed dial. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She wears tiny engineer goggles and adjusts the dial, while a chunky pixel robot with a monitor head watches excitedly. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-24/PR-10252.jpg",
+    "prompt": "Cozy pixel art scene of a retro computer terminal with a chunky three-speed dial. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She wears tiny engineer goggles and adjusts the dial, while a chunky pixel robot with a monitor head watches excitedly. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-24T10:59:25.533773+00:00"
+}

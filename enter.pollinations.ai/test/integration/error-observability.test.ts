@@ -42,8 +42,17 @@ describe("Error observability", () => {
             );
 
             expect(response.status).toBe(502);
-            await response.text();
+            const body = (await response.json()) as {
+                error: { details?: Record<string, unknown> };
+            };
             await waitOnExecutionContext(ctx);
+
+            expect(body.error.details).toMatchObject({
+                name: "UpstreamError",
+                upstreamStatus: 200,
+                upstreamHost: "ec2-54-147-14-220.compute-1.amazonaws.com",
+                upstreamBody: "application/json",
+            });
 
             expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
             expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({

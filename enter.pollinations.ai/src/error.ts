@@ -42,14 +42,15 @@ export class UpstreamError extends HTTPException {
 const GenericErrorDetailsSchema = z
     .object({
         name: z.string(),
-        stack: z.string().optional(),
+        upstreamStatus: z.number().int().optional(),
+        upstreamHost: z.string().optional(),
+        upstreamBody: z.string().optional(),
     })
     .meta({ $id: "ErrorDetails" });
 
 const ValidationErrorDetailsSchema = z
     .object({
         name: z.string(),
-        stack: z.string().optional(),
         formErrors: z.array(z.string()),
         fieldErrors: z.record(z.string(), z.array(z.string())),
     })
@@ -144,7 +145,10 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
                 message: err.message || getDefaultErrorMessage(err.status),
             });
         }
-        return c.json(createErrorResponse(err, status, timestamp), status);
+        return c.json(
+            createUpstreamErrorResponse(err, status, timestamp),
+            status,
+        );
     }
 
     if (err instanceof HTTPException) {
@@ -219,7 +223,22 @@ function createInternalErrorResponse(
 ): ErrorResponse {
     return createErrorResponse(error, status, timestamp, {
         name: error.name,
-        stack: error.stack,
+    });
+}
+
+function createUpstreamErrorResponse(
+    error: UpstreamError,
+    status: ContentfulStatusCode,
+    timestamp: string,
+): ErrorResponse {
+    return createErrorResponse(error, status, timestamp, {
+        name: error.name,
+        upstreamStatus: error.upstreamStatus,
+        upstreamHost: error.requestUrl?.hostname,
+        upstreamBody: truncateString(
+            error.responseBody,
+            MAX_UPSTREAM_BODY_LENGTH,
+        ),
     });
 }
 

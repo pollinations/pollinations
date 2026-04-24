@@ -105,6 +105,7 @@ export async function callNovaReelAPI(
                   durationSeconds,
                   fps: 24,
                   dimension: "1280x720",
+                  seed: safeParams.seed,
               },
           }
         : {
@@ -114,6 +115,7 @@ export async function callNovaReelAPI(
                   durationSeconds,
                   fps: 24,
                   dimension: "1280x720",
+                  seed: safeParams.seed,
               },
           };
 

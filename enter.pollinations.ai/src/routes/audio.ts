@@ -13,11 +13,7 @@ import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import {
-    getDefaultErrorMessage,
-    remapUpstreamStatus,
-    UpstreamError,
-} from "@/error.ts";
+import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
@@ -155,7 +151,7 @@ export async function generateSpeech(opts: {
         elevenLabsBody.seed = opts.seed;
     }
 
-    const response = await fetch(elevenLabsUrl, {
+    const rawResponse = await fetch(elevenLabsUrl, {
         method: "POST",
         headers: {
             "xi-api-key": apiKey,
@@ -164,19 +160,10 @@ export async function generateSpeech(opts: {
         },
         body: JSON.stringify(elevenLabsBody),
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-            upstreamStatus: response.status,
-            responseBody: errorText,
-        });
-    }
+    const response = await ensureUpstreamOk(
+        rawResponse,
+        new URL(elevenLabsUrl),
+    );
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
@@ -244,29 +231,18 @@ export async function transcribeWithElevenLabs(opts: {
         formData.append("language_code", language);
     }
 
-    const response = await fetch(
-        "https://api.elevenlabs.io/v1/speech-to-text",
-        {
-            method: "POST",
-            headers: {
-                "xi-api-key": apiKey,
-            },
-            body: formData,
+    const elevenLabsUrl = "https://api.elevenlabs.io/v1/speech-to-text";
+    const rawResponse = await fetch(elevenLabsUrl, {
+        method: "POST",
+        headers: {
+            "xi-api-key": apiKey,
         },
+        body: formData,
+    });
+    const response = await ensureUpstreamOk(
+        rawResponse,
+        new URL(elevenLabsUrl),
     );
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs transcription error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-            upstreamStatus: response.status,
-            responseBody: errorText,
-        });
-    }
 
     const elevenLabsData: ElevenLabsTranscriptionResponse =
         await response.json();
@@ -378,7 +354,7 @@ export async function generateMusic(opts: {
         elevenLabsBody.seed = opts.seed;
     }
 
-    const response = await fetch(elevenLabsUrl, {
+    const rawResponse = await fetch(elevenLabsUrl, {
         method: "POST",
         headers: {
             "xi-api-key": apiKey,
@@ -387,19 +363,10 @@ export async function generateMusic(opts: {
         },
         body: JSON.stringify(elevenLabsBody),
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("ElevenLabs Music error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-            upstreamStatus: response.status,
-            responseBody: errorText,
-        });
-    }
+    const response = await ensureUpstreamOk(
+        rawResponse,
+        new URL(elevenLabsUrl),
+    );
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
@@ -478,7 +445,7 @@ export async function generateQwenTts(opts: {
         parameters: instruct ? { instruct } : {},
     };
 
-    const response = await fetch(QWEN_TTS_ENDPOINT, {
+    const rawResponse = await fetch(QWEN_TTS_ENDPOINT, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -486,19 +453,10 @@ export async function generateQwenTts(opts: {
         },
         body: JSON.stringify(body),
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        log.warn("Qwen TTS error {status}: {body}", {
-            status: response.status,
-            body: errorText,
-        });
-        throw new UpstreamError(remapUpstreamStatus(response.status), {
-            message: errorText || getDefaultErrorMessage(response.status),
-            upstreamStatus: response.status,
-            responseBody: errorText,
-        });
-    }
+    const response = await ensureUpstreamOk(
+        rawResponse,
+        new URL(QWEN_TTS_ENDPOINT),
+    );
 
     const data = (await response.json()) as {
         output?: { audio?: { url?: string } };
@@ -570,7 +528,8 @@ export async function generateAceStepMusic(opts: {
 
     const authHeaders = { Authorization: `Bearer ${serviceToken}` };
 
-    const submitResponse = await fetch(`${serviceUrl}/release_task`, {
+    const submitUrl = `${serviceUrl}/release_task`;
+    const rawSubmitResponse = await fetch(submitUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
@@ -582,19 +541,10 @@ export async function generateAceStepMusic(opts: {
             audio_format: "mp3",
         }),
     });
-
-    if (!submitResponse.ok) {
-        const errorText = await submitResponse.text();
-        log.warn("ACE-Step submit error {status}: {body}", {
-            status: submitResponse.status,
-            body: errorText,
-        });
-        throw new UpstreamError(submitResponse.status as ContentfulStatusCode, {
-            message: errorText || getDefaultErrorMessage(submitResponse.status),
-            upstreamStatus: submitResponse.status,
-            responseBody: errorText,
-        });
-    }
+    const submitResponse = await ensureUpstreamOk(
+        rawSubmitResponse,
+        new URL(submitUrl),
+    );
 
     const submitData = (await submitResponse.json()) as {
         data?: { task_id?: string };
@@ -962,30 +912,19 @@ export const audioRoutes = new Hono<Env>()
             whisperFormData.append("timestamp_granularities[]", "word");
 
             // Thin proxy to OVHcloud Whisper
-            const response = await fetch(
-                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions",
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${ovhApiKey}`,
-                    },
-                    body: whisperFormData,
+            const whisperUrl =
+                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
+            const rawResponse = await fetch(whisperUrl, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${ovhApiKey}`,
                 },
+                body: whisperFormData,
+            });
+            const response = await ensureUpstreamOk(
+                rawResponse,
+                new URL(whisperUrl),
             );
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                log.warn("Transcription error {status}: {body}", {
-                    status: response.status,
-                    body: errorText,
-                });
-                throw new UpstreamError(remapUpstreamStatus(response.status), {
-                    message:
-                        errorText || getDefaultErrorMessage(response.status),
-                    upstreamStatus: response.status,
-                    responseBody: errorText,
-                });
-            }
 
             // Read body to extract duration for usage billing
             const responseBody = await response.text();

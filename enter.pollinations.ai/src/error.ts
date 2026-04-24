@@ -39,6 +39,20 @@ export class UpstreamError extends HTTPException {
     }
 }
 
+export async function ensureUpstreamOk(
+    response: Response,
+    requestUrl: URL,
+): Promise<Response> {
+    if (response.ok) return response;
+    const responseBody = await response.text();
+    throw new UpstreamError(remapUpstreamStatus(response.status), {
+        message: responseBody || getDefaultErrorMessage(response.status),
+        requestUrl,
+        upstreamStatus: response.status,
+        responseBody,
+    });
+}
+
 const GenericErrorDetailsSchema = z
     .object({
         name: z.string(),
@@ -124,9 +138,9 @@ type ServerErrorEnvelope = {
     apiKeyId?: string;
 };
 
-const MAX_ERROR_MESSAGE_LENGTH = 2000;
+const MAX_ERROR_MESSAGE_LENGTH = 4000;
 const MAX_STACK_LENGTH = 12000;
-const MAX_UPSTREAM_BODY_LENGTH = 4000;
+const MAX_UPSTREAM_BODY_LENGTH = 16000;
 
 export const handleError: ErrorHandler<Env> = async (err, c) => {
     const log = c.get("log");

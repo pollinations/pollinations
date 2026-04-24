@@ -22,6 +22,7 @@ type PipeCall = {
 
 export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
+    errorEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
     pipeCalls: PipeCall[];
@@ -30,6 +31,7 @@ export type MockTinybirdState = {
 export function createMockTinybird(): MockAPI<MockTinybirdState> {
     const state: MockTinybirdState = {
         events: [],
+        errorEvents: [],
         dailyResponse: [],
         usageResponse: [],
         pipeCalls: [],
@@ -55,6 +57,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 state.events.push(...events);
             }
 
+            if (eventName === "error_event") {
+                state.errorEvents.push(...rows);
+            }
+
             return c.json(
                 { successful_rows: rows.length, quarantined_rows: 0 },
                 200,
@@ -75,6 +81,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
 
     const reset = () => {
         state.events = [];
+        state.errorEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];
         state.pipeCalls = [];

@@ -115,6 +115,8 @@ const imageVideoHandlers = factory.createHandlers(
                 message:
                     responseText || getDefaultErrorMessage(response.status),
                 requestUrl: targetUrl,
+                upstreamStatus: response.status,
+                responseBody: responseText,
             });
         }
 
@@ -174,6 +176,8 @@ const chatCompletionHandlers = factory.createHandlers(
             throw new UpstreamError(remapUpstreamStatus(response.status), {
                 message: errorMessage,
                 requestUrl: targetUrl,
+                upstreamStatus: response.status,
+                responseBody: responseText,
             });
         }
 
@@ -185,6 +189,8 @@ const chatCompletionHandlers = factory.createHandlers(
                 throw new UpstreamError(502, {
                     message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
                     requestUrl: targetUrl,
+                    upstreamStatus: response.status,
+                    responseBody: contentType,
                 });
             }
         }
@@ -544,6 +550,8 @@ export const proxyRoutes = new Hono<Env>()
                     message:
                         responseText || getDefaultErrorMessage(response.status),
                     requestUrl: targetUrl,
+                    upstreamStatus: response.status,
+                    responseBody: responseText,
                 });
             }
 

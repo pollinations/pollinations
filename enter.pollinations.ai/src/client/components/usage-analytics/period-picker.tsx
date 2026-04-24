@@ -50,21 +50,37 @@ function monthGridDates(viewMonth: Date): Date[] {
 }
 
 function sameUtcDay(left: Date, right: Date): boolean {
-    return left.toISOString().slice(0, 10) === right.toISOString().slice(0, 10);
+    return left.getTime() === right.getTime();
 }
 
 function periodDate(value: UsagePeriodSelection): Date {
     return periodToWindow(value).start;
 }
 
+function viewBounds(
+    viewDate: Date,
+    granularity: PeriodGranularity,
+): { start: Date; end: Date } {
+    if (granularity === "month") {
+        const start = new Date(Date.UTC(viewDate.getUTCFullYear(), 0, 1));
+        return { start, end: addUtcMonths(start, 12) };
+    }
+
+    const start = new Date(
+        Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth(), 1),
+    );
+    return { start, end: addUtcMonths(start, 1) };
+}
+
 export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(() => periodDate(value));
     const ref = useRef<HTMLDivElement>(null);
+    const { granularity, period } = value;
 
     useEffect(() => {
-        setViewDate(periodDate(value));
-    }, [value]);
+        setViewDate(periodDate({ granularity, period }));
+    }, [granularity, period]);
 
     useEffect(() => {
         const handleClick = (event: MouseEvent) => {
@@ -75,6 +91,19 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
         document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
     }, []);
+
+    useEffect(() => {
+        if (!open) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setOpen(false);
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [open]);
 
     const dates = useMemo(() => monthGridDates(viewDate), [viewDate]);
     const selectedWindow = periodToWindow(value);
@@ -88,14 +117,10 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
         value.granularity === "month"
             ? addUtcMonths(viewDate, 12)
             : addUtcMonths(viewDate, 1);
-    const previousDisabled =
-        value.granularity === "month"
-            ? previousViewDate.getUTCFullYear() < minDate.getUTCFullYear()
-            : addUtcMonths(previousViewDate, 1) <= minDate;
-    const nextDisabled =
-        value.granularity === "month"
-            ? nextViewDate.getUTCFullYear() > today.getUTCFullYear()
-            : nextViewDate > today;
+    const previousBounds = viewBounds(previousViewDate, value.granularity);
+    const nextBounds = viewBounds(nextViewDate, value.granularity);
+    const previousDisabled = previousBounds.end <= minDate;
+    const nextDisabled = nextBounds.start > today;
 
     const setGranularity = (granularity: PeriodGranularity) => {
         onChange(periodFromDate(granularity, periodDate(value)));
@@ -133,6 +158,9 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
             </div>
             <button
                 type="button"
+                aria-expanded={open}
+                aria-haspopup="dialog"
+                aria-label={`Select usage period, current ${formatPeriodLabel(value)}`}
                 onClick={() => setOpen((isOpen) => !isOpen)}
                 className={cn(
                     "inline-flex min-w-[150px] items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-left text-xs font-medium",
@@ -162,10 +190,19 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                 </svg>
             </button>
             {open && (
-                <div className="absolute left-0 top-full z-30 mt-2 w-[304px] rounded-xl border border-amber-950 bg-white p-3 shadow-lg transition-opacity duration-200 ease-out">
+                <div
+                    role="dialog"
+                    aria-label="Usage period picker"
+                    className="absolute left-0 top-full z-30 mt-2 w-[304px] rounded-xl border border-amber-950 bg-white p-3 shadow-lg transition-opacity duration-200 ease-out"
+                >
                     <div className="mb-3 flex items-center justify-between">
                         <button
                             type="button"
+                            aria-label={
+                                value.granularity === "month"
+                                    ? "Previous year"
+                                    : "Previous month"
+                            }
                             disabled={previousDisabled}
                             onClick={() => setViewDate(previousViewDate)}
                             className={cn(
@@ -181,6 +218,11 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                         </div>
                         <button
                             type="button"
+                            aria-label={
+                                value.granularity === "month"
+                                    ? "Next year"
+                                    : "Next month"
+                            }
                             disabled={nextDisabled}
                             onClick={() => setViewDate(nextViewDate)}
                             className={cn(
@@ -206,6 +248,14 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                                 const selectable = isUsagePeriodSelectable(
                                     periodFromDate("month", date),
                                 );
+                                const ariaLabel = date.toLocaleDateString(
+                                    "en-US",
+                                    {
+                                        timeZone: "UTC",
+                                        month: "long",
+                                        year: "numeric",
+                                    },
+                                );
                                 const selected =
                                     date.getUTCFullYear() ===
                                         selectedWindow.start.getUTCFullYear() &&
@@ -215,6 +265,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                                     <button
                                         type="button"
                                         key={label}
+                                        aria-label={ariaLabel}
                                         disabled={!selectable}
                                         onClick={() => selectDate(date)}
                                         className={cn(
@@ -246,6 +297,19 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                                     const selectable = isUsagePeriodSelectable(
                                         periodFromDate(value.granularity, date),
                                     );
+                                    const ariaLabel =
+                                        value.granularity === "week"
+                                            ? `Select week ${formatPeriodLabel(periodFromDate("week", date))}`
+                                            : `Select ${date.toLocaleDateString(
+                                                  "en-US",
+                                                  {
+                                                      timeZone: "UTC",
+                                                      weekday: "long",
+                                                      month: "long",
+                                                      day: "numeric",
+                                                      year: "numeric",
+                                                  },
+                                              )}`;
                                     const selected =
                                         value.granularity === "day"
                                             ? sameUtcDay(
@@ -258,6 +322,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                                         <button
                                             type="button"
                                             key={date.toISOString()}
+                                            aria-label={ariaLabel}
                                             disabled={!selectable}
                                             onClick={() => selectDate(date)}
                                             className={cn(

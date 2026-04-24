@@ -153,18 +153,27 @@ type UsageWindow = {
     until: string;
 };
 
+type UsageWindowDates = {
+    sinceDate: Date;
+    untilDate: Date;
+};
+
 type UsagePeriod = {
     granularity?: PeriodGranularity;
     period?: string;
 };
 
-function buildUsageWindow(days: number): UsageWindow {
+function formatUsageWindow(window: UsageWindowDates): UsageWindow {
+    return {
+        since: formatTinybirdDateTime(window.sinceDate),
+        until: formatTinybirdDateTime(window.untilDate),
+    };
+}
+
+function buildUsageWindow(days: number): UsageWindowDates {
     const untilDate = startOfNextUtcDay();
     const sinceDate = addUtcDays(untilDate, -days);
-    return {
-        since: formatTinybirdDateTime(sinceDate),
-        until: formatTinybirdDateTime(untilDate),
-    };
+    return { sinceDate, untilDate };
 }
 
 function startOfUtcDay(year: number, monthIndex: number, day: number): Date {
@@ -175,7 +184,7 @@ function usageMinDate(): Date {
     return new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
 }
 
-function parseUtcDayPeriod(period: string): UsageWindow | null {
+function parseUtcDayPeriod(period: string): UsageWindowDates | null {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(period);
     if (!match) return null;
     const year = Number(match[1]);
@@ -189,13 +198,10 @@ function parseUtcDayPeriod(period: string): UsageWindow | null {
     ) {
         return null;
     }
-    return {
-        since: formatTinybirdDateTime(sinceDate),
-        until: formatTinybirdDateTime(addUtcDays(sinceDate, 1)),
-    };
+    return { sinceDate, untilDate: addUtcDays(sinceDate, 1) };
 }
 
-function parseUtcMonthPeriod(period: string): UsageWindow | null {
+function parseUtcMonthPeriod(period: string): UsageWindowDates | null {
     const match = /^(\d{4})-(\d{2})$/.exec(period);
     if (!match) return null;
     const year = Number(match[1]);
@@ -208,13 +214,10 @@ function parseUtcMonthPeriod(period: string): UsageWindow | null {
         return null;
     }
     const untilDate = startOfUtcDay(year, month, 1);
-    return {
-        since: formatTinybirdDateTime(sinceDate),
-        until: formatTinybirdDateTime(untilDate),
-    };
+    return { sinceDate, untilDate };
 }
 
-function parseUtcWeekPeriod(period: string): UsageWindow | null {
+function parseUtcWeekPeriod(period: string): UsageWindowDates | null {
     const match = /^(\d{4})-W(\d{2})$/.exec(period);
     if (!match) return null;
     const isoYear = Number(match[1]);
@@ -229,10 +232,7 @@ function parseUtcWeekPeriod(period: string): UsageWindow | null {
 
     if (getUtcIsoWeekPeriod(sinceDate) !== period) return null;
 
-    return {
-        since: formatTinybirdDateTime(sinceDate),
-        until: formatTinybirdDateTime(addUtcDays(sinceDate, 7)),
-    };
+    return { sinceDate, untilDate: addUtcDays(sinceDate, 7) };
 }
 
 function getUtcIsoWeekPeriod(date: Date): string {
@@ -256,15 +256,21 @@ function getUtcIsoWeekPeriod(date: Date): string {
 function buildUsageWindowFromPeriod({
     granularity,
     period,
-}: UsagePeriod): UsageWindow | null {
+}: UsagePeriod): UsageWindowDates | null {
     if (!granularity || !period) return null;
 
     if (granularity === "day") return parseUtcDayPeriod(period);
     if (granularity === "week") return parseUtcWeekPeriod(period);
-    return parseUtcMonthPeriod(period);
+    if (granularity === "month") return parseUtcMonthPeriod(period);
+
+    granularity satisfies never;
+    return null;
 }
 
-function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
+function resolveUsageWindow(
+    days: number,
+    period: UsagePeriod,
+): UsageWindowDates {
     const hasPeriodParam = period.granularity || period.period;
     const usageWindow = buildUsageWindowFromPeriod(period);
     if (hasPeriodParam && !usageWindow) {
@@ -274,15 +280,16 @@ function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
         });
     }
     if (usageWindow) {
-        const sinceDate = new Date(`${usageWindow.since.replace(" ", "T")}Z`);
-        const untilDate = new Date(`${usageWindow.until.replace(" ", "T")}Z`);
         const now = new Date();
         const today = startOfUtcDay(
             now.getUTCFullYear(),
             now.getUTCMonth(),
             now.getUTCDate(),
         );
-        if (untilDate <= usageMinDate() || sinceDate > today) {
+        if (
+            usageWindow.untilDate <= usageMinDate() ||
+            usageWindow.sinceDate > today
+        ) {
             throw new HTTPException(400, {
                 message: `Usage period must overlap ${USAGE_MIN_DATE} through today.`,
             });
@@ -305,16 +312,15 @@ function buildUsageWindows(
 ): UsageWindow[] {
     const overallWindow = resolveUsageWindow(days, period);
     const windows: UsageWindow[] = [];
-    let cursor = new Date(`${overallWindow.since.replace(" ", "T")}Z`);
-    const end = new Date(`${overallWindow.until.replace(" ", "T")}Z`);
+    let cursor = overallWindow.sinceDate;
+    const end = overallWindow.untilDate;
 
     while (cursor < end) {
         const next = addUtcDays(cursor, chunkDays);
         const boundedNext = next < end ? next : end;
-        windows.push({
-            since: formatTinybirdDateTime(cursor),
-            until: formatTinybirdDateTime(boundedNext),
-        });
+        windows.push(
+            formatUsageWindow({ sinceDate: cursor, untilDate: boundedNext }),
+        );
         cursor = boundedNext;
     }
 
@@ -755,10 +761,12 @@ export const accountRoutes = new Hono<Env>()
                 c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
-            const usageWindow = resolveUsageWindow(days, {
-                granularity,
-                period,
-            });
+            const usageWindow = formatUsageWindow(
+                resolveUsageWindow(days, {
+                    granularity,
+                    period,
+                }),
+            );
             const filenamePeriod = usageWindowFilenamePart(days, {
                 granularity,
                 period,
@@ -1368,10 +1376,12 @@ export const accountRoutes = new Hono<Env>()
 
             const { format, limit, before, days, granularity, period } =
                 c.req.valid("query");
-            const usageWindow = resolveUsageWindow(days, {
-                granularity,
-                period,
-            });
+            const usageWindow = formatUsageWindow(
+                resolveUsageWindow(days, {
+                    granularity,
+                    period,
+                }),
+            );
             const filenamePeriod = usageWindowFilenamePart(days, {
                 granularity,
                 period,

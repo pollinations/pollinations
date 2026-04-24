@@ -1,0 +1,35 @@
+{
+  "date": "2026-04-23",
+  "period_start": "2026-04-23",
+  "period_end": "2026-04-23",
+  "title": "MCP v2.1.0: Dynamic registries and account tools",
+  "summary": "A heavy frontend polish day brings a massive MCP server upgrade, a personalized Play page experience, and a much smoother mobile UI.\n\nThe MCP server got a hefty upgrade. Agents can now tap into 9 video models and over 35 voices via dynamic registries. We also added account tools so your agents can check their own Pollen balances without leaving the terminal.\n\nWe've updated the Play page to focus on a streamlined, authenticated flow. Logging in now unlocks the full model catalog and ensures proper BYOP traffic attribution for creators.\n\nA cluster of UI updates makes browsing models and managing keys significantly less annoying. The pricing page now features brand logos and one-click API key copying. On mobile, we fixed the background scrolling in modals, centered the header, and cleaned up the pricing tables.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 10379,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10415,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10416,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10425,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10426,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10427,
+      "date": "2026-04-23"
+    }
+  ],
+  "generated_at": "2026-04-24T06:36:55.491346+00:00"
+}

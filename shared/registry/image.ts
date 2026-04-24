@@ -191,6 +191,7 @@ export const IMAGE_SERVICES = {
                 promptTextTokens: perMillion(5), // per 1M tokens
                 promptCachedTokens: perMillion(1.25), // per 1M tokens
                 promptImageTokens: perMillion(8), // per 1M tokens
+                completionTextTokens: perMillion(10), // per 1M tokens
                 completionImageTokens: perMillion(32), // per 1M tokens
             },
         ],

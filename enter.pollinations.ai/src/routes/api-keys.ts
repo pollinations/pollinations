@@ -147,6 +147,10 @@ const UpdateMetadataSchema = z.object({
         .refine((val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val), {
             message: "Must be a valid URL with a scheme (e.g. https://...)",
         })
+        .refine((val) => !isLoopbackUrl(val), {
+            message:
+                "Loopback URLs (localhost, 127.x.x.x, ::1) cannot be registered — they are shared by every local development environment.",
+        })
         .optional(),
 });
 

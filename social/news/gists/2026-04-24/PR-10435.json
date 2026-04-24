@@ -1,0 +1,34 @@
+{
+  "pr_number": 10435,
+  "title": "[codex] add usage period picker",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10435",
+  "merged_at": "2026-04-24T08:43:17Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Harvesting data by the day",
+    "blurb": "We've swapped out the old rolling usage buttons for a shiny new calendar picker. Now you can slice and dice your API usage stats by exact days, weeks, or months!",
+    "summary": "Replaced rolling usage range buttons with a precise Day/Week/Month calendar period picker, including backend support for exact time windows.",
+    "impact": "Users can now filter their API usage data and export CSVs for specific time periods instead of relying on fixed rolling windows.",
+    "keywords": [
+      "analytics",
+      "dashboard",
+      "usage",
+      "ui",
+      "calendar"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking at a glowing calendar and usage charts. The robot's screen shows a bar chart, and Polly is holding a tiny pointer to represent selecting a specific time period.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, pointing at a glowing retro calendar next to a chunky monitor robot whose screen displays a colorful bar chart. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-24/PR-10435.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, pointing at a glowing retro calendar next to a chunky monitor robot whose screen displays a colorful bar chart. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-24T08:45:37.727742+00:00"
+}

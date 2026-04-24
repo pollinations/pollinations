@@ -433,18 +433,12 @@ const checkCacheAndGenerate = async (
             "X-Error-Type": errorType,
         });
 
-        // Create a response object with error information
         const responseObj = {
             error: errorType,
             message: error.message,
             details: error.details,
             timingInfo: relativeTiming(timingInfo),
             requestId,
-            requestParameters: {
-                prompt: originalPrompt,
-                ...safeParams,
-                referrer,
-            },
             queueInfo: null,
         };
 

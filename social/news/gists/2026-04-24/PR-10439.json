@@ -1,0 +1,34 @@
+{
+  "pr_number": 10439,
+  "title": "feat: add DeepSeek V4 via DeepInfra",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10439",
+  "merged_at": "2026-04-24T11:22:49Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seeking deeper knowledge",
+    "blurb": "DeepSeek V4 Flash and Pro have officially landed in the hive! Tap into these incredibly powerful new reasoning models for your next big idea.",
+    "summary": "Integrated DeepSeek V4 Flash and Pro models into the text generation API via DeepInfra.",
+    "impact": "Developers can now route requests to the latest DeepSeek V4 models for advanced text, reasoning, and coding tasks.",
+    "keywords": [
+      "deepseek",
+      "llm",
+      "text-generation",
+      "api",
+      "models"
+    ],
+    "visual_concept": "DeepSeek is famously represented by a whale. The scene should feature the Pollinations bee mascot making friends with a cute, chunky pixel art whale surfacing in a cozy garden pond, representing the new DeepSeek V4 integration.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sailor hat, greeting a friendly, chunky blue whale surfacing in a small garden pond. Lime green (#ecf874) lily pads and glowing code-plants surround the water. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-24/PR-10439.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny sailor hat, greeting a friendly, chunky blue whale surfacing in a small garden pond. Lime green (#ecf874) lily pads and glowing code-plants surround the water. Soft pastel lavender and peach gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-24T11:23:56.312710+00:00"
+}

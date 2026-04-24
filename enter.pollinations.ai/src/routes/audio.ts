@@ -173,6 +173,8 @@ export async function generateSpeech(opts: {
         });
         throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
+            upstreamStatus: response.status,
+            responseBody: errorText,
         });
     }
 
@@ -261,6 +263,8 @@ export async function transcribeWithElevenLabs(opts: {
         });
         throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
+            upstreamStatus: response.status,
+            responseBody: errorText,
         });
     }
 
@@ -392,6 +396,8 @@ export async function generateMusic(opts: {
         });
         throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
+            upstreamStatus: response.status,
+            responseBody: errorText,
         });
     }
 
@@ -489,6 +495,8 @@ export async function generateQwenTts(opts: {
         });
         throw new UpstreamError(remapUpstreamStatus(response.status), {
             message: errorText || getDefaultErrorMessage(response.status),
+            upstreamStatus: response.status,
+            responseBody: errorText,
         });
     }
 
@@ -505,8 +513,13 @@ export async function generateQwenTts(opts: {
 
     const audioResponse = await fetch(audioUrl);
     if (!audioResponse.ok) {
+        const errorText = await audioResponse.text();
         throw new UpstreamError(502 as ContentfulStatusCode, {
-            message: `Failed to fetch generated audio: ${audioResponse.status}`,
+            message:
+                errorText ||
+                `Failed to fetch generated audio: ${audioResponse.status}`,
+            upstreamStatus: audioResponse.status,
+            responseBody: errorText,
         });
     }
     const audioBuffer = await audioResponse.arrayBuffer();
@@ -578,6 +591,8 @@ export async function generateAceStepMusic(opts: {
         });
         throw new UpstreamError(submitResponse.status as ContentfulStatusCode, {
             message: errorText || getDefaultErrorMessage(submitResponse.status),
+            upstreamStatus: submitResponse.status,
+            responseBody: errorText,
         });
     }
 
@@ -610,8 +625,13 @@ export async function generateAceStepMusic(opts: {
 
         if (!pollResponse.ok) {
             if (++consecutiveErrors >= 3) {
+                const errorText = await pollResponse.text();
                 throw new UpstreamError(502 as ContentfulStatusCode, {
-                    message: `ACE-Step polling failed: ${pollResponse.status}`,
+                    message:
+                        errorText ||
+                        `ACE-Step polling failed: ${pollResponse.status}`,
+                    upstreamStatus: pollResponse.status,
+                    responseBody: errorText,
                 });
             }
             continue;
@@ -654,6 +674,8 @@ export async function generateAceStepMusic(opts: {
         const errorText = await audioResponse.text();
         throw new UpstreamError(audioResponse.status as ContentfulStatusCode, {
             message: errorText || "Failed to download generated audio",
+            upstreamStatus: audioResponse.status,
+            responseBody: errorText,
         });
     }
 
@@ -960,6 +982,8 @@ export const audioRoutes = new Hono<Env>()
                 throw new UpstreamError(remapUpstreamStatus(response.status), {
                     message:
                         errorText || getDefaultErrorMessage(response.status),
+                    upstreamStatus: response.status,
+                    responseBody: errorText,
                 });
             }
 

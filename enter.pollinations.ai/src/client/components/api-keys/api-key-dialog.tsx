@@ -8,7 +8,6 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
-import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import { Button } from "../button.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -64,8 +63,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    useScrollLock(isOpen);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -158,11 +155,11 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     {triggerLabel}
                 </Button>
             </Dialog.Trigger>
-            <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
-            <Dialog.Positioner className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto z-[100]">
+            <Dialog.Backdrop className="fixed inset-0 z-[100] bg-green-950/50" />
+            <Dialog.Positioner className="fixed inset-0 z-[110] flex h-dvh items-start justify-center overflow-hidden p-4">
                 <Dialog.Content
                     className={cn(
-                        "border-4 rounded-lg shadow-lg max-w-2xl w-full my-auto",
+                        "my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border-4 shadow-lg",
                         "bg-white border-green-950",
                     )}
                 >
@@ -193,17 +190,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                     <form
                         onSubmit={handleSubmit}
-                        className="flex flex-col flex-1 min-h-0 overflow-hidden"
+                        className="flex min-h-0 flex-1 flex-col"
                     >
-                        {error && (
-                            <div className="px-6 pt-2 pb-4 shrink-0">
-                                <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-                                    {error}
-                                </p>
-                            </div>
-                        )}
+                        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
+                            {error && (
+                                <div className="pb-2">
+                                    <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                                        {error}
+                                    </p>
+                                </div>
+                            )}
 
-                        <div className="px-6 pb-2 space-y-4">
                             <hr className="border-gray-200" />
                             <Field.Root className="flex items-center gap-3">
                                 <Field.Label className="text-sm font-semibold shrink-0">

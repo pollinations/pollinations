@@ -7,7 +7,8 @@ import { Panel } from "../ui/panel.tsx";
 import { Chart } from "./chart";
 import { FilterButton } from "./filter-button";
 import { MultiSelect } from "./multi-select";
-import type { FilterState, Metric, TimeRange } from "./types";
+import { PeriodPicker } from "./period-picker.tsx";
+import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const TIER_PILL_CLASSES = {
@@ -22,18 +23,18 @@ const TIER_PILL_CLASSES = {
 
 type UsageGraphProps = {
     tier?: TierStatus;
-    timeRange: TimeRange;
-    onTimeRangeChange: (timeRange: TimeRange) => void;
+    period: UsagePeriodSelection;
+    onPeriodChange: (period: UsagePeriodSelection) => void;
     apiKeys: Array<{ id: string; name: string }>;
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
     tier,
-    timeRange,
-    onTimeRangeChange,
+    period,
+    onPeriodChange,
     apiKeys,
 }) => {
-    const [filters, setFilters] = useState<Omit<FilterState, "timeRange">>({
+    const [filters, setFilters] = useState<Omit<FilterState, "period">>({
         metric: "pollen",
         selectedKeyIds: [],
         selectedModels: [],
@@ -55,7 +56,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
     const { loading, error, fetchUsage, usedModels, chartData, stats } =
         useUsageData({
             ...filters,
-            timeRange,
+            period,
         });
 
     const modelSelectOptions = usedModels.map((m) => ({
@@ -75,19 +76,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
     const showModelBreakdown =
         filters.selectedModels.length === 0 ||
         filters.selectedModels.length > 1;
-
-    // On mobile, if "all" (90 days) is selected, switch to 30d
-    useEffect(() => {
-        const handleResize = () => {
-            const isMobile = window.innerWidth < 640; // sm breakpoint
-            if (isMobile && timeRange === "all") {
-                onTimeRangeChange("30d");
-            }
-        };
-        handleResize(); // Check on mount
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, [onTimeRangeChange, timeRange]);
 
     return (
         <div className="flex flex-col gap-2">
@@ -121,33 +109,12 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                 )}
                 {!loading && !error && (
                     <>
-                        {/* Filters Row 1: Time Range + Metric */}
+                        {/* Filters Row 1: Period + Metric */}
                         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-xs font-medium text-gray-500 mr-1">
-                                    Last
-                                </span>
-                                {(["7d", "30d", "all"] as TimeRange[]).map(
-                                    (t) => (
-                                        <FilterButton
-                                            key={t}
-                                            active={timeRange === t}
-                                            onClick={() => onTimeRangeChange(t)}
-                                            className={
-                                                t === "all"
-                                                    ? "hidden sm:inline-flex"
-                                                    : ""
-                                            }
-                                        >
-                                            {t === "7d"
-                                                ? "7 days"
-                                                : t === "30d"
-                                                  ? "30 days"
-                                                  : "90 days"}
-                                        </FilterButton>
-                                    ),
-                                )}
-                            </div>
+                            <PeriodPicker
+                                value={period}
+                                onChange={onPeriodChange}
+                            />
                             <div className="flex gap-1.5 items-center">
                                 <span className="text-xs font-medium text-gray-500 mr-1">
                                     Type

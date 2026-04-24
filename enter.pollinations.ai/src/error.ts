@@ -45,10 +45,11 @@ export async function ensureUpstreamOk(
 ): Promise<Response> {
     if (response.ok) return response;
     const responseBody = await response.text();
+    const rawMessage =
+        extractUpstreamMessage(responseBody) ||
+        getDefaultErrorMessage(response.status);
     throw new UpstreamError(remapUpstreamStatus(response.status), {
-        message:
-            extractUpstreamMessage(responseBody) ||
-            getDefaultErrorMessage(response.status),
+        message: truncateString(rawMessage, MAX_ERROR_MESSAGE_LENGTH) ?? "",
         requestUrl:
             typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
         upstreamStatus: response.status,

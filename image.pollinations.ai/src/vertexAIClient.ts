@@ -24,7 +24,7 @@ export interface VertexAIImageRequest {
     model?: string; // Model ID: gemini-2.5-flash-image (default) or gemini-3-pro-image-preview
     imageSize?: string; // "1K", "2K", "4K" - supported by gemini-3-pro-image-preview and gemini-3.1-flash-image-preview
     safe?: boolean; // When true, use stricter safety settings; when false, use BLOCK_ONLY_HIGH
-    reasoning?: boolean; // When true, enable thinking/reasoning for improved text rendering
+    reasoning?: string; // "fast" | "balanced" | "pro" - controls CoT depth per model
 }
 
 export interface VertexAIPart {
@@ -46,6 +46,7 @@ export interface VertexAIResponse {
         promptTokenCount: number;
         candidatesTokenCount: number;
         totalTokenCount: number;
+        thoughtsTokenCount?: number;
     };
 }
 
@@ -184,12 +185,21 @@ export async function generateImageWithVertexAI(
             },
         ];
 
-        // Build thinking config when reasoning is enabled
-        const thinkingConfig = request.reasoning
-            ? modelId.includes("3.1") || modelId.includes("3-pro")
-                ? { thinkingConfig: { thinkingLevel: "HIGH" } }
-                : { thinkingConfig: { thinkingBudget: 1024 } }
-            : {};
+        const getThinkingConfig = (mode: string | undefined, model: string) => {
+            if (!mode || mode === "balanced") return {};
+            if (model.includes("3.1")) {
+                if (mode === "fast") {
+                    return { thinkingConfig: { thinkingLevel: "MINIMAL" } };
+                }
+                return { thinkingConfig: { thinkingLevel: "HIGH" } };
+            }
+            // For all other models (e.g. gemini-2.5-flash-image, gemini-3-pro-image-preview)
+            // we do NOT send an explicit thinkingConfig to avoid 400 errors,
+            // relying on the provider's defaults instead.
+            return {};
+        };
+
+        const thinkingConfig = getThinkingConfig(request.reasoning, modelId);
 
         // Build the request body in Vertex AI format
         const requestBody: {

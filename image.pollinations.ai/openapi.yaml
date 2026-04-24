@@ -130,10 +130,11 @@ paths:
             default: false
         - name: reasoning
           in: query
-          description: Enable thinking/reasoning for improved text rendering and layout (nanobanana models only)
+          description: "Controls reasoning depth for nanobanana models. Explicit provider control currently applies to nanobanana-2; other nanobanana models use provider defaults. Accepts: fast, balanced, pro. Also accepts true (→ pro) and false (→ balanced) for backward compatibility"
           schema:
-            type: boolean
-            default: false
+            type: string
+            enum: [fast, balanced, pro]
+            default: balanced
       responses:
         '200':
           description: Successfully generated image

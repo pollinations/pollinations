@@ -631,7 +631,7 @@
   | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span><button class="copy-btn" onclick="copyCode('setup-cmd')">Copy</button></div>
                     <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                         <li>🔑 Saves API key to <code style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code></li>
-                        <li>🤖 Adds 7 models: Kimi K2.5, DeepSeek, GLM, Gemini + Search, Claude Haiku + 2 paid</li>
+                        <li>🤖 Adds 8 models: Kimi K2.5, DeepSeek V4, GLM, Gemini + Search, Claude Haiku + 3 paid</li>
                         <li>🔍 Configures <code style="color:var(--accent); font-size:13px">web_search</code> tool with Perplexity <em>via pollinations.ai</em> (preserves existing if already set)</li>
                     </ul>
 
@@ -644,11 +644,12 @@
     "defaults": {
       "model": {
         "primary": "pollinations/kimi",
-        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
+        "fallbacks": ["pollinations/glm"]
       },
       "models": {
         "pollinations/kimi": { "alias": "Kimi K2.5" },
-        "pollinations/deepseek": { "alias": "DeepSeek V3.2" },
+        "pollinations/deepseek": { "alias": "DeepSeek V4 Flash" },
+        "pollinations/deepseek-pro": { "alias": "DeepSeek V4 Pro" },
         "pollinations/glm": { "alias": "GLM-4.7" },
         "pollinations/gemini-search": { "alias": "Gemini + Search" },
         "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
@@ -667,8 +668,10 @@
         "models": [
           { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
             "input": ["text","image"], "contextLength": 256000 },
-          { "id": "deepseek", "name": "DeepSeek V3.2",
-            "input": ["text"], "contextLength": 128000 },
+          { "id": "deepseek", "name": "DeepSeek V4 Flash",
+            "input": ["text"], "contextLength": 1000000 },
+          { "id": "deepseek-pro", "name": "DeepSeek V4 Pro",
+            "input": ["text"], "contextLength": 65536 },
           { "id": "glm", "name": "GLM-4.7",
             "input": ["text"], "contextLength": 128000 },
           { "id": "gemini-search", "name": "Gemini + Search",
@@ -726,9 +729,14 @@ The script will restart the gateway automatically. After that, switch to the new
                     <div class="model-note">Google Gemini with <strong>always-on web search</strong>. Vision support. Look up docs, APIs, recent changes.</div>
                 </div>
                 <div class="model-row">
-                    <div class="model-label">DeepSeek V3.2</div>
+                    <div class="model-label">DeepSeek V4 Flash <span class="model-tag paid">paid</span></div>
                     <div class="model-id">pollinations/deepseek</div>
-                    <div class="model-note"><strong>Strong reasoning</strong> & tool calling. Good alternative to Kimi for hard problems.</div>
+                    <div class="model-note"><strong>Fast reasoning</strong> & tool calling. Good paid alternative to Kimi for hard problems.</div>
+                </div>
+                <div class="model-row dimmed">
+                    <div class="model-label">DeepSeek V4 Pro <span class="model-tag paid">paid</span></div>
+                    <div class="model-id">pollinations/deepseek-pro</div>
+                    <div class="model-note">DeepSeek's advanced reasoning and coding model for heavier paid workloads.</div>
                 </div>
                 <div class="model-row">
                     <div class="model-label">GLM-4.7</div>

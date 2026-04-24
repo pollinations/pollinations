@@ -43,6 +43,7 @@ Recipient roles are labelled in `sops-recipients.yaml` (`core`, `itachi`, `ci`) 
 | `rotate-genai-gcp.sh` | GCP | `gcloud iam service-accounts keys create` → deploy → delete old | 0 (rolling) |
 | `rotate-genai-perplexity.sh` | Perplexity | `generate_auth_token` → deploy → `revoke_auth_token` | 0 (rolling) |
 | `rotate-genai-fireworks.sh` | Fireworks | REST create → deploy → delete old | 0 (rolling) |
+| `rotate-genai-deepinfra.sh` | DeepInfra | `POST /v1/api-tokens` → deploy → `DELETE /v1/api-tokens/{token}` | 0 (rolling) |
 | `rotate-genai-xai.sh` | xAI | `POST /auth/api-keys` create → deploy → `DELETE /auth/api-keys/{id}` | 0 (rolling) |
 | `rotate-genai-elevenlabs.sh` | ElevenLabs | SA create → deploy → delete old | 0 (rolling) |
 
@@ -201,6 +202,24 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | main→production | `git push origin main:production` (admin push) |
 | Deploy wait | `deploy-enter-services.yml` |
 | Health check | `POST gen.pollinations.ai/v1/chat/completions` with a Fireworks-backed model → 200 |
+| Failure handling | Any failure after new-key creation = abort without deleting old |
+| Cleanup | Restore original branch at end |
+
+### `rotate-genai-deepinfra.sh`
+
+| Aspect | Choice |
+|---|---|
+| Dry-run | Shows plan, exits 0 with no mutations |
+| Pre-flight | git clean, gh, current key works via `/v1/openai/chat/completions`, SOPS readable |
+| Rotation mechanism | `POST /v1/api-tokens` → verify → (later) `DELETE /v1/api-tokens/{old-token-id-or-token}` |
+| Create-before-delete | ✅ |
+| Branch naming | `rotate/deepinfra-<timestamp>` |
+| PR body | Mentions automation, new key prefix |
+| Auto-merge | `gh pr merge --auto --squash` |
+| Merge wait | Poll PR state, 15min timeout |
+| main→production | `git push origin main:production` (admin push) |
+| Deploy wait | `deploy-enter-services.yml` |
+| Health check | `POST gen.pollinations.ai/v1/chat/completions` with `deepseek` model → 200 |
 | Failure handling | Any failure after new-key creation = abort without deleting old |
 | Cleanup | Restore original branch at end |
 

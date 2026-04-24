@@ -346,7 +346,7 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /api/account/profile");
     lines.push(
-        "Returns user profile. `githubUsername` and `image` are always included. `name` and `email` are included only when the API key has the `account:profile` permission.",
+        "Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has the `account:profile` permission. `nextResetAt` is `null` for tiers with no hourly refill.",
     );
     lines.push("");
 

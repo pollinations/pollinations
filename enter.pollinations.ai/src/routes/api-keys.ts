@@ -10,6 +10,7 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
+import { isLoopbackUrl } from "./url-utils.ts";
 
 function setPrivateNoStoreHeaders(c: {
     header: (name: string, value: string) => void;

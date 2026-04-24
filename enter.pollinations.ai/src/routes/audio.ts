@@ -160,10 +160,7 @@ export async function generateSpeech(opts: {
         },
         body: JSON.stringify(elevenLabsBody),
     });
-    const response = await ensureUpstreamOk(
-        rawResponse,
-        new URL(elevenLabsUrl),
-    );
+    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
@@ -239,10 +236,7 @@ export async function transcribeWithElevenLabs(opts: {
         },
         body: formData,
     });
-    const response = await ensureUpstreamOk(
-        rawResponse,
-        new URL(elevenLabsUrl),
-    );
+    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
     const elevenLabsData: ElevenLabsTranscriptionResponse =
         await response.json();
@@ -363,10 +357,7 @@ export async function generateMusic(opts: {
         },
         body: JSON.stringify(elevenLabsBody),
     });
-    const response = await ensureUpstreamOk(
-        rawResponse,
-        new URL(elevenLabsUrl),
-    );
+    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
@@ -453,10 +444,7 @@ export async function generateQwenTts(opts: {
         },
         body: JSON.stringify(body),
     });
-    const response = await ensureUpstreamOk(
-        rawResponse,
-        new URL(QWEN_TTS_ENDPOINT),
-    );
+    const response = await ensureUpstreamOk(rawResponse, QWEN_TTS_ENDPOINT);
 
     const data = (await response.json()) as {
         output?: { audio?: { url?: string } };
@@ -469,17 +457,10 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    const audioResponse = await fetch(audioUrl);
-    if (!audioResponse.ok) {
-        const errorText = await audioResponse.text();
-        throw new UpstreamError(502 as ContentfulStatusCode, {
-            message:
-                errorText ||
-                `Failed to fetch generated audio: ${audioResponse.status}`,
-            upstreamStatus: audioResponse.status,
-            responseBody: errorText,
-        });
-    }
+    const audioResponse = await ensureUpstreamOk(
+        await fetch(audioUrl),
+        audioUrl,
+    );
     const audioBuffer = await audioResponse.arrayBuffer();
 
     const serviceId = model.includes("instruct")
@@ -541,10 +522,7 @@ export async function generateAceStepMusic(opts: {
             audio_format: "mp3",
         }),
     });
-    const submitResponse = await ensureUpstreamOk(
-        rawSubmitResponse,
-        new URL(submitUrl),
-    );
+    const submitResponse = await ensureUpstreamOk(rawSubmitResponse, submitUrl);
 
     const submitData = (await submitResponse.json()) as {
         data?: { task_id?: string };
@@ -617,18 +595,11 @@ export async function generateAceStepMusic(opts: {
         });
     }
 
-    const audioResponse = await fetch(`${serviceUrl}${audioPath}`, {
-        headers: authHeaders,
-    });
-    if (!audioResponse.ok) {
-        const errorText = await audioResponse.text();
-        throw new UpstreamError(audioResponse.status as ContentfulStatusCode, {
-            message: errorText || "Failed to download generated audio",
-            upstreamStatus: audioResponse.status,
-            responseBody: errorText,
-        });
-    }
-
+    const audioUrl = `${serviceUrl}${audioPath}`;
+    const audioResponse = await ensureUpstreamOk(
+        await fetch(audioUrl, { headers: authHeaders }),
+        audioUrl,
+    );
     const audioBuffer = await audioResponse.arrayBuffer();
 
     // Use requested duration for billing (more accurate than byte-size heuristic)
@@ -921,10 +892,7 @@ export const audioRoutes = new Hono<Env>()
                 },
                 body: whisperFormData,
             });
-            const response = await ensureUpstreamOk(
-                rawResponse,
-                new URL(whisperUrl),
-            );
+            const response = await ensureUpstreamOk(rawResponse, whisperUrl);
 
             // Read body to extract duration for usage billing
             const responseBody = await response.text();

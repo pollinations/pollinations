@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ALL_MODELS } from "./constants";
-import { getPeriodDates } from "./period-utils.ts";
+import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -36,9 +36,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             granularity: filters.period.granularity,
             period: filters.period.period,
         });
-        if (filters.period.granularity === "day") {
-            params.set("grain", "hour");
-        }
         if (filters.selectedKeyIds.length > 0) {
             params.set("api_key_ids", filters.selectedKeyIds.join(","));
         }
@@ -139,12 +136,15 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             buckets.set(dateKey, cur);
         });
 
-        const allDates = getPeriodDates(filters.period);
+        const isHourly = filters.period.granularity === "day";
+        const bucketKeys = getPeriodBucketKeys(filters.period);
 
-        const sorted = allDates.map((dateStr) => {
-            const isHourly = dateStr.includes(" ");
-            const date = new Date(`${dateStr.replace(" ", "T")}.000Z`);
-            const d = buckets.get(dateStr) || {
+        const sorted = bucketKeys.map((bucketKey) => {
+            const date = periodBucketKeyToDate(
+                bucketKey,
+                filters.period.granularity,
+            );
+            const d = buckets.get(bucketKey) || {
                 requests: 0,
                 pollen: 0,
                 tierRequests: 0,

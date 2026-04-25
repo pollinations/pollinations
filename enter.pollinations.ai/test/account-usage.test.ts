@@ -85,30 +85,39 @@ test("GET /api/account/usage/daily maps selected periods to exact windows", asyn
     expect(dailyCalls).toHaveLength(3);
     expect(dailyCalls[0].query.since).toBe("2026-04-24 00:00:00");
     expect(dailyCalls[0].query.until).toBe("2026-04-25 00:00:00");
-    expect(dailyCalls[0].query.grain).toBe("day");
+    expect(dailyCalls[0].query.grain).toBe("hour");
     expect(dailyCalls[1].query.since).toBe("2026-04-20 00:00:00");
     expect(dailyCalls[1].query.until).toBe("2026-04-27 00:00:00");
+    expect(dailyCalls[1].query.grain).toBe("day");
     expect(dailyCalls[2].query.since).toBe("2026-04-01 00:00:00");
     expect(dailyCalls[2].query.until).toBe("2026-05-01 00:00:00");
+    expect(dailyCalls[2].query.grain).toBe("day");
 });
 
-test("GET /api/account/usage/daily forwards hourly grain to the pipe", async ({
+test("GET /api/account/usage/daily derives pipe grain from selected period", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
 
-    const res = await SELF.fetch(
-        "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-04-24&grain=hour",
+    const day = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-04-24",
         { headers: authHeaders(sessionToken) },
     );
-    expect(res.status).toBe(200);
+    expect(day.status).toBe(200);
+
+    const monthWithIgnoredGrain = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?granularity=month&period=2026-04&grain=hour",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(monthWithIgnoredGrain.status).toBe(200);
 
     const dailyCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("user_usage_daily_filtered.json"),
     );
-    expect(dailyCalls).toHaveLength(1);
+    expect(dailyCalls).toHaveLength(2);
     expect(dailyCalls[0].query.grain).toBe("hour");
+    expect(dailyCalls[1].query.grain).toBe("day");
 });
 
 test("GET /api/account/usage/daily rejects periods outside supported bounds", async ({

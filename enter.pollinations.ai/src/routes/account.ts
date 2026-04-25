@@ -402,7 +402,6 @@ const usageDailyQuerySchema = z.object({
         .default(DEFAULT_DAILY_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
-    grain: z.enum(["day", "hour"]).optional().default("day"),
     api_key_ids: z
         .string()
         .optional()
@@ -901,9 +900,9 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
-                grain,
                 api_key_ids: apiKeyIds,
             } = c.req.valid("query");
+            const grain = granularity === "day" ? "hour" : "day";
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;

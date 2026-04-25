@@ -139,34 +139,30 @@ export const Chart: FC<ChartProps> = ({
         return { bars: barData, yTicks: ticks };
     }, [data, cw, ch, pad.left, pad.top]);
 
-    const trimDecimal = (value: string) =>
-        value.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
-
-    const formatCompactVal = (v: number) => {
-        if (v >= 1e6) {
+    const formatCompactVal = (v: number): string => {
+        const abs = Math.abs(v);
+        if (abs >= 1e6) {
             const m = v / 1e6;
             return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
         }
-        if (v >= 1e3) {
+        if (abs >= 1e3) {
             const k = v / 1e3;
             return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
         }
-        return null;
+        return Number.isInteger(v) ? v.toString() : Number(v).toString();
     };
 
     const formatPollenAxisVal = (v: number) => {
-        const compact = formatCompactVal(v);
-        if (compact) return compact;
+        if (Math.abs(v) >= 1e3) return formatCompactVal(v);
         if (Number.isInteger(v)) return v.toString();
         const decimals = Math.abs(v) < 1 ? 4 : 2;
-        const formatted = trimDecimal(v.toFixed(decimals));
+        const formatted = Number(v.toFixed(decimals)).toString();
         return formatted === "0" ? v.toExponential(1) : formatted;
     };
 
     const formatVal = (v: number) => {
-        const compact = formatCompactVal(v);
-        if (compact) return compact;
         if (metric === "pollen") return formatPollenAxisVal(v);
+        if (Math.abs(v) >= 1e3) return formatCompactVal(v);
         return Math.round(v).toString();
     };
 

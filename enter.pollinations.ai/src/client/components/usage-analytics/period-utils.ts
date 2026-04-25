@@ -143,23 +143,33 @@ export function formatPeriodLabel(selection: UsagePeriodSelection): string {
     });
 }
 
-export function getPeriodDates(selection: UsagePeriodSelection): string[] {
+export function getPeriodBucketKeys(selection: UsagePeriodSelection): string[] {
     const { start, end } = periodToWindow(selection);
-    const dates: string[] = [];
+    const bucketKeys: string[] = [];
     const cursor = new Date(start);
     if (selection.granularity === "day") {
         while (cursor < end) {
-            dates.push(`${formatUtcHourPeriod(cursor)}:00:00`);
+            bucketKeys.push(`${formatUtcHourPeriod(cursor)}:00:00`);
             cursor.setUTCHours(cursor.getUTCHours() + 1);
         }
-        return dates;
+        return bucketKeys;
     }
 
     while (cursor < end) {
-        dates.push(formatUtcDatePeriod(cursor));
+        bucketKeys.push(formatUtcDatePeriod(cursor));
         cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
-    return dates;
+    return bucketKeys;
+}
+
+export function periodBucketKeyToDate(
+    bucketKey: string,
+    granularity: PeriodGranularity,
+): Date {
+    if (granularity === "day") {
+        return new Date(`${bucketKey.replace(" ", "T")}.000Z`);
+    }
+    return new Date(`${bucketKey}T00:00:00.000Z`);
 }
 
 export function isUsagePeriodSelectable(

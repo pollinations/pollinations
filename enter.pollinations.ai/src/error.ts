@@ -1,4 +1,5 @@
 import type { Logger } from "@logtape/logtape";
+import { ValidationError } from "@shared/http/validation-error.ts";
 import { APIError } from "better-auth";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -10,7 +11,6 @@ import {
     sendErrorEventToTinybird,
     type TinybirdErrorEvent,
 } from "@/events.ts";
-import { ValidationError } from "@/middleware/validator";
 import { getRoutePath } from "@/util.ts";
 import type { ErrorVariables } from "./env.ts";
 import type { LoggerVariables } from "./middleware/logger.ts";

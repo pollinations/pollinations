@@ -10,8 +10,8 @@ import { requestId } from "hono/request-id";
 import type { Env as GenerationEnv } from "@/env.ts";
 import { handleError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
-import { audioRoutes } from "@/routes/audio.ts";
-import { proxyRoutes } from "@/routes/proxy.ts";
+import { audioRoutes } from "./routes/audio.ts";
+import { proxyRoutes } from "./routes/proxy.ts";
 
 const generationLogger = logger as unknown as MiddlewareHandler<GenerationEnv>;
 const generationErrorHandler =

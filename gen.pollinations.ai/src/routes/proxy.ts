@@ -1,6 +1,7 @@
 import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
@@ -10,7 +11,6 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import type { Env } from "../env.ts";
 import { handleImageEdit, handleImageGeneration } from "./images.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref

@@ -13,6 +13,7 @@ import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
+import type { Env } from "@/env.ts";
 import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
@@ -22,7 +23,6 @@ import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
-import type { Env } from "../env.ts";
 
 const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
 

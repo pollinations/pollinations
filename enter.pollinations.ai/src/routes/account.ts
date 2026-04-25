@@ -902,6 +902,7 @@ export const accountRoutes = new Hono<Env>()
                 period,
                 api_key_ids: apiKeyIds,
             } = c.req.valid("query");
+            const grain = granularity === "day" ? "hour" : "day";
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -916,7 +917,7 @@ export const accountRoutes = new Hono<Env>()
                 granularity,
                 period,
             });
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
+            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
             const windows = buildUsageWindows(days, { granularity, period });
 
             try {
@@ -944,6 +945,7 @@ export const accountRoutes = new Hono<Env>()
                                     user_id: usageUserId,
                                     since: window.since,
                                     until: window.until,
+                                    grain,
                                     api_key_ids:
                                         apiKeyIds.length > 0
                                             ? apiKeyIds.join(",")

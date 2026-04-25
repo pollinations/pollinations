@@ -39,6 +39,39 @@ export class UpstreamError extends HTTPException {
     }
 }
 
+export async function ensureUpstreamOk(
+    response: Response,
+    requestUrl: string | URL,
+): Promise<Response> {
+    if (response.ok) return response;
+    const responseBody = await response.text();
+    const rawMessage =
+        extractUpstreamMessage(responseBody) ||
+        getDefaultErrorMessage(response.status);
+    throw new UpstreamError(remapUpstreamStatus(response.status), {
+        message: truncateString(rawMessage, MAX_ERROR_MESSAGE_LENGTH) ?? "",
+        requestUrl:
+            typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
+        upstreamStatus: response.status,
+        responseBody,
+    });
+}
+
+function extractUpstreamMessage(body: string): string {
+    try {
+        const parsed = JSON.parse(body);
+        const extracted =
+            parsed?.details?.error?.message ||
+            parsed?.error?.message ||
+            parsed?.message ||
+            (typeof parsed?.error === "string" ? parsed.error : null);
+        if (typeof extracted === "string" && extracted) return extracted;
+    } catch {
+        // Not JSON — fall through to raw body
+    }
+    return body;
+}
+
 const GenericErrorDetailsSchema = z
     .object({
         name: z.string(),
@@ -126,7 +159,7 @@ type ServerErrorEnvelope = {
 
 const MAX_ERROR_MESSAGE_LENGTH = 2000;
 const MAX_STACK_LENGTH = 12000;
-const MAX_UPSTREAM_BODY_LENGTH = 4000;
+const MAX_UPSTREAM_BODY_LENGTH = 16000;
 
 export const handleError: ErrorHandler<Env> = async (err, c) => {
     const log = c.get("log");
@@ -241,11 +274,13 @@ function createUpstreamErrorResponse(
 }
 
 /**
- * Remap upstream 429s to 502 so clients can distinguish between our own rate
- * limit (429) and a downstream provider quota issue (502 Bad Gateway).
+ * Remap upstream 4xx statuses that are our operational concern (auth, routing,
+ * quota, conflicts) to 502 Bad Gateway. Leaves input-content errors
+ * (400/413/422) as-is since those can reflect user input we failed to validate.
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
-    if (status === 429) return 502;
+    const remapTo502 = new Set([401, 403, 404, 409, 415, 429]);
+    if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }
 

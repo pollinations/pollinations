@@ -7,6 +7,8 @@
         "dev": "wrangler dev",
         "deploy:staging": "wrangler deploy --env staging",
         "deploy:production": "wrangler deploy --env production",
+        "push-secrets:staging": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/staging.vars.json 'node scripts/push-generation-secrets.mjs {} staging'",
+        "push-secrets:production": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/prod.vars.json 'node scripts/push-generation-secrets.mjs {} production'",
         "test": "vitest run",
         "typecheck": "tsc --noEmit"
     },

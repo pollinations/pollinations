@@ -11,12 +11,10 @@ import { accountRoutes } from "./routes/account.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
-import { audioRoutes } from "./routes/audio.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
-import { proxyRoutes } from "./routes/proxy.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
@@ -38,9 +36,7 @@ export const api = new Hono<Env>()
     .route("/webhooks", webhooksRoutes)
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
-    .route("/model-stats", modelStatsRoutes)
-    .route("/generate", proxyRoutes)
-    .route("/generate/v1/audio", audioRoutes);
+    .route("/model-stats", modelStatsRoutes);
 
 export type ApiRoutes = typeof api;
 

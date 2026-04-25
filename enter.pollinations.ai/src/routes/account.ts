@@ -9,11 +9,23 @@ import {
     user as userTable,
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
+import { getTierCadence, tierNames } from "@/tier-config.ts";
 import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
+
+// Calculate next tier refill time (null for tiers with no refill).
+// Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
+function getNextRefillAt(tier?: string | null): string | null {
+    const cadence = tier ? getTierCadence(tier) : "none";
+    if (cadence === "none") return null;
+    const next = new Date();
+    next.setUTCMinutes(0, 0, 0);
+    next.setUTCHours(next.getUTCHours() + 1);
+    return next.toISOString();
+}
 
 // Cache TTL in seconds
 const CACHE_TTL = 60 * 60; // 1 hour
@@ -24,6 +36,9 @@ const USAGE_CHUNK_DAYS = 30;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
+const USAGE_MIN_DATE = "2026-01-01";
+const PERIOD_GRANULARITIES = ["day", "week", "month"] as const;
+type PeriodGranularity = (typeof PERIOD_GRANULARITIES)[number];
 
 type UsageDebugBindings = CloudflareBindings & {
     USAGE_DEBUG_USER_ID?: string;
@@ -150,32 +165,174 @@ type UsageWindow = {
     until: string;
 };
 
-function buildUsageWindow(days: number): UsageWindow {
+type UsageWindowDates = {
+    sinceDate: Date;
+    untilDate: Date;
+};
+
+type UsagePeriod = {
+    granularity?: PeriodGranularity;
+    period?: string;
+};
+
+function formatUsageWindow(window: UsageWindowDates): UsageWindow {
+    return {
+        since: formatTinybirdDateTime(window.sinceDate),
+        until: formatTinybirdDateTime(window.untilDate),
+    };
+}
+
+function buildUsageWindow(days: number): UsageWindowDates {
     const untilDate = startOfNextUtcDay();
     const sinceDate = addUtcDays(untilDate, -days);
-    return {
-        since: formatTinybirdDateTime(sinceDate),
-        until: formatTinybirdDateTime(untilDate),
-    };
+    return { sinceDate, untilDate };
+}
+
+function startOfUtcDay(year: number, monthIndex: number, day: number): Date {
+    return new Date(Date.UTC(year, monthIndex, day, 0, 0, 0, 0));
+}
+
+function usageMinDate(): Date {
+    return new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
+}
+
+function parseUtcDayPeriod(period: string): UsageWindowDates | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(period);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const sinceDate = startOfUtcDay(year, month - 1, day);
+    if (
+        sinceDate.getUTCFullYear() !== year ||
+        sinceDate.getUTCMonth() !== month - 1 ||
+        sinceDate.getUTCDate() !== day
+    ) {
+        return null;
+    }
+    return { sinceDate, untilDate: addUtcDays(sinceDate, 1) };
+}
+
+function parseUtcMonthPeriod(period: string): UsageWindowDates | null {
+    const match = /^(\d{4})-(\d{2})$/.exec(period);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const sinceDate = startOfUtcDay(year, month - 1, 1);
+    if (
+        sinceDate.getUTCFullYear() !== year ||
+        sinceDate.getUTCMonth() !== month - 1
+    ) {
+        return null;
+    }
+    const untilDate = startOfUtcDay(year, month, 1);
+    return { sinceDate, untilDate };
+}
+
+function parseUtcWeekPeriod(period: string): UsageWindowDates | null {
+    const match = /^(\d{4})-W(\d{2})$/.exec(period);
+    if (!match) return null;
+    const isoYear = Number(match[1]);
+    const isoWeek = Number(match[2]);
+    if (isoWeek < 1 || isoWeek > 53) return null;
+
+    // ISO week 1 is the week containing Jan 4. Weeks start on Monday.
+    const jan4 = startOfUtcDay(isoYear, 0, 4);
+    const jan4Day = jan4.getUTCDay() || 7;
+    const weekOneMonday = addUtcDays(jan4, 1 - jan4Day);
+    const sinceDate = addUtcDays(weekOneMonday, (isoWeek - 1) * 7);
+
+    if (getUtcIsoWeekPeriod(sinceDate) !== period) return null;
+
+    return { sinceDate, untilDate: addUtcDays(sinceDate, 7) };
+}
+
+function getUtcIsoWeekPeriod(date: Date): string {
+    const utcDate = startOfUtcDay(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+    );
+    const day = utcDate.getUTCDay() || 7;
+    const thursday = addUtcDays(utcDate, 4 - day);
+    const isoYear = thursday.getUTCFullYear();
+    const yearStart = startOfUtcDay(isoYear, 0, 1);
+    const isoWeek = Math.ceil(
+        ((thursday.getTime() - yearStart.getTime()) / (SECONDS_PER_DAY * 1000) +
+            1) /
+            7,
+    );
+    return `${isoYear}-W${String(isoWeek).padStart(2, "0")}`;
+}
+
+function buildUsageWindowFromPeriod({
+    granularity,
+    period,
+}: UsagePeriod): UsageWindowDates | null {
+    if (!granularity || !period) return null;
+
+    if (granularity === "day") return parseUtcDayPeriod(period);
+    if (granularity === "week") return parseUtcWeekPeriod(period);
+    if (granularity === "month") return parseUtcMonthPeriod(period);
+
+    granularity satisfies never;
+    return null;
+}
+
+function resolveUsageWindow(
+    days: number,
+    period: UsagePeriod,
+): UsageWindowDates {
+    const hasPeriodParam = period.granularity || period.period;
+    const usageWindow = buildUsageWindowFromPeriod(period);
+    if (hasPeriodParam && !usageWindow) {
+        throw new HTTPException(400, {
+            message:
+                "Invalid usage period. Use granularity=day&period=YYYY-MM-DD, granularity=week&period=YYYY-WNN, or granularity=month&period=YYYY-MM.",
+        });
+    }
+    if (usageWindow) {
+        const now = new Date();
+        const today = startOfUtcDay(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+        );
+        if (
+            usageWindow.untilDate <= usageMinDate() ||
+            usageWindow.sinceDate > today
+        ) {
+            throw new HTTPException(400, {
+                message: `Usage period must overlap ${USAGE_MIN_DATE} through today.`,
+            });
+        }
+    }
+    return usageWindow || buildUsageWindow(days);
+}
+
+function usageWindowFilenamePart(days: number, period: UsagePeriod): string {
+    return period.granularity && period.period
+        ? `${period.granularity}-${period.period}`
+        : `${days}d`;
 }
 
 function buildUsageWindows(
     days: number,
+    period: UsagePeriod = {},
     chunkDays = USAGE_CHUNK_DAYS,
     newestFirst = false,
 ): UsageWindow[] {
-    const overallWindow = buildUsageWindow(days);
+    const overallWindow = resolveUsageWindow(days, period);
     const windows: UsageWindow[] = [];
-    let cursor = new Date(`${overallWindow.since.replace(" ", "T")}Z`);
-    const end = new Date(`${overallWindow.until.replace(" ", "T")}Z`);
+    let cursor = overallWindow.sinceDate;
+    const end = overallWindow.untilDate;
 
     while (cursor < end) {
         const next = addUtcDays(cursor, chunkDays);
         const boundedNext = next < end ? next : end;
-        windows.push({
-            since: formatTinybirdDateTime(cursor),
-            until: formatTinybirdDateTime(boundedNext),
-        });
+        windows.push(
+            formatUsageWindow({ sinceDate: cursor, untilDate: boundedNext }),
+        );
         cursor = boundedNext;
     }
 
@@ -229,6 +386,8 @@ const usageQuerySchema = z.object({
         .max(MAX_USAGE_DAYS)
         .optional()
         .default(DEFAULT_USAGE_DAYS),
+    granularity: z.enum(PERIOD_GRANULARITIES).optional(),
+    period: z.string().optional(),
 });
 
 // Query params schema for daily usage
@@ -241,6 +400,8 @@ const usageDailyQuerySchema = z.object({
         .max(MAX_USAGE_DAYS)
         .optional()
         .default(DEFAULT_DAILY_USAGE_DAYS),
+    granularity: z.enum(PERIOD_GRANULARITIES).optional(),
+    period: z.string().optional(),
     api_key_ids: z
         .string()
         .optional()
@@ -375,6 +536,15 @@ const profileResponseSchema = z.object({
         .string()
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
+    tier: z
+        .enum(["anonymous", ...tierNames])
+        .describe("User's current tier level"),
+    nextResetAt: z.iso
+        .datetime()
+        .nullable()
+        .describe(
+            "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
+        ),
     name: z
         .string()
         .nullable()
@@ -454,7 +624,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username and profile image are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",
@@ -479,6 +649,7 @@ export const accountRoutes = new Hono<Env>()
                 .select({
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
+                    tier: userTable.tier,
                     name: userTable.name,
                     email: userTable.email,
                 })
@@ -494,6 +665,8 @@ export const accountRoutes = new Hono<Env>()
             return c.json({
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
+                tier: profile.tier,
+                nextResetAt: getNextRefillAt(profile.tier),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,
@@ -573,7 +746,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Usage History",
             description:
-                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, and supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
+                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Usage records",
@@ -608,10 +781,20 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            const { format, limit, before, days } = c.req.valid("query");
+            const { format, limit, before, days, granularity, period } =
+                c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
-            const usageWindow = buildUsageWindow(days);
+            const usageWindow = formatUsageWindow(
+                resolveUsageWindow(days, {
+                    granularity,
+                    period,
+                }),
+            );
+            const filenamePeriod = usageWindowFilenamePart(days, {
+                granularity,
+                period,
+            });
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
             const header =
@@ -657,7 +840,7 @@ export const accountRoutes = new Hono<Env>()
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-latest-${usage.length}-rows-${days}d-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-usage-latest-${usage.length}-rows-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
@@ -678,7 +861,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns daily aggregated usage for the requested time window (max 90 days), grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
+                "Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
                     description: "Daily usage records aggregated by date/model",
@@ -715,8 +898,11 @@ export const accountRoutes = new Hono<Env>()
             const {
                 format,
                 days,
+                granularity,
+                period,
                 api_key_ids: apiKeyIds,
             } = c.req.valid("query");
+            const grain = granularity === "day" ? "hour" : "day";
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -725,8 +911,14 @@ export const accountRoutes = new Hono<Env>()
             const cacheKeyPrefix = usageUserOverridden
                 ? `usage:daily:debug:${usageUserId}`
                 : `usage:daily:${usageUserId}`;
-            const cacheKey = `${cacheKeyPrefix}:${days}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
-            const windows = buildUsageWindows(days);
+            const periodCacheKey =
+                granularity && period ? `${granularity}:${period}` : `${days}d`;
+            const filenamePeriod = usageWindowFilenamePart(days, {
+                granularity,
+                period,
+            });
+            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
+            const windows = buildUsageWindows(days, { granularity, period });
 
             try {
                 let usage: DailyUsageRecord[] | null = null;
@@ -753,6 +945,7 @@ export const accountRoutes = new Hono<Env>()
                                     user_id: usageUserId,
                                     since: window.since,
                                     until: window.until,
+                                    grain,
                                     api_key_ids:
                                         apiKeyIds.length > 0
                                             ? apiKeyIds.join(",")
@@ -793,7 +986,7 @@ export const accountRoutes = new Hono<Env>()
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${days}d-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
@@ -1207,8 +1400,18 @@ export const accountRoutes = new Hono<Env>()
             }
             const user = c.var.auth.requireUser();
 
-            const { format, limit, before, days } = c.req.valid("query");
-            const usageWindow = buildUsageWindow(days);
+            const { format, limit, before, days, granularity, period } =
+                c.req.valid("query");
+            const usageWindow = formatUsageWindow(
+                resolveUsageWindow(days, {
+                    granularity,
+                    period,
+                }),
+            );
+            const filenamePeriod = usageWindowFilenamePart(days, {
+                granularity,
+                period,
+            });
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
             const header =
@@ -1241,7 +1444,7 @@ export const accountRoutes = new Hono<Env>()
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-key-usage-${usage.length}-rows-${days}d-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-key-usage-${usage.length}-rows-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }

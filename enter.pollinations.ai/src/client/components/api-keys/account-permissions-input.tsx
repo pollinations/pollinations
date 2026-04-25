@@ -2,13 +2,10 @@ import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
 import {
-    audioModelIds,
-    imageModelIds,
-    textModelIds,
-    videoModelIds,
+    MODEL_CATEGORIES,
+    type ModelCategoryModel,
 } from "./model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
-import { getModelDisplayName } from "./model-utils.ts";
 import {
     getPermissionPillClasses,
     getPermissionUiTheme,
@@ -53,41 +50,6 @@ export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
         tooltip: "create, list, and revoke API keys",
     },
 ];
-
-const textModels = textModelIds
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const imageModels = imageModelIds
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const videoModels = videoModelIds
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const audioModels = audioModelIds
-    .map((id) => ({
-        id,
-        label: getModelDisplayName(id),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-const MODEL_CATEGORIES = [
-    { label: "Text", models: textModels },
-    { label: "Image", models: imageModels },
-    { label: "Video", models: videoModels },
-    { label: "Audio", models: audioModels },
-] as const;
 
 const MODEL_CATEGORY_TEXT_CLASSES = {
     Text: "text-blue-800",
@@ -143,12 +105,9 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         }
     };
 
-    const allModelIds = [
-        ...textModels,
-        ...imageModels,
-        ...videoModels,
-        ...audioModels,
-    ].map((m) => m.id);
+    const allModelIds = MODEL_CATEGORIES.flatMap(({ models }) =>
+        models.map((model) => model.id),
+    );
 
     const commitSelection = (next: string[]) => {
         onModelsChange(normalizeAllowedModelSelection(next, allModelIds));
@@ -170,7 +129,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     const isModelSelected = (modelId: string) =>
         isUnrestricted || (allowedModels ?? []).includes(modelId);
 
-    const toggleCategory = (categoryModels: { id: string }[]) => {
+    const toggleCategory = (categoryModels: ModelCategoryModel[]) => {
         if (disabled) return;
         const categoryIds = categoryModels.map((m) => m.id);
         if (isUnrestricted) {
@@ -196,7 +155,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
         }
     };
 
-    const isCategoryAllSelected = (categoryModels: { id: string }[]) =>
+    const isCategoryAllSelected = (categoryModels: ModelCategoryModel[]) =>
         isUnrestricted ||
         categoryModels.every((m) => (allowedModels ?? []).includes(m.id));
 
@@ -354,12 +313,12 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
 /** Renders a category of model chips with a select/deselect-all toggle. */
 const ModelCategory: FC<{
     label: string;
-    models: { id: string; label: string }[];
+    models: ModelCategoryModel[];
     disabled: boolean;
     isModelSelected: (id: string) => boolean;
     toggleModel: (id: string) => void;
-    toggleCategory: (models: { id: string }[]) => void;
-    isCategoryAllSelected: (models: { id: string }[]) => boolean;
+    toggleCategory: (models: ModelCategoryModel[]) => void;
+    isCategoryAllSelected: (models: ModelCategoryModel[]) => boolean;
     showApiName?: boolean;
     theme?: PermissionUiTheme;
 }> = ({
@@ -407,7 +366,6 @@ const ModelCategory: FC<{
                     onClick={() => toggleModel(model.id)}
                     disabled={disabled}
                     showApiName={showApiName}
-                    theme={theme}
                     category={label}
                 />
             ))}
@@ -422,7 +380,6 @@ const ModelChip: FC<{
     onClick: () => void;
     disabled?: boolean;
     showApiName?: boolean;
-    theme?: PermissionUiTheme;
     category?: string;
 }> = ({
     apiName,
@@ -431,7 +388,6 @@ const ModelChip: FC<{
     onClick,
     disabled,
     showApiName = true,
-    theme = "green",
     category,
 }) => {
     return (

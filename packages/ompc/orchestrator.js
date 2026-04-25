@@ -54,7 +54,8 @@ const OPENCODE_CONFIG = {
                 "gemini-fast": {
                     "name": "Gemini 2.5 Flash Lite - Exploration",
                 },
-                "deepseek": { "name": "DeepSeek V3.2 - Reasoning" },
+                "deepseek": { "name": "DeepSeek V4 Flash - Reasoning" },
+                "deepseek-pro": { "name": "DeepSeek V4 Pro - Advanced" },
                 "qwen-coder": { "name": "Qwen3 Coder 30B - Code" },
                 "perplexity-fast": { "name": "Perplexity Sonar - Web Search" },
                 "perplexity-reasoning": {

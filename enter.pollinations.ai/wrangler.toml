@@ -96,6 +96,7 @@ script_name = "pollinations-enter"
 
 [env.local.vars]
 ENVIRONMENT = "local"
+USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; local dashboard usage data
 CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
@@ -289,6 +290,7 @@ new_classes = ["PollenRateLimiter"]
 
 [env.dev.vars]
 ENVIRONMENT = "dev"
+USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
 CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"

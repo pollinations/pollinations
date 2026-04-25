@@ -5,7 +5,7 @@
  */
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { applySafety } from "@/middleware/safety.ts";
 import {
     type CreateImageEditRequest,
@@ -79,19 +79,14 @@ async function postToImageService(
     body: Record<string, unknown>,
     proxyHeaders: (c: Context) => Record<string, string>,
 ): Promise<Response> {
-    const response = await fetch(targetUrl.toString(), {
-        method: "POST",
-        headers: { ...proxyHeaders(c), "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-        const responseText = await response.text();
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
-            message: responseText || getDefaultErrorMessage(response.status),
-            requestUrl: targetUrl,
-        });
-    }
-    return response;
+    return ensureUpstreamOk(
+        await fetch(targetUrl.toString(), {
+            method: "POST",
+            headers: { ...proxyHeaders(c), "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        }),
+        targetUrl,
+    );
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */

@@ -29,11 +29,7 @@ import {
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import {
-    getDefaultErrorMessage,
-    remapUpstreamStatus,
-    UpstreamError,
-} from "@/error.ts";
+import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import {
@@ -109,20 +105,7 @@ const imageVideoHandlers = factory.createHandlers(
             body: c.req.raw.body,
         });
 
-        if (!response.ok) {
-            const responseText = await response.text();
-            log.warn("Image service error {status}: {body}", {
-                status: response.status,
-                body: responseText,
-            });
-            throw new UpstreamError(remapUpstreamStatus(response.status), {
-                message:
-                    responseText || getDefaultErrorMessage(response.status),
-                requestUrl: targetUrl,
-            });
-        }
-
-        return response;
+        return ensureUpstreamOk(response, targetUrl);
     },
 );
 
@@ -132,7 +115,6 @@ const chatCompletionHandlers = factory.createHandlers(
     resolveModel("generate.text"),
     track("generate.text"),
     async (c) => {
-        const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
         c.var.auth.requireKeyBudget();
@@ -164,41 +146,12 @@ const chatCompletionHandlers = factory.createHandlers(
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
         const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-        const response = await proxy(targetUrl, {
+        const rawResponse = await proxy(targetUrl, {
             method: c.req.method,
             headers: proxyHeaders(c),
             body: JSON.stringify(requestBody),
         });
-
-        if (!response.ok) {
-            const responseText = await response.text();
-            log.warn("Chat completions error {status}: {body}", {
-                status: response.status,
-                body: responseText,
-            });
-
-            // Try to extract meaningful error message from upstream JSON
-            let errorMessage =
-                responseText || getDefaultErrorMessage(response.status);
-            try {
-                const parsed = JSON.parse(responseText);
-                const extracted =
-                    parsed?.details?.error?.message ||
-                    parsed?.error?.message ||
-                    parsed?.message ||
-                    (typeof parsed?.error === "string" ? parsed.error : null);
-                if (extracted) {
-                    errorMessage = extracted;
-                }
-            } catch {
-                // Not JSON or parse failed - use raw text as-is
-            }
-
-            throw new UpstreamError(remapUpstreamStatus(response.status), {
-                message: errorMessage,
-                requestUrl: targetUrl,
-            });
-        }
+        const response = await ensureUpstreamOk(rawResponse, targetUrl);
 
         // Validate streaming responses: if client requested stream but upstream
         // returned non-SSE, throw rather than forwarding broken data.
@@ -208,6 +161,8 @@ const chatCompletionHandlers = factory.createHandlers(
                 throw new UpstreamError(502, {
                     message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
                     requestUrl: targetUrl,
+                    upstreamStatus: response.status,
+                    responseBody: contentType,
                 });
             }
         }
@@ -533,7 +488,6 @@ export const proxyRoutes = new Hono<Env>()
         resolveModel("generate.text"),
         track("generate.text"),
         async (c) => {
-            const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
             c.var.auth.requireKeyBudget();
@@ -555,23 +509,11 @@ export const proxyRoutes = new Hono<Env>()
             // Add model param after proxyUrl() to ensure it's always present
             targetUrl.searchParams.set("model", model);
 
-            const response = await fetch(targetUrl, {
+            const rawResponse = await fetch(targetUrl, {
                 method: "GET",
                 headers: proxyHeaders(c),
             });
-
-            if (!response.ok) {
-                const responseText = await response.text();
-                log.warn("Text service error {status}: {body}", {
-                    status: response.status,
-                    body: responseText,
-                });
-                throw new UpstreamError(remapUpstreamStatus(response.status), {
-                    message:
-                        responseText || getDefaultErrorMessage(response.status),
-                    requestUrl: targetUrl,
-                });
-            }
+            const response = await ensureUpstreamOk(rawResponse, targetUrl);
 
             // Backend returns plain text for text models and raw audio for audio models
             // No JSON parsing needed for GET endpoint - just pass through the response
@@ -756,6 +698,17 @@ export const proxyRoutes = new Hono<Env>()
                         "Style/genre tags for music generation (acestep only)",
                     example: "brazilian berimbau instrumental",
                 }),
+                seed: z.coerce
+                    .number()
+                    .int()
+                    .min(-1)
+                    .max(4294967295)
+                    .optional()
+                    .meta({
+                        description:
+                            "Seed for deterministic output (0-4294967295). Same seed + params = best-effort return of the same cached result. Omit for random.",
+                        example: "42",
+                    }),
                 key: z.string().optional().meta({
                     description:
                         "API key (alternative to Authorization header)",
@@ -792,32 +745,36 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental } = c.req.valid(
+                const { duration, instrumental, seed } = c.req.valid(
                     "query" as never,
                 ) as {
                     duration?: number;
                     instrumental?: boolean;
+                    seed?: number;
                 };
                 return generateMusic({
                     prompt: text,
                     durationSeconds: duration,
                     forceInstrumental: instrumental,
+                    seed: seed === -1 ? undefined : seed,
                     apiKey,
                     log,
                 });
             }
 
-            const { voice, response_format } = c.req.valid(
+            const { voice, response_format, seed } = c.req.valid(
                 "query" as never,
             ) as {
                 voice: string;
                 response_format: string;
+                seed?: number;
             };
 
             return generateSpeech({
                 text,
                 voice: voice || "alloy",
                 responseFormat: response_format || "mp3",
+                seed: seed === -1 ? undefined : seed,
                 apiKey,
                 log,
             });

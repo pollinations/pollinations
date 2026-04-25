@@ -11,6 +11,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "kontext",
         provider: "azure",
+        brand: "Black Forest Labs",
+        category: "image",
         cost: [
             {
                 date: COST_START_DATE,
@@ -25,6 +27,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "nanobanana",
         provider: "google",
+        brand: "Google",
+        category: "image",
         paidOnly: true,
         cost: [
             // Gemini 2.5 Flash Image via Vertex AI
@@ -43,6 +47,8 @@ export const IMAGE_SERVICES = {
         aliases: ["nanobanana2"],
         modelId: "nanobanana-2",
         provider: "google",
+        brand: "Google",
+        category: "image",
         paidOnly: true,
         cost: [
             // Gemini 3.1 Flash Image via Vertex AI
@@ -50,6 +56,7 @@ export const IMAGE_SERVICES = {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.5), // per 1M tokens
                 promptImageTokens: perMillion(0.5), // per 1M tokens
+                completionTextTokens: perMillion(3), // text/reasoning output tokens
                 completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
             },
         ],
@@ -61,6 +68,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "nanobanana-pro",
         provider: "google",
+        brand: "Google",
+        category: "image",
         paidOnly: true,
         cost: [
             // Gemini 3 Pro Image via Vertex AI
@@ -70,6 +79,7 @@ export const IMAGE_SERVICES = {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(1.25), // per 1M tokens
                 promptImageTokens: perMillion(1.25), // per 1M tokens
+                completionTextTokens: perMillion(12), // text/reasoning output tokens
                 completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
             },
         ],
@@ -81,6 +91,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedream5",
         provider: "bytedance",
+        brand: "ByteDance",
+        category: "image",
         paidOnly: true,
         cost: [
             {
@@ -103,6 +115,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedream",
         provider: "bytedance",
+        brand: "ByteDance",
+        category: "image",
         paidOnly: true,
         hidden: true,
         cost: [
@@ -125,6 +139,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedream-pro",
         provider: "bytedance",
+        brand: "ByteDance",
+        category: "image",
         paidOnly: true,
         hidden: true,
         cost: [
@@ -147,6 +163,8 @@ export const IMAGE_SERVICES = {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",
         provider: "azure",
+        brand: "OpenAI",
+        category: "image",
         cost: [
             {
                 date: COST_START_DATE,
@@ -164,6 +182,8 @@ export const IMAGE_SERVICES = {
         aliases: ["gpt-image-1.5", "gpt-image-large"],
         modelId: "gptimage-large",
         provider: "azure",
+        brand: "OpenAI",
+        category: "image",
         cost: [
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             {
@@ -171,6 +191,7 @@ export const IMAGE_SERVICES = {
                 promptTextTokens: perMillion(5), // per 1M tokens
                 promptCachedTokens: perMillion(1.25), // per 1M tokens
                 promptImageTokens: perMillion(8), // per 1M tokens
+                completionTextTokens: perMillion(10), // per 1M tokens
                 completionImageTokens: perMillion(32), // per 1M tokens
             },
         ],
@@ -182,6 +203,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "gpt-image-2",
         provider: "azure",
+        brand: "OpenAI",
+        category: "image",
         cost: [
             {
                 date: COST_START_DATE,
@@ -199,6 +222,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "flux",
         provider: "runpod",
+        brand: "Black Forest Labs",
+        category: "image",
         cost: [
             {
                 date: COST_START_DATE,
@@ -213,6 +238,8 @@ export const IMAGE_SERVICES = {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
         provider: "runpod",
+        brand: "Alibaba",
+        category: "image",
         cost: [
             {
                 date: COST_START_DATE,
@@ -227,6 +254,8 @@ export const IMAGE_SERVICES = {
         aliases: ["veo-3.1-fast", "video"],
         modelId: "veo",
         provider: "google",
+        brand: "Google",
+        category: "video",
         paidOnly: true,
         cost: [
             {
@@ -242,6 +271,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedance",
         provider: "bytedance",
+        brand: "ByteDance",
+        category: "video",
         paidOnly: true,
         cost: [
             // Token formula: (height × width × FPS × duration) / 1024
@@ -265,6 +296,8 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedance-pro",
         provider: "bytedance",
+        brand: "ByteDance",
+        category: "video",
         paidOnly: true,
         cost: [
             // Token formula: (height × width × FPS × duration) / 1024
@@ -288,6 +321,8 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",
         provider: "alibaba",
+        brand: "Alibaba",
+        category: "video",
         paidOnly: true,
         cost: [
             // Using I2V+audio rate as base since T2V also generates audio; audio cost split out separately for tracking
@@ -313,6 +348,8 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.2", "wan-2.2"],
         modelId: "wan-fast",
         provider: "alibaba",
+        brand: "Alibaba",
+        category: "video",
         paidOnly: true,
         cost: [
             {
@@ -337,6 +374,8 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.7-image", "wan-img"],
         modelId: "wan-image",
         provider: "alibaba",
+        brand: "Alibaba",
+        category: "image",
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),
@@ -358,6 +397,8 @@ export const IMAGE_SERVICES = {
         aliases: ["wan2.7-image-pro", "wan-img-pro"],
         modelId: "wan-image-pro",
         provider: "alibaba",
+        brand: "Alibaba",
+        category: "image",
         paidOnly: true,
         cost: [
             {
@@ -385,6 +426,8 @@ export const IMAGE_SERVICES = {
         ],
         modelId: "qwen-image",
         provider: "alibaba",
+        brand: "Qwen",
+        category: "image",
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -406,6 +449,8 @@ export const IMAGE_SERVICES = {
         aliases: ["grok-imagine-image"],
         modelId: "grok-imagine",
         provider: "xai",
+        brand: "xAI",
+        category: "image",
         paidOnly: true,
         cost: [
             {
@@ -427,6 +472,8 @@ export const IMAGE_SERVICES = {
         aliases: ["grok-aurora", "aurora", "grok-imagine-image-pro"],
         modelId: "grok-imagine-pro",
         provider: "xai",
+        brand: "xAI",
+        category: "image",
         paidOnly: true,
         cost: [
             {
@@ -449,6 +496,8 @@ export const IMAGE_SERVICES = {
         aliases: ["grok-imagine-video"],
         modelId: "grok-video-pro",
         provider: "xai",
+        brand: "xAI",
+        category: "video",
         paidOnly: true,
         cost: [
             {
@@ -471,6 +520,8 @@ export const IMAGE_SERVICES = {
         aliases: ["flux-klein"],
         modelId: "klein",
         provider: "runpod",
+        brand: "Black Forest Labs",
+        category: "image",
         alpha: true,
         cost: [
             {
@@ -486,6 +537,8 @@ export const IMAGE_SERVICES = {
         aliases: ["ltx2", "ltx-2.3", "ltxvideo", "ltx-video"],
         modelId: "ltx-2",
         provider: "lambda",
+        brand: "Lightricks",
+        category: "video",
         alpha: true,
         cost: [
             {
@@ -501,6 +554,8 @@ export const IMAGE_SERVICES = {
         aliases: ["pruna-image", "pruna"],
         modelId: "p-image",
         provider: "pruna",
+        brand: "Pruna",
+        category: "image",
         paidOnly: true,
         cost: [
             {
@@ -522,6 +577,8 @@ export const IMAGE_SERVICES = {
         aliases: ["pruna-edit", "pruna-image-edit"],
         modelId: "p-image-edit",
         provider: "pruna",
+        brand: "Pruna",
+        category: "image",
         paidOnly: true,
         cost: [
             {
@@ -543,6 +600,8 @@ export const IMAGE_SERVICES = {
         aliases: ["pruna-video"],
         modelId: "p-video",
         provider: "pruna",
+        brand: "Pruna",
+        category: "video",
         paidOnly: true,
         cost: [
             // $0.12 per run / 5s default = $0.024/sec
@@ -566,6 +625,8 @@ export const IMAGE_SERVICES = {
         aliases: ["amazon-nova-canvas"],
         modelId: "nova-canvas",
         provider: "aws",
+        brand: "Amazon",
+        category: "image",
         paidOnly: true,
         cost: [
             {
@@ -581,6 +642,8 @@ export const IMAGE_SERVICES = {
         aliases: ["amazon-nova-reel"],
         modelId: "nova-reel",
         provider: "aws",
+        brand: "Amazon",
+        category: "video",
         cost: [
             {
                 date: COST_START_DATE,

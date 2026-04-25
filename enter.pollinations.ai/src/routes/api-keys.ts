@@ -10,7 +10,7 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
-import { isLoopbackUrl } from "./url-utils.ts";
+import { appUrlMatchesRedirect, isLoopbackUrl } from "./url-utils.ts";
 
 function setPrivateNoStoreHeaders(c: {
     header: (name: string, value: string) => void;
@@ -306,7 +306,13 @@ export const apiKeysRoutes = new Hono<Env>()
                 const duplicate = allKeys.find((k) => {
                     if (k.id === id) return false;
                     const meta = parseMetadata(k.metadata);
-                    return meta.appUrl === metadataUpdate.appUrl;
+                    return (
+                        typeof meta.appUrl === "string" &&
+                        appUrlMatchesRedirect(
+                            meta.appUrl,
+                            metadataUpdate.appUrl,
+                        )
+                    );
                 });
                 if (duplicate) {
                     throw new HTTPException(409, {

@@ -1,0 +1,35 @@
+{
+  "date": "2026-04-24",
+  "period_start": "2026-04-24",
+  "period_end": "2026-04-24",
+  "title": "DeepSeek V4 and granular image reasoning",
+  "summary": "More control over your generations with audio seeds and image reasoning modes, plus DeepSeek V4 and better usage tracking.\n\nWe wired up DeepSeek V4 (Flash and Pro) via DeepInfra for your text generation needs. On the visual side, we ripped out the binary reasoning toggle for images and replaced it with fast, balanced, and pro modes. You now have actual control over how hard the model thinks before it paints, and it fixes some budget capping edge cases in the process.\n\nAudio endpoints now accept a seed parameter. If you've ever generated the perfect voice clip or music track and then lost it to the ether of non-deterministic caching, you can now lock it in. Pass a seed, get the exact same audio back.\n\nThe dashboard now has a proper calendar picker for filtering and exporting usage data, replacing the old rolling windows. We also restored the tier and nextResetAt fields to the profile endpoint, so your integrations can once again see exactly when your pollen credits will refill without needing extra permissions.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 10252,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10314,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10435,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10439,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10443,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10446,
+      "date": "2026-04-24"
+    }
+  ],
+  "generated_at": "2026-04-25T06:28:37.144356+00:00"
+}

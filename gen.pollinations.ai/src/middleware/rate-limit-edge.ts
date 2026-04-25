@@ -3,7 +3,7 @@ import { HTTPException } from "hono/http-exception";
 
 type EdgeRateLimiterEnv = {
     Bindings: CloudflareBindings & {
-        EDGE_RATE_LIMITER: any;
+        EDGE_RATE_LIMITER?: RateLimit;
     };
 };
 

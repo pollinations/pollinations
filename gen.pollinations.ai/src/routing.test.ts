@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { resolveRoute } from "./routing.ts";
+import { classifyRoute, resolveRoute } from "./routing.ts";
 
 function route(path: string) {
     return resolveRoute(new URL(path, "https://staging.gen.pollinations.ai"));
 }
 
 describe("resolveRoute", () => {
+    it("classifies public API ownership explicitly", () => {
+        expect(classifyRoute("/api/generate/text/hello")).toBe("generation");
+        expect(classifyRoute("/image/hello")).toBe("generation");
+        expect(classifyRoute("/api/docs")).toBe("docs");
+        expect(classifyRoute("/api/account/keys")).toBe("control-plane-api");
+        expect(classifyRoute("/api/auth/session")).toBe("control-plane-api");
+        expect(classifyRoute("/account/keys")).toBe("account-ui");
+    });
+
     it("redirects root and docs to api docs on the same origin", () => {
         expect(route("/")).toEqual({
             kind: "redirect",

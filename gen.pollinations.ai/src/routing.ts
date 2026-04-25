@@ -4,6 +4,12 @@ type RouteDecision =
     | { kind: "generation"; url: URL }
     | { kind: "enter"; url: URL; noIndex: boolean };
 
+export type RouteClass =
+    | "generation"
+    | "docs"
+    | "control-plane-api"
+    | "account-ui";
+
 const robotsTxt = [
     "User-agent: *",
     "Allow: /api/docs",
@@ -17,13 +23,42 @@ const robotsTxt = [
     "Disallow: /api/v1/",
 ].join("\n");
 
+const GENERATION_API_PREFIX = "/api/generate";
+const DOCS_API_PREFIX = "/api/docs";
+const API_PREFIX = "/api/";
+const ACCOUNT_PREFIX = "/account";
+
 function isGenerationApiPath(path: string): boolean {
-    return path === "/api/generate" || path.startsWith("/api/generate/");
+    return (
+        path === GENERATION_API_PREFIX ||
+        path.startsWith(`${GENERATION_API_PREFIX}/`)
+    );
+}
+
+export function classifyRoute(path: string): RouteClass {
+    if (path === "/models" || isGenerationApiPath(path)) {
+        return "generation";
+    }
+
+    if (path === DOCS_API_PREFIX || path.startsWith(`${DOCS_API_PREFIX}/`)) {
+        return "docs";
+    }
+
+    if (path.startsWith(API_PREFIX)) {
+        return "control-plane-api";
+    }
+
+    if (path === ACCOUNT_PREFIX || path.startsWith(`${ACCOUNT_PREFIX}/`)) {
+        return "account-ui";
+    }
+
+    return "generation";
 }
 
 export function resolveRoute(inputUrl: URL): RouteDecision {
     const url = new URL(inputUrl);
     const path = url.pathname;
+    const routeClass = classifyRoute(path);
 
     if (path === "/robots.txt") {
         return {
@@ -47,23 +82,31 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
         return { kind: "generation", url };
     }
 
-    if (isGenerationApiPath(path)) {
+    if (routeClass === "generation" && isGenerationApiPath(path)) {
         return { kind: "generation", url };
     }
 
-    if (path.startsWith("/api/")) {
+    if (routeClass === "docs") {
         return {
             kind: "enter",
             url,
-            noIndex: !path.startsWith("/api/docs"),
+            noIndex: false,
         };
     }
 
-    if (path === "/account" || path === "/account/") {
+    if (routeClass === "control-plane-api") {
+        return {
+            kind: "enter",
+            url,
+            noIndex: true,
+        };
+    }
+
+    if (path === ACCOUNT_PREFIX || path === `${ACCOUNT_PREFIX}/`) {
         return { kind: "enter", url, noIndex: true };
     }
 
-    if (path.startsWith("/account/")) {
+    if (routeClass === "account-ui") {
         url.pathname = `/api${path}`;
         return { kind: "enter", url, noIndex: true };
     }

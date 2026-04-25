@@ -1,83 +1,124 @@
 /**
- * gen.pollinations.ai - Simplified API Gateway
+ * gen.pollinations.ai - API generation gateway
  *
- * This worker provides clean, short URLs for the Pollinations API by proxying
- * requests to enter.pollinations.ai via service bindings (zero latency).
+ * Generation routes are handled in this worker. Account, docs, auth, billing UI,
+ * and other non-generation API routes remain owned by enter.pollinations.ai.
  *
  * URL Mapping:
- *   gen.pollinations.ai/              → redirect to /api/docs
- *   gen.pollinations.ai/docs          → redirect to /api/docs
- *   gen.pollinations.ai/models        → /api/generate/text/models
- *   gen.pollinations.ai/image/*       → /api/generate/image/*
- *   gen.pollinations.ai/text/*        → /api/generate/text/*
- *   gen.pollinations.ai/audio/*       → /api/generate/audio/*
- *   gen.pollinations.ai/v1/*          → /api/generate/v1/*
- *   gen.pollinations.ai/account/*     → /api/account/*
+ *   gen.pollinations.ai/              -> redirect to /api/docs
+ *   gen.pollinations.ai/docs          -> redirect to /api/docs
+ *   gen.pollinations.ai/models        -> /api/generate/text/models
+ *   gen.pollinations.ai/api/generate/* -> handled locally
+ *   gen.pollinations.ai/api/*         -> enter.pollinations.ai
+ *   gen.pollinations.ai/account/*     -> /api/account/*
+ *   gen.pollinations.ai/image/*       -> /api/generate/image/*
+ *   gen.pollinations.ai/text/*        -> /api/generate/text/*
+ *   gen.pollinations.ai/audio/*       -> /api/generate/audio/*
+ *   gen.pollinations.ai/video/*       -> /api/generate/video/*
+ *   gen.pollinations.ai/v1/*          -> /api/generate/v1/*
  */
 
-interface Env {
+import {
+    type Context,
+    type ErrorHandler,
+    Hono,
+    type MiddlewareHandler,
+} from "hono";
+import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
+import { requestId } from "hono/request-id";
+import type { Env as GenerationEnv } from "@/env.ts";
+import { handleError } from "@/error.ts";
+import { logger } from "@/middleware/logger.ts";
+import { audioRoutes } from "@/routes/audio.ts";
+import { proxyRoutes } from "@/routes/proxy.ts";
+import { resolveRoute } from "./routing.ts";
+
+interface Env extends CloudflareBindings {
     ENTER: Fetcher;
 }
 
-/** Append X-Robots-Tag to prevent search engines from indexing API responses */
+const generationLogger = logger as unknown as MiddlewareHandler<GenerationEnv>;
+const generationErrorHandler =
+    handleError as unknown as ErrorHandler<GenerationEnv>;
+const generationProxyRoutes = proxyRoutes as unknown as Hono<GenerationEnv>;
+const generationAudioRoutes = audioRoutes as unknown as Hono<GenerationEnv>;
+
+const generationApp = new Hono<GenerationEnv>()
+    // Permissive CORS for generation endpoints. Auth is API-key based.
+    .use(
+        "*",
+        cors({
+            origin: "*",
+            allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allowHeaders: [],
+            exposeHeaders: ["Content-Length", "Content-Disposition"],
+            maxAge: 600,
+        }),
+    )
+    .use("*", requestId())
+    .use("*", generationLogger)
+    .use("*", async (c, next) => {
+        await next();
+        c.header("X-Robots-Tag", "noindex, nofollow");
+    })
+    .route("/api/generate", generationProxyRoutes)
+    .route("/api/generate/v1/audio", generationAudioRoutes);
+
+generationApp.notFound(async (c: Context<GenerationEnv>) => {
+    return generationErrorHandler(new HTTPException(404), c);
+});
+
+generationApp.onError(generationErrorHandler);
+
+/** Append X-Robots-Tag to prevent search engines from indexing API responses. */
 function noIndex(response: Response): Response {
     const res = new Response(response.body, response);
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
     return res;
 }
 
+function rewriteRequest(request: Request, url: URL): Request {
+    return new Request(url.toString(), request);
+}
+
+async function fetchGeneration(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+    url: URL,
+): Promise<Response> {
+    return noIndex(
+        await generationApp.fetch(rewriteRequest(request, url), env, ctx),
+    );
+}
+
+async function fetchEnter(
+    request: Request,
+    env: Env,
+    url: URL,
+    shouldNoIndex: boolean,
+): Promise<Response> {
+    const response = await env.ENTER.fetch(rewriteRequest(request, url));
+    return shouldNoIndex ? noIndex(response) : response;
+}
+
 export default {
-    async fetch(request: Request, env: Env): Promise<Response> {
-        const url = new URL(request.url);
-        const path = url.pathname;
+    async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+        const route = resolveRoute(new URL(request.url));
 
-        // Serve robots.txt — block infinite generation paths, allow docs
-        if (path === "/robots.txt") {
-            return new Response(
-                [
-                    "User-agent: *",
-                    "Allow: /api/docs",
-                    "Allow: /api/docs/llm.txt",
-                    "Disallow: /image/",
-                    "Disallow: /text/",
-                    "Disallow: /video/",
-                    "Disallow: /audio/",
-                    "Disallow: /v1/",
-                    "Disallow: /api/generate/",
-                    "Disallow: /api/v1/",
-                ].join("\n"),
-                { headers: { "Content-Type": "text/plain" } },
-            );
+        if (route.kind === "robots") {
+            return route.response;
         }
 
-        // Redirect root and /docs to API docs
-        if (path === "/" || path === "/docs") {
-            return Response.redirect(`${url.origin}/api/docs`, 301);
+        if (route.kind === "redirect") {
+            return Response.redirect(route.location, route.status);
         }
 
-        // Convenience: /models → /api/generate/text/models (most common use case)
-        if (path === "/models") {
-            url.pathname = "/api/generate/text/models";
-            return noIndex(await env.ENTER.fetch(url, request));
+        if (route.kind === "generation") {
+            return fetchGeneration(request, env, ctx, route.url);
         }
 
-        // Don't rewrite /api/* paths - they're already in the correct format
-        // Allow docs to be indexed; block all other API routes
-        if (path.startsWith("/api/")) {
-            const response = await env.ENTER.fetch(request);
-            return path.startsWith("/api/docs") ? response : noIndex(response);
-        }
-
-        // Account routes: /account/* → /api/account/*
-        if (path.startsWith("/account")) {
-            url.pathname = "/api" + path;
-            return noIndex(await env.ENTER.fetch(url, request));
-        }
-
-        // Rewrite API paths: /image/*, /text/*, /v1/* → /api/generate/*
-        url.pathname = "/api/generate" + path;
-
-        // Forward via service binding (zero latency - same V8 isolate)
-        return noIndex(await env.ENTER.fetch(url, request));
+        return fetchEnter(request, env, route.url, route.noIndex);
     },
 };

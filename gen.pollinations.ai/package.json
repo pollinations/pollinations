@@ -7,11 +7,18 @@
         "dev": "wrangler dev",
         "deploy:staging": "wrangler deploy --env staging",
         "deploy:production": "wrangler deploy --env production",
+        "gen-types": "wrangler types --include-runtime=false --env-interface CloudflareBindings worker-bindings.d.ts --env production",
         "typecheck": "tsc --noEmit"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20251202.0",
+        "@types/node": "^25.6.0",
         "typescript": "^5.9.3",
         "wrangler": "^4.52.1"
+    },
+    "dependencies": {
+        "drizzle-orm": "0.44.7",
+        "hono": "4.10.6",
+        "nanoid": "^5.1.9"
     }
 }

@@ -22,8 +22,9 @@ export const logger = createMiddleware<Env>(async (c, next) => {
 
     const startTime = Date.now();
     c.set("requestStartedAt", startTime);
-    const shouldEmitRequestLogs =
-        c.env.ENVIRONMENT === "local" || c.env.ENVIRONMENT === "test";
+    const shouldEmitRequestLogs = (
+        ["local", "test"] as readonly string[]
+    ).includes(c.env.ENVIRONMENT);
 
     await withContext(
         {

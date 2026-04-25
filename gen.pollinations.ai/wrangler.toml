@@ -3,10 +3,35 @@ main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Service binding to enter worker (zero latency - same V8 isolate)
+# Service binding to enter worker (zero latency - same V8 isolate).
+# Will be removed once gen serves all API routes natively.
 services = [
     { binding = "ENTER", service = "pollinations-enter" }
 ]
+
+# Top-level vars = local-dev defaults. Per-env blocks below override.
+# Wrangler types unions these with env-specific narrowings, so shared code
+# that compares ENVIRONMENT to "local"/"test" typechecks.
+[vars]
+ENVIRONMENT = "local"
+LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
+IMAGE_SERVICE_URL = "http://localhost:16384"
+TEXT_SERVICE_URL = "http://localhost:16385"
+MUSIC_SERVICE_URL = ""
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+POLLEN_REFILL_PER_HOUR = 1
+# Secrets — placeholders so wrangler types emits them. Replace with `wrangler secret put`
+# before deploying gen as the live hot-path.
+BETTER_AUTH_SECRET = ""
+GITHUB_CLIENT_ID = ""
+GITHUB_CLIENT_SECRET = ""
+TINYBIRD_INGEST_TOKEN = ""
+PLN_GPU_TOKEN = ""
+PLN_ENTER_TOKEN = ""
+DASHSCOPE_API_KEY = ""
+OVHCLOUD_API_KEY = ""
 
 [dev]
 port = 8788
@@ -19,9 +44,63 @@ pattern = "gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+[env.production.vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
+# Hot-path backends — same EC2 hosts enter uses.
+IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
+MUSIC_SERVICE_URL = ""
+# Tinybird ingest (track.ts, error.ts). Token via `wrangler secret put`.
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+# Pollen rate-limiter DO refill rate (DO runs in enter's script; gen sets for type only).
+POLLEN_REFILL_PER_HOUR = 1
+# Secrets — placeholders for typecheck. Replace with `wrangler secret put --env production`.
+BETTER_AUTH_SECRET = ""
+GITHUB_CLIENT_ID = ""
+GITHUB_CLIENT_SECRET = ""
+TINYBIRD_INGEST_TOKEN = ""
+PLN_GPU_TOKEN = ""
+PLN_ENTER_TOKEN = ""
+DASHSCOPE_API_KEY = ""
+OVHCLOUD_API_KEY = ""
+
 [[env.production.services]]
 binding = "ENTER"
 service = "pollinations-enter-production"
+
+# Shared hot-path bindings — same resources as enter.
+[[env.production.d1_databases]]
+remote = true
+binding = "DB"
+database_name = "production-pollinations-enter-db"
+database_id = "f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3"
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "eb4ea5149a5a413db53902bf2b8c1d95"
+
+[[env.production.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.production.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+# PollenRateLimiter DO — class defined in pollinations-enter, gen binds cross-script.
+[[env.production.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+script_name = "pollinations-enter-production"
+
+# Edge rate limiter (per-IP) — mirrors enter's config.
+[[env.production.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10000, period = 10 }
 
 # Staging routes
 [env.staging]
@@ -31,6 +110,53 @@ pattern = "staging.gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+[env.staging.vars]
+ENVIRONMENT = "staging"
+LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
+IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
+MUSIC_SERVICE_URL = ""
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+POLLEN_REFILL_PER_HOUR = 1
+# Secrets placeholders — replace with `wrangler secret put --env staging`.
+BETTER_AUTH_SECRET = ""
+GITHUB_CLIENT_ID = ""
+GITHUB_CLIENT_SECRET = ""
+TINYBIRD_INGEST_TOKEN = ""
+PLN_GPU_TOKEN = ""
+PLN_ENTER_TOKEN = ""
+DASHSCOPE_API_KEY = ""
+OVHCLOUD_API_KEY = ""
+
 [[env.staging.services]]
 binding = "ENTER"
 service = "pollinations-enter-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "staging-pollinations-enter-db"
+database_id = "bd0ef469-d727-4ff4-9118-bd7e6e7985ae"
+
+[[env.staging.kv_namespaces]]
+binding = "KV"
+id = "eb4ea5149a5a413db53902bf2b8c1d95"
+
+[[env.staging.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.staging.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[env.staging.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+script_name = "pollinations-enter-staging"
+
+[[env.staging.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10000, period = 10 }

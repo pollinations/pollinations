@@ -113,11 +113,11 @@ jobs:
             echo "✅ No type errors in changed files"
           fi
 
-      - name: Get changed files in gen.pollinations.ai
+      - name: Get changed files that affect gen.pollinations.ai
         id: gen-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep '^gen.pollinations.ai/' || true)
-          echo "Changed gen.pollinations.ai files:"
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(gen.pollinations.ai/|enter.pollinations.ai/src/|shared/registry/)' || true)
+          echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
           echo "$FILES" >> $GITHUB_OUTPUT

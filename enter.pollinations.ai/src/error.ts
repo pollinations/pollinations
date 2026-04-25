@@ -1,7 +1,8 @@
 import type { Logger } from "@logtape/logtape";
 import { APIError } from "better-auth";
-import type { Context, ErrorHandler } from "hono";
+import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { RequestIdVariables } from "hono/request-id";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import {
@@ -11,7 +12,13 @@ import {
 } from "@/events.ts";
 import { ValidationError } from "@/middleware/validator";
 import { getRoutePath } from "@/util.ts";
-import type { Env } from "./env.ts";
+import type { ErrorVariables } from "./env.ts";
+import type { LoggerVariables } from "./middleware/logger.ts";
+
+type ErrorHandlerEnv = {
+    Bindings: CloudflareBindings;
+    Variables: RequestIdVariables & LoggerVariables & ErrorVariables;
+};
 
 type UpstreamErrorOptions = {
     res?: Response;
@@ -161,7 +168,10 @@ const MAX_ERROR_MESSAGE_LENGTH = 2000;
 const MAX_STACK_LENGTH = 12000;
 const MAX_UPSTREAM_BODY_LENGTH = 16000;
 
-export const handleError: ErrorHandler<Env> = async (err, c) => {
+export async function handleError<TEnv extends ErrorHandlerEnv>(
+    err: Error,
+    c: Context<TEnv>,
+) {
     const log = c.get("log");
     const timestamp = new Date().toISOString();
 
@@ -211,7 +221,7 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
     emitServerError(c, err, status, timestamp, log);
     const response = createInternalErrorResponse(err, status, timestamp);
     return c.json(response, status);
-};
+}
 
 /**
  * Creates a standardized error response
@@ -326,8 +336,8 @@ export function getDefaultErrorMessage(status: number): string {
     return messages[status] || "UNKNOWN_ERROR";
 }
 
-function emitServerError(
-    c: Context<Env>,
+function emitServerError<TEnv extends ErrorHandlerEnv>(
+    c: Context<TEnv>,
     error: Error,
     status: number,
     timestamp: string,
@@ -352,8 +362,8 @@ function emitServerError(
     );
 }
 
-function createServerErrorEnvelope(
-    c: Context<Env>,
+function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
+    c: Context<TEnv>,
     error: Error,
     status: number,
     timestamp: string,

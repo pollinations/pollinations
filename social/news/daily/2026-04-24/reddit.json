@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-24",
+  "period_start": "2026-04-24",
+  "period_end": "2026-04-24",
+  "generated_at": "2026-04-25T06:28:37.144356+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-24/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped DeepSeek V4, granular image reasoning, and deterministic audio caching",
+  "text": "Merged 6 PRs today. Main updates hit the text, image, and audio endpoints.\n\nFirst, DeepSeek V4 is now available on the text endpoint, routed via DeepInfra. You can hit it by passing the model name in your standard text generation calls.\n\nOn the image side, we refactored how reasoning works. The old boolean toggle was too blunt. We replaced it with 'fast', 'balanced', and 'pro' modes. This gives you actual control over the tradeoff between generation speed and output quality depending on what your app actually needs.\n\nFor audio, we added a seed parameter. This is strictly for deterministic caching. If you pass the same prompt and seed, you will get a cache hit with the exact same audio file instead of spinning up a new generation. It makes workflows predictable and saves compute.\n\nOn the account side, we restored visibility into your current tier and the nextResetAt timestamp on the profile page. We also added a usage period picker in Codex. It should be much easier now to see exactly where your pollen credits are going and when your tier resets.\n\nCode, roadmap, and docs are in the open: https://github.com/pollinations/pollinations"
+}

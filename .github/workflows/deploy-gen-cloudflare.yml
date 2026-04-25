@@ -1,0 +1,42 @@
+name: Deploy gen.pollinations.ai
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - 'gen.pollinations.ai/**'
+      - 'enter.pollinations.ai/src/**'
+      - 'shared/registry/**'
+      - '.github/workflows/deploy-gen-cloudflare.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./gen.pollinations.ai
+
+      - name: Test
+        run: npm test
+        working-directory: ./gen.pollinations.ai
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: ./gen.pollinations.ai
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy:production
+        working-directory: ./gen.pollinations.ai

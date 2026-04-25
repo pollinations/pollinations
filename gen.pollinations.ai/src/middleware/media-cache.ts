@@ -1,5 +1,5 @@
 /**
- * Generic media cache middleware for enter.pollinations.ai
+ * Generic media cache middleware for gen.pollinations.ai
  * Cache-first pattern: check cache before auth/rate limiting.
  * Used for image, video, and audio GET endpoints.
  *

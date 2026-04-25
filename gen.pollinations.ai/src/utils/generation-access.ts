@@ -7,7 +7,7 @@ import {
 } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import { getEstimatedPrice, getModelStats } from "./model-stats.ts";
+import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
 
 type GenerationAccessVariables = AuthVariables &
     BalanceVariables &

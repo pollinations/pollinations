@@ -7,7 +7,13 @@ import type { Session, User } from "@/auth.ts";
 import * as schema from "@/db/schema/better-auth.ts";
 import { createAuth } from "../auth.ts";
 import type { LoggerVariables } from "./logger.ts";
-import type { ModelVariables } from "./model.ts";
+
+type ModelVariables = {
+    model: {
+        requested: string;
+        resolved: string;
+    };
+};
 
 export type AuthVariables = {
     auth: {

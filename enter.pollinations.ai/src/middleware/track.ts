@@ -50,8 +50,14 @@ import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
 import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
-import type { ModelVariables } from "./model.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
+
+type ModelVariables = {
+    model: {
+        requested: string;
+        resolved: ModelName;
+    };
+};
 
 export type ModelUsage = {
     model: string;

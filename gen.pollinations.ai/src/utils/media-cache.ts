@@ -1,5 +1,5 @@
 /**
- * Generic media caching utilities for enter.pollinations.ai
+ * Generic media caching utilities for gen.pollinations.ai
  * Used by both image and audio cache middleware.
  * Stores binary responses in R2 with URL-based cache keys.
  */

@@ -88,7 +88,7 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
     log.debug("[DEDUP] Deduplicating request: {method} {url}", {
         method,
         url: c.req.url,
-        key: key.substring(0, 12) + "...",
+        key: `${key.substring(0, 12)}...`,
     });
 
     // Check if request already inflight

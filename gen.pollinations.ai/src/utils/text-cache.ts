@@ -1,12 +1,12 @@
 /**
- * Text caching utilities for enter.pollinations.ai
+ * Text caching utilities for gen.pollinations.ai
  * Adapted from text.pollinations.ai/cloudflare-cache
  * Following the "thin proxy" design principle - keeping logic simple and minimal
  */
 
-import type { Context } from "hono";
 import type { Logger } from "@logtape/logtape";
 import stableStringify from "fast-json-stable-stringify";
+import type { Context } from "hono";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];

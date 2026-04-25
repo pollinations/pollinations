@@ -14,7 +14,7 @@
         "resolveJsonModule": true,
         "baseUrl": ".",
         "paths": {
-            "@/*": ["../enter.pollinations.ai/src/*"],
+            "@/*": ["src/*", "../enter.pollinations.ai/src/*"],
             "@shared/*": ["../shared/*"]
         }
     },

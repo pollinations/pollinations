@@ -1,5 +1,5 @@
 /**
- * Text cache middleware for enter.pollinations.ai
+ * Text cache middleware for gen.pollinations.ai
  * Implements cache-first pattern: check cache before auth/rate limiting
  * Adapted from text.pollinations.ai/cloudflare-cache
  */
@@ -80,7 +80,7 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     // Generate cache key
     const cacheKey = await generateCacheKey(c.req.raw, bodyText);
     log.debug("[TEXT-CACHE] Cache key: {key}", {
-        key: cacheKey.substring(0, 16) + "...",
+        key: `${cacheKey.substring(0, 16)}...`,
     });
 
     // Try to get from cache

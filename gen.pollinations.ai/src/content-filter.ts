@@ -1,7 +1,7 @@
 import type {
     ContentFilterResult,
     ContentFilterSeverity,
-} from "@/schemas/openai.ts";
+} from "@shared/schemas/openai.ts";
 
 const severityOrder: Record<ContentFilterSeverity, number> = {
     safe: 0,

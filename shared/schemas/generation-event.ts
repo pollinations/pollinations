@@ -1,5 +1,5 @@
-import type { PriceDefinition, Usage } from "@shared/registry/registry.ts";
-import type { ContentFilterResult } from "@/schemas/openai";
+import type { PriceDefinition, Usage } from "../registry/registry.ts";
+import type { ContentFilterResult } from "./openai.ts";
 
 export type EventType = "generate.text" | "generate.image" | "generate.audio";
 export type ApiKeyType = "secret" | "publishable";
@@ -111,6 +111,7 @@ export type TinybirdEvent = {
 
 // Alias for backward compatibility with track.ts
 export type InsertGenerationEvent = TinybirdEvent;
+export type SelectGenerationEvent = TinybirdEvent;
 
 export type GenerationEventPriceParams = {
     tokenPricePromptText: number;

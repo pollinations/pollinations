@@ -25,12 +25,6 @@ import {
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
-import { createFactory } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
-import { z } from "zod";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
-import { validator } from "@/middleware/validator.ts";
-import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import {
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
@@ -38,7 +32,13 @@ import {
     CreateImageRequestSchema,
     CreateImageResponseSchema,
     GetModelsResponseSchema,
-} from "@/schemas/openai.ts";
+} from "@shared/schemas/openai.ts";
+import { createFactory } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
+import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
+import { validator } from "@/middleware/validator.ts";
+import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import {

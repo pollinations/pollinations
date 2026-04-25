@@ -3,14 +3,15 @@
  * POST /v1/images/generations — generate images from text prompts
  * POST /v1/images/edits — edit images with text prompts + source images
  */
-import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
+
 import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
     type CreateImageRequest,
-} from "@/schemas/openai.ts";
+} from "@shared/schemas/openai.ts";
+import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 
 // biome-ignore lint/suspicious/noExplicitAny: internal callback bridging typed proxy.ts and untyped Context.var
 type CheckBalanceFn = (vars: any, env: any) => Promise<void>;

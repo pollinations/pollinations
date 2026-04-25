@@ -1,5 +1,5 @@
+import type { SelectGenerationEvent } from "@shared/schemas/generation-event.ts";
 import { Hono } from "hono";
-import type { SelectGenerationEvent } from "@/db/schema/event.ts";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
 
 type TinybirdGenerationEvent = Omit<

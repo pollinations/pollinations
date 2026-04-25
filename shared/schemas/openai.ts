@@ -1,10 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import {
-    AUDIO_VOICES,
-    DEFAULT_TEXT_MODEL,
-} from "../../../shared/registry/text.ts";
+import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 

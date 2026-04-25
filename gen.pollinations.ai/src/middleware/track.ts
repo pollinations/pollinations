@@ -14,23 +14,30 @@ import {
     openaiUsageToUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
+import type {
+    ApiKeyType,
+    EventType,
+    GenerationEventContentFilterParams,
+    InsertGenerationEvent,
+} from "@shared/schemas/generation-event.ts";
+import {
+    contentFilterResultsToEventParams,
+    priceToEventParams,
+    usageToEventParams,
+} from "@shared/schemas/generation-event.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+    type ContentFilterResult,
+    ContentFilterResultSchema,
+    ContentFilterSeveritySchema,
+} from "@shared/schemas/openai.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import type {
-    ApiKeyType,
-    EventType,
-    GenerationEventContentFilterParams,
-    InsertGenerationEvent,
-} from "@/db/schema/event.ts";
-import {
-    contentFilterResultsToEventParams,
-    priceToEventParams,
-    usageToEventParams,
-} from "@/db/schema/event.ts";
 import type { ErrorVariables } from "@/env.ts";
 import {
     getDefaultErrorMessage,
@@ -42,13 +49,6 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
-import {
-    type CompletionUsage,
-    CompletionUsageSchema,
-    type ContentFilterResult,
-    ContentFilterResultSchema,
-    ContentFilterSeveritySchema,
-} from "@/schemas/openai.ts";
 import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
 import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 

@@ -10,9 +10,9 @@ import {
     getTextModels,
 } from "@shared/registry/registry.ts";
 import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
+import { CompletionUsageSchema } from "@shared/schemas/openai.ts";
 import { describe, expect } from "vitest";
 import worker from "@/index.ts";
-import { CompletionUsageSchema } from "@/schemas/openai.ts";
 import { test } from "../fixtures.ts";
 import { assertTrackedBillingEvent } from "../helpers/billing-assertions.ts";
 

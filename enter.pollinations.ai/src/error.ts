@@ -2,7 +2,6 @@ import type { Logger } from "@logtape/logtape";
 import { APIError } from "better-auth";
 import type { Context, ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { routePath } from "hono/route";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import {
@@ -11,6 +10,7 @@ import {
     type TinybirdErrorEvent,
 } from "@/events.ts";
 import { ValidationError } from "@/middleware/validator";
+import { getRoutePath } from "@/util.ts";
 import type { Env } from "./env.ts";
 
 type UpstreamErrorOptions = {
@@ -375,7 +375,7 @@ function createServerErrorEnvelope(
             MAX_ERROR_MESSAGE_LENGTH,
         ) || getDefaultErrorMessage(status);
     const stack = truncateString(error.stack, MAX_STACK_LENGTH);
-    const resolvedRoutePath = routePath(c) || c.req.path;
+    const resolvedRoutePath = getRoutePath(c);
 
     return {
         kind: "server_error",

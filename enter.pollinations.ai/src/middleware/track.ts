@@ -18,7 +18,6 @@ import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
-import { routePath } from "hono/route";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import type {
@@ -47,7 +46,7 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@/schemas/openai.ts";
-import { generateRandomId, removeUnset } from "@/util.ts";
+import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
 import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 import type { BalanceVariables } from "./balance.ts";
 import type { LoggerVariables } from "./logger.ts";
@@ -180,7 +179,7 @@ export const track = (eventType: EventType) =>
                 const finalEvent = createTrackingEvent({
                     id: generateRandomId(),
                     requestId: c.get("requestId"),
-                    requestPath: `${routePath(c)}`,
+                    requestPath: getRoutePath(c),
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,

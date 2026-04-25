@@ -1,0 +1,146 @@
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { HTTPException } from "hono/http-exception";
+import type { createAuth } from "../auth.ts";
+import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
+import * as schema from "../db/schema/better-auth.ts";
+import { parseMetadata } from "./metadata-utils.ts";
+import { appUrlMatchesRedirect, isLoopbackUrl } from "./url-utils.ts";
+
+export type ApiKeyType = "secret" | "publishable";
+
+type CreateApiKeyForUserInput = {
+    authClient: ReturnType<typeof createAuth>;
+    dbBinding: D1Database;
+    userId: string;
+    name: string;
+    type: ApiKeyType;
+    expiresIn?: number;
+    allowedModels?: string[] | null;
+    pollenBudget?: number | null;
+    accountPermissions?: string[] | null;
+    metadata?: Record<string, unknown>;
+    allowAccountKeysPermission: boolean;
+    defaultCreatedVia: string;
+};
+
+export async function requireAvailableAppUrl(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    appUrl: string,
+    excludeKeyId?: string,
+): Promise<void> {
+    if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(appUrl)) {
+        throw new HTTPException(400, {
+            message: "Must be a valid URL with a scheme (e.g. https://...)",
+        });
+    }
+    if (isLoopbackUrl(appUrl)) {
+        throw new HTTPException(400, {
+            message:
+                "Loopback URLs (localhost, 127.x.x.x, ::1) cannot be registered — they are shared by every local development environment.",
+        });
+    }
+
+    const allKeys = await db.query.apikey.findMany();
+    const duplicate = allKeys.find((key) => {
+        if (excludeKeyId && key.id === excludeKeyId) return false;
+        const meta = parseMetadata(key.metadata);
+        return (
+            typeof meta.appUrl === "string" &&
+            appUrlMatchesRedirect(meta.appUrl, appUrl)
+        );
+    });
+    if (duplicate) {
+        throw new HTTPException(409, {
+            message: "This URL is already registered. Please use a different URL.",
+        });
+    }
+}
+
+export async function createApiKeyForUser({
+    authClient,
+    dbBinding,
+    userId,
+    name,
+    type,
+    expiresIn,
+    allowedModels,
+    pollenBudget,
+    accountPermissions,
+    metadata,
+    allowAccountKeysPermission,
+    defaultCreatedVia,
+}: CreateApiKeyForUserInput) {
+    const db = drizzle(dbBinding, { schema });
+    const appUrl = metadata?.appUrl;
+    if (typeof appUrl === "string") {
+        await requireAvailableAppUrl(db, appUrl);
+    }
+
+    const sanitizedAccountPerms =
+        sanitizeAuthorizeAccountPermissions(accountPermissions) ?? null;
+    const safeAccountPerms = allowAccountKeysPermission
+        ? sanitizedAccountPerms
+        : sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null;
+
+    const permissions: Record<string, string[]> = {};
+    if (allowedModels) permissions.models = allowedModels;
+    if (safeAccountPerms && safeAccountPerms.length > 0) {
+        permissions.account = safeAccountPerms;
+    }
+
+    const isPublishable = type === "publishable";
+    const prefix = isPublishable ? "pk" : "sk";
+    const baseMetadata = {
+        keyType: type,
+        createdVia: defaultCreatedVia,
+        ...metadata,
+    };
+
+    const created = await authClient.api.createApiKey({
+        body: {
+            name,
+            prefix,
+            userId,
+            ...(expiresIn != null && { expiresIn }),
+            metadata: baseMetadata,
+            permissions:
+                Object.keys(permissions).length > 0 ? permissions : undefined,
+        },
+    });
+
+    if (!created?.id || !created?.key) {
+        throw new HTTPException(500, {
+            message: "Failed to create API key",
+        });
+    }
+
+    const finalMetadata = {
+        ...baseMetadata,
+        ...(isPublishable && { plaintextKey: created.key }),
+    };
+
+    const d1Updates: Partial<typeof schema.apikey.$inferInsert> = {
+        metadata: JSON.stringify(finalMetadata),
+    };
+    if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
+
+    await db
+        .update(schema.apikey)
+        .set(d1Updates)
+        .where(eq(schema.apikey.id, created.id));
+
+    return {
+        id: created.id,
+        key: created.key,
+        name: created.name,
+        type,
+        prefix,
+        start: created.start,
+        expiresAt: created.expiresAt,
+        expiresIn,
+        permissions: Object.keys(permissions).length > 0 ? permissions : null,
+        pollenBudget: pollenBudget ?? null,
+        metadata: finalMetadata,
+    };
+}

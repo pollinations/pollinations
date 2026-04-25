@@ -3,6 +3,78 @@ import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 
 describe("API Key Management", () => {
+    describe("POST /api/api-keys", () => {
+        test("should create publishable key metadata in one step", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "one-step-publishable",
+                        type: "publishable",
+                        metadata: {
+                            description: "created in one step",
+                            appUrl: "https://one-step.example/callback",
+                        },
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.key.startsWith("pk_")).toBe(true);
+            expect(created.metadata).toMatchObject({
+                keyType: "publishable",
+                description: "created in one step",
+                appUrl: "https://one-step.example/callback",
+                plaintextKey: created.key,
+            });
+        });
+
+        test("should reject loopback appUrl before creation", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "localhost-publishable",
+                        type: "publishable",
+                        metadata: {
+                            appUrl: "http://localhost:3456/callback",
+                        },
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(400);
+
+            const listResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const list = await listResponse.json();
+            expect(
+                list.data.some((key: any) => key.name === "localhost-publishable"),
+            ).toBe(false);
+        });
+    });
+
     describe("GET /api/api-keys", () => {
         test("should list all API keys for authenticated user", async ({
             sessionToken,

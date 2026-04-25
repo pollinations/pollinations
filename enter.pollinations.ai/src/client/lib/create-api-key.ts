@@ -1,5 +1,3 @@
-import { authClient } from "../auth.ts";
-
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
 export function expiryDaysToExpiresIn(
@@ -28,12 +26,11 @@ type CreatedKey = {
     key: string;
     name: string | null;
     expiresIn: number | undefined;
+    expiresAt?: string | null;
 };
 
-// Two-step create: (1) create the key via better-auth, (2) POST the permission
-// fields that better-auth's API key plugin doesn't cover (allowedModels,
-// pollenBudget, accountPermissions). On step-2 failure the key survives with
-// defaults — caller should surface the error so the user can revoke manually.
+// Server-side creation keeps Better Auth as an implementation detail and lets
+// us validate Pollinations-specific fields before the key exists.
 export async function createKeyWithPermissions({
     name,
     prefix,
@@ -42,47 +39,51 @@ export async function createKeyWithPermissions({
     permissions,
 }: CreateKeyInput): Promise<CreatedKey> {
     const expiresIn = expiryDaysToExpiresIn(expiryDays);
-    const result = await authClient.apiKey.create({
+    const body = {
         name,
-        prefix,
+        type: prefix === "pk" ? "publishable" : "secret",
         ...(expiresIn !== undefined && { expiresIn }),
         ...(metadata && { metadata }),
+        ...(permissions?.allowedModels !== undefined && {
+            allowedModels: permissions.allowedModels,
+        }),
+        ...(permissions?.pollenBudget !== undefined && {
+            pollenBudget: permissions.pollenBudget,
+        }),
+        ...(permissions?.accountPermissions !== undefined && {
+            accountPermissions: permissions.accountPermissions,
+        }),
+    };
+
+    const response = await fetch("/api/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
     });
 
-    if (result.error || !result.data?.key) {
-        throw new Error(result.error?.message || "Failed to create API key");
-    }
-
-    const { id, key } = result.data;
-
-    if (permissions) {
-        const updates = Object.fromEntries(
-            Object.entries(permissions).filter(
-                ([, v]) => v !== undefined && v !== null,
-            ),
+    if (!response.ok) {
+        const err = (await response.json().catch(() => null)) as {
+            message?: string;
+            error?: { message?: string };
+        } | null;
+        throw new Error(
+            err?.message || err?.error?.message || "Failed to create API key",
         );
-        if (Object.keys(updates).length > 0) {
-            const response = await fetch(`/api/api-keys/${id}/update`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(updates),
-            });
-            if (!response.ok) {
-                const err = (await response.json().catch(() => null)) as {
-                    message?: string;
-                } | null;
-                throw new Error(
-                    `Key created but failed to set permissions: ${err?.message || "Unknown error"}`,
-                );
-            }
-        }
     }
+
+    const data = (await response.json()) as {
+        id: string;
+        key: string;
+        name?: string | null;
+        expiresAt?: string | null;
+    };
 
     return {
-        id,
-        key,
-        name: result.data.name ?? null,
+        id: data.id,
+        key: data.key,
+        name: data.name ?? null,
         expiresIn,
+        expiresAt: data.expiresAt,
     };
 }

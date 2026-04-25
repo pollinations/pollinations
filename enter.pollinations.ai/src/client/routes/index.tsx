@@ -115,7 +115,9 @@ function RouteComponent() {
             metadata: {
                 description: formState.description,
                 keyType,
-                ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
+                ...(isPublishable && formState.appUrl
+                    ? { appUrl: formState.appUrl }
+                    : {}),
             },
             permissions: {
                 allowedModels: formState.allowedModels,
@@ -125,31 +127,6 @@ function RouteComponent() {
                     : undefined,
             },
         });
-
-        // Store plaintext key and app settings for publishable keys
-        if (isPublishable) {
-            const metaRes = await fetch(
-                `/api/api-keys/${created.id}/metadata`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        description: formState.description,
-                        keyType,
-                        plaintextKey: created.key,
-                        ...(formState.appUrl && { appUrl: formState.appUrl }),
-                    }),
-                },
-            );
-            if (!metaRes.ok) {
-                const err = await metaRes.json().catch(() => null);
-                throw new Error(
-                    (err as { error?: { message?: string } })?.error?.message ||
-                        "Failed to save key metadata",
-                );
-            }
-        }
 
         router.invalidate();
         return {

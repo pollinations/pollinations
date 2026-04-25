@@ -59,7 +59,11 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
         };
     }
 
-    if (path === "/account" || path.startsWith("/account/")) {
+    if (path === "/account" || path === "/account/") {
+        return { kind: "enter", url, noIndex: true };
+    }
+
+    if (path.startsWith("/account/")) {
         url.pathname = `/api${path}`;
         return { kind: "enter", url, noIndex: true };
     }

@@ -60,7 +60,17 @@ describe("resolveRoute", () => {
         expect(models.url.pathname).toBe("/api/generate/text/models");
     });
 
-    it("forwards account and non-generation api routes to enter", () => {
+    it("forwards the account app root to enter", () => {
+        const account = route("/account");
+
+        expect(account.kind).toBe("enter");
+        if (account.kind !== "enter") return;
+
+        expect(account.url.pathname).toBe("/account");
+        expect(account.noIndex).toBe(true);
+    });
+
+    it("rewrites account api subpaths and forwards non-generation api routes to enter", () => {
         const account = route("/account/keys");
         const auth = route("/api/auth/session");
 

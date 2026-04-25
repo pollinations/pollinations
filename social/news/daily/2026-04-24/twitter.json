@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-24",
+  "period_start": "2026-04-24",
+  "period_end": "2026-04-24",
+  "generated_at": "2026-04-25T06:28:37.144356+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-24/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 6 PRs today. deepseek v4 is live. replaced the boolean image reasoning toggle with fast/balanced/pro modes (nuance is nice). also added a seed param to audio generation so you can actually cache deterministic outputs. building infra is just chasing state."
+}

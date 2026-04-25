@@ -1,0 +1,33 @@
+{
+  "pr_number": 10449,
+  "title": "fix(media): implement GET /{hash}/metadata JSON endpoint",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10449",
+  "merged_at": "2026-04-25T13:14:10Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Peeking behind the pixels",
+    "blurb": "Added a new metadata endpoint to the media API. Now you can check file sizes and types without downloading the whole thing.",
+    "summary": "Implemented a new `GET /{hash}/metadata` endpoint in the media API to retrieve file details like size and content type as JSON.",
+    "impact": "Developers can now efficiently check media file metadata without needing to download the entire file or rely solely on HEAD requests.",
+    "keywords": [
+      "media",
+      "api",
+      "metadata",
+      "storage"
+    ],
+    "visual_concept": "Polly the bee acting as an archivist or librarian, inspecting a small tag or label attached to a media file. The monitor robot holds the file, displaying its stats. Represents extracting metadata (the tag) from the media (the file).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, inspecting a glowing digital file tag attached to a picture frame held by a chunky monitor-head robot. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'METADATA'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-25/PR-10449.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, inspecting a glowing digital file tag attached to a picture frame held by a chunky monitor-head robot. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'METADATA'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-25T13:15:03.101769+00:00"
+}

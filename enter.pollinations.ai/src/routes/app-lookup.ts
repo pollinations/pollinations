@@ -8,7 +8,7 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
-import { isLoopbackUrl } from "./url-utils.ts";
+import { appUrlMatchesRedirect, isLoopbackUrl } from "./url-utils.ts";
 
 async function resolveAttribution(
     db: ReturnType<typeof drizzle<typeof schema>>,
@@ -109,21 +109,15 @@ export const appLookupRoutes = new Hono<Env>().get(
             const candidates = await db.query.apikey.findMany({
                 where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
             });
-            // Find the best match: longest appUrl that is a prefix of resolvedRedirect
-            // Case-insensitive to handle mixed-case registrations
-            const redirectLower = resolvedRedirect.toLowerCase();
+            // Match the registered app URL exactly after URL normalization.
+            // App attribution should not be inferred from partial prefixes.
             let bestMatch: (typeof candidates)[number] | null = null;
-            let bestLen = 0;
             for (const row of candidates) {
                 const meta = parseMetadata(row.metadata);
                 const appUrl = meta.appUrl as string;
-                if (
-                    appUrl &&
-                    redirectLower.startsWith(appUrl.toLowerCase()) &&
-                    appUrl.length > bestLen
-                ) {
+                if (appUrl && appUrlMatchesRedirect(appUrl, resolvedRedirect)) {
                     bestMatch = row;
-                    bestLen = appUrl.length;
+                    break;
                 }
             }
             if (bestMatch) {

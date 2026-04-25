@@ -39,6 +39,9 @@ import {
 } from "@/error.ts";
 import { sendToTinybird } from "@/events.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
+import type { BalanceVariables } from "@/middleware/balance.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import {
     type CompletionUsage,
     CompletionUsageSchema,
@@ -48,9 +51,6 @@ import {
 } from "@/schemas/openai.ts";
 import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
 import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
-import type { BalanceVariables } from "./balance.ts";
-import type { LoggerVariables } from "./logger.ts";
-import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 type ModelVariables = {
     model: {
@@ -220,8 +220,11 @@ export const track = (eventType: EventType) =>
                 );
 
                 // Handle balance deduction for both API keys and users
+                const balanceDb = db as unknown as Parameters<
+                    typeof handleBalanceDeduction
+                >[0]["db"];
                 await handleBalanceDeduction({
-                    db,
+                    db: balanceDb,
                     isBilledUsage: responseTracking.isBilledUsage,
                     totalPrice: responseTracking.price?.totalPrice,
                     userId: userTracking.userId,

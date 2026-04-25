@@ -1,0 +1,34 @@
+{
+  "pr_number": 10453,
+  "title": "[codex] usage dashboard buckets improvements",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10453",
+  "merged_at": "2026-04-25T10:12:08Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Finer grains of pollen",
+    "blurb": "We've polished up the usage dashboard so you can track your pollen consumption down to the hour. Plus, charts look much cleaner on mobile now!",
+    "summary": "Upgraded the account usage dashboard to support hourly data granularity for daily views and improved mobile chart formatting.",
+    "impact": "You can now track your API usage with much greater precision and enjoy a cleaner, better-fitting chart on mobile devices.",
+    "keywords": [
+      "dashboard",
+      "analytics",
+      "usage",
+      "ui",
+      "tinybird"
+    ],
+    "visual_concept": "Polly the bee looking closely at a clean, glowing bar chart on a retro monitor, holding a magnifying glass to inspect the tiny 'grains' of data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a glowing retro computer monitor displaying a neat, colorful bar chart. The bee is holding a small magnifying glass over the screen. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-25/PR-10453.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, looking at a glowing retro computer monitor displaying a neat, colorful bar chart. The bee is holding a small magnifying glass over the screen. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-25T10:13:12.163232+00:00"
+}

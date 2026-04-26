@@ -126,7 +126,7 @@ const chatCompletionHandlers = factory.createHandlers(
         // Apply safety per-message: each text content is independently scanned.
         // Redaction (privacy) rewrites content in place; blocks throw 400.
         // Both string content and array content parts of type "text" are scanned.
-        const safeParam = requestBody.safe as string | undefined;
+        const safeParam = requestBody.safe as string | boolean | undefined;
         delete requestBody.safe;
         await Promise.all(
             (requestBody.messages ?? []).map(

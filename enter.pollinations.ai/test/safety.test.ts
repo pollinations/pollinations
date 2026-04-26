@@ -292,4 +292,12 @@ describe("SafeSchema", () => {
         const result = SafeSchema.safeParse("privacy,bogus");
         expect(result.success).toBe(false);
     });
+
+    it("coerces boolean true → 'true' alias", () => {
+        expect(SafeSchema.parse(true)).toBe("true");
+    });
+
+    it("coerces boolean false → undefined (off)", () => {
+        expect(SafeSchema.parse(false)).toBeUndefined();
+    });
 });

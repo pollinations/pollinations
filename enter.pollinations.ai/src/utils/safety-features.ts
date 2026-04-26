@@ -76,12 +76,18 @@ const SAFE_DESCRIPTION =
     ". Defaults to off — must be explicitly opted in.";
 
 /**
- * Shared zod schema for the `safe` field. Rejects unknown tokens with a clear
- * error so typos fail loudly instead of silently disabling safety.
+ * Shared zod schema for the `safe` field. Accepts:
+ *   - string: comma-separated feature list ("privacy,secrets") or alias ("true", "nsfw")
+ *   - boolean: true → "true" alias (privacy+secrets), false → off
+ * Rejects unknown tokens with a clear error so typos fail loudly instead of
+ * silently disabling safety.
  */
 export const SafeSchema = z
-    .string()
+    .union([z.string(), z.boolean()])
     .optional()
+    .transform((v) =>
+        typeof v === "boolean" ? (v ? "true" : undefined) : v,
+    )
     .refine((v) => invalidSafeTokens(v).length === 0, {
         message: `Unknown safe feature. Valid: ${[...VALID_FEATURES].join(", ")}`,
     })

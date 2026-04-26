@@ -223,8 +223,9 @@ export function handleImageGeneration(
 
         // Apply safety — swap in redacted prompt or throw on block.
         // body.safe is validated by the route's json validator (SafeSchema rejects
-        // booleans and unknown tokens with 400 before this handler runs).
-        const safeParam = body.safe as string | undefined;
+        // unknown tokens with 400 before this handler runs); booleans are coerced
+        // by applySafety (true → privacy+secrets alias, false → off).
+        const safeParam = body.safe as string | boolean | undefined;
         delete body.safe;
         body.prompt = await applySafety(c, body.prompt, safeParam);
 

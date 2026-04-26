@@ -36,9 +36,16 @@ import {
 export async function applySafety(
     c: Context,
     text: string,
-    bodySafe?: string,
+    bodySafe?: string | boolean,
 ): Promise<string> {
-    const features = getEffectiveFeatures(c, bodySafe);
+    // Coerce legacy boolean form: true → "true" alias, false → off.
+    const bodySafeStr =
+        typeof bodySafe === "boolean"
+            ? bodySafe
+                ? "true"
+                : undefined
+            : bodySafe;
+    const features = getEffectiveFeatures(c, bodySafeStr);
     if (features.size === 0 || !text.trim()) return text;
 
     c.header("X-Safety-Applied", [...features].join(","));

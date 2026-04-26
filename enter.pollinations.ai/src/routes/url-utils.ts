@@ -1,7 +1,7 @@
 /**
  * Returns true if the URL's hostname is a loopback/local address.
- * Used to prevent localhost URLs from being registered or resolved as
- * belonging to a specific app — any local dev app shares these hostnames.
+ * Kept for the consent UI to recognize localhost dev servers and word the
+ * "unrecognized app" warning appropriately. Not used for identity inference.
  */
 export function isLoopbackUrl(url: string): boolean {
     try {
@@ -15,35 +15,9 @@ export function isLoopbackUrl(url: string): boolean {
     }
 }
 
-/**
- * Match registered app URLs against redirect URLs using exact URL semantics.
- * URL parsing normalizes case for scheme/host, default ports, and a missing
- * root slash, while still requiring the full path and query string to match.
- */
-export function appUrlMatchesRedirect(
-    appUrl: string,
-    redirectUrl: string,
-): boolean {
-    const normalizedAppUrl = normalizeUrlForExactMatch(appUrl);
-    const normalizedRedirectUrl = normalizeUrlForExactMatch(redirectUrl);
-    return (
-        normalizedAppUrl !== null &&
-        normalizedRedirectUrl !== null &&
-        normalizedAppUrl === normalizedRedirectUrl
-    );
-}
-
 function normalizeHostname(hostname: string): string {
     return hostname
         .toLowerCase()
         .replace(/^\[(.*)\]$/, "$1")
         .replace(/\.$/, "");
-}
-
-function normalizeUrlForExactMatch(url: string): string | null {
-    try {
-        return new URL(url).href;
-    } catch {
-        return null;
-    }
 }

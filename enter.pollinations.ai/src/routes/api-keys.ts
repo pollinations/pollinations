@@ -11,7 +11,7 @@ import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import {
     createApiKeyForUser,
-    requireAvailableAppUrl,
+    validateAppUrlFormat,
 } from "./api-key-creation.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
@@ -370,9 +370,8 @@ export const apiKeysRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const existingKey = await requireOwnedKey(db, id, user.id);
 
-            // Check for duplicate appUrl across all keys
             if (metadataUpdate.appUrl) {
-                await requireAvailableAppUrl(db, metadataUpdate.appUrl, id);
+                validateAppUrlFormat(metadataUpdate.appUrl);
             }
 
             const metadata = await updateKeyMetadata(

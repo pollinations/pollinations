@@ -37,7 +37,7 @@ describe("API Key Management", () => {
             });
         });
 
-        test("should reject loopback appUrl before creation", async ({
+        test("should accept loopback appUrl as opaque metadata", async ({
             sessionToken,
         }) => {
             const response = await SELF.fetch(
@@ -58,20 +58,11 @@ describe("API Key Management", () => {
                 },
             );
 
-            expect(response.status).toBe(400);
-
-            const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
-                {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.metadata.appUrl).toBe(
+                "http://localhost:3456/callback",
             );
-            const list = await listResponse.json();
-            expect(
-                list.data.some((key: any) => key.name === "localhost-publishable"),
-            ).toBe(false);
         });
     });
 

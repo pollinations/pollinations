@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
@@ -8,7 +8,6 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { validator } from "../middleware/validator.ts";
 import { parseMetadata } from "./metadata-utils.ts";
-import { appUrlMatchesRedirect, isLoopbackUrl } from "./url-utils.ts";
 
 async function resolveAttribution(
     db: ReturnType<typeof drizzle<typeof schema>>,
@@ -30,8 +29,12 @@ async function resolveAttribution(
 }
 
 /**
- * Public endpoint to resolve an app_key or redirect_url to attribution info.
+ * Public endpoint to resolve an app_key (client_id) to attribution info.
  * No auth required — used during the /authorize flow.
+ *
+ * Identity comes from client_id only. Redirect URLs are not used to infer
+ * which app is calling: any developer can claim any URL by writing it into
+ * their key's metadata, so URL-based attribution is not trustworthy.
  */
 const AppLookupQuerySchema = z.object({
     client_id: z
@@ -39,7 +42,7 @@ const AppLookupQuerySchema = z.object({
         .startsWith("pk_")
         .optional()
         .describe(
-            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username instead of a generic hostname. Canonical OAuth name.",
+            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username. Canonical OAuth name.",
         ),
     app_key: z
         .string()
@@ -48,20 +51,6 @@ const AppLookupQuerySchema = z.object({
         .describe(
             "Legacy alias for `client_id`. Accepted for backwards compatibility.",
         ),
-    redirect_uri: z
-        .string()
-        .url()
-        .optional()
-        .describe(
-            "The URL users return to after authorizing. If no client_id is provided, the system tries to match this URL against registered app URLs. Canonical OAuth name.",
-        ),
-    redirect_url: z
-        .string()
-        .url()
-        .optional()
-        .describe(
-            "Legacy alias for `redirect_uri`. Accepted for backwards compatibility.",
-        ),
 });
 
 export const appLookupRoutes = new Hono<Env>().get(
@@ -69,59 +58,28 @@ export const appLookupRoutes = new Hono<Env>().get(
     describeRoute({
         tags: ["Account"],
         description:
-            "Look up app attribution by app_key or redirect_url. No auth required. Used during the /authorize BYOP flow to resolve the app name and author shown on the consent screen.",
+            "Look up app attribution by client_id. No auth required. Used during the /authorize BYOP flow to resolve the app name and author shown on the consent screen. Without a client_id the consent screen falls back to a hostname-only display.",
         hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
     }),
     validator("query", AppLookupQuerySchema),
     async (c) => {
-        const {
-            client_id: clientId,
-            app_key: appKey,
-            redirect_uri: redirectUri,
-            redirect_url: redirectUrl,
-        } = c.req.valid("query");
+        const { client_id: clientId, app_key: appKey } = c.req.valid("query");
         const resolvedAppKey = clientId ?? appKey;
-        const resolvedRedirect = redirectUri ?? redirectUrl;
-        const db = drizzle(c.env.DB, { schema });
-
-        // Strategy 1: Explicit client_id — verify via better-auth
-        if (resolvedAppKey) {
-            const auth = createAuth(c.env);
-            const result = await auth.api.verifyApiKey({
-                body: { key: resolvedAppKey },
-            });
-            if (result.valid && result.key) {
-                const keyRow = await db.query.apikey.findFirst({
-                    where: eq(schema.apikey.id, result.key.id),
-                });
-                if (keyRow) {
-                    return c.json(await resolveAttribution(db, keyRow));
-                }
-            }
+        if (!resolvedAppKey) {
+            return c.json({ found: false });
         }
 
-        // Strategy 2: Match redirect_uri against registered appUrl values
-        // Fetch all publishable keys with appUrl and match in JS
-        // (D1 rejects the LIKE pattern at scale with "pattern too complex")
-        // Loopback hostnames are shared by every local dev app, so they must
-        // never resolve to a specific developer's attribution (issue #10020).
-        if (resolvedRedirect && !isLoopbackUrl(resolvedRedirect)) {
-            const candidates = await db.query.apikey.findMany({
-                where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
+        const db = drizzle(c.env.DB, { schema });
+        const auth = createAuth(c.env);
+        const result = await auth.api.verifyApiKey({
+            body: { key: resolvedAppKey },
+        });
+        if (result.valid && result.key) {
+            const keyRow = await db.query.apikey.findFirst({
+                where: eq(schema.apikey.id, result.key.id),
             });
-            // Match the registered app URL exactly after URL normalization.
-            // App attribution should not be inferred from partial prefixes.
-            let bestMatch: (typeof candidates)[number] | null = null;
-            for (const row of candidates) {
-                const meta = parseMetadata(row.metadata);
-                const appUrl = meta.appUrl as string;
-                if (appUrl && appUrlMatchesRedirect(appUrl, resolvedRedirect)) {
-                    bestMatch = row;
-                    break;
-                }
-            }
-            if (bestMatch) {
-                return c.json(await resolveAttribution(db, bestMatch));
+            if (keyRow) {
+                return c.json(await resolveAttribution(db, keyRow));
             }
         }
 

@@ -4,8 +4,6 @@ import { HTTPException } from "hono/http-exception";
 import type { createAuth } from "../auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import * as schema from "../db/schema/better-auth.ts";
-import { parseMetadata } from "./metadata-utils.ts";
-import { appUrlMatchesRedirect, isLoopbackUrl } from "./url-utils.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
@@ -24,35 +22,10 @@ type CreateApiKeyForUserInput = {
     defaultCreatedVia: string;
 };
 
-export async function requireAvailableAppUrl(
-    db: ReturnType<typeof drizzle<typeof schema>>,
-    appUrl: string,
-    excludeKeyId?: string,
-): Promise<void> {
+export function validateAppUrlFormat(appUrl: string): void {
     if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(appUrl)) {
         throw new HTTPException(400, {
             message: "Must be a valid URL with a scheme (e.g. https://...)",
-        });
-    }
-    if (isLoopbackUrl(appUrl)) {
-        throw new HTTPException(400, {
-            message:
-                "Loopback URLs (localhost, 127.x.x.x, ::1) cannot be registered — they are shared by every local development environment.",
-        });
-    }
-
-    const allKeys = await db.query.apikey.findMany();
-    const duplicate = allKeys.find((key) => {
-        if (excludeKeyId && key.id === excludeKeyId) return false;
-        const meta = parseMetadata(key.metadata);
-        return (
-            typeof meta.appUrl === "string" &&
-            appUrlMatchesRedirect(meta.appUrl, appUrl)
-        );
-    });
-    if (duplicate) {
-        throw new HTTPException(409, {
-            message: "This URL is already registered. Please use a different URL.",
         });
     }
 }
@@ -74,14 +47,14 @@ export async function createApiKeyForUser({
     const db = drizzle(dbBinding, { schema });
     const appUrl = metadata?.appUrl;
     if (typeof appUrl === "string") {
-        await requireAvailableAppUrl(db, appUrl);
+        validateAppUrlFormat(appUrl);
     }
 
     const sanitizedAccountPerms =
         sanitizeAuthorizeAccountPermissions(accountPermissions) ?? null;
     const safeAccountPerms = allowAccountKeysPermission
         ? sanitizedAccountPerms
-        : sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null;
+        : (sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null);
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) permissions.models = allowedModels;

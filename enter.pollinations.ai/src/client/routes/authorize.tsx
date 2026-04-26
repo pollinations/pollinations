@@ -228,11 +228,11 @@ function AuthorizeComponent() {
                 return;
             }
 
-            const params = new URLSearchParams();
-            if (app_key) params.set("app_key", app_key);
-            else params.set("redirect_uri", redirect_url);
+            // Attribution is identified by client_id only. Without one, the
+            // consent screen falls back to the hostname display.
+            if (!app_key) return;
 
-            fetch(`/api/app-lookup?${params}`)
+            fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
                 .then((r) => r.json())
                 .then((data) => setAttribution(data as Attribution))
                 .catch(() => {});

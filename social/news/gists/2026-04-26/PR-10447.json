@@ -1,0 +1,33 @@
+{
+  "pr_number": 10447,
+  "title": "fix(auth): stop inferring BYOP app identity from redirect URL + close metadata escalation",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10447",
+  "merged_at": "2026-04-26T13:01:29Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Securing the hive's keys",
+    "blurb": "We've tightened up our authentication logic to make sure app identities are strictly verified and API keys are more secure than ever.",
+    "summary": "Updated the authentication system to strictly verify app identities via client IDs and secured API key metadata against unauthorized modifications.",
+    "impact": "App attribution is now more reliable for developers, and the platform's core security is significantly strengthened.",
+    "keywords": [
+      "auth",
+      "security",
+      "api-keys",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee acting as a locksmith or friendly security guard, inspecting glowing API keys. A chunky retro terminal showing a lock icon.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, inspecting a glowing golden key. A chunky retro terminal nearby displays a green padlock icon. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-26/PR-10447.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, inspecting a glowing golden key. A chunky retro terminal nearby displays a green padlock icon. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-26T13:02:20.805300+00:00"
+}

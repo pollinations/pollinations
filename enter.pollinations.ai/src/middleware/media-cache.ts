@@ -10,6 +10,7 @@
 
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     cacheResponse,
@@ -19,7 +20,7 @@ import {
 
 type MediaCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & AuthVariables;
 };
 
 type MediaCacheConfig = {
@@ -41,7 +42,9 @@ export function createMediaCache(config: MediaCacheConfig) {
             return next();
         }
 
-        const cacheKey = generateCacheKey(new URL(c.req.url));
+        const keySafety =
+            (c.var.auth?.apiKey?.metadata?.safe as string | undefined) ?? "";
+        const cacheKey = generateCacheKey(new URL(c.req.url), keySafety);
         log.debug("Cache key: {key}", { key: cacheKey });
 
         try {

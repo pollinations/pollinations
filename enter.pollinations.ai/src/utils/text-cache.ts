@@ -16,11 +16,14 @@ const EXCLUDED_PARAMS = ["key", "no-cache"];
  * Handles both GET and POST requests
  * @param request - The request object
  * @param bodyText - Optional pre-read body text for POST requests
+ * @param keySafety - Raw key-metadata safety string. Folded into the cache key
+ *   so requests under different key-level safety policies never collide.
  * @returns Promise<string> - The cache key (SHA-256 hash)
  */
 export async function generateCacheKey(
     request: Request,
     bodyText?: string,
+    keySafety = "",
 ): Promise<string> {
     const url = new URL(request.url);
 
@@ -39,7 +42,8 @@ export async function generateCacheKey(
     const parts = [
         normalizedMethod,
         url.pathname,
-        filteredParams.toString(), // Only include non-auth query params
+        filteredParams.toString(),
+        `safety:${keySafety}`,
     ];
 
     // Add filtered body for POST/PUT requests

@@ -6,6 +6,7 @@
 
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
     createCaptureStream,
@@ -15,7 +16,7 @@ import {
 
 type TextCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & AuthVariables;
 };
 
 /**
@@ -77,8 +78,10 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
         return next();
     }
 
-    // Generate cache key
-    const cacheKey = await generateCacheKey(c.req.raw, bodyText);
+    // Generate cache key — fold key-level safety so different policies never collide
+    const keySafety =
+        (c.var.auth?.apiKey?.metadata?.safe as string | undefined) ?? "";
+    const cacheKey = await generateCacheKey(c.req.raw, bodyText, keySafety);
     log.debug("[TEXT-CACHE] Cache key: {key}", {
         key: cacheKey.substring(0, 16) + "...",
     });

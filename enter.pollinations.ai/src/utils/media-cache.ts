@@ -10,7 +10,7 @@ import { removeUnset } from "@/util.ts";
 
 const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 
-export function generateCacheKey(url: URL): string {
+export function generateCacheKey(url: URL, keySafety = ""): string {
     const normalizedUrl = new URL(url);
     const params = Array.from(normalizedUrl.searchParams.entries()).sort(
         ([keyA], [keyB]) => keyA.localeCompare(keyB),
@@ -23,9 +23,10 @@ export function generateCacheKey(url: URL): string {
         }
     }
 
-    const fullPath = normalizedUrl.pathname + normalizedUrl.search;
+    // Fold key-level safety into the path so different policies never collide
+    const fullPath = `${normalizedUrl.pathname}${normalizedUrl.search}|safety:${keySafety}`;
     const hash = createHash(fullPath);
-    const safePath = fullPath.replace(/[/\s?=&]/g, "_");
+    const safePath = fullPath.replace(/[/\s?=&|:]/g, "_");
     const trimmedPath = safePath.substring(0, 990);
 
     return `${trimmedPath}-${hash}`;

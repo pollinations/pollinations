@@ -279,9 +279,11 @@ function AuthorizeComponent() {
                 prefix: "sk",
                 expiryDays: keyPermissions.permissions.expiryDays,
                 metadata: {
-                    keyType: "secret",
-                    createdVia: isDeviceMode ? "device-flow" : "redirect-auth",
                     ...(isDeviceMode && { deviceUserCode: user_code }),
+                    ...(!isDeviceMode &&
+                        parsedRedirectUrl && {
+                            redirectOrigin: parsedRedirectUrl.origin,
+                        }),
                     ...(attribution?.found && {
                         clientId: attribution.clientId,
                         createdForUserId: attribution.userId,

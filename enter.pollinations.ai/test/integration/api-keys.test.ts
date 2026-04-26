@@ -64,6 +64,42 @@ describe("API Key Management", () => {
                 "http://localhost:3456/callback",
             );
         });
+
+        test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "spoof-attempt",
+                        type: "publishable",
+                        accountPermissions: ["keys"],
+                        metadata: {
+                            keyType: "secret",
+                            createdVia: "forged",
+                            plaintextKey: "sk_forged",
+                            appUrl: "https://legit.example/callback",
+                        },
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.key.startsWith("pk_")).toBe(true);
+            expect(created.metadata.keyType).toBe("publishable");
+            expect(created.metadata.createdVia).toBe("dashboard");
+            expect(created.metadata.plaintextKey).toBe(created.key);
+            expect(created.metadata.appUrl).toBe(
+                "https://legit.example/callback",
+            );
+        });
     });
 
     describe("GET /api/api-keys", () => {
@@ -325,24 +361,32 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        keyType: "publishable",
+                        appUrl: "https://freshness.example/callback",
                     }),
                 },
             );
             expect(metadataResponse.status).toBe(200);
+            const updated = await metadataResponse.json();
+            expect(updated.metadata.appUrl).toBe(
+                "https://freshness.example/callback",
+            );
 
-            const accountKeyResponse = await SELF.fetch(
-                "http://localhost:3000/api/account/key",
+            const listResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
                 {
                     headers: {
-                        Authorization: `Bearer ${createdKey.key}`,
+                        Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                 },
             );
-
-            expect(accountKeyResponse.status).toBe(200);
-            const accountKey = await accountKeyResponse.json();
-            expect(accountKey.type).toBe("publishable");
+            expect(listResponse.status).toBe(200);
+            const list = (await listResponse.json()) as {
+                data: { id: string; metadata?: { appUrl?: string } }[];
+            };
+            const refreshed = list.data.find((k) => k.id === createdKey.id);
+            expect(refreshed?.metadata?.appUrl).toBe(
+                "https://freshness.example/callback",
+            );
         });
 
         test("should update pollen budget", async ({ auth, sessionToken }) => {

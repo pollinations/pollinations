@@ -177,11 +177,11 @@ const CreateApiKeySchema = z.object({
 
 /**
  * Schema for updating metadata on an API key.
+ * Only caller-owned fields are accepted. Server-controlled fields like
+ * keyType, createdVia, and plaintextKey cannot be modified after creation.
  */
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
-    keyType: z.string().optional(),
-    plaintextKey: z.string().optional(),
     appUrl: z
         .string()
         .refine((val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val), {

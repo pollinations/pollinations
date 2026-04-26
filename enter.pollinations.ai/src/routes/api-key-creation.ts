@@ -7,6 +7,16 @@ import * as schema from "../db/schema/better-auth.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
+export type CallerMetadata = {
+    appUrl?: string;
+    redirectOrigin?: string;
+    deviceUserCode?: string;
+    clientId?: string;
+    createdForUserId?: string;
+    createdForApp?: string;
+    description?: string;
+};
+
 type CreateApiKeyForUserInput = {
     authClient: ReturnType<typeof createAuth>;
     dbBinding: D1Database;
@@ -17,7 +27,7 @@ type CreateApiKeyForUserInput = {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
-    metadata?: Record<string, unknown>;
+    metadata?: CallerMetadata;
     allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
 };
@@ -28,6 +38,29 @@ export function validateAppUrlFormat(appUrl: string): void {
             message: "Must be a valid URL with a scheme (e.g. https://...)",
         });
     }
+}
+
+// Caller-provided metadata is restricted to a typed allowlist. Server-controlled
+// fields like keyType / createdVia / plaintextKey can never be set or overridden
+// by callers, even via /api/api-keys metadata patches.
+function pickCallerMetadata(
+    metadata: CallerMetadata | undefined,
+): Record<string, unknown> {
+    if (!metadata) return {};
+    const out: Record<string, unknown> = {};
+    if (typeof metadata.appUrl === "string") out.appUrl = metadata.appUrl;
+    if (typeof metadata.redirectOrigin === "string")
+        out.redirectOrigin = metadata.redirectOrigin;
+    if (typeof metadata.deviceUserCode === "string")
+        out.deviceUserCode = metadata.deviceUserCode;
+    if (typeof metadata.clientId === "string") out.clientId = metadata.clientId;
+    if (typeof metadata.createdForUserId === "string")
+        out.createdForUserId = metadata.createdForUserId;
+    if (typeof metadata.createdForApp === "string")
+        out.createdForApp = metadata.createdForApp;
+    if (typeof metadata.description === "string")
+        out.description = metadata.description;
+    return out;
 }
 
 export async function createApiKeyForUser({
@@ -45,9 +78,9 @@ export async function createApiKeyForUser({
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
-    const appUrl = metadata?.appUrl;
-    if (typeof appUrl === "string") {
-        validateAppUrlFormat(appUrl);
+    const callerMetadata = pickCallerMetadata(metadata);
+    if (typeof callerMetadata.appUrl === "string") {
+        validateAppUrlFormat(callerMetadata.appUrl);
     }
 
     const sanitizedAccountPerms =
@@ -65,9 +98,9 @@ export async function createApiKeyForUser({
     const isPublishable = type === "publishable";
     const prefix = isPublishable ? "pk" : "sk";
     const baseMetadata = {
+        ...callerMetadata,
         keyType: type,
         createdVia: defaultCreatedVia,
-        ...metadata,
     };
 
     const created = await authClient.api.createApiKey({

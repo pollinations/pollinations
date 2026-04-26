@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-04-26",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-25",
+  "generated_at": "2026-04-26T06:36:13.049262+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-26/images/reddit.jpg"
+    }
+  ],
+  "title": "pollinations update: MCP v2.1, DeepSeek V4, and 39 merged PRs",
+  "text": "Merged 39 PRs this week. Mostly focused on model migrations, MCP overhauls, and fixing some long-standing mobile layout issues.\n\n**Model routing & updates**\nAdded DeepSeek V4 (via DeepInfra) and Claude Opus 4.7 (via Bedrock). We also upgraded the Fireworks models and added gpt-image-2 via Azure eastus2. Replaced the boolean reasoning toggle for images with fast/balanced/pro modes, which maps better to the current pipeline. Also remapped Azure 403s to 502s so the fallback logic actually triggers when Azure drops a request.\n\n**MCP v2.1.0**\nOverhauled the Model Context Protocol implementation. We moved to a dynamic registry, added account tools, and cleaned up the single-gateway logic. Fixed a Windows bug where orphan processes would busy-loop if the parent exited.\n\n**Dashboard & UI**\nPlayground generation is now gated on login (removed the anonymous publishable key). Added a usage period picker to the dashboard and cleaned up the usage buckets. Mobile layouts finally got some attention—headers, modals, and the API key dialog scroll are much less frustrating to use now.\n\n**Community**\n11 new apps added to the showcase this week. We also stopped the system from auto-banning users who delete their GitHub accounts, which was an oversight on our end.\n\nDocs and code are in the repo as usual."
+}

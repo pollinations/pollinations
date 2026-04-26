@@ -12,6 +12,7 @@ import {
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@/schemas/openai.ts";
+import { SafeSchema } from "@/utils/safety-features.ts";
 
 // biome-ignore lint/suspicious/noExplicitAny: internal callback bridging typed proxy.ts and untyped Context.var
 type CheckBalanceFn = (vars: any, env: any) => Promise<void>;
@@ -156,12 +157,20 @@ async function parseEditInput(c: Context): Promise<{
                 message: "Missing required field: image",
             });
 
+        const safeRaw = (formData.get("safe") as string) || undefined;
+        const safeParsed = SafeSchema.safeParse(safeRaw);
+        if (!safeParsed.success)
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: safeParsed.error.issues
+                    .map((i) => i.message)
+                    .join(", "),
+            });
         return {
             prompt,
             imageUrls,
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
-            safe: (formData.get("safe") as string) || undefined,
+            safe: safeParsed.data,
             extra: {},
         };
     }
@@ -195,7 +204,7 @@ async function parseEditInput(c: Context): Promise<{
         size: parsed.data.size,
         quality: parsed.data.quality,
         seed,
-        safe: body.safe as string | undefined,
+        safe: parsed.data.safe,
         extra: passthrough,
     };
 }
@@ -212,7 +221,9 @@ export function handleImageGeneration(
         const body = (await c.req.json()) as CreateImageRequest &
             Record<string, unknown>;
 
-        // Apply safety — swap in redacted prompt or throw on block
+        // Apply safety — swap in redacted prompt or throw on block.
+        // body.safe is validated by the route's json validator (SafeSchema rejects
+        // booleans and unknown tokens with 400 before this handler runs).
         const safeParam = body.safe as string | undefined;
         delete body.safe;
         body.prompt = await applySafety(c, body.prompt, safeParam);

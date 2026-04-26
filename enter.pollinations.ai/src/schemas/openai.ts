@@ -637,8 +637,9 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        safe: SafeSchema,
     })
-    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
+    .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, etc.
     .meta({ $id: "CreateImageRequest" });
 
 export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
@@ -683,6 +684,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        safe: SafeSchema,
     })
     .passthrough()
     .meta({ $id: "CreateImageEditRequest" });

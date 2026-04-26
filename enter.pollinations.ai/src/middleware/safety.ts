@@ -50,8 +50,15 @@ export async function applySafety(
             "INPUT",
             c.env as unknown as BedrockGuardrailEnv,
         );
-    } catch {
-        // Bedrock unavailable — fail closed for safe-enabled requests
+    } catch (err) {
+        // Bedrock unavailable — fail closed for safe-enabled requests.
+        // Log upstream status so operators can distinguish outages (5xx/429)
+        // from config bugs (4xx) without changing the user-facing response.
+        const upstream = err as { upstreamStatus?: number };
+        c.get("log").error("Bedrock guardrail failed: {upstreamStatus} {err}", {
+            upstreamStatus: upstream.upstreamStatus,
+            err: String(err),
+        });
         c.header("X-Safety-Status", "unavailable");
         throw safetyError(503, "service_unavailable", {
             message: "Safety service temporarily unavailable",
@@ -83,10 +90,22 @@ export async function applySafety(
         c.header("X-Safety-Redacted", redactedIds.join(","));
         return response.outputs[0].text;
     }
-    return text;
+
+    // Bedrock intervened but produced no classifiable triggers — schema drift
+    // or partial outage. Returning the original text would silently leak.
+    c.header("X-Safety-Status", "unavailable");
+    throw safetyError(503, "service_unavailable", {
+        message: "Safety service returned unrecognized intervention",
+    });
 }
 
 function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
+    const keyMeta = c.var.auth?.apiKey?.metadata?.safe as string | undefined;
+    const requestSafe =
+        bodySafe || c.req.query("safe") || c.req.header("x-safe");
+    const features = resolveEffectiveSafety(keyMeta, requestSafe);
+    if (features.size === 0) return features;
+
     const env = c.env as unknown as BedrockGuardrailEnv;
     if (
         !env.BEDROCK_GUARDRAIL_ID ||
@@ -95,13 +114,12 @@ function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
         !env.AWS_BEDROCK_SECRET_ACCESS_KEY ||
         !env.AWS_BEDROCK_REGION
     ) {
-        return new Set();
+        c.header("X-Safety-Status", "misconfigured");
+        throw safetyError(503, "service_unavailable", {
+            message: "Safety service not configured",
+        });
     }
-
-    const keyMeta = c.var.auth?.apiKey?.metadata?.safe as string | undefined;
-    const requestSafe =
-        bodySafe || c.req.query("safe") || c.req.header("x-safe");
-    return resolveEffectiveSafety(keyMeta, requestSafe);
+    return features;
 }
 
 function safetyError(

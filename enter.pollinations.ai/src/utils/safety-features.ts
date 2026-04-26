@@ -10,6 +10,7 @@
  * reused by any caller that needs the same vocabulary.
  */
 
+import { z } from "zod";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 
 // What each feature covers: PII types, regex names, and content categories.
@@ -52,10 +53,39 @@ const ALIASES: Record<string, string[]> = {
     nsfw: ["sexual", "violence"],
 };
 
-const VALID_FEATURES = new Set([
+export const VALID_FEATURES = new Set([
     ...Object.keys(FEATURE_TRIGGERS),
     ...Object.keys(ALIASES),
 ]);
+
+/**
+ * Validate a comma-separated safe value. Returns the list of unknown tokens
+ * (empty array means input is valid). Empty/missing input is valid (= off).
+ */
+export function invalidSafeTokens(value: string | undefined | null): string[] {
+    if (!value) return [];
+    return value
+        .split(",")
+        .map((p) => p.trim().toLowerCase())
+        .filter((p) => p.length > 0 && !VALID_FEATURES.has(p));
+}
+
+const SAFE_DESCRIPTION =
+    "Safety features: comma-separated list of " +
+    [...VALID_FEATURES].join(", ") +
+    ". Defaults to off — must be explicitly opted in.";
+
+/**
+ * Shared zod schema for the `safe` field. Rejects unknown tokens with a clear
+ * error so typos fail loudly instead of silently disabling safety.
+ */
+export const SafeSchema = z
+    .string()
+    .optional()
+    .refine((v) => invalidSafeTokens(v).length === 0, {
+        message: `Unknown safe feature. Valid: ${[...VALID_FEATURES].join(", ")}`,
+    })
+    .meta({ description: SAFE_DESCRIPTION });
 
 /**
  * Parse a comma-separated safe value into a feature set, expanding aliases.

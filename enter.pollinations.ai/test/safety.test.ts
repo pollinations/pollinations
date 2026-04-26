@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 import {
     classifyTriggers,
+    invalidSafeTokens,
     resolveEffectiveSafety,
+    SafeSchema,
 } from "@/utils/safety-features.ts";
 
 const intervened = (
@@ -237,5 +239,57 @@ describe("classifyTriggers", () => {
         const result = classifyTriggers(response, new Set(["privacy"]));
         expect(result.blockedFeatures).toEqual(new Set());
         expect(result.redactedFeatures).toEqual(new Set());
+    });
+});
+
+describe("invalidSafeTokens", () => {
+    it("returns empty array for undefined/empty (default-off)", () => {
+        expect(invalidSafeTokens(undefined)).toEqual([]);
+        expect(invalidSafeTokens(null)).toEqual([]);
+        expect(invalidSafeTokens("")).toEqual([]);
+    });
+
+    it("accepts canonical features", () => {
+        expect(invalidSafeTokens("privacy")).toEqual([]);
+        expect(invalidSafeTokens("privacy,secrets,sexual,violence,shield")).toEqual([]);
+    });
+
+    it("accepts aliases", () => {
+        expect(invalidSafeTokens("true")).toEqual([]);
+        expect(invalidSafeTokens("nsfw")).toEqual([]);
+    });
+
+    it("returns unknown tokens", () => {
+        expect(invalidSafeTokens("pii")).toEqual(["pii"]);
+        expect(invalidSafeTokens("privacy,saef")).toEqual(["saef"]);
+    });
+
+    it("is case-insensitive and trims whitespace", () => {
+        expect(invalidSafeTokens("PRIVACY, Secrets ")).toEqual([]);
+    });
+});
+
+describe("SafeSchema", () => {
+    it("accepts undefined (default-off)", () => {
+        expect(SafeSchema.parse(undefined)).toBeUndefined();
+    });
+
+    it("accepts canonical features and aliases", () => {
+        expect(SafeSchema.parse("privacy,secrets")).toBe("privacy,secrets");
+        expect(SafeSchema.parse("true")).toBe("true");
+        expect(SafeSchema.parse("nsfw")).toBe("nsfw");
+    });
+
+    it("rejects typos with a clear error", () => {
+        const result = SafeSchema.safeParse("pii");
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0].message).toContain("Valid:");
+        }
+    });
+
+    it("rejects mixed valid+invalid tokens", () => {
+        const result = SafeSchema.safeParse("privacy,bogus");
+        expect(result.success).toBe(false);
     });
 });

@@ -22,7 +22,6 @@ const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = [
     "nologo",
     "enhance",
-    "safe",
     "private",
     "transparent",
     "negative_prompt",
@@ -125,6 +124,7 @@ async function parseEditInput(c: Context): Promise<{
     size?: string;
     quality?: string;
     seed?: number;
+    safe?: string;
     extra: Record<string, unknown>;
 }> {
     const contentType = c.req.header("content-type") || "";
@@ -161,6 +161,7 @@ async function parseEditInput(c: Context): Promise<{
             imageUrls,
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
+            safe: (formData.get("safe") as string) || undefined,
             extra: {},
         };
     }
@@ -194,6 +195,7 @@ async function parseEditInput(c: Context): Promise<{
         size: parsed.data.size,
         quality: parsed.data.quality,
         seed,
+        safe: body.safe as string | undefined,
         extra: passthrough,
     };
 }
@@ -269,11 +271,12 @@ export function handleImageEdit(
             size,
             quality,
             seed,
+            safe,
             extra,
         } = await parseEditInput(c);
 
         // Apply safety — swap in redacted prompt or throw on block
-        const prompt = await applySafety(c, rawPrompt);
+        const prompt = await applySafety(c, rawPrompt, safe);
 
         const resolved = resolveParams({ size, quality, seed });
 

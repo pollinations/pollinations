@@ -5,6 +5,7 @@ import {
     AUDIO_VOICES,
     DEFAULT_TEXT_MODEL,
 } from "../../../shared/registry/text.ts";
+import { SafeSchema } from "@/utils/safety-features.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -341,7 +342,7 @@ export const CreateChatCompletionRequestSchema = z.object({
         .min(1)
         .max(128)
         .optional(), // deprecated, supported
-    safe: z.string().optional(),
+    safe: SafeSchema,
 });
 
 const ChatCompletionMessageContentBlockSchema = z.union([

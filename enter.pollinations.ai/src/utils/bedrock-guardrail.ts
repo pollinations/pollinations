@@ -88,9 +88,12 @@ export async function applyGuardrail(
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
+        const err = new Error(
             `Bedrock Guardrail API error ${response.status}: ${errorText}`,
-        );
+        ) as Error & { upstreamStatus: number; upstreamBody: string };
+        err.upstreamStatus = response.status;
+        err.upstreamBody = errorText;
+        throw err;
     }
     return response.json();
 }

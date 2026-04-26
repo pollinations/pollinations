@@ -1,5 +1,6 @@
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { z } from "zod";
+import { SafeSchema } from "@/utils/safety-features.ts";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
@@ -62,11 +63,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             description:
                 "What to avoid in the generated image. Only supported by `flux` and `zimage` — other models ignore this.",
         }),
-    safe: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Enable safety content filters" }),
+    safe: SafeSchema,
     quality: z
         .enum(QUALITIES as unknown as [string, ...string[]])
         .optional()

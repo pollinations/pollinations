@@ -1,0 +1,33 @@
+{
+  "pr_number": 10477,
+  "title": "docs: update README — 2026-04-26",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10477",
+  "merged_at": "2026-04-26T07:35:36Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "The daily chronicle",
+    "blurb": "Our trusty bot swept through the README to pin up the latest news and community apps.",
+    "summary": "Automated daily update to the README file, refreshing the latest news and recent apps sections.",
+    "impact": "Keeps the repository's front page up to date with the newest community contributions and project milestones.",
+    "keywords": [
+      "readme",
+      "documentation",
+      "automated",
+      "news"
+    ],
+    "visual_concept": "Polly the bee acting as a newsie or archivist, updating a literal bulletin board with new papers. The Nomnom creature could be eating the old news.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, pinning a fresh paper to a wooden bulletin board. Nearby, the round tan Nomnom creature happily eats the old deprecated news clippings. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-26/PR-10477.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, pinning a fresh paper to a wooden bulletin board. Nearby, the round tan Nomnom creature happily eats the old deprecated news clippings. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-26T07:36:32.289118+00:00"
+}

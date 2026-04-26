@@ -16,7 +16,11 @@ import {
     user as userTable,
 } from "./db/schema/better-auth.ts";
 import { sendTierEventToTinybird } from "./events.ts";
-import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
+import {
+    DEFAULT_TIER,
+    getTierPollen,
+    SIGNUP_GRANT_POLLEN,
+} from "./tier-config.ts";
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -272,7 +276,12 @@ function onAfterUserCreate(
     return async (user: GenericUser, _ctx: GenericEndpointContext | null) => {
         try {
             const db = drizzle(env.DB);
-            const tierBalance = getTierPollen(DEFAULT_TIER);
+            // Welcome grant when enabled — credited to tier_balance. Refill
+            // preserves above-cap balances so it isn't stripped next hour.
+            const tierBalance = Math.max(
+                getTierPollen(DEFAULT_TIER),
+                SIGNUP_GRANT_POLLEN,
+            );
             await db
                 .update(userTable)
                 .set({

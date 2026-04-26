@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -9,6 +9,7 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import { BYOP_FIRST_KEY_GRANT_POLLEN } from "../tier-config.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 function setPrivateNoStoreHeaders(c: {
@@ -97,6 +98,36 @@ async function updateKeyMetadata(
         .set({ metadata: JSON.stringify(merged), updatedAt: new Date() })
         .where(eq(schema.apikey.id, keyId));
     return merged;
+}
+
+/**
+ * One-time grant for spore users minting their first BYOP key.
+ * Idempotent via `byop_granted_at IS NULL` guard. Caps the granted user at spore
+ * so seed+ users don't get bumped. Grant is skipped when the constant is 0.
+ */
+async function maybeGrantByopFirstKeyPollen(
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    userId: string,
+    keyMetadata: Record<string, unknown>,
+): Promise<void> {
+    if (BYOP_FIRST_KEY_GRANT_POLLEN <= 0) return;
+    const createdVia = keyMetadata.createdVia;
+    const isByopKey =
+        createdVia === "redirect-auth" || createdVia === "device-flow";
+    if (!isByopKey || !keyMetadata.clientId) return;
+    await db
+        .update(schema.user)
+        .set({
+            tierBalance: sql`COALESCE(${schema.user.tierBalance}, 0) + ${BYOP_FIRST_KEY_GRANT_POLLEN}`,
+            byopGrantedAt: Date.now(),
+        })
+        .where(
+            and(
+                eq(schema.user.id, userId),
+                eq(schema.user.tier, "spore"),
+                isNull(schema.user.byopGrantedAt),
+            ),
+        );
 }
 
 /**
@@ -262,6 +293,12 @@ export const apiKeysRoutes = new Hono<Env>()
                     .set(d1Updates)
                     .where(eq(schema.apikey.id, id));
             }
+
+            await maybeGrantByopFirstKeyPollen(
+                db,
+                user.id,
+                parseMetadata(existingKey.metadata),
+            );
 
             const updated = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),

@@ -3,7 +3,7 @@ import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 import {
     classifyTriggers,
     invalidSafeTokens,
-    resolveEffectiveSafety,
+    parseSafe,
     SafeSchema,
 } from "@/utils/safety-features.ts";
 
@@ -16,41 +16,29 @@ const intervened = (
     outputs,
 });
 
-describe("resolveEffectiveSafety", () => {
-    it("returns empty set when both sources are undefined", () => {
-        expect(resolveEffectiveSafety(undefined, undefined).size).toBe(0);
+describe("parseSafe", () => {
+    it("returns empty set when value is undefined", () => {
+        expect(parseSafe(undefined).size).toBe(0);
     });
 
     it("parses comma-separated features", () => {
-        const result = resolveEffectiveSafety(null, "privacy,secrets");
-        expect(result).toEqual(new Set(["privacy", "secrets"]));
+        expect(parseSafe("privacy,secrets")).toEqual(
+            new Set(["privacy", "secrets"]),
+        );
     });
 
     it("ignores invalid feature names", () => {
-        const result = resolveEffectiveSafety(null, "privacy,bogus,secrets");
-        expect(result).toEqual(new Set(["privacy", "secrets"]));
-    });
-
-    it("unions key-level and request-level features", () => {
-        const result = resolveEffectiveSafety("privacy", "secrets");
-        expect(result).toEqual(new Set(["privacy", "secrets"]));
-    });
-
-    it("key-level features cannot be removed by request", () => {
-        const result = resolveEffectiveSafety("privacy,secrets", "nsfw");
-        expect(result).toEqual(
-            new Set(["privacy", "secrets", "sexual", "violence"]),
+        expect(parseSafe("privacy,bogus,secrets")).toEqual(
+            new Set(["privacy", "secrets"]),
         );
     });
 
     it("expands 'true' alias to privacy + secrets", () => {
-        const result = resolveEffectiveSafety(null, "true");
-        expect(result).toEqual(new Set(["privacy", "secrets"]));
+        expect(parseSafe("true")).toEqual(new Set(["privacy", "secrets"]));
     });
 
     it("expands 'nsfw' alias to sexual + violence", () => {
-        const result = resolveEffectiveSafety(null, "nsfw");
-        expect(result).toEqual(new Set(["sexual", "violence"]));
+        expect(parseSafe("nsfw")).toEqual(new Set(["sexual", "violence"]));
     });
 });
 

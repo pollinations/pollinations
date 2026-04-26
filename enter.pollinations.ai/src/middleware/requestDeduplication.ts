@@ -82,13 +82,8 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
         }
     }
 
-    // Create deduplication key from URL + method + body + key-level safety.
-    // Auth runs before this middleware in the route chain (see proxy.ts), so
-    // c.var.auth is populated; we type-narrow defensively for safety.
-    const auth = (c.var as { auth?: { apiKey?: { metadata?: { safe?: string } } } })
-        .auth;
-    const keySafety = auth?.apiKey?.metadata?.safe ?? "";
-    const key = await createRequestKey(c, keySafety);
+    // Create deduplication key from URL + method + body
+    const key = await createRequestKey(c);
 
     log.debug("[DEDUP] Deduplicating request: {method} {url}", {
         method,
@@ -147,18 +142,14 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
  * Create a deduplication key from request URL, method, and body
  * Handles GET (URL only) and POST (URL + body) robustly
  */
-async function createRequestKey(
-    c: {
-        req: { method: string; url: string; raw: Request };
-    },
-    keySafety: string,
-): Promise<string> {
+async function createRequestKey(c: {
+    req: { method: string; url: string; raw: Request };
+}): Promise<string> {
     const parts: string[] = [];
 
-    // Always include method, URL, and key-level safety policy
+    // Always include method and URL
     parts.push(c.req.method);
     parts.push(c.req.url);
-    parts.push(`safety:${keySafety}`);
 
     // For POST, include body if present (GET uses URL params)
     if (c.req.method === "POST") {

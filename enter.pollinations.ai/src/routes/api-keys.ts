@@ -9,7 +9,6 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
-import { SafeSchema } from "../utils/safety-features.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 function setPrivateNoStoreHeaders(c: {
@@ -149,7 +148,6 @@ const UpdateMetadataSchema = z.object({
             message: "Must be a valid URL with a scheme (e.g. https://...)",
         })
         .optional(),
-    safe: SafeSchema,
 });
 
 /**

@@ -42,9 +42,7 @@ export function createMediaCache(config: MediaCacheConfig) {
             return next();
         }
 
-        const keySafety =
-            (c.var.auth?.apiKey?.metadata?.safe as string | undefined) ?? "";
-        const cacheKey = generateCacheKey(new URL(c.req.url), keySafety);
+        const cacheKey = generateCacheKey(new URL(c.req.url));
         log.debug("Cache key: {key}", { key: cacheKey });
 
         try {

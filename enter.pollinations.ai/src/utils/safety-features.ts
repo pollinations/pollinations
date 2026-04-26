@@ -95,8 +95,9 @@ export const SafeSchema = z
 
 /**
  * Parse a comma-separated safe value into a feature set, expanding aliases.
+ * Returns an empty set when the value is missing or empty (= safety off).
  */
-function parseSafe(value: string | undefined | null): Set<string> {
+export function parseSafe(value: string | undefined | null): Set<string> {
     if (!value) return new Set();
     const features = new Set<string>();
     for (const part of value.split(",")) {
@@ -107,17 +108,6 @@ function parseSafe(value: string | undefined | null): Set<string> {
         }
     }
     return features;
-}
-
-/**
- * Resolve effective safety features from API key metadata + request.
- * Both sources are unioned — request can add features but not remove key-level ones.
- */
-export function resolveEffectiveSafety(
-    keyMetadataSafe: string | undefined | null,
-    requestSafe: string | undefined | null,
-): Set<string> {
-    return new Set([...parseSafe(keyMetadataSafe), ...parseSafe(requestSafe)]);
 }
 
 /**

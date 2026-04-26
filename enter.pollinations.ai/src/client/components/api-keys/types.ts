@@ -40,8 +40,6 @@ export type CreateApiKey = {
     accountPermissions?: string[] | null;
     /** App URL for publishable keys (optional, for consent screen attribution) */
     appUrl?: string;
-    /** Safety features: comma-separated (privacy, secrets, nsfw, shield, true) */
-    safe?: string;
 };
 
 export type CreateApiKeyResponse = ApiKey & {

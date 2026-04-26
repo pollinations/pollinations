@@ -4,14 +4,12 @@ import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import type { PermissionUiTheme } from "./permission-ui.ts";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
-import { SafetyInput } from "./safety-input.tsx";
 
 export interface KeyPermissions {
     allowedModels: string[] | null;
     pollenBudget: number | null;
     expiryDays: number | null;
     accountPermissions: string[] | null;
-    safe: string;
 }
 
 export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
@@ -25,7 +23,6 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     const [accountPermissions, setAccountPermissions] = useState<
         string[] | null
     >(initial.accountPermissions ?? []);
-    const [safe, setSafe] = useState(initial.safe ?? "");
 
     return {
         permissions: {
@@ -33,13 +30,11 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
             pollenBudget,
             expiryDays,
             accountPermissions,
-            safe,
         },
         setAllowedModels,
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
-        setSafe,
     };
 }
 
@@ -67,7 +62,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
-        setSafe,
     } = value;
 
     return (
@@ -96,12 +90,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 onModelsChange={setAllowedModels}
                 theme={theme}
                 modelsInitiallyExpanded={modelsInitiallyExpanded}
-            />
-            <SafetyInput
-                value={permissions.safe}
-                onChange={setSafe}
-                disabled={disabled}
-                theme={theme}
             />
         </div>
     );

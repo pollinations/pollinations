@@ -23,10 +23,7 @@ import {
     type BedrockGuardrailEnv,
     type BedrockResponse,
 } from "@/utils/bedrock-guardrail.ts";
-import {
-    classifyTriggers,
-    resolveEffectiveSafety,
-} from "@/utils/safety-features.ts";
+import { classifyTriggers, parseSafe } from "@/utils/safety-features.ts";
 
 /**
  * Apply safety to text. Returns the (possibly redacted) text the caller should
@@ -101,9 +98,8 @@ export async function applySafety(
 }
 
 function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
-    const keyMeta = c.var.auth?.apiKey?.metadata?.safe as string | undefined;
     const requestSafe = bodySafe || c.req.query("safe");
-    const features = resolveEffectiveSafety(keyMeta, requestSafe);
+    const features = parseSafe(requestSafe);
     if (features.size === 0) return features;
 
     const env = c.env as unknown as BedrockGuardrailEnv;

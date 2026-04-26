@@ -78,10 +78,7 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
         return next();
     }
 
-    // Generate cache key — fold key-level safety so different policies never collide
-    const keySafety =
-        (c.var.auth?.apiKey?.metadata?.safe as string | undefined) ?? "";
-    const cacheKey = await generateCacheKey(c.req.raw, bodyText, keySafety);
+    const cacheKey = await generateCacheKey(c.req.raw, bodyText);
     log.debug("[TEXT-CACHE] Cache key: {key}", {
         key: cacheKey.substring(0, 16) + "...",
     });

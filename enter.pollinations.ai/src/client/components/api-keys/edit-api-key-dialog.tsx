@@ -9,7 +9,6 @@ import { Card } from "../ui/card.tsx";
 import { Input } from "../ui/input.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
-import { SafetyInput } from "./safety-input.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -34,7 +33,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
     const isAppKey = isPublishable && !!initialAppUrl;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
-    const initialSafe = (apiKey.metadata?.safe as string) || "";
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -59,16 +57,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
         expiryDays,
-        safe: initialSafe,
     });
-    const safe = keyPermissions.permissions.safe;
 
     async function handleSave() {
         setIsSubmitting(true);
         setError(null);
         try {
-            const { expiryDays, safe: _safe, ...permissions } =
-                keyPermissions.permissions;
+            const { expiryDays, ...permissions } = keyPermissions.permissions;
             await onUpdate(apiKey.id, {
                 name,
                 ...permissions,
@@ -77,13 +72,10 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     : null,
             });
 
-            // Save metadata changes (app URL, safety)
+            // Save metadata changes (app URL only)
             const metadataPatch: Record<string, string | undefined> = {};
             if (isPublishable && appUrl !== initialAppUrl) {
                 metadataPatch.appUrl = appUrl || undefined;
-            }
-            if (safe !== initialSafe) {
-                metadataPatch.safe = safe || undefined;
             }
             if (Object.keys(metadataPatch).length > 0) {
                 const metaRes = await fetch(
@@ -204,18 +196,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 />
                             )}
 
-                            {!isAppKey ? (
+                            {!isAppKey && (
                                 <KeyPermissionsInputs
                                     value={keyPermissions}
                                     disabled={isSubmitting}
                                     inline
                                     theme="violet"
-                                />
-                            ) : (
-                                <SafetyInput
-                                    value={safe}
-                                    onChange={keyPermissions.setSafe}
-                                    disabled={isSubmitting}
                                 />
                             )}
                         </div>

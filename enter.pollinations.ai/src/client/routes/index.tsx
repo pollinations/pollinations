@@ -116,7 +116,6 @@ function RouteComponent() {
                 description: formState.description,
                 keyType,
                 ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
-                ...(formState.safe && { safe: formState.safe }),
             },
             permissions: {
                 allowedModels: formState.allowedModels,
@@ -140,7 +139,6 @@ function RouteComponent() {
                         keyType,
                         plaintextKey: created.key,
                         ...(formState.appUrl && { appUrl: formState.appUrl }),
-                        ...(formState.safe && { safe: formState.safe }),
                     }),
                 },
             );

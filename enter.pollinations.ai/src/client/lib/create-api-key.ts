@@ -42,17 +42,11 @@ export async function createKeyWithPermissions({
     const body = {
         name,
         type: prefix === "pk" ? "publishable" : "secret",
-        ...(expiresIn !== undefined && { expiresIn }),
-        ...(metadata && { metadata }),
-        ...(permissions?.allowedModels !== undefined && {
-            allowedModels: permissions.allowedModels,
-        }),
-        ...(permissions?.pollenBudget !== undefined && {
-            pollenBudget: permissions.pollenBudget,
-        }),
-        ...(permissions?.accountPermissions !== undefined && {
-            accountPermissions: permissions.accountPermissions,
-        }),
+        expiresIn,
+        metadata,
+        allowedModels: permissions?.allowedModels,
+        pollenBudget: permissions?.pollenBudget,
+        accountPermissions: permissions?.accountPermissions,
     };
 
     const response = await fetch("/api/api-keys", {

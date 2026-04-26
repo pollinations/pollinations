@@ -1466,7 +1466,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "|----------|-------------|",
                                 "| `POST /upload` | Upload a file, receive a content-addressed URL |",
                                 "| `GET /{hash}` | Retrieve a previously uploaded file |",
-                                "| `GET /{hash}/metadata` | Get file metadata (size, type, dimensions) |",
+                                "| `GET /{hash}/metadata` | Get file metadata (hash, content type, size, uploadedAt) as JSON |",
                                 "",
                                 "**Base URL:** [media.pollinations.ai](https://media.pollinations.ai)",
                             ].join("\n"),

@@ -46,7 +46,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         ? "publishable"
         : "secret";
     const [appUrl, setAppUrl] = useState("");
-    const [safe, setSafe] = useState("");
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -57,6 +56,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
               }
             : {},
     );
+    const safe = keyPermissions.permissions.safe;
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
     );
@@ -71,13 +71,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setError(null);
         try {
             const isPublishable = keyType === "publishable";
+            const { safe: safeValue, ...rest } = keyPermissions.permissions;
             const newKey = await onSubmit({
                 name,
                 description,
                 keyType,
-                ...keyPermissions.permissions,
+                ...rest,
                 ...(isPublishable && appUrl && { appUrl }),
-                ...(safe && { safe }),
+                ...(safeValue && { safe: safeValue }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -142,7 +143,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setError(null);
                     setName(generateFunName());
                     setAppUrl("");
-                    setSafe("");
+                    keyPermissions.setSafe("");
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
                         month: "2-digit",
@@ -283,8 +284,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     disabled={isSubmitting}
                                     inline
                                     theme="violet"
-                                    safe={safe}
-                                    onSafeChange={setSafe}
                                 />
                             )}
                         </div>

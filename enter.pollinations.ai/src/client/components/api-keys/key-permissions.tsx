@@ -11,6 +11,7 @@ export interface KeyPermissions {
     pollenBudget: number | null;
     expiryDays: number | null;
     accountPermissions: string[] | null;
+    safe: string;
 }
 
 export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
@@ -24,6 +25,7 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     const [accountPermissions, setAccountPermissions] = useState<
         string[] | null
     >(initial.accountPermissions ?? []);
+    const [safe, setSafe] = useState(initial.safe ?? "");
 
     return {
         permissions: {
@@ -31,11 +33,13 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
             pollenBudget,
             expiryDays,
             accountPermissions,
+            safe,
         },
         setAllowedModels,
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
+        setSafe,
     };
 }
 
@@ -45,8 +49,6 @@ interface KeyPermissionsInputsProps {
     inline?: boolean;
     theme?: PermissionUiTheme;
     modelsInitiallyExpanded?: boolean;
-    safe?: string;
-    onSafeChange?: (value: string) => void;
 }
 
 /**
@@ -58,8 +60,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     inline = false,
     theme = "green",
     modelsInitiallyExpanded = false,
-    safe,
-    onSafeChange,
 }) => {
     const {
         permissions,
@@ -67,6 +67,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
+        setSafe,
     } = value;
 
     return (
@@ -96,14 +97,12 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 theme={theme}
                 modelsInitiallyExpanded={modelsInitiallyExpanded}
             />
-            {onSafeChange && (
-                <SafetyInput
-                    value={safe ?? ""}
-                    onChange={onSafeChange}
-                    disabled={disabled}
-                    theme={theme}
-                />
-            )}
+            <SafetyInput
+                value={permissions.safe}
+                onChange={setSafe}
+                disabled={disabled}
+                theme={theme}
+            />
         </div>
     );
 };

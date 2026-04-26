@@ -35,7 +35,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const isAppKey = isPublishable && !!initialAppUrl;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
     const initialSafe = (apiKey.metadata?.safe as string) || "";
-    const [safe, setSafe] = useState(initialSafe);
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -60,13 +59,16 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
         expiryDays,
+        safe: initialSafe,
     });
+    const safe = keyPermissions.permissions.safe;
 
     async function handleSave() {
         setIsSubmitting(true);
         setError(null);
         try {
-            const { expiryDays, ...permissions } = keyPermissions.permissions;
+            const { expiryDays, safe: _safe, ...permissions } =
+                keyPermissions.permissions;
             await onUpdate(apiKey.id, {
                 name,
                 ...permissions,
@@ -208,13 +210,11 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                     disabled={isSubmitting}
                                     inline
                                     theme="violet"
-                                    safe={safe}
-                                    onSafeChange={setSafe}
                                 />
                             ) : (
                                 <SafetyInput
                                     value={safe}
-                                    onChange={setSafe}
+                                    onChange={keyPermissions.setSafe}
                                     disabled={isSubmitting}
                                 />
                             )}

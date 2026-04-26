@@ -78,31 +78,24 @@ export async function applySafety(
         });
     }
 
-    if (redactedFeatures.size > 0) {
-        // Bedrock said it would anonymize but returned no replacement text.
-        // Returning the original would silently leak PII — fail closed instead.
-        if (!response.outputs?.[0]?.text) {
-            c.header("X-Safety-Status", "unavailable");
-            throw safetyError(503, "service_unavailable", {
-                message: "Safety service returned malformed redaction response",
-            });
+    // Bedrock runs all detectors regardless of the user's requested features.
+    // If the user opted into privacy AND Bedrock produced a redacted output
+    // different from the input, use it — covers schema drift where a new PII
+    // type we don't have in FEATURE_TRIGGERS would otherwise leak through.
+    // Otherwise (user didn't opt into privacy, or no redaction), pass through.
+    const redacted = response.outputs?.[0]?.text;
+    if (features.has("privacy") && redacted && redacted !== text) {
+        if (redactedIds.length > 0) {
+            c.header("X-Safety-Redacted", redactedIds.join(","));
         }
-        c.header("X-Safety-Redacted", redactedIds.join(","));
-        return response.outputs[0].text;
+        return redacted;
     }
-
-    // Bedrock intervened but produced no classifiable triggers — schema drift
-    // or partial outage. Returning the original text would silently leak.
-    c.header("X-Safety-Status", "unavailable");
-    throw safetyError(503, "service_unavailable", {
-        message: "Safety service returned unrecognized intervention",
-    });
+    return text;
 }
 
 function getEffectiveFeatures(c: Context, bodySafe?: string): Set<string> {
     const keyMeta = c.var.auth?.apiKey?.metadata?.safe as string | undefined;
-    const requestSafe =
-        bodySafe || c.req.query("safe") || c.req.header("x-safe");
+    const requestSafe = bodySafe || c.req.query("safe");
     const features = resolveEffectiveSafety(keyMeta, requestSafe);
     if (features.size === 0) return features;
 

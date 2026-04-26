@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-04-26",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-25",
+  "generated_at": "2026-04-26T06:36:13.049262+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-26/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>. 39 PRs merged this week. We wired up a bunch of new models, overhauled MCP, and stopped auto-banning users just because they deleted their GitHub accounts.\n\n## Weekly Update - 2026-04-26\n\n🧠 **The Great Model Migration**\n- DeepSeek V4 (via DeepInfra) and Claude Opus 4.7 (`claude-xlarge`) are live.\n- Upgraded Fireworks models (Minimax 2.7, Qwen VL, Kimi 2.6).\n- Audio now supports Qwen3-TTS.\n- Added `gpt-image-2` via Azure.\n\n⚙️ **MCP v2.1.0 & API Controls**\n- MCP v2.1.0 is out: dynamic registry, account tools, and we fixed those busy-looping orphan processes on Windows.\n- Image generation reasoning is now `fast`/`balanced`/`pro` instead of a blunt boolean.\n- Audio generation finally accepts a `seed` parameter for deterministic caching.\n- Added a `GET /{hash}/metadata` JSON endpoint for media.\n\n📊 **Dashboard & Mobile Polish**\n- The usage dashboard got a period picker and improved bucket precision.\n- Mobile headers, modals, and API key dialog scrolling are fixed. It actually fits on your screen now.\n\n🌱 **Community Greenhouse**\n- 11 new apps added to the ecosystem this week, including Aureon, ManhwaGen, and Scene2Text.\n\nGo build something."
+}

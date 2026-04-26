@@ -86,14 +86,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 inline={inline}
                 theme={theme}
             />
-            {onSafeChange && (
-                <SafetyInput
-                    value={safe ?? ""}
-                    onChange={onSafeChange}
-                    disabled={disabled}
-                    theme={theme}
-                />
-            )}
             <div className="text-sm font-semibold">Permissions</div>
             <AccountPermissionsInput
                 value={permissions.accountPermissions}
@@ -104,6 +96,14 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 theme={theme}
                 modelsInitiallyExpanded={modelsInitiallyExpanded}
             />
+            {onSafeChange && (
+                <SafetyInput
+                    value={safe ?? ""}
+                    onChange={onSafeChange}
+                    disabled={disabled}
+                    theme={theme}
+                />
+            )}
         </div>
     );
 };

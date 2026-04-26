@@ -82,9 +82,12 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
         }
     }
 
-    // Create deduplication key from URL + method + body + key-level safety
-    const keySafety =
-        (c.var.auth?.apiKey?.metadata?.safe as string | undefined) ?? "";
+    // Create deduplication key from URL + method + body + key-level safety.
+    // Auth runs before this middleware in the route chain (see proxy.ts), so
+    // c.var.auth is populated; we type-narrow defensively for safety.
+    const auth = (c.var as { auth?: { apiKey?: { metadata?: { safe?: string } } } })
+        .auth;
+    const keySafety = auth?.apiKey?.metadata?.safe ?? "";
     const key = await createRequestKey(c, keySafety);
 
     log.debug("[DEDUP] Deduplicating request: {method} {url}", {

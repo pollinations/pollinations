@@ -1,0 +1,34 @@
+{
+  "pr_number": 10494,
+  "title": "feat(finance): deepinfra provider, one-time events, shared sops loader",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10494",
+  "merged_at": "2026-04-27T11:52:48Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Balancing the hive's books",
+    "blurb": "We've upgraded our internal finance tracker to automatically pull usage stats from DeepInfra and securely share API keys. Just making sure the pollen reserves are perfectly calculated.",
+    "summary": "Added DeepInfra cost tracking, one-time event handling, and a shared SOPS secrets loader to the internal finance runway tracker.",
+    "impact": "Internal operations can now accurately forecast DeepInfra usage and manage one-off financial events without duplicating API keys.",
+    "keywords": [
+      "finance",
+      "infrastructure",
+      "deepinfra",
+      "secrets",
+      "tooling"
+    ],
+    "visual_concept": "Polly the bee acting as an accountant. She wears tiny reading glasses and sits at a desk with a retro computer showing a spreadsheet. A small safe represents the shared secrets loader. The Nomnom creature is eating a stack of paper receipts.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, sitting at a wooden desk with a retro computer displaying a green spreadsheet. The round Nomnom creature happily eats a stack of paper receipts nearby. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-27/PR-10494.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, sitting at a wooden desk with a retro computer displaying a green spreadsheet. The round Nomnom creature happily eats a stack of paper receipts nearby. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-27T11:53:53.353535+00:00"
+}

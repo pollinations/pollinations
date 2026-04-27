@@ -1,0 +1,34 @@
+{
+  "pr_number": 10490,
+  "title": "chore: remove 3 dead apps (2026-04-27)",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10490",
+  "merged_at": "2026-04-27T16:05:04Z",
+  "labels": [
+    "WEB",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the garden",
+    "blurb": "We've pruned a few broken links from the community app showcase to keep the garden healthy and easy to navigate.",
+    "summary": "Automated cleanup removing three inactive community apps from the showcase directory.",
+    "impact": "Users browsing the app showcase will experience fewer broken links and 404 errors.",
+    "keywords": [
+      "apps",
+      "showcase",
+      "cleanup",
+      "maintenance"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, gently pruning dead leaves from a vibrant digital plant to keep the garden healthy.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, gently pruning withered pixelated leaves from a glowing lime green (#ecf874) code-plant. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-27/PR-10490.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, gently pruning withered pixelated leaves from a glowing lime green (#ecf874) code-plant. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-27T16:08:17.865164+00:00"
+}

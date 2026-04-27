@@ -73,9 +73,7 @@ async function readBodyWithLimit(response: Response): Promise<Buffer> {
             } catch {
                 /* ignore */
             }
-            throw new Error(
-                `Image exceeds maximum size of ${MAX_BYTES} bytes`,
-            );
+            throw new Error(`Image exceeds maximum size of ${MAX_BYTES} bytes`);
         }
         chunks.push(value);
     }
@@ -94,7 +92,10 @@ export async function downloadImageAsBase64(
         ? AbortSignal.any([signal, timeoutSignal])
         : timeoutSignal;
 
-    const response = await fetchWithRedirectGuard(validated.url, combinedSignal);
+    const response = await fetchWithRedirectGuard(
+        validated.url,
+        combinedSignal,
+    );
     if (!response.ok) {
         throw new Error(
             `Failed to fetch image: ${response.status} ${response.statusText}`,

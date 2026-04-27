@@ -113,15 +113,15 @@ describe("validateImageUrl", () => {
     });
 
     test("rejects literal private IP hostnames", async () => {
-        await expect(
-            validateImageUrl("http://127.0.0.1/x"),
-        ).rejects.toThrow(/private IP/);
+        await expect(validateImageUrl("http://127.0.0.1/x")).rejects.toThrow(
+            /private IP/,
+        );
         await expect(
             validateImageUrl("http://169.254.169.254/latest/meta-data/"),
         ).rejects.toThrow(/private IP/);
-        await expect(
-            validateImageUrl("http://10.0.0.1/x"),
-        ).rejects.toThrow(/private IP/);
+        await expect(validateImageUrl("http://10.0.0.1/x")).rejects.toThrow(
+            /private IP/,
+        );
         await expect(validateImageUrl("http://[::1]/x")).rejects.toThrow(
             /private IP/,
         );
@@ -148,8 +148,7 @@ describe("validateImageUrl", () => {
     test("allows public hostnames", async () => {
         const r = await validateImageUrl("https://good.example/img.png");
         expect(r.kind).toBe("http");
-        if (r.kind === "http")
-            expect(r.url.hostname).toBe("good.example");
+        if (r.kind === "http") expect(r.url.hostname).toBe("good.example");
     });
 
     test("allows literal public IPs", async () => {

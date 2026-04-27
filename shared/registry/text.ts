@@ -122,6 +122,8 @@ export const TEXT_SERVICES = {
         aliases: ["openclaw-agent", "openclaw-coder"],
         modelId: OPENCLAW_BACKING_MODEL_ID,
         provider: "ovhcloud",
+        brand: "OpenClaw",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),

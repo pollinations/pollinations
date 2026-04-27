@@ -24,6 +24,30 @@ const genAliases = [
     "utils/text-cache.ts",
 ];
 
+const enterAliases = [
+    ["@/auth.ts", "auth.ts"],
+    ["@/cache", "cache.ts"],
+    ["@/db/schema/better-auth.ts", "db/schema/better-auth.ts"],
+    [
+        "@/durable-objects/PollenRateLimiter.ts",
+        "durable-objects/PollenRateLimiter.ts",
+    ],
+    ["@/error.ts", "error.ts"],
+    ["@/events.ts", "events.ts"],
+    ["@/logger", "logger.ts"],
+    ["@/middleware/auth.ts", "middleware/auth.ts"],
+    ["@/middleware/balance.ts", "middleware/balance.ts"],
+    ["@/middleware/logger.ts", "middleware/logger.ts"],
+    ["@/middleware/rate-limit-durable.ts", "middleware/rate-limit-durable.ts"],
+    ["@/routes/account.ts", "routes/account.ts"],
+    ["@/tier-config.ts", "tier-config.ts"],
+    ["@/util", "util.ts"],
+    ["@/util.ts", "util.ts"],
+    ["@/utils/api-docs.ts", "utils/api-docs.ts"],
+    ["@/utils/model-stats.ts", "utils/model-stats.ts"],
+    ["@/utils/track-helpers.ts", "utils/track-helpers.ts"],
+] as const;
+
 export default defineConfig({
     resolve: {
         alias: [
@@ -31,10 +55,10 @@ export default defineConfig({
                 find: `@/${path}`,
                 replacement: `${genSrc}${path}`,
             })),
-            {
-                find: /^@\/(.*)$/,
-                replacement: `${enterSrc}$1`,
-            },
+            ...enterAliases.map(([find, path]) => ({
+                find,
+                replacement: `${enterSrc}${path}`,
+            })),
             {
                 find: /^@shared\/(.*)$/,
                 replacement: `${sharedSrc}$1`,

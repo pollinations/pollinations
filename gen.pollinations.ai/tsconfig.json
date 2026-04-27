@@ -14,7 +14,45 @@
         "resolveJsonModule": true,
         "baseUrl": ".",
         "paths": {
-            "@/*": ["src/*", "../enter.pollinations.ai/src/*"],
+            "@/auth.ts": ["../enter.pollinations.ai/src/auth.ts"],
+            "@/cache": ["../enter.pollinations.ai/src/cache.ts"],
+            "@/db/schema/better-auth.ts": [
+                "../enter.pollinations.ai/src/db/schema/better-auth.ts"
+            ],
+            "@/durable-objects/PollenRateLimiter.ts": [
+                "../enter.pollinations.ai/src/durable-objects/PollenRateLimiter.ts"
+            ],
+            "@/error.ts": ["../enter.pollinations.ai/src/error.ts"],
+            "@/events.ts": ["../enter.pollinations.ai/src/events.ts"],
+            "@/logger": ["../enter.pollinations.ai/src/logger.ts"],
+            "@/middleware/auth.ts": [
+                "../enter.pollinations.ai/src/middleware/auth.ts"
+            ],
+            "@/middleware/balance.ts": [
+                "../enter.pollinations.ai/src/middleware/balance.ts"
+            ],
+            "@/middleware/logger.ts": [
+                "../enter.pollinations.ai/src/middleware/logger.ts"
+            ],
+            "@/middleware/rate-limit-durable.ts": [
+                "../enter.pollinations.ai/src/middleware/rate-limit-durable.ts"
+            ],
+            "@/routes/account.ts": [
+                "../enter.pollinations.ai/src/routes/account.ts"
+            ],
+            "@/tier-config.ts": ["../enter.pollinations.ai/src/tier-config.ts"],
+            "@/util": ["../enter.pollinations.ai/src/util.ts"],
+            "@/util.ts": ["../enter.pollinations.ai/src/util.ts"],
+            "@/utils/api-docs.ts": [
+                "../enter.pollinations.ai/src/utils/api-docs.ts"
+            ],
+            "@/utils/model-stats.ts": [
+                "../enter.pollinations.ai/src/utils/model-stats.ts"
+            ],
+            "@/utils/track-helpers.ts": [
+                "../enter.pollinations.ai/src/utils/track-helpers.ts"
+            ],
+            "@/*": ["src/*"],
             "@shared/*": ["../shared/*"]
         }
     },

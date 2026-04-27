@@ -22,7 +22,6 @@
                 "../enter.pollinations.ai/src/durable-objects/PollenRateLimiter.ts"
             ],
             "@/error.ts": ["../enter.pollinations.ai/src/error.ts"],
-            "@/events.ts": ["../enter.pollinations.ai/src/events.ts"],
             "@/logger": ["../enter.pollinations.ai/src/logger.ts"],
             "@/middleware/auth.ts": [
                 "../enter.pollinations.ai/src/middleware/auth.ts"

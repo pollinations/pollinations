@@ -588,12 +588,6 @@ function AuthorizeComponent() {
                                 inline
                                 theme="amber"
                             />
-                            {attribution?.found && (
-                                <p className="mt-2 text-xs text-amber-800/80">
-                                    20% of what you spend here goes to the app's
-                                    developer.
-                                </p>
-                            )}
                         </div>
 
                         <div className="-mx-6 px-10 py-4 border-t border-amber-300">

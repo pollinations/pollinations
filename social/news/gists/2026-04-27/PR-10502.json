@@ -1,0 +1,34 @@
+{
+  "pr_number": 10502,
+  "title": "fix: route grok to working azure 4.20 non-reasoning deployment",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10502",
+  "merged_at": "2026-04-27T17:33:03Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok is back in the hive",
+    "blurb": "We've rewired our Grok endpoint to point to the shiny new 4.20 deployment. The 502 errors are gone, and the sassy AI is back to buzzing along perfectly.",
+    "summary": "Resolved an issue causing 502 errors on the `grok` endpoint by migrating to the updated `grok-4-20-non-reasoning` deployment.",
+    "impact": "Text generation requests using the `grok` model will now succeed reliably instead of failing with upstream errors.",
+    "keywords": [
+      "grok",
+      "bug fix",
+      "text models",
+      "api",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee acting as a sysadmin, fixing a server connection with a new cable, while the Nomnom creature happily disposes of the old 502 error logs by eating them.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a glowing lime green (#ecf874) cable into a retro server rack. Nearby, the round tan Nomnom creature happily eats a stack of paper labeled '502 ERRORS'. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-27/PR-10502.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a glowing lime green (#ecf874) cable into a retro server rack. Nearby, the round tan Nomnom creature happily eats a stack of paper labeled '502 ERRORS'. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-27T17:34:01.790758+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10505,
+  "title": "Add StoryForge to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10505",
+  "merged_at": "2026-04-27T19:19:24Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Forging new stories",
+    "blurb": "StoryForge just landed in the app showcase. It turns your stray ideas into chapter-based short stories, complete with AI cover art.",
+    "summary": "Added StoryForge to the community showcase, a client-side web app that generates illustrated short stories using the Pollinations API.",
+    "impact": "Creators can now discover StoryForge in the writing section to easily generate and illustrate their own chapter-based tales.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "writing",
+      "storyforge"
+    ],
+    "visual_concept": "StoryForge implies crafting tales. Polly the bee acting as an author or blacksmith of words. A cozy writing desk with magical books, a tiny anvil, and glowing pages.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting at a wooden desk reading a glowing magical book. A small pixelated anvil sits on the desk next to a lime green (#ecf874) inkwell. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-27/PR-10505.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, sitting at a wooden desk reading a glowing magical book. A small pixelated anvil sits on the desk next to a lime green (#ecf874) inkwell. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-27T19:20:25.418824+00:00",
+  "app_name": "StoryForge",
+  "app_url": "http://pollen-story-forge.vercel.app/"
+}

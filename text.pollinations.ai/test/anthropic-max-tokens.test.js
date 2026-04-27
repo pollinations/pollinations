@@ -19,11 +19,6 @@ describe("Anthropic max_tokens defaults", () => {
         expect(result.options.max_tokens).toBe(128000);
     });
 
-    it("should set max_tokens default for claude-legacy (opus-4-5)", () => {
-        const result = resolveModelConfig(messages, { model: "claude-legacy" });
-        expect(result.options.max_tokens).toBe(64000);
-    });
-
     it("should allow user to override max_tokens", () => {
         const result = resolveModelConfig(messages, {
             model: "claude",

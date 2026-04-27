@@ -363,7 +363,7 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
 
 - **`accountPermissions`**
 
-  `object` — Account permissions (e.g. \["balance", "usage"]). "keys" is auto-stripped.
+  `object` — Account permissions (e.g. \["profile", "usage"]). "keys" is auto-stripped.
 
 - **`allowedModels`**
 

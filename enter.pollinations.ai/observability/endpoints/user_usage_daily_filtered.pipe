@@ -1,7 +1,8 @@
 DESCRIPTION >
-    Get daily aggregated billed usage for a user, grouped by date, model, and meter source.
+    Get aggregated billed usage for a user, grouped by date/hour, model, and meter source.
     Use 'since' and 'until' for date range filtering.
     Use 'api_key_ids' (comma-separated) to filter to one or more API keys.
+    Use 'grain=hour' to group by hour; defaults to daily buckets.
 
 TOKEN tinybird_read READ
 
@@ -9,7 +10,11 @@ NODE user_usage_daily_filtered_node
 SQL >
     %
     SELECT
-        toDate(start_time) as date,
+        if(
+            {{String(grain, 'day')}} = 'hour',
+            formatDateTime(toStartOfHour(start_time), '%F %T'),
+            formatDateTime(toStartOfDay(start_time), '%F')
+        ) as date,
         resolved_model_requested as model,
         splitByChar(':', selected_meter_slug)[-1] as meter_source,
         count() as requests,

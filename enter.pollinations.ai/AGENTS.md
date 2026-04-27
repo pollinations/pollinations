@@ -598,13 +598,12 @@ https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL&app_key=pk_you
 | `models` | Comma-separated allowed models | `flux,openai,gptimage` |
 | `budget` | Pollen budget limit | `10` |
 | `expiry` | Expiry in days (default: 30) | `7` |
-| `permissions` | Account permissions | `profile,balance,usage` |
+| `permissions` | Account permissions | `profile,usage` |
 
 ### Account Permissions
 
 - `profile`: Read user's name, email, GitHub username
-- `balance`: Read pollen balance
-- `usage`: Read usage history
+- `usage`: Read usage history and pollen balance
 
 ### App Registration
 
@@ -613,7 +612,7 @@ Register a `pk_` key at enter.pollinations.ai with **App URL** + **BYOP** toggle
 ### Example
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,balance&expiry=7
+https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,usage&expiry=7
 ```
 
 After authorization, the user is redirected back with an `sk_` key in the URL fragment:
@@ -624,8 +623,9 @@ https://myapp.com/callback#api_key=sk_xxxxx
 ### App Lookup Endpoint
 
 `GET /api/app-lookup` — resolves app attribution (no auth required):
-- `?app_key=pk_xxx` — direct key lookup
-- `?redirect_url=https://...` — matches against registered `appUrl` values
+- `?app_key=pk_xxx` (or `?client_id=pk_xxx`) — direct key lookup; returns `{ found: false }` if absent
+
+URL-based lookup (matching `redirect_url` against registered `appUrl` values) was removed — identity is derived from `client_id` only, never from the redirect URL. See PR #10447.
 
 ---
 

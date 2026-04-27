@@ -82,11 +82,20 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "deepseek",
-      "name": "DeepSeek V3.2 — Strong reasoning & tool calling",
+      "name": "DeepSeek V4 Flash — Fast reasoning & tool calling (paid)",
       "reasoning": true,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
-      "contextWindow": 128000,
+      "contextWindow": 1000000,
+      "maxTokens": 8192
+    },
+    {
+      "id": "deepseek-pro",
+      "name": "DeepSeek V4 Pro — Advanced reasoning & coding (paid)",
+      "reasoning": true,
+      "input": ["text"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 65536,
       "maxTokens": 8192
     },
     {
@@ -165,8 +174,8 @@ echo "  API Key:   $MASKED"
 echo "  Default:   pollinations/openclaw (agentic coding + computer use preset)"
 echo "  Fallbacks: kimi, deepseek, glm"
 echo ""
-echo "  Switch models:  /model pollinations/deepseek"
+echo "  Switch models:  /model pollinations/deepseek or /model pollinations/deepseek-pro"
 echo "  Your account:   https://enter.pollinations.ai"
 echo ""
-echo "  Free: openclaw, kimi, deepseek, glm, gemini-search, claude-fast"
-echo "  Paid: claude-large, gemini-large"
+echo "  Free: openclaw, kimi, glm, gemini-search, claude-fast"
+echo "  Paid: deepseek, deepseek-pro, claude-large, gemini-large"

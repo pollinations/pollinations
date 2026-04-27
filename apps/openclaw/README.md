@@ -32,13 +32,14 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 | Model | ID | Best for |
 |---|---|---|
 | **OpenClaw** (default) | `pollinations/openclaw` | Agentic coding, terminal workflows, computer-use reliability |
-| **Kimi K2.5** | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
-| **DeepSeek V3.2** | `pollinations/deepseek` | Strong reasoning & tool calling |
-| **GLM 5** | `pollinations/glm` | Coding, reasoning, agentic workflows |
+| **Kimi K2.6** | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+| **DeepSeek V4 Flash** | `pollinations/deepseek` | Fast reasoning & tool calling (paid) |
+| **DeepSeek V4 Pro** | `pollinations/deepseek-pro` | Advanced reasoning & coding (paid) |
+| **GLM 5.1** | `pollinations/glm` | Coding, reasoning, agentic workflows |
 | **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
 | **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
 | **Claude Opus 4.6** | `pollinations/claude-large` | Most intelligent (paid) |
-| **Gemini 3 Pro** | `pollinations/gemini-large` | 1M context (paid) |
+| **Gemini 3.1 Pro** | `pollinations/gemini-large` | 1M context (paid) |
 
 ## Manual Setup
 

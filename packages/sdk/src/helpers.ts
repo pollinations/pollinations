@@ -645,7 +645,7 @@ export async function listKeys(): Promise<AccountKey[]> {
  * const created = await createKey({
  *   name: 'my-bot',
  *   type: 'secret',
- *   accountPermissions: ['balance', 'usage'],
+ *   accountPermissions: ['usage'],
  * });
  * console.log('Save this key — it will not be shown again:', created.key);
  * ```

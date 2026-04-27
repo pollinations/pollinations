@@ -61,6 +61,24 @@ type ScaledDimensions = {
     scalingFactor: number;
 };
 
+type AzureGPTImageTokenDetails = {
+    cached_tokens?: number;
+    image_tokens?: number;
+    text_tokens?: number;
+};
+
+type AzureGPTImageUsage = {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    prompt_tokens_details?: AzureGPTImageTokenDetails;
+    completion_tokens_details?: AzureGPTImageTokenDetails;
+    input_tokens?: number;
+    output_tokens?: number;
+    input_tokens_details?: AzureGPTImageTokenDetails;
+    output_tokens_details?: AzureGPTImageTokenDetails;
+};
+
 export type ImageGenerationResult = {
     buffer: Buffer;
     isMature: boolean;
@@ -79,6 +97,59 @@ export type AuthResult = {
     username: string | null;
     debugInfo: object;
 };
+
+function safeTokenCount(value: unknown): number {
+    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function mapAzureGPTImageUsage(
+    usage: AzureGPTImageUsage | undefined,
+    separateCompletionTextTokens: boolean,
+) {
+    const promptTokens =
+        safeTokenCount(usage?.prompt_tokens) ||
+        safeTokenCount(usage?.input_tokens);
+    const completionTokens =
+        safeTokenCount(usage?.completion_tokens) ||
+        safeTokenCount(usage?.output_tokens) ||
+        safeTokenCount(usage?.total_tokens);
+
+    const promptDetails =
+        usage?.prompt_tokens_details || usage?.input_tokens_details;
+    const completionDetails =
+        usage?.completion_tokens_details || usage?.output_tokens_details;
+
+    const promptCachedTokens = safeTokenCount(promptDetails?.cached_tokens);
+    const promptImageTokens = safeTokenCount(promptDetails?.image_tokens);
+    const promptTextTokens =
+        safeTokenCount(promptDetails?.text_tokens) ||
+        Math.max(promptTokens - promptCachedTokens - promptImageTokens, 0);
+
+    const completionTextTokens = separateCompletionTextTokens
+        ? safeTokenCount(completionDetails?.text_tokens)
+        : 0;
+    const completionImageTokens =
+        safeTokenCount(completionDetails?.image_tokens) ||
+        Math.max(completionTokens - completionTextTokens, 0) ||
+        1;
+
+    const totalTokenCount =
+        safeTokenCount(usage?.total_tokens) ||
+        promptTextTokens +
+            promptCachedTokens +
+            promptImageTokens +
+            completionTextTokens +
+            completionImageTokens;
+
+    return {
+        promptTextTokens,
+        promptCachedTokens,
+        promptImageTokens,
+        completionTextTokens,
+        completionImageTokens,
+        totalTokenCount,
+    };
+}
 
 /**
  * Calculates scaled dimensions while maintaining aspect ratio
@@ -325,7 +396,7 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
 
 /**
  * Configuration for Azure GPT Image endpoints
- * All models use myceli-prod-swedencentral with a shared API key
+ * All models use myceli-prod-eastus2 with a shared API key
  */
 interface AzureGPTImageConfig {
     baseUrl: string;
@@ -337,13 +408,18 @@ const AZURE_GPTIMAGE_API_VERSION = "2025-04-01-preview";
 const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
     gptimage: {
         baseUrl:
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
         modelName: "gpt-image-1-mini",
     },
     "gptimage-large": {
         baseUrl:
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
         modelName: "gpt-image-1.5",
+    },
+    "gpt-image-2": {
+        baseUrl:
+            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
+        modelName: "gpt-image-2",
     },
 };
 
@@ -361,11 +437,11 @@ const callAzureGPTImageWithEndpoint = async (
     userInfo: AuthResult,
     config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY;
+    const apiKey = process.env.AZURE_MYCELI_PROD_EASTUS2_API_KEY;
 
     if (!apiKey) {
         throw new Error(
-            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
+            "AZURE_MYCELI_PROD_EASTUS2_API_KEY not found in environment variables",
         );
     }
 
@@ -574,7 +650,12 @@ const callAzureGPTImageWithEndpoint = async (
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new HttpError(errorText, response.status);
+        // Azure 403 = provider blocked us (content policy, key disabled,
+        // deployment quota) — not a client auth problem. Remap to 502 so the
+        // caller sees an upstream failure instead of being told they're
+        // forbidden.
+        const status = response.status === 403 ? 502 : response.status;
+        throw new HttpError(errorText, status);
     }
 
     const data = await response.json();
@@ -586,18 +667,14 @@ const callAzureGPTImageWithEndpoint = async (
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(data.data[0].b64_json, "base64");
 
-    // Extract token usage from Azure OpenAI response
-    // Azure returns usage in format: { prompt_tokens, completion_tokens, total_tokens }
-    // Log full usage breakdown for debugging high token counts
-    logCloudflare(
-        `GPT Image full usage: prompt_tokens=${data.usage?.prompt_tokens}, completion_tokens=${data.usage?.completion_tokens}, total_tokens=${data.usage?.total_tokens}`,
+    const usage = mapAzureGPTImageUsage(
+        data.usage,
+        config.modelName === "gpt-image-1.5",
     );
 
-    const outputTokens =
-        data.usage?.completion_tokens || data.usage?.total_tokens || 1;
-
+    logCloudflare("GPT Image full usage:", data.usage);
     logCloudflare(
-        `GPT Image token usage: ${outputTokens} completion tokens (used for billing)`,
+        `GPT Image billable usage: promptText=${usage.promptTextTokens}, promptCached=${usage.promptCachedTokens}, promptImage=${usage.promptImageTokens}, completionText=${usage.completionTextTokens}, completionImage=${usage.completionImageTokens}`,
     );
 
     // Azure doesn't provide content safety information directly, so we'll set defaults
@@ -608,10 +685,7 @@ const callAzureGPTImageWithEndpoint = async (
         isChild: false, // Default assumption
         trackingData: {
             actualModel: safeParams.model,
-            usage: {
-                completionImageTokens: outputTokens,
-                totalTokenCount: outputTokens,
-            },
+            usage,
         },
     };
 };
@@ -704,7 +778,8 @@ const generateImage = async (
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
         case "gptimage":
-        case "gptimage-large": {
+        case "gptimage-large":
+        case "gpt-image-2": {
             const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,

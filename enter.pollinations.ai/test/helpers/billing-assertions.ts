@@ -83,7 +83,9 @@ export function assertTrackedBillingEvent(
         priceDefinition?.completionTextTokens || 0,
     );
     expect(event.tokenPriceCompletionReasoning).toBe(
-        priceDefinition?.completionReasoningTokens || 0,
+        priceDefinition?.completionReasoningTokens ??
+            priceDefinition?.completionTextTokens ??
+            0,
     );
     expect(event.tokenPriceCompletionAudio).toBe(
         priceDefinition?.completionAudioTokens || 0,

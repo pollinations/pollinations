@@ -9,14 +9,9 @@ import { useModelStats } from "./use-model-stats.ts";
 type PricingProps = {
     tierBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({
-    tierBalance,
-    packBalance,
-    cryptoBalance,
-}) => {
+export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
     useEffect(() => {
         if (window.location.hash === "#models") {
             const el = document.getElementById("models");
@@ -68,7 +63,6 @@ export const Pricing: FC<PricingProps> = ({
                         textModels={textModels}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 </div>
 

@@ -47,7 +47,6 @@ export const Route = createFileRoute("/")({
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
-        const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
@@ -59,7 +58,6 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
-            cryptoBalance,
         };
     },
 });
@@ -73,7 +71,6 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
-        cryptoBalance,
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -263,7 +260,6 @@ function RouteComponent() {
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
-                            cryptoBalance={cryptoBalance}
                             tier={tierData?.active?.tier}
                         />
                     )}
@@ -291,7 +287,6 @@ function RouteComponent() {
                 <Pricing
                     tierBalance={tierBalance}
                     packBalance={packBalance}
-                    cryptoBalance={cryptoBalance}
                 />
                 <FAQ />
                 <Footer />

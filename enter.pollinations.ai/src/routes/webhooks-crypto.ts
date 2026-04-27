@@ -263,12 +263,12 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
         // NOWPayments only sends webhooks on status changes, not arbitrary replays
         // Manual dashboard replays are rare and can be reconciled via Tinybird logs
 
-        // Credit pollen to user's crypto balance (separate from fiat pack balance)
+        // Credit pollen to user's pack balance (crypto purchases share the fiat pack bucket)
         const db = drizzle(c.env.DB);
         const result = await db
             .update(userTable)
             .set({
-                cryptoBalance: sql`COALESCE(${userTable.cryptoBalance}, 0) + ${pollenAmount}`,
+                packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${pollenAmount}`,
             })
             .where(eq(userTable.id, userId));
 

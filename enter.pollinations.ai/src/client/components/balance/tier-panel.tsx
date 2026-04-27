@@ -69,7 +69,7 @@ const MicrobeLimitedPanel: FC = () => (
     </Panel>
 );
 
-// ─── Tier screen (spore + creator tiers) ─────────────────────
+// ─── Tier screen (active tier display) ─────────────────────
 
 const TierScreen: FC<{
     tier: TierStatus;

@@ -256,7 +256,7 @@ function AuthorizeComponent() {
                 if (!data) return;
                 setTotalBalance(
                     toFinitePollen(data.tierBalance) +
-                        toFinitePollen(data.creatorBalance) +
+                        toFinitePollen(data.devBalance) +
                         toFinitePollen(data.packBalance) +
                         toFinitePollen(data.cryptoBalance),
                 );

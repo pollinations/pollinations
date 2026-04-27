@@ -8,14 +8,14 @@ import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
     tierBalance?: number;
-    creatorBalance?: number;
+    devBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
 };
 
 export const Pricing: FC<PricingProps> = ({
     tierBalance,
-    creatorBalance,
+    devBalance,
     packBalance,
     cryptoBalance,
 }) => {
@@ -69,7 +69,7 @@ export const Pricing: FC<PricingProps> = ({
                         audioModels={audioModels}
                         textModels={textModels}
                         tierBalance={tierBalance}
-                        creatorBalance={creatorBalance}
+                        devBalance={devBalance}
                         packBalance={packBalance}
                         cryptoBalance={cryptoBalance}
                     />

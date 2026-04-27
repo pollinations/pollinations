@@ -6,18 +6,18 @@ import { user as userTable } from "../db/schema/better-auth.ts";
  * Balance buckets, in the order they are consumed by atomicDeductUserBalance.
  *
  * - tier: free, hourly-refilled allowance per tier
- * - creator: earnings from BYOP markup on apps the user owns (spendable)
+ * - dev: earnings from BYOP markup on apps the user owns (spendable)
  * - crypto: purchased via NOWPayments, cumulative
  * - pack: purchased via Stripe/Polar, cumulative
  */
-export const BALANCE_BUCKETS = ["tier", "creator", "crypto", "pack"] as const;
+export const BALANCE_BUCKETS = ["tier", "dev", "crypto", "pack"] as const;
 export type Bucket = (typeof BALANCE_BUCKETS)[number];
 
 export type UserBalance = Record<`${Bucket}Balance`, number>;
 
 const BUCKET_COLUMNS = {
     tier: userTable.tierBalance,
-    creator: userTable.creatorBalance,
+    dev: userTable.devBalance,
     crypto: userTable.cryptoBalance,
     pack: userTable.packBalance,
 } as const satisfies Record<Bucket, unknown>;
@@ -25,7 +25,7 @@ const BUCKET_COLUMNS = {
 /**
  * Atomically deducts pollen from user balance.
  *
- * Priority when non-tier balance is positive: tier → creator → crypto → pack.
+ * Priority when non-tier balance is positive: tier → dev → crypto → pack.
  * If no positive non-tier balance, always deducts from tier —
  * tier refills hourly so going negative is fine and prevents spillover into
  * non-tier buckets.
@@ -41,23 +41,23 @@ export async function atomicDeductUserBalance(
 		UPDATE ${userTable}
 		SET
 			tier_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(creator_balance, 0)) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
+				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
 				WHEN COALESCE(tier_balance, 0) > 0 THEN COALESCE(tier_balance, 0) - ${amount}
 				ELSE tier_balance
 			END,
-			creator_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(creator_balance, 0)) <= 0 THEN creator_balance
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(creator_balance, 0) > 0 THEN COALESCE(creator_balance, 0) - ${amount}
-				ELSE creator_balance
+			dev_balance = CASE
+				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN dev_balance
+				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) > 0 THEN COALESCE(dev_balance, 0) - ${amount}
+				ELSE dev_balance
 			END,
 			crypto_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(creator_balance, 0)) <= 0 THEN crypto_balance
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(creator_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
+				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN crypto_balance
+				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
 				ELSE crypto_balance
 			END,
 			pack_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(creator_balance, 0)) <= 0 THEN pack_balance
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(creator_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
+				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN pack_balance
+				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 				ELSE pack_balance
 			END
 		WHERE id = ${userId}
@@ -141,7 +141,7 @@ export async function getUserBalances(
     const result = await db
         .select({
             tierBalance: userTable.tierBalance,
-            creatorBalance: userTable.creatorBalance,
+            devBalance: userTable.devBalance,
             cryptoBalance: userTable.cryptoBalance,
             packBalance: userTable.packBalance,
         })
@@ -152,7 +152,7 @@ export async function getUserBalances(
     const user = result[0];
     return {
         tierBalance: user?.tierBalance ?? 0,
-        creatorBalance: user?.creatorBalance ?? 0,
+        devBalance: user?.devBalance ?? 0,
         cryptoBalance: user?.cryptoBalance ?? 0,
         packBalance: user?.packBalance ?? 0,
     };
@@ -164,7 +164,7 @@ export type DeductionSource = Record<`from${Capitalize<Bucket>}`, number>;
  * Identifies which single balance bucket a deduction comes from.
  * Mirrors the CASE logic in atomicDeductUserBalance:
  * - If no positive non-tier balance → always tier
- * - Otherwise: tier → creator → crypto → pack
+ * - Otherwise: tier → dev → crypto → pack
  */
 export function identifyDeductionSource(
     balances: UserBalance,
@@ -172,24 +172,24 @@ export function identifyDeductionSource(
 ): DeductionSource {
     const zero: DeductionSource = {
         fromTier: 0,
-        fromCreator: 0,
+        fromDev: 0,
         fromCrypto: 0,
         fromPack: 0,
     };
-    const { tierBalance, creatorBalance, cryptoBalance, packBalance } =
+    const { tierBalance, devBalance, cryptoBalance, packBalance } =
         balances;
 
-    if (creatorBalance + cryptoBalance + packBalance <= 0)
+    if (devBalance + cryptoBalance + packBalance <= 0)
         return { ...zero, fromTier: amount };
     if (tierBalance > 0) return { ...zero, fromTier: amount };
-    if (creatorBalance > 0) return { ...zero, fromCreator: amount };
+    if (devBalance > 0) return { ...zero, fromDev: amount };
     if (cryptoBalance > 0) return { ...zero, fromCrypto: amount };
     return { ...zero, fromPack: amount };
 }
 
 /**
  * Atomically deducts pollen from non-tier balances only.
- * Picks the first positive bucket: creator → crypto → pack.
+ * Picks the first positive bucket: dev → crypto → pack.
  * Full amount from one bucket.
  */
 export async function atomicDeductPaidBalance(
@@ -202,16 +202,16 @@ export async function atomicDeductPaidBalance(
     const result = await db.run(sql`
 		UPDATE ${userTable}
 		SET
-			creator_balance = CASE
-				WHEN COALESCE(creator_balance, 0) > 0 THEN COALESCE(creator_balance, 0) - ${amount}
-				ELSE creator_balance
+			dev_balance = CASE
+				WHEN COALESCE(dev_balance, 0) > 0 THEN COALESCE(dev_balance, 0) - ${amount}
+				ELSE dev_balance
 			END,
 			crypto_balance = CASE
-				WHEN COALESCE(creator_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
+				WHEN COALESCE(dev_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
 				ELSE crypto_balance
 			END,
 			pack_balance = CASE
-				WHEN COALESCE(creator_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
+				WHEN COALESCE(dev_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 				ELSE pack_balance
 			END
 		WHERE id = ${userId}

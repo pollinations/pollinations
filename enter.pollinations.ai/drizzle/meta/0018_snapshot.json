@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "bd4f1e08-7ad0-4714-aed6-220972726d57",
+  "id": "7afe6e74-17aa-4f88-a30c-ebcb55739f99",
   "prevId": "fd04b46c-8c90-4ada-a7e2-32f20efe8e17",
   "tables": {
     "account": {
@@ -658,8 +658,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "creator_balance": {
-          "name": "creator_balance",
+        "dev_balance": {
+          "name": "dev_balance",
           "type": "real",
           "primaryKey": false,
           "notNull": false,

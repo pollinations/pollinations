@@ -9,7 +9,7 @@ import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
     tierBalance?: unknown;
-    creatorBalance?: unknown;
+    devBalance?: unknown;
     packBalance?: unknown;
     cryptoBalance?: unknown;
 };
@@ -73,7 +73,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
-    creatorBalance,
+    devBalance,
     packBalance,
     cryptoBalance,
 }) => {
@@ -90,11 +90,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     };
     // Clamp at 0 for display — individual buckets can go slightly negative from overage
     const displayTier = Math.max(0, toFinitePollen(tierBalance));
-    const displayDeveloper = Math.max(0, toFinitePollen(creatorBalance));
+    const displayDev = Math.max(0, toFinitePollen(devBalance));
     const displayTopUps =
         Math.max(0, toFinitePollen(packBalance)) +
         Math.max(0, toFinitePollen(cryptoBalance));
-    const totalPollen = displayTier + displayDeveloper + displayTopUps;
+    const totalPollen = displayTier + displayDev + displayTopUps;
     const gaugeHeightClass = "h-[40px] sm:h-[46px]";
 
     type Segment = Omit<
@@ -120,9 +120,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         },
         {
             key: "byop",
-            value: displayDeveloper,
+            value: displayDev,
             label: "🌻 Earnings",
-            title: `🌻 Dev earnings: ${formatPollen(displayDeveloper)} Pollen\nPollen earned from BYOP app usage. Used after 🌱 Tier Pollen for regular models; available for paid-only models.`,
+            title: `🌻 Dev earnings: ${formatPollen(displayDev)} Pollen\nPollen earned from BYOP app usage. Used after 🌱 Tier Pollen for regular models; available for paid-only models.`,
             barClassName: "bg-amber-200",
             textClassName: "text-amber-950",
         },

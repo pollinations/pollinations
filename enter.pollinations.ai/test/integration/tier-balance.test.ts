@@ -380,12 +380,12 @@ describe("Tier Balance Management", () => {
         test("identifyDeductionSource should pick single bucket", () => {
             const b = (
                 tier: number,
-                creator: number,
+                dev: number,
                 crypto: number,
                 pack = 0,
             ) => ({
                 tierBalance: tier,
-                creatorBalance: creator,
+                devBalance: dev,
                 cryptoBalance: crypto,
                 packBalance: pack,
             });
@@ -393,41 +393,41 @@ describe("Tier Balance Management", () => {
             // Tier is positive, has paid balance — tier first
             const fromTier = identifyDeductionSource(b(5, 0, 3, 5), 7);
             expect(fromTier.fromTier).toBe(7);
-            expect(fromTier.fromCreator).toBe(0);
+            expect(fromTier.fromDev).toBe(0);
             expect(fromTier.fromCrypto).toBe(0);
             expect(fromTier.fromPack).toBe(0);
 
-            // Tier zero, creator positive, has paid — falls to creator
-            const fromCreator = identifyDeductionSource(b(0, 4, 3, 0), 7);
-            expect(fromCreator.fromCreator).toBe(7);
-            expect(fromCreator.fromTier).toBe(0);
-            expect(fromCreator.fromCrypto).toBe(0);
+            // Tier zero, dev positive, has paid — falls to dev
+            const fromDev = identifyDeductionSource(b(0, 4, 3, 0), 7);
+            expect(fromDev.fromDev).toBe(7);
+            expect(fromDev.fromTier).toBe(0);
+            expect(fromDev.fromCrypto).toBe(0);
 
-            // Tier/creator zero, crypto positive — falls to crypto
+            // Tier/dev zero, crypto positive — falls to crypto
             const fromCrypto = identifyDeductionSource(b(0, 0, 3, 0), 7);
             expect(fromCrypto.fromCrypto).toBe(7);
-            expect(fromCrypto.fromCreator).toBe(0);
+            expect(fromCrypto.fromDev).toBe(0);
             expect(fromCrypto.fromPack).toBe(0);
 
-            // Tier/creator/crypto zero, pack positive — falls to pack
+            // Tier/dev/crypto zero, pack positive — falls to pack
             const fromPack = identifyDeductionSource(b(0, 0, 0, 5), 8);
             expect(fromPack.fromPack).toBe(8);
             expect(fromPack.fromCrypto).toBe(0);
 
-            // No paid/creator balance — always tier, never spills
+            // No paid/dev balance — always tier, never spills
             const noPaid = identifyDeductionSource(b(0, 0, 0), 3);
             expect(noPaid.fromTier).toBe(3);
             expect(noPaid.fromPack).toBe(0);
 
-            // Negative tier, positive creator — falls to creator
-            const negTierPosCreator = identifyDeductionSource(
+            // Negative tier, positive dev — falls to dev
+            const negTierPosDev = identifyDeductionSource(
                 b(-3, 2, 0, 0),
                 4,
             );
-            expect(negTierPosCreator.fromCreator).toBe(4);
-            expect(negTierPosCreator.fromTier).toBe(0);
+            expect(negTierPosDev.fromDev).toBe(4);
+            expect(negTierPosDev.fromTier).toBe(0);
 
-            // Negative tier, no creator, positive crypto — falls to crypto
+            // Negative tier, no dev, positive crypto — falls to crypto
             const negTierPosCrypto = identifyDeductionSource(b(-3, 0, 2, 0), 4);
             expect(negTierPosCrypto.fromCrypto).toBe(4);
             expect(negTierPosCrypto.fromTier).toBe(0);
@@ -896,7 +896,7 @@ describe("Tier Balance Management", () => {
                     name: "Paid Deduct Test",
                     tier: "flower",
                     tierBalance: 10,
-                    creatorBalance: 2,
+                    devBalance: 2,
                     packBalance: 5,
                     cryptoBalance: 3,
                     createdAt: new Date(),
@@ -906,7 +906,7 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 10,
-                        creatorBalance: 2,
+                        devBalance: 2,
                         packBalance: 5,
                         cryptoBalance: 3,
                     },
@@ -917,7 +917,7 @@ describe("Tier Balance Management", () => {
 
             let balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Unchanged - tier is skipped
-            expect(balances.creatorBalance).toBe(0); // 2 - 2
+            expect(balances.devBalance).toBe(0); // 2 - 2
             expect(balances.cryptoBalance).toBe(3); // Unchanged
             expect(balances.packBalance).toBe(5); // Unchanged
 
@@ -926,7 +926,7 @@ describe("Tier Balance Management", () => {
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.creatorBalance).toBe(0); // Unchanged
+            expect(balances.devBalance).toBe(0); // Unchanged
             expect(balances.cryptoBalance).toBe(-1); // 3 - 4 (goes negative)
             expect(balances.packBalance).toBe(5); // Unchanged
 
@@ -935,7 +935,7 @@ describe("Tier Balance Management", () => {
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.creatorBalance).toBe(0); // Unchanged
+            expect(balances.devBalance).toBe(0); // Unchanged
             expect(balances.cryptoBalance).toBe(-1); // Unchanged
             expect(balances.packBalance).toBe(-2); // 5 - 7 (goes negative)
         });
@@ -1021,7 +1021,7 @@ describe("Tier Balance Management", () => {
                 .update(userTable)
                 .set({
                     tierBalance: 0,
-                    creatorBalance: 2,
+                    devBalance: 2,
                     packBalance: 0,
                     cryptoBalance: 0,
                 })

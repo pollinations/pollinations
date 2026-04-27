@@ -6,7 +6,7 @@ describe("getAvailableBalance", () => {
         expect(
             getAvailableBalance({
                 tierBalance: 0.1,
-                creatorBalance: 0.15,
+                devBalance: 0.15,
                 packBalance: 0.2,
                 cryptoBalance: 0.3,
             }),
@@ -18,7 +18,7 @@ describe("getAvailableBalance", () => {
             getAvailableBalance(
                 {
                     tierBalance: 10,
-                    creatorBalance: 2,
+                    devBalance: 2,
                     packBalance: 0.5,
                     cryptoBalance: 0,
                 },
@@ -31,7 +31,7 @@ describe("getAvailableBalance", () => {
         expect(
             getAvailableBalance({
                 tierBalance: -1,
-                creatorBalance: -0.2,
+                devBalance: -0.2,
                 packBalance: 0.3,
                 cryptoBalance: -0.5,
             }),
@@ -42,7 +42,7 @@ describe("getAvailableBalance", () => {
         expect(
             getAvailableBalance({
                 tierBalance: -1,
-                creatorBalance: 0,
+                devBalance: 0,
                 packBalance: 0,
                 cryptoBalance: -2,
             }),

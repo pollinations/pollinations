@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest";
 import {
     BYOP_MARKUP_PCT,
     computeBilledPrice,
-    computeCreatorCredit,
+    computeDevCredit,
 } from "@/billing-config.ts";
 import {
     apikey as apikeyTable,
@@ -18,22 +18,22 @@ import {
 } from "@/utils/balance-deduction.ts";
 import {
     handleBalanceDeduction,
-    resolveCreatorMarkup,
+    resolveDevMarkup,
 } from "@/utils/track-helpers.ts";
 
 describe("BYOP markup", () => {
-    describe("computeCreatorCredit", () => {
+    describe("computeDevCredit", () => {
         test("returns baseline × markup for positive prices", () => {
-            expect(computeCreatorCredit(1)).toBeCloseTo(BYOP_MARKUP_PCT, 10);
-            expect(computeCreatorCredit(4)).toBeCloseTo(
+            expect(computeDevCredit(1)).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+            expect(computeDevCredit(4)).toBeCloseTo(
                 4 * BYOP_MARKUP_PCT,
                 10,
             );
         });
 
         test("returns 0 for zero or negative prices", () => {
-            expect(computeCreatorCredit(0)).toBe(0);
-            expect(computeCreatorCredit(-1)).toBe(0);
+            expect(computeDevCredit(0)).toBe(0);
+            expect(computeDevCredit(-1)).toBe(0);
         });
     });
 
@@ -47,38 +47,38 @@ describe("BYOP markup", () => {
         });
     });
 
-    describe("resolveCreatorMarkup", () => {
+    describe("resolveDevMarkup", () => {
         test("returns null when clientId missing", async () => {
             const db = drizzle(env.DB);
-            expect(await resolveCreatorMarkup(db, undefined, 1)).toBeNull();
-            expect(await resolveCreatorMarkup(db, "", 1)).toBeNull();
+            expect(await resolveDevMarkup(db, undefined, 1)).toBeNull();
+            expect(await resolveDevMarkup(db, "", 1)).toBeNull();
         });
 
         test("returns null when baseline price is 0", async () => {
             const db = drizzle(env.DB);
             expect(
-                await resolveCreatorMarkup(db, "pk_doesnotexist", 0),
+                await resolveDevMarkup(db, "pk_doesnotexist", 0),
             ).toBeNull();
         });
 
         test("returns null when pk_ row doesn't exist", async () => {
             const db = drizzle(env.DB);
             expect(
-                await resolveCreatorMarkup(db, "pk_doesnotexist", 1),
+                await resolveDevMarkup(db, "pk_doesnotexist", 1),
             ).toBeNull();
         });
 
         test("returns markup resolution when pk_ row exists", async () => {
             const db = drizzle(env.DB);
-            const creatorId = "test-creator-resolve";
+            const devId = "test-creator-resolve";
             const pkId = "pk_test_resolve";
 
             await db
                 .insert(userTable)
                 .values({
-                    id: creatorId,
-                    email: `${creatorId}@test.com`,
-                    name: creatorId,
+                    id: devId,
+                    email: `${devId}@test.com`,
+                    name: devId,
                     tier: "spore",
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -89,7 +89,7 @@ describe("BYOP markup", () => {
                 .insert(apikeyTable)
                 .values({
                     id: pkId,
-                    userId: creatorId,
+                    userId: devId,
                     name: "test-app",
                     key: `hashed-${pkId}`,
                     enabled: true,
@@ -98,16 +98,16 @@ describe("BYOP markup", () => {
                 })
                 .onConflictDoNothing();
 
-            const result = await resolveCreatorMarkup(db, pkId, 4);
+            const result = await resolveDevMarkup(db, pkId, 4);
             expect(result).not.toBeNull();
-            expect(result?.creatorUserId).toBe(creatorId);
-            expect(result?.creatorCredit).toBeCloseTo(4 * BYOP_MARKUP_PCT, 10);
+            expect(result?.devUserId).toBe(devId);
+            expect(result?.devCredit).toBeCloseTo(4 * BYOP_MARKUP_PCT, 10);
             expect(result?.markupPct).toBe(BYOP_MARKUP_PCT);
         });
     });
 
-    describe("atomicCreditUserBalance (creator bucket)", () => {
-        test("credits creator_balance; ok=true", async () => {
+    describe("atomicCreditUserBalance (dev bucket)", () => {
+        test("credits dev_balance; ok=true", async () => {
             const db = drizzle(env.DB);
             const userId = "test-creator-credit";
             await db.delete(userTable).where(sql`${userTable.id} = ${userId}`);
@@ -116,7 +116,7 @@ describe("BYOP markup", () => {
                 email: `${userId}@test.com`,
                 name: userId,
                 tier: "spore",
-                creatorBalance: 5,
+                devBalance: 5,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
@@ -124,12 +124,12 @@ describe("BYOP markup", () => {
             const { ok, newBalance } = await atomicCreditUserBalance(
                 db,
                 userId,
-                "creator",
+                "dev",
                 2,
             );
             expect(ok).toBe(true);
             expect(newBalance).toBe(7);
-            expect((await getUserBalances(db, userId)).creatorBalance).toBe(7);
+            expect((await getUserBalances(db, userId)).devBalance).toBe(7);
         });
 
         test("missing user → ok=false", async () => {
@@ -137,7 +137,7 @@ describe("BYOP markup", () => {
             const { ok, newBalance } = await atomicCreditUserBalance(
                 db,
                 "user-does-not-exist",
-                "creator",
+                "dev",
                 1,
             );
             expect(ok).toBe(false);
@@ -145,8 +145,8 @@ describe("BYOP markup", () => {
         });
     });
 
-    describe("deduction priority with creator_balance", () => {
-        test("spends tier → creator → crypto → pack", async () => {
+    describe("deduction priority with dev_balance", () => {
+        test("spends tier → dev → crypto → pack", async () => {
             const db = drizzle(env.DB);
             const userId = "test-priority-creator";
 
@@ -157,7 +157,7 @@ describe("BYOP markup", () => {
                 name: userId,
                 tier: "flower",
                 tierBalance: 2,
-                creatorBalance: 3,
+                devBalance: 3,
                 cryptoBalance: 5,
                 packBalance: 10,
                 createdAt: new Date(),
@@ -168,23 +168,23 @@ describe("BYOP markup", () => {
             await atomicDeductUserBalance(db, userId, 1);
             let b = await getUserBalances(db, userId);
             expect(b.tierBalance).toBe(1);
-            expect(b.creatorBalance).toBe(3);
+            expect(b.devBalance).toBe(3);
 
-            // Drain tier, then next goes to creator
+            // Drain tier, then next goes to dev
             await atomicDeductUserBalance(db, userId, 1); // tier → 0
-            await atomicDeductUserBalance(db, userId, 2); // creator → 1 (tier 0 → goes negative)
+            await atomicDeductUserBalance(db, userId, 2); // dev → 1 (tier 0 → goes negative)
             b = await getUserBalances(db, userId);
             // tier CASE: paid balance > 0, tier ≤ 0 → tier unchanged
             expect(b.tierBalance).toBe(0);
-            expect(b.creatorBalance).toBe(1);
+            expect(b.devBalance).toBe(1);
             expect(b.cryptoBalance).toBe(5);
             expect(b.packBalance).toBe(10);
 
-            // Drain creator, then crypto
-            await atomicDeductUserBalance(db, userId, 1); // creator → 0
+            // Drain dev, then crypto
+            await atomicDeductUserBalance(db, userId, 1); // dev → 0
             await atomicDeductUserBalance(db, userId, 2); // crypto → 3
             b = await getUserBalances(db, userId);
-            expect(b.creatorBalance).toBe(0);
+            expect(b.devBalance).toBe(0);
             expect(b.cryptoBalance).toBe(3);
 
             // Drain crypto, then pack
@@ -197,15 +197,15 @@ describe("BYOP markup", () => {
     });
 
     describe("handleBalanceDeduction — BYOP markup", () => {
-        async function setupPayerAndCreator() {
+        async function setupPayerAndDev() {
             const db = drizzle(env.DB);
             const payerId = "test-payer-markup";
-            const creatorId = "test-creator-markup";
+            const devId = "test-creator-markup";
             const pkId = "pk_markup_test";
 
             await db
                 .delete(userTable)
-                .where(sql`${userTable.id} IN (${payerId}, ${creatorId})`);
+                .where(sql`${userTable.id} IN (${payerId}, ${devId})`);
             await db
                 .delete(apikeyTable)
                 .where(sql`${apikeyTable.id} = ${pkId}`);
@@ -217,18 +217,18 @@ describe("BYOP markup", () => {
                     name: payerId,
                     tier: "flower",
                     tierBalance: 2,
-                    creatorBalance: 0,
+                    devBalance: 0,
                     cryptoBalance: 0,
                     packBalance: 0,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
                 {
-                    id: creatorId,
-                    email: `${creatorId}@test.com`,
-                    name: creatorId,
+                    id: devId,
+                    email: `${devId}@test.com`,
+                    name: devId,
                     tier: "spore",
-                    creatorBalance: 0,
+                    devBalance: 0,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -236,7 +236,7 @@ describe("BYOP markup", () => {
 
             await db.insert(apikeyTable).values({
                 id: pkId,
-                userId: creatorId,
+                userId: devId,
                 name: "markup-app",
                 key: `hashed-${pkId}`,
                 enabled: true,
@@ -244,11 +244,11 @@ describe("BYOP markup", () => {
                 updatedAt: new Date(),
             });
 
-            return { db, payerId, creatorId, pkId };
+            return { db, payerId, devId, pkId };
         }
 
-        test("non-BYOP request: bills baseline, no creator credit", async () => {
-            const { db, payerId, creatorId } = await setupPayerAndCreator();
+        test("non-BYOP request: bills baseline, no dev credit", async () => {
+            const { db, payerId, devId } = await setupPayerAndDev();
 
             const { markup } = await handleBalanceDeduction({
                 db,
@@ -262,14 +262,14 @@ describe("BYOP markup", () => {
             expect(
                 (await getUserBalances(db, payerId)).tierBalance,
             ).toBeCloseTo(2 - 0.5, 10);
-            expect((await getUserBalances(db, creatorId)).creatorBalance).toBe(
+            expect((await getUserBalances(db, devId)).devBalance).toBe(
                 0,
             );
         });
 
-        test("BYOP request: bills baseline+markup, credits creator_balance", async () => {
-            const { db, payerId, creatorId, pkId } =
-                await setupPayerAndCreator();
+        test("BYOP request: bills baseline+markup, credits dev_balance", async () => {
+            const { db, payerId, devId, pkId } =
+                await setupPayerAndDev();
 
             const { markup } = await handleBalanceDeduction({
                 db,
@@ -280,21 +280,21 @@ describe("BYOP markup", () => {
             });
 
             expect(markup).not.toBeNull();
-            expect(markup?.creatorUserId).toBe(creatorId);
-            expect(markup?.creatorCredit).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+            expect(markup?.devUserId).toBe(devId);
+            expect(markup?.devCredit).toBeCloseTo(BYOP_MARKUP_PCT, 10);
 
             // Payer loses baseline + markup from tier_balance
             expect(
                 (await getUserBalances(db, payerId)).tierBalance,
             ).toBeCloseTo(2 - 1 - BYOP_MARKUP_PCT, 10);
 
-            // Creator's creator_balance (not pack_balance) gets the markup
-            const creator = await getUserBalances(db, creatorId);
-            expect(creator.creatorBalance).toBeCloseTo(BYOP_MARKUP_PCT, 10);
-            expect(creator.packBalance).toBe(0);
+            // Dev's dev_balance (not pack_balance) gets the markup
+            const dev = await getUserBalances(db, devId);
+            expect(dev.devBalance).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+            expect(dev.packBalance).toBe(0);
         });
 
-        test("self-dealing: creator == payer still gets markup credited", async () => {
+        test("self-dealing: dev == payer still gets markup credited", async () => {
             const db = drizzle(env.DB);
             const userId = "test-self-deal";
             const pkId = "pk_self_deal";
@@ -310,7 +310,7 @@ describe("BYOP markup", () => {
                 name: userId,
                 tier: "flower",
                 tierBalance: 2,
-                creatorBalance: 0,
+                devBalance: 0,
                 cryptoBalance: 0,
                 packBalance: 0,
                 createdAt: new Date(),
@@ -335,14 +335,14 @@ describe("BYOP markup", () => {
             });
 
             const b = await getUserBalances(db, userId);
-            // Net: -1 - markup from tier, +markup to creator (tier → creator conversion)
+            // Net: -1 - markup from tier, +markup to dev (tier → dev conversion)
             expect(b.tierBalance).toBeCloseTo(2 - 1 - BYOP_MARKUP_PCT, 10);
-            expect(b.creatorBalance).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+            expect(b.devBalance).toBeCloseTo(BYOP_MARKUP_PCT, 10);
         });
 
         test("cache hit / unbilled: no credit, no deduction", async () => {
-            const { db, payerId, creatorId, pkId } =
-                await setupPayerAndCreator();
+            const { db, payerId, devId, pkId } =
+                await setupPayerAndDev();
 
             const { markup } = await handleBalanceDeduction({
                 db,
@@ -354,15 +354,15 @@ describe("BYOP markup", () => {
 
             expect(markup).toBeNull();
             expect((await getUserBalances(db, payerId)).tierBalance).toBe(2);
-            expect((await getUserBalances(db, creatorId)).creatorBalance).toBe(
+            expect((await getUserBalances(db, devId)).devBalance).toBe(
                 0,
             );
         });
 
         test("unknown pk_: markup=null, payer billed baseline only", async () => {
             // Sk_ carries a clientId that resolves to no pk_ row.
-            // resolveCreatorMarkup returns null, no markup is levied, payer
-            // pays baseline. Event will record creator_credit=0.
+            // resolveDevMarkup returns null, no markup is levied, payer
+            // pays baseline. Event will record dev_credit=0.
             const db = drizzle(env.DB);
             const payerId = "test-payer-unknown-pk";
 
@@ -391,8 +391,8 @@ describe("BYOP markup", () => {
             ).toBeCloseTo(2 - 1, 10);
         });
 
-        test("reverts creator credit when payer deduction fails", async () => {
-            const { db, creatorId, pkId } = await setupPayerAndCreator();
+        test("reverts dev credit when payer deduction fails", async () => {
+            const { db, devId, pkId } = await setupPayerAndDev();
 
             await expect(
                 handleBalanceDeduction({
@@ -404,7 +404,7 @@ describe("BYOP markup", () => {
                 }),
             ).rejects.toThrow(/affected 0 rows/);
 
-            expect((await getUserBalances(db, creatorId)).creatorBalance).toBe(
+            expect((await getUserBalances(db, devId)).devBalance).toBe(
                 0,
             );
         });

@@ -26,7 +26,7 @@ import type { ModelPrice } from "./types.ts";
 type ModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
-    creatorBalance?: number;
+    devBalance?: number;
     packBalance?: number;
     cryptoBalance?: number;
 };
@@ -34,7 +34,7 @@ type ModelRowProps = {
 export const ModelRow: FC<ModelRowProps> = ({
     model,
     tierBalance,
-    creatorBalance,
+    devBalance,
     packBalance,
     cryptoBalance,
 }) => {
@@ -52,7 +52,7 @@ export const ModelRow: FC<ModelRowProps> = ({
 
     const isSignedIn = packBalance !== undefined;
     const nonTierBalance =
-        toFinitePollen(creatorBalance) +
+        toFinitePollen(devBalance) +
         toFinitePollen(packBalance) +
         toFinitePollen(cryptoBalance);
     const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;

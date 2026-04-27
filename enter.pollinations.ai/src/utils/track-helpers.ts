@@ -3,7 +3,7 @@ import type { ModelName } from "@shared/registry/registry.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { BYOP_MARKUP_PCT, computeCreatorCredit } from "@/billing-config.ts";
+import { BYOP_MARKUP_PCT, computeDevCredit } from "@/billing-config.ts";
 import { apikey as apikeyTable } from "@/db/schema/better-auth.ts";
 import {
     atomicAdjustUserBalance,
@@ -18,8 +18,8 @@ import {
 const log = getLogger(["track", "helpers"]);
 
 export type MarkupResolution = {
-    creatorUserId: string;
-    creatorCredit: number;
+    devUserId: string;
+    devCredit: number;
     markupPct: number;
 };
 
@@ -35,16 +35,16 @@ interface DeductionParams {
 }
 
 /**
- * Resolves the creator user id from a BYOP sk_ token's clientId (= pk_ row id).
+ * Resolves the dev user id from a BYOP sk_ token's clientId (= pk_ row id).
  * Returns null if the clientId is missing, invalid, or the pk_ row can't be found.
  */
-export async function resolveCreatorMarkup(
+export async function resolveDevMarkup(
     db: DrizzleD1Database,
     apiKeyClientId: string | undefined,
     baselinePrice: number,
 ): Promise<MarkupResolution | null> {
     if (!apiKeyClientId) return null;
-    const credit = computeCreatorCredit(baselinePrice);
+    const credit = computeDevCredit(baselinePrice);
     if (credit <= 0) return null;
 
     const [clientRow] = await db
@@ -56,22 +56,22 @@ export async function resolveCreatorMarkup(
     if (!clientRow?.userId) return null;
 
     return {
-        creatorUserId: clientRow.userId,
-        creatorCredit: credit,
+        devUserId: clientRow.userId,
+        devCredit: credit,
         markupPct: BYOP_MARKUP_PCT,
     };
 }
 
 /**
- * Handles balance deduction and BYOP creator credit for billable requests.
+ * Handles balance deduction and BYOP dev credit for billable requests.
  *
  * Non-BYOP: deduct baseline from payer + api key budget.
  * BYOP (apiKeyClientId present): deduct billed (baseline × 1+markup) from payer
- * and api key budget; credit markup to creator's creator_balance.
+ * and api key budget; credit markup to dev's dev_balance.
  *
  * Returns the applied markup (if any) so the caller can record it on the
  * generation event. On any billing failure this throws after best-effort
- * compensation so the event is not emitted with a misleading creator credit.
+ * compensation so the event is not emitted with a misleading dev credit.
  */
 export async function handleBalanceDeduction(
     params: DeductionParams,
@@ -89,31 +89,31 @@ export async function handleBalanceDeduction(
 
     if (!isBilledUsage || !totalPrice) return { markup: null };
 
-    const resolved = await resolveCreatorMarkup(db, apiKeyClientId, totalPrice);
-    let creatorCredited = false;
+    const resolved = await resolveDevMarkup(db, apiKeyClientId, totalPrice);
+    let devCredited = false;
     let markup: MarkupResolution | null = resolved;
     if (resolved) {
         try {
             const { ok } = await atomicCreditUserBalance(
                 db,
-                resolved.creatorUserId,
-                "creator",
-                resolved.creatorCredit,
+                resolved.devUserId,
+                "dev",
+                resolved.devCredit,
             );
             if (!ok) {
                 log.error(
-                    "Creator credit UPDATE affected 0 rows for {creatorUserId} — creator row missing, skipping markup",
-                    { creatorUserId: resolved.creatorUserId },
+                    "Dev credit UPDATE affected 0 rows for {devUserId} — dev row missing, skipping markup",
+                    { devUserId: resolved.devUserId },
                 );
                 markup = null;
             } else {
-                creatorCredited = true;
+                devCredited = true;
             }
         } catch (error) {
             log.error(
-                "Creator credit failed for {creatorUserId}: {error} — skipping markup",
+                "Dev credit failed for {devUserId}: {error} — skipping markup",
                 {
-                    creatorUserId: resolved.creatorUserId,
+                    devUserId: resolved.devUserId,
                     error: error instanceof Error ? error.message : error,
                 },
             );
@@ -121,7 +121,7 @@ export async function handleBalanceDeduction(
         }
     }
 
-    const billedPrice = totalPrice + (markup?.creatorCredit ?? 0);
+    const billedPrice = totalPrice + (markup?.devCredit ?? 0);
 
     try {
         // Handle API key budget deduction — docks the full billed amount since
@@ -136,23 +136,23 @@ export async function handleBalanceDeduction(
             await deductUserBalance(db, userId, billedPrice, modelResolved);
         }
     } catch (error) {
-        if (creatorCredited && resolved) {
+        if (devCredited && resolved) {
             try {
                 await atomicAdjustUserBalance(
                     db,
-                    resolved.creatorUserId,
-                    "creator",
-                    -resolved.creatorCredit,
+                    resolved.devUserId,
+                    "dev",
+                    -resolved.devCredit,
                 );
                 log.warn(
-                    "Reverted creator credit for {creatorUserId} after payer debit failure",
-                    { creatorUserId: resolved.creatorUserId },
+                    "Reverted dev credit for {devUserId} after payer debit failure",
+                    { devUserId: resolved.devUserId },
                 );
             } catch (revertError) {
                 log.error(
-                    "Failed to revert creator credit for {creatorUserId}: {error}",
+                    "Failed to revert dev credit for {devUserId}: {error}",
                     {
-                        creatorUserId: resolved.creatorUserId,
+                        devUserId: resolved.devUserId,
                         error:
                             revertError instanceof Error
                                 ? revertError.message
@@ -166,10 +166,10 @@ export async function handleBalanceDeduction(
 
     if (markup) {
         log.debug(
-            "Credited {credit} pollen to creator {creatorUserId} (markup={pct}%)",
+            "Credited {credit} pollen to dev {devUserId} (markup={pct}%)",
             {
-                credit: markup.creatorCredit,
-                creatorUserId: markup.creatorUserId,
+                credit: markup.devCredit,
+                devUserId: markup.devUserId,
                 pct: (markup.markupPct * 100).toFixed(0),
             },
         );
@@ -262,7 +262,7 @@ async function deductUserBalance(
     }
 
     log.debug(
-        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, creator: -{fromCreator}, crypto: -{fromCrypto}, pack: -{fromPack})",
+        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, dev: -{fromDev}, crypto: -{fromCrypto}, pack: -{fromPack})",
         {
             price: amount,
             userId,

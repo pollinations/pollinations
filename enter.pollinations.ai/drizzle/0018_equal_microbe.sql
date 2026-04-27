@@ -1,1 +1,0 @@
-ALTER TABLE `user` ADD `creator_balance` real;

@@ -178,10 +178,10 @@ export const track = (eventType: EventType) =>
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
 
-                // Deduct payer + credit creator BEFORE emitting the event so
-                // creator_credit on the event reflects the ledger, not our intent.
+                // Deduct payer + credit dev BEFORE emitting the event so
+                // dev_credit on the event reflects the ledger, not our intent.
                 // If the credit fails, handleBalanceDeduction returns markup=null
-                // and the event records creator_credit=0.
+                // and the event records dev_credit=0.
                 const { markup } = await handleBalanceDeduction({
                     db,
                     isBilledUsage: responseTracking.isBilledUsage,
@@ -220,7 +220,7 @@ export const track = (eventType: EventType) =>
                         '  selectedMeterSlug="{event.selectedMeterSlug}"',
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
-                        "  creatorCredit={event.creatorCredit}",
+                        "  devCredit={event.devCredit}",
                     ].join("\n"),
                     { event: finalEvent },
                 );
@@ -493,7 +493,7 @@ function createTrackingEvent({
         totalCost: responseTracking.cost?.totalCost || 0,
         totalPrice: responseTracking.price?.totalPrice || 0,
 
-        creatorCredit: markup?.creatorCredit ?? 0,
+        devCredit: markup?.devCredit ?? 0,
         byopMarkupPct: markup?.markupPct ?? 0,
 
         ...responseTracking.contentFilterResults,

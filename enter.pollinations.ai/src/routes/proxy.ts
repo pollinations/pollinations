@@ -234,7 +234,7 @@ function hasPaidBalance(c: any): boolean | undefined {
     const user = c.var?.auth?.user;
     if (!user) return undefined;
     return (
-        (user.creatorBalance ?? 0) > 0 ||
+        (user.devBalance ?? 0) > 0 ||
         (user.packBalance ?? 0) > 0 ||
         (user.cryptoBalance ?? 0) > 0
     );

@@ -81,8 +81,8 @@ export type TinybirdEvent = {
     totalCost: number;
     totalPrice: number;
 
-    // BYOP creator markup (populated when request was authenticated by a BYOP sk_)
-    creatorCredit?: number;
+    // BYOP dev markup (populated when request was authenticated by a BYOP sk_)
+    devCredit?: number;
     byopMarkupPct?: number;
 
     // Prompt Moderation

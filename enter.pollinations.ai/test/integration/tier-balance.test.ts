@@ -792,11 +792,10 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(200);
         });
 
-        test("atomicDeductPaidBalance should skip tier and prefer dev over pack", async () => {
+        test("atomicDeductPaidBalance bills pack only (tier and dev untouched)", async () => {
             const db = drizzle(env.DB);
             const userId = "test-paid-deduct";
 
-            // Setup user with tier, dev, and pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -819,29 +818,26 @@ describe("Tier Balance Management", () => {
                     },
                 });
 
-            // Deduct 2 pollen using paid-only deduction (all from dev)
+            // Paid-only never touches tier or dev — pack only.
             await atomicDeductPaidBalance(db, userId, 2);
 
             let balances = await getUserBalances(db, userId);
-            expect(balances.tierBalance).toBe(10); // Unchanged - tier is skipped
-            expect(balances.devBalance).toBe(0); // 2 - 2
-            expect(balances.packBalance).toBe(5); // Unchanged
+            expect(balances.tierBalance).toBe(10);
+            expect(balances.devBalance).toBe(2);
+            expect(balances.packBalance).toBe(3);
 
-            // Deduct 4 more (dev empty → all from pack)
             await atomicDeductPaidBalance(db, userId, 4);
 
             balances = await getUserBalances(db, userId);
-            expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.devBalance).toBe(0); // Unchanged
-            expect(balances.packBalance).toBe(1); // 5 - 4
+            expect(balances.tierBalance).toBe(10);
+            expect(balances.devBalance).toBe(2);
+            expect(balances.packBalance).toBe(-1); // pack can go negative
 
-            // Deduct 7 more (dev still empty → all from pack, goes negative)
-            await atomicDeductPaidBalance(db, userId, 7);
-
+            // Even with positive dev, paid-only still drains only pack.
+            await atomicDeductPaidBalance(db, userId, 1);
             balances = await getUserBalances(db, userId);
-            expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.devBalance).toBe(0); // Unchanged
-            expect(balances.packBalance).toBe(-6); // 1 - 7 (goes negative)
+            expect(balances.devBalance).toBe(2);
+            expect(balances.packBalance).toBe(-2);
         });
 
         test("should show paid_only field in model info", async () => {
@@ -905,7 +901,7 @@ describe("Tier Balance Management", () => {
             expect(claudeLarge.paid_only).toBe(true);
         });
 
-        test("should show paid_only models when user has Dev earnings", async ({
+        test("should hide paid_only models when user has only Dev earnings (no pack)", async ({
             apiKey,
             sessionToken,
         }) => {
@@ -937,11 +933,11 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(200);
             const models = (await response.json()) as any[];
 
+            // Dev earnings cannot unlock paid-only models — only pack does.
             const claudeLarge = models.find(
                 (m: any) => m.name === "claude-large",
             );
-            expect(claudeLarge).toBeDefined();
-            expect(claudeLarge.paid_only).toBe(true);
+            expect(claudeLarge).toBeUndefined();
         });
 
         test("should show all models including paid_only when unauthenticated", async () => {

@@ -491,7 +491,11 @@ function createTrackingEvent({
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
-        totalPrice: responseTracking.price?.totalPrice || 0,
+        // totalPrice = what the user was billed (baseline + BYOP markup if any).
+        // totalCost stays at provider cost — no markup.
+        totalPrice:
+            (responseTracking.price?.totalPrice || 0) +
+            (markup?.devCredit ?? 0),
 
         devCredit: markup?.devCredit ?? 0,
         byopMarkupPct: markup?.markupPct ?? 0,

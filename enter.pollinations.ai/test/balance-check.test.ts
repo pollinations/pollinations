@@ -12,7 +12,7 @@ describe("getAvailableBalance", () => {
         ).toBeCloseTo(0.45);
     });
 
-    it("excludes only tier for paid-only models", () => {
+    it("counts only pack for paid-only models (dev not spendable)", () => {
         expect(
             getAvailableBalance(
                 {
@@ -22,7 +22,20 @@ describe("getAvailableBalance", () => {
                 },
                 true,
             ),
-        ).toBeCloseTo(2.5);
+        ).toBeCloseTo(0.5);
+    });
+
+    it("returns 0 for paid-only when only dev/tier are positive", () => {
+        expect(
+            getAvailableBalance(
+                {
+                    tierBalance: 10,
+                    devBalance: 5,
+                    packBalance: 0,
+                },
+                true,
+            ),
+        ).toBe(0);
     });
 
     it("ignores negative buckets", () => {

@@ -175,9 +175,9 @@ export function identifyDeductionSource(
 }
 
 /**
- * Atomically deducts pollen from non-tier balances only.
- * Picks the first positive bucket: dev → pack.
- * Full amount from one bucket.
+ * Atomically deducts pollen for paid-only models.
+ * Paid-only models bill pack_balance only — dev_balance (BYOP earnings) and
+ * tier_balance (free allowance) are not spendable on paid-only workloads.
  */
 export async function atomicDeductPaidBalance(
     db: DrizzleD1Database,
@@ -188,15 +188,7 @@ export async function atomicDeductPaidBalance(
 
     const result = await db.run(sql`
 		UPDATE ${userTable}
-		SET
-			dev_balance = CASE
-				WHEN COALESCE(dev_balance, 0) > 0 THEN COALESCE(dev_balance, 0) - ${amount}
-				ELSE dev_balance
-			END,
-			pack_balance = CASE
-				WHEN COALESCE(dev_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
-				ELSE pack_balance
-			END
+		SET pack_balance = COALESCE(pack_balance, 0) - ${amount}
 		WHERE id = ${userId}
 	`);
 

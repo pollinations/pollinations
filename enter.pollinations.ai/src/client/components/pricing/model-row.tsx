@@ -49,10 +49,14 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const nonTierBalance =
-        toFinitePollen(devBalance) + toFinitePollen(packBalance);
-    const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;
-    const effectiveBalance = showPaidOnly ? nonTierBalance : totalBalance;
+    const totalBalance =
+        toFinitePollen(tierBalance) +
+        toFinitePollen(devBalance) +
+        toFinitePollen(packBalance);
+    // Paid-only models can only be paid with pack balance.
+    const effectiveBalance = showPaidOnly
+        ? toFinitePollen(packBalance)
+        : totalBalance;
 
     const genPerPollen = calculatePerPollen(model);
     const balanceRequests = isSignedIn

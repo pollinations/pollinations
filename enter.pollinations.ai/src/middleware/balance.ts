@@ -17,7 +17,7 @@ type BalanceCheckResult = {
 
 /**
  * Get the total available balance across relevant buckets.
- * For paid-only models: dev + pack.
+ * For paid-only models: pack only (dev_balance is not spendable on paid-only).
  * For regular models: tier + dev + pack (only positive buckets).
  */
 export function getAvailableBalance(
@@ -25,9 +25,7 @@ export function getAvailableBalance(
     isPaidOnly = false,
 ): number {
     if (isPaidOnly) {
-        return (
-            Math.max(0, balances.devBalance) + Math.max(0, balances.packBalance)
-        );
+        return Math.max(0, balances.packBalance);
     }
     return (
         Math.max(0, balances.tierBalance) +
@@ -96,15 +94,13 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     };
 
     // Mirror the priority used by atomicDeductUserBalance:
-    // tier → dev → pack (paid-only skips only tier).
+    // regular: tier → dev → pack
+    // paid-only: pack only
     const determineBalanceSource = (
         balances: UserBalance,
         isPaidOnly = false,
     ): { source: string; slug: string } => {
         if (isPaidOnly) {
-            if (balances.devBalance > 0) {
-                return { source: "dev", slug: "v1:meter:dev" };
-            }
             return { source: "pack", slug: "v1:meter:pack" };
         }
 
@@ -160,26 +156,19 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const requirePaidBalance = async (userId: string, message?: string) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
-        const hasPositivePaidBalance =
-            balances.devBalance > 0 || balances.packBalance > 0;
-
         log.debug(
-            "Non-tier balance check for user {userId}: dev={devBalance}, pack={packBalance}",
-            {
-                userId,
-                devBalance: balances.devBalance,
-                packBalance: balances.packBalance,
-            },
+            "Pack balance check for user {userId}: pack={packBalance}",
+            { userId, packBalance: balances.packBalance },
         );
 
-        if (hasPositivePaidBalance) {
+        if (balances.packBalance > 0) {
             const { source, slug } = determineBalanceSource(balances, true);
             c.var.balance.balanceCheckResult = {
                 selectedMeterId: `local:${source}`,
                 selectedMeterSlug: slug,
                 balances: {
                     "v1:meter:tier": 0,
-                    "v1:meter:dev": balances.devBalance,
+                    "v1:meter:dev": 0,
                     "v1:meter:pack": balances.packBalance,
                 },
             };
@@ -189,7 +178,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         throw new HTTPException(402, {
             message:
                 message ||
-                "This model requires 💳 Top-up Pollen or 🌻 Dev earnings. 🌱 Tier Pollen cannot be used.",
+                "This model requires 💳 Top-up Pollen. 🌱 Tier Pollen and 🌻 Dev earnings cannot be used.",
         });
     };
 

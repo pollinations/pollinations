@@ -248,10 +248,15 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const nonTierBalance =
-        toFinitePollen(devBalance) + toFinitePollen(packBalance);
-    const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;
-    const effectiveBalance = showPaidOnly ? nonTierBalance : totalBalance;
+    const totalBalance =
+        toFinitePollen(tierBalance) +
+        toFinitePollen(devBalance) +
+        toFinitePollen(packBalance);
+    // Paid-only models can only be paid with pack balance; dev earnings and
+    // tier allowance are not spendable on paid-only workloads.
+    const effectiveBalance = showPaidOnly
+        ? toFinitePollen(packBalance)
+        : totalBalance;
 
     const perPollen = calculatePerPollen(model);
     const balanceRequests = isSignedIn

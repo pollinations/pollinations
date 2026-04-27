@@ -170,7 +170,10 @@ export const callComfyUI = async (
             if (process.env.ENTER_TOKEN) {
                 headers["x-enter-token"] = process.env.ENTER_TOKEN;
             }
-            
+            if (process.env.PLN_GPU_TOKEN) {
+                headers["x-backend-token"] = process.env.PLN_GPU_TOKEN;
+            }
+
             response = await fetchFunction({
                 method: "POST",
                 headers,

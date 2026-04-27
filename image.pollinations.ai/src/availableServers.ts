@@ -222,6 +222,21 @@ export const handleRegisterEndpoint = (
     res: ServerResponse,
 ) => {
     if (req.method === "POST") {
+        const expectedToken = process.env.PLN_GPU_TOKEN;
+        if (expectedToken) {
+            const provided = req.headers["x-backend-token"];
+            if (provided !== expectedToken) {
+                res.statusCode = 403;
+                res.end(
+                    JSON.stringify({ success: false, message: "Unauthorized" }),
+                );
+                return;
+            }
+        } else {
+            logError(
+                "PLN_GPU_TOKEN not set - /register accepting unauthenticated POSTs",
+            );
+        }
         let body = "";
         req.on("data", (chunk) => {
             body += chunk.toString();

@@ -45,57 +45,112 @@ describe("BYOP markup", () => {
     });
 
     describe("resolveDevMarkup", () => {
-        test("returns null when clientId missing", async () => {
-            const db = drizzle(env.DB);
-            expect(await resolveDevMarkup(db, undefined, 1)).toBeNull();
-            expect(await resolveDevMarkup(db, "", 1)).toBeNull();
-        });
-
-        test("returns null when baseline price is 0", async () => {
-            const db = drizzle(env.DB);
-            expect(await resolveDevMarkup(db, "pk_doesnotexist", 0)).toBeNull();
-        });
-
-        test("returns null when pk_ row doesn't exist", async () => {
-            const db = drizzle(env.DB);
-            expect(await resolveDevMarkup(db, "pk_doesnotexist", 1)).toBeNull();
-        });
-
-        test("returns markup resolution when pk_ row exists", async () => {
+        async function setupResolveFixture(payerTier: string) {
             const db = drizzle(env.DB);
             const devId = "test-creator-resolve";
+            const payerId = "test-payer-resolve";
             const pkId = "pk_test_resolve";
 
             await db
-                .insert(userTable)
-                .values({
+                .delete(userTable)
+                .where(sql`${userTable.id} IN (${devId}, ${payerId})`);
+            await db
+                .delete(apikeyTable)
+                .where(sql`${apikeyTable.id} = ${pkId}`);
+
+            await db.insert(userTable).values([
+                {
                     id: devId,
                     email: `${devId}@test.com`,
                     name: devId,
                     tier: "spore",
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                })
-                .onConflictDoNothing();
-
-            await db
-                .insert(apikeyTable)
-                .values({
-                    id: pkId,
-                    userId: devId,
-                    name: "test-app",
-                    key: `hashed-${pkId}`,
-                    enabled: true,
+                },
+                {
+                    id: payerId,
+                    email: `${payerId}@test.com`,
+                    name: payerId,
+                    tier: payerTier,
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                })
-                .onConflictDoNothing();
+                },
+            ]);
 
-            const result = await resolveDevMarkup(db, pkId, 4);
+            await db.insert(apikeyTable).values({
+                id: pkId,
+                userId: devId,
+                name: "test-app",
+                key: `hashed-${pkId}`,
+                enabled: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+
+            return { db, devId, payerId, pkId };
+        }
+
+        test("returns null when clientId missing", async () => {
+            const db = drizzle(env.DB);
+            expect(await resolveDevMarkup(db, undefined, 1, "u")).toBeNull();
+            expect(await resolveDevMarkup(db, "", 1, "u")).toBeNull();
+        });
+
+        test("returns null when payer userId missing", async () => {
+            const db = drizzle(env.DB);
+            expect(await resolveDevMarkup(db, "pk_x", 1, undefined)).toBeNull();
+        });
+
+        test("returns null when baseline price is 0", async () => {
+            const db = drizzle(env.DB);
+            expect(
+                await resolveDevMarkup(db, "pk_doesnotexist", 0, "u"),
+            ).toBeNull();
+        });
+
+        test("returns null when pk_ row doesn't exist", async () => {
+            const db = drizzle(env.DB);
+            expect(
+                await resolveDevMarkup(db, "pk_doesnotexist", 1, "u"),
+            ).toBeNull();
+        });
+
+        test("returns markup resolution when payer is spore", async () => {
+            const { db, devId, payerId, pkId } =
+                await setupResolveFixture("spore");
+            const result = await resolveDevMarkup(db, pkId, 4, payerId);
             expect(result).not.toBeNull();
             expect(result?.devUserId).toBe(devId);
             expect(result?.devCredit).toBeCloseTo(4 * BYOP_MARKUP_PCT, 10);
             expect(result?.markupPct).toBe(BYOP_MARKUP_PCT);
+        });
+
+        test("returns markup resolution when payer is microbe", async () => {
+            const { db, payerId, pkId } = await setupResolveFixture("microbe");
+            const result = await resolveDevMarkup(db, pkId, 4, payerId);
+            expect(result).not.toBeNull();
+        });
+
+        test("returns null when payer is seed (non-eligible tier)", async () => {
+            const { db, payerId, pkId } = await setupResolveFixture("seed");
+            expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
+        });
+
+        test("returns null when payer is flower (non-eligible tier)", async () => {
+            const { db, payerId, pkId } = await setupResolveFixture("flower");
+            expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
+        });
+
+        test("returns null when payer == dev (self-dealing)", async () => {
+            const { db, devId, pkId } = await setupResolveFixture("spore");
+            expect(await resolveDevMarkup(db, pkId, 4, devId)).toBeNull();
+        });
+
+        test("returns null when payer row not found", async () => {
+            const { db, pkId } = await setupResolveFixture("spore");
+            expect(
+                await resolveDevMarkup(db, pkId, 4, "missing-payer"),
+            ).toBeNull();
         });
     });
 
@@ -199,7 +254,7 @@ describe("BYOP markup", () => {
                     id: payerId,
                     email: `${payerId}@test.com`,
                     name: payerId,
-                    tier: "flower",
+                    tier: "spore",
                     tierBalance: 2,
                     devBalance: 0,
                     packBalance: 0,
@@ -274,7 +329,7 @@ describe("BYOP markup", () => {
             expect(dev.packBalance).toBe(0);
         });
 
-        test("self-dealing: dev == payer still gets markup credited", async () => {
+        test("self-dealing: dev == payer → no markup, baseline only", async () => {
             const db = drizzle(env.DB);
             const userId = "test-self-deal";
             const pkId = "pk_self_deal";
@@ -288,7 +343,7 @@ describe("BYOP markup", () => {
                 id: userId,
                 email: `${userId}@test.com`,
                 name: userId,
-                tier: "flower",
+                tier: "spore",
                 tierBalance: 2,
                 devBalance: 0,
                 packBalance: 0,
@@ -305,7 +360,7 @@ describe("BYOP markup", () => {
                 updatedAt: new Date(),
             });
 
-            await handleBalanceDeduction({
+            const { markup } = await handleBalanceDeduction({
                 db,
                 isBilledUsage: true,
                 totalPrice: 1,
@@ -313,10 +368,52 @@ describe("BYOP markup", () => {
                 apiKeyClientId: pkId,
             });
 
+            expect(markup).toBeNull();
             const b = await getUserBalances(db, userId);
-            // Net: -1 - markup from tier, +markup to dev (tier → dev conversion)
-            expect(b.tierBalance).toBeCloseTo(2 - 1 - BYOP_MARKUP_PCT, 10);
-            expect(b.devBalance).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+            // No markup levied: only baseline debited, no dev credit.
+            expect(b.tierBalance).toBeCloseTo(2 - 1, 10);
+            expect(b.devBalance).toBe(0);
+        });
+
+        test("non-eligible payer tier (seed): no markup, baseline only", async () => {
+            const { db, payerId, devId, pkId } = await setupPayerAndDev();
+            await db
+                .update(userTable)
+                .set({ tier: "seed" })
+                .where(sql`${userTable.id} = ${payerId}`);
+
+            const { markup } = await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 1,
+                userId: payerId,
+                apiKeyClientId: pkId,
+            });
+
+            expect(markup).toBeNull();
+            expect(
+                (await getUserBalances(db, payerId)).tierBalance,
+            ).toBeCloseTo(2 - 1, 10);
+            expect((await getUserBalances(db, devId)).devBalance).toBe(0);
+        });
+
+        test("sybil ring guard: spore-tier ring members can still attribute, but only across distinct users", async () => {
+            // Documents the residual policy: spore A pays via spore B's app →
+            // markup credited (intended monetization). What this test
+            // verifies is that the gate fires on tier + identity, not on any
+            // anti-collusion heuristic — collusion detection is out of scope.
+            const { db, payerId, devId, pkId } = await setupPayerAndDev();
+
+            const { markup } = await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 1,
+                userId: payerId,
+                apiKeyClientId: pkId,
+            });
+
+            expect(markup).not.toBeNull();
+            expect(markup?.devUserId).toBe(devId);
         });
 
         test("cache hit / unbilled: no credit, no deduction", async () => {

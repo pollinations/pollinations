@@ -3,8 +3,15 @@ import type { ModelName } from "@shared/registry/registry.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { BYOP_MARKUP_PCT, computeDevCredit } from "@/billing-config.ts";
-import { apikey as apikeyTable } from "@/db/schema/better-auth.ts";
+import {
+    BYOP_MARKUP_PCT,
+    computeDevCredit,
+    isMarkupEligiblePayerTier,
+} from "@/billing-config.ts";
+import {
+    apikey as apikeyTable,
+    user as userTable,
+} from "@/db/schema/better-auth.ts";
 import {
     atomicAdjustUserBalance,
     atomicCreditUserBalance,
@@ -36,14 +43,21 @@ interface DeductionParams {
 
 /**
  * Resolves the dev user id from a BYOP sk_ token's clientId (= pk_ row id).
- * Returns null if the clientId is missing, invalid, or the pk_ row can't be found.
+ * Returns null when markup must not be levied:
+ *  - clientId missing / invalid / pk_ row not found
+ *  - baseline price is zero
+ *  - payer is the same user as the dev (self-dealing)
+ *  - payer's tier is not user-facing (only microbe/spore are eligible —
+ *    blocks dev/business accounts from cycling spend into dev_balance via
+ *    coordinated rings)
  */
 export async function resolveDevMarkup(
     db: DrizzleD1Database,
     apiKeyClientId: string | undefined,
     baselinePrice: number,
+    payerUserId: string | undefined,
 ): Promise<MarkupResolution | null> {
-    if (!apiKeyClientId) return null;
+    if (!apiKeyClientId || !payerUserId) return null;
     const credit = computeDevCredit(baselinePrice);
     if (credit <= 0) return null;
 
@@ -54,6 +68,17 @@ export async function resolveDevMarkup(
         .limit(1);
 
     if (!clientRow?.userId) return null;
+    if (clientRow.userId === payerUserId) return null;
+
+    const [payerRow] = await db
+        .select({ tier: userTable.tier })
+        .from(userTable)
+        .where(eq(userTable.id, payerUserId))
+        .limit(1);
+
+    if (!payerRow?.tier || !isMarkupEligiblePayerTier(payerRow.tier)) {
+        return null;
+    }
 
     return {
         devUserId: clientRow.userId,
@@ -89,7 +114,12 @@ export async function handleBalanceDeduction(
 
     if (!isBilledUsage || !totalPrice) return { markup: null };
 
-    const resolved = await resolveDevMarkup(db, apiKeyClientId, totalPrice);
+    const resolved = await resolveDevMarkup(
+        db,
+        apiKeyClientId,
+        totalPrice,
+        userId,
+    );
     let devCredited = false;
     let markup: MarkupResolution | null = resolved;
     if (resolved) {

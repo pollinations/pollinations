@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ALL_MODELS } from "./constants";
-import { getPeriodDates } from "./period-utils.ts";
+import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -136,11 +136,15 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             buckets.set(dateKey, cur);
         });
 
-        const allDates = getPeriodDates(filters.period);
+        const isHourly = filters.period.granularity === "day";
+        const bucketKeys = getPeriodBucketKeys(filters.period);
 
-        const sorted = allDates.map((dateStr) => {
-            const date = new Date(`${dateStr}T00:00:00.000Z`);
-            const d = buckets.get(dateStr) || {
+        const sorted = bucketKeys.map((bucketKey) => {
+            const date = periodBucketKeyToDate(
+                bucketKey,
+                filters.period.granularity,
+            );
+            const d = buckets.get(bucketKey) || {
                 requests: 0,
                 pollen: 0,
                 tierRequests: 0,
@@ -169,17 +173,29 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 filters.metric === "requests" ? "paidRequests" : "paidPollen";
 
             return {
-                label: date.toLocaleDateString("en-US", {
-                    timeZone: "UTC",
-                    month: "short",
-                    day: "numeric",
-                }),
+                label: isHourly
+                    ? date.toLocaleTimeString("en-US", {
+                          timeZone: "UTC",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                      })
+                    : date.toLocaleDateString("en-US", {
+                          timeZone: "UTC",
+                          month: "short",
+                          day: "numeric",
+                      }),
                 fullDate: date.toLocaleDateString("en-US", {
                     timeZone: "UTC",
                     weekday: "short",
                     year: "numeric",
                     month: "short",
                     day: "numeric",
+                    ...(isHourly && {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                    }),
                 }),
                 value: d[filters.metric],
                 tierValue: d[tierKey],

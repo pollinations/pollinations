@@ -623,8 +623,9 @@ https://myapp.com/callback#api_key=sk_xxxxx
 ### App Lookup Endpoint
 
 `GET /api/app-lookup` — resolves app attribution (no auth required):
-- `?app_key=pk_xxx` — direct key lookup
-- `?redirect_url=https://...` — matches against registered `appUrl` values
+- `?app_key=pk_xxx` (or `?client_id=pk_xxx`) — direct key lookup; returns `{ found: false }` if absent
+
+URL-based lookup (matching `redirect_url` against registered `appUrl` values) was removed — identity is derived from `client_id` only, never from the redirect URL. See PR #10447.
 
 ---
 

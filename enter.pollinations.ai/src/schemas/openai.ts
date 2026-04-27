@@ -654,6 +654,26 @@ export const CreateImageResponseSchema = z
     })
     .meta({ $id: "CreateImageResponse" });
 
+// Source image URLs must be http(s) or a data: URI. Rejects file://, gopher://,
+// ssh:// and other schemes at the edge so the image backend never sees them.
+// Backend still re-validates with full SSRF guard (private IP block, redirects).
+const ALLOWED_IMAGE_PROTOCOLS = new Set(["http:", "https:"]);
+const sourceImageUrlString = z
+    .string()
+    .min(1)
+    .max(8192)
+    .refine(
+        (s) => {
+            if (s.startsWith("data:")) return true;
+            try {
+                return ALLOWED_IMAGE_PROTOCOLS.has(new URL(s).protocol);
+            } catch {
+                return false;
+            }
+        },
+        { message: "image must be an http(s) URL or a data: URI" },
+    );
+
 // Schema for JSON-based image edit requests
 // For multipart/form-data requests, parsing is done manually in the route handler
 export const CreateImageEditRequestSchema = z
@@ -663,10 +683,10 @@ export const CreateImageEditRequestSchema = z
         }),
         image: z
             .union([
-                z.string().meta({ description: "Image URL" }),
+                sourceImageUrlString.meta({ description: "Image URL" }),
                 z.array(
                     z.object({
-                        image_url: z.string().meta({
+                        image_url: sourceImageUrlString.meta({
                             description:
                                 "URL or base64 data URI of the source image",
                         }),

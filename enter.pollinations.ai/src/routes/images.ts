@@ -28,6 +28,25 @@ const PASSTHROUGH_PARAMS = [
     "guidance_scale",
 ] as const;
 
+const ALLOWED_IMAGE_PROTOCOLS = new Set(["http:", "https:"]);
+
+/** Cheap edge-side scheme check. Backend re-validates with full SSRF guard. */
+function assertAllowedImageScheme(value: string): void {
+    if (value.startsWith("data:")) return;
+    let parsed: URL;
+    try {
+        parsed = new URL(value);
+    } catch {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "image must be an http(s) URL or a data: URI",
+        });
+    }
+    if (!ALLOWED_IMAGE_PROTOCOLS.has(parsed.protocol))
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `image protocol "${parsed.protocol}" not allowed`,
+        });
+}
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);
     let binaryStr = "";
@@ -142,6 +161,7 @@ async function parseEditInput(c: Context): Promise<{
             ...(formData.getAll("image[]") as (File | string)[]),
         ]) {
             if (typeof entry === "string") {
+                assertAllowedImageScheme(entry);
                 imageUrls.push(entry);
             } else if (entry instanceof File) {
                 const base64 = arrayBufferToBase64(await entry.arrayBuffer());

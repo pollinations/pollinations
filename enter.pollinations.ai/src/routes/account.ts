@@ -720,7 +720,6 @@ export const accountRoutes = new Hono<Env>()
                 .select({
                     tierBalance: userTable.tierBalance,
                     packBalance: userTable.packBalance,
-                    cryptoBalance: userTable.cryptoBalance,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -728,15 +727,11 @@ export const accountRoutes = new Hono<Env>()
 
             const tierBalance = users[0]?.tierBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
-            const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
             // Clamp each bucket at 0 before summing — individual buckets can go negative
             // from overage but shouldn't reduce the visible total
             return c.json({
-                balance:
-                    Math.max(0, tierBalance) +
-                    Math.max(0, packBalance) +
-                    Math.max(0, cryptoBalance),
+                balance: Math.max(0, tierBalance) + Math.max(0, packBalance),
             });
         },
     )

@@ -181,14 +181,14 @@ function filterModelsByPermissions<
     });
 }
 
-// Check if authenticated user has paid balance (pack or crypto > 0)
+// Check if authenticated user has paid balance (pack > 0)
 // Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
 // Returns undefined if no user (unauthenticated), true/false otherwise.
 // biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
 function hasPaidBalance(c: any): boolean | undefined {
     const user = c.var?.auth?.user;
     if (!user) return undefined;
-    return (user.packBalance ?? 0) > 0 || (user.cryptoBalance ?? 0) > 0;
+    return (user.packBalance ?? 0) > 0;
 }
 
 export const proxyRoutes = new Hono<Env>()

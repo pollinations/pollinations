@@ -1,0 +1,35 @@
+{
+  "pr_number": 10508,
+  "title": "Add Frieze to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10508",
+  "merged_at": "2026-04-27T20:38:23Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Art in the terminal",
+    "blurb": "Meet Frieze, a delightfully silly shell tool that generates AI-powered banner images and slogans right in your terminal. Because your command line was looking a little too serious.",
+    "summary": "Added Frieze, a community-built shell tool for generating AI banners and slogans, to the apps showcase.",
+    "impact": "Developers can now discover Frieze in the greenhouse and use it to inject AI-generated art into their terminal sessions.",
+    "keywords": [
+      "community",
+      "app",
+      "terminal",
+      "cli",
+      "frieze",
+      "banner"
+    ],
+    "visual_concept": "A retro terminal displaying a colorful banner. Polly the bee wearing a tiny artist beret, admiring the terminal. The Monitor Robot displaying a banner on its screen head. Represents the 'Frieze' CLI tool bringing art to the shell.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny artist beret, admiring a retro computer terminal that displays a colorful pixelated banner. A chunky robot with a CRT monitor head stands nearby, its screen glowing with a mini artwork. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-27/PR-10508.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny artist beret, admiring a retro computer terminal that displays a colorful pixelated banner. A chunky robot with a CRT monitor head stands nearby, its screen glowing with a mini artwork. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-27T20:39:26.733828+00:00",
+  "app_name": "Frieze",
+  "app_url": "https://github.com/peterjaric/frieze"
+}

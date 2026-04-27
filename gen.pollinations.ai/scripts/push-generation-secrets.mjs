@@ -14,6 +14,7 @@ const REQUIRED_SECRET_KEYS = [
     "PLN_ENTER_TOKEN",
     "PLN_GPU_TOKEN",
     "TINYBIRD_INGEST_TOKEN",
+    "TINYBIRD_READ_TOKEN",
 ];
 
 const [sourcePath, environment] = process.argv.slice(2);

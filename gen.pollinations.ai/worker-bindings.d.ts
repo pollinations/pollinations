@@ -7,7 +7,7 @@ interface CloudflareBindings {
     GITHUB_CLIENT_SECRET: string;
     PLN_ENTER_TOKEN: string;
     TINYBIRD_INGEST_TOKEN: string;
-    TINYBIRD_READ_TOKEN?: string;
+    TINYBIRD_READ_TOKEN: string;
     TINYBIRD_SYNC_TOKEN?: string;
     STRIPE_SECRET_KEY?: string;
     STRIPE_WEBHOOK_SECRET?: string;

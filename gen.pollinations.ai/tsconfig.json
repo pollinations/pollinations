@@ -41,11 +41,6 @@
                 "../enter.pollinations.ai/src/routes/account.ts"
             ],
             "@/tier-config.ts": ["../enter.pollinations.ai/src/tier-config.ts"],
-            "@/util": ["../enter.pollinations.ai/src/util.ts"],
-            "@/util.ts": ["../enter.pollinations.ai/src/util.ts"],
-            "@/utils/api-docs.ts": [
-                "../enter.pollinations.ai/src/utils/api-docs.ts"
-            ],
             "@/utils/model-stats.ts": [
                 "../enter.pollinations.ai/src/utils/model-stats.ts"
             ],

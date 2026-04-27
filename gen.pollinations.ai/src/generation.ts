@@ -5,6 +5,7 @@ import { requestId } from "hono/request-id";
 import type { Env as GenerationEnv } from "@/env.ts";
 import { handleError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
+import { accountRoutes } from "@/routes/account.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
@@ -31,7 +32,8 @@ export function createGenerationApp(): Hono<GenerationEnv> {
             }
         })
         .route("/api/generate", proxyRoutes)
-        .route("/api/generate/v1/audio", audioRoutes);
+        .route("/api/generate/v1/audio", audioRoutes)
+        .route("/api/account", accountRoutes);
 
     app.route("/api/docs", createDocsRoutes(app));
 

@@ -369,6 +369,15 @@ async function fetchTinybirdRows<T>(
     return data.data;
 }
 
+function requireTinybirdReadToken(env: CloudflareBindings): string {
+    if (!env.TINYBIRD_READ_TOKEN) {
+        throw new HTTPException(500, {
+            message: "Tinybird read token is not configured",
+        });
+    }
+    return env.TINYBIRD_READ_TOKEN;
+}
+
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
@@ -791,7 +800,7 @@ export const accountRoutes = new Hono<Env>()
                 period,
             });
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
                 "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
 
@@ -901,7 +910,7 @@ export const accountRoutes = new Hono<Env>()
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
             const cacheKeyPrefix = usageUserOverridden
                 ? `usage:daily:debug:${usageUserId}`
@@ -1349,7 +1358,7 @@ export const accountRoutes = new Hono<Env>()
                 period,
             });
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
                 "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
 

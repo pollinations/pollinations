@@ -60,6 +60,7 @@ describe("docs routes", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
+        expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.components.schemas.EnterOnly).toBeDefined();
     });

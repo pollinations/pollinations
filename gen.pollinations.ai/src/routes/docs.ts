@@ -89,7 +89,7 @@ function generateLLMDoc(): string {
         "",
         "## Account API",
         "",
-        "Account and API-key routes are available through gen and are currently forwarded to enter.pollinations.ai while the control plane migration continues.",
+        "Account and API-key routes are available through gen at /account/*.",
         "",
         "## Authentication",
         "",
@@ -181,7 +181,10 @@ function getGenerationSchema(generationApp: Hono<Env>): Promise<OpenApiSchema> {
 function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
-        const publicPath = path.replace(/^\/api\/generate(?=\/|$)/, "") || "/";
+        const publicPath =
+            path
+                .replace(/^\/api\/generate(?=\/|$)/, "")
+                .replace(/^\/api\/account(?=\/|$)/, "/account") || "/";
         paths[publicPath] = value;
     }
 

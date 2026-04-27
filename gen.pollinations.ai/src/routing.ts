@@ -7,6 +7,7 @@ type RouteDecision =
 export type RouteClass =
     | "generation"
     | "docs"
+    | "account-api"
     | "control-plane-api"
     | "account-ui";
 
@@ -25,6 +26,7 @@ const robotsTxt = [
 
 const GENERATION_API_PREFIX = "/api/generate";
 const DOCS_API_PREFIX = "/api/docs";
+const ACCOUNT_API_PREFIX = "/api/account";
 const API_PREFIX = "/api/";
 const ACCOUNT_PREFIX = "/account";
 
@@ -42,6 +44,14 @@ export function classifyRoute(path: string): RouteClass {
 
     if (path === DOCS_API_PREFIX || path.startsWith(`${DOCS_API_PREFIX}/`)) {
         return "docs";
+    }
+
+    if (
+        path === ACCOUNT_API_PREFIX ||
+        path.startsWith(`${ACCOUNT_API_PREFIX}/`) ||
+        path.startsWith(`${ACCOUNT_PREFIX}/`)
+    ) {
+        return "account-api";
     }
 
     if (path.startsWith(API_PREFIX)) {
@@ -89,6 +99,16 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
 
     if (routeClass === "docs") {
         url.pathname = matchPath;
+        return {
+            kind: "generation",
+            url,
+        };
+    }
+
+    if (routeClass === "account-api") {
+        url.pathname = matchPath.startsWith(`${ACCOUNT_PREFIX}/`)
+            ? `/api${matchPath}`
+            : matchPath;
         return {
             kind: "generation",
             url,

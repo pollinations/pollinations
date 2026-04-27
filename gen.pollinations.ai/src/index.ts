@@ -1,8 +1,8 @@
 /**
  * gen.pollinations.ai - API generation gateway
  *
- * Generation and docs routes are handled in this worker. Account, auth, billing UI,
- * and other non-generation API routes remain owned by enter.pollinations.ai.
+ * Generation, account API, and docs routes are handled in this worker. Auth,
+ * billing UI, and other control-plane routes remain owned by enter.pollinations.ai.
  *
  * URL Mapping:
  *   gen.pollinations.ai/              -> redirect to /api/docs
@@ -10,8 +10,9 @@
  *   gen.pollinations.ai/models        -> /api/generate/text/models
  *   gen.pollinations.ai/api/generate/* -> handled locally
  *   gen.pollinations.ai/api/docs/*    -> handled locally
+ *   gen.pollinations.ai/api/account/* -> handled locally
  *   gen.pollinations.ai/api/*         -> enter.pollinations.ai
- *   gen.pollinations.ai/account/*     -> /api/account/*
+ *   gen.pollinations.ai/account/*     -> /api/account/* handled locally
  *   gen.pollinations.ai/image/*       -> /api/generate/image/*
  *   gen.pollinations.ai/text/*        -> /api/generate/text/*
  *   gen.pollinations.ai/audio/*       -> /api/generate/audio/*

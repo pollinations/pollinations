@@ -10,9 +10,9 @@ describe("resolveRoute", () => {
         expect(classifyRoute("/api/generate/text/hello")).toBe("generation");
         expect(classifyRoute("/image/hello")).toBe("generation");
         expect(classifyRoute("/api/docs")).toBe("docs");
-        expect(classifyRoute("/api/account/keys")).toBe("control-plane-api");
+        expect(classifyRoute("/api/account/keys")).toBe("account-api");
         expect(classifyRoute("/api/auth/session")).toBe("control-plane-api");
-        expect(classifyRoute("/account/keys")).toBe("account-ui");
+        expect(classifyRoute("/account/keys")).toBe("account-api");
     });
 
     it("redirects root and docs to api docs on the same origin", () => {
@@ -93,17 +93,25 @@ describe("resolveRoute", () => {
         expect(account.noIndex).toBe(true);
     });
 
-    it("rewrites account api subpaths and forwards non-generation api routes to enter", () => {
+    it("rewrites account api subpaths locally and forwards other api routes to enter", () => {
         const account = route("/account/keys");
+        const accountApi = route("/api/account/key/");
         const auth = route("/api/auth/session");
 
-        expect(account.kind).toBe("enter");
+        expect(account.kind).toBe("generation");
+        expect(accountApi.kind).toBe("generation");
         expect(auth.kind).toBe("enter");
 
-        if (account.kind !== "enter" || auth.kind !== "enter") return;
+        if (
+            account.kind !== "generation" ||
+            accountApi.kind !== "generation" ||
+            auth.kind !== "enter"
+        ) {
+            return;
+        }
 
         expect(account.url.pathname).toBe("/api/account/keys");
-        expect(account.noIndex).toBe(true);
+        expect(accountApi.url.pathname).toBe("/api/account/key");
         expect(auth.url.pathname).toBe("/api/auth/session");
         expect(auth.noIndex).toBe(true);
     });

@@ -590,9 +590,8 @@ function AuthorizeComponent() {
                             />
                             {attribution?.found && (
                                 <p className="mt-2 text-xs text-amber-800/80">
-                                    BYOP app requests include a 25% markup. App
-                                    developers receive 20% of the total Pollen
-                                    charged.
+                                    20% of what you spend here goes to the app's
+                                    developer.
                                 </p>
                             )}
                         </div>

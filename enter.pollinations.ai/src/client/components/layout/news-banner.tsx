@@ -26,7 +26,7 @@ const PINNED_NEWS: Highlight[] = [
         emoji: "🌻",
         title: "Dev earnings for BYOP",
         description:
-            "BYOP app requests include a 25% markup. App developers receive 20% of the total Pollen charged. [Create an App Key](/#keys)",
+            "Register a BYOP App Key — 20% of what users spend on your app comes back to you as Pollen. [Create an App Key](/#keys)",
     },
 ];
 

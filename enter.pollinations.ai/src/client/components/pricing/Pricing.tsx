@@ -90,11 +90,6 @@ export const Pricing: FC<PricingProps> = ({
                                     for paid-only models) → 🌻 Dev earnings → 💳
                                     Top-up Pollen
                                 </div>
-                                <div>
-                                    - BYOP app requests include a 25% markup and
-                                    developers receive 20% of the total Pollen
-                                    charged
-                                </div>
                             </div>
                         </Card>
                         <Card

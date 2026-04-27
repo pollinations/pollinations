@@ -180,9 +180,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                         BYOP
                                     </a>
                                     <br />
-                                    BYOP app requests include a 25% markup. App
-                                    developers receive 20% of the total Pollen
-                                    charged.
+                                    Earn 20% of every Pollen your users spend
+                                    through your app.
                                 </>
                             ) : (
                                 "Access AI models for text, image, and audio generation."

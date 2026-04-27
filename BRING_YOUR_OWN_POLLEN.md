@@ -12,7 +12,7 @@ Your users connect their Pollinations account to your app and spend their own Po
 Why this is good:
 
 - 💸 **$0 costs** — user usage does not spend your Pollen
-- **🌻 Dev earnings** — BYOP app requests include a 25% markup. App developers receive 20% of the total Pollen charged.
+- **🌻 Dev earnings** — earn 20% of every Pollen your users spend through your app, credited to your wallet
 - 🔐 **Scoped access** — users approve model limits, budget, and expiry
 - 🔑 **No key management** — the auth flow handles it
 - ⚖️ **Self-regulating** — everyone pays for what they use
@@ -28,7 +28,7 @@ An **App Key** is a public app identifier (`pk_...`) you create on [enter.pollin
 |----------------|-------------|
 | Consent screen shows generic hostname | Consent screen shows **your app name + your GitHub** |
 | No traffic attribution | Traffic your app drives is **tracked to your account** |
-| No earnings attribution | App developers receive **20% of the total Pollen charged** |
+| No earnings attribution | You earn **20% of every Pollen** your users spend through your app |
 
 To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → **Create New App Key**:
 

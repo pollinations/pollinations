@@ -1,7 +1,6 @@
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
-import { BYOP_MARKUP_PCT } from "@/billing-config.ts";
 import { cn } from "@/util.ts";
 import { Panel } from "../ui/panel.tsx";
 import { AccountBadge } from "./account-badge.tsx";
@@ -37,11 +36,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-    const devEarningsMarkupPct = Math.round(BYOP_MARKUP_PCT * 100);
-    const devEarningsSharePct = Math.round(
-        (BYOP_MARKUP_PCT / (1 + BYOP_MARKUP_PCT)) * 100,
-    );
-
     return (
         <>
             <div id="keys" className="flex flex-col gap-2 scroll-mt-6">
@@ -90,11 +84,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Register an <strong>App Key</strong> so
                                     users can sign in with their own
                                     Pollinations account — web apps, chatbots,
-                                    CLIs, anything. BYOP app requests include a{" "}
-                                    {`${devEarningsMarkupPct}%`} markup. App
-                                    developers receive{" "}
-                                    {`${devEarningsSharePct}%`} of the total
-                                    Pollen charged.{" "}
+                                    CLIs, anything.{" "}
                                     <a
                                         href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
                                         target="_blank"

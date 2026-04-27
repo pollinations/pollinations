@@ -326,15 +326,15 @@ export const TEXT_SERVICES = {
     },
     "deepseek-pro": {
         aliases: ["deepseek-v4-pro"],
-        modelId: "deepseek-ai/DeepSeek-V4-Pro",
-        provider: "deepinfra",
+        modelId: "accounts/fireworks/models/deepseek-v4-pro",
+        provider: "fireworks",
         brand: "DeepSeek",
         category: "text",
         cost: [
             {
                 date: new Date("2026-04-24").getTime(),
                 promptTextTokens: perMillion(1.74),
-                promptCachedTokens: perMillion(0.145),
+                promptCachedTokens: perMillion(0.14),
                 completionTextTokens: perMillion(3.48),
             },
         ],
@@ -343,7 +343,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 65536,
+        contextLength: 1048576,
         isSpecialized: false,
         paidOnly: true,
     },

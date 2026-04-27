@@ -370,14 +370,6 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(6.0),
             },
         ],
-        price: [
-            {
-                date: new Date("2026-04-27").getTime(),
-                promptTextTokens: perMillion(0),
-                promptCachedTokens: perMillion(0),
-                completionTextTokens: perMillion(0),
-            },
-        ],
         description: "Grok 4.20 Non-Reasoning - High Speed",
         inputModalities: ["text"],
         outputModalities: ["text"],

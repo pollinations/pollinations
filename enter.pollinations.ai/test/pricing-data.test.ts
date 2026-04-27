@@ -27,3 +27,15 @@ test("pricing data still exposes standard models through the default price fallb
         completionTextPrice: "1.25",
     });
 });
+
+test("grok pricing uses its non-zero registry fallback", () => {
+    const grok = getModelPrices().find((price) => price.name === "grok");
+
+    expect(grok).toMatchObject({
+        name: "grok",
+        type: "text",
+        promptTextPrice: "2.0",
+        promptCachedPrice: "0.2",
+        completionTextPrice: "6.0",
+    });
+});

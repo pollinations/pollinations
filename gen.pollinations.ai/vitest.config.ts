@@ -9,6 +9,7 @@ const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 
 const genAliases = [
     "content-filter.ts",
+    "cache",
     "env.ts",
     "middleware/media-cache.ts",
     "middleware/model.ts",
@@ -24,12 +25,12 @@ const genAliases = [
     "utils/api-docs.ts",
     "utils/generation-access.ts",
     "utils/media-cache.ts",
+    "utils/model-stats.ts",
     "utils/text-cache.ts",
 ];
 
 const enterAliases = [
     ["@/auth.ts", "auth.ts"],
-    ["@/cache", "cache.ts"],
     ["@/db/schema/better-auth.ts", "db/schema/better-auth.ts"],
     [
         "@/durable-objects/PollenRateLimiter.ts",
@@ -44,7 +45,6 @@ const enterAliases = [
     ["@/middleware/rate-limit-durable.ts", "middleware/rate-limit-durable.ts"],
     ["@/routes/account.ts", "routes/account.ts"],
     ["@/tier-config.ts", "tier-config.ts"],
-    ["@/utils/model-stats.ts", "utils/model-stats.ts"],
     ["@/utils/track-helpers.ts", "utils/track-helpers.ts"],
 ] as const;
 

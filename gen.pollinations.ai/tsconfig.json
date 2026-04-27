@@ -15,7 +15,6 @@
         "baseUrl": ".",
         "paths": {
             "@/auth.ts": ["../enter.pollinations.ai/src/auth.ts"],
-            "@/cache": ["../enter.pollinations.ai/src/cache.ts"],
             "@/db/schema/better-auth.ts": [
                 "../enter.pollinations.ai/src/db/schema/better-auth.ts"
             ],
@@ -41,9 +40,6 @@
                 "../enter.pollinations.ai/src/routes/account.ts"
             ],
             "@/tier-config.ts": ["../enter.pollinations.ai/src/tier-config.ts"],
-            "@/utils/model-stats.ts": [
-                "../enter.pollinations.ai/src/utils/model-stats.ts"
-            ],
             "@/utils/track-helpers.ts": [
                 "../enter.pollinations.ai/src/utils/track-helpers.ts"
             ],

@@ -7,10 +7,9 @@ import { user as userTable } from "../db/schema/better-auth.ts";
  *
  * - tier: free, hourly-refilled allowance per tier
  * - dev: earnings from BYOP markup on apps the user owns (spendable)
- * - crypto: purchased via NOWPayments, cumulative
  * - pack: purchased via Stripe/Polar, cumulative
  */
-export const BALANCE_BUCKETS = ["tier", "dev", "crypto", "pack"] as const;
+export const BALANCE_BUCKETS = ["tier", "dev", "pack"] as const;
 export type Bucket = (typeof BALANCE_BUCKETS)[number];
 
 export type UserBalance = Record<`${Bucket}Balance`, number>;
@@ -18,14 +17,13 @@ export type UserBalance = Record<`${Bucket}Balance`, number>;
 const BUCKET_COLUMNS = {
     tier: userTable.tierBalance,
     dev: userTable.devBalance,
-    crypto: userTable.cryptoBalance,
     pack: userTable.packBalance,
 } as const satisfies Record<Bucket, unknown>;
 
 /**
  * Atomically deducts pollen from user balance.
  *
- * Priority when non-tier balance is positive: tier → dev → crypto → pack.
+ * Priority when non-tier balance is positive: tier → dev → pack.
  * If no positive non-tier balance, always deducts from tier —
  * tier refills hourly so going negative is fine and prevents spillover into
  * non-tier buckets.
@@ -41,23 +39,18 @@ export async function atomicDeductUserBalance(
 		UPDATE ${userTable}
 		SET
 			tier_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
+				WHEN (COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
 				WHEN COALESCE(tier_balance, 0) > 0 THEN COALESCE(tier_balance, 0) - ${amount}
 				ELSE tier_balance
 			END,
 			dev_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN dev_balance
+				WHEN (COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN dev_balance
 				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) > 0 THEN COALESCE(dev_balance, 0) - ${amount}
 				ELSE dev_balance
 			END,
-			crypto_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN crypto_balance
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
-				ELSE crypto_balance
-			END,
 			pack_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN pack_balance
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
+				WHEN (COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN pack_balance
+				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 				ELSE pack_balance
 			END
 		WHERE id = ${userId}
@@ -142,7 +135,6 @@ export async function getUserBalances(
         .select({
             tierBalance: userTable.tierBalance,
             devBalance: userTable.devBalance,
-            cryptoBalance: userTable.cryptoBalance,
             packBalance: userTable.packBalance,
         })
         .from(userTable)
@@ -153,7 +145,6 @@ export async function getUserBalances(
     return {
         tierBalance: user?.tierBalance ?? 0,
         devBalance: user?.devBalance ?? 0,
-        cryptoBalance: user?.cryptoBalance ?? 0,
         packBalance: user?.packBalance ?? 0,
     };
 }
@@ -164,7 +155,7 @@ export type DeductionSource = Record<`from${Capitalize<Bucket>}`, number>;
  * Identifies which single balance bucket a deduction comes from.
  * Mirrors the CASE logic in atomicDeductUserBalance:
  * - If no positive non-tier balance → always tier
- * - Otherwise: tier → dev → crypto → pack
+ * - Otherwise: tier → dev → pack
  */
 export function identifyDeductionSource(
     balances: UserBalance,
@@ -173,23 +164,19 @@ export function identifyDeductionSource(
     const zero: DeductionSource = {
         fromTier: 0,
         fromDev: 0,
-        fromCrypto: 0,
         fromPack: 0,
     };
-    const { tierBalance, devBalance, cryptoBalance, packBalance } =
-        balances;
+    const { tierBalance, devBalance, packBalance } = balances;
 
-    if (devBalance + cryptoBalance + packBalance <= 0)
-        return { ...zero, fromTier: amount };
+    if (devBalance + packBalance <= 0) return { ...zero, fromTier: amount };
     if (tierBalance > 0) return { ...zero, fromTier: amount };
     if (devBalance > 0) return { ...zero, fromDev: amount };
-    if (cryptoBalance > 0) return { ...zero, fromCrypto: amount };
     return { ...zero, fromPack: amount };
 }
 
 /**
  * Atomically deducts pollen from non-tier balances only.
- * Picks the first positive bucket: dev → crypto → pack.
+ * Picks the first positive bucket: dev → pack.
  * Full amount from one bucket.
  */
 export async function atomicDeductPaidBalance(
@@ -206,12 +193,8 @@ export async function atomicDeductPaidBalance(
 				WHEN COALESCE(dev_balance, 0) > 0 THEN COALESCE(dev_balance, 0) - ${amount}
 				ELSE dev_balance
 			END,
-			crypto_balance = CASE
-				WHEN COALESCE(dev_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
-				ELSE crypto_balance
-			END,
 			pack_balance = CASE
-				WHEN COALESCE(dev_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
+				WHEN COALESCE(dev_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 				ELSE pack_balance
 			END
 		WHERE id = ${userId}

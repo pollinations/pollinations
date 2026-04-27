@@ -10,14 +10,12 @@ type PricingProps = {
     tierBalance?: number;
     devBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 export const Pricing: FC<PricingProps> = ({
     tierBalance,
     devBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     useEffect(() => {
         if (window.location.hash === "#models") {
@@ -71,7 +69,6 @@ export const Pricing: FC<PricingProps> = ({
                         tierBalance={tierBalance}
                         devBalance={devBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 </div>
 

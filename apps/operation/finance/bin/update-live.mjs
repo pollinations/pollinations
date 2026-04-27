@@ -24,7 +24,7 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadDotenv } from "../lib/io.mjs";
+import { loadDotenv, loadSharedModelSecrets } from "../lib/io.mjs";
 
 const APP_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 const VENDORS_PATH = join(APP_DIR, "secrets", "vendors.json");
@@ -76,8 +76,10 @@ async function loadProviderModule(providerName) {
 }
 
 async function main() {
-    // Load secrets (RUNPOD_API_KEY, LAMBDA_LABS_API_KEY, etc.) from
-    // apps/operation/finance/secrets/.env into process.env.
+    // Provider/model API keys live in text.pollinations.ai/secrets/env.json
+    // (SOPS-encrypted, source of truth). Decrypt and merge into process.env
+    // first; finance's local .env can still override anything finance-specific.
+    await loadSharedModelSecrets();
     await loadDotenv();
 
     const month = currentMonth();

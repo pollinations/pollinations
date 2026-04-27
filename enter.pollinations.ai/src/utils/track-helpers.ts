@@ -262,7 +262,7 @@ async function deductUserBalance(
     }
 
     log.debug(
-        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, dev: -{fromDev}, crypto: -{fromCrypto}, pack: -{fromPack})",
+        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, dev: -{fromDev}, pack: -{fromPack})",
         {
             price: amount,
             userId,

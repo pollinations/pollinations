@@ -25,10 +25,7 @@ describe("BYOP markup", () => {
     describe("computeDevCredit", () => {
         test("returns baseline × markup for positive prices", () => {
             expect(computeDevCredit(1)).toBeCloseTo(BYOP_MARKUP_PCT, 10);
-            expect(computeDevCredit(4)).toBeCloseTo(
-                4 * BYOP_MARKUP_PCT,
-                10,
-            );
+            expect(computeDevCredit(4)).toBeCloseTo(4 * BYOP_MARKUP_PCT, 10);
         });
 
         test("returns 0 for zero or negative prices", () => {
@@ -56,16 +53,12 @@ describe("BYOP markup", () => {
 
         test("returns null when baseline price is 0", async () => {
             const db = drizzle(env.DB);
-            expect(
-                await resolveDevMarkup(db, "pk_doesnotexist", 0),
-            ).toBeNull();
+            expect(await resolveDevMarkup(db, "pk_doesnotexist", 0)).toBeNull();
         });
 
         test("returns null when pk_ row doesn't exist", async () => {
             const db = drizzle(env.DB);
-            expect(
-                await resolveDevMarkup(db, "pk_doesnotexist", 1),
-            ).toBeNull();
+            expect(await resolveDevMarkup(db, "pk_doesnotexist", 1)).toBeNull();
         });
 
         test("returns markup resolution when pk_ row exists", async () => {
@@ -146,7 +139,7 @@ describe("BYOP markup", () => {
     });
 
     describe("deduction priority with dev_balance", () => {
-        test("spends tier → dev → crypto → pack", async () => {
+        test("spends tier → dev → pack", async () => {
             const db = drizzle(env.DB);
             const userId = "test-priority-creator";
 
@@ -158,7 +151,6 @@ describe("BYOP markup", () => {
                 tier: "flower",
                 tierBalance: 2,
                 devBalance: 3,
-                cryptoBalance: 5,
                 packBalance: 10,
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -177,21 +169,13 @@ describe("BYOP markup", () => {
             // tier CASE: paid balance > 0, tier ≤ 0 → tier unchanged
             expect(b.tierBalance).toBe(0);
             expect(b.devBalance).toBe(1);
-            expect(b.cryptoBalance).toBe(5);
             expect(b.packBalance).toBe(10);
 
-            // Drain dev, then crypto
+            // Drain dev, then pack
             await atomicDeductUserBalance(db, userId, 1); // dev → 0
-            await atomicDeductUserBalance(db, userId, 2); // crypto → 3
-            b = await getUserBalances(db, userId);
-            expect(b.devBalance).toBe(0);
-            expect(b.cryptoBalance).toBe(3);
-
-            // Drain crypto, then pack
-            await atomicDeductUserBalance(db, userId, 3); // crypto → 0
             await atomicDeductUserBalance(db, userId, 4); // pack → 6
             b = await getUserBalances(db, userId);
-            expect(b.cryptoBalance).toBe(0);
+            expect(b.devBalance).toBe(0);
             expect(b.packBalance).toBe(6);
         });
     });
@@ -218,7 +202,6 @@ describe("BYOP markup", () => {
                     tier: "flower",
                     tierBalance: 2,
                     devBalance: 0,
-                    cryptoBalance: 0,
                     packBalance: 0,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -262,14 +245,11 @@ describe("BYOP markup", () => {
             expect(
                 (await getUserBalances(db, payerId)).tierBalance,
             ).toBeCloseTo(2 - 0.5, 10);
-            expect((await getUserBalances(db, devId)).devBalance).toBe(
-                0,
-            );
+            expect((await getUserBalances(db, devId)).devBalance).toBe(0);
         });
 
         test("BYOP request: bills baseline+markup, credits dev_balance", async () => {
-            const { db, payerId, devId, pkId } =
-                await setupPayerAndDev();
+            const { db, payerId, devId, pkId } = await setupPayerAndDev();
 
             const { markup } = await handleBalanceDeduction({
                 db,
@@ -311,7 +291,6 @@ describe("BYOP markup", () => {
                 tier: "flower",
                 tierBalance: 2,
                 devBalance: 0,
-                cryptoBalance: 0,
                 packBalance: 0,
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -341,8 +320,7 @@ describe("BYOP markup", () => {
         });
 
         test("cache hit / unbilled: no credit, no deduction", async () => {
-            const { db, payerId, devId, pkId } =
-                await setupPayerAndDev();
+            const { db, payerId, devId, pkId } = await setupPayerAndDev();
 
             const { markup } = await handleBalanceDeduction({
                 db,
@@ -354,9 +332,7 @@ describe("BYOP markup", () => {
 
             expect(markup).toBeNull();
             expect((await getUserBalances(db, payerId)).tierBalance).toBe(2);
-            expect((await getUserBalances(db, devId)).devBalance).toBe(
-                0,
-            );
+            expect((await getUserBalances(db, devId)).devBalance).toBe(0);
         });
 
         test("unknown pk_: markup=null, payer billed baseline only", async () => {
@@ -404,9 +380,7 @@ describe("BYOP markup", () => {
                 }),
             ).rejects.toThrow(/affected 0 rows/);
 
-            expect((await getUserBalances(db, devId)).devBalance).toBe(
-                0,
-            );
+            expect((await getUserBalances(db, devId)).devBalance).toBe(0);
         });
     });
 });

@@ -1,7 +1,7 @@
 import type { ValidationTargets } from "hono";
 import { validator as zValidator } from "hono-openapi";
-import { z, ZodError } from "zod";
-import { $ZodIssue } from "zod/v4/core";
+import { ZodError, type z } from "zod";
+import type { $ZodIssue } from "zod/v4/core";
 
 const validationTargetMessages: { [key in keyof ValidationTargets]: string } = {
     query: "Query parameter validation failed",

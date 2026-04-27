@@ -36,7 +36,6 @@ type UnifiedModelTableProps = {
     tierBalance?: number;
     devBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -138,7 +137,6 @@ type TabContentProps = {
     tierBalance?: number;
     devBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 const TabContent: FC<TabContentProps> = ({
@@ -149,7 +147,6 @@ const TabContent: FC<TabContentProps> = ({
     tierBalance,
     devBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
     const regularModels =
@@ -168,7 +165,6 @@ const TabContent: FC<TabContentProps> = ({
                         tierBalance={tierBalance}
                         devBalance={devBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -185,7 +181,6 @@ const TabContent: FC<TabContentProps> = ({
                                 tierBalance={tierBalance}
                                 devBalance={devBalance}
                                 packBalance={packBalance}
-                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -201,7 +196,6 @@ const TabContent: FC<TabContentProps> = ({
                         tierBalance={tierBalance}
                         devBalance={devBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -218,7 +212,6 @@ const TabContent: FC<TabContentProps> = ({
                                 tierBalance={tierBalance}
                                 devBalance={devBalance}
                                 packBalance={packBalance}
-                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -235,7 +228,6 @@ type MobileModelRowProps = {
     tierBalance?: number;
     devBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({
@@ -243,7 +235,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     tierBalance,
     devBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -258,9 +249,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
     const isSignedIn = packBalance !== undefined;
     const nonTierBalance =
-        toFinitePollen(devBalance) +
-        toFinitePollen(packBalance) +
-        toFinitePollen(cryptoBalance);
+        toFinitePollen(devBalance) + toFinitePollen(packBalance);
     const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;
     const effectiveBalance = showPaidOnly ? nonTierBalance : totalBalance;
 
@@ -581,7 +570,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     tierBalance,
     devBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
@@ -703,7 +691,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     tierBalance={tierBalance}
                     devBalance={devBalance}
                     packBalance={packBalance}
-                    cryptoBalance={cryptoBalance}
                 />
             )}
         </div>

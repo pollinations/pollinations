@@ -28,7 +28,6 @@ type ModelRowProps = {
     tierBalance?: number;
     devBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 export const ModelRow: FC<ModelRowProps> = ({
@@ -36,7 +35,6 @@ export const ModelRow: FC<ModelRowProps> = ({
     tierBalance,
     devBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
@@ -52,9 +50,7 @@ export const ModelRow: FC<ModelRowProps> = ({
 
     const isSignedIn = packBalance !== undefined;
     const nonTierBalance =
-        toFinitePollen(devBalance) +
-        toFinitePollen(packBalance) +
-        toFinitePollen(cryptoBalance);
+        toFinitePollen(devBalance) + toFinitePollen(packBalance);
     const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;
     const effectiveBalance = showPaidOnly ? nonTierBalance : totalBalance;
 

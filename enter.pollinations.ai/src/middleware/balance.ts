@@ -17,8 +17,8 @@ type BalanceCheckResult = {
 
 /**
  * Get the total available balance across relevant buckets.
- * For paid-only models: all non-tier balances.
- * For regular models: tier + non-tier balances (only positive buckets).
+ * For paid-only models: dev + pack.
+ * For regular models: tier + dev + pack (only positive buckets).
  */
 export function getAvailableBalance(
     balances: UserBalance,
@@ -26,15 +26,12 @@ export function getAvailableBalance(
 ): number {
     if (isPaidOnly) {
         return (
-            Math.max(0, balances.devBalance) +
-            Math.max(0, balances.cryptoBalance) +
-            Math.max(0, balances.packBalance)
+            Math.max(0, balances.devBalance) + Math.max(0, balances.packBalance)
         );
     }
     return (
         Math.max(0, balances.tierBalance) +
         Math.max(0, balances.devBalance) +
-        Math.max(0, balances.cryptoBalance) +
         Math.max(0, balances.packBalance)
     );
 }
@@ -68,7 +65,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
             .select({
                 tierBalance: userTable.tierBalance,
                 devBalance: userTable.devBalance,
-                cryptoBalance: userTable.cryptoBalance,
                 packBalance: userTable.packBalance,
             })
             .from(userTable)
@@ -79,7 +75,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         return {
             tierBalance: user?.tierBalance ?? 0,
             devBalance: user?.devBalance ?? 0,
-            cryptoBalance: user?.cryptoBalance ?? 0,
             packBalance: user?.packBalance ?? 0,
         };
     };
@@ -101,7 +96,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     };
 
     // Mirror the priority used by atomicDeductUserBalance:
-    // tier → dev → crypto → pack (paid-only skips only tier).
+    // tier → dev → pack (paid-only skips only tier).
     const determineBalanceSource = (
         balances: UserBalance,
         isPaidOnly = false,
@@ -109,9 +104,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         if (isPaidOnly) {
             if (balances.devBalance > 0) {
                 return { source: "dev", slug: "v1:meter:dev" };
-            }
-            if (balances.cryptoBalance > 0) {
-                return { source: "crypto", slug: "v1:meter:crypto" };
             }
             return { source: "pack", slug: "v1:meter:pack" };
         }
@@ -122,16 +114,12 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         if (balances.devBalance > 0) {
             return { source: "dev", slug: "v1:meter:dev" };
         }
-        if (balances.cryptoBalance > 0) {
-            return { source: "crypto", slug: "v1:meter:crypto" };
-        }
         return { source: "pack", slug: "v1:meter:pack" };
     };
 
     const allBalancesMap = (b: UserBalance): Record<string, number> => ({
         "v1:meter:tier": b.tierBalance,
         "v1:meter:dev": b.devBalance,
-        "v1:meter:crypto": b.cryptoBalance,
         "v1:meter:pack": b.packBalance,
     });
 
@@ -142,16 +130,14 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         const hasPositiveBalance =
             balances.tierBalance > 0 ||
             balances.devBalance > 0 ||
-            balances.cryptoBalance > 0 ||
             balances.packBalance > 0;
 
         log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, dev={devBalance}, crypto={cryptoBalance}, pack={packBalance}",
+            "Local pollen balance for user {userId}: tier={tierBalance}, dev={devBalance}, pack={packBalance}",
             {
                 userId,
                 tierBalance: balances.tierBalance,
                 devBalance: balances.devBalance,
-                cryptoBalance: balances.cryptoBalance,
                 packBalance: balances.packBalance,
             },
         );
@@ -175,16 +161,13 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
         const hasPositivePaidBalance =
-            balances.devBalance > 0 ||
-            balances.cryptoBalance > 0 ||
-            balances.packBalance > 0;
+            balances.devBalance > 0 || balances.packBalance > 0;
 
         log.debug(
-            "Non-tier balance check for user {userId}: dev={devBalance}, crypto={cryptoBalance}, pack={packBalance}",
+            "Non-tier balance check for user {userId}: dev={devBalance}, pack={packBalance}",
             {
                 userId,
                 devBalance: balances.devBalance,
-                cryptoBalance: balances.cryptoBalance,
                 packBalance: balances.packBalance,
             },
         );
@@ -197,7 +180,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
                 balances: {
                     "v1:meter:tier": 0,
                     "v1:meter:dev": balances.devBalance,
-                    "v1:meter:crypto": balances.cryptoBalance,
                     "v1:meter:pack": balances.packBalance,
                 },
             };

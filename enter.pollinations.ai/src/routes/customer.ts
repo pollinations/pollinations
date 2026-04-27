@@ -18,12 +18,13 @@ export const customerRoutes = new Hono<Env>()
         "/balance",
         describeRoute({
             tags: ["👤 Account"],
-            description: "Get detailed balance fields for the current user.",
+            description:
+                "Get detailed balance breakdown for the current user (tier, dev, pack).",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const { tierBalance, devBalance, packBalance, cryptoBalance } =
+            const { tierBalance, devBalance, packBalance } =
                 await c.var.balance.getBalance(user.id);
             const db = drizzle(c.env.DB);
             const users = await db
@@ -37,7 +38,6 @@ export const customerRoutes = new Hono<Env>()
                 tierBalance,
                 devBalance,
                 packBalance,
-                cryptoBalance,
                 lastTierGrant,
             });
         },

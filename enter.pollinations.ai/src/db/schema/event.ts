@@ -159,7 +159,9 @@ export function priceToEventParams(
         tokenPriceCompletionText:
             priceDefinition?.completionTextTokens || 0,
         tokenPriceCompletionReasoning:
-            priceDefinition?.completionReasoningTokens || 0,
+            priceDefinition?.completionReasoningTokens ??
+            priceDefinition?.completionTextTokens ??
+            0,
         tokenPriceCompletionAudio:
             priceDefinition?.completionAudioTokens || 0,
         tokenPriceCompletionImage:

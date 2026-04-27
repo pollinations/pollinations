@@ -1,4 +1,4 @@
-import { Logger } from "@logtape/logtape";
+import type { Logger } from "@logtape/logtape";
 
 interface CacheOptions<TArgs extends any[]> {
     log: Logger;

@@ -266,7 +266,6 @@ function sendErrorResponse(
         error: errorType,
         message: error.message || "An error occurred",
         requestId: Math.random().toString(36).substring(7),
-        requestParameters: requestData || {},
     };
     if (errorDetails) errorResponse.details = errorDetails;
 

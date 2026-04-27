@@ -1,8 +1,8 @@
 {
+  "id": "e8b28661-a6b4-4efd-83c8-b4d691849754",
+  "prevId": "fd04b46c-8c90-4ada-a7e2-32f20efe8e17",
   "version": "6",
   "dialect": "sqlite",
-  "id": "7afe6e74-17aa-4f88-a30c-ebcb55739f99",
-  "prevId": "fd04b46c-8c90-4ada-a7e2-32f20efe8e17",
   "tables": {
     "account": {
       "name": "account",
@@ -113,15 +113,15 @@
         "account_user_id_user_id_fk": {
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -318,15 +318,15 @@
         "apikey_user_id_user_id_fk": {
           "name": "apikey_user_id_user_id_fk",
           "tableFrom": "apikey",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -413,15 +413,15 @@
         "device_code_user_id_user_id_fk": {
           "name": "device_code_user_id_user_id_fk",
           "tableFrom": "device_code",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -516,15 +516,15 @@
         "session_user_id_user_id_fk": {
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -658,13 +658,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "dev_balance": {
-          "name": "dev_balance",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "last_tier_grant": {
           "name": "last_tier_grant",
           "type": "integer",
@@ -760,9 +753,9 @@
   "views": {},
   "enums": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
+    "tables": {}
   },
   "internal": {
     "indexes": {}

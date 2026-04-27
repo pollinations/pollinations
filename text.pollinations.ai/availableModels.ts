@@ -56,11 +56,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v3p2"],
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash"],
+    },
+    {
+        name: "deepseek-pro",
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro"],
     },
     {
         name: "grok",
-        config: portkeyConfig["grok-4-1-fast-non-reasoning"],
+        config: portkeyConfig["grok-4-20-non-reasoning"],
     },
     {
         name: "grok-large",

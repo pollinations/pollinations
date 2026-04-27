@@ -131,8 +131,22 @@
     {
       "idx": 18,
       "version": "6",
-      "when": 1777299575325,
-      "tag": "0018_third_flatman",
+      "when": 1777307039011,
+      "tag": "0018_consolidate_crypto_into_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1777313809557,
+      "tag": "0019_drop_crypto_column",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1777315050308,
+      "tag": "0020_add_dev_balance",
       "breakpoints": true
     }
   ]

@@ -11,7 +11,6 @@ type PollenBalanceProps = {
     tierBalance?: unknown;
     devBalance?: unknown;
     packBalance?: unknown;
-    cryptoBalance?: unknown;
 };
 
 type GaugeSegmentProps = {
@@ -75,7 +74,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     devBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const [activeGaugeSegment, setActiveGaugeSegment] = useState<string | null>(
@@ -91,9 +89,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     // Clamp at 0 for display — individual buckets can go slightly negative from overage
     const displayTier = Math.max(0, toFinitePollen(tierBalance));
     const displayDev = Math.max(0, toFinitePollen(devBalance));
-    const displayTopUps =
-        Math.max(0, toFinitePollen(packBalance)) +
-        Math.max(0, toFinitePollen(cryptoBalance));
+    const displayTopUps = Math.max(0, toFinitePollen(packBalance));
     const totalPollen = displayTier + displayDev + displayTopUps;
     const gaugeHeightClass = "h-[40px] sm:h-[46px]";
 
@@ -114,7 +110,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             key: "topups",
             value: displayTopUps,
             label: "💳 Top-up",
-            title: `💳 Top-up: ${formatPollen(displayTopUps)} Pollen\nPollen you bought via packs or crypto.`,
+            title: `💳 Top-up: ${formatPollen(displayTopUps)} Pollen\nPollen you bought via packs.`,
             barClassName: "bg-amber-300",
             textClassName: "text-amber-950",
         },

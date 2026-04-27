@@ -16,7 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps
 
 This works for both fresh installs and existing OpenClaw setups. It:
 - Runs `openclaw onboard` for fresh installs (creates config + workspace)
-- Adds the Pollinations provider with 8 models to `~/.openclaw/openclaw.json`
+- Adds the Pollinations provider with 9 models to `~/.openclaw/openclaw.json`
 - Sets OpenClaw as default with Kimi + DeepSeek + GLM fallbacks
 
 **Step 3 (fresh install only):** Start the gateway:

@@ -10,10 +10,10 @@ import {
 } from "@/db/schema/better-auth.ts";
 import type { ApiKeyType } from "@/db/schema/event.ts";
 import { getTierCadence, tierNames } from "@/tier-config.ts";
-import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import { createApiKeyForUser } from "./api-key-creation.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).
@@ -1092,79 +1092,20 @@ export const accountRoutes = new Hono<Env>()
                 accountPermissions,
             } = c.req.valid("json");
 
-            const isPublishable = type === "publishable";
-            const prefix = isPublishable ? "pk" : "sk";
-
-            // Whitelist to known scopes (drops unknown / legacy names like "balance").
-            // Then strip "keys" to prevent escalation via the BYOP flow.
-            const safeAccountPerms =
-                sanitizeAuthorizeAccountPermissions(accountPermissions)?.filter(
-                    (p) => p !== "keys",
-                ) ?? null;
-
-            // Build permissions object
-            const permissions: Record<string, string[]> = {};
-            if (allowedModels) permissions.models = allowedModels;
-            if (safeAccountPerms && safeAccountPerms.length > 0)
-                permissions.account = safeAccountPerms;
-
-            // Create key via better-auth server API (no session needed when passing userId)
-            const authClient = c.var.auth.client;
-            const created = await authClient.api.createApiKey({
-                body: {
-                    name,
-                    prefix,
-                    userId: user.id,
-                    ...(expiresIn != null && { expiresIn }),
-                    metadata: {
-                        keyType: type,
-                        createdVia: "api",
-                    },
-                    permissions:
-                        Object.keys(permissions).length > 0
-                            ? permissions
-                            : undefined,
-                },
-            });
-
-            if (!created?.id || !created?.key) {
-                throw new HTTPException(500, {
-                    message: "Failed to create API key",
-                });
-            }
-
-            const db = drizzle(c.env.DB);
-
-            // Set D1 custom fields (pollenBudget, publishable plaintext)
-            const d1Updates: Record<string, unknown> = {};
-            if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
-            if (isPublishable) {
-                d1Updates.metadata = JSON.stringify({
-                    keyType: type,
-                    createdVia: "api",
-                    plaintextKey: created.key,
-                });
-            }
-
-            if (Object.keys(d1Updates).length > 0) {
-                await db
-                    .update(apikeyTable)
-                    .set(d1Updates)
-                    .where(eq(apikeyTable.id, created.id));
-            }
-
-            return c.json({
-                id: created.id,
-                key: created.key,
-                name: created.name,
+            const created = await createApiKeyForUser({
+                authClient: c.var.auth.client,
+                dbBinding: c.env.DB,
+                userId: user.id,
+                name,
                 type,
-                prefix,
-                start: created.start,
-                expiresAt: created.expiresAt,
-                permissions:
-                    Object.keys(permissions).length > 0 ? permissions : null,
-                pollenBudget: pollenBudget ?? null,
+                expiresIn,
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                allowAccountKeysPermission: false,
+                defaultCreatedVia: "api",
             });
+            return c.json(created);
         },
     )
     .delete(

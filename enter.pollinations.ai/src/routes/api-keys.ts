@@ -9,7 +9,13 @@ import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
+import {
+    createApiKeyForUser,
+    validateAppUrlFormat,
+} from "./api-key-creation.ts";
 import { parseMetadata } from "./metadata-utils.ts";
+
+const SECONDS_PER_DAY = 24 * 60 * 60;
 
 function setPrivateNoStoreHeaders(c: {
     header: (name: string, value: string) => void;
@@ -135,13 +141,47 @@ const UpdateApiKeySchema = z.object({
         .describe("Expiration date for the key. null = no expiry"),
 });
 
+const CreateApiKeySchema = z.object({
+    name: z.string().min(1).max(253).describe("Name for the API key"),
+    type: z
+        .enum(["secret", "publishable"])
+        .optional()
+        .default("secret")
+        .describe("Key type: secret (sk_) or publishable (pk_)"),
+    expiresIn: z
+        .number()
+        .int()
+        .positive()
+        .max(365 * SECONDS_PER_DAY)
+        .optional()
+        .describe("Expiry in seconds from now (max 365 days)"),
+    allowedModels: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe("Model IDs this key can access. null = all models allowed"),
+    pollenBudget: z
+        .number()
+        .nullable()
+        .optional()
+        .describe("Pollen budget cap for this key. null = unlimited"),
+    accountPermissions: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe(
+            'Account permissions: ["profile", "usage", "keys"]. null = none',
+        ),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
 /**
  * Schema for updating metadata on an API key.
+ * Only caller-owned fields are accepted. Server-controlled fields like
+ * keyType, createdVia, and plaintextKey cannot be modified after creation.
  */
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
-    keyType: z.string().optional(),
-    plaintextKey: z.string().optional(),
     appUrl: z
         .string()
         .refine((val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val), {
@@ -157,6 +197,41 @@ const UpdateMetadataSchema = z.object({
  */
 export const apiKeysRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
+    /**
+     * Create an API key for the authenticated dashboard/BYOP session.
+     * Centralizes key creation so validation happens before Better Auth creates
+     * the key, avoiding the old create-then-metadata-update flow.
+     */
+    .post(
+        "/",
+        describeRoute({
+            tags: ["👤 Account"],
+            description: "Create an API key for the current session user.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", CreateApiKeySchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+
+            const created = await createApiKeyForUser({
+                authClient: c.var.auth.client,
+                dbBinding: c.env.DB,
+                userId: user.id,
+                name: input.name,
+                type: input.type,
+                expiresIn: input.expiresIn,
+                allowedModels: input.allowedModels,
+                pollenBudget: input.pollenBudget,
+                accountPermissions: input.accountPermissions,
+                metadata: input.metadata,
+                allowAccountKeysPermission: true,
+                defaultCreatedVia: "dashboard",
+            });
+
+            return c.json(created);
+        },
+    )
     /**
      * List all API keys for the current user with pollenBalance from D1.
      * Extends better-auth's native list with custom D1 columns.
@@ -295,19 +370,8 @@ export const apiKeysRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const existingKey = await requireOwnedKey(db, id, user.id);
 
-            // Check for duplicate appUrl across all keys
             if (metadataUpdate.appUrl) {
-                const allKeys = await db.query.apikey.findMany();
-                const duplicate = allKeys.find((k) => {
-                    if (k.id === id) return false;
-                    const meta = parseMetadata(k.metadata);
-                    return meta.appUrl === metadataUpdate.appUrl;
-                });
-                if (duplicate) {
-                    throw new HTTPException(409, {
-                        message: `This URL is already registered. Please use a different URL.`,
-                    });
-                }
+                validateAppUrlFormat(metadataUpdate.appUrl);
             }
 
             const metadata = await updateKeyMetadata(

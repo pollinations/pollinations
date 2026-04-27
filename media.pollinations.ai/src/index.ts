@@ -61,6 +61,16 @@ const ErrorSchema = z.object({
     error: z.string(),
 });
 
+const MetadataResponseSchema = z.object({
+    hash: z.string().describe("16-char hex content hash"),
+    contentType: z.string(),
+    size: z.number().int().describe("File size in bytes"),
+    uploadedAt: z
+        .string()
+        .optional()
+        .describe("ISO-8601 upload timestamp, when recorded"),
+});
+
 const api = new Hono<{ Bindings: Env }>();
 
 api.post(
@@ -296,6 +306,68 @@ api.get(
         } catch (error) {
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);
+        }
+    },
+);
+
+api.get(
+    "/:hash/metadata",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Get file metadata",
+        description:
+            "Return file metadata (hash, content type, size, upload timestamp) as JSON without downloading the file body.",
+        responses: {
+            200: {
+                description: "File metadata",
+                content: {
+                    "application/json": {
+                        schema: resolver(MetadataResponseSchema),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid hash format",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "File not found",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const hash = c.req.param("hash");
+
+        if (!HASH_PATTERN.test(hash)) {
+            return c.json({ error: "Invalid hash format" }, 400);
+        }
+
+        try {
+            const object = await c.env.MEDIA_BUCKET.head(hash);
+
+            if (!object) {
+                return c.json({ error: "Not found" }, 404);
+            }
+
+            c.header("Cache-Control", CACHE_CONTROL);
+            return c.json({
+                hash,
+                contentType:
+                    object.httpMetadata?.contentType ||
+                    "application/octet-stream",
+                size: object.size,
+                ...(object.customMetadata?.uploadedAt && {
+                    uploadedAt: object.customMetadata.uploadedAt,
+                }),
+            });
+        } catch (error) {
+            console.error("Metadata error:", error);
+            return c.json({ error: "Metadata lookup failed" }, 500);
         }
     },
 );

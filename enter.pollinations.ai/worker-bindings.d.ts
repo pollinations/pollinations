@@ -32,6 +32,10 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
+        GOOGLE_CLIENT_ID: string;
+        GOOGLE_CLIENT_SECRET: string;
+        DISCORD_CLIENT_ID: string;
+        DISCORD_CLIENT_SECRET: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         STRIPE_SECRET_KEY: string;
@@ -75,6 +79,10 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
+        GOOGLE_CLIENT_ID: string;
+        GOOGLE_CLIENT_SECRET: string;
+        DISCORD_CLIENT_ID: string;
+        DISCORD_CLIENT_SECRET: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         STRIPE_SECRET_KEY: string;
@@ -119,6 +127,10 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
+        GOOGLE_CLIENT_ID: string;
+        GOOGLE_CLIENT_SECRET: string;
+        DISCORD_CLIENT_ID: string;
+        DISCORD_CLIENT_SECRET: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         STRIPE_SECRET_KEY: string;
@@ -163,6 +175,10 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
+        GOOGLE_CLIENT_ID: string;
+        GOOGLE_CLIENT_SECRET: string;
+        DISCORD_CLIENT_ID: string;
+        DISCORD_CLIENT_SECRET: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         STRIPE_SECRET_KEY: string;
@@ -205,6 +221,10 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
+        GOOGLE_CLIENT_ID: string;
+        GOOGLE_CLIENT_SECRET: string;
+        DISCORD_CLIENT_ID: string;
+        DISCORD_CLIENT_SECRET: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         STRIPE_SECRET_KEY: string;
@@ -229,6 +249,10 @@ declare namespace Cloudflare {
         POLAR_WEBHOOK_SECRET: string;
         GITHUB_CLIENT_ID: string;
         GITHUB_CLIENT_SECRET: string;
+        GOOGLE_CLIENT_ID: string;
+        GOOGLE_CLIENT_SECRET: string;
+        DISCORD_CLIENT_ID: string;
+        DISCORD_CLIENT_SECRET: string;
         PLN_ENTER_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         STRIPE_SECRET_KEY: string;
@@ -329,6 +353,10 @@ declare namespace NodeJS {
                 | "POLAR_WEBHOOK_SECRET"
                 | "GITHUB_CLIENT_ID"
                 | "GITHUB_CLIENT_SECRET"
+                | "GOOGLE_CLIENT_ID"
+                | "GOOGLE_CLIENT_SECRET"
+                | "DISCORD_CLIENT_ID"
+                | "DISCORD_CLIENT_SECRET"
                 | "PLN_ENTER_TOKEN"
                 | "TINYBIRD_READ_TOKEN"
                 | "STRIPE_SECRET_KEY"

@@ -17,10 +17,11 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "../components/auth/auth-modal.tsx";
+import { SocialSignInButtons } from "../components/auth/social-sign-in-buttons.tsx";
 import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
-import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -140,7 +141,12 @@ function AuthorizeComponent() {
     const user = session?.user;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
+    const {
+        isSigningIn,
+        pendingProvider,
+        error: signInError,
+        signIn,
+    } = useSocialSignIn();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [deviceOutcome, setDeviceOutcome] = useState<
@@ -410,7 +416,7 @@ function AuthorizeComponent() {
                         </AuthInfoCard>
                     )}
 
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex flex-wrap gap-2 justify-end">
                         <Button
                             as="button"
                             onClick={handleDeny}
@@ -420,16 +426,11 @@ function AuthorizeComponent() {
                         >
                             Deny
                         </Button>
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn || !!error}
-                            color="dark"
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
+                        <SocialSignInButtons
+                            pendingProvider={pendingProvider}
+                            disabled={!!error}
+                            onSignIn={signIn}
+                        />
                     </div>
                 </div>
             </AuthModal>

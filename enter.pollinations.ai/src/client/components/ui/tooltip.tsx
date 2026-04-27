@@ -9,19 +9,20 @@ type TooltipProps = {
 export const Tooltip: FC<TooltipProps> = ({ children, content, onClick }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [mobileTop, setMobileTop] = useState(0);
-    const buttonRef = useRef<HTMLButtonElement>(null);
+    const triggerRef = useRef<HTMLSpanElement>(null);
 
     const updateMobilePosition = () => {
-        if (buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
+        if (triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
             setMobileTop(rect.bottom + 4);
         }
     };
 
     return (
-        <button
-            ref={buttonRef}
-            type="button"
+        // biome-ignore lint/a11y/noStaticElementInteractions: Tooltip can wrap sortable buttons; a native button wrapper creates invalid nested buttons.
+        // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handling belongs to the wrapped control when it is interactive.
+        <span
+            ref={triggerRef}
             className="relative cursor-default text-left inline-flex items-center"
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
@@ -52,6 +53,6 @@ export const Tooltip: FC<TooltipProps> = ({ children, content, onClick }) => {
             >
                 {content}
             </span>
-        </button>
+        </span>
     );
 };

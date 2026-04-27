@@ -24,36 +24,57 @@ import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
+type LinkedAuthAccount = {
+    providerId: string;
+};
+
+async function fetchLinkedAuthAccounts(): Promise<LinkedAuthAccount[]> {
+    const response = await fetch("/api/auth/list-accounts", {
+        credentials: "include",
+    });
+    if (!response.ok) return [];
+    return response.json() as Promise<LinkedAuthAccount[]>;
+}
+
 export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [tierData, apiKeysResult, d1BalanceResult, profileResult] =
-            await Promise.all([
-                apiClient.tiers.view
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient["api-keys"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : { data: [] })),
-                apiClient.customer.balance
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient.account.profile
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-            ]);
+        const [
+            tierData,
+            apiKeysResult,
+            d1BalanceResult,
+            profileResult,
+            linkedAccounts,
+        ] = await Promise.all([
+            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            apiClient.account.profile
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            fetchLinkedAuthAccounts(),
+        ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
+        const displayName =
+            githubUsername || context.user?.name || context.user?.email || "";
 
         return {
             user: context.user,
-            githubUsername,
+            displayName,
+            discordLinked: linkedAccounts.some(
+                (account) => account.providerId === "discord",
+            ),
             apiKeys,
             tierData,
             tierBalance,
@@ -66,7 +87,8 @@ function RouteComponent() {
     const router = useRouter();
     const {
         user,
-        githubUsername,
+        displayName,
+        discordLinked,
         apiKeys,
         tierData,
         tierBalance,
@@ -74,6 +96,10 @@ function RouteComponent() {
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [isLinkingDiscord, setIsLinkingDiscord] = useState(false);
+    const [linkAccountError, setLinkAccountError] = useState<string | null>(
+        null,
+    );
     const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
     const [usagePeriod, setUsagePeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
@@ -96,6 +122,43 @@ function RouteComponent() {
             console.error("Sign out failed:", error);
         } finally {
             setIsSigningOut(false);
+        }
+    }
+
+    async function handleLinkDiscord(): Promise<void> {
+        if (isLinkingDiscord || discordLinked) return;
+        setIsLinkingDiscord(true);
+        setLinkAccountError(null);
+        try {
+            const response = await fetch("/api/auth/link-social", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    provider: "discord",
+                    callbackURL: window.location.href,
+                }),
+            });
+            const data = (await response.json().catch(() => null)) as {
+                url?: string;
+                message?: string;
+            } | null;
+
+            if (!response.ok) {
+                throw new Error(data?.message || "Failed to connect Discord");
+            }
+            if (data?.url) {
+                window.location.href = data.url;
+                return;
+            }
+            await router.invalidate();
+        } catch (error) {
+            setLinkAccountError(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to connect Discord",
+            );
+            setIsLinkingDiscord(false);
         }
     }
 
@@ -186,8 +249,11 @@ function RouteComponent() {
             <div className="flex flex-col gap-20">
                 <Header>
                     <User
-                        githubUsername={githubUsername}
-                        githubAvatarUrl={user?.image || ""}
+                        displayName={displayName}
+                        avatarUrl={user?.image || ""}
+                        discordLinked={discordLinked}
+                        isLinkingDiscord={isLinkingDiscord}
+                        onLinkDiscord={handleLinkDiscord}
                         onSignOut={handleSignOut}
                     />
                     <Button
@@ -198,6 +264,11 @@ function RouteComponent() {
                         API Reference
                     </Button>
                 </Header>
+                {linkAccountError && (
+                    <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                        {linkAccountError}
+                    </div>
+                )}
                 <NewsBanner />
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">

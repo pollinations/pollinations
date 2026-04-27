@@ -1,12 +1,14 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
 import { authClient } from "../auth.ts";
+import { ErrorBanner } from "../components/auth/auth-modal.tsx";
+import { SocialSignInButtons } from "../components/auth/social-sign-in-buttons.tsx";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Footer } from "../components/layout/footer.tsx";
 import { Header } from "../components/layout/header.tsx";
 import { NewsBanner } from "../components/layout/news-banner.tsx";
 import { Pricing } from "../components/pricing";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
@@ -39,39 +41,25 @@ export const Route = createFileRoute("/sign-in")({
 });
 
 function RouteComponent() {
-    const [loading, setLoading] = useState(false);
-
-    const handleSignIn = async () => {
-        setLoading(true);
-        const { error } = await authClient.signIn.social({
-            provider: "github",
-        });
-        if (error) {
-            setLoading(false);
-            throw error;
-        }
-    };
+    const { pendingProvider, error, signIn } = useSocialSignIn();
 
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-20">
                 <Header>
-                    <div className="relative">
-                        <Button
-                            as="button"
-                            onClick={handleSignIn}
-                            disabled={loading}
+                    <div className="flex flex-col items-center gap-2">
+                        {error && <ErrorBanner>{error}</ErrorBanner>}
+                        <SocialSignInButtons
+                            pendingProvider={pendingProvider}
+                            onSignIn={signIn}
                             color="amber"
-                            weight="light"
-                            className="whitespace-nowrap"
-                        >
-                            {loading ? "Signing in..." : "Sign in with Github"}
-                        </Button>
+                            className="flex flex-wrap justify-center gap-2"
+                        />
                         <a
                             href="https://github.com/pollinations/pollinations/issues/5543"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="absolute left-1/2 -translate-x-1/2 -bottom-5 text-xs text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
+                            className="text-xs text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
                         >
                             more options?
                         </a>

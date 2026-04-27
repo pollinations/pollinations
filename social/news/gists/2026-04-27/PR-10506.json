@@ -1,0 +1,34 @@
+{
+  "pr_number": 10506,
+  "title": "fix: use cost fallback for grok pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10506",
+  "merged_at": "2026-04-27T19:51:13Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Grok metadata and billing update",
+    "blurb": "We've updated the billing logic and metadata for Grok models to ensure sustainable access to their massive 262k context windows.",
+    "summary": "Fixed a pricing override for Grok models to accurately reflect provider costs and updated metadata to support 262k context and multimodal inputs.",
+    "impact": "Users will see accurate credit usage for Grok models, ensuring reliable access to its advanced reasoning capabilities.",
+    "keywords": [
+      "grok",
+      "pricing",
+      "billing",
+      "models",
+      "metadata"
+    ],
+    "visual_concept": "The pollinations bee and the Nomnom creature reviewing a long, glowing receipt or document, representing the updated billing and massive context window.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and the round Nomnom creature reviewing a long, glowing receipt sprouting from a retro terminal. A small code-plant grows in a lime green (#ecf874) pot nearby. Soft pastel gradients, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-27/PR-10506.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses and the round Nomnom creature reviewing a long, glowing receipt sprouting from a retro terminal. A small code-plant grows in a lime green (#ecf874) pot nearby. Soft pastel gradients, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-27T19:52:29.321830+00:00"
+}

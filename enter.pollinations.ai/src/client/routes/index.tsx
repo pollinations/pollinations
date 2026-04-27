@@ -284,10 +284,7 @@ function RouteComponent() {
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
-                <Pricing
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                />
+                <Pricing tierBalance={tierBalance} packBalance={packBalance} />
                 <FAQ />
                 <Footer />
             </div>

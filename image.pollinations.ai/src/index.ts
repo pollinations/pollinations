@@ -679,13 +679,13 @@ const server = http.createServer((req, res) => {
     }
 
     if (pathname === "/register") {
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Cache-Control":
-                "no-store, no-cache, must-revalidate, proxy-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-        });
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader(
+            "Cache-Control",
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+        );
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
         handleRegisterEndpoint(req, res);
         return;
     }

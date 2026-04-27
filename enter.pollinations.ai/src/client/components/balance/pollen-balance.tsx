@@ -11,7 +11,6 @@ import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
-    cryptoBalance: number;
     tier?: string;
 };
 
@@ -71,7 +70,6 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
-    cryptoBalance,
     tier = "spore",
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
@@ -85,7 +83,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     };
     // Clamp at 0 for display — individual buckets can go slightly negative from overage
     const displayTier = Math.max(0, tierBalance);
-    const displayPaid = Math.max(0, packBalance) + Math.max(0, cryptoBalance);
+    const displayPaid = Math.max(0, packBalance);
     const totalPollen = displayTier + displayPaid;
 
     function calculatePercentage(value: number, total: number): number {
@@ -128,7 +126,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         <div
                             className={`relative ${gaugeHeightClass} bg-gray-200 rounded-full overflow-hidden border-2 border-amber-300`}
                         >
-                            {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
+                            {/* Paid Pollen - Soft purple for paid (pack) */}
                             {paidPercentage > 0 && (
                                 <PollenGaugeSegment
                                     percentage={paidPercentage}

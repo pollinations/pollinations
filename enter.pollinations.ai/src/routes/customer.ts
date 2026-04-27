@@ -19,13 +19,14 @@ export const customerRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Get detailed balance breakdown for the current user (tier, pack, crypto).",
+                "Get detailed balance breakdown for the current user (tier, pack).",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const { tierBalance, packBalance, cryptoBalance } =
-                await c.var.balance.getBalance(user.id);
+            const { tierBalance, packBalance } = await c.var.balance.getBalance(
+                user.id,
+            );
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({ lastTierGrant: userTable.lastTierGrant })
@@ -37,7 +38,6 @@ export const customerRoutes = new Hono<Env>()
             return c.json({
                 tierBalance,
                 packBalance,
-                cryptoBalance,
                 lastTierGrant,
             });
         },

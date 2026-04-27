@@ -5,11 +5,11 @@ import { user as userTable } from "../db/schema/better-auth.ts";
 /**
  * Atomically deducts pollen from user balance.
  *
- * If the user has no positive paid balance (crypto+pack ≤ 0), always deducts from tier.
- * Tier resets hourly so going negative is fine — prevents spillover into paid balances.
+ * If the user has no positive pack balance, always deducts from tier.
+ * Tier resets hourly so going negative is fine — prevents spillover into pack.
  *
- * If the user has positive paid balance, uses existing priority: tier → crypto → pack.
- * This lets users who purchased packs use them after tier runs out.
+ * If the user has a positive pack balance, uses priority: tier → pack.
+ * Lets users who purchased packs use them after tier runs out.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
@@ -22,18 +22,13 @@ export async function atomicDeductUserBalance(
 		UPDATE ${userTable}
 		SET
 			tier_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0)) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
+				WHEN COALESCE(pack_balance, 0) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
 				WHEN COALESCE(tier_balance, 0) > 0 THEN COALESCE(tier_balance, 0) - ${amount}
 				ELSE tier_balance
 			END,
-			crypto_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0)) <= 0 THEN crypto_balance
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
-				ELSE crypto_balance
-			END,
 			pack_balance = CASE
-				WHEN (COALESCE(crypto_balance, 0) + COALESCE(pack_balance, 0)) <= 0 THEN pack_balance
-				WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
+				WHEN COALESCE(pack_balance, 0) <= 0 THEN pack_balance
+				WHEN COALESCE(tier_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 				ELSE pack_balance
 			END
 		WHERE id = ${userId}
@@ -69,7 +64,6 @@ export async function atomicDeductApiKeyBalance(
 
 export type UserBalances = {
     tierBalance: number;
-    cryptoBalance: number;
     packBalance: number;
 };
 
@@ -79,7 +73,7 @@ export type UserBalances = {
  *
  * @param db - Drizzle database instance
  * @param userId - User ID to get balances for
- * @returns Object with tier, crypto, and pack balances
+ * @returns Object with tier and pack balances
  */
 export async function getUserBalances(
     db: DrizzleD1Database,
@@ -88,7 +82,6 @@ export async function getUserBalances(
     const result = await db
         .select({
             tierBalance: userTable.tierBalance,
-            cryptoBalance: userTable.cryptoBalance,
             packBalance: userTable.packBalance,
         })
         .from(userTable)
@@ -98,42 +91,33 @@ export async function getUserBalances(
     const user = result[0];
     return {
         tierBalance: user?.tierBalance ?? 0,
-        cryptoBalance: user?.cryptoBalance ?? 0,
         packBalance: user?.packBalance ?? 0,
     };
 }
 
 export type DeductionSource = {
     fromTier: number;
-    fromCrypto: number;
     fromPack: number;
 };
 
 /**
  * Identifies which single balance bucket a deduction comes from.
  * Matches the logic in atomicDeductUserBalance:
- * - If no positive paid balance → always tier
- * - Otherwise: tier → crypto → pack
+ * - If no positive pack balance → always tier
+ * - Otherwise: tier → pack
  */
 export function identifyDeductionSource(
     tierBalance: number,
-    cryptoBalance: number,
+    packBalance: number,
     amount: number,
-    packBalance = 0,
 ): DeductionSource {
-    // No positive paid balance → always deduct from tier
-    if (cryptoBalance + packBalance <= 0)
-        return { fromTier: amount, fromCrypto: 0, fromPack: 0 };
-    if (tierBalance > 0)
-        return { fromTier: amount, fromCrypto: 0, fromPack: 0 };
-    if (cryptoBalance > 0)
-        return { fromTier: 0, fromCrypto: amount, fromPack: 0 };
-    return { fromTier: 0, fromCrypto: 0, fromPack: amount };
+    if (packBalance <= 0) return { fromTier: amount, fromPack: 0 };
+    if (tierBalance > 0) return { fromTier: amount, fromPack: 0 };
+    return { fromTier: 0, fromPack: amount };
 }
 
 /**
- * Atomically deducts pollen from paid balances only (excluding tier_balance).
- * Picks the first positive bucket: crypto → pack. Full amount from one bucket.
+ * Atomically deducts pollen from paid balance only (excluding tier_balance).
  *
  * @param db - Drizzle database instance
  * @param userId - User ID to deduct from
@@ -147,19 +131,9 @@ export async function atomicDeductPaidBalance(
 ): Promise<void> {
     if (amount <= 0) return;
 
-    // Deduct entire amount from first positive paid bucket (crypto → pack)
-    // COALESCE guards against NULL columns in both conditions and subtraction
     await db.run(sql`
 		UPDATE ${userTable}
-		SET
-			crypto_balance = CASE
-				WHEN COALESCE(crypto_balance, 0) > 0 THEN COALESCE(crypto_balance, 0) - ${amount}
-				ELSE crypto_balance
-			END,
-			pack_balance = CASE
-				WHEN COALESCE(crypto_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
-				ELSE pack_balance
-			END
+		SET pack_balance = COALESCE(pack_balance, 0) - ${amount}
 		WHERE id = ${userId}
 	`);
 }

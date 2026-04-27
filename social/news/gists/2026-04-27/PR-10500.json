@@ -1,0 +1,33 @@
+{
+  "pr_number": 10500,
+  "title": "refactor(billing): consolidate crypto_balance into pack_balance",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10500",
+  "merged_at": "2026-04-27T17:29:26Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Simplified Pollen Wallets",
+    "blurb": "We've tidied up the billing dashboard by merging crypto credits directly into your standard pack balance. One unified number, zero confusion.",
+    "summary": "Consolidated the crypto and pack balance buckets into a single unified pack balance across the API and dashboard.",
+    "impact": "Users will now see a single, unified pack balance instead of separate crypto and pack totals, making it easier to track available credits.",
+    "keywords": [
+      "billing",
+      "dashboard",
+      "api",
+      "refactor"
+    ],
+    "visual_concept": "The pollinations.ai bee organizing glowing digital coins into a single large honey jar, representing the consolidation of balances. The Nomnom creature eating the old, complex ledger.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, organizing glowing digital coins into a single large honey jar. The round Nomnom creature happily eats an old complex ledger nearby. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-27/PR-10500.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, organizing glowing digital coins into a single large honey jar. The round Nomnom creature happily eats an old complex ledger nearby. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-27T17:30:46.396966+00:00"
+}

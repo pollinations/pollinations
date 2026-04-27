@@ -188,7 +188,7 @@ function filterModelsByPermissions<
 function hasPaidBalance(c: any): boolean | undefined {
     const user = c.var?.auth?.user;
     if (!user) return undefined;
-    return (user.packBalance ?? 0) > 0;
+    return (user.devBalance ?? 0) > 0 || (user.packBalance ?? 0) > 0;
 }
 
 export const proxyRoutes = new Hono<Env>()

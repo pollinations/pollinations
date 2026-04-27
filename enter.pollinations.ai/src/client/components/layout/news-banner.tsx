@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-04-17",
-        emoji: "💰",
-        title: "Transparent Pricing: Cost vs Price",
+        date: "2026-04-23",
+        emoji: "🌻",
+        title: "Dev earnings for BYOP",
         description:
-            "The registry now tracks provider cost separately from user price. See the [pricing table](/#pricing) for the rates you pay.",
+            "Register a BYOP App Key — 20% of what users spend on your app comes back to you as Pollen. [Create an App Key](/#keys)",
     },
 ];
 

@@ -1,6 +1,6 @@
-import {
-    type ContentFilterResult,
-    type ContentFilterSeverity,
+import type {
+    ContentFilterResult,
+    ContentFilterSeverity,
 } from "@/schemas/openai.ts";
 
 const severityOrder: Record<ContentFilterSeverity, number> = {

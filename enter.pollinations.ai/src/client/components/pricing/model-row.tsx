@@ -1,9 +1,11 @@
 import { type FC, useState } from "react";
+import { toFinitePollen } from "@/client/lib/format-pollen.ts";
 import { cn } from "../../../util.ts";
 import { Badge } from "../ui/badge.tsx";
 import {
     calculateForBalance,
     calculatePerPollen,
+    PAID_ONLY_TOOLTIP,
     TOP_UP_TOOLTIP,
 } from "./calculations.ts";
 import {
@@ -24,12 +26,14 @@ import type { ModelPrice } from "./types.ts";
 type ModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
 export const ModelRow: FC<ModelRowProps> = ({
     model,
     tierBalance,
+    devBalance,
     packBalance,
 }) => {
     const modelDisplayName = getModelDisplayName(model.name);
@@ -45,9 +49,10 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+    const nonTierBalance =
+        toFinitePollen(devBalance) + toFinitePollen(packBalance);
+    const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;
+    const effectiveBalance = showPaidOnly ? nonTierBalance : totalBalance;
 
     const genPerPollen = calculatePerPollen(model);
     const balanceRequests = isSignedIn
@@ -230,13 +235,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Tooltip>
                             )}
                             {showPaidOnly && (
-                                <Tooltip
-                                    content={
-                                        isDisabled
-                                            ? TOP_UP_TOOLTIP
-                                            : "This model uses purchased pollen only."
-                                    }
-                                >
+                                <Tooltip content={PAID_ONLY_TOOLTIP}>
                                     <Badge color="purple" size="sm">
                                         PAID
                                     </Badge>
@@ -254,7 +253,9 @@ export const ModelRow: FC<ModelRowProps> = ({
                         content={
                             <span className="text-xs">
                                 {isDisabled
-                                    ? TOP_UP_TOOLTIP
+                                    ? showPaidOnly
+                                        ? PAID_ONLY_TOOLTIP
+                                        : TOP_UP_TOOLTIP
                                     : `≈ ${balanceRequests} with current balance`}
                             </span>
                         }

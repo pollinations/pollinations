@@ -3,6 +3,7 @@ import {
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
+import { toFinitePollen } from "@/client/lib/format-pollen.ts";
 import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
@@ -33,6 +34,7 @@ type UnifiedModelTableProps = {
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
@@ -133,6 +135,7 @@ type TabContentProps = {
     sortKey: SortKey;
     sortDir: SortDir;
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
@@ -142,6 +145,7 @@ const TabContent: FC<TabContentProps> = ({
     sortKey,
     sortDir,
     tierBalance,
+    devBalance,
     packBalance,
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
@@ -159,6 +163,7 @@ const TabContent: FC<TabContentProps> = ({
                         key={model.name}
                         model={model}
                         tierBalance={tierBalance}
+                        devBalance={devBalance}
                         packBalance={packBalance}
                     />
                 ))}
@@ -174,6 +179,7 @@ const TabContent: FC<TabContentProps> = ({
                                 key={model.name}
                                 model={model}
                                 tierBalance={tierBalance}
+                                devBalance={devBalance}
                                 packBalance={packBalance}
                             />
                         ))}
@@ -188,6 +194,7 @@ const TabContent: FC<TabContentProps> = ({
                         key={model.name}
                         model={model}
                         tierBalance={tierBalance}
+                        devBalance={devBalance}
                         packBalance={packBalance}
                     />
                 ))}
@@ -203,6 +210,7 @@ const TabContent: FC<TabContentProps> = ({
                                 key={model.name}
                                 model={model}
                                 tierBalance={tierBalance}
+                                devBalance={devBalance}
                                 packBalance={packBalance}
                             />
                         ))}
@@ -218,12 +226,14 @@ const TabContent: FC<TabContentProps> = ({
 type MobileModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({
     model,
     tierBalance,
+    devBalance,
     packBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
@@ -238,9 +248,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+    const nonTierBalance =
+        toFinitePollen(devBalance) + toFinitePollen(packBalance);
+    const totalBalance = toFinitePollen(tierBalance) + nonTierBalance;
+    const effectiveBalance = showPaidOnly ? nonTierBalance : totalBalance;
 
     const perPollen = calculatePerPollen(model);
     const balanceRequests = isSignedIn
@@ -557,6 +568,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     textModels,
     audioModels,
     tierBalance,
+    devBalance,
     packBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
@@ -677,6 +689,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     sortKey={sortKey}
                     sortDir={sortDir}
                     tierBalance={tierBalance}
+                    devBalance={devBalance}
                     packBalance={packBalance}
                 />
             )}

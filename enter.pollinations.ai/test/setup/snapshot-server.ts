@@ -1,9 +1,9 @@
-import { serve } from "@hono/node-server";
-import { Hono } from "hono";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { TestProject } from "vitest/node";
+import { serve } from "@hono/node-server";
 import { getLogger } from "@logtape/logtape";
+import { Hono } from "hono";
+import type { TestProject } from "vitest/node";
 
 const SNAPSHOTS_DIR = path.join(process.cwd(), "test", "mocks", "snapshots");
 

@@ -21,6 +21,7 @@ import {
     type UsagePeriodSelection,
 } from "../components/usage-analytics";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import { toFinitePollen } from "../lib/format-pollen.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
@@ -45,8 +46,9 @@ export const Route = createFileRoute("/")({
                     .then((r) => (r.ok ? r.json() : null)),
             ]);
         const apiKeys = apiKeysResult.data || [];
-        const tierBalance = d1BalanceResult?.tierBalance ?? 0;
-        const packBalance = d1BalanceResult?.packBalance ?? 0;
+        const tierBalance = toFinitePollen(d1BalanceResult?.tierBalance);
+        const devBalance = toFinitePollen(d1BalanceResult?.devBalance);
+        const packBalance = toFinitePollen(d1BalanceResult?.packBalance);
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
@@ -57,6 +59,7 @@ export const Route = createFileRoute("/")({
             apiKeys,
             tierData,
             tierBalance,
+            devBalance,
             packBalance,
         };
     },
@@ -70,6 +73,7 @@ function RouteComponent() {
         apiKeys,
         tierData,
         tierBalance,
+        devBalance,
         packBalance,
     } = Route.useLoaderData();
 
@@ -259,8 +263,8 @@ function RouteComponent() {
                     {activeTab === "balance" && (
                         <PollenBalance
                             tierBalance={tierBalance}
+                            devBalance={devBalance}
                             packBalance={packBalance}
-                            tier={tierData?.active?.tier}
                         />
                     )}
                     {activeTab === "usage" && (
@@ -284,7 +288,11 @@ function RouteComponent() {
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
-                <Pricing tierBalance={tierBalance} packBalance={packBalance} />
+                <Pricing
+                    tierBalance={tierBalance}
+                    devBalance={devBalance}
+                    packBalance={packBalance}
+                />
                 <FAQ />
                 <Footer />
             </div>

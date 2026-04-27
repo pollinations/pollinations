@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { routePath } from "hono/route";
-import { LoggerVariables } from "@/middleware/logger.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 
 type AliasEnv = {
     Bindings: CloudflareBindings;

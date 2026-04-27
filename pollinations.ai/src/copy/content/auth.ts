@@ -26,6 +26,7 @@ export const AUTH_COPY = {
 
     // BYOP CTA
     byopTitle: "🐝 Register your app for BYOP",
-    byopDescription: "🌼 Let your users bring their own Pollen.",
+    byopDescription:
+        "BYOP app requests include a 25% markup for 🌻 Dev earnings. App developers receive 20% of the total Pollen charged.",
     byopLink: "Learn about BYOP",
 };

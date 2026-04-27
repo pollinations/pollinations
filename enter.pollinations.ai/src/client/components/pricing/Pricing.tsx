@@ -8,10 +8,15 @@ import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
+export const Pricing: FC<PricingProps> = ({
+    tierBalance,
+    devBalance,
+    packBalance,
+}) => {
     useEffect(() => {
         if (window.location.hash === "#models") {
             const el = document.getElementById("models");
@@ -62,6 +67,7 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                         audioModels={audioModels}
                         textModels={textModels}
                         tierBalance={tierBalance}
+                        devBalance={devBalance}
                         packBalance={packBalance}
                     />
                 </div>
@@ -73,20 +79,13 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                             className="text-xs !border-transparent"
                         >
                             <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
-                                💡 How Pollen is Spent
+                                💡 How Pollen Works
                             </div>
                             <div className="space-y-1 text-xs text-gray-500">
                                 <div>
-                                    1. Tier grants (refilled hourly) are used
-                                    first
-                                </div>
-                                <div>
-                                    2. Purchased pollen is used after tier
-                                    grants are depleted
-                                </div>
-                                <div className="text-purple-700 mt-2">
-                                    ⚠️ <strong>Exception:</strong> 🪷 Paid Only
-                                    models require purchased pollen only
+                                    - Spending order: 🌱 Tier Pollen (skipped
+                                    for paid-only models) → 🌻 Dev earnings → 💳
+                                    Top-up Pollen
                                 </div>
                             </div>
                         </Card>

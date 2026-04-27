@@ -21,6 +21,7 @@ SCHEMA >
     `tier_balance` Nullable(Float64) `json:$.tier_balance`,
     `pack_balance` Nullable(Float64) `json:$.pack_balance`,
     `crypto_balance` Nullable(Float64) `json:$.crypto_balance`,
+    `dev_balance` Nullable(Float64) `json:$.dev_balance`,
     `last_tier_grant` Nullable(Int64) `json:$.last_tier_grant`,
     `synced_at` DateTime `json:$.synced_at`
 

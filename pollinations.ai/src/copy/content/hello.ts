@@ -24,7 +24,7 @@ export const HELLO_PAGE = {
     howItWorksTitle: "How it works",
     howItWorksBuildDesc: "Use one API across models.",
     howItWorksShipDesc: "Start free with regular compute refills.",
-    howItWorksGetPaidDesc: "Your users get their own compute.",
+    howItWorksGetPaidDesc: "As usage grows, your app receives Dev earnings.",
 
     // Start free section
     startFreeTitle: "Start free",
@@ -51,8 +51,8 @@ export const HELLO_PAGE = {
             pillColor: "bg-tertiary-light",
         },
         {
-            pre: "As your app grows, you ",
-            bold: "get more compute",
+            pre: "As usage grows, your app receives ",
+            bold: "Dev earnings",
             post: "",
             emoji: "📈",
             pillColor: "bg-secondary-light",
@@ -116,7 +116,7 @@ export const HELLO_PAGE = {
         {
             emoji: "🤝",
             title: "For your users",
-            desc: "Each user who signs in gets free hourly compute to try your app.\nWhen they need more, it just works — no Stripe setup on your end.",
+            desc: "Each user who signs in gets free hourly compute to try your app.\nBYOP app requests include a 25% markup for 🌻 Dev earnings — no Stripe setup on your end.",
             linkText: "🔌 Set up for your app",
             linkUrl: "byopDocs",
             fullWidth: true,
@@ -149,8 +149,9 @@ export const HELLO_PAGE = {
         },
         {
             emoji: "🌻",
-            title: "Rewards",
-            description: "People use your app, you earn pollen.",
+            title: "Dev earnings",
+            description:
+                "App developers receive 20% of the total Pollen charged.",
         },
         {
             emoji: "🗺️",

@@ -360,33 +360,46 @@ describe("Tier Balance Management", () => {
         });
 
         test("identifyDeductionSource should pick single bucket", () => {
-            // Tier is positive, has pack — tier first
-            const fromTier = identifyDeductionSource(5, 5, 7);
+            const b = (tier: number, dev: number, pack: number) => ({
+                tierBalance: tier,
+                devBalance: dev,
+                packBalance: pack,
+            });
+
+            // Tier is positive, has paid balance — tier first
+            const fromTier = identifyDeductionSource(b(5, 3, 5), 7);
             expect(fromTier.fromTier).toBe(7);
+            expect(fromTier.fromDev).toBe(0);
             expect(fromTier.fromPack).toBe(0);
 
-            // Tier zero, pack positive — falls to pack
-            const fromPack = identifyDeductionSource(0, 8, 5);
-            expect(fromPack.fromTier).toBe(0);
-            expect(fromPack.fromPack).toBe(5);
+            // Tier zero, dev positive — falls to dev
+            const fromDev = identifyDeductionSource(b(0, 4, 0), 7);
+            expect(fromDev.fromDev).toBe(7);
+            expect(fromDev.fromTier).toBe(0);
+            expect(fromDev.fromPack).toBe(0);
 
-            // No pack balance — always tier, never spills
-            const noPaid = identifyDeductionSource(0, 0, 3);
+            // Tier/dev zero, pack positive — falls to pack
+            const fromPack = identifyDeductionSource(b(0, 0, 8), 5);
+            expect(fromPack.fromPack).toBe(5);
+            expect(fromPack.fromTier).toBe(0);
+
+            // No paid/dev balance — always tier, never spills
+            const noPaid = identifyDeductionSource(b(0, 0, 0), 3);
             expect(noPaid.fromTier).toBe(3);
             expect(noPaid.fromPack).toBe(0);
 
-            // Negative tier, no pack — always tier
-            const negTierNoPaid = identifyDeductionSource(-3, 0, 4);
-            expect(negTierNoPaid.fromTier).toBe(4);
-            expect(negTierNoPaid.fromPack).toBe(0);
+            // Negative tier, positive dev — falls to dev
+            const negTierPosDev = identifyDeductionSource(b(-3, 2, 0), 4);
+            expect(negTierPosDev.fromDev).toBe(4);
+            expect(negTierPosDev.fromTier).toBe(0);
 
-            // Negative tier, positive pack — falls to pack
-            const negTierPosPack = identifyDeductionSource(-3, 2, 4);
-            expect(negTierPosPack.fromTier).toBe(0);
+            // Negative tier, no dev, positive pack — falls to pack
+            const negTierPosPack = identifyDeductionSource(b(-3, 0, 2), 4);
             expect(negTierPosPack.fromPack).toBe(4);
+            expect(negTierPosPack.fromTier).toBe(0);
 
-            // All negative — no pack balance, always tier
-            const allNeg = identifyDeductionSource(-3, -1, 5);
+            // All negative — no paid balance, always tier
+            const allNeg = identifyDeductionSource(b(-3, -1, -2), 5);
             expect(allNeg.fromTier).toBe(5);
             expect(allNeg.fromPack).toBe(0);
         });
@@ -549,7 +562,7 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(402);
             const error = await response.json();
             expect(error.error?.message).toMatch(
-                /requires a paid balance|Insufficient balance/,
+                /requires .*Top-up Pollen.*Dev earnings|Insufficient balance/,
             );
         });
 
@@ -643,7 +656,7 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(402);
             const error = await response.json();
             expect(error.error?.message).toMatch(
-                /requires a paid balance|Insufficient balance/,
+                /requires .*Top-up Pollen.*Dev earnings|Insufficient balance/,
             );
         });
 
@@ -779,11 +792,11 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(200);
         });
 
-        test("atomicDeductPaidBalance should skip tier balance", async () => {
+        test("atomicDeductPaidBalance should skip tier and prefer dev over pack", async () => {
             const db = drizzle(env.DB);
             const userId = "test-paid-deduct";
 
-            // Setup user with tier and pack balance
+            // Setup user with tier, dev, and pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -792,6 +805,7 @@ describe("Tier Balance Management", () => {
                     name: "Paid Deduct Test",
                     tier: "flower",
                     tierBalance: 10,
+                    devBalance: 2,
                     packBalance: 5,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -800,30 +814,34 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 10,
+                        devBalance: 2,
                         packBalance: 5,
                     },
                 });
 
-            // Deduct 2 pollen using paid-only deduction (all from pack)
+            // Deduct 2 pollen using paid-only deduction (all from dev)
             await atomicDeductPaidBalance(db, userId, 2);
 
             let balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Unchanged - tier is skipped
-            expect(balances.packBalance).toBe(3); // 5 - 2
+            expect(balances.devBalance).toBe(0); // 2 - 2
+            expect(balances.packBalance).toBe(5); // Unchanged
 
-            // Deduct 4 more (pack still positive → all from pack, goes negative)
+            // Deduct 4 more (dev empty → all from pack)
             await atomicDeductPaidBalance(db, userId, 4);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.packBalance).toBe(-1); // 3 - 4 (goes negative)
+            expect(balances.devBalance).toBe(0); // Unchanged
+            expect(balances.packBalance).toBe(1); // 5 - 4
 
-            // Deduct 7 more (pack already negative → all from pack)
+            // Deduct 7 more (dev still empty → all from pack, goes negative)
             await atomicDeductPaidBalance(db, userId, 7);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.packBalance).toBe(-8); // -1 - 7 (more negative)
+            expect(balances.devBalance).toBe(0); // Unchanged
+            expect(balances.packBalance).toBe(-6); // 1 - 7 (goes negative)
         });
 
         test("should show paid_only field in model info", async () => {
@@ -876,6 +894,45 @@ describe("Tier Balance Management", () => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/generate/text/models",
                 { headers: { authorization: `Bearer ${paidApiKey}` } },
+            );
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as any[];
+
+            const claudeLarge = models.find(
+                (m: any) => m.name === "claude-large",
+            );
+            expect(claudeLarge).toBeDefined();
+            expect(claudeLarge.paid_only).toBe(true);
+        });
+
+        test("should show paid_only models when user has Dev earnings", async ({
+            apiKey,
+            sessionToken,
+        }) => {
+            const db = drizzle(env.DB);
+            const sessionResponse = await SELF.fetch(
+                "http://localhost:3000/api/auth/get-session",
+                {
+                    headers: {
+                        cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            const session = await sessionResponse.json();
+            const userId = session.user.id;
+
+            await db
+                .update(userTable)
+                .set({
+                    tierBalance: 0,
+                    devBalance: 2,
+                    packBalance: 0,
+                })
+                .where(sql`${userTable.id} = ${userId}`);
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/text/models",
+                { headers: { authorization: `Bearer ${apiKey}` } },
             );
             expect(response.status).toBe(200);
             const models = (await response.json()) as any[];

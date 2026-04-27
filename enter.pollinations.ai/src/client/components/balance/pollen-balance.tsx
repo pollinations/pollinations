@@ -1,7 +1,6 @@
-import { type FC, useState } from "react";
-import { formatPollen } from "@/client/lib/format-pollen.ts";
+import { type FC, useId, useState } from "react";
+import { formatPollen, toFinitePollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
-import { getTierColor, getTierEmoji } from "@/tier-config.ts";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -9,72 +8,78 @@ import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
-    tierBalance: number;
-    packBalance: number;
-    tier?: string;
+    tierBalance?: unknown;
+    devBalance?: unknown;
+    packBalance?: unknown;
 };
 
 type GaugeSegmentProps = {
     percentage: number;
     value: number;
     label: string;
-    color: "amber" | "orange" | "blue" | "green" | "pink" | "gray" | "violet";
     title: string;
-    position: "left" | "right";
-    offset?: number;
+    offset: number;
+    barClassName: string;
+    textClassName: string;
+    isTooltipActive: boolean;
+    tooltipId: string;
+    onTooltipClose: () => void;
+    onTooltipOpen: () => void;
 };
-
-const GAUGE_COLOR_CLASSES = {
-    amber: { bg: "bg-amber-200", text: "text-amber-900" },
-    orange: { bg: "bg-orange-300", text: "text-orange-950" },
-    blue: { bg: "bg-blue-200", text: "text-blue-900" },
-    green: { bg: "bg-green-200", text: "text-green-900" },
-    pink: { bg: "bg-pink-200", text: "text-pink-900" },
-    violet: { bg: "bg-violet-200", text: "text-violet-950" },
-    gray: { bg: "bg-gray-300", text: "text-gray-900" },
-} as const;
 
 const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     percentage,
     value,
     label,
-    color,
     title,
-    position,
-    offset = 0,
+    offset,
+    barClassName,
+    textClassName,
+    isTooltipActive,
+    tooltipId,
+    onTooltipClose,
+    onTooltipOpen,
 }) => {
-    const { bg: bgColor, text: textColor } = GAUGE_COLOR_CLASSES[color];
-
-    const style =
-        position === "left"
-            ? { width: `${percentage}%` }
-            : { left: `${offset}%`, width: `${percentage}%` };
-
     return (
-        <div
-            className={`absolute inset-y-0 ${bgColor} transition-all duration-500 ease-out cursor-help`}
-            style={style}
-            title={title}
+        <button
+            type="button"
+            className={`absolute inset-y-0 ${barClassName} cursor-default appearance-none border-0 p-0 text-center transition-all duration-500 ease-out focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/45`}
+            style={{ left: `${offset}%`, width: `${percentage}%` }}
+            aria-label={title.replace(/\n/g, ". ")}
+            aria-describedby={isTooltipActive ? tooltipId : undefined}
+            onBlur={onTooltipClose}
+            onClick={(event) => {
+                event.stopPropagation();
+                onTooltipOpen();
+            }}
+            onFocus={onTooltipOpen}
+            onMouseEnter={onTooltipOpen}
+            onMouseLeave={onTooltipClose}
         >
-            <div className="absolute inset-0 flex items-center justify-center gap-1">
-                <span
-                    className={`${textColor} font-bold text-sm whitespace-nowrap`}
-                >
-                    {label} {formatPollen(value)}
+            <div
+                className={`${textClassName} absolute inset-0 flex flex-col items-center justify-center px-1 leading-none`}
+            >
+                <span className="truncate whitespace-nowrap text-[9px] font-semibold uppercase sm:text-[10px]">
+                    {label}
+                </span>
+                <span className="truncate whitespace-nowrap text-[11px] font-bold tabular-nums sm:text-sm">
+                    {formatPollen(value)}
                 </span>
             </div>
-        </div>
+        </button>
     );
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
+    devBalance,
     packBalance,
-    tier = "spore",
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
-    const tierEmoji = getTierEmoji(tier);
-    const tierColor = getTierColor(tier) as GaugeSegmentProps["color"];
+    const [activeGaugeSegment, setActiveGaugeSegment] = useState<string | null>(
+        null,
+    );
+    const gaugeTooltipId = useId();
 
     const copyEmail = () => {
         navigator.clipboard.writeText("billing@pollinations.ai");
@@ -82,35 +87,86 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         setTimeout(() => setEmailCopied(false), 2000);
     };
     // Clamp at 0 for display — individual buckets can go slightly negative from overage
-    const displayTier = Math.max(0, tierBalance);
-    const displayPaid = Math.max(0, packBalance);
-    const totalPollen = displayTier + displayPaid;
+    const displayTier = Math.max(0, toFinitePollen(tierBalance));
+    const displayDev = Math.max(0, toFinitePollen(devBalance));
+    const displayTopUps = Math.max(0, toFinitePollen(packBalance));
+    const totalPollen = displayTier + displayDev + displayTopUps;
+    const gaugeHeightClass = "h-[40px] sm:h-[46px]";
 
-    function calculatePercentage(value: number, total: number): number {
-        return total > 0 ? (value / total) * 100 : 0;
-    }
+    type Segment = Omit<
+        GaugeSegmentProps,
+        | "percentage"
+        | "offset"
+        | "isTooltipActive"
+        | "tooltipId"
+        | "onTooltipClose"
+        | "onTooltipOpen"
+    > & {
+        key: string;
+    };
 
-    const rawPaidPercentage = calculatePercentage(displayPaid, totalPollen);
-    const gaugeHeightClass = "h-[30px] sm:h-[34px]";
-    const hideTierGaugeSegment = tier === "microbe" && displayTier === 0;
+    const segments: Segment[] = [
+        {
+            key: "topups",
+            value: displayTopUps,
+            label: "💳 Top-up",
+            title: `💳 Top-up: ${formatPollen(displayTopUps)} Pollen\nPollen you bought via packs.`,
+            barClassName: "bg-amber-300",
+            textClassName: "text-amber-950",
+        },
+        {
+            key: "byop",
+            value: displayDev,
+            label: "🌻 Earnings",
+            title: `🌻 Dev earnings: ${formatPollen(displayDev)} Pollen\nPollen earned from BYOP app usage.`,
+            barClassName: "bg-amber-200",
+            textClassName: "text-amber-950",
+        },
+        {
+            key: "tier",
+            value: displayTier,
+            label: "🌱 Tier",
+            title: `🌱 Tier: ${formatPollen(displayTier)} Pollen\nFree hourly Pollen from your current tier.`,
+            barClassName: "bg-amber-100",
+            textClassName: "text-amber-900",
+        },
+    ];
 
-    // Ensure both segments are always visible (min width to fit labels)
-    const MIN_SEGMENT = 20;
-    let paidPercentage: number;
-    let freePercentage: number;
-    if (hideTierGaugeSegment) {
-        paidPercentage = displayPaid > 0 ? 100 : 0;
-        freePercentage = 0;
-    } else if (totalPollen > 0) {
-        paidPercentage = Math.max(
-            MIN_SEGMENT,
-            Math.min(100 - MIN_SEGMENT, rawPaidPercentage),
-        );
-        freePercentage = 100 - paidPercentage;
-    } else {
-        paidPercentage = 50;
-        freePercentage = 50;
-    }
+    const rawPercentages =
+        totalPollen > 0
+            ? segments.map((segment) => (segment.value / totalPollen) * 100)
+            : segments.map(() => 100 / segments.length);
+    const minSegment = 16;
+    const pinned = rawPercentages.map((percentage) => percentage < minSegment);
+    const pinnedTotal = pinned.filter(Boolean).length * minSegment;
+    const remainingRaw = rawPercentages.reduce(
+        (sum, percentage, index) => sum + (pinned[index] ? 0 : percentage),
+        0,
+    );
+    const displayPercentages = rawPercentages.map((percentage, index) => {
+        if (pinned[index]) return minSegment;
+        if (remainingRaw <= 0) return (100 - pinnedTotal) / segments.length;
+        return (percentage / remainingRaw) * (100 - pinnedTotal);
+    });
+
+    let currentOffset = 0;
+    const gaugeSegments = segments.map((segment, index) => {
+        const percentage = displayPercentages[index] ?? 0;
+        const offset = currentOffset;
+        currentOffset += percentage;
+        return { ...segment, percentage, offset };
+    });
+    const activeSegment = gaugeSegments.find(
+        (segment) => segment.key === activeGaugeSegment,
+    );
+    const activeTooltipCenter = activeSegment
+        ? Math.max(
+              18,
+              Math.min(82, activeSegment.offset + activeSegment.percentage / 2),
+          )
+        : 50;
+    const [tooltipTitle = "", tooltipBody = ""] =
+        activeSegment?.title.split("\n") ?? [];
 
     return (
         <Panel color="amber">
@@ -122,34 +178,48 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         {formatPollen(totalPollen)} pollen
                     </span>
                     {/* Gauge */}
-                    <div className="w-full max-w-[540px]">
+                    <div className="relative w-full max-w-[540px]">
                         <div
-                            className={`relative ${gaugeHeightClass} bg-gray-200 rounded-full overflow-hidden border-2 border-amber-300`}
+                            className={`relative ${gaugeHeightClass} rounded-full overflow-hidden border-2 border-amber-300 bg-amber-100`}
                         >
-                            {/* Paid Pollen - Soft purple for paid (pack) */}
-                            {paidPercentage > 0 && (
+                            {gaugeSegments.map((segment) => (
                                 <PollenGaugeSegment
-                                    percentage={paidPercentage}
-                                    value={displayPaid}
-                                    label="🪷"
-                                    color="amber"
-                                    title={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants for others`}
-                                    position="left"
+                                    key={segment.key}
+                                    percentage={segment.percentage}
+                                    value={segment.value}
+                                    label={segment.label}
+                                    title={segment.title}
+                                    offset={segment.offset}
+                                    barClassName={segment.barClassName}
+                                    textClassName={segment.textClassName}
+                                    isTooltipActive={
+                                        activeGaugeSegment === segment.key
+                                    }
+                                    tooltipId={gaugeTooltipId}
+                                    onTooltipClose={() =>
+                                        setActiveGaugeSegment(null)
+                                    }
+                                    onTooltipOpen={() =>
+                                        setActiveGaugeSegment(segment.key)
+                                    }
                                 />
-                            )}
-                            {/* Free Pollen - Soft teal for free */}
-                            {!hideTierGaugeSegment && freePercentage > 0 && (
-                                <PollenGaugeSegment
-                                    percentage={freePercentage}
-                                    value={displayTier}
-                                    label={tierEmoji}
-                                    color={tierColor}
-                                    title={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
-                                    position="right"
-                                    offset={paidPercentage}
-                                />
-                            )}
+                            ))}
                         </div>
+                        {activeSegment && (
+                            <span
+                                id={gaugeTooltipId}
+                                role="tooltip"
+                                className="pointer-events-none absolute top-full z-50 mt-2 w-[240px] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-xs text-gray-800 shadow-lg"
+                                style={{ left: `${activeTooltipCenter}%` }}
+                            >
+                                <span className="block font-semibold text-gray-900">
+                                    {tooltipTitle}
+                                </span>
+                                <span className="mt-1 block whitespace-normal leading-snug">
+                                    {tooltipBody}
+                                </span>
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -166,8 +236,8 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 Buy Pollen
                             </h3>
                             <p className="text-sm text-amber-800">
-                                Choose a pack below. 🧪 Beta bonus is already
-                                included, with larger packs getting more.
+                                Choose a pack. Larger packs include a bigger
+                                beta bonus.
                             </p>
                         </div>
 
@@ -180,7 +250,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     color="amber"
                                     weight="light"
                                     title={`Buy $${pack.amountUsd} pollen pack`}
-                                    className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:w-[132px] sm:justify-self-center sm:text-sm"
+                                    className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:w-[156px] sm:justify-self-center sm:text-sm"
                                 >
                                     <span className="font-semibold text-amber-900">
                                         ${pack.amountUsd}
@@ -189,10 +259,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                         /
                                     </span>
                                     <span className="font-medium text-amber-900">
-                                        🪷{" "}
                                         {formatPollenPackValue(
                                             pack.pollenGrant,
-                                        )}
+                                        )}{" "}
+                                        pollen
                                     </span>
                                 </Button>
                             ))}

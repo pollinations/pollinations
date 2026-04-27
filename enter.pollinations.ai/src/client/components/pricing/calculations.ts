@@ -8,7 +8,9 @@
 import millify from "millify";
 import type { ModelPrice } from "./types.ts";
 
-export const TOP_UP_TOOLTIP = "🔒 Top up to use this model";
+export const TOP_UP_TOOLTIP = "Top up to use this model";
+export const PAID_ONLY_TOOLTIP =
+    "Requires 💳 Top-up Pollen or 🌻 Dev earnings. 🌱 Tier Pollen cannot be used.";
 
 /** Format number as coarse estimate (not precise - it's an average) */
 function formatCount(num: number): string {
@@ -35,8 +37,6 @@ export function calculatePerPollen(model: ModelPrice): string {
 
 /**
  * Calculate how many requests the user can afford with their current balance.
- * For paid-only models: only packBalance.
- * For free models: tierBalance + packBalance.
  * Returns "0" when balance is insufficient, "—" when no cost data.
  */
 export function calculateForBalance(

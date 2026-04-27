@@ -1,6 +1,6 @@
 import { Hono } from "hono";
+import type { PolarEvent } from "@/events.ts";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
-import { PolarEvent } from "@/events.ts";
 
 export type MockPolarState = {
     events: PolarEvent[];

@@ -74,6 +74,10 @@ SCHEMA >
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 
+-- BYOP dev markup (credit credited to pk_ owner's dev_balance; 0 on non-BYOP)
+`dev_credit`   Float64 `json:$.devCredit` DEFAULT 0,
+`byop_markup_pct`  Float32 `json:$.byopMarkupPct` DEFAULT 0,
+
 -- Prompt Moderation
 `moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',
 `moderation_prompt_self_harm_severity`  LowCardinality(String) `json:$.moderationPromptSelfHarmSeverity` DEFAULT 'undefined',

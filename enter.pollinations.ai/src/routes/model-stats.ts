@@ -4,8 +4,8 @@
  * to avoid duplicate caching and Tinybird calls
  */
 
-import { Hono } from "hono";
 import { getLogger } from "@logtape/logtape";
+import { Hono } from "hono";
 import type { Env } from "../env.ts";
 import { getModelStats } from "../utils/model-stats.ts";
 

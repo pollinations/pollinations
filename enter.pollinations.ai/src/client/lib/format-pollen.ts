@@ -1,3 +1,11 @@
-export function formatPollen(value: number): string {
-    return value.toFixed(value > 0 && value < 1 ? 3 : 2);
+export function toFinitePollen(value: unknown): number {
+    if (value === null || value === undefined) return 0;
+    const numericValue =
+        typeof value === "number" ? value : Number.parseFloat(String(value));
+    return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+export function formatPollen(value: unknown): string {
+    const safeValue = toFinitePollen(value);
+    return safeValue.toFixed(safeValue > 0 && safeValue < 1 ? 3 : 2);
 }

@@ -28,7 +28,7 @@ const TABLES: TableConfig[] = [
         datasource: "d1_user",
         query: `SELECT id, name, email, email_verified, image, created_at, updated_at,
                        role, banned, ban_reason, ban_expires, github_id, github_username,
-                       tier, tier_balance, pack_balance, last_tier_grant
+                       tier, tier_balance, pack_balance, dev_balance, last_tier_grant
                 FROM user`,
     },
     {

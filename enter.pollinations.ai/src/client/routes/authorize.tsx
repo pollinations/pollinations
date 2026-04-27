@@ -28,7 +28,7 @@ import {
     sanitizeAuthorizeAccountPermissions,
 } from "../lib/authorize-config.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
-import { formatPollen } from "../lib/format-pollen.ts";
+import { formatPollen, toFinitePollen } from "../lib/format-pollen.ts";
 
 type Attribution = {
     found: boolean;
@@ -255,7 +255,9 @@ function AuthorizeComponent() {
             .then((data) => {
                 if (!data) return;
                 setTotalBalance(
-                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
+                    toFinitePollen(data.tierBalance) +
+                        toFinitePollen(data.devBalance) +
+                        toFinitePollen(data.packBalance),
                 );
             })
             .catch(() => {});

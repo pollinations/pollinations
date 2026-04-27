@@ -114,11 +114,12 @@ export const PLAY_PAGE = {
         "Never expose in client-side code, git repos, or public URLs",
     appKeyLabel: "App Key",
     appKeyFeature1: "🌼 Identifies your app in the BYOP consent screen",
-    appKeyFeature2: "📈 Traffic attribution",
+    appKeyFeature2: "🌻 Dev earnings",
     appKeyNote:
-        "For developers building apps where users bring their own Pollen. Create one at enter.pollinations.ai.",
+        "For developers building apps where users bring their own Pollen. App developers receive 20% of the total Pollen charged.",
     byopLabel: "Bring Your Own Pollen",
-    byopDescription: "Building an app? Let users bring their own Pollen.",
+    byopDescription:
+        "Building an app? BYOP app requests include a 25% markup for 🌻 Dev earnings.",
     getKeyButton: "Get Your Key",
     byopButton: "Learn more",
 

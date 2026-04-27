@@ -116,7 +116,7 @@ jobs:
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(gen.pollinations.ai/|enter.pollinations.ai/src/|shared/registry/)' || true)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(gen.pollinations.ai/|enter.pollinations.ai/src/|shared/(registry|schemas|http)/)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT

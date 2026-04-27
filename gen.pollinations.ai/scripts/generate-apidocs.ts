@@ -9,7 +9,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
 const OPENAPI_URL =
     process.env.OPENAPI_URL ||
-    "https://enter.pollinations.ai/api/docs/open-api/generate-schema";
+    "https://gen.pollinations.ai/api/docs/open-api/generate-schema";
+
+type JsonObject = Record<string, unknown>;
 
 /**
  * Strip all 4xx/5xx error response sections from the markdown and append
@@ -95,15 +97,17 @@ function deduplicateErrorResponses(md: string): string {
 /**
  * Replace long enum arrays in the spec with a description pointing to /models.
  */
-function simplifyModelEnums(spec: any): void {
-    for (const [_path, methods] of Object.entries(spec.paths || {})) {
-        for (const op of Object.values(methods as any)) {
-            if (!op || typeof op !== "object") continue;
-            for (const param of (op as any).parameters || []) {
-                const schema = param.schema;
-                if (schema?.enum && schema.enum.length > 15) {
-                    const examples = schema.enum.slice(0, 5).join(", ");
-                    schema.description = `${schema.description || param.name}. Examples: ${examples}. See /image/models, /text/models, or /audio/models for full list.`;
+function simplifyModelEnums(spec: JsonObject): void {
+    for (const methods of Object.values(asObject(spec.paths))) {
+        for (const op of Object.values(asObject(methods))) {
+            const operation = asObject(op);
+            for (const param of asArray(operation.parameters)) {
+                const parameter = asObject(param);
+                const schema = asObject(parameter.schema);
+                const enumValues = asArray(schema.enum);
+                if (enumValues.length > 15) {
+                    const examples = enumValues.slice(0, 5).join(", ");
+                    schema.description = `${String(parameter.description || parameter.name || "Model")}. Examples: ${examples}. See /image/models, /text/models, or /audio/models for full list.`;
                     delete schema.enum;
                 }
             }
@@ -134,7 +138,7 @@ function cleanPlaceholderExamples(md: string): string {
     });
 }
 
-function removeEmptyValues(obj: any): any {
+function removeEmptyValues(obj: unknown): unknown {
     if (Array.isArray(obj)) {
         const filtered = obj
             .map(removeEmptyValues)
@@ -142,7 +146,7 @@ function removeEmptyValues(obj: any): any {
         return filtered.length > 0 ? filtered : undefined;
     }
     if (obj && typeof obj === "object") {
-        const result: any = {};
+        const result: JsonObject = {};
         for (const [k, v] of Object.entries(obj)) {
             if (v === "" || v === null) continue;
             const cleaned = removeEmptyValues(v);
@@ -153,9 +157,18 @@ function removeEmptyValues(obj: any): any {
     return obj;
 }
 
+function asObject(value: unknown): JsonObject {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return value as JsonObject;
+}
+
+function asArray(value: unknown): unknown[] {
+    return Array.isArray(value) ? value : [];
+}
+
 async function main() {
     console.log(`Fetching OpenAPI spec from ${OPENAPI_URL}...`);
-    const spec = await fetch(OPENAPI_URL).then((r) => r.json());
+    const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as JsonObject;
     const originalSpecSize = JSON.stringify(spec).length;
 
     // Pre-process: simplify long model enum lists

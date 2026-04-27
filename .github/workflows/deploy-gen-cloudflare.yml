@@ -8,6 +8,8 @@ on:
       - 'gen.pollinations.ai/**'
       - 'enter.pollinations.ai/src/**'
       - 'shared/registry/**'
+      - 'shared/schemas/**'
+      - 'shared/http/**'
       - '.github/workflows/deploy-gen-cloudflare.yml'
   workflow_dispatch:
 

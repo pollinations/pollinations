@@ -1,7 +1,7 @@
 /**
  * gen.pollinations.ai - API generation gateway
  *
- * Generation routes are handled in this worker. Account, docs, auth, billing UI,
+ * Generation and docs routes are handled in this worker. Account, auth, billing UI,
  * and other non-generation API routes remain owned by enter.pollinations.ai.
  *
  * URL Mapping:
@@ -9,6 +9,7 @@
  *   gen.pollinations.ai/docs          -> redirect to /api/docs
  *   gen.pollinations.ai/models        -> /api/generate/text/models
  *   gen.pollinations.ai/api/generate/* -> handled locally
+ *   gen.pollinations.ai/api/docs/*    -> handled locally
  *   gen.pollinations.ai/api/*         -> enter.pollinations.ai
  *   gen.pollinations.ai/account/*     -> /api/account/*
  *   gen.pollinations.ai/image/*       -> /api/generate/image/*
@@ -43,10 +44,14 @@ async function fetchGeneration(
     env: Env,
     ctx: ExecutionContext,
     url: URL,
+    shouldNoIndex = true,
 ): Promise<Response> {
-    return noIndex(
-        await generationApp.fetch(rewriteRequest(request, url), env, ctx),
+    const response = await generationApp.fetch(
+        rewriteRequest(request, url),
+        env,
+        ctx,
     );
+    return shouldNoIndex ? noIndex(response) : response;
 }
 
 async function fetchEnter(
@@ -72,7 +77,13 @@ export default {
         }
 
         if (route.kind === "generation") {
-            return fetchGeneration(request, env, ctx, route.url);
+            return fetchGeneration(
+                request,
+                env,
+                ctx,
+                route.url,
+                !route.url.pathname.startsWith("/api/docs"),
+            );
         }
 
         return fetchEnter(request, env, route.url, route.noIndex);

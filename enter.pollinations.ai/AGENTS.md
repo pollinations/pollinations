@@ -693,9 +693,9 @@ hono-openapi introspects describeRoute() + validators
         ▼
 OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
         │
-        ├──► Scalar UI at /api/docs (interactive, runtime)
+        ├──► Scalar UI at gen.pollinations.ai/api/docs (interactive, runtime)
         ├──► /api/docs/llm.txt (compact plain text for AI agents)
-        └──► scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
+        └──► gen.pollinations.ai/scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
 ```
 
 ### Source Files (what you edit)
@@ -724,14 +724,14 @@ OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
 
 ### Three Output Surfaces
 
-1. **Scalar UI** (`/api/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
+1. **Scalar UI** (`gen.pollinations.ai/api/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
 2. **LLM text** (`/api/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
-3. **APIDOCS.md** — markdown version, generated offline by `scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
+3. **APIDOCS.md** — markdown version, generated offline by `gen.pollinations.ai/scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
 
 ### Regenerating APIDOCS.md
 
-- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy enter.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
-- **Manual**: `npm run docs:generate` (fetches from production `enter.pollinations.ai`, so changes must be deployed first)
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy gen.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
+- **Manual**: `npm run docs:generate --prefix gen.pollinations.ai` (fetches from production `gen.pollinations.ai`, so changes must be deployed first)
 
 ### Where to Make Changes
 

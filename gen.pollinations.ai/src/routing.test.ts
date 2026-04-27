@@ -29,13 +29,27 @@ describe("resolveRoute", () => {
         });
     });
 
-    it("keeps docs on enter without noindex", () => {
+    it("routes docs locally without noindex", () => {
         const decision = route("/api/docs");
 
-        expect(decision.kind).toBe("enter");
-        if (decision.kind !== "enter") return;
+        expect(decision.kind).toBe("generation");
+        if (decision.kind !== "generation") return;
         expect(decision.url.pathname).toBe("/api/docs");
-        expect(decision.noIndex).toBe(false);
+    });
+
+    it("normalizes trailing slashes before exact public route matching", () => {
+        const docs = route("/docs/");
+        const models = route("/models/");
+
+        expect(docs).toEqual({
+            kind: "redirect",
+            location: "https://staging.gen.pollinations.ai/api/docs",
+            status: 301,
+        });
+
+        expect(models.kind).toBe("generation");
+        if (models.kind !== "generation") return;
+        expect(models.url.pathname).toBe("/api/generate/text/models");
     });
 
     it("routes api generation paths locally", () => {

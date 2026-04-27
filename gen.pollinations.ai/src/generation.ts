@@ -6,6 +6,7 @@ import type { Env as GenerationEnv } from "@/env.ts";
 import { handleError } from "@/error.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
+import { createDocsRoutes } from "./routes/docs.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 
 export function createGenerationApp(): Hono<GenerationEnv> {
@@ -25,10 +26,14 @@ export function createGenerationApp(): Hono<GenerationEnv> {
         .use("*", logger)
         .use("*", async (c, next) => {
             await next();
-            c.header("X-Robots-Tag", "noindex, nofollow");
+            if (!c.req.path.startsWith("/api/docs")) {
+                c.header("X-Robots-Tag", "noindex, nofollow");
+            }
         })
         .route("/api/generate", proxyRoutes)
         .route("/api/generate/v1/audio", audioRoutes);
+
+    app.route("/api/docs", createDocsRoutes(app));
 
     app.notFound(async (c: Context<GenerationEnv>) => {
         return handleError(new HTTPException(404), c);

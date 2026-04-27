@@ -1,4 +1,5 @@
 interface CloudflareBindings {
+    ENTER: Fetcher;
     BETTER_AUTH_SECRET: string;
     POLAR_ACCESS_TOKEN?: string;
     POLAR_WEBHOOK_SECRET?: string;

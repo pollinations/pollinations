@@ -58,7 +58,8 @@ export function classifyRoute(path: string): RouteClass {
 export function resolveRoute(inputUrl: URL): RouteDecision {
     const url = new URL(inputUrl);
     const path = url.pathname;
-    const routeClass = classifyRoute(path);
+    const matchPath = stripTrailingSlash(path);
+    const routeClass = classifyRoute(matchPath);
 
     if (path === "/robots.txt") {
         return {
@@ -69,7 +70,7 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
         };
     }
 
-    if (path === "/" || path === "/docs") {
+    if (matchPath === "/" || matchPath === "/docs") {
         return {
             kind: "redirect",
             location: `${url.origin}/api/docs`,
@@ -77,7 +78,7 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
         };
     }
 
-    if (path === "/models") {
+    if (matchPath === "/models") {
         url.pathname = "/api/generate/text/models";
         return { kind: "generation", url };
     }
@@ -87,10 +88,10 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
     }
 
     if (routeClass === "docs") {
+        url.pathname = matchPath;
         return {
-            kind: "enter",
+            kind: "generation",
             url,
-            noIndex: false,
         };
     }
 
@@ -113,4 +114,8 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
 
     url.pathname = `/api/generate${path}`;
     return { kind: "generation", url };
+}
+
+function stripTrailingSlash(path: string): string {
+    return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }

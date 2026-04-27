@@ -64,7 +64,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "grok",
-        config: portkeyConfig["grok-4-1-fast-non-reasoning"],
+        config: portkeyConfig["grok-4-20-non-reasoning"],
     },
     {
         name: "grok-large",

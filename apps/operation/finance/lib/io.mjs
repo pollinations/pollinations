@@ -1,3 +1,4 @@
+import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import {
     copyFile,
@@ -14,6 +15,17 @@ const CONFIG_PATH = join(APP_DIR, "config.local.json");
 const VENDORS_PATH = join(APP_DIR, "secrets", "vendors.json");
 const INPUT_DIR = join(APP_DIR, "secrets", "input");
 const ENV_PATH = join(APP_DIR, "secrets", ".env");
+// Source-of-truth for provider/model API keys lives with the text service.
+// Finance pulls from there so no key needs to be duplicated locally.
+const SHARED_MODEL_SECRETS_PATH = join(
+    APP_DIR,
+    "..",
+    "..",
+    "..",
+    "text.pollinations.ai",
+    "secrets",
+    "env.json",
+);
 
 export function appDir() {
     return APP_DIR;
@@ -63,6 +75,51 @@ export async function copyIntoInput(sourcePath, destName) {
     const dest = join(INPUT_DIR, destName);
     await copyFile(sourcePath, dest);
     return dest;
+}
+
+/**
+ * Decrypt the text service's SOPS-encrypted env.json (the source of truth
+ * for provider/model API keys) and merge any keys not already set into the
+ * given target. Used so we don't duplicate keys like DEEPINFRA_API_KEY,
+ * ANTHROPIC_API_KEY, etc. into a separate finance .env file.
+ *
+ * No-op if the file is missing or `sops` isn't on PATH / can't decrypt
+ * (e.g. user's age key isn't loaded). Logs a warning in that case so the
+ * caller knows live MTD won't work — but doesn't fail the run, since the
+ * Wise feed and forecast still work without provider keys.
+ */
+export async function loadSharedModelSecrets(target = process.env) {
+    if (!existsSync(SHARED_MODEL_SECRETS_PATH)) return target;
+    const stdout = await new Promise((resolve) => {
+        execFile(
+            "sops",
+            ["-d", SHARED_MODEL_SECRETS_PATH],
+            { timeout: 30_000, maxBuffer: 10 * 1024 * 1024 },
+            (err, out, stderr) => {
+                if (err) {
+                    console.warn(
+                        `Could not decrypt shared model secrets (${SHARED_MODEL_SECRETS_PATH}): ${err.message}\n${stderr || ""}`.trim(),
+                    );
+                    resolve(null);
+                    return;
+                }
+                resolve(out);
+            },
+        );
+    });
+    if (!stdout) return target;
+    let data;
+    try {
+        data = JSON.parse(stdout);
+    } catch (e) {
+        console.warn(`Shared model secrets is not valid JSON: ${e.message}`);
+        return target;
+    }
+    for (const [key, value] of Object.entries(data)) {
+        if (typeof value !== "string") continue;
+        if (target[key] === undefined) target[key] = value;
+    }
+    return target;
 }
 
 /**

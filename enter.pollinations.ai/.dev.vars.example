@@ -14,13 +14,6 @@ TINYBIRD_INGEST_TOKEN=your_tinybird_ingest_token
 TINYBIRD_READ_TOKEN=your_tinybird_read_token
 TINYBIRD_SYNC_TOKEN=your_tinybird_sync_token
 
-# NOWPayments Crypto Payments (https://nowpayments.io)
-# Get keys from: https://account.nowpayments.io (production) or https://account-sandbox.nowpayments.io (sandbox)
-NOWPAYMENTS_API_KEY=your_nowpayments_api_key
-NOWPAYMENTS_IPN_SECRET=your_nowpayments_ipn_secret
-# Set to "sandbox" for testing, "production" for live payments
-NOWPAYMENTS_ENV=sandbox
-
 # Testing
 PLN_ENTER_TOKEN=optional_pln_enter_token
 

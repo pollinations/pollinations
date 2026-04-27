@@ -15,28 +15,22 @@ type BalanceCheckResult = {
 export type UserBalance = {
     tierBalance: number;
     packBalance: number;
-    cryptoBalance: number;
 };
 
 /**
  * Get the total available balance across relevant buckets.
- * For paid-only models: crypto + pack only.
- * For regular models: tier + crypto + pack (only positive buckets).
+ * For paid-only models: pack only.
+ * For regular models: tier + pack (only positive buckets).
  */
 export function getAvailableBalance(
     balances: UserBalance,
     isPaidOnly = false,
 ): number {
     if (isPaidOnly) {
-        return (
-            Math.max(0, balances.cryptoBalance) +
-            Math.max(0, balances.packBalance)
-        );
+        return Math.max(0, balances.packBalance);
     }
     return (
-        Math.max(0, balances.tierBalance) +
-        Math.max(0, balances.cryptoBalance) +
-        Math.max(0, balances.packBalance)
+        Math.max(0, balances.tierBalance) + Math.max(0, balances.packBalance)
     );
 }
 
@@ -68,7 +62,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
             .select({
                 tierBalance: userTable.tierBalance,
                 packBalance: userTable.packBalance,
-                cryptoBalance: userTable.cryptoBalance,
             })
             .from(userTable)
             .where(eq(userTable.id, userId))
@@ -78,7 +71,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         return {
             tierBalance: user?.tierBalance ?? 0,
             packBalance: user?.packBalance ?? 0,
-            cryptoBalance: user?.cryptoBalance ?? 0,
         };
     };
 
@@ -105,19 +97,12 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         isPaidOnly = false,
     ): { source: string; slug: string } => {
         if (isPaidOnly) {
-            // For paid-only: crypto → pack
-            if (balances.cryptoBalance > 0) {
-                return { source: "crypto", slug: "v1:meter:crypto" };
-            }
             return { source: "pack", slug: "v1:meter:pack" };
         }
 
-        // Regular: tier → crypto → pack
+        // Regular: tier → pack
         if (balances.tierBalance > 0) {
             return { source: "tier", slug: "v1:meter:tier" };
-        }
-        if (balances.cryptoBalance > 0) {
-            return { source: "crypto", slug: "v1:meter:crypto" };
         }
         return { source: "pack", slug: "v1:meter:pack" };
     };
@@ -126,17 +111,14 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
         // Check if any individual bucket is positive (don't sum — negative buckets shouldn't cancel out positive ones)
         const hasPositiveBalance =
-            balances.tierBalance > 0 ||
-            balances.cryptoBalance > 0 ||
-            balances.packBalance > 0;
+            balances.tierBalance > 0 || balances.packBalance > 0;
 
         log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, crypto={cryptoBalance}",
+            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}",
             {
                 userId,
                 tierBalance: balances.tierBalance,
                 packBalance: balances.packBalance,
-                cryptoBalance: balances.cryptoBalance,
             },
         );
 
@@ -147,7 +129,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
                 selectedMeterSlug: slug,
                 balances: {
                     "v1:meter:tier": balances.tierBalance,
-                    "v1:meter:crypto": balances.cryptoBalance,
                     "v1:meter:pack": balances.packBalance,
                 },
             };
@@ -163,18 +144,12 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const requirePaidBalance = async (userId: string, message?: string) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
-        // Check if any paid bucket is positive (don't sum — negative buckets shouldn't cancel out positive ones)
-        const hasPositivePaidBalance =
-            balances.cryptoBalance > 0 || balances.packBalance > 0;
+        const hasPositivePaidBalance = balances.packBalance > 0;
 
-        log.debug(
-            "Paid balance check for user {userId}: crypto={cryptoBalance}, pack={packBalance}",
-            {
-                userId,
-                cryptoBalance: balances.cryptoBalance,
-                packBalance: balances.packBalance,
-            },
-        );
+        log.debug("Paid balance check for user {userId}: pack={packBalance}", {
+            userId,
+            packBalance: balances.packBalance,
+        });
 
         if (hasPositivePaidBalance) {
             const { source, slug } = determineBalanceSource(balances, true);
@@ -183,7 +158,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
                 selectedMeterSlug: slug,
                 balances: {
                     "v1:meter:tier": 0, // Tier not available for paid-only
-                    "v1:meter:crypto": balances.cryptoBalance,
                     "v1:meter:pack": balances.packBalance,
                 },
             };

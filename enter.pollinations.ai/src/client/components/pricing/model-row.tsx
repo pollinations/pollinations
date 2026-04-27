@@ -25,14 +25,12 @@ type ModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 export const ModelRow: FC<ModelRowProps> = ({
     model,
     tierBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
@@ -47,7 +45,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
+    const paidBalance = packBalance ?? 0;
     const totalBalance = (tierBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 

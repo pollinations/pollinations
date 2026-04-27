@@ -104,15 +104,14 @@ async function deductUserBalance(
         const balancesBefore = await getUserBalances(db, userId);
         const deductionSource = identifyDeductionSource(
             balancesBefore.tierBalance,
-            balancesBefore.cryptoBalance,
-            amount,
             balancesBefore.packBalance,
+            amount,
         );
 
         await atomicDeductUserBalance(db, userId, amount);
 
         log.debug(
-            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
+            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
             {
                 price: amount,
                 userId,

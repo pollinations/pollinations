@@ -175,7 +175,6 @@ describe("ElevenLabs TTS", () => {
                 .set({
                     tierBalance: 0.1,
                     packBalance: 0,
-                    cryptoBalance: 0,
                 })
                 .where(eq(userTable.id, userId));
 

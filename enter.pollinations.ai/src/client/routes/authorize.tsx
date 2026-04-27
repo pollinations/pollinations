@@ -255,9 +255,7 @@ function AuthorizeComponent() {
             .then((data) => {
                 if (!data) return;
                 setTotalBalance(
-                    (data.tierBalance ?? 0) +
-                        (data.packBalance ?? 0) +
-                        (data.cryptoBalance ?? 0),
+                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
                 );
             })
             .catch(() => {});

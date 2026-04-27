@@ -54,7 +54,6 @@ describe("Tier Balance Management", () => {
                         tier: user.tier,
                         tierBalance: user.tierBalance,
                         packBalance: 0,
-                        cryptoBalance: 0,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     })
@@ -112,11 +111,11 @@ describe("Tier Balance Management", () => {
             }
         });
 
-        test("should not affect pack or crypto balance during refill", async () => {
+        test("should not affect pack balance during refill", async () => {
             const db = drizzle(env.DB);
             const executionContext = createExecutionContext();
 
-            // Create user with existing pack and crypto balance
+            // Create user with existing pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -125,8 +124,7 @@ describe("Tier Balance Management", () => {
                     name: "Multi Balance",
                     tier: "flower",
                     tierBalance: 2,
-                    packBalance: 50,
-                    cryptoBalance: 25,
+                    packBalance: 75,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -135,8 +133,7 @@ describe("Tier Balance Management", () => {
                     set: {
                         tier: "flower",
                         tierBalance: 2,
-                        packBalance: 50,
-                        cryptoBalance: 25,
+                        packBalance: 75,
                     },
                 });
 
@@ -148,15 +145,13 @@ describe("Tier Balance Management", () => {
                 .select({
                     tierBalance: userTable.tierBalance,
                     packBalance: userTable.packBalance,
-                    cryptoBalance: userTable.cryptoBalance,
                 })
                 .from(userTable)
                 .where(sql`${userTable.id} = 'user-multi-balance'`)
                 .limit(1);
 
             expect(user[0]?.tierBalance).toBe(TIER_POLLEN.flower);
-            expect(user[0]?.packBalance).toBe(50); // Unchanged
-            expect(user[0]?.cryptoBalance).toBe(25); // Unchanged
+            expect(user[0]?.packBalance).toBe(75); // Unchanged
         });
 
         test("should recover negative balances gradually via additive refill", async () => {
@@ -180,7 +175,6 @@ describe("Tier Balance Management", () => {
                         tier: user.tier,
                         tierBalance: user.tierBalance,
                         packBalance: 0,
-                        cryptoBalance: 0,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     })
@@ -233,7 +227,7 @@ describe("Tier Balance Management", () => {
             const db = drizzle(env.DB);
             const userId = "test-atomic-deduct";
 
-            // Setup user with all balance types
+            // Setup user with tier and pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -243,7 +237,6 @@ describe("Tier Balance Management", () => {
                     tier: "flower",
                     tierBalance: 5,
                     packBalance: 10,
-                    cryptoBalance: 3,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -252,7 +245,6 @@ describe("Tier Balance Management", () => {
                     set: {
                         tierBalance: 5,
                         packBalance: 10,
-                        cryptoBalance: 3,
                     },
                 });
 
@@ -261,7 +253,6 @@ describe("Tier Balance Management", () => {
 
             let balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(2); // 5 - 3
-            expect(balances.cryptoBalance).toBe(3); // Unchanged
             expect(balances.packBalance).toBe(10); // Unchanged
 
             // Deduct 4 more (all from tier — tier is still positive)
@@ -269,31 +260,28 @@ describe("Tier Balance Management", () => {
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(-2); // 2 - 4 (goes negative)
-            expect(balances.cryptoBalance).toBe(3); // Unchanged
             expect(balances.packBalance).toBe(10); // Unchanged
 
-            // Deduct 5 more (tier is negative, crypto is positive → all from crypto)
+            // Deduct 5 more (tier is negative, pack is positive → all from pack)
             await atomicDeductUserBalance(db, userId, 5);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(-2); // Unchanged
-            expect(balances.cryptoBalance).toBe(-2); // 3 - 5 (goes negative)
-            expect(balances.packBalance).toBe(10); // Unchanged
+            expect(balances.packBalance).toBe(5); // 10 - 5
 
-            // Deduct 15 more (tier/crypto negative → all from pack)
+            // Deduct 15 more (tier negative, pack still positive → all from pack)
             await atomicDeductUserBalance(db, userId, 15);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(-2); // Unchanged
-            expect(balances.cryptoBalance).toBe(-2); // Unchanged
-            expect(balances.packBalance).toBe(-5); // 10 - 15 (goes negative)
+            expect(balances.packBalance).toBe(-10); // 5 - 15 (goes negative)
         });
 
-        test("should prioritize tier → crypto → pack balance order", async () => {
+        test("should prioritize tier → pack balance order", async () => {
             const db = drizzle(env.DB);
             const userId = "test-priority-order";
 
-            // Setup: User with only crypto balance
+            // Setup: User with only pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -302,8 +290,7 @@ describe("Tier Balance Management", () => {
                     name: "Priority Test",
                     tier: "flower",
                     tierBalance: 0,
-                    packBalance: 0,
-                    cryptoBalance: 10,
+                    packBalance: 10,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -311,17 +298,15 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 0,
-                        packBalance: 0,
-                        cryptoBalance: 10,
+                        packBalance: 10,
                     },
                 });
 
-            // Deduct from crypto when tier is 0
+            // Deduct from pack when tier is 0
             await atomicDeductUserBalance(db, userId, 3);
             let balances = await getUserBalances(db, userId);
-            expect(balances.cryptoBalance).toBe(7); // 10 - 3
+            expect(balances.packBalance).toBe(7); // 10 - 3
             expect(balances.tierBalance).toBe(0);
-            expect(balances.packBalance).toBe(0);
 
             // Add tier balance
             await db
@@ -333,13 +318,13 @@ describe("Tier Balance Management", () => {
             await atomicDeductUserBalance(db, userId, 2);
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(3); // 5 - 2
-            expect(balances.cryptoBalance).toBe(7); // Unchanged
+            expect(balances.packBalance).toBe(7); // Unchanged
 
             // Deduct more than tier — no split, tier goes negative
             await atomicDeductUserBalance(db, userId, 5);
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(-2); // 3 - 5 (goes negative)
-            expect(balances.cryptoBalance).toBe(7); // Unchanged
+            expect(balances.packBalance).toBe(7); // Unchanged
         });
 
         test("should handle zero deductions gracefully", async () => {
@@ -355,7 +340,6 @@ describe("Tier Balance Management", () => {
                     tier: "flower",
                     tierBalance: 10,
                     packBalance: 5,
-                    cryptoBalance: 3,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -364,7 +348,6 @@ describe("Tier Balance Management", () => {
                     set: {
                         tierBalance: 10,
                         packBalance: 5,
-                        cryptoBalance: 3,
                     },
                 });
 
@@ -373,50 +356,38 @@ describe("Tier Balance Management", () => {
 
             const balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10);
-            expect(balances.cryptoBalance).toBe(3);
             expect(balances.packBalance).toBe(5);
         });
 
         test("identifyDeductionSource should pick single bucket", () => {
-            // Tier is positive, has paid balance — tier first
-            const fromTier = identifyDeductionSource(5, 3, 7, 5);
+            // Tier is positive, has pack — tier first
+            const fromTier = identifyDeductionSource(5, 5, 7);
             expect(fromTier.fromTier).toBe(7);
-            expect(fromTier.fromCrypto).toBe(0);
             expect(fromTier.fromPack).toBe(0);
 
-            // Tier zero, crypto positive, has paid — falls to crypto
-            const fromCrypto = identifyDeductionSource(0, 3, 7, 0);
-            expect(fromCrypto.fromTier).toBe(0);
-            expect(fromCrypto.fromCrypto).toBe(7);
-            expect(fromCrypto.fromPack).toBe(0);
-
-            // Tier/crypto zero, pack positive — falls to pack
-            const fromPack = identifyDeductionSource(0, 0, 8, 5);
+            // Tier zero, pack positive — falls to pack
+            const fromPack = identifyDeductionSource(0, 8, 5);
             expect(fromPack.fromTier).toBe(0);
-            expect(fromPack.fromCrypto).toBe(0);
-            expect(fromPack.fromPack).toBe(8);
+            expect(fromPack.fromPack).toBe(5);
 
-            // No paid balance (crypto+pack ≤ 0) — always tier, never spills
+            // No pack balance — always tier, never spills
             const noPaid = identifyDeductionSource(0, 0, 3);
             expect(noPaid.fromTier).toBe(3);
             expect(noPaid.fromPack).toBe(0);
 
-            // Negative tier, no paid balance — always tier
+            // Negative tier, no pack — always tier
             const negTierNoPaid = identifyDeductionSource(-3, 0, 4);
             expect(negTierNoPaid.fromTier).toBe(4);
-            expect(negTierNoPaid.fromCrypto).toBe(0);
             expect(negTierNoPaid.fromPack).toBe(0);
 
-            // Negative tier, positive crypto+pack — falls to crypto
-            const negTierPosCrypto = identifyDeductionSource(-3, 2, 4, 0);
-            expect(negTierPosCrypto.fromTier).toBe(0);
-            expect(negTierPosCrypto.fromCrypto).toBe(4);
-            expect(negTierPosCrypto.fromPack).toBe(0);
+            // Negative tier, positive pack — falls to pack
+            const negTierPosPack = identifyDeductionSource(-3, 2, 4);
+            expect(negTierPosPack.fromTier).toBe(0);
+            expect(negTierPosPack.fromPack).toBe(4);
 
-            // All negative — no paid balance, always tier
+            // All negative — no pack balance, always tier
             const allNeg = identifyDeductionSource(-3, -1, 5);
             expect(allNeg.fromTier).toBe(5);
-            expect(allNeg.fromCrypto).toBe(0);
             expect(allNeg.fromPack).toBe(0);
         });
 
@@ -433,7 +404,6 @@ describe("Tier Balance Management", () => {
                     tier: "flower",
                     tierBalance: -1,
                     packBalance: -2,
-                    cryptoBalance: -1,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -442,16 +412,14 @@ describe("Tier Balance Management", () => {
                     set: {
                         tierBalance: -1,
                         packBalance: -2,
-                        cryptoBalance: -1,
                     },
                 });
 
-            // All paid buckets ≤ 0 — deducts from tier to prevent paid spillover
+            // Pack ≤ 0 — deducts from tier to prevent paid spillover
             await atomicDeductUserBalance(db, userId, 3);
 
             const balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(-4); // -1 - 3
-            expect(balances.cryptoBalance).toBe(-1); // Unchanged
             expect(balances.packBalance).toBe(-2); // Unchanged
         });
     });
@@ -470,8 +438,7 @@ describe("Tier Balance Management", () => {
                     name: "Concurrent Test",
                     tier: "flower",
                     tierBalance: 10,
-                    packBalance: 5,
-                    cryptoBalance: 5,
+                    packBalance: 10,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -479,8 +446,7 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 10,
-                        packBalance: 5,
-                        cryptoBalance: 5,
+                        packBalance: 10,
                     },
                 });
 
@@ -494,10 +460,7 @@ describe("Tier Balance Management", () => {
 
             // Check final balance
             const balances = await getUserBalances(db, userId);
-            const totalBalance =
-                balances.tierBalance +
-                balances.cryptoBalance +
-                balances.packBalance;
+            const totalBalance = balances.tierBalance + balances.packBalance;
 
             // With atomic deductions, total should be exactly 10 (20 - 10 = 10).
             // We only check the total sum, not per-bucket distribution, because
@@ -564,7 +527,6 @@ describe("Tier Balance Management", () => {
                 .set({
                     tierBalance: 10,
                     packBalance: 0,
-                    cryptoBalance: 0,
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
@@ -617,7 +579,6 @@ describe("Tier Balance Management", () => {
                 .set({
                     tierBalance: 10,
                     packBalance: 0,
-                    cryptoBalance: 0,
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
@@ -660,7 +621,6 @@ describe("Tier Balance Management", () => {
                 .set({
                     tierBalance: 10,
                     packBalance: 0,
-                    cryptoBalance: 0,
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
@@ -713,7 +673,6 @@ describe("Tier Balance Management", () => {
                 .set({
                     tierBalance: 10,
                     packBalance: 0,
-                    cryptoBalance: 0,
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
@@ -728,49 +687,6 @@ describe("Tier Balance Management", () => {
             );
 
             expect(response.status).toBe(402);
-        });
-
-        test("should accept paid-only models when user has crypto balance", async ({
-            apiKey,
-            sessionToken,
-            mocks,
-        }) => {
-            await mocks.enable("polar", "tinybird", "vcr");
-            const db = drizzle(env.DB);
-
-            // Get the authenticated user ID from session
-            const sessionResponse = await SELF.fetch(
-                "http://localhost:3000/api/auth/get-session",
-                {
-                    headers: {
-                        cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
-            );
-            const session = await sessionResponse.json();
-            const userId = session.user.id;
-
-            // Setup user with crypto balance
-            await db
-                .update(userTable)
-                .set({
-                    tierBalance: 0,
-                    packBalance: 0,
-                    cryptoBalance: 10,
-                })
-                .where(sql`${userTable.id} = ${userId}`);
-
-            // Test paid-only image model: seedream-pro
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/generate/image/test?model=seedream-pro",
-                {
-                    headers: {
-                        "authorization": `Bearer ${apiKey}`,
-                    },
-                },
-            );
-
-            expect(response.status).toBe(200);
         });
 
         test("should accept paid-only models when user has pack balance", async ({
@@ -799,7 +715,6 @@ describe("Tier Balance Management", () => {
                 .set({
                     tierBalance: 0,
                     packBalance: 10,
-                    cryptoBalance: 0,
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
@@ -842,7 +757,6 @@ describe("Tier Balance Management", () => {
                 .set({
                     tierBalance: 10,
                     packBalance: 0,
-                    cryptoBalance: 0,
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
@@ -869,7 +783,7 @@ describe("Tier Balance Management", () => {
             const db = drizzle(env.DB);
             const userId = "test-paid-deduct";
 
-            // Setup user with all balance types
+            // Setup user with tier and pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -879,7 +793,6 @@ describe("Tier Balance Management", () => {
                     tier: "flower",
                     tierBalance: 10,
                     packBalance: 5,
-                    cryptoBalance: 3,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -888,33 +801,29 @@ describe("Tier Balance Management", () => {
                     set: {
                         tierBalance: 10,
                         packBalance: 5,
-                        cryptoBalance: 3,
                     },
                 });
 
-            // Deduct 2 pollen using paid-only deduction (all from crypto)
+            // Deduct 2 pollen using paid-only deduction (all from pack)
             await atomicDeductPaidBalance(db, userId, 2);
 
             let balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Unchanged - tier is skipped
-            expect(balances.cryptoBalance).toBe(1); // 3 - 2
-            expect(balances.packBalance).toBe(5); // Unchanged
+            expect(balances.packBalance).toBe(3); // 5 - 2
 
-            // Deduct 4 more (crypto still positive → all from crypto, goes negative)
+            // Deduct 4 more (pack still positive → all from pack, goes negative)
             await atomicDeductPaidBalance(db, userId, 4);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.cryptoBalance).toBe(-3); // 1 - 4 (goes negative)
-            expect(balances.packBalance).toBe(5); // Unchanged
+            expect(balances.packBalance).toBe(-1); // 3 - 4 (goes negative)
 
-            // Deduct 7 more (crypto is negative → all from pack)
+            // Deduct 7 more (pack already negative → all from pack)
             await atomicDeductPaidBalance(db, userId, 7);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(10); // Still unchanged
-            expect(balances.cryptoBalance).toBe(-3); // Unchanged
-            expect(balances.packBalance).toBe(-2); // 5 - 7 (goes negative)
+            expect(balances.packBalance).toBe(-8); // -1 - 7 (more negative)
         });
 
         test("should show paid_only field in model info", async () => {
@@ -941,7 +850,7 @@ describe("Tier Balance Management", () => {
         test("should hide paid_only models when user has no paid balance", async ({
             apiKey,
         }) => {
-            // apiKey fixture creates user with tier balance only (no pack/crypto)
+            // apiKey fixture creates user with tier balance only (no pack)
             const response = await SELF.fetch(
                 "http://localhost:3000/api/generate/text/models",
                 { headers: { authorization: `Bearer ${apiKey}` } },
@@ -992,7 +901,7 @@ describe("Tier Balance Management", () => {
             expect(claudeLarge).toBeDefined();
         });
 
-        test("should accept paid-only models with mixed balance (crypto + tier)", async ({
+        test("should accept paid-only models with mixed balance (pack + tier)", async ({
             apiKey,
             sessionToken,
             mocks,
@@ -1012,17 +921,16 @@ describe("Tier Balance Management", () => {
             const session = await sessionResponse.json();
             const userId = session.user.id;
 
-            // Setup user with mixed balance including crypto
+            // Setup user with mixed balance including pack
             await db
                 .update(userTable)
                 .set({
                     tierBalance: 5,
-                    packBalance: 0,
-                    cryptoBalance: 2, // Has crypto, so should work
+                    packBalance: 2, // Has pack, so should work
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
-            // Should succeed because user has crypto balance
+            // Should succeed because user has pack balance
             const response = await SELF.fetch(
                 "http://localhost:3000/api/generate/v1/chat/completions",
                 {
@@ -1041,11 +949,11 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(200);
         });
 
-        test("should deduct only from crypto/pack for paid-only models", async () => {
+        test("should deduct only from pack for paid-only models", async () => {
             const db = drizzle(env.DB);
             const userId = "test-paid-deduct-verify";
 
-            // Setup user with all balance types
+            // Setup user with tier and pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -1054,8 +962,7 @@ describe("Tier Balance Management", () => {
                     name: "Verify Deduct Test",
                     tier: "flower",
                     tierBalance: 100, // Large tier balance
-                    packBalance: 2,
-                    cryptoBalance: 1,
+                    packBalance: 3,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -1063,29 +970,26 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 100,
-                        packBalance: 2,
-                        cryptoBalance: 1,
+                        packBalance: 3,
                     },
                 });
 
-            // Deduct 1.5 pollen using paid-only deduction (all from crypto)
+            // Deduct 1.5 pollen using paid-only deduction (all from pack)
             await atomicDeductPaidBalance(db, userId, 1.5);
 
             const balances = await getUserBalances(db, userId);
 
             // Tier should be completely untouched
             expect(balances.tierBalance).toBe(100);
-            // Crypto absorbs entire amount (single bucket, goes negative)
-            expect(balances.cryptoBalance).toBe(-0.5); // 1 - 1.5
-            // Pack untouched
-            expect(balances.packBalance).toBe(2);
+            // Pack absorbs entire amount
+            expect(balances.packBalance).toBe(1.5); // 3 - 1.5
         });
 
         test("should allow paid balance to go negative for paid-only models", async () => {
             const db = drizzle(env.DB);
             const userId = "test-paid-negative";
 
-            // Setup user with small paid balances
+            // Setup user with small pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -1094,8 +998,7 @@ describe("Tier Balance Management", () => {
                     name: "Negative Test",
                     tier: "flower",
                     tierBalance: 50, // Should not be used
-                    packBalance: 1,
-                    cryptoBalance: 0.5,
+                    packBalance: 1.5,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -1103,22 +1006,19 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 50,
-                        packBalance: 1,
-                        cryptoBalance: 0.5,
+                        packBalance: 1.5,
                     },
                 });
 
-            // Deduct more than available — crypto is positive, takes the full hit
+            // Deduct more than available — pack absorbs full amount, goes negative
             await atomicDeductPaidBalance(db, userId, 3);
 
             const balances = await getUserBalances(db, userId);
 
             // Tier still untouched
             expect(balances.tierBalance).toBe(50);
-            // Crypto absorbs entire amount (goes negative)
-            expect(balances.cryptoBalance).toBe(-2.5); // 0.5 - 3
-            // Pack untouched
-            expect(balances.packBalance).toBe(1);
+            // Pack absorbs entire amount (goes negative)
+            expect(balances.packBalance).toBe(-1.5); // 1.5 - 3
         });
 
         test("should reject all paid-only model aliases with tier-only balance", async ({
@@ -1147,7 +1047,6 @@ describe("Tier Balance Management", () => {
                 .set({
                     tierBalance: 10,
                     packBalance: 0,
-                    cryptoBalance: 0,
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
@@ -1196,8 +1095,7 @@ describe("Tier Balance Management", () => {
                     name: "Concurrent Paid Test",
                     tier: "flower",
                     tierBalance: 100, // Should never be touched
-                    packBalance: 5,
-                    cryptoBalance: 5,
+                    packBalance: 10,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -1205,8 +1103,7 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 100,
-                        packBalance: 5,
-                        cryptoBalance: 5,
+                        packBalance: 10,
                     },
                 });
 
@@ -1223,17 +1120,15 @@ describe("Tier Balance Management", () => {
             // Tier should remain untouched
             expect(balances.tierBalance).toBe(100);
 
-            // Total paid balance should be reduced by exactly 8
-            const totalPaidBalance =
-                balances.cryptoBalance + balances.packBalance;
-            expect(totalPaidBalance).toBe(2); // (5 + 5) - 8 = 2
+            // Pack balance should be reduced by exactly 8
+            expect(balances.packBalance).toBe(2); // 10 - 8 = 2
         });
 
         test("regular and paid-only deductions should work correctly in sequence", async () => {
             const db = drizzle(env.DB);
             const userId = "test-mixed-deduct";
 
-            // Setup user with all balance types
+            // Setup user with tier and pack balance
             await db
                 .insert(userTable)
                 .values({
@@ -1242,8 +1137,7 @@ describe("Tier Balance Management", () => {
                     name: "Mixed Deduct Test",
                     tier: "flower",
                     tierBalance: 5,
-                    packBalance: 5,
-                    cryptoBalance: 5,
+                    packBalance: 10,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -1251,8 +1145,7 @@ describe("Tier Balance Management", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 5,
-                        packBalance: 5,
-                        cryptoBalance: 5,
+                        packBalance: 10,
                     },
                 });
 
@@ -1261,24 +1154,21 @@ describe("Tier Balance Management", () => {
 
             let balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(2); // 5 - 3
-            expect(balances.cryptoBalance).toBe(5); // Untouched
-            expect(balances.packBalance).toBe(5); // Untouched
+            expect(balances.packBalance).toBe(10); // Untouched
 
             // Second: Paid-only deduction (skips tier)
             await atomicDeductPaidBalance(db, userId, 4);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(2); // Still 2, not touched
-            expect(balances.cryptoBalance).toBe(1); // 5 - 4
-            expect(balances.packBalance).toBe(5); // Untouched
+            expect(balances.packBalance).toBe(6); // 10 - 4
 
             // Third: Regular deduction — tier is still positive, takes the full hit
             await atomicDeductUserBalance(db, userId, 6);
 
             balances = await getUserBalances(db, userId);
             expect(balances.tierBalance).toBe(-4); // 2 - 6 (goes negative)
-            expect(balances.cryptoBalance).toBe(1); // Unchanged
-            expect(balances.packBalance).toBe(5); // Unchanged
+            expect(balances.packBalance).toBe(6); // Unchanged
         });
     });
 
@@ -1305,7 +1195,7 @@ describe("Tier Balance Management", () => {
             // tier negative, pack positive — should be allowed
             await db
                 .update(userTable)
-                .set({ tierBalance: -3, packBalance: 5, cryptoBalance: 0 })
+                .set({ tierBalance: -3, packBalance: 5 })
                 .where(sql`${userTable.id} = ${userId}`);
 
             const response = await SELF.fetch(
@@ -1348,7 +1238,7 @@ describe("Tier Balance Management", () => {
             // All negative — should be rejected
             await db
                 .update(userTable)
-                .set({ tierBalance: -3, packBalance: -1, cryptoBalance: -2 })
+                .set({ tierBalance: -3, packBalance: -1 })
                 .where(sql`${userTable.id} = ${userId}`);
 
             const response = await SELF.fetch(
@@ -1369,7 +1259,7 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(402);
         });
 
-        test("should allow paid-only model when crypto is negative but pack is positive", async ({
+        test("should reject paid-only model when pack is negative", async ({
             apiKey,
             sessionToken,
             mocks,
@@ -1388,47 +1278,10 @@ describe("Tier Balance Management", () => {
             const session = await sessionResponse.json();
             const userId = session.user.id;
 
-            // crypto negative, pack positive — paid-only should be allowed
+            // tier positive, pack negative — paid-only should be rejected
             await db
                 .update(userTable)
-                .set({ tierBalance: 10, packBalance: 5, cryptoBalance: -2 })
-                .where(sql`${userTable.id} = ${userId}`);
-
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/generate/image/test?model=seedream-pro",
-                {
-                    headers: {
-                        "authorization": `Bearer ${apiKey}`,
-                    },
-                },
-            );
-
-            expect(response.status).toBe(200);
-        });
-
-        test("should reject paid-only model when both crypto and pack are negative", async ({
-            apiKey,
-            sessionToken,
-            mocks,
-        }) => {
-            await mocks.enable("polar", "tinybird", "vcr");
-            const db = drizzle(env.DB);
-
-            const sessionResponse = await SELF.fetch(
-                "http://localhost:3000/api/auth/get-session",
-                {
-                    headers: {
-                        cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
-            );
-            const session = await sessionResponse.json();
-            const userId = session.user.id;
-
-            // tier positive, but crypto and pack both negative — paid-only should be rejected
-            await db
-                .update(userTable)
-                .set({ tierBalance: 10, packBalance: -1, cryptoBalance: -2 })
+                .set({ tierBalance: 10, packBalance: -1 })
                 .where(sql`${userTable.id} = ${userId}`);
 
             const response = await SELF.fetch(

@@ -365,9 +365,17 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: new Date("2026-04-27").getTime(),
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.05),
-                completionTextTokens: perMillion(0.5),
+                promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.2),
+                completionTextTokens: perMillion(6.0),
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-04-27").getTime(),
+                promptTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                completionTextTokens: perMillion(0),
             },
         ],
         description: "Grok 4.20 Non-Reasoning - High Speed",
@@ -390,7 +398,7 @@ export const TEXT_SERVICES = {
         category: "text",
         cost: [
             {
-                date: new Date("2026-04-08").getTime(),
+                date: new Date("2026-04-27").getTime(),
                 promptTextTokens: perMillion(2.0),
                 promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(6.0),
@@ -403,6 +411,7 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 2000000,
         isSpecialized: false,
+        paidOnly: true,
     },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],

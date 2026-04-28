@@ -603,7 +603,10 @@ const callGPTImageWithEndpoint = async (
             throw new Error(`Failed to process image: ${error.message}`);
         }
 
-        // Add other parameters
+        // OpenAI direct requires model in form data; Azure uses URL deployment.
+        if (config.provider === "openai") {
+            formData.append("model", config.modelName);
+        }
         formData.append("quality", quality);
         formData.append("n", "1");
 

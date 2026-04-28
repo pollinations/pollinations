@@ -136,7 +136,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                 </div>
             </DashboardSection>
 
-            <DashboardSection title="Graph" theme="pink" framed>
+            <DashboardSection title="Activity" theme="pink" framed>
                 {loading && (
                     <div className="flex items-center justify-center h-[180px]">
                         <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
@@ -161,95 +161,92 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                     </div>
                 )}
                 {!loading && !error && (
-                    <>
+                    <div className="flex flex-col gap-4">
                         <Chart
                             data={chartData}
                             metric={filters.metric}
                             showModelBreakdown={showModelBreakdown}
                             tier={tier}
                         />
-                        <p className="mt-4 text-[10px] text-gray-400">
+                        <div className="grid gap-3 border-t border-pink-300/70 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <UsageStatCard
+                                label="Requests"
+                                value={stats.totalRequests.toLocaleString()}
+                            />
+                            <UsageStatCard
+                                label="Pollen spent"
+                                value={formatPollen(stats.totalPollen)}
+                                detail={
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span
+                                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${tierPill.bg} ${tierPill.text}`}
+                                        >
+                                            {tierEmoji}{" "}
+                                            {formatPollen(stats.tierPollen)}
+                                        </span>
+                                        <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                                            🪷 {formatPollen(stats.paidPollen)}
+                                        </span>
+                                    </div>
+                                }
+                            />
+                            <UsageStatCard
+                                label="Average"
+                                value={formatPollen(
+                                    stats.averagePollenPerRequest,
+                                )}
+                                detail="Pollen per request"
+                            />
+                            <UsageStatCard
+                                label="Active models"
+                                value={stats.activeModelCount.toLocaleString()}
+                                detail={
+                                    stats.activeModelCount === 1
+                                        ? "Model used"
+                                        : "Models used"
+                                }
+                            />
+                            <UsageStatCard
+                                label="Top model"
+                                value={
+                                    <span className="text-xl leading-tight">
+                                        {stats.topModel?.label || "None"}
+                                    </span>
+                                }
+                                detail={
+                                    stats.topModel
+                                        ? formatMetricValue(
+                                              filters.metric === "requests"
+                                                  ? stats.topModel.requests
+                                                  : stats.topModel.pollen,
+                                              filters.metric,
+                                          )
+                                        : "No model usage yet"
+                                }
+                            />
+                            <UsageStatCard
+                                label={
+                                    period.granularity === "day"
+                                        ? "Peak hour"
+                                        : "Peak day"
+                                }
+                                value={stats.peakPeriod?.label || "None"}
+                                detail={
+                                    stats.peakPeriod
+                                        ? formatMetricValue(
+                                              stats.peakPeriod.value,
+                                              filters.metric,
+                                          )
+                                        : "No activity yet"
+                                }
+                            />
+                        </div>
+                        <p className="text-[10px] text-gray-400">
                             Data refreshes every hour. Times shown in UTC.
                         </p>
-                    </>
+                    </div>
                 )}
             </DashboardSection>
-
-            {!loading && !error && (
-                <DashboardSection title="Stats" theme="pink" framed>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        <UsageStatCard
-                            label="Requests"
-                            value={stats.totalRequests.toLocaleString()}
-                        />
-                        <UsageStatCard
-                            label="Pollen spent"
-                            value={formatPollen(stats.totalPollen)}
-                            detail={
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span
-                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${tierPill.bg} ${tierPill.text}`}
-                                    >
-                                        {tierEmoji}{" "}
-                                        {formatPollen(stats.tierPollen)}
-                                    </span>
-                                    <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">
-                                        🪷 {formatPollen(stats.paidPollen)}
-                                    </span>
-                                </div>
-                            }
-                        />
-                        <UsageStatCard
-                            label="Average"
-                            value={formatPollen(stats.averagePollenPerRequest)}
-                            detail="Pollen per request"
-                        />
-                        <UsageStatCard
-                            label="Active models"
-                            value={stats.activeModelCount.toLocaleString()}
-                            detail={
-                                stats.activeModelCount === 1
-                                    ? "Model used"
-                                    : "Models used"
-                            }
-                        />
-                        <UsageStatCard
-                            label="Top model"
-                            value={
-                                <span className="text-xl leading-tight">
-                                    {stats.topModel?.label || "None"}
-                                </span>
-                            }
-                            detail={
-                                stats.topModel
-                                    ? formatMetricValue(
-                                          filters.metric === "requests"
-                                              ? stats.topModel.requests
-                                              : stats.topModel.pollen,
-                                          filters.metric,
-                                      )
-                                    : "No model usage yet"
-                            }
-                        />
-                        <UsageStatCard
-                            label={
-                                period.granularity === "day"
-                                    ? "Peak hour"
-                                    : "Peak day"
-                            }
-                            value={stats.peakPeriod?.label || "None"}
-                            detail={
-                                stats.peakPeriod
-                                    ? formatMetricValue(
-                                          stats.peakPeriod.value,
-                                          filters.metric,
-                                      )
-                                    : "No activity yet"
-                            }
-                        />
-                    </div>
-                </DashboardSection>
-            )}
         </div>
     );
 };

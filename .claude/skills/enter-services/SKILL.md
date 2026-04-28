@@ -32,13 +32,13 @@ Add to `~/.ssh/config`:
 Host enter-services
   HostName 54.147.14.220
   User ubuntu
-  IdentityFile ~/.ssh/enter-services-shared-key
+  IdentityFile ~/.ssh/enter-services-shared
 
 # Staging instance
 Host enter-services-staging
   HostName 44.222.254.250
   User ubuntu
-  IdentityFile ~/.ssh/enter-services-staging-key
+  IdentityFile ~/.ssh/enter-services-staging
 ```
 
 ---

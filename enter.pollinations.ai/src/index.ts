@@ -74,9 +74,6 @@ app.onError(handleError);
 
 export type AppRoutes = typeof app;
 
-// Export Durable Object for pollen-based rate limiting
-export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
-
 export default {
     fetch: app.fetch,
     async scheduled(

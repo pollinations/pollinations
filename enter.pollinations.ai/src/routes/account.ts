@@ -1306,7 +1306,7 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
-                // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
+                // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
             });
         },

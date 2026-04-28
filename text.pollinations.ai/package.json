@@ -10,7 +10,7 @@
         "start:dev": "npm run decrypt-vars && npx tsx startServer.ts",
         "dev": "npm run decrypt-vars && DEBUG=pollinations:* npx tsx --watch startServer.ts",
         "type-check": "tsc --noEmit",
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "vitest run",
         "deploy:portkey": "bash scripts/deploy-portkey.sh"
     },
     "keywords": [],
@@ -29,6 +29,7 @@
         "zod": "^4.3.5"
     },
     "devDependencies": {
-        "@types/node": "^25.2.3"
+        "@types/node": "^25.2.3",
+        "vitest": "^3.2.4"
     }
 }

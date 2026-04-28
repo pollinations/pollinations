@@ -1,0 +1,33 @@
+{
+  "pr_number": 10528,
+  "title": "(patch): remove a stale IDE config from the codebase root",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10528",
+  "merged_at": "2026-04-28T16:15:45Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweeping up the IDE dust",
+    "blurb": "Swept away some leftover IDE configuration files to keep the repository root sparkling clean.",
+    "summary": "Removed a stale `.codemap-state.json` IDE configuration file from the repository root.",
+    "impact": "Keeps the codebase clean and prevents clutter for developers working in the repository.",
+    "keywords": [
+      "chore",
+      "cleanup",
+      "ide",
+      "config"
+    ],
+    "visual_concept": "The Nomnom creature eating a stale, dusty old configuration file while Polly the bee holds a tiny broom, representing repository cleanup.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a dusty old computer file while the cute bee mascot watches amused, holding a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-28/PR-10528.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a dusty old computer file while the cute bee mascot watches amused, holding a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-04-28T16:17:38.875109+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 10512,
+  "title": "chore: update app metrics 2026-04-28",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10512",
+  "merged_at": "2026-04-28T05:17:18Z",
+  "labels": [
+    "API",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bot just watered the plants and updated the health metrics for all community apps in the greenhouse.",
+    "summary": "Automated daily update of community app metrics and health checks in the greenhouse registry.",
+    "impact": "Keeps the community app showcase up-to-date with the latest health and usage statistics.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "health-check"
+    ],
+    "visual_concept": "A cute robot (Monitor Robot) or bot watering plants (apps) in a greenhouse, with Polly the bee observing or helping.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby with a tiny clipboard checking off metrics. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-28/PR-10512.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head watering glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby with a tiny clipboard checking off metrics. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-04-28T05:18:14.576337+00:00"
+}

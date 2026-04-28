@@ -1,10 +1,10 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
+import { getTierPollen, TIER_POLLEN, tierNames } from "@shared/tier-config.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import worker from "@/index.ts";
-import { getTierPollen, TIER_POLLEN, tierNames } from "@/tier-config.ts";
 import {
     atomicDeductPaidBalance,
     atomicDeductUserBalance,

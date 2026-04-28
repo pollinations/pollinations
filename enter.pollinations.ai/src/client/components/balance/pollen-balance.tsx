@@ -1,7 +1,7 @@
+import { getTierColor, getTierEmoji } from "@shared/tier-config.ts";
 import { type FC, useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
-import { getTierColor, getTierEmoji } from "@/tier-config.ts";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";

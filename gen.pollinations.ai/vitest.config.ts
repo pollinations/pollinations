@@ -45,7 +45,6 @@ const enterAliases = [
     ["@/middleware/auth.ts", "middleware/auth.ts"],
     ["@/middleware/balance.ts", "middleware/balance.ts"],
     ["@/routes/account.ts", "routes/account.ts"],
-    ["@/tier-config.ts", "tier-config.ts"],
     ["@/utils/track-helpers.ts", "utils/track-helpers.ts"],
 ] as const;
 

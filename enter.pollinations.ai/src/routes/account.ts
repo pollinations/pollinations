@@ -1,4 +1,5 @@
 import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
+import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -9,7 +10,6 @@ import {
     apikey as apikeyTable,
     user as userTable,
 } from "@/db/schema/better-auth.ts";
-import { getTierCadence, tierNames } from "@/tier-config.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";

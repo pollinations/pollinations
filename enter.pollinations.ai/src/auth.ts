@@ -1,3 +1,4 @@
+import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
@@ -16,7 +17,6 @@ import {
     user as userTable,
 } from "./db/schema/better-auth.ts";
 import { sendTierEventToTinybird } from "./events.ts";
-import { DEFAULT_TIER, getTierPollen } from "./tier-config.ts";
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);

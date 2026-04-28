@@ -10,6 +10,7 @@ on:
       - 'shared/registry/**'
       - 'shared/schemas/**'
       - 'shared/http/**'
+      - 'shared/tier-config.ts'
       - '.github/workflows/deploy-gen-cloudflare.yml'
   workflow_dispatch:
 

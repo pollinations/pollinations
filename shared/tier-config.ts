@@ -39,7 +39,6 @@ export function getTierEmoji(tier: string): string {
     return isValidTier(tier) ? TIERS[tier].emoji : TIERS[DEFAULT_TIER].emoji;
 }
 
-// Tier colors derived from TIERS.color (matches feat/hide-tiers-microbe)
 export const TIER_COLORS = Object.fromEntries(
     Object.entries(TIERS).map(([tier, c]) => [tier, c.color]),
 ) as Record<TierName, string>;

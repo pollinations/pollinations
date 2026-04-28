@@ -1,16 +1,16 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
-import { Hono } from "hono";
-import { describeRoute, resolver } from "hono-openapi";
-import { z } from "zod";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import {
     getTierCadence,
     getTierPollen,
     type TierName,
     type TierStatus,
     tierNames,
-} from "@/tier-config.ts";
+} from "@shared/tier-config.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { Hono } from "hono";
+import { describeRoute, resolver } from "hono-openapi";
+import { z } from "zod";
+import { user as userTable } from "@/db/schema/better-auth.ts";
 import { capitalize } from "@/util.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";

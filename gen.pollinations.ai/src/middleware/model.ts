@@ -59,8 +59,14 @@ export function resolveModel(
                 }
             } else {
                 try {
-                    const body = await c.req.json();
-                    rawModel = body.model || null;
+                    const body =
+                        (c.req.valid("json" as never) as
+                            | { model?: string }
+                            | undefined) ||
+                        ((await c.req.json()) as
+                            | { model?: string }
+                            | undefined);
+                    rawModel = body?.model || null;
                 } catch {
                     // Body parsing failed, use default
                 }

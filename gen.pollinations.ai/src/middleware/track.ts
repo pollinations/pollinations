@@ -510,6 +510,18 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
         }
         try {
             const stream = (
+                request.valid("json" as never) as
+                    | { stream?: unknown }
+                    | undefined
+            )?.stream;
+            if (stream !== undefined) {
+                return z.safeParse(z.coerce.boolean(), stream).data || false;
+            }
+        } catch {
+            // Fall back to parsing a cloned raw body for routes without JSON validation.
+        }
+        try {
+            const stream = (
                 (await request.raw.clone().json()) as { stream?: unknown }
             ).stream;
             return z.safeParse(z.coerce.boolean(), stream).data || false;

@@ -21,16 +21,11 @@
             "@/durable-objects/PollenRateLimiter.ts": [
                 "../enter.pollinations.ai/src/durable-objects/PollenRateLimiter.ts"
             ],
-            "@/error.ts": ["../enter.pollinations.ai/src/error.ts"],
-            "@/logger": ["../enter.pollinations.ai/src/logger.ts"],
             "@/middleware/auth.ts": [
                 "../enter.pollinations.ai/src/middleware/auth.ts"
             ],
             "@/middleware/balance.ts": [
                 "../enter.pollinations.ai/src/middleware/balance.ts"
-            ],
-            "@/middleware/logger.ts": [
-                "../enter.pollinations.ai/src/middleware/logger.ts"
             ],
             "@/middleware/rate-limit-durable.ts": [
                 "../enter.pollinations.ai/src/middleware/rate-limit-durable.ts"

@@ -182,9 +182,7 @@ function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         const publicPath =
-            path
-                .replace(/^\/api\/generate(?=\/|$)/, "")
-                .replace(/^\/api\/account(?=\/|$)/, "/account") || "/";
+            path.replace(/^\/api\/account(?=\/|$)/, "/account") || "/";
         paths[publicPath] = value;
     }
 
@@ -233,9 +231,7 @@ function isGenerationPath(path: string): boolean {
         path === "/video" ||
         path.startsWith("/video/") ||
         path === "/generate" ||
-        path.startsWith("/generate/") ||
-        path === "/api/generate" ||
-        path.startsWith("/api/generate/")
+        path.startsWith("/generate/")
     );
 }
 

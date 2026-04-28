@@ -29,11 +29,11 @@ export function createGenerationApp(): Hono<GenerationEnv> {
             if (!c.req.path.startsWith("/docs")) {
                 c.header("X-Robots-Tag", "noindex, nofollow");
             }
-        })
-        .route("/api/generate", proxyRoutes)
-        .route("/api/generate/v1/audio", audioRoutes);
+        });
 
-    app.route("/docs", createDocsRoutes(app));
+    app.route("/docs", createDocsRoutes(app))
+        .route("/v1/audio", audioRoutes)
+        .route("/", proxyRoutes);
 
     app.notFound(async (c: Context<GenerationEnv>) => {
         return handleError(new HTTPException(404), c);

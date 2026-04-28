@@ -30,17 +30,12 @@ describe("resolveRoute", () => {
         expect(decision.url.pathname).toBe("/docs");
     });
 
-    it("normalizes trailing slashes before exact public route matching", () => {
+    it("normalizes trailing slashes for docs", () => {
         const docs = route("/docs/");
-        const models = route("/models/");
 
         expect(docs.kind).toBe("generation");
         if (docs.kind !== "generation") return;
         expect(docs.url.pathname).toBe("/docs");
-
-        expect(models.kind).toBe("generation");
-        if (models.kind !== "generation") return;
-        expect(models.url.pathname).toBe("/api/generate/text/models");
     });
 
     it("does not expose api paths on gen", () => {
@@ -51,7 +46,7 @@ describe("resolveRoute", () => {
         expect(decision.kind).toBe("notFound");
     });
 
-    it("rewrites public shorthand paths to local generation routes", () => {
+    it("routes public generation paths locally without rewriting", () => {
         const image = route("/image/a%20cat?model=flux");
         const text = route("/text/hello");
         const models = route("/models");
@@ -68,10 +63,10 @@ describe("resolveRoute", () => {
             return;
         }
 
-        expect(image.url.pathname).toBe("/api/generate/image/a%20cat");
+        expect(image.url.pathname).toBe("/image/a%20cat");
         expect(image.url.search).toBe("?model=flux");
-        expect(text.url.pathname).toBe("/api/generate/text/hello");
-        expect(models.url.pathname).toBe("/api/generate/text/models");
+        expect(text.url.pathname).toBe("/text/hello");
+        expect(models.url.pathname).toBe("/models");
     });
 
     it("forwards the account app root to enter", () => {
@@ -99,12 +94,12 @@ describe("resolveRoute", () => {
         expect(account.noIndex).toBe(true);
     });
 
-    it("preserves the previous broad fallback into api generation", () => {
+    it("routes unknown public paths to generation fallback without rewriting", () => {
         const decision = route("/custom/path?seed=1");
 
         expect(decision.kind).toBe("generation");
         if (decision.kind !== "generation") return;
-        expect(decision.url.pathname).toBe("/api/generate/custom/path");
+        expect(decision.url.pathname).toBe("/custom/path");
         expect(decision.url.search).toBe("?seed=1");
     });
 

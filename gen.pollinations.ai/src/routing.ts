@@ -76,7 +76,6 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
     }
 
     if (matchPath === "/models") {
-        url.pathname = "/api/generate/text/models";
         return { kind: "generation", url };
     }
 
@@ -105,7 +104,6 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
         return { kind: "notFound" };
     }
 
-    url.pathname = `/api/generate${path}`;
     return { kind: "generation", url };
 }
 

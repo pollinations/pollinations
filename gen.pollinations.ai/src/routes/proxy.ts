@@ -205,6 +205,7 @@ export const proxyRoutes = new Hono<Env>()
         "/audio/models",
         auth({ allowApiKey: true, allowSessionCookie: false }),
     )
+    .use("/models", auth({ allowApiKey: true, allowSessionCookie: false }))
     .get(
         "/v1/models",
         describeRoute({
@@ -282,6 +283,41 @@ export const proxyRoutes = new Hono<Env>()
                     ),
                 ],
             });
+        },
+    )
+    .get(
+        "/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Text Models",
+            description:
+                "Convenience alias for `/text/models`. Returns all available text generation models with pricing, capabilities, and metadata.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of text models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        async (c) => {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            const models = filterModelsByPermissions(
+                getTextModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
+            return c.json(models);
         },
     )
     .get(

@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-04-17",
-        emoji: "💰",
-        title: "Transparent Pricing: Cost vs Price",
+        date: "2026-04-28",
+        emoji: "🎉",
+        title: "New paid models",
         description:
-            "The registry now tracks provider cost separately from user price. See the [pricing table](/#pricing) for the rates you pay.",
+            "ElevenLabs Music, ElevenLabs TTS, and GPT Image 2 are now available as paid models. [Check them out](/#models).",
     },
 ];
 

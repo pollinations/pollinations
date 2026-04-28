@@ -300,6 +300,72 @@ test(
 );
 
 test(
+    "POST /v1/chat/completions with audio model returns 400",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "acestep",
+                    messages: [
+                        {
+                            role: "user",
+                            content: TEST_MESSAGE_CONTENT,
+                        },
+                    ],
+                    seed: testSeed(),
+                }),
+            },
+        );
+        const body = await response.text();
+        expect(response.status).toBe(400);
+        const error = JSON.parse(body);
+        expect(error.error.message).toContain("acestep");
+        expect(error.error.message).toContain("audio");
+    },
+);
+
+test(
+    "POST /v1/chat/completions with image model returns 400",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "flux",
+                    messages: [
+                        {
+                            role: "user",
+                            content: TEST_MESSAGE_CONTENT,
+                        },
+                    ],
+                    seed: testSeed(),
+                }),
+            },
+        );
+        const body = await response.text();
+        expect(response.status).toBe(400);
+        const error = JSON.parse(body);
+        expect(error.error.message).toContain("flux");
+        expect(error.error.message).toContain("image");
+    },
+);
+
+test(
     "POST /v1/chat/completions should handle empty messages",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {

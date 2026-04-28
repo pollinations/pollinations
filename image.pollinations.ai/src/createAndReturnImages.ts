@@ -394,34 +394,72 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
     return buffer;
 }
 
-/**
- * Configuration for Azure GPT Image endpoints
- * All models use myceli-prod-eastus2 with a shared API key
- */
 interface AzureGPTImageConfig {
     baseUrl: string;
     modelName: string;
+    apiKeyEnv: string;
 }
 
 const AZURE_GPTIMAGE_API_VERSION = "2025-04-01-preview";
 
-const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
-    gptimage: {
-        baseUrl:
-            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
-        modelName: "gpt-image-1-mini",
-    },
-    "gptimage-large": {
-        baseUrl:
-            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
-        modelName: "gpt-image-1.5",
-    },
-    "gpt-image-2": {
-        baseUrl:
-            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
-        modelName: "gpt-image-2",
-    },
+// gpt-image-2 has a 12 RPM per-region subscription quota, so it's deployed across
+// 4 regions and selected at random per call to spread load (~48 RPM combined).
+const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig[]> = {
+    gptimage: [
+        {
+            baseUrl:
+                "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            modelName: "gpt-image-1-mini",
+            apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
+        },
+    ],
+    "gptimage-large": [
+        {
+            baseUrl:
+                "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+            modelName: "gpt-image-1.5",
+            apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
+        },
+    ],
+    "gpt-image-2": [
+        {
+            baseUrl:
+                "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
+        },
+        {
+            baseUrl:
+                "https://swedencentral.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+        },
+        {
+            baseUrl:
+                "https://westus3.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
+        },
+        {
+            baseUrl:
+                "https://polandcentral.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
+        },
+        {
+            baseUrl:
+                "https://uaenorth.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_UAENORTH_API_KEY",
+        },
+    ],
 };
+
+function pickGPTImageEndpoint(model: string): AzureGPTImageConfig {
+    const endpoints =
+        AZURE_GPTIMAGE_CONFIGS[model] || AZURE_GPTIMAGE_CONFIGS.gptimage;
+    return endpoints[Math.floor(Math.random() * endpoints.length)];
+}
 
 /**
  * Helper function to call Azure GPT Image with specific endpoint
@@ -435,13 +473,13 @@ const callAzureGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
+    config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage[0],
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env.AZURE_MYCELI_PROD_EASTUS2_API_KEY;
+    const apiKey = process.env[config.apiKeyEnv];
 
     if (!apiKey) {
         throw new Error(
-            "AZURE_MYCELI_PROD_EASTUS2_API_KEY not found in environment variables",
+            `${config.apiKeyEnv} not found in environment variables`,
         );
     }
 
@@ -704,18 +742,17 @@ export const callAzureGPTImage = async (
     userInfo: AuthResult,
     model: string = "gptimage",
 ): Promise<ImageGenerationResult> => {
-    const config =
-        AZURE_GPTIMAGE_CONFIGS[model] || AZURE_GPTIMAGE_CONFIGS.gptimage;
+    const endpoint = pickGPTImageEndpoint(model);
     try {
         return await callAzureGPTImageWithEndpoint(
             prompt,
             safeParams,
             userInfo,
-            config,
+            endpoint,
         );
     } catch (error) {
         logError(
-            `Error calling Azure GPT Image API (${config.modelName}):`,
+            `Error calling Azure GPT Image API (${endpoint.modelName} via ${endpoint.apiKeyEnv}):`,
             error,
         );
         throw error;
@@ -780,9 +817,10 @@ const generateImage = async (
         case "gptimage":
         case "gptimage-large":
         case "gpt-image-2": {
-            const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
+            const gptModelName =
+                AZURE_GPTIMAGE_CONFIGS[safeParams.model][0].modelName;
             logError(
-                `GPT Image (${gptConfig.modelName}) authentication check:`,
+                `GPT Image (${gptModelName}) authentication check:`,
                 formatAuthInfo(userInfo),
             );
             progress.updateBar(
@@ -805,7 +843,7 @@ const generateImage = async (
                     requestId,
                     35,
                     "Processing",
-                    `Trying Azure GPT Image (${gptConfig.modelName})...`,
+                    `Trying Azure GPT Image (${gptModelName})...`,
                 );
                 return await callAzureGPTImage(
                     prompt,

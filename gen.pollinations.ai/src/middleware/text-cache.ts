@@ -1,6 +1,6 @@
 /**
  * Text cache middleware for gen.pollinations.ai
- * Implements cache-first pattern: check cache before auth/rate limiting
+ * Implements cache lookup after access checks.
  * Adapted from text.pollinations.ai/cloudflare-cache
  */
 
@@ -20,7 +20,7 @@ type TextCacheEnv = {
 
 /**
  * Text cache middleware
- * - Checks cache FIRST (before auth/rate limiting)
+ * - Checks cache after auth/balance checks
  * - Returns immediately on cache HIT
  * - On MISS: continues to auth/rate limiting/origin
  * - After origin response: caches it (handles both streaming and non-streaming)
@@ -98,7 +98,7 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
         });
     }
 
-    // No cache hit, continue to auth/rate limiting/origin
+    // No cache hit, continue to origin
     await next();
 
     // After response from origin, cache it

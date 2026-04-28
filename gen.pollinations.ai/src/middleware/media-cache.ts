@@ -1,6 +1,6 @@
 /**
  * Generic media cache middleware for gen.pollinations.ai
- * Cache-first pattern: check cache before auth/rate limiting.
+ * Checks cache after auth/balance checks.
  * Used for image, video, and audio GET endpoints.
  *
  * Currently uses IMAGE_BUCKET (R2) for all media types.

@@ -680,7 +680,7 @@ npx wrangler d1 execute DB --remote --env production \
 
 ## API Documentation Pipeline
 
-The API reference at `gen.pollinations.ai/api/docs` is auto-generated from source code. **Never edit `APIDOCS.md` directly** — it gets overwritten by CI.
+The API reference at `gen.pollinations.ai/docs` is auto-generated from source code. **Never edit `APIDOCS.md` directly** — it gets overwritten by CI.
 
 ### How It Works
 
@@ -691,10 +691,10 @@ Source files (routes + Zod schemas)
 hono-openapi introspects describeRoute() + validators
         │
         ▼
-OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
+OpenAPI 3.x JSON served at /docs/open-api/generate-schema
         │
-        ├──► Scalar UI at gen.pollinations.ai/api/docs (interactive, runtime)
-        ├──► /api/docs/llm.txt (compact plain text for AI agents)
+        ├──► Scalar UI at gen.pollinations.ai/docs (interactive, runtime)
+        ├──► /docs/llm.txt (compact plain text for AI agents)
         └──► gen.pollinations.ai/scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
 ```
 
@@ -719,13 +719,13 @@ OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
   1. Strips `/generate/` prefix from paths (internal mount point → public API paths)
   2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
   3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
-- **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/api/docs/llm.txt`, separate from OpenAPI
+- **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/docs/llm.txt`, separate from OpenAPI
 - **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`, `/tiers/view`)
 
 ### Three Output Surfaces
 
-1. **Scalar UI** (`gen.pollinations.ai/api/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
-2. **LLM text** (`/api/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
+1. **Scalar UI** (`gen.pollinations.ai/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
+2. **LLM text** (`/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
 3. **APIDOCS.md** — markdown version, generated offline by `gen.pollinations.ai/scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
 
 ### Regenerating APIDOCS.md

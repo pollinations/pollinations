@@ -23,7 +23,6 @@ const genAliases = [
     "middleware/model.ts",
     "middleware/rate-limit-durable.ts",
     "middleware/rate-limit-edge.ts",
-    "middleware/requestDeduplication.ts",
     "middleware/text-cache.ts",
     "middleware/track.ts",
     "middleware/validator.ts",

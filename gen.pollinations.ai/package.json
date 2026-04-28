@@ -4,7 +4,8 @@
     "type": "module",
     "description": "Simplified API gateway for pollinations.ai",
     "scripts": {
-        "dev": "wrangler dev --port 8788 --local --persist-to .wrangler/state --show-interactive-dev-session false",
+        "decrypt-vars": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/dev.vars.json 'node scripts/push-generation-secrets.mjs {} local'",
+        "dev": "npm run decrypt-vars && wrangler dev --port 8788 --local --persist-to .wrangler/state --show-interactive-dev-session false",
         "deploy:staging": "wrangler deploy --env staging",
         "deploy:production": "wrangler deploy --env production",
         "push-secrets:staging": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/staging.vars.json 'node scripts/push-generation-secrets.mjs {} staging'",

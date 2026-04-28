@@ -8,7 +8,6 @@ import { audioCache, imageCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import { handleImageEdit, handleImageGeneration } from "./images.ts";
@@ -41,10 +40,7 @@ import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
-import {
-    checkBalance,
-    requireGenerationAccess,
-} from "@/utils/generation-access.ts";
+import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
 import {
     generateAceStepMusic,
     generateMusic,
@@ -73,12 +69,10 @@ const factory = createFactory<Env>();
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
     track("generate.image"),
+    generationAccess,
+    imageCache,
     async (c) => {
         const log = c.get("log").getChild("generate");
-        await c.var.auth.requireAuthorization();
-        c.var.auth.requireModelAccess();
-        c.var.auth.requireKeyBudget();
-        await checkBalance(c.var, c.env);
 
         // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
         const promptParam = c.req.param("prompt") || "";
@@ -110,15 +104,12 @@ const chatCompletionHandlers = factory.createHandlers(
     validator("json", CreateChatCompletionRequestSchema),
     resolveModel("generate.text"),
     track("generate.text"),
+    generationAccess,
+    textCache,
     async (c) => {
-        await c.var.auth.requireAuthorization();
-        c.var.auth.requireModelAccess();
-        c.var.auth.requireKeyBudget();
-
         // Use resolved model from middleware for the backend request
         const requestBody = await c.req.json();
         requestBody.model = c.var.model.resolved;
-        await checkBalance(c.var, c.env);
 
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -430,11 +421,8 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth())
     .use(frontendKeyRateLimit)
     .use(balance)
-    // Request deduplication: prevents duplicate concurrent requests by sharing promises
-    .use(requestDeduplication)
     .post(
         "/v1/chat/completions",
-        textCache,
         describeRoute({
             tags: ["✍️ Text Generation"],
             summary: "Chat Completions",
@@ -461,7 +449,6 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/text/:prompt",
-        textCache,
         describeRoute({
             tags: ["✍️ Text Generation"],
             summary: "Simple Text Generation",
@@ -494,12 +481,9 @@ export const proxyRoutes = new Hono<Env>()
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
         track("generate.text"),
+        generationAccess,
+        textCache,
         async (c) => {
-            await c.var.auth.requireAuthorization();
-            c.var.auth.requireModelAccess();
-            c.var.auth.requireKeyBudget();
-            await checkBalance(c.var, c.env);
-
             // Use resolved model from middleware
             const model = c.var.model.resolved;
 
@@ -529,7 +513,6 @@ export const proxyRoutes = new Hono<Env>()
         // .+ doesn't match newlines, but [\s\S]+ matches any character including \n
         // This creates a named param for OpenAPI docs while matching any characters
         "/image/:prompt{[\\s\\S]+}",
-        imageCache,
         describeRoute({
             tags: ["🖼️ Image Generation"],
             summary: "Generate Image",
@@ -575,7 +558,6 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/video/:prompt{[\\s\\S]+}",
-        imageCache,
         describeRoute({
             tags: ["🎬 Video Generation"],
             summary: "Generate Video",
@@ -619,7 +601,6 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/audio/:text",
-        audioCache,
         describeRoute({
             tags: ["🔊 Audio Generation"],
             summary: "Generate Audio",
@@ -721,9 +702,10 @@ export const proxyRoutes = new Hono<Env>()
         ),
         resolveModel("generate.audio"),
         track("generate.audio"),
+        generationAccess,
+        audioCache,
         async (c) => {
             const log = c.get("log").getChild("generate");
-            await requireGenerationAccess(c.var, c.env);
 
             const rawText = c.req.param("text");
             let text: string;

@@ -1,5 +1,6 @@
 import { getAvailableBalance } from "@shared/billing/balance.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
+import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
@@ -11,6 +12,11 @@ type GenerationAccessVariables = AuthVariables &
     BalanceVariables &
     ModelVariables &
     LoggerVariables;
+
+type GenerationAccessEnv = {
+    Bindings: CloudflareBindings;
+    Variables: GenerationAccessVariables;
+};
 
 export async function checkBalance(
     vars: GenerationAccessVariables,
@@ -70,3 +76,10 @@ export async function requireGenerationAccess(
     vars.auth.requireKeyBudget();
     await checkBalance(vars, env);
 }
+
+export const generationAccess = createMiddleware<GenerationAccessEnv>(
+    async (c, next) => {
+        await requireGenerationAccess(c.var, c.env);
+        await next();
+    },
+);

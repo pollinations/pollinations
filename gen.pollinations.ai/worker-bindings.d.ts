@@ -1,18 +1,10 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
     BETTER_AUTH_SECRET: string;
-    POLAR_ACCESS_TOKEN?: string;
-    POLAR_WEBHOOK_SECRET?: string;
-    GITHUB_CLIENT_ID: string;
-    GITHUB_CLIENT_SECRET: string;
     PLN_ENTER_TOKEN: string;
     TINYBIRD_INGEST_TOKEN: string;
-    TINYBIRD_READ_TOKEN: string;
-    TINYBIRD_SYNC_TOKEN?: string;
-    STRIPE_SECRET_KEY?: string;
-    STRIPE_WEBHOOK_SECRET?: string;
     ELEVENLABS_API_KEY: string;
-    OVHCLOUD_API_KEY?: string;
+    OVHCLOUD_API_KEY: string;
     PLN_GPU_TOKEN: string;
     MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;

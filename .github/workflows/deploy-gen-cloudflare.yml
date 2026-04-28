@@ -7,6 +7,8 @@ on:
     paths:
       - 'gen.pollinations.ai/**'
       - 'shared/**'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/deploy-gen-cloudflare.yml'
   workflow_dispatch:
 

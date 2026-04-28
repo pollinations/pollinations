@@ -509,7 +509,9 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
             return false;
         }
         try {
-            const stream = (await request.json()).stream;
+            const stream = (
+                (await request.raw.clone().json()) as { stream?: unknown }
+            ).stream;
             return z.safeParse(z.coerce.boolean(), stream).data || false;
         } catch {
             return false;

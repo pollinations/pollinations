@@ -695,7 +695,16 @@ export const proxyRoutes = new Hono<Env>()
             const log = c.get("log").getChild("generate");
             await requireGenerationAccess(c.var, c.env);
 
-            const text = decodeURIComponent(c.req.param("text"));
+            const rawText = c.req.param("text");
+            let text: string;
+            try {
+                text = decodeURIComponent(rawText);
+            } catch {
+                throw new UpstreamError(400, {
+                    message:
+                        "Invalid percent-encoding in URL path. Make sure the text is properly URL-encoded (e.g. with encodeURIComponent), and that any literal '%' characters are written as '%25'.",
+                });
+            }
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 

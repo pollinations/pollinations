@@ -23,10 +23,10 @@ interface Highlight {
 const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-04-28",
-        emoji: "🎉",
-        title: "New paid models",
+        emoji: "💸",
+        title: "ElevenLabs Music, ElevenLabs TTS and GPT Image 2 moved to paid",
         description:
-            "ElevenLabs Music, ElevenLabs TTS, and GPT Image 2 are now available as paid models. [Check them out](/#models).",
+            "These models are no longer free. See the [pricing table](/#models) for current rates.",
     },
 ];
 

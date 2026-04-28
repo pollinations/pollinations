@@ -1,0 +1,34 @@
+{
+  "pr_number": 10531,
+  "title": "switch gpt-image-2 to openai direct, drop azure round-robin",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10531",
+  "merged_at": "2026-04-28T16:47:46Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Direct line to the source",
+    "blurb": "We've rewired gpt-image-2 to talk directly to OpenAI, dropping the old multi-region setup. This means higher rate limits and smoother, faster generations for everyone.",
+    "summary": "Switched the gpt-image-2 model backend from an Azure round-robin setup to a direct OpenAI API integration.",
+    "impact": "Users will experience significantly higher generation capacity and fewer rate limits when using the gpt-image-2 model.",
+    "keywords": [
+      "gpt-image-2",
+      "openai",
+      "infrastructure",
+      "rate-limits",
+      "reliability"
+    ],
+    "visual_concept": "Polly the bee acting as a network engineer, bypassing a tangled mess of old cables (Azure round-robin) to plug a single, massive, glowing green cable directly into a sleek server (OpenAI direct). Represents simplification and higher capacity.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny yellow hardhat, plugging a massive glowing lime green (#ecf874) cable directly into a sleek retro server mainframe. A tangled mess of old cables sits discarded in a box nearby. Soft pastel gradient background with warm lighting. Chunky retro sprites, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-28/PR-10531.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny yellow hardhat, plugging a massive glowing lime green (#ecf874) cable directly into a sleek retro server mainframe. A tangled mess of old cables sits discarded in a box nearby. Soft pastel gradient background with warm lighting. Chunky retro sprites, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-28T16:48:53.008206+00:00"
+}

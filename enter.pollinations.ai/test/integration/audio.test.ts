@@ -135,6 +135,29 @@ describe("ElevenLabs TTS", () => {
     );
 
     test(
+        "GET /audio/:text with malformed percent-encoding returns 400",
+        { timeout: 30000 },
+        async ({ paidApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/generate/audio/hello%",
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${paidApiKey}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(400);
+            const body = await response.json();
+            expect((body as { error: { message: string } }).error.message).toContain(
+                "Invalid percent-encoding",
+            );
+        },
+    );
+
+    test(
         "POST /v1/audio/speech with exhausted budget returns 402",
         { timeout: 30000 },
         async ({ exhaustedBudgetApiKey, mocks }) => {

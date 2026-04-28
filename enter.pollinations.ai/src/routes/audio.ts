@@ -241,14 +241,17 @@ export async function transcribeWithElevenLabs(opts: {
     const elevenLabsData: ElevenLabsTranscriptionResponse =
         await response.json();
 
-    // Get duration from word timestamps (Scribe v2 always returns words)
-    if (!elevenLabsData.words?.length) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
-            message:
-                "ElevenLabs response missing word timestamps (required for billing)",
-        });
+    // Scribe usually returns word-level timestamps; for silent audio or audio
+    // with no detectable speech, the words array can be empty. Treat that as
+    // a successful empty transcription rather than a server error.
+    const lastWord = elevenLabsData.words?.at(-1);
+    const duration = lastWord?.end ?? 0;
+    if (!lastWord) {
+        log.warn(
+            "ElevenLabs scribe returned no word timestamps; billing 0s (file size={size})",
+            { size: file.size },
+        );
     }
-    const duration = elevenLabsData.words[elevenLabsData.words.length - 1].end;
 
     const usageHeaders = buildUsageHeaders(
         "scribe",
@@ -277,11 +280,12 @@ export async function transcribeWithElevenLabs(opts: {
             task: "transcribe",
             language: elevenLabsData.language_code || "unknown",
             duration,
-            words: elevenLabsData.words?.map((w) => ({
-                word: w.text,
-                start: w.start,
-                end: w.end,
-            })),
+            words:
+                elevenLabsData.words?.map((w) => ({
+                    word: w.text,
+                    start: w.start,
+                    end: w.end,
+                })) ?? [],
             segments: [
                 {
                     id: 0,

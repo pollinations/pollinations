@@ -1,7 +1,7 @@
 import {
-    authenticateApiKeyRequest,
     type AuthenticatedApiKey,
     type AuthUser,
+    authenticateApiKeyRequest,
     BannedAccountError,
 } from "@shared/auth/api-key.ts";
 import { createMiddleware } from "hono/factory";
@@ -31,15 +31,9 @@ export type AuthEnv = {
     Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
 
-export type AuthOptions = {
-    allowSessionCookie: boolean;
-    allowApiKey: boolean;
-};
-
-export const auth = (options: AuthOptions) =>
+export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
         const authResult = await (async () => {
-            if (!options.allowApiKey) return null;
             try {
                 return await authenticateApiKeyRequest({
                     request: c.req.raw,

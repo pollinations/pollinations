@@ -6,7 +6,6 @@ on:
       - production
     paths:
       - 'gen.pollinations.ai/**'
-      - 'enter.pollinations.ai/src/**'
       - 'shared/**'
       - '.github/workflows/deploy-gen-cloudflare.yml'
   workflow_dispatch:

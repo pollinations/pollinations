@@ -195,17 +195,11 @@ export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
-    .use("/v1/models", auth({ allowApiKey: true, allowSessionCookie: false }))
-    .use(
-        "/image/models",
-        auth({ allowApiKey: true, allowSessionCookie: false }),
-    )
-    .use("/text/models", auth({ allowApiKey: true, allowSessionCookie: false }))
-    .use(
-        "/audio/models",
-        auth({ allowApiKey: true, allowSessionCookie: false }),
-    )
-    .use("/models", auth({ allowApiKey: true, allowSessionCookie: false }))
+    .use("/v1/models", auth())
+    .use("/image/models", auth())
+    .use("/text/models", auth())
+    .use("/audio/models", auth())
+    .use("/models", auth())
     .get(
         "/v1/models",
         describeRoute({
@@ -433,7 +427,7 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)
-    .use(auth({ allowApiKey: true, allowSessionCookie: false }))
+    .use(auth())
     .use(frontendKeyRateLimit)
     .use(balance)
     // Request deduplication: prevents duplicate concurrent requests by sharing promises

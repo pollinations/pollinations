@@ -629,12 +629,7 @@ export async function generateAceStepMusic(opts: {
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
-    .use(
-        "*",
-        auth({ allowApiKey: true, allowSessionCookie: false }),
-        frontendKeyRateLimit,
-        balance,
-    )
+    .use("*", auth(), frontendKeyRateLimit, balance)
     .post(
         "/speech",
         describeRoute({

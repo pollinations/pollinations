@@ -402,6 +402,7 @@ function AuthorizeComponent() {
                                 isDeviceMode={isDeviceMode}
                                 userCode={user_code}
                                 redirectHostname={redirectHostname}
+                                redirectUrl={redirect_url}
                             />
                             <p className="text-sm text-amber-900 mt-3">
                                 Sign in to review and approve the requested
@@ -496,6 +497,7 @@ function AuthorizeComponent() {
                                 isDeviceMode={isDeviceMode}
                                 userCode={user_code}
                                 redirectHostname={redirectHostname}
+                                redirectUrl={redirect_url}
                             />
                         </div>
 

@@ -66,7 +66,7 @@ function generateLLMDoc(): string {
         "",
         "Base URL: https://gen.pollinations.ai",
         "API Keys: https://enter.pollinations.ai",
-        "OpenAPI: https://gen.pollinations.ai/api/docs/open-api/generate-schema",
+        "OpenAPI: https://gen.pollinations.ai/docs/open-api/generate-schema",
         "",
         "## Generation",
         "",
@@ -106,7 +106,7 @@ const LLM_BUTTON_HTML = `
   button.textContent = 'Copy for LLMs';
   button.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9999;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;font:14px system-ui;box-shadow:0 6px 18px rgba(0,0,0,.14);cursor:pointer';
   button.onclick = async function () {
-    var res = await fetch('/api/docs/llm.txt');
+    var res = await fetch('/docs/llm.txt');
     var text = await res.text();
     await navigator.clipboard.writeText(text);
     var previous = button.textContent;
@@ -195,8 +195,10 @@ function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
 }
 
 async function fetchEnterSchema(c: Context<Env>) {
+    const url = new URL(c.req.url);
+    url.pathname = "/api/docs/open-api/generate-schema";
     const response = await c.env.ENTER.fetch(
-        new Request(c.req.url, {
+        new Request(url, {
             method: "GET",
             headers: c.req.raw.headers,
         }),
@@ -316,15 +318,7 @@ export function createDocsRoutes(generationApp: Hono<Env>): Hono<Env> {
                 theme: "saturn",
                 hideModels: true,
                 sources: [
-                    { url: "/api/docs/open-api/generate-schema", title: "API" },
-                    ...(c.env.ENVIRONMENT === "development"
-                        ? [
-                              {
-                                  url: "/api/auth/open-api/generate-schema",
-                                  title: "Auth",
-                              },
-                          ]
-                        : []),
+                    { url: "/docs/open-api/generate-schema", title: "API" },
                 ],
                 authentication: {
                     preferredSecurityScheme: "bearerAuth",

@@ -7,57 +7,48 @@ function route(path: string) {
 
 describe("resolveRoute", () => {
     it("classifies public API ownership explicitly", () => {
-        expect(classifyRoute("/api/generate/text/hello")).toBe("generation");
         expect(classifyRoute("/image/hello")).toBe("generation");
-        expect(classifyRoute("/api/docs")).toBe("docs");
-        expect(classifyRoute("/api/account/keys")).toBe("account-api");
-        expect(classifyRoute("/api/auth/session")).toBe("control-plane-api");
+        expect(classifyRoute("/docs")).toBe("docs");
+        expect(classifyRoute("/api/account/keys")).toBe("unsupported-api");
+        expect(classifyRoute("/api/auth/session")).toBe("unsupported-api");
         expect(classifyRoute("/account/keys")).toBe("account-api");
     });
 
-    it("redirects root and docs to api docs on the same origin", () => {
+    it("redirects root to docs on the same origin", () => {
         expect(route("/")).toEqual({
             kind: "redirect",
-            location: "https://staging.gen.pollinations.ai/api/docs",
-            status: 301,
-        });
-
-        expect(route("/docs")).toEqual({
-            kind: "redirect",
-            location: "https://staging.gen.pollinations.ai/api/docs",
+            location: "https://staging.gen.pollinations.ai/docs",
             status: 301,
         });
     });
 
     it("routes docs locally without noindex", () => {
-        const decision = route("/api/docs");
+        const decision = route("/docs");
 
         expect(decision.kind).toBe("generation");
         if (decision.kind !== "generation") return;
-        expect(decision.url.pathname).toBe("/api/docs");
+        expect(decision.url.pathname).toBe("/docs");
     });
 
     it("normalizes trailing slashes before exact public route matching", () => {
         const docs = route("/docs/");
         const models = route("/models/");
 
-        expect(docs).toEqual({
-            kind: "redirect",
-            location: "https://staging.gen.pollinations.ai/api/docs",
-            status: 301,
-        });
+        expect(docs.kind).toBe("generation");
+        if (docs.kind !== "generation") return;
+        expect(docs.url.pathname).toBe("/docs");
 
         expect(models.kind).toBe("generation");
         if (models.kind !== "generation") return;
         expect(models.url.pathname).toBe("/api/generate/text/models");
     });
 
-    it("routes api generation paths locally", () => {
+    it("does not expose api paths on gen", () => {
+        expect(route("/api").kind).toBe("notFound");
+
         const decision = route("/api/generate/v1/chat/completions");
 
-        expect(decision.kind).toBe("generation");
-        if (decision.kind !== "generation") return;
-        expect(decision.url.pathname).toBe("/api/generate/v1/chat/completions");
+        expect(decision.kind).toBe("notFound");
     });
 
     it("rewrites public shorthand paths to local generation routes", () => {
@@ -93,27 +84,19 @@ describe("resolveRoute", () => {
         expect(account.noIndex).toBe(true);
     });
 
-    it("rewrites account api subpaths locally and forwards other api routes to enter", () => {
+    it("proxies public account api subpaths to enter and rejects api aliases", () => {
         const account = route("/account/keys");
         const accountApi = route("/api/account/key/");
         const auth = route("/api/auth/session");
 
-        expect(account.kind).toBe("generation");
-        expect(accountApi.kind).toBe("generation");
-        expect(auth.kind).toBe("enter");
+        expect(account.kind).toBe("enter");
+        expect(accountApi.kind).toBe("notFound");
+        expect(auth.kind).toBe("notFound");
 
-        if (
-            account.kind !== "generation" ||
-            accountApi.kind !== "generation" ||
-            auth.kind !== "enter"
-        ) {
-            return;
-        }
+        if (account.kind !== "enter") return;
 
         expect(account.url.pathname).toBe("/api/account/keys");
-        expect(accountApi.url.pathname).toBe("/api/account/key");
-        expect(auth.url.pathname).toBe("/api/auth/session");
-        expect(auth.noIndex).toBe(true);
+        expect(account.noIndex).toBe(true);
     });
 
     it("preserves the previous broad fallback into api generation", () => {
@@ -134,7 +117,7 @@ describe("resolveRoute", () => {
             "text/plain",
         );
         await expect(decision.response.text()).resolves.toContain(
-            "Disallow: /api/generate/",
+            "Disallow: /api/",
         );
     });
 });

@@ -2,63 +2,50 @@ type RouteDecision =
     | { kind: "robots"; response: Response }
     | { kind: "redirect"; location: string; status: 301 | 302 }
     | { kind: "generation"; url: URL }
-    | { kind: "enter"; url: URL; noIndex: boolean };
+    | { kind: "enter"; url: URL; noIndex: boolean }
+    | { kind: "notFound" };
 
 export type RouteClass =
     | "generation"
     | "docs"
     | "account-api"
-    | "control-plane-api"
+    | "unsupported-api"
     | "account-ui";
 
 const robotsTxt = [
     "User-agent: *",
-    "Allow: /api/docs",
-    "Allow: /api/docs/llm.txt",
+    "Allow: /docs",
+    "Allow: /docs/llm.txt",
     "Disallow: /image/",
     "Disallow: /text/",
     "Disallow: /video/",
     "Disallow: /audio/",
     "Disallow: /v1/",
-    "Disallow: /api/generate/",
-    "Disallow: /api/v1/",
+    "Disallow: /api/",
 ].join("\n");
 
-const GENERATION_API_PREFIX = "/api/generate";
-const DOCS_API_PREFIX = "/api/docs";
-const ACCOUNT_API_PREFIX = "/api/account";
-const API_PREFIX = "/api/";
+const DOCS_PREFIX = "/docs";
+const API_PREFIX = "/api";
 const ACCOUNT_PREFIX = "/account";
 
-function isGenerationApiPath(path: string): boolean {
-    return (
-        path === GENERATION_API_PREFIX ||
-        path.startsWith(`${GENERATION_API_PREFIX}/`)
-    );
-}
-
 export function classifyRoute(path: string): RouteClass {
-    if (path === "/models" || isGenerationApiPath(path)) {
+    if (path === "/models") {
         return "generation";
     }
 
-    if (path === DOCS_API_PREFIX || path.startsWith(`${DOCS_API_PREFIX}/`)) {
+    if (path === DOCS_PREFIX || path.startsWith(`${DOCS_PREFIX}/`)) {
         return "docs";
     }
 
-    if (
-        path === ACCOUNT_API_PREFIX ||
-        path.startsWith(`${ACCOUNT_API_PREFIX}/`) ||
-        path.startsWith(`${ACCOUNT_PREFIX}/`)
-    ) {
+    if (path.startsWith(`${ACCOUNT_PREFIX}/`)) {
         return "account-api";
     }
 
-    if (path.startsWith(API_PREFIX)) {
-        return "control-plane-api";
+    if (path === API_PREFIX || path.startsWith(`${API_PREFIX}/`)) {
+        return "unsupported-api";
     }
 
-    if (path === ACCOUNT_PREFIX || path.startsWith(`${ACCOUNT_PREFIX}/`)) {
+    if (path === ACCOUNT_PREFIX) {
         return "account-ui";
     }
 
@@ -80,20 +67,16 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
         };
     }
 
-    if (matchPath === "/" || matchPath === "/docs") {
+    if (matchPath === "/") {
         return {
             kind: "redirect",
-            location: `${url.origin}/api/docs`,
+            location: `${url.origin}/docs`,
             status: 301,
         };
     }
 
     if (matchPath === "/models") {
         url.pathname = "/api/generate/text/models";
-        return { kind: "generation", url };
-    }
-
-    if (routeClass === "generation" && isGenerationApiPath(path)) {
         return { kind: "generation", url };
     }
 
@@ -106,16 +89,7 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
     }
 
     if (routeClass === "account-api") {
-        url.pathname = matchPath.startsWith(`${ACCOUNT_PREFIX}/`)
-            ? `/api${matchPath}`
-            : matchPath;
-        return {
-            kind: "generation",
-            url,
-        };
-    }
-
-    if (routeClass === "control-plane-api") {
+        url.pathname = `/api${matchPath}`;
         return {
             kind: "enter",
             url,
@@ -123,13 +97,12 @@ export function resolveRoute(inputUrl: URL): RouteDecision {
         };
     }
 
-    if (path === ACCOUNT_PREFIX || path === `${ACCOUNT_PREFIX}/`) {
+    if (routeClass === "account-ui") {
         return { kind: "enter", url, noIndex: true };
     }
 
-    if (routeClass === "account-ui") {
-        url.pathname = `/api${path}`;
-        return { kind: "enter", url, noIndex: true };
+    if (routeClass === "unsupported-api") {
+        return { kind: "notFound" };
     }
 
     url.pathname = `/api/generate${path}`;

@@ -16,15 +16,16 @@ Simplified API gateway for pollinations.ai, providing clean URLs via Cloudflare 
 
 ## URL Mapping
 
-| gen.pollinations.ai | → enter.pollinations.ai       |
-| ------------------- | ----------------------------- |
-| `/`                 | redirect → `/api/docs`        |
-| `/docs`             | redirect → `/api/docs`        |
-| `/models`           | → `/api/generate/text/models` |
-| `/image/*`          | → `/api/generate/image/*`     |
-| `/text/*`           | → `/api/generate/text/*`      |
-| `/v1/*`             | → `/api/generate/v1/*`        |
-| `/openai`           | → `/api/generate/openai`      |
+| gen.pollinations.ai | Owner             |
+| ------------------- | ----------------- |
+| `/`                 | redirect → `/docs` |
+| `/docs`             | local API docs    |
+| `/models`           | generation worker |
+| `/image/*`          | generation worker |
+| `/text/*`           | generation worker |
+| `/v1/*`             | generation worker |
+| `/openai`           | generation worker |
+| `/account/*`        | enter account API |
 
 ## Development
 

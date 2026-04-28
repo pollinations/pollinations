@@ -24,9 +24,6 @@
             "@/middleware/balance.ts": [
                 "../enter.pollinations.ai/src/middleware/balance.ts"
             ],
-            "@/routes/account.ts": [
-                "../enter.pollinations.ai/src/routes/account.ts"
-            ],
             "@/utils/track-helpers.ts": [
                 "../enter.pollinations.ai/src/utils/track-helpers.ts"
             ],

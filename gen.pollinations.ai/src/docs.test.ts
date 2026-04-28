@@ -41,7 +41,7 @@ describe("docs routes", () => {
 
         const response = await app.fetch(
             new Request(
-                "https://gen.pollinations.ai/api/docs/open-api/generate-schema",
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
             ),
             envWithEnterSchema(enterSchema),
             executionContext,
@@ -67,7 +67,7 @@ describe("docs routes", () => {
 
     it("does not add noindex to docs responses at the worker boundary", async () => {
         const response = await worker.fetch(
-            new Request("https://gen.pollinations.ai/api/docs/llm.txt"),
+            new Request("https://gen.pollinations.ai/docs/llm.txt"),
             envWithEnterSchema({}),
             executionContext,
         );

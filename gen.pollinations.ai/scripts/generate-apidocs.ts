@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
 const OPENAPI_URL =
     process.env.OPENAPI_URL ||
-    "https://gen.pollinations.ai/api/docs/open-api/generate-schema";
+    "https://gen.pollinations.ai/docs/open-api/generate-schema";
 
 type JsonObject = Record<string, unknown>;
 

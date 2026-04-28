@@ -67,7 +67,7 @@ function generateLLMDoc(): string {
     lines.push("");
     lines.push("Base URL: https://gen.pollinations.ai");
     lines.push("API Keys: https://enter.pollinations.ai");
-    lines.push("Docs: https://gen.pollinations.ai/api/docs");
+    lines.push("Docs: https://gen.pollinations.ai/docs");
     lines.push(
         "CLI: `npx @pollinations_ai/cli` (binary: `polli`) — agent-friendly, `--json` everywhere",
     );
@@ -340,16 +340,16 @@ function generateLLMDoc(): string {
     lines.push(
         "All account endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission.",
     );
-    lines.push("Base path: /api/account");
+    lines.push("Base path: /account");
     lines.push("");
 
-    lines.push("### GET /api/account/profile");
+    lines.push("### GET /account/profile");
     lines.push(
         "Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has the `account:profile` permission. `nextResetAt` is `null` for tiers with no hourly refill.",
     );
     lines.push("");
 
-    lines.push("### GET /api/account/balance");
+    lines.push("### GET /account/balance");
     lines.push(
         "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
     );
@@ -358,7 +358,7 @@ function generateLLMDoc(): string {
     );
     lines.push("");
 
-    lines.push("### GET /api/account/usage");
+    lines.push("### GET /account/usage");
     lines.push(
         "Per-request usage history: model, token counts, cost, response time.",
     );
@@ -368,7 +368,7 @@ function generateLLMDoc(): string {
     lines.push("Requires `account:usage` permission.");
     lines.push("");
 
-    lines.push("### GET /api/account/usage/daily");
+    lines.push("### GET /account/usage/daily");
     lines.push(
         "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
     );
@@ -378,13 +378,13 @@ function generateLLMDoc(): string {
     lines.push("Requires `account:usage` permission. Cached 1 hour.");
     lines.push("");
 
-    lines.push("### GET /api/account/keys");
+    lines.push("### GET /account/keys");
     lines.push(
         "List all API keys for the current user. Requires secret key (sk_) with `account:keys` permission.",
     );
     lines.push("");
 
-    lines.push("### POST /api/account/keys");
+    lines.push("### POST /account/keys");
     lines.push(
         "Create an API key. Requires secret key (sk_) with `account:keys` permission.",
     );
@@ -408,14 +408,14 @@ function generateLLMDoc(): string {
     );
     lines.push("");
 
-    lines.push("### DELETE /api/account/keys/:id");
+    lines.push("### DELETE /account/keys/:id");
     lines.push(
         "Revoke an API key by ID. Cannot revoke the key authenticating the request.",
     );
     lines.push("Requires secret key (sk_) with `account:keys` permission.");
     lines.push("");
 
-    lines.push("### GET /api/account/key");
+    lines.push("### GET /account/key");
     lines.push(
         "Info about the current API key: { valid, type, name, expiresAt, expiresIn, permissions, pollenBudget, rateLimitEnabled }.",
     );
@@ -1099,7 +1099,7 @@ function transformOpenAPISchema(
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c) => {
-            return c.redirect("https://gen.pollinations.ai/api/docs", 301);
+            return c.redirect("https://gen.pollinations.ai/docs", 301);
         })
         .get("/llm.txt", (c) => {
             c.header("Cache-Control", "public, max-age=3600");

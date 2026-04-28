@@ -5,19 +5,15 @@
  * billing UI, and other control-plane routes remain owned by enter.pollinations.ai.
  *
  * URL Mapping:
- *   gen.pollinations.ai/              -> redirect to /api/docs
- *   gen.pollinations.ai/docs          -> redirect to /api/docs
- *   gen.pollinations.ai/models        -> /api/generate/text/models
- *   gen.pollinations.ai/api/generate/* -> handled locally
- *   gen.pollinations.ai/api/docs/*    -> handled locally
- *   gen.pollinations.ai/api/account/* -> handled locally
- *   gen.pollinations.ai/api/*         -> enter.pollinations.ai
- *   gen.pollinations.ai/account/*     -> /api/account/* handled locally
- *   gen.pollinations.ai/image/*       -> /api/generate/image/*
- *   gen.pollinations.ai/text/*        -> /api/generate/text/*
- *   gen.pollinations.ai/audio/*       -> /api/generate/audio/*
- *   gen.pollinations.ai/video/*       -> /api/generate/video/*
- *   gen.pollinations.ai/v1/*          -> /api/generate/v1/*
+ *   gen.pollinations.ai/              -> redirect to /docs
+ *   gen.pollinations.ai/docs          -> docs handled locally
+ *   gen.pollinations.ai/models        -> generation models
+ *   gen.pollinations.ai/account/*     -> enter account API
+ *   gen.pollinations.ai/image/*       -> image generation
+ *   gen.pollinations.ai/text/*        -> text generation
+ *   gen.pollinations.ai/audio/*       -> audio generation
+ *   gen.pollinations.ai/video/*       -> video generation
+ *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
 import { createGenerationApp } from "./generation.ts";
@@ -85,8 +81,12 @@ export default {
                 env,
                 ctx,
                 route.url,
-                !route.url.pathname.startsWith("/api/docs"),
+                !route.url.pathname.startsWith("/docs"),
             );
+        }
+
+        if (route.kind === "notFound") {
+            return noIndex(new Response("Not Found", { status: 404 }));
         }
 
         return fetchEnter(request, env, route.url, route.noIndex);

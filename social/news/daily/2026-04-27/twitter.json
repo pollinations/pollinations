@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-27",
+  "period_start": "2026-04-27",
+  "period_end": "2026-04-27",
+  "generated_at": "2026-04-28T06:51:50.995459+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-27/images/twitter.jpg"
+    }
+  ],
+  "text": "rewired the plumbing for deepseek pro (now via fireworks) and grok. text endpoints should be stable again. also added storyforge and frieze to the ecosystem. building ai infra is mostly just finding out which servers are awake today."
+}

@@ -151,9 +151,9 @@ describe("ElevenLabs TTS", () => {
 
             expect(response.status).toBe(400);
             const body = await response.json();
-            expect((body as { error: { message: string } }).error.message).toContain(
-                "Invalid percent-encoding",
-            );
+            expect(
+                (body as { error: { message: string } }).error.message,
+            ).toContain("Invalid percent-encoding");
         },
     );
 

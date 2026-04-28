@@ -180,14 +180,17 @@ const CreateApiKeySchema = z.object({
  * Only caller-owned fields are accepted. Server-controlled fields like
  * keyType, createdVia, and plaintextKey cannot be modified after creation.
  */
+const UrlWithSchemeSchema = z.string().refine(
+    (val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val),
+    {
+        message: "Must be a valid URL with a scheme (e.g. https://...)",
+    },
+);
+
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
-    appUrl: z
-        .string()
-        .refine((val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val), {
-            message: "Must be a valid URL with a scheme (e.g. https://...)",
-        })
-        .optional(),
+    appUrl: UrlWithSchemeSchema.optional(),
+    redirectUris: z.array(UrlWithSchemeSchema).optional(),
 });
 
 /**
@@ -372,6 +375,11 @@ export const apiKeysRoutes = new Hono<Env>()
 
             if (metadataUpdate.appUrl) {
                 validateAppUrlFormat(metadataUpdate.appUrl);
+            }
+            if (metadataUpdate.redirectUris) {
+                for (const uri of metadataUpdate.redirectUris) {
+                    validateAppUrlFormat(uri);
+                }
             }
 
             const metadata = await updateKeyMetadata(

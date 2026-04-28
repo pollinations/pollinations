@@ -9,6 +9,7 @@ export type ApiKeyType = "secret" | "publishable";
 
 export type CallerMetadata = {
     appUrl?: string;
+    redirectUris?: string[];
     redirectOrigin?: string;
     deviceUserCode?: string;
     clientId?: string;
@@ -49,6 +50,11 @@ function pickCallerMetadata(
     if (!metadata) return {};
     const out: Record<string, unknown> = {};
     if (typeof metadata.appUrl === "string") out.appUrl = metadata.appUrl;
+    if (Array.isArray(metadata.redirectUris)) {
+        out.redirectUris = metadata.redirectUris.filter(
+            (v): v is string => typeof v === "string" && !!v,
+        );
+    }
     if (typeof metadata.redirectOrigin === "string")
         out.redirectOrigin = metadata.redirectOrigin;
     if (typeof metadata.deviceUserCode === "string")
@@ -81,6 +87,11 @@ export async function createApiKeyForUser({
     const callerMetadata = pickCallerMetadata(metadata);
     if (typeof callerMetadata.appUrl === "string") {
         validateAppUrlFormat(callerMetadata.appUrl);
+    }
+    if (Array.isArray(callerMetadata.redirectUris)) {
+        for (const uri of callerMetadata.redirectUris as string[]) {
+            validateAppUrlFormat(uri);
+        }
     }
 
     const sanitizedAccountPerms =

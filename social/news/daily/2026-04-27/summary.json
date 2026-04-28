@@ -1,0 +1,27 @@
+{
+  "date": "2026-04-27",
+  "period_start": "2026-04-27",
+  "period_end": "2026-04-27",
+  "title": "Text model plumbing: Grok and DeepSeek Pro are stable again",
+  "summary": "Rerouting text models around upstream outages and welcoming two new community apps to the greenhouse.\n\nUpstream providers occasionally trip over their own shoelaces. We rerouted Grok to a working Azure 4.20 non-reasoning deployment to fix a string of 502 errors, and shifted DeepSeek Pro over to Fireworks for better uptime and context handling. Both models are back to generating text instead of stack traces.\n\nTwo new community projects hit the showcase. StoryForge is a client-side app that spins up illustrated, chapter-based short stories. On the terminal side, Frieze is a CLI tool that injects AI-generated banners and slogans straight into your shell. More proof that you can build weird, fun things with simple HTTP calls.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 10493,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10502,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10505,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10508,
+      "date": "2026-04-27"
+    }
+  ],
+  "generated_at": "2026-04-28T06:51:50.995459+00:00"
+}

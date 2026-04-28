@@ -6,10 +6,14 @@ const enterSrc = fileURLToPath(
     new URL("../enter.pollinations.ai/src/", import.meta.url),
 );
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
+const cloudflareWorkersStub = fileURLToPath(
+    new URL("./test/cloudflare-workers.ts", import.meta.url),
+);
 
 const genAliases = [
     "content-filter.ts",
     "cache",
+    "durable-objects/PollenRateLimiter.ts",
     "env.ts",
     "error.ts",
     "events.ts",
@@ -18,6 +22,7 @@ const genAliases = [
     "middleware/logger.ts",
     "middleware/media-cache.ts",
     "middleware/model.ts",
+    "middleware/rate-limit-durable.ts",
     "middleware/rate-limit-edge.ts",
     "middleware/requestDeduplication.ts",
     "middleware/text-cache.ts",
@@ -37,13 +42,8 @@ const genAliases = [
 const enterAliases = [
     ["@/auth.ts", "auth.ts"],
     ["@/db/schema/better-auth.ts", "db/schema/better-auth.ts"],
-    [
-        "@/durable-objects/PollenRateLimiter.ts",
-        "durable-objects/PollenRateLimiter.ts",
-    ],
     ["@/middleware/auth.ts", "middleware/auth.ts"],
     ["@/middleware/balance.ts", "middleware/balance.ts"],
-    ["@/middleware/rate-limit-durable.ts", "middleware/rate-limit-durable.ts"],
     ["@/routes/account.ts", "routes/account.ts"],
     ["@/tier-config.ts", "tier-config.ts"],
     ["@/utils/track-helpers.ts", "utils/track-helpers.ts"],
@@ -63,6 +63,10 @@ export default defineConfig({
             {
                 find: /^@shared\/(.*)$/,
                 replacement: `${sharedSrc}$1`,
+            },
+            {
+                find: "cloudflare:workers",
+                replacement: cloudflareWorkersStub,
             },
         ],
     },

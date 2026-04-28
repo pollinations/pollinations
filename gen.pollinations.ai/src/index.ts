@@ -23,6 +23,8 @@
 import { createGenerationApp } from "./generation.ts";
 import { resolveRoute } from "./routing.ts";
 
+export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
+
 interface Env extends CloudflareBindings {
     ENTER: Fetcher;
 }

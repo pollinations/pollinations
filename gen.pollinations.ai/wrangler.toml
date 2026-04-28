@@ -26,6 +26,14 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+[[durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["PollenRateLimiter"]
+
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
@@ -78,7 +86,10 @@ simple = { limit = 10000, period = 10 }
 [[env.production.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
-script_name = "pollinations-enter-production"
+
+[[env.production.migrations]]
+tag = "v1"
+new_classes = ["PollenRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -129,7 +140,10 @@ simple = { limit = 10000, period = 10 }
 [[env.staging.durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
-script_name = "pollinations-enter-staging"
+
+[[env.staging.migrations]]
+tag = "v1"
+new_classes = ["PollenRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"

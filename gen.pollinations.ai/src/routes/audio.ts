@@ -18,6 +18,7 @@ import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
+import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
@@ -628,7 +629,12 @@ export async function generateAceStepMusic(opts: {
 
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
-    .use("*", auth({ allowApiKey: true, allowSessionCookie: false }), balance)
+    .use(
+        "*",
+        auth({ allowApiKey: true, allowSessionCookie: false }),
+        frontendKeyRateLimit,
+        balance,
+    )
     .post(
         "/speech",
         describeRoute({

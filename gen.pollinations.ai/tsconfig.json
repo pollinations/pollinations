@@ -18,17 +18,11 @@
             "@/db/schema/better-auth.ts": [
                 "../enter.pollinations.ai/src/db/schema/better-auth.ts"
             ],
-            "@/durable-objects/PollenRateLimiter.ts": [
-                "../enter.pollinations.ai/src/durable-objects/PollenRateLimiter.ts"
-            ],
             "@/middleware/auth.ts": [
                 "../enter.pollinations.ai/src/middleware/auth.ts"
             ],
             "@/middleware/balance.ts": [
                 "../enter.pollinations.ai/src/middleware/balance.ts"
-            ],
-            "@/middleware/rate-limit-durable.ts": [
-                "../enter.pollinations.ai/src/middleware/rate-limit-durable.ts"
             ],
             "@/routes/account.ts": [
                 "../enter.pollinations.ai/src/routes/account.ts"

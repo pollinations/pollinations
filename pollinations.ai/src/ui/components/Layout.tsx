@@ -1,4 +1,3 @@
-import { useCallback, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { AUTH_COPY } from "../../copy/content/auth";
 import { LAYOUT, LAYOUT_NO_TRANSLATE } from "../../copy/content/layout";
@@ -71,15 +70,7 @@ const tertiaryBtn =
     "h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark";
 const labelCls = "font-headline text-[7px] font-black uppercase tracking-wider";
 
-function FooterLinks({
-    layoutCopy,
-    emailCopied,
-    onCopyEmail,
-}: {
-    layoutCopy: Record<string, string>;
-    emailCopied: boolean;
-    onCopyEmail: () => void;
-}) {
+function FooterLinks({ layoutCopy }: { layoutCopy: Record<string, string> }) {
     return (
         <>
             <Button
@@ -108,20 +99,6 @@ function FooterLinks({
                 className={tertiaryBtn}
             >
                 <span className={labelCls}>{layoutCopy.refundsLink}</span>
-            </Button>
-            <Button
-                type="button"
-                onClick={onCopyEmail}
-                variant="iconText"
-                size={null}
-                className={tertiaryBtn}
-            >
-                <span className={labelCls}>{layoutCopy.emailLink}</span>
-                <span
-                    className={`absolute -top-8 left-0 font-body text-xs font-bold text-dark uppercase tracking-wider transition-opacity duration-200 ${emailCopied ? "opacity-100" : "opacity-0"}`}
-                >
-                    {layoutCopy.copiedLabel}
-                </span>
             </Button>
         </>
     );
@@ -156,15 +133,9 @@ function Layout() {
     const location = useLocation();
     const showFooter = useFooterVisibility();
     const showHeader = useHeaderVisibility();
-    const [emailCopied, setEmailCopied] = useState(false);
     const { isLoggedIn } = useAuthState();
     const { copy: authCopy } = usePageCopy(AUTH_COPY);
     const { copy: layoutCopy } = usePageCopy(LAYOUT, LAYOUT_NO_TRANSLATE);
-    const handleCopyEmail = useCallback(() => {
-        navigator.clipboard.writeText(layoutCopy.contactEmail);
-        setEmailCopied(true);
-        setTimeout(() => setEmailCopied(false), 2000);
-    }, [layoutCopy.contactEmail]);
 
     return (
         <div className="relative min-h-screen">
@@ -274,11 +245,7 @@ function Layout() {
                                 </div>
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <FooterLinks
-                                    layoutCopy={layoutCopy}
-                                    emailCopied={emailCopied}
-                                    onCopyEmail={handleCopyEmail}
-                                />
+                                <FooterLinks layoutCopy={layoutCopy} />
                                 <EnterButton
                                     isLoggedIn={isLoggedIn}
                                     authCopy={authCopy}
@@ -304,11 +271,7 @@ function Layout() {
 
                             {/* Center: Links */}
                             <div className="flex items-center flex-shrink-0 gap-2">
-                                <FooterLinks
-                                    layoutCopy={layoutCopy}
-                                    emailCopied={emailCopied}
-                                    onCopyEmail={handleCopyEmail}
-                                />
+                                <FooterLinks layoutCopy={layoutCopy} />
                             </div>
 
                             {/* Right: Social + Enter */}

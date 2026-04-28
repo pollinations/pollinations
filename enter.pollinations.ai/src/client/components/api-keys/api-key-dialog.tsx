@@ -45,7 +45,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const keyType: "secret" | "publishable" = simplified
         ? "publishable"
         : "secret";
-    const [appUrl, setAppUrl] = useState("");
+    const [redirectUris, setRedirectUris] = useState<string[]>([]);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -75,7 +75,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 description,
                 keyType,
                 ...keyPermissions.permissions,
-                ...(isPublishable && appUrl && { appUrl }),
+                ...(isPublishable &&
+                    redirectUris.filter((v) => v.trim()).length > 0 && {
+                        redirectUris: redirectUris.filter((v) => v.trim()),
+                    }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -268,8 +271,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                             {simplified && !createdKey && (
                                 <PublishableKeySettings
-                                    appUrl={appUrl}
-                                    onAppUrlChange={setAppUrl}
+                                    redirectUris={redirectUris}
+                                    onRedirectUrisChange={setRedirectUris}
                                     disabled={isSubmitting}
                                 />
                             )}

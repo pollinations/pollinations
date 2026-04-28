@@ -103,9 +103,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 apiKey.metadata?.keyType === "publishable";
                             const plaintextKey = apiKey.metadata
                                 ?.plaintextKey as string | undefined;
-                            const appUrl = apiKey.metadata?.appUrl as
+                            const redirectUrisMeta = Array.isArray(
+                                apiKey.metadata?.redirectUris,
+                            )
+                                ? (apiKey.metadata?.redirectUris as string[])
+                                : [];
+                            const legacyAppUrl = apiKey.metadata?.appUrl as
                                 | string
                                 | undefined;
+                            const appUrl =
+                                redirectUrisMeta[0] || legacyAppUrl || "";
                             const isAppKey = isPublishable && !!appUrl;
 
                             return (

@@ -1,9 +1,5 @@
 
-        // Publishable key for the registered OpenClaw app on enter.pollinations.ai.
-        // Empty string = no client_id sent → consent screen shows the
-        // "Unverified app" warning (correct fallback during initial setup).
-        // Replace with the real pk_... once the OpenClaw app is registered.
-        const OPENCLAW_APP_KEY = "";
+        const OPENCLAW_APP_KEY = "pk_6qmH5idGyIiJdbgA";
 
         function copyCode(id) {
             const el = document.getElementById(id);

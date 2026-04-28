@@ -233,6 +233,12 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             />
                         </svg>
                     </a>
+                    <SidebarExternalLink href="https://discord.com/channels/885844321461485618/1432378056126894343">
+                        🧪 #pollen-beta
+                    </SidebarExternalLink>
+                    <SidebarExternalLink href="https://github.com/pollinations/pollinations/issues">
+                        🐛 Report an issue
+                    </SidebarExternalLink>
                 </div>
             </nav>
             <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
@@ -284,6 +290,34 @@ const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
         </button>
     );
 };
+
+const SidebarExternalLink: FC<PropsWithChildren<{ href: string }>> = ({
+    href,
+    children,
+}) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-[15px] font-medium text-gray-800 transition-colors hover:bg-white/60 hover:text-gray-950 focus:outline-none focus-visible:bg-white/60"
+    >
+        <span>{children}</span>
+        <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4 shrink-0 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <path
+                d="M7 17 17 7M9 7h8v8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    </a>
+);
 
 const MobileHeader: FC<{ onOpen: () => void }> = ({ onOpen }) => {
     return (
@@ -345,19 +379,6 @@ const AccountMenuLinks: FC = () => (
                 ariaLabel="Pollinations GitHub repository"
             />
         </div>
-        <div className="my-1 border-t border-amber-300" />
-        <AccountMenuLink
-            href="https://discord.com/channels/885844321461485618/1432378056126894343"
-            external
-        >
-            🧪 #pollen-beta ↗
-        </AccountMenuLink>
-        <AccountMenuLink
-            href="https://github.com/pollinations/pollinations/issues"
-            external
-        >
-            🐛 Report an issue ↗
-        </AccountMenuLink>
     </>
 );
 
@@ -378,26 +399,6 @@ const AccountIconLink: FC<{
             {icon}
         </span>
         <span>{label}</span>
-    </a>
-);
-
-type AccountMenuLinkProps = PropsWithChildren<{
-    href: string;
-    external?: boolean;
-}>;
-
-const AccountMenuLink: FC<AccountMenuLinkProps> = ({
-    href,
-    external = false,
-    children,
-}) => (
-    <a
-        href={href}
-        target={external ? "_blank" : undefined}
-        rel={external ? "noopener noreferrer" : undefined}
-        className="block rounded-md px-3 py-2 text-sm text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
-    >
-        {children}
     </a>
 );
 

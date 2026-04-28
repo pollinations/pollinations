@@ -9,7 +9,7 @@ const logError = debug("pollinations:flux-klein:error");
 
 // RunPod pod endpoint for Klein 4B (read lazily so dotenv has time to load)
 const getKleinGenerateUrl = () =>
-    `${process.env.KLEIN_URL || "https://pi90tfk3sa9t12-8000.proxy.runpod.net"}/generate`;
+    `${process.env.KLEIN_URL || "https://lqh6weiexk4sth-8000.proxy.runpod.net"}/generate`;
 const MAX_INPUT_IMAGES = 10;
 
 /**

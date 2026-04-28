@@ -26,6 +26,7 @@ export const LAYOUT = {
     // Footer
     termsLink: "Terms",
     privacyLink: "Privacy",
+    refundsLink: "Refunds",
     emailLink: "Email",
     copiedLabel: "Copied!",
     footerBranding: "Pollinations.AI © 2026 Myceli AI OÜ",

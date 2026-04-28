@@ -1,12 +1,4 @@
-export type DashboardPage =
-    | "updates"
-    | "pollen"
-    | "usage"
-    | "keys"
-    | "models"
-    | "terms"
-    | "privacy"
-    | "refunds";
+export type DashboardPage = "updates" | "pollen" | "usage" | "keys" | "models";
 
 export type DashboardTheme =
     | "amber"
@@ -17,10 +9,8 @@ export type DashboardTheme =
     | "teal"
     | "violet";
 
-type DashboardNavPage = Exclude<DashboardPage, "terms" | "privacy" | "refunds">;
-
 export const DASHBOARD_NAV_ITEMS: {
-    id: DashboardNavPage;
+    id: DashboardPage;
     label: string;
     theme: DashboardTheme;
 }[] = [
@@ -37,9 +27,6 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     "usage",
     "keys",
     "models",
-    "terms",
-    "privacy",
-    "refunds",
 ];
 
 // ─── Color palette (single source of truth) ──────────────────

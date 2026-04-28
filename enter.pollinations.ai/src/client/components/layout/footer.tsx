@@ -1,34 +1,29 @@
-import { Link } from "@tanstack/react-router";
-
 export function Footer() {
     return (
         <div className="mt-4 mx-auto">
             <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-3 text-sm text-gray-400">
                 <span>© 2026 Myceli.AI</span>
                 <span className="hidden sm:inline">·</span>
-                <Link
-                    to="/terms"
-                    reloadDocument
+                <a
+                    href="https://pollinations.ai/terms"
                     className="font-medium text-gray-500 hover:text-gray-700 hover:underline transition-colors"
                 >
                     Terms
-                </Link>
+                </a>
                 <span className="hidden sm:inline">·</span>
-                <Link
-                    to="/privacy"
-                    reloadDocument
+                <a
+                    href="https://pollinations.ai/privacy"
                     className="font-medium text-gray-500 hover:text-gray-700 hover:underline transition-colors"
                 >
                     Privacy
-                </Link>
+                </a>
                 <span className="hidden sm:inline">·</span>
-                <Link
-                    to="/refunds"
-                    reloadDocument
+                <a
+                    href="https://pollinations.ai/refunds"
                     className="font-medium text-gray-500 hover:text-gray-700 hover:underline transition-colors"
                 >
                     Refunds
-                </Link>
+                </a>
             </div>
         </div>
     );

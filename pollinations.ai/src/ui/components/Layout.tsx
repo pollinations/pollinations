@@ -101,6 +101,15 @@ function FooterLinks({
                 <span className={labelCls}>{layoutCopy.privacyLink}</span>
             </Button>
             <Button
+                as={Link}
+                to="/refunds"
+                variant="iconText"
+                size={null}
+                className={tertiaryBtn}
+            >
+                <span className={labelCls}>{layoutCopy.refundsLink}</span>
+            </Button>
+            <Button
                 type="button"
                 onClick={onCopyEmail}
                 variant="iconText"

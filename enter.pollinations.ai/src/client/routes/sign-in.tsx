@@ -1,8 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
-import privacyMarkdown from "../../../legal/PRIVACY_POLICY.md?raw";
-import refundsMarkdown from "../../../legal/REFUNDS_AND_CANCELLATIONS.md?raw";
-import termsMarkdown from "../../../legal/TERMS_OF_SERVICE.md?raw";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import { DashboardSection } from "../components/layout/dashboard-section.tsx";
@@ -14,7 +11,6 @@ import {
     type DashboardTheme,
     isDashboardPage,
 } from "../components/layout/dashboard-theme.ts";
-import { LegalDocument } from "../components/layout/legal-page-layout.tsx";
 import { UpdatesPage } from "../components/layout/updates-page.tsx";
 import { Pricing } from "../components/pricing";
 
@@ -100,7 +96,6 @@ function RouteComponent() {
                 <SignedOutAccountArea
                     loading={loading}
                     onSignIn={handleSignIn}
-                    onPageChange={handlePageChange}
                 />
             }
         >
@@ -138,15 +133,6 @@ function RouteComponent() {
                 </SignedOutPanel>
             )}
             {activePage === "models" && <Pricing />}
-            {activePage === "terms" && (
-                <LegalDocument markdown={termsMarkdown} />
-            )}
-            {activePage === "privacy" && (
-                <LegalDocument markdown={privacyMarkdown} />
-            )}
-            {activePage === "refunds" && (
-                <LegalDocument markdown={refundsMarkdown} />
-            )}
         </DashboardShell>
     );
 }
@@ -154,11 +140,9 @@ function RouteComponent() {
 function SignedOutAccountArea({
     loading,
     onSignIn,
-    onPageChange,
 }: {
     loading: boolean;
     onSignIn: () => void;
-    onPageChange: (page: DashboardPage) => void;
 }) {
     return (
         <div className="flex flex-col gap-2">
@@ -180,36 +164,7 @@ function SignedOutAccountArea({
             >
                 more options?
             </a>
-            <div className="mt-2 border-t border-gray-200 pt-2">
-                <SidebarTextButton onClick={() => onPageChange("terms")}>
-                    Terms
-                </SidebarTextButton>
-                <SidebarTextButton onClick={() => onPageChange("privacy")}>
-                    Privacy Policy
-                </SidebarTextButton>
-                <SidebarTextButton onClick={() => onPageChange("refunds")}>
-                    Refund Policy
-                </SidebarTextButton>
-            </div>
         </div>
-    );
-}
-
-function SidebarTextButton({
-    onClick,
-    children,
-}: {
-    onClick: () => void;
-    children: ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className="block w-full rounded-full px-3 py-2 text-left text-sm font-medium text-gray-800 transition-colors hover:bg-white/60 hover:text-gray-950"
-        >
-            {children}
-        </button>
     );
 }
 

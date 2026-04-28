@@ -1,8 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import privacyMarkdown from "../../../legal/PRIVACY_POLICY.md?raw";
-import refundsMarkdown from "../../../legal/REFUNDS_AND_CANCELLATIONS.md?raw";
-import termsMarkdown from "../../../legal/TERMS_OF_SERVICE.md?raw";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -22,7 +19,6 @@ import {
     DashboardShell,
 } from "../components/layout/dashboard-shell.tsx";
 import { isDashboardPage } from "../components/layout/dashboard-theme.ts";
-import { LegalDocument } from "../components/layout/legal-page-layout.tsx";
 import { UpdatesPage } from "../components/layout/updates-page.tsx";
 import { Pricing } from "../components/pricing";
 import {
@@ -299,15 +295,6 @@ function RouteComponent() {
             )}
             {activePage === "models" && (
                 <Pricing tierBalance={tierBalance} packBalance={packBalance} />
-            )}
-            {activePage === "terms" && (
-                <LegalDocument markdown={termsMarkdown} />
-            )}
-            {activePage === "privacy" && (
-                <LegalDocument markdown={privacyMarkdown} />
-            )}
-            {activePage === "refunds" && (
-                <LegalDocument markdown={refundsMarkdown} />
             )}
         </DashboardShell>
     );

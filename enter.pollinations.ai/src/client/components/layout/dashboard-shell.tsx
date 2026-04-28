@@ -243,9 +243,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             githubAvatarUrl={githubAvatarUrl ?? ""}
                             onSignOut={onSignOut}
                             className="w-full justify-start"
-                            menuItems={
-                                <AccountMenuLinks onPageChange={onPageChange} />
-                            }
+                            menuItems={<AccountMenuLinks />}
                         />
                     ) : null)}
                 <div className="px-3 text-[11px] leading-none text-green-950/45">
@@ -332,9 +330,7 @@ const Brand: FC = () => (
     </a>
 );
 
-const AccountMenuLinks: FC<{
-    onPageChange: (page: DashboardPage) => void;
-}> = ({ onPageChange }) => (
+const AccountMenuLinks: FC = () => (
     <>
         <div className="flex flex-col gap-1">
             <AccountIconLink
@@ -362,16 +358,6 @@ const AccountMenuLinks: FC<{
         >
             🐛 Report an issue ↗
         </AccountMenuLink>
-        <div className="my-1 border-t border-amber-300" />
-        <AccountMenuLegalLink onClick={() => onPageChange("terms")}>
-            Terms
-        </AccountMenuLegalLink>
-        <AccountMenuLegalLink onClick={() => onPageChange("privacy")}>
-            Privacy Policy
-        </AccountMenuLegalLink>
-        <AccountMenuLegalLink onClick={() => onPageChange("refunds")}>
-            Refund Policy
-        </AccountMenuLegalLink>
     </>
 );
 
@@ -413,33 +399,6 @@ const AccountMenuLink: FC<AccountMenuLinkProps> = ({
     >
         {children}
     </a>
-);
-
-const AccountMenuLegalLink: FC<{
-    onClick: () => void;
-    children: ReactNode;
-}> = ({ onClick, children }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className="flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm text-amber-900 transition-colors hover:bg-amber-300"
-    >
-        <span>{children}</span>
-        <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4 shrink-0 text-amber-900/60"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-        >
-            <path
-                d="m9 18 6-6-6-6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </svg>
-    </button>
 );
 
 const DiscordIcon: FC = () => (

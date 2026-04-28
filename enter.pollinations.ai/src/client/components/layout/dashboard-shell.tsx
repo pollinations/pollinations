@@ -372,7 +372,7 @@ const AccountIconLink: FC<{
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300"
+        className="flex items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}
@@ -395,7 +395,7 @@ const AccountMenuLink: FC<AccountMenuLinkProps> = ({
         href={href}
         target={external ? "_blank" : undefined}
         rel={external ? "noopener noreferrer" : undefined}
-        className="block rounded-md px-3 py-2 text-sm text-amber-900 transition-colors hover:bg-amber-300"
+        className="block rounded-md px-3 py-2 text-sm text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
     >
         {children}
     </a>

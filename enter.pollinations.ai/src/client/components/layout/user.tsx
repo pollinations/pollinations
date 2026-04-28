@@ -65,7 +65,7 @@ export const User: FC<UserProps> = ({
                     )}
                     <Menu.Item
                         value="sign-out"
-                        className="px-3 py-2 text-sm text-amber-900 hover:bg-amber-300 cursor-pointer flex items-center rounded-md"
+                        className="px-3 py-2 text-sm text-amber-900 hover:bg-amber-300 cursor-pointer flex items-center rounded-md focus:outline-none focus-visible:bg-amber-300"
                         onClick={onSignOut}
                     >
                         Sign Out

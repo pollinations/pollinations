@@ -10,7 +10,7 @@ interface LegalPageLayoutProps {
 }
 
 const PROSE_CLASSES =
-    "prose prose-lg prose-slate max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-h1:text-2xl prose-h1:font-bold prose-h1:not-italic prose-h1:mb-2 prose-h1:font-body prose-h1:text-center prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:mb-3 prose-p:leading-normal prose-ul:my-3 prose-ul:list-disc prose-ul:pl-8 prose-li:text-gray-700 prose-li:mb-1 prose-li:leading-normal prose-strong:text-gray-900 prose-strong:font-semibold prose-em:text-gray-400 prose-em:text-center prose-em:block prose-em:mb-6 prose-em:text-sm prose-em:font-normal prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-3 prose-blockquote:px-4 prose-blockquote:my-4 prose-blockquote:not-italic prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 prose-hr:my-8 prose-hr:border-gray-300";
+    "prose prose-sm sm:prose-base prose-slate max-w-none prose-headings:font-subheading prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-gray-900 prose-h1:text-3xl prose-h1:not-italic prose-h1:mb-5 prose-h1:text-left prose-h2:text-2xl prose-h2:mt-9 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:mb-3 prose-p:leading-normal prose-ul:my-3 prose-ul:list-disc prose-ul:pl-8 prose-li:text-gray-700 prose-li:mb-1 prose-li:leading-normal prose-strong:text-gray-900 prose-strong:font-semibold prose-em:text-gray-500 prose-em:not-italic prose-em:block prose-em:mb-6 prose-em:text-sm prose-em:font-normal prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:bg-white/70 prose-blockquote:py-3 prose-blockquote:px-4 prose-blockquote:my-4 prose-blockquote:not-italic prose-a:text-gray-900 prose-a:underline hover:prose-a:text-gray-700 prose-hr:my-8 prose-hr:border-gray-300";
 
 const NAV_ITEMS: { key: LegalPage; label: string; path: string }[] = [
     { key: "terms", label: "Terms", path: "/terms" },
@@ -77,8 +77,16 @@ export function LegalPageLayout({
             </div>
 
             {/* Content */}
+            <LegalDocument markdown={markdown} />
+        </div>
+    );
+}
+
+export function LegalDocument({ markdown }: { markdown: string }) {
+    return (
+        <>
             <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-8 sm:px-8 sm:py-10">
+                <div className="rounded-2xl border border-gray-300 bg-white/80 p-6 sm:p-8">
                     <div className={PROSE_CLASSES}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {markdown}
@@ -88,7 +96,7 @@ export function LegalPageLayout({
             </div>
 
             {/* Company Information */}
-            <div className="text-center mt-12 mb-8 text-gray-600">
+            <div className="mt-6 rounded-2xl border border-gray-300 bg-white/70 p-5 text-center text-gray-600">
                 <div className="flex items-center justify-center gap-3 mb-2">
                     <img
                         src="/myceli-ai-logo.svg"
@@ -113,6 +121,6 @@ export function LegalPageLayout({
                     Supervisory authority: Estonian Data Protection Inspectorate
                 </p>
             </div>
-        </div>
+        </>
     );
 }

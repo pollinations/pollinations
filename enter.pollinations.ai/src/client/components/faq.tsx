@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import faqMarkdown from "../../../POLLEN_FAQ.md?raw";
-import { Button } from "./button.tsx";
 import { PollenExamples } from "./pricing/pollen-examples.tsx";
 import { Card } from "./ui/card.tsx";
-import { Panel } from "./ui/panel.tsx";
+
+export const FAQ_GITHUB_URL =
+    "https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md";
 
 type FAQItem = {
     question: string;
@@ -64,7 +65,11 @@ const parseFAQFromMarkdown = (markdown: string): FAQItem[] => {
 
 const faqData = parseFAQFromMarkdown(faqMarkdown);
 
-export const FAQ: FC = () => {
+type FAQProps = {
+    showTitle?: boolean;
+};
+
+export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
     const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
 
     const toggleQuestion = (index: number) => {
@@ -118,68 +123,51 @@ export const FAQ: FC = () => {
     }, []);
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex flex-col sm:flex-row justify-between gap-3">
-                <h2 className="font-bold flex-1">FAQ</h2>
-                <div className="flex gap-3">
-                    <Button
-                        as="a"
-                        href="https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        color="violet"
-                        weight="light"
-                    >
-                        🐙 View on GitHub
-                    </Button>
-                </div>
-            </div>
-            <Panel color="violet">
-                <div className="flex flex-col gap-4">
-                    {faqData.map((item, index) => {
-                        const questionId = generateSlug(item.question);
-                        return (
-                            <div
-                                key={item.question}
-                                id={questionId}
-                                className="pb-4 last:pb-0 scroll-mt-20"
+        <>
+            {showTitle && (
+                <h2 className="px-1 text-left text-lg font-semibold text-violet-950 sm:text-xl">
+                    FAQ
+                </h2>
+            )}
+            <div className="flex flex-col gap-4">
+                {faqData.map((item, index) => {
+                    const questionId = generateSlug(item.question);
+                    return (
+                        <div
+                            key={item.question}
+                            id={questionId}
+                            className="pb-4 last:pb-0 scroll-mt-20"
+                        >
+                            <button
+                                type="button"
+                                onClick={() => toggleQuestion(index)}
+                                className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 transition-colors"
                             >
-                                <button
-                                    type="button"
-                                    onClick={() => toggleQuestion(index)}
-                                    className="w-full text-left flex justify-between items-start gap-4 text-violet-950 hover:text-violet-800 transition-colors"
+                                <span className="flex-1 font-bold text-violet-700">
+                                    {item.question}
+                                </span>
+                                <span className="text-2xl flex-shrink-0 font-normal">
+                                    {openIndices.has(index) ? "−" : "+"}
+                                </span>
+                            </button>
+                            {openIndices.has(index) && (
+                                <Card
+                                    color="violet"
+                                    bg="bg-white/80"
+                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
                                 >
-                                    <span
-                                        className="flex-1 text-pink-500"
-                                        style={{ fontWeight: 700 }}
-                                    >
-                                        {item.question}
-                                    </span>
-                                    <span className="text-2xl flex-shrink-0 font-normal">
-                                        {openIndices.has(index) ? "−" : "+"}
-                                    </span>
-                                </button>
-                                {openIndices.has(index) && (
-                                    <Card
-                                        color="violet"
-                                        bg="bg-white/80"
-                                        className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
-                                    >
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                        >
-                                            {item.answer}
-                                        </ReactMarkdown>
-                                        {item.question.includes(
-                                            "What can I create with Pollen",
-                                        ) && <PollenExamples />}
-                                    </Card>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            </Panel>
-        </div>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {item.answer}
+                                    </ReactMarkdown>
+                                    {item.question.includes(
+                                        "What can I create with Pollen",
+                                    ) && <PollenExamples />}
+                                </Card>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </>
     );
 };

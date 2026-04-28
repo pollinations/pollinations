@@ -63,6 +63,18 @@
         @apply mx-auto px-4 sm:px-6 md:px-8 pt-4 overflow-x-hidden;
     }
 
+    html.dashboard-shell,
+    body.dashboard-shell {
+        max-width: none;
+        height: 100dvh;
+        @apply p-0 m-0 overflow-hidden;
+    }
+
+    body.dashboard-shell #root {
+        height: 100dvh;
+        min-height: 0;
+    }
+
     h1 {
         @apply font-heading text-5xl;
     }
@@ -107,6 +119,10 @@
 
     .scrollbar-theme-blue {
         --scrollbar-thumb-color: rgba(37, 99, 235, 0.6);
+    }
+
+    .scrollbar-theme-pink {
+        --scrollbar-thumb-color: rgba(219, 39, 119, 0.55);
     }
 
     .scrollbar-theme-violet {

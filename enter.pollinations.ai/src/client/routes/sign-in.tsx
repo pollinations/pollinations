@@ -1,12 +1,30 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import privacyMarkdown from "../../../legal/PRIVACY_POLICY.md?raw";
+import refundsMarkdown from "../../../legal/REFUNDS_AND_CANCELLATIONS.md?raw";
+import termsMarkdown from "../../../legal/TERMS_OF_SERVICE.md?raw";
 import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
-import { FAQ } from "../components/faq.tsx";
-import { Footer } from "../components/layout/footer.tsx";
-import { Header } from "../components/layout/header.tsx";
-import { NewsBanner } from "../components/layout/news-banner.tsx";
+import { DashboardSection } from "../components/layout/dashboard-section.tsx";
+import {
+    type DashboardPage,
+    DashboardShell,
+} from "../components/layout/dashboard-shell.tsx";
+import {
+    type DashboardTheme,
+    isDashboardPage,
+} from "../components/layout/dashboard-theme.ts";
+import { LegalDocument } from "../components/layout/legal-page-layout.tsx";
+import { UpdatesPage } from "../components/layout/updates-page.tsx";
 import { Pricing } from "../components/pricing";
+
+function pageFromHash(hash: string): DashboardPage {
+    const page = hash.replace(/^#/, "");
+    if (isDashboardPage(page)) return page;
+    if (page === "news" || page === "faq") return "updates";
+    if (page === "pricing") return "models";
+    return "updates";
+}
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
@@ -40,6 +58,18 @@ export const Route = createFileRoute("/sign-in")({
 
 function RouteComponent() {
     const [loading, setLoading] = useState(false);
+    const [activePage, setActivePage] = useState<DashboardPage>(() =>
+        pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
+    );
+
+    useEffect(() => {
+        function syncPageFromHash(): void {
+            setActivePage(pageFromHash(window.location.hash));
+        }
+
+        window.addEventListener("hashchange", syncPageFromHash);
+        return () => window.removeEventListener("hashchange", syncPageFromHash);
+    }, []);
 
     const handleSignIn = async () => {
         setLoading(true);
@@ -52,43 +82,165 @@ function RouteComponent() {
         }
     };
 
+    function handlePageChange(page: DashboardPage): void {
+        setActivePage(page);
+        try {
+            history.replaceState(null, "", `#${page}`);
+        } catch {
+            // Hash updates are cosmetic; navigation still works without them.
+        }
+        window.scrollTo({ top: 0, behavior: "auto" });
+    }
+
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-20">
-                <Header>
-                    <div className="relative">
-                        <Button
-                            as="button"
-                            onClick={handleSignIn}
-                            disabled={loading}
-                            color="amber"
-                            weight="light"
-                            className="whitespace-nowrap"
-                        >
-                            {loading ? "Signing in..." : "Sign in with Github"}
-                        </Button>
-                        <a
-                            href="https://github.com/pollinations/pollinations/issues/5543"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="absolute left-1/2 -translate-x-1/2 -bottom-5 text-xs text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
-                        >
-                            more options?
-                        </a>
-                    </div>
-                    <Button
-                        as="a"
-                        href="https://gen.pollinations.ai/docs"
-                        className="bg-gray-900 text-white hover:brightness-90! whitespace-nowrap"
-                    >
-                        API Ref.
-                    </Button>
-                </Header>
-                <NewsBanner />
-                <FAQ />
-                <Pricing />
-                <Footer />
+        <DashboardShell
+            activePage={activePage}
+            onPageChange={handlePageChange}
+            accountArea={
+                <SignedOutAccountArea
+                    loading={loading}
+                    onSignIn={handleSignIn}
+                    onPageChange={handlePageChange}
+                />
+            }
+        >
+            {activePage === "updates" && <UpdatesPage />}
+            {activePage === "pollen" && (
+                <SignedOutPanel
+                    title="Pollen"
+                    theme="amber"
+                    loading={loading}
+                    onSignIn={handleSignIn}
+                >
+                    Sign in to view your balance, top up pollen, and manage your
+                    tier.
+                </SignedOutPanel>
+            )}
+            {activePage === "usage" && (
+                <SignedOutPanel
+                    title="Usage"
+                    theme="pink"
+                    loading={loading}
+                    onSignIn={handleSignIn}
+                >
+                    Sign in to view request volume, pollen spend, and usage
+                    filters.
+                </SignedOutPanel>
+            )}
+            {activePage === "keys" && (
+                <SignedOutPanel
+                    title="Keys"
+                    theme="blue"
+                    loading={loading}
+                    onSignIn={handleSignIn}
+                >
+                    Sign in to create API keys and app keys for your projects.
+                </SignedOutPanel>
+            )}
+            {activePage === "models" && <Pricing />}
+            {activePage === "terms" && (
+                <LegalDocument markdown={termsMarkdown} />
+            )}
+            {activePage === "privacy" && (
+                <LegalDocument markdown={privacyMarkdown} />
+            )}
+            {activePage === "refunds" && (
+                <LegalDocument markdown={refundsMarkdown} />
+            )}
+        </DashboardShell>
+    );
+}
+
+function SignedOutAccountArea({
+    loading,
+    onSignIn,
+    onPageChange,
+}: {
+    loading: boolean;
+    onSignIn: () => void;
+    onPageChange: (page: DashboardPage) => void;
+}) {
+    return (
+        <div className="flex flex-col gap-2">
+            <Button
+                as="button"
+                onClick={onSignIn}
+                disabled={loading}
+                color="amber"
+                weight="light"
+                className="w-full justify-center text-center"
+            >
+                {loading ? "Signing in..." : "Sign in with GitHub"}
+            </Button>
+            <a
+                href="https://github.com/pollinations/pollinations/issues/5543"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-2 hover:text-gray-800"
+            >
+                more options?
+            </a>
+            <div className="mt-2 border-t border-gray-200 pt-2">
+                <SidebarTextButton onClick={() => onPageChange("terms")}>
+                    Terms
+                </SidebarTextButton>
+                <SidebarTextButton onClick={() => onPageChange("privacy")}>
+                    Privacy Policy
+                </SidebarTextButton>
+                <SidebarTextButton onClick={() => onPageChange("refunds")}>
+                    Refund Policy
+                </SidebarTextButton>
             </div>
         </div>
+    );
+}
+
+function SidebarTextButton({
+    onClick,
+    children,
+}: {
+    onClick: () => void;
+    children: ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="block w-full rounded-full px-3 py-2 text-left text-sm font-medium text-gray-800 transition-colors hover:bg-white/60 hover:text-gray-950"
+        >
+            {children}
+        </button>
+    );
+}
+
+function SignedOutPanel({
+    title,
+    theme,
+    loading,
+    onSignIn,
+    children,
+}: {
+    title: string;
+    theme: Extract<DashboardTheme, "amber" | "blue" | "pink">;
+    loading: boolean;
+    onSignIn: () => void;
+    children: ReactNode;
+}) {
+    return (
+        <DashboardSection title={title} theme={theme} framed>
+            <div className="flex flex-col items-start gap-4 text-sm text-gray-700 sm:flex-row sm:items-center sm:justify-between">
+                <p>{children}</p>
+                <Button
+                    as="button"
+                    color={theme}
+                    weight="light"
+                    onClick={onSignIn}
+                    disabled={loading}
+                    className="shrink-0"
+                >
+                    {loading ? "Signing in..." : "Sign in"}
+                </Button>
+            </div>
+        </DashboardSection>
     );
 }

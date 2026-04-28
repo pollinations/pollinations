@@ -176,7 +176,7 @@ export const Chart: FC<ChartProps> = ({
 
     if (data.length === 0) {
         return (
-            <div className="flex items-center justify-center h-[180px] rounded-xl bg-gray-50 border border-dashed border-gray-200">
+            <div className="flex items-center justify-center h-[180px]">
                 <div className="text-center">
                     <p className="text-sm text-gray-400 font-medium">
                         No usage data available

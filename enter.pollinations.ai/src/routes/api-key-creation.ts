@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import type { createAuth } from "../auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import * as schema from "../db/schema/better-auth.ts";
+import { parseMetadata } from "./metadata-utils.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
@@ -12,6 +13,7 @@ export type CallerMetadata = {
     redirectOrigin?: string;
     deviceUserCode?: string;
     description?: string;
+    byopEnabled?: boolean;
 };
 
 type CreateApiKeyForUserInput = {
@@ -38,12 +40,13 @@ export function validateAppUrlFormat(appUrl: string): void {
     }
 }
 
-// Caller-provided metadata is restricted to presentation-only fields.
+// Caller-provided metadata is restricted to explicit app/key settings.
 // Server-controlled fields like keyType / createdVia / plaintextKey and
 // billing attribution can never be set or overridden by callers, even via
 // /api/api-keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
+    isPublishable: boolean,
 ): Record<string, unknown> {
     if (!metadata) return {};
     const out: Record<string, unknown> = {};
@@ -54,6 +57,9 @@ function pickCallerMetadata(
         out.deviceUserCode = metadata.deviceUserCode;
     if (typeof metadata.description === "string")
         out.description = metadata.description;
+    if (isPublishable && typeof metadata.byopEnabled === "boolean") {
+        out.byopEnabled = metadata.byopEnabled;
+    }
     return out;
 }
 
@@ -82,6 +88,12 @@ async function requireValidByopClientKey(
             message: "Invalid BYOP client key",
         });
     }
+    const metadata = parseMetadata(clientKey.metadata);
+    if (metadata.byopEnabled !== true) {
+        throw new HTTPException(400, {
+            message: "Invalid BYOP client key",
+        });
+    }
 
     return clientKey;
 }
@@ -102,7 +114,8 @@ export async function createApiKeyForUser({
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
-    const callerMetadata = pickCallerMetadata(metadata);
+    const isPublishable = type === "publishable";
+    const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (typeof callerMetadata.appUrl === "string") {
         validateAppUrlFormat(callerMetadata.appUrl);
     }
@@ -119,7 +132,6 @@ export async function createApiKeyForUser({
         permissions.account = safeAccountPerms;
     }
 
-    const isPublishable = type === "publishable";
     if (byopClientKeyId && isPublishable) {
         throw new HTTPException(400, {
             message: "BYOP attribution can only be attached to secret keys",

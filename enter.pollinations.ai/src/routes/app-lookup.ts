@@ -25,6 +25,7 @@ async function resolveAttribution(
         githubUsername: user?.githubUsername || undefined,
         appName: keyRow.name,
         appUrl: (meta.appUrl as string) || undefined,
+        byopEnabled: meta.byopEnabled === true,
     };
 }
 

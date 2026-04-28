@@ -119,6 +119,9 @@ function RouteComponent() {
                 ...(isPublishable && formState.appUrl
                     ? { appUrl: formState.appUrl }
                     : {}),
+                ...(isPublishable
+                    ? { byopEnabled: formState.byopEnabled ?? false }
+                    : {}),
             },
             permissions: {
                 allowedModels: formState.allowedModels,

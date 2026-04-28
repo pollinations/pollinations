@@ -84,6 +84,7 @@ describe("BYOP markup", () => {
                 prefix: "pk",
                 key: `hashed-${pkId}`,
                 enabled: true,
+                metadata: JSON.stringify({ byopEnabled: true }),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
@@ -121,6 +122,7 @@ describe("BYOP markup", () => {
                 { prefix: "sk" },
                 { enabled: false },
                 { expiresAt: new Date(Date.now() - 1000) },
+                { metadata: JSON.stringify({ byopEnabled: false }) },
             ];
 
             for (const patch of invalidAppKeyStates) {
@@ -299,6 +301,7 @@ describe("BYOP markup", () => {
                 prefix: "pk",
                 key: `hashed-${pkId}`,
                 enabled: true,
+                metadata: JSON.stringify({ byopEnabled: true }),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
@@ -378,6 +381,7 @@ describe("BYOP markup", () => {
                 prefix: "pk",
                 key: `hashed-${pkId}`,
                 enabled: true,
+                metadata: JSON.stringify({ byopEnabled: true }),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });

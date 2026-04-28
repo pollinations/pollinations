@@ -200,6 +200,7 @@ const UpdateMetadataSchema = z.object({
             message: "Must be a valid URL with a scheme (e.g. https://...)",
         })
         .optional(),
+    byopEnabled: z.boolean().optional(),
 });
 
 /**
@@ -420,6 +421,15 @@ export const apiKeysRoutes = new Hono<Env>()
 
             if (metadataUpdate.appUrl) {
                 validateAppUrlFormat(metadataUpdate.appUrl);
+            }
+            if (
+                metadataUpdate.byopEnabled !== undefined &&
+                existingKey.prefix !== "pk"
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "BYOP earnings can only be enabled on publishable app keys",
+                });
             }
 
             const metadata = await updateKeyMetadata(

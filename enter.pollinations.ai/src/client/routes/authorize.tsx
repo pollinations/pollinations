@@ -38,6 +38,7 @@ type Attribution = {
     githubUsername?: string;
     appName?: string;
     appUrl?: string;
+    byopEnabled?: boolean;
 };
 
 function parseList(val: unknown): string[] | null {
@@ -279,9 +280,10 @@ function AuthorizeComponent() {
                 prefix: "sk",
                 source: "authorize",
                 expiryDays: keyPermissions.permissions.expiryDays,
-                byopClientKeyId: attribution?.found
-                    ? attribution.clientId
-                    : undefined,
+                byopClientKeyId:
+                    attribution?.found && attribution.byopEnabled
+                        ? attribution.clientId
+                        : undefined,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
                     ...(!isDeviceMode &&

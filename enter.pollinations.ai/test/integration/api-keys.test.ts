@@ -21,6 +21,7 @@ describe("API Key Management", () => {
                         metadata: {
                             description: "created in one step",
                             appUrl: "https://one-step.example/callback",
+                            byopEnabled: true,
                         },
                     }),
                 },
@@ -33,6 +34,7 @@ describe("API Key Management", () => {
                 keyType: "publishable",
                 description: "created in one step",
                 appUrl: "https://one-step.example/callback",
+                byopEnabled: true,
                 plaintextKey: created.key,
             });
         });
@@ -124,12 +126,14 @@ describe("API Key Management", () => {
                         type: "publishable",
                         metadata: {
                             appUrl: "https://trusted-byop.example/callback",
+                            byopEnabled: true,
                         },
                     }),
                 },
             );
             expect(appResponse.status).toBe(200);
             const appKey = await appResponse.json();
+            expect(appKey.metadata.byopEnabled).toBe(true);
 
             const dashboardResponse = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
@@ -204,6 +208,67 @@ describe("API Key Management", () => {
             };
             const listed = list.data.find((k) => k.id === created.id);
             expect(listed?.byopClientKeyId).toBe(appKey.id);
+        });
+
+        test("rejects BYOP attribution when app key earnings are disabled", async ({
+            sessionToken,
+        }) => {
+            const appResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "byop-disabled-app",
+                        type: "publishable",
+                        metadata: {
+                            appUrl: "https://byop-disabled.example/callback",
+                            byopEnabled: false,
+                        },
+                    }),
+                },
+            );
+            expect(appResponse.status).toBe(200);
+            const appKey = await appResponse.json();
+
+            const lookupResponse = await SELF.fetch(
+                `http://localhost:3000/api/app-lookup?app_key=${encodeURIComponent(appKey.key)}`,
+            );
+            expect(lookupResponse.status).toBe(200);
+            const lookup = (await lookupResponse.json()) as {
+                found?: boolean;
+                byopEnabled?: boolean;
+            };
+            expect(lookup.found).toBe(true);
+            expect(lookup.byopEnabled).toBe(false);
+
+            const secretResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys/authorize",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "disabled-byop-secret",
+                        type: "secret",
+                        byopClientKeyId: appKey.id,
+                    }),
+                },
+            );
+
+            expect(secretResponse.status).toBe(400);
+            const error = (await secretResponse.json()) as {
+                message?: string;
+                error?: { message?: string };
+            };
+            expect(error.message ?? error.error?.message).toMatch(
+                /Invalid BYOP client key/,
+            );
         });
 
         test("rejects BYOP attribution to non-publishable keys", async ({
@@ -485,23 +550,29 @@ describe("API Key Management", () => {
             expect(keyInfo.permissions?.models).toEqual(["flux"]);
         });
 
-        test("should reflect updated metadata immediately after update", async ({
-            auth,
+        test("should reflect updated app key metadata immediately after update", async ({
             sessionToken,
         }) => {
-            const createResponse = await auth.apiKey.create({
-                name: "metadata-freshness-test",
-                fetchOptions: {
+            const createResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
                     headers: {
+                        "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
+                    body: JSON.stringify({
+                        name: "metadata-freshness-test",
+                        type: "publishable",
+                        metadata: {
+                            appUrl: "https://initial.example/callback",
+                            byopEnabled: true,
+                        },
+                    }),
                 },
-            });
-            const createdKey = createResponse.data;
-            expect(createdKey).toBeTruthy();
-            if (!createdKey) {
-                throw new Error("Failed to create API key");
-            }
+            );
+            expect(createResponse.status).toBe(200);
+            const createdKey = await createResponse.json();
 
             const metadataResponse = await SELF.fetch(
                 `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
@@ -513,6 +584,7 @@ describe("API Key Management", () => {
                     },
                     body: JSON.stringify({
                         appUrl: "https://freshness.example/callback",
+                        byopEnabled: false,
                     }),
                 },
             );
@@ -521,6 +593,7 @@ describe("API Key Management", () => {
             expect(updated.metadata.appUrl).toBe(
                 "https://freshness.example/callback",
             );
+            expect(updated.metadata.byopEnabled).toBe(false);
 
             const listResponse = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
@@ -532,12 +605,16 @@ describe("API Key Management", () => {
             );
             expect(listResponse.status).toBe(200);
             const list = (await listResponse.json()) as {
-                data: { id: string; metadata?: { appUrl?: string } }[];
+                data: {
+                    id: string;
+                    metadata?: { appUrl?: string; byopEnabled?: boolean };
+                }[];
             };
             const refreshed = list.data.find((k) => k.id === createdKey.id);
             expect(refreshed?.metadata?.appUrl).toBe(
                 "https://freshness.example/callback",
             );
+            expect(refreshed?.metadata?.byopEnabled).toBe(false);
         });
 
         test("should update pollen budget", async ({ auth, sessionToken }) => {

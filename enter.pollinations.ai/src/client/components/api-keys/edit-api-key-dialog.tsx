@@ -31,8 +31,10 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
     const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
+    const initialByopEnabled = apiKey.metadata?.byopEnabled === true;
     const isAppKey = isPublishable && !!initialAppUrl;
     const [appUrl, setAppUrl] = useState(initialAppUrl);
+    const [byopEnabled, setByopEnabled] = useState(initialByopEnabled);
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -73,7 +75,10 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             });
 
             // Save app settings for publishable keys
-            if (isPublishable && appUrl !== initialAppUrl) {
+            if (
+                isPublishable &&
+                (appUrl !== initialAppUrl || byopEnabled !== initialByopEnabled)
+            ) {
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {
@@ -82,6 +87,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         credentials: "include",
                         body: JSON.stringify({
                             appUrl: appUrl || undefined,
+                            byopEnabled,
                         }),
                     },
                 );
@@ -190,6 +196,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     appUrl={appUrl}
                                     onAppUrlChange={setAppUrl}
+                                    byopEnabled={byopEnabled}
+                                    onByopEnabledChange={setByopEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

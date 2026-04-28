@@ -41,6 +41,8 @@ export type CreateApiKey = {
     accountPermissions?: string[] | null;
     /** App URL for publishable keys (optional, for consent screen attribution) */
     appUrl?: string;
+    /** Enables BYOP creator earnings for publishable app keys */
+    byopEnabled?: boolean;
 };
 
 export type CreateApiKeyResponse = ApiKey & {

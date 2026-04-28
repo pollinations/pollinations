@@ -104,6 +104,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             const appUrl = apiKey.metadata?.appUrl as
                                 | string
                                 | undefined;
+                            const byopEnabled =
+                                apiKey.metadata?.byopEnabled === true;
                             const isAppKey = isPublishable && !!appUrl;
 
                             return (
@@ -219,6 +221,23 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         "",
                                                     )}
                                                 </a>
+                                            </span>
+                                        )}
+                                        {isPublishable && (
+                                            <span>
+                                                <span className="text-gray-400">
+                                                    Earnings:{" "}
+                                                </span>
+                                                <span
+                                                    className={cn(
+                                                        "font-medium",
+                                                        byopEnabled
+                                                            ? "text-green-700"
+                                                            : "text-gray-500",
+                                                    )}
+                                                >
+                                                    {byopEnabled ? "on" : "off"}
+                                                </span>
                                             </span>
                                         )}
                                         {!isAppKey && (

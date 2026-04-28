@@ -12,6 +12,7 @@ import {
     apikey as apikeyTable,
     user as userTable,
 } from "@/db/schema/better-auth.ts";
+import { parseMetadata } from "@/routes/metadata-utils.ts";
 import {
     atomicAdjustUserBalance,
     atomicCreditUserBalance,
@@ -47,6 +48,7 @@ interface DeductionParams {
  * Returns null when markup must not be levied:
  *  - byop_client_key_id missing / invalid / pk_ row not found
  *  - referenced key is not an enabled, unexpired publishable app key
+ *  - referenced app key has metadata.byopEnabled disabled or missing
  *  - baseline price is zero
  *  - payer is the same user as the dev (self-dealing)
  *  - payer's tier is not user-facing (only microbe/spore are eligible —
@@ -64,7 +66,7 @@ export async function resolveDevMarkup(
     if (credit <= 0) return null;
 
     const [clientRow] = await db
-        .select({ userId: apikeyTable.userId })
+        .select({ userId: apikeyTable.userId, metadata: apikeyTable.metadata })
         .from(apikeyTable)
         .where(
             and(
@@ -80,6 +82,7 @@ export async function resolveDevMarkup(
         .limit(1);
 
     if (!clientRow?.userId) return null;
+    if (parseMetadata(clientRow.metadata).byopEnabled !== true) return null;
     if (clientRow.userId === payerUserId) return null;
 
     const [payerRow] = await db

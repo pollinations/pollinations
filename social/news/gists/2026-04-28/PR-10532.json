@@ -1,0 +1,34 @@
+{
+  "pr_number": 10532,
+  "title": "update banner: announce paid models (ElevenLabs Music/TTS, GPT Image 2)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10532",
+  "merged_at": "2026-04-28T17:20:53Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fresh news on the banner",
+    "blurb": "The homepage banner has been updated with the latest details on our premium model tiers, including ElevenLabs and GPT Image 2.",
+    "summary": "Updated the news banner to reflect the new premium tiers for ElevenLabs Music, TTS, and GPT Image 2.",
+    "impact": "Users will now see up-to-date information about premium model access right at the top of the site.",
+    "keywords": [
+      "banner",
+      "ui",
+      "models",
+      "tiers",
+      "elevenlabs"
+    ],
+    "visual_concept": "Polly the bee updating a glowing sign or banner on a retro computer monitor. The sign shows a list of models. Nomnom creature is eating old banner text.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting a new lime green (#ecf874) banner on a retro computer monitor. The round nomnom creature happily eats the old banner text nearby. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-28/PR-10532.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, painting a new lime green (#ecf874) banner on a retro computer monitor. The round nomnom creature happily eats the old banner text nearby. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-28T17:21:54.836580+00:00"
+}

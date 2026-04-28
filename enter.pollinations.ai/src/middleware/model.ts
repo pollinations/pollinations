@@ -1,10 +1,22 @@
-import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
-import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/registry/types.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+
+const SERVICES_BY_EVENT_TYPE = {
+    "generate.text": TEXT_SERVICES,
+    "generate.image": IMAGE_SERVICES,
+    "generate.audio": AUDIO_SERVICES,
+} as const satisfies Record<EventType, Record<string, unknown>>;
+
+const ENDPOINT_LABEL: Record<EventType, string> = {
+    "generate.text": "text",
+    "generate.image": "image",
+    "generate.audio": "audio",
+};
 
 export type ModelVariables = {
     model: {
@@ -76,6 +88,22 @@ export function resolveModel(
                     error instanceof Error
                         ? error.message
                         : `Invalid model: ${model}`,
+            });
+        }
+
+        // Reject models whose category doesn't match this endpoint
+        // (e.g. an audio model sent to /v1/chat/completions). Without this,
+        // the request would be proxied to the wrong backend and surface
+        // as a 5xx upstream error.
+        if (!(resolved in SERVICES_BY_EVENT_TYPE[eventType])) {
+            const actualCategory = (
+                ["generate.text", "generate.image", "generate.audio"] as const
+            ).find((et) => resolved in SERVICES_BY_EVENT_TYPE[et]);
+            const actualLabel = actualCategory
+                ? ENDPOINT_LABEL[actualCategory]
+                : "unknown";
+            throw new HTTPException(400, {
+                message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
             });
         }
 

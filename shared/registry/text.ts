@@ -24,9 +24,6 @@ export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 export type TextModelId = (typeof TEXT_SERVICES)[TextModelName]["modelId"];
 
-export const OPENCLAW_BACKING_MODEL_ID =
-    "qwen3-coder-30b-a3b-instruct" as const;
-
 export const TEXT_SERVICES = {
     "openai": {
         aliases: ["gpt-5.4-nano", "gpt-5-mini"],
@@ -117,27 +114,6 @@ export const TEXT_SERVICES = {
         tools: true,
         contextLength: 262144,
         isSpecialized: false,
-    },
-    "openclaw": {
-        aliases: ["openclaw-agent", "openclaw-coder"],
-        modelId: OPENCLAW_BACKING_MODEL_ID,
-        provider: "ovhcloud",
-        brand: "OpenClaw",
-        category: "text",
-        cost: [
-            {
-                date: new Date("2026-01-05").getTime(),
-                promptTextTokens: perMillion(0.08),
-                completionTextTokens: perMillion(0.32),
-            },
-        ],
-        description:
-            "OpenClaw - Agentic coding and computer-use preset optimized for OpenClaw workflows",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        contextLength: 262144,
-        isSpecialized: true,
     },
     "mistral": {
         aliases: [

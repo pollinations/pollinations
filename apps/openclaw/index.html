@@ -145,11 +145,10 @@
                                         "agents": {
                                         "defaults": {
                                         "model": {
-                                        "primary": "pollinations/openclaw",
-                                        "fallbacks": ["pollinations/kimi", "pollinations/deepseek", "pollinations/glm"]
+                                        "primary": "pollinations/kimi",
+                                        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
                                         },
                                         "models": {
-                                        "pollinations/openclaw": { "alias": "OpenClaw" },
                                         "pollinations/kimi": { "alias": "Kimi K2.5" },
                                         "pollinations/kimi-k2.6": { "alias": "Kimi K2.6" },
                                         "pollinations/deepseek": { "alias": "DeepSeek V4 Flash" },
@@ -170,8 +169,6 @@
                                         "apiKey": "${POLLINATIONS_API_KEY}",
                                         "api": "openai-completions",
                                         "models": [
-                                        { "id": "openclaw", "name": "OpenClaw",
-                                        "input": ["text"], "contextWindow": 262144 },
                                         { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
                                         "input": ["text","image"], "contextWindow": 256000 },
                                         { "id": "kimi-k2.6", "name": "Kimi K2.6 (Paid)", "reasoning": true,
@@ -223,7 +220,7 @@
                                     | bash -s -- <span class="key-in-json">YOUR_API_KEY</span></div>
                             </div>
                             <p style="margin-top:8px;">The script will restart the gateway automatically. After that,
-                                switch to the new provider with: <code>/model pollinations/openclaw</code></p>
+                                switch to the new provider with: <code>/model pollinations/kimi</code></p>
                         </div>
                     </div>
                 </div>
@@ -234,13 +231,7 @@
 
                 <div class="model-table">
                     <div class="model-row recommended">
-                        <div class="model-label">OpenClaw <span class="model-tag">default</span></div>
-                        <div class="model-id">pollinations/openclaw</div>
-                        <div class="model-note"><strong>Best low-cost preset</strong> for agentic coding and
-                            computer-use workflows. Built on a fast coding model with OpenClaw-tuned behavior.</div>
-                    </div>
-                    <div class="model-row">
-                        <div class="model-label">Kimi K2.5</div>
+                        <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
                         <div class="model-id">pollinations/kimi</div>
                         <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K
                                 context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
@@ -288,7 +279,7 @@
                 </div>
 
                 <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code
-                        style="color:var(--text)">/model pollinations/openclaw</code></p>
+                        style="color:var(--text)">/model pollinations/kimi</code></p>
             </section>
 
             <section class="section">

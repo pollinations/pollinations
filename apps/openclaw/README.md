@@ -2,7 +2,7 @@
 
 Use **25+ AI models** as your OpenClaw brain through a single API.
 
-**OpenClaw** as default — a preset alias over the existing `qwen3-coder` backbone, tuned with a system prompt for agentic coding and computer-use workflows. Not a new backend model. Kimi K2.5, DeepSeek, GLM 5, and Claude Haiku available as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) on paid tier.
+**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM 5, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
 
 ## Setup
 
@@ -16,8 +16,8 @@ curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps
 
 This works for both fresh installs and existing OpenClaw setups. It:
 - Runs `openclaw onboard` for fresh installs (creates config + workspace)
-- Adds the Pollinations provider with 10 models to `~/.openclaw/openclaw.json`
-- Sets OpenClaw as default with Kimi + DeepSeek + GLM fallbacks
+- Adds the Pollinations provider with 9 models to `~/.openclaw/openclaw.json`
+- Sets Kimi K2.5 as default with DeepSeek + GLM fallbacks
 
 **Step 3 (fresh install only):** Start the gateway:
 
@@ -31,8 +31,7 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 
 | Model | ID | Best for |
 |---|---|---|
-| **OpenClaw** (default) | `pollinations/openclaw` | Agentic coding, terminal workflows, computer-use reliability |
-| **Kimi K2.5** | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+| **Kimi K2.5** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
 | **Kimi K2.6** | `pollinations/kimi-k2.6` | Flagship agentic, vision, reasoning (262K context, paid) |
 | **DeepSeek V4 Flash** | `pollinations/deepseek` | Fast reasoning & tool calling (paid) |
 | **DeepSeek V4 Pro** | `pollinations/deepseek-pro` | Advanced reasoning & coding (paid) |
@@ -55,13 +54,6 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
         "apiKey": "YOUR_API_KEY",
         "api": "openai-completions",
         "models": [
-          {
-            "id": "openclaw",
-            "name": "OpenClaw",
-            "input": ["text"],
-            "contextWindow": 262144,
-            "maxTokens": 8192
-          },
           {
             "id": "kimi",
             "name": "Kimi K2.5",
@@ -88,8 +80,7 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
 Then set the default model:
 
 ```bash
-openclaw models set pollinations/openclaw
-openclaw models fallbacks add pollinations/kimi
+openclaw models set pollinations/kimi
 openclaw models fallbacks add pollinations/deepseek
 openclaw models fallbacks add pollinations/glm
 openclaw gateway restart

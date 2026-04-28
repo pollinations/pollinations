@@ -75,6 +75,7 @@ function stripTrailingSlash(path: string): string {
 // Boundary routes: these are handled before generation middleware.
 app.get("/robots.txt", () => robotsTxt())
     .get("/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
+    .get("/docs/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
     .all("/api", () => notFound())
     .all("/api/*", () => notFound())
     .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))

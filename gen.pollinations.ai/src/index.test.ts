@@ -37,6 +37,15 @@ describe("gen worker routing", () => {
         );
     });
 
+    it("accepts docs with a trailing slash", async () => {
+        const response = await fetchWorker("/docs/");
+
+        expect(response.status).toBe(301);
+        expect(response.headers.get("Location")).toBe(
+            "https://staging.gen.pollinations.ai/docs",
+        );
+    });
+
     it("serves robots.txt locally", async () => {
         const response = await fetchWorker("/robots.txt");
 

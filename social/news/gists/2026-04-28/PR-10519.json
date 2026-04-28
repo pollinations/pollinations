@@ -1,0 +1,33 @@
+{
+  "pr_number": 10519,
+  "title": "fix: return 400 for malformed audio URL instead of 500",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10519",
+  "merged_at": "2026-04-28T15:38:00Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polite rejections for bad audio URLs",
+    "blurb": "We fixed a bug where malformed audio URLs would cause a server error. Now, you'll get a helpful 400 error instead, making debugging your API calls a breeze.",
+    "summary": "Fixed an issue where malformed percent-encoding in audio URLs caused a 500 server error instead of a 400 client error.",
+    "impact": "Developers will now receive a clear 400 Bad Request error when sending improperly encoded audio URLs, making debugging easier.",
+    "keywords": [
+      "audio",
+      "api",
+      "bug-fix",
+      "error-handling"
+    ],
+    "visual_concept": "Polly the bee and the Nomnom creature. Nomnom is trying to eat a jagged, broken URL string (malformed percent-encoding) and looking confused, while Polly holds up a polite '400' stop sign. Cozy pixel art.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature looking confused while trying to eat a jagged, broken URL string. The cute bee mascot hovers nearby holding a small polite '400' stop sign. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-28/PR-10519.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature looking confused while trying to eat a jagged, broken URL string. The cute bee mascot hovers nearby holding a small polite '400' stop sign. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-28T15:39:04.555765+00:00"
+}

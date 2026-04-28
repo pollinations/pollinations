@@ -2,9 +2,6 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 const genSrc = fileURLToPath(new URL("./src/", import.meta.url));
-const enterSrc = fileURLToPath(
-    new URL("../enter.pollinations.ai/src/", import.meta.url),
-);
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const cloudflareWorkersStub = fileURLToPath(
     new URL("./test/cloudflare-workers.ts", import.meta.url),
@@ -19,6 +16,8 @@ const genAliases = [
     "events.ts",
     "logger",
     "logger.ts",
+    "middleware/auth.ts",
+    "middleware/balance.ts",
     "middleware/logger.ts",
     "middleware/media-cache.ts",
     "middleware/model.ts",
@@ -39,24 +38,12 @@ const genAliases = [
     "utils/text-cache.ts",
 ];
 
-const enterAliases = [
-    ["@/auth.ts", "auth.ts"],
-    ["@/db/schema/better-auth.ts", "db/schema/better-auth.ts"],
-    ["@/middleware/auth.ts", "middleware/auth.ts"],
-    ["@/middleware/balance.ts", "middleware/balance.ts"],
-    ["@/utils/track-helpers.ts", "utils/track-helpers.ts"],
-] as const;
-
 export default defineConfig({
     resolve: {
         alias: [
             ...genAliases.map((path) => ({
                 find: `@/${path}`,
                 replacement: `${genSrc}${path}`,
-            })),
-            ...enterAliases.map(([find, path]) => ({
-                find,
-                replacement: `${enterSrc}${path}`,
             })),
             {
                 find: /^@shared\/(.*)$/,

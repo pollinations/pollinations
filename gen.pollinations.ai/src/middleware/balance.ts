@@ -1,10 +1,9 @@
 import {
-    type BalanceCheckResult,
     createBalanceCheckResult,
-    getAvailableBalance,
     getUserBalance,
     hasPositiveBalance,
     hasPositivePaidBalance,
+    type BalanceCheckResult,
     type UserBalance,
 } from "@shared/billing/balance.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -13,7 +12,6 @@ import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 
-export { getAvailableBalance };
 export type { UserBalance };
 
 export type BalanceVariables = {
@@ -37,7 +35,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const log = c.get("log").getChild("balance");
     const db = drizzle(c.env.DB);
 
-    // Helper to fetch balance with error handling
     const fetchBalanceWithErrorHandling = async (
         userId: string,
     ): Promise<UserBalance> => {
@@ -72,7 +69,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
             return;
         }
 
-        // no positive balance - 402 for all billing/payment issues
         throw new HTTPException(402, {
             message: message || "Your pollen balance is too low.",
         });
@@ -94,7 +90,6 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
             return;
         }
 
-        // No paid balance available
         throw new HTTPException(402, {
             message:
                 message ||

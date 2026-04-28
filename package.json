@@ -1,9 +1,14 @@
 {
   "name": "pollinations-monorepo",
   "private": true,
+  "workspaces": [
+    "shared",
+    "enter.pollinations.ai",
+    "gen.pollinations.ai"
+  ],
   "scripts": {
-    "install:all": "npm install --prefix enter.pollinations.ai && npm install --prefix gen.pollinations.ai && npm install --prefix text.pollinations.ai && npm install --prefix image.pollinations.ai && npm install --prefix packages/sdk && npm install --prefix packages/mcp",
-    "install:services": "npm install --prefix enter.pollinations.ai && npm install --prefix gen.pollinations.ai && npm install --prefix text.pollinations.ai && npm install --prefix image.pollinations.ai",
+    "install:all": "npm install && npm install --prefix text.pollinations.ai && npm install --prefix image.pollinations.ai && npm install --prefix packages/sdk && npm install --prefix packages/mcp",
+    "install:services": "npm install && npm install --prefix text.pollinations.ai && npm install --prefix image.pollinations.ai",
     "install:packages": "npm install --prefix packages/sdk && npm install --prefix packages/mcp",
     "build:sdk": "npm run build --prefix packages/sdk",
     "dev": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,gen,text,image' -c 'auto' 'npm run dev --prefix enter.pollinations.ai' 'npm run dev --prefix gen.pollinations.ai' 'npm run dev --prefix text.pollinations.ai' 'npm run dev --prefix image.pollinations.ai'",

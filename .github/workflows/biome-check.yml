@@ -65,7 +65,7 @@ jobs:
       - name: Get changed TypeScript files in enter.pollinations.ai
         id: enter-ts-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep '^enter.pollinations.ai/.*\.\(ts\|tsx\)$' | sed 's|^enter.pollinations.ai/||' || true)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(enter.pollinations.ai/|shared/).*\.(ts|tsx)$' || true)
           echo "Changed TypeScript files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -76,11 +76,6 @@ jobs:
           else
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Install enter.pollinations.ai dependencies
-        if: steps.enter-ts-files.outputs.any_changed == 'true'
-        working-directory: enter.pollinations.ai
-        run: npm ci
 
       - name: Typecheck changed files only
         if: steps.enter-ts-files.outputs.any_changed == 'true'
@@ -97,10 +92,11 @@ jobs:
 
           while IFS= read -r file; do
             [ -z "$file" ] && continue
+            enter_file="${file#enter.pollinations.ai/}"
             # Look for this file in the typecheck output
-            if grep -q "src/$file\|$file" /tmp/typecheck-output.txt 2>/dev/null; then
+            if grep -q "$enter_file\|$file" /tmp/typecheck-output.txt 2>/dev/null; then
               echo "❌ Type error in changed file: $file"
-              grep -E "(src/)?$file" /tmp/typecheck-output.txt || true
+              grep -E "$enter_file|$file" /tmp/typecheck-output.txt || true
               FOUND_ERROR=true
             fi
           done <<< "$CHANGED_FILES"
@@ -116,7 +112,7 @@ jobs:
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(gen.pollinations.ai/|enter.pollinations.ai/src/|shared/(registry|schemas|http)/|shared/tier-config\.ts$)' || true)
+          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(gen.pollinations.ai/|enter.pollinations.ai/src/|shared/)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -128,17 +124,10 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Install gen.pollinations.ai dependencies
-        if: steps.gen-files.outputs.any_changed == 'true'
-        working-directory: gen.pollinations.ai
-        run: npm ci
-
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
-        working-directory: gen.pollinations.ai
-        run: npm test
+        run: npm test --workspace pollinations-gen
 
       - name: Typecheck gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
-        working-directory: gen.pollinations.ai
-        run: npm run typecheck
+        run: npm run typecheck --workspace pollinations-gen

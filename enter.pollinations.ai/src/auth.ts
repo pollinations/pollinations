@@ -1,3 +1,9 @@
+import { createApiKeyPlugin } from "@shared/auth/api-key.ts";
+import * as betterAuthSchema from "@shared/db/better-auth.ts";
+import {
+    account as accountTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { DEFAULT_TIER, getTierPollen } from "@shared/tier-config.ts";
 import {
     type BetterAuthOptions,
@@ -8,57 +14,14 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, apiKey, openAPI } from "better-auth/plugins";
+import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import * as betterAuthSchema from "./db/schema/better-auth.ts";
-import {
-    account as accountTable,
-    user as userTable,
-} from "./db/schema/better-auth.ts";
 import { sendTierEventToTinybird } from "./events.ts";
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
-
-    const PUBLISHABLE_KEY_PREFIX = "pk";
-
-    const apiKeyPlugin = apiKey({
-        enableMetadata: true,
-        deferUpdates: true, // Defers lastRequest/requestCount updates - OK if dropped, prevents D1 contention
-        defaultPrefix: PUBLISHABLE_KEY_PREFIX,
-        defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
-        minimumNameLength: 1, // Allow short hostnames (e.g., "x.ai")
-        maximumNameLength: 253, // DNS hostname max length
-        startingCharactersConfig: {
-            charactersLength: 10, // Store more characters for display (pk_xxxxxxxxxx...)
-        },
-        customKeyGenerator: (options: {
-            length: number;
-            prefix: string | undefined;
-        }) => {
-            // Publishable keys (pk_) are SHORT (16 chars), Secret keys (sk_) are LONG (32 chars)
-            const isPublishable = options.prefix === PUBLISHABLE_KEY_PREFIX;
-            const keyLength = isPublishable ? 16 : 32;
-            const chars =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            const randomBytes = crypto.getRandomValues(
-                new Uint8Array(keyLength),
-            );
-            const key = Array.from(
-                randomBytes,
-                (byte) => chars[byte % chars.length],
-            ).join("");
-            return options.prefix ? `${options.prefix}_${key}` : key;
-        },
-        keyExpiration: {
-            minExpiresIn: 0, // No minimum - allow any positive expiry
-            maxExpiresIn: 365, // Max 1 year
-        },
-        rateLimit: {
-            enabled: false, // Disabled - Roblox games hit rate limits with many concurrent players
-        },
-    });
+    const apiKeyPlugin = createApiKeyPlugin();
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -82,7 +45,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // Required for deferUpdates to work properly
             backgroundTasks: ctx
                 ? {
-                      handler: (promise: Promise<any>) => {
+                      handler: (promise: Promise<unknown>) => {
                           ctx.waitUntil(
                               promise.catch(() => {
                                   // Silently ignore - these are non-critical tracking updates

@@ -63,7 +63,6 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        working-directory: gen.pollinations.ai
         run: npm ci
 
       # Cloudflare rolls out new worker versions across isolates progressively.
@@ -74,8 +73,7 @@ jobs:
         run: sleep 60
 
       - name: Regenerate APIDOCS.md
-        working-directory: gen.pollinations.ai
-        run: npm run docs:generate
+        run: npm run docs:generate --workspace pollinations-gen
 
       - name: Check for changes
         id: changes

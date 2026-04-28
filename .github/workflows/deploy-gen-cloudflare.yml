@@ -7,10 +7,7 @@ on:
     paths:
       - 'gen.pollinations.ai/**'
       - 'enter.pollinations.ai/src/**'
-      - 'shared/registry/**'
-      - 'shared/schemas/**'
-      - 'shared/http/**'
-      - 'shared/tier-config.ts'
+      - 'shared/**'
       - '.github/workflows/deploy-gen-cloudflare.yml'
   workflow_dispatch:
 
@@ -28,18 +25,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        working-directory: ./gen.pollinations.ai
 
       - name: Test
-        run: npm test
-        working-directory: ./gen.pollinations.ai
+        run: npm test --workspace pollinations-gen
 
       - name: Typecheck
-        run: npm run typecheck
-        working-directory: ./gen.pollinations.ai
+        run: npm run typecheck --workspace pollinations-gen
 
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: npm run deploy:production
-        working-directory: ./gen.pollinations.ai
+        run: npm run deploy:production --workspace pollinations-gen

@@ -1,3 +1,4 @@
+import { user as userTable } from "@shared/db/better-auth.ts";
 import {
     getTierCadence,
     getTierPollen,
@@ -10,7 +11,6 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import { capitalize } from "@/util.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import type { Env } from "../env.ts";

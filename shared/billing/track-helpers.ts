@@ -1,15 +1,14 @@
 import { getLogger } from "@logtape/logtape";
-import type { ModelName } from "@shared/registry/registry.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { apikey as apikeyTable } from "@/db/schema/better-auth.ts";
+import type { ModelName } from "../registry/registry.ts";
+import { getModelDefinition } from "../registry/registry.ts";
 import {
     atomicDeductApiKeyBalance,
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
     getUserBalances,
     identifyDeductionSource,
-} from "./balance-deduction.ts";
+} from "./deduction.ts";
 
 const log = getLogger(["track", "helpers"]);
 
@@ -64,7 +63,7 @@ async function deductApiKeyBalance(
     amount: number,
 ): Promise<void> {
     try {
-        await atomicDeductApiKeyBalance(db, apikeyTable, apiKeyId, amount);
+        await atomicDeductApiKeyBalance(db, apiKeyId, amount);
         log.debug("Decremented {price} pollen from API key {keyId} budget", {
             price: amount,
             keyId: apiKeyId,

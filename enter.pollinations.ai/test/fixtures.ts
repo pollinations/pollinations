@@ -1,11 +1,11 @@
 import { env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { createAuthClient } from "better-auth/client";
 import { adminClient, apiKeyClient } from "better-auth/client/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import { ensureConfigured } from "@/logger.ts";
 import { createFetchMock, teardownFetchMock } from "./mocks/fetch.ts";
 import { createMockGithub } from "./mocks/github.ts";

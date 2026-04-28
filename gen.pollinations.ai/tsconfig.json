@@ -14,19 +14,6 @@
         "resolveJsonModule": true,
         "baseUrl": ".",
         "paths": {
-            "@/auth.ts": ["../enter.pollinations.ai/src/auth.ts"],
-            "@/db/schema/better-auth.ts": [
-                "../enter.pollinations.ai/src/db/schema/better-auth.ts"
-            ],
-            "@/middleware/auth.ts": [
-                "../enter.pollinations.ai/src/middleware/auth.ts"
-            ],
-            "@/middleware/balance.ts": [
-                "../enter.pollinations.ai/src/middleware/balance.ts"
-            ],
-            "@/utils/track-helpers.ts": [
-                "../enter.pollinations.ai/src/utils/track-helpers.ts"
-            ],
             "@/*": ["src/*"],
             "@shared/*": ["../shared/*"]
         }

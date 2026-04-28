@@ -1,13 +1,11 @@
 import {
-    type AuthenticatedApiKey,
-    assertNotBanned,
     authenticateApiKeyRequest,
+    type AuthenticatedApiKey,
+    type AuthUser,
     BannedAccountError,
 } from "@shared/auth/api-key.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import type { Session, User } from "@/auth.ts";
-import { createAuth } from "../auth.ts";
 import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {
@@ -19,15 +17,11 @@ type ModelVariables = {
 
 export type AuthVariables = {
     auth: {
-        client: ReturnType<typeof createAuth>;
-        user?: User;
-        session?: Session;
+        user?: AuthUser;
         apiKey?: AuthenticatedApiKey;
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
-        requireUser: () => User;
-        /** Throws 403 if the API key doesn't have access to the resolved model from c.var.model. */
+        requireUser: () => AuthUser;
         requireModelAccess: () => void;
-        /** Throws 402 if the API key has a budget set and remaining <= 0. */
         requireKeyBudget: () => void;
     };
 };
@@ -42,69 +36,25 @@ export type AuthOptions = {
     allowApiKey: boolean;
 };
 
-interface AuthResult {
-    user?: User;
-    session?: Session;
-    apiKey?: AuthenticatedApiKey;
-    rawApiKey?: string;
-}
-
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        const _log = c.get("log").getChild("auth");
-        const client = createAuth(c.env);
-
-        const authenticateSession = async (): Promise<AuthResult | null> => {
-            if (!options.allowSessionCookie) return null;
-            const result = await client.api.getSession({
-                headers: c.req.raw.headers,
-            });
-            if (!result?.user) return null;
-
-            try {
-                assertNotBanned(result.user);
-            } catch (error) {
-                if (error instanceof BannedAccountError) {
-                    throw new HTTPException(403, { message: error.message });
-                }
-                throw error;
-            }
-
-            return {
-                user: result?.user,
-                session: result?.session,
-            };
-        };
-
-        const authenticateApiKey = async (): Promise<AuthResult | null> => {
+        const authResult = await (async () => {
             if (!options.allowApiKey) return null;
             try {
-                const result = await authenticateApiKeyRequest({
+                return await authenticateApiKeyRequest({
                     request: c.req.raw,
                     env: c.env,
-                    client,
                     ctx: c.executionCtx,
                 });
-                if (!result) return null;
-                return {
-                    user: result.user as User,
-                    apiKey: result.apiKey,
-                    rawApiKey: result.rawApiKey,
-                };
             } catch (error) {
                 if (error instanceof BannedAccountError) {
                     throw new HTTPException(403, { message: error.message });
                 }
                 throw error;
             }
-        };
+        })();
 
-        // Try session authentication first, then API key
-        let authResult = await authenticateSession();
-        if (!authResult) {
-            authResult = await authenticateApiKey();
-        }
-        const { user, session, apiKey } = authResult || {};
+        const { user, apiKey } = authResult || {};
 
         const requireAuthorization = async (options?: {
             message?: string;
@@ -116,13 +66,13 @@ export const auth = (options: AuthOptions) =>
             }
         };
 
-        const requireUser = (): User => {
+        const requireUser = (): AuthUser => {
             if (!user) throw new HTTPException(401);
             return user;
         };
 
         function requireModelAccess(): void {
-            if (!apiKey || !apiKey.permissions?.models) return;
+            if (!apiKey?.permissions?.models) return;
 
             const model = c.var.model;
             if (!model) return;
@@ -149,9 +99,7 @@ export const auth = (options: AuthOptions) =>
         }
 
         c.set("auth", {
-            client,
             user,
-            session,
             apiKey,
             requireAuthorization,
             requireUser,

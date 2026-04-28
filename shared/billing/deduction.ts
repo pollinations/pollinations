@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { user as userTable } from "../db/schema/better-auth.ts";
+import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
 
 /**
  * Atomically deducts pollen from user balance.
@@ -48,7 +48,6 @@ export async function atomicDeductUserBalance(
  */
 export async function atomicDeductApiKeyBalance(
     db: DrizzleD1Database,
-    apiKeyTable: any,
     apiKeyId: string,
     amount: number,
 ): Promise<void> {

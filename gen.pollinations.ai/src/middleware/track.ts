@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
@@ -50,7 +51,6 @@ import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, getRoutePath, removeUnset } from "@/util.ts";
-import { handleBalanceDeduction } from "@/utils/track-helpers.ts";
 
 type ModelVariables = {
     model: {
@@ -128,7 +128,7 @@ export const track = (eventType: EventType) =>
             userGithubId: c.var.auth.user?.githubId
                 ? String(c.var.auth.user.githubId)
                 : undefined,
-            userGithubUsername: c.var.auth.user?.githubUsername,
+            userGithubUsername: c.var.auth.user?.githubUsername ?? undefined,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,

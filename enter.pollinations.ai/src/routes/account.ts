@@ -1,3 +1,7 @@
+import {
+    apikey as apikeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
 import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
@@ -6,10 +10,6 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import {
-    apikey as apikeyTable,
-    user as userTable,
-} from "@/db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";

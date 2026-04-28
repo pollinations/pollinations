@@ -1,10 +1,8 @@
+import { getAvailableBalance } from "@shared/billing/balance.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
 import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
-import {
-    type BalanceVariables,
-    getAvailableBalance,
-} from "@/middleware/balance.ts";
+import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";

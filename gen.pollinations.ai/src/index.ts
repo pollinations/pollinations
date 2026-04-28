@@ -17,15 +17,19 @@
  */
 
 import { type Context, Hono } from "hono";
-import { createGenerationApp } from "./generation.ts";
+import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
+import { requestId } from "hono/request-id";
+import type { Env } from "@/env.ts";
+import { handleError } from "@/error.ts";
+import { logger } from "@/middleware/logger.ts";
+import { audioRoutes } from "./routes/audio.ts";
+import { createDocsRoutes } from "./routes/docs.ts";
+import { proxyRoutes } from "./routes/proxy.ts";
 
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
-type Env = CloudflareBindings & { ENTER: Fetcher };
-type BoundaryEnv = { Bindings: Env };
-
-const generationApp = createGenerationApp();
-const app = new Hono<BoundaryEnv>();
+const app = new Hono<Env>();
 
 /** Append X-Robots-Tag to prevent search engines from indexing API responses. */
 function noIndex(response: Response): Response {
@@ -59,22 +63,16 @@ function robotsTxt(): Response {
     );
 }
 
-async function fetchEnter(
-    c: Context<BoundaryEnv>,
-    url: URL,
-): Promise<Response> {
+async function fetchEnter(c: Context<Env>, url: URL): Promise<Response> {
     const response = await c.env.ENTER.fetch(rewriteRequest(c.req.raw, url));
     return noIndex(response);
-}
-
-async function fetchGeneration(c: Context<BoundaryEnv>): Promise<Response> {
-    return generationApp.fetch(c.req.raw, c.env, c.executionCtx);
 }
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }
 
+// Boundary routes: these are handled before generation middleware.
 app.get("/robots.txt", () => robotsTxt())
     .get("/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
     .all("/api", () => notFound())
@@ -86,7 +84,35 @@ app.get("/robots.txt", () => robotsTxt())
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
         return fetchEnter(c, url);
     })
-    .all("*", fetchGeneration);
+    // Generation routes: docs, models, and media/text/audio/video APIs live at
+    // the public gen origin without an internal /api prefix.
+    .use(
+        "*",
+        cors({
+            origin: "*",
+            allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allowHeaders: [],
+            exposeHeaders: ["Content-Length", "Content-Disposition"],
+            maxAge: 600,
+        }),
+    )
+    .use("*", requestId())
+    .use("*", logger)
+    .use("*", async (c, next) => {
+        await next();
+        if (!c.req.path.startsWith("/docs")) {
+            c.header("X-Robots-Tag", "noindex, nofollow");
+        }
+    })
+    .route("/docs", createDocsRoutes(app))
+    .route("/v1/audio", audioRoutes)
+    .route("/", proxyRoutes);
+
+app.notFound(async (c: Context<Env>) => {
+    return handleError(new HTTPException(404), c);
+});
+
+app.onError(handleError);
 
 export default {
     fetch: app.fetch,

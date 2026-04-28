@@ -171,8 +171,8 @@ function generationDocumentation(): OpenApiSchema {
 
 let generationSchemaPromise: Promise<OpenApiSchema> | undefined;
 
-function getGenerationSchema(generationApp: Hono<Env>): Promise<OpenApiSchema> {
-    generationSchemaPromise ??= generateSpecs(generationApp, {
+function getGenerationSchema(genApp: Hono<Env>): Promise<OpenApiSchema> {
+    generationSchemaPromise ??= generateSpecs(genApp, {
         documentation: generationDocumentation(),
     }).then((schema) => transformGenerationSchema(schema as OpenApiSchema));
     return generationSchemaPromise;
@@ -305,7 +305,7 @@ function asRecordArray(value: unknown): OpenApiSchema[] {
     );
 }
 
-export function createDocsRoutes(generationApp: Hono<Env>): Hono<Env> {
+export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     return new Hono<Env>()
         .get("/", async (c, next) => {
             const response = await Scalar<Env>({
@@ -341,7 +341,7 @@ export function createDocsRoutes(generationApp: Hono<Env>): Hono<Env> {
         })
         .get("/open-api/generate-schema", async (c) => {
             const [generationSchema, enterSchema] = await Promise.all([
-                getGenerationSchema(generationApp),
+                getGenerationSchema(genApp),
                 fetchEnterSchema(c).catch(() => undefined),
             ]);
 

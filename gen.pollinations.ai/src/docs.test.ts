@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { createGenerationApp } from "./generation.ts";
 import worker from "./index.ts";
 
 const executionContext = {
@@ -23,7 +22,6 @@ function envWithEnterSchema(schema: unknown): CloudflareBindings {
 
 describe("docs routes", () => {
     it("serves a gen-owned OpenAPI schema and merges non-generation enter paths", async () => {
-        const app = createGenerationApp();
         const enterSchema = {
             openapi: "3.1.0",
             info: { title: "Enter", version: "0.0.0" },
@@ -39,7 +37,7 @@ describe("docs routes", () => {
             },
         };
 
-        const response = await app.fetch(
+        const response = await worker.fetch(
             new Request(
                 "https://gen.pollinations.ai/docs/open-api/generate-schema",
             ),

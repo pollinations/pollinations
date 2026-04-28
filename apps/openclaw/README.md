@@ -111,3 +111,4 @@ The [Pollinations skill on ClawHub](https://github.com/openclaw/skills/blob/main
 - **Get API Key:** https://enter.pollinations.ai
 - **Models:** https://gen.pollinations.ai/v1/models
 - **GitHub:** https://github.com/pollinations/pollinations
+- **Discord:** https://discord.gg/pollinations-ai-885844321461485618

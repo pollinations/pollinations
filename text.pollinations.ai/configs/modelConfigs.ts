@@ -74,11 +74,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
-    "grok-4-1-fast-non-reasoning": () =>
+    "grok-4-20-non-reasoning": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-1-fast-non-reasoning/chat/completions?api-version=2024-12-01-preview",
-            "grok-4-1-fast-non-reasoning",
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-non-reasoning/chat/completions?api-version=2024-12-01-preview",
+            "grok-4-20-non-reasoning",
         ),
     "grok-4-20-reasoning": () =>
         createAzureModelConfig(

@@ -7,17 +7,13 @@ describe("getAvailableBalance", () => {
             getAvailableBalance({
                 tierBalance: 0.1,
                 packBalance: 0.2,
-                cryptoBalance: 0.3,
             }),
-        ).toBeCloseTo(0.6);
+        ).toBeCloseTo(0.3);
     });
 
     it("excludes tier for paid-only models", () => {
         expect(
-            getAvailableBalance(
-                { tierBalance: 10, packBalance: 0.5, cryptoBalance: 0 },
-                true,
-            ),
+            getAvailableBalance({ tierBalance: 10, packBalance: 0.5 }, true),
         ).toBeCloseTo(0.5);
     });
 
@@ -26,7 +22,6 @@ describe("getAvailableBalance", () => {
             getAvailableBalance({
                 tierBalance: -1,
                 packBalance: 0.3,
-                cryptoBalance: -0.5,
             }),
         ).toBeCloseTo(0.3);
     });
@@ -36,7 +31,6 @@ describe("getAvailableBalance", () => {
             getAvailableBalance({
                 tierBalance: -1,
                 packBalance: 0,
-                cryptoBalance: -2,
             }),
         ).toBe(0);
     });

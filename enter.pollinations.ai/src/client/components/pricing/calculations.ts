@@ -10,7 +10,7 @@ import type { ModelPrice } from "./types.ts";
 
 export const TOP_UP_TOOLTIP = "Top up to use this model";
 export const PAID_ONLY_TOOLTIP =
-    "Requires 💳 Top-up Pollen or 🌻 Dev earnings. 🌱 Tier Pollen cannot be used.";
+    "Requires 💳 Top-up Pollen. 🌱 Tier Pollen and 🌻 Dev earnings cannot be used.";
 
 /** Format number as coarse estimate (not precise - it's an average) */
 function formatCount(num: number): string {

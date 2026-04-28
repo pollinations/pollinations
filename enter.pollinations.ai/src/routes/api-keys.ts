@@ -141,7 +141,7 @@ const UpdateApiKeySchema = z.object({
         .describe("Expiration date for the key. null = no expiry"),
 });
 
-const CreateApiKeySchema = z.object({
+const BaseCreateApiKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
     type: z
         .enum(["secret", "publishable"])
@@ -175,6 +175,18 @@ const CreateApiKeySchema = z.object({
     metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
+const CreateApiKeySchema = BaseCreateApiKeySchema;
+
+const CreateAuthorizeApiKeySchema = BaseCreateApiKeySchema.extend({
+    type: z.literal("secret").optional().default("secret"),
+    byopClientKeyId: z
+        .string()
+        .min(1)
+        .nullable()
+        .optional()
+        .describe("Publishable app API key row id for BYOP attribution"),
+});
+
 /**
  * Schema for updating metadata on an API key.
  * Only caller-owned fields are accepted. Server-controlled fields like
@@ -198,7 +210,7 @@ const UpdateMetadataSchema = z.object({
 export const apiKeysRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     /**
-     * Create an API key for the authenticated dashboard/BYOP session.
+     * Create an API key for the authenticated dashboard session.
      * Centralizes key creation so validation happens before Better Auth creates
      * the key, avoiding the old create-then-metadata-update flow.
      */
@@ -227,6 +239,41 @@ export const apiKeysRoutes = new Hono<Env>()
                 metadata: input.metadata,
                 allowAccountKeysPermission: true,
                 defaultCreatedVia: "dashboard",
+            });
+
+            return c.json(created);
+        },
+    )
+    /**
+     * Create an API key for the OAuth/device authorize flow.
+     * This is the only creation path that may attach BYOP attribution.
+     */
+    .post(
+        "/authorize",
+        describeRoute({
+            tags: ["👤 Account"],
+            description: "Create an API key for the current authorize session.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", CreateAuthorizeApiKeySchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+
+            const created = await createApiKeyForUser({
+                authClient: c.var.auth.client,
+                dbBinding: c.env.DB,
+                userId: user.id,
+                name: input.name,
+                type: input.type,
+                expiresIn: input.expiresIn,
+                allowedModels: input.allowedModels,
+                pollenBudget: input.pollenBudget,
+                accountPermissions: input.accountPermissions,
+                metadata: input.metadata,
+                byopClientKeyId: input.byopClientKeyId,
+                allowAccountKeysPermission: false,
+                defaultCreatedVia: "redirect-auth",
             });
 
             return c.json(created);
@@ -267,6 +314,7 @@ export const apiKeysRoutes = new Hono<Env>()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    byopClientKeyId: key.byopClientKeyId,
                 })),
             });
         },

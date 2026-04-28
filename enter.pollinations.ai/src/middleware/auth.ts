@@ -40,6 +40,7 @@ interface ApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    byopClientKeyId?: string | null;
     rawKey?: string;
 }
 
@@ -110,12 +111,15 @@ export const auth = (options: AuthOptions) =>
                 | undefined;
 
             // verifyApiKey already checks expiry and enabled.
-            // We still need pollenBalance (custom column, not in verifyApiKey)
-            // and the user record (for ban check + downstream user.id/tier/githubId).
+            // We still need custom D1 columns and the user record (for ban
+            // check + downstream user.id/tier/githubId).
             const db = drizzle(c.env.DB, { schema });
             const [apiKeyExtra, userData] = await Promise.all([
                 db
-                    .select({ pollenBalance: schema.apikey.pollenBalance })
+                    .select({
+                        pollenBalance: schema.apikey.pollenBalance,
+                        byopClientKeyId: schema.apikey.byopClientKeyId,
+                    })
                     .from(schema.apikey)
                     .where(eq(schema.apikey.id, key.id))
                     .get(),
@@ -140,6 +144,7 @@ export const auth = (options: AuthOptions) =>
                     permissions,
                     metadata: key.metadata || undefined,
                     pollenBalance: apiKeyExtra?.pollenBalance ?? null,
+                    byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
                     rawKey: rawApiKey,
                 },
                 rawApiKey,

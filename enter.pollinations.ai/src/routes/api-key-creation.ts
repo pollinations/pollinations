@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import type { createAuth } from "../auth.ts";
@@ -11,9 +11,6 @@ export type CallerMetadata = {
     appUrl?: string;
     redirectOrigin?: string;
     deviceUserCode?: string;
-    clientId?: string;
-    createdForUserId?: string;
-    createdForApp?: string;
     description?: string;
 };
 
@@ -28,6 +25,7 @@ type CreateApiKeyForUserInput = {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
+    byopClientKeyId?: string | null;
     allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
 };
@@ -40,9 +38,10 @@ export function validateAppUrlFormat(appUrl: string): void {
     }
 }
 
-// Caller-provided metadata is restricted to a typed allowlist. Server-controlled
-// fields like keyType / createdVia / plaintextKey can never be set or overridden
-// by callers, even via /api/api-keys metadata patches.
+// Caller-provided metadata is restricted to presentation-only fields.
+// Server-controlled fields like keyType / createdVia / plaintextKey and
+// billing attribution can never be set or overridden by callers, even via
+// /api/api-keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
 ): Record<string, unknown> {
@@ -53,14 +52,38 @@ function pickCallerMetadata(
         out.redirectOrigin = metadata.redirectOrigin;
     if (typeof metadata.deviceUserCode === "string")
         out.deviceUserCode = metadata.deviceUserCode;
-    if (typeof metadata.clientId === "string") out.clientId = metadata.clientId;
-    if (typeof metadata.createdForUserId === "string")
-        out.createdForUserId = metadata.createdForUserId;
-    if (typeof metadata.createdForApp === "string")
-        out.createdForApp = metadata.createdForApp;
     if (typeof metadata.description === "string")
         out.description = metadata.description;
     return out;
+}
+
+type ApiKeyDb = ReturnType<typeof drizzle<typeof schema>>;
+
+async function requireValidByopClientKey(
+    db: ApiKeyDb,
+    byopClientKeyId: string | null | undefined,
+) {
+    if (!byopClientKeyId) return null;
+
+    const clientKey = await db.query.apikey.findFirst({
+        where: and(
+            eq(schema.apikey.id, byopClientKeyId),
+            eq(schema.apikey.prefix, "pk"),
+            eq(schema.apikey.enabled, true),
+            or(
+                isNull(schema.apikey.expiresAt),
+                gt(schema.apikey.expiresAt, new Date()),
+            ),
+        ),
+    });
+
+    if (!clientKey) {
+        throw new HTTPException(400, {
+            message: "Invalid BYOP client key",
+        });
+    }
+
+    return clientKey;
 }
 
 export async function createApiKeyForUser({
@@ -74,6 +97,7 @@ export async function createApiKeyForUser({
     pollenBudget,
     accountPermissions,
     metadata,
+    byopClientKeyId,
     allowAccountKeysPermission,
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
@@ -96,11 +120,18 @@ export async function createApiKeyForUser({
     }
 
     const isPublishable = type === "publishable";
+    if (byopClientKeyId && isPublishable) {
+        throw new HTTPException(400, {
+            message: "BYOP attribution can only be attached to secret keys",
+        });
+    }
+
+    const byopClientKey = await requireValidByopClientKey(db, byopClientKeyId);
     const prefix = isPublishable ? "pk" : "sk";
     const baseMetadata = {
         ...callerMetadata,
         keyType: type,
-        createdVia: defaultCreatedVia,
+        createdVia: byopClientKey ? "redirect-auth" : defaultCreatedVia,
     };
 
     const created = await authClient.api.createApiKey({
@@ -130,6 +161,7 @@ export async function createApiKeyForUser({
         metadata: JSON.stringify(finalMetadata),
     };
     if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
+    if (byopClientKey) d1Updates.byopClientKeyId = byopClientKey.id;
 
     await db
         .update(schema.apikey)
@@ -147,6 +179,7 @@ export async function createApiKeyForUser({
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: pollenBudget ?? null,
+        byopClientKeyId: byopClientKey?.id ?? null,
         metadata: finalMetadata,
     };
 }

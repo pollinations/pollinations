@@ -36,7 +36,8 @@ const TABLES: TableConfig[] = [
         query: `SELECT id, name, start, prefix, user_id, refill_interval, refill_amount,
                        last_refill_at, enabled, rate_limit_enabled, rate_limit_time_window,
                        rate_limit_max, request_count, remaining, last_request, expires_at,
-                       created_at, updated_at, permissions, metadata, pollen_balance
+                       created_at, updated_at, permissions, metadata, pollen_balance,
+                       byop_client_key_id
                 FROM apikey`,
     },
     {

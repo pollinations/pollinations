@@ -52,7 +52,7 @@ export async function checkBalance(
     if (isPaidOnly) {
         await balance.requirePaidBalance(
             auth.user.id,
-            "This model requires 💳 Top-up Pollen or 🌻 Dev earnings. 🌱 Tier Pollen cannot be used.",
+            "This model requires 💳 Top-up Pollen. 🌱 Tier Pollen and 🌻 Dev earnings cannot be used.",
         );
         return;
     }

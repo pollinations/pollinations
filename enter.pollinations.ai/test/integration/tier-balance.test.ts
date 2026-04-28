@@ -562,7 +562,7 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(402);
             const error = await response.json();
             expect(error.error?.message).toMatch(
-                /requires .*Top-up Pollen.*Dev earnings|Insufficient balance/,
+                /requires .*Top-up Pollen|Insufficient balance/,
             );
         });
 
@@ -656,7 +656,7 @@ describe("Tier Balance Management", () => {
             expect(response.status).toBe(402);
             const error = await response.json();
             expect(error.error?.message).toMatch(
-                /requires .*Top-up Pollen.*Dev earnings|Insufficient balance/,
+                /requires .*Top-up Pollen|Insufficient balance/,
             );
         });
 

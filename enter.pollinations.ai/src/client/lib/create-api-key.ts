@@ -16,8 +16,10 @@ type Permissions = {
 type CreateKeyInput = {
     name: string;
     prefix: "sk" | "pk";
+    source?: "dashboard" | "authorize";
     expiryDays?: number | null;
     metadata?: Record<string, unknown>;
+    byopClientKeyId?: string | null;
     permissions?: Permissions;
 };
 
@@ -34,8 +36,10 @@ type CreatedKey = {
 export async function createKeyWithPermissions({
     name,
     prefix,
+    source = "dashboard",
     expiryDays,
     metadata,
+    byopClientKeyId,
     permissions,
 }: CreateKeyInput): Promise<CreatedKey> {
     const expiresIn = expiryDaysToExpiresIn(expiryDays);
@@ -44,17 +48,21 @@ export async function createKeyWithPermissions({
         type: prefix === "pk" ? "publishable" : "secret",
         expiresIn,
         metadata,
+        byopClientKeyId,
         allowedModels: permissions?.allowedModels,
         pollenBudget: permissions?.pollenBudget,
         accountPermissions: permissions?.accountPermissions,
     };
 
-    const response = await fetch("/api/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(body),
-    });
+    const response = await fetch(
+        source === "authorize" ? "/api/api-keys/authorize" : "/api/api-keys",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(body),
+        },
+    );
 
     if (!response.ok) {
         const err = (await response.json().catch(() => null)) as {

@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import type { ModelName } from "@shared/registry/registry.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     BYOP_MARKUP_PCT,
@@ -37,14 +37,16 @@ interface DeductionParams {
     userId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
-    apiKeyClientId?: string;
+    byopClientKeyId?: string | null;
     modelResolved?: string;
 }
 
 /**
- * Resolves the dev user id from a BYOP sk_ token's clientId (= pk_ row id).
+ * Resolves the dev user id from a BYOP sk_ token's trusted
+ * byop_client_key_id (= pk_ row id).
  * Returns null when markup must not be levied:
- *  - clientId missing / invalid / pk_ row not found
+ *  - byop_client_key_id missing / invalid / pk_ row not found
+ *  - referenced key is not an enabled, unexpired publishable app key
  *  - baseline price is zero
  *  - payer is the same user as the dev (self-dealing)
  *  - payer's tier is not user-facing (only microbe/spore are eligible —
@@ -53,18 +55,28 @@ interface DeductionParams {
  */
 export async function resolveDevMarkup(
     db: DrizzleD1Database,
-    apiKeyClientId: string | undefined,
+    byopClientKeyId: string | null | undefined,
     baselinePrice: number,
     payerUserId: string | undefined,
 ): Promise<MarkupResolution | null> {
-    if (!apiKeyClientId || !payerUserId) return null;
+    if (!byopClientKeyId || !payerUserId) return null;
     const credit = computeDevCredit(baselinePrice);
     if (credit <= 0) return null;
 
     const [clientRow] = await db
         .select({ userId: apikeyTable.userId })
         .from(apikeyTable)
-        .where(eq(apikeyTable.id, apiKeyClientId))
+        .where(
+            and(
+                eq(apikeyTable.id, byopClientKeyId),
+                eq(apikeyTable.prefix, "pk"),
+                eq(apikeyTable.enabled, true),
+                or(
+                    isNull(apikeyTable.expiresAt),
+                    gt(apikeyTable.expiresAt, new Date()),
+                ),
+            ),
+        )
         .limit(1);
 
     if (!clientRow?.userId) return null;
@@ -91,8 +103,8 @@ export async function resolveDevMarkup(
  * Handles balance deduction and BYOP dev credit for billable requests.
  *
  * Non-BYOP: deduct baseline from payer + api key budget.
- * BYOP (apiKeyClientId present): deduct billed (baseline × 1+markup) from payer
- * and api key budget; credit markup to dev's dev_balance.
+ * BYOP (byopClientKeyId present): deduct billed (baseline × 1+markup) from
+ * payer and api key budget; credit markup to dev's dev_balance.
  *
  * Returns the applied markup (if any) so the caller can record it on the
  * generation event. On any billing failure this throws after best-effort
@@ -108,7 +120,7 @@ export async function handleBalanceDeduction(
         userId,
         apiKeyId,
         apiKeyPollenBalance,
-        apiKeyClientId,
+        byopClientKeyId,
         modelResolved,
     } = params;
 
@@ -116,7 +128,7 @@ export async function handleBalanceDeduction(
 
     const resolved = await resolveDevMarkup(
         db,
-        apiKeyClientId,
+        byopClientKeyId,
         totalPrice,
         userId,
     );

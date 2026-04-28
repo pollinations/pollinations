@@ -83,9 +83,11 @@ export const Pricing: FC<PricingProps> = ({
                             </div>
                             <div className="space-y-1 text-xs text-gray-500">
                                 <div>
-                                    - Spending order: 🌱 Tier Pollen (skipped
-                                    for paid-only models) → 🌻 Dev earnings → 💳
-                                    Top-up Pollen
+                                    - Regular models: 🌱 Tier Pollen → 🌻 Dev
+                                    earnings → 💳 Top-up Pollen
+                                </div>
+                                <div>
+                                    - Paid-only models: 💳 Top-up Pollen only
                                 </div>
                             </div>
                         </Card>

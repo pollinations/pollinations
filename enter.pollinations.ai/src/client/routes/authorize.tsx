@@ -277,18 +277,17 @@ function AuthorizeComponent() {
                     ? `Device ${user_code}`
                     : attribution?.appName || redirectHostname,
                 prefix: "sk",
+                source: "authorize",
                 expiryDays: keyPermissions.permissions.expiryDays,
+                byopClientKeyId: attribution?.found
+                    ? attribution.clientId
+                    : undefined,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
                     ...(!isDeviceMode &&
                         parsedRedirectUrl && {
                             redirectOrigin: parsedRedirectUrl.origin,
                         }),
-                    ...(attribution?.found && {
-                        clientId: attribution.clientId,
-                        createdForUserId: attribution.userId,
-                        createdForApp: attribution.appName,
-                    }),
                 },
                 permissions: {
                     allowedModels,

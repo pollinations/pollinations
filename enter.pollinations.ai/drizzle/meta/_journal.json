@@ -148,6 +148,20 @@
       "when": 1777315050308,
       "tag": "0020_add_dev_balance",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1777336761134,
+      "tag": "0021_complete_slayback",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1777339823999,
+      "tag": "0022_backfill_byop_client_key",
+      "breakpoints": true
     }
   ]
 }

@@ -118,6 +118,7 @@ export const track = (eventType: EventType) =>
         const apiKeyMetadata = c.var.auth.apiKey?.metadata as
             | Record<string, unknown>
             | undefined;
+        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
@@ -128,14 +129,10 @@ export const track = (eventType: EventType) =>
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,
-            apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
-            apiKeyCreatedForApp: apiKeyMetadata?.createdForApp as
-                | string
-                | undefined,
-            apiKeyCreatedForUserId: apiKeyMetadata?.createdForUserId as
-                | string
-                | undefined,
-            apiKeyClientId: apiKeyMetadata?.clientId as string | undefined,
+            apiKeyCreatedVia: byopClientKeyId
+                ? "redirect-auth"
+                : (apiKeyMetadata?.createdVia as string | undefined),
+            apiKeyClientId: byopClientKeyId ?? undefined,
         } satisfies UserData;
 
         let responseOverride = null;
@@ -189,7 +186,7 @@ export const track = (eventType: EventType) =>
                     userId: userTracking.userId,
                     apiKeyId: c.var.auth?.apiKey?.id,
                     apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                    apiKeyClientId: userTracking.apiKeyClientId,
+                    byopClientKeyId,
                     modelResolved: c.var.model?.resolved,
                 });
 

@@ -84,6 +84,9 @@ describe("API Key Management", () => {
                             keyType: "secret",
                             createdVia: "forged",
                             plaintextKey: "sk_forged",
+                            clientId: "forged-client",
+                            createdForUserId: "forged-user",
+                            createdForApp: "forged-app",
                             appUrl: "https://legit.example/callback",
                         },
                     }),
@@ -96,8 +99,156 @@ describe("API Key Management", () => {
             expect(created.metadata.keyType).toBe("publishable");
             expect(created.metadata.createdVia).toBe("dashboard");
             expect(created.metadata.plaintextKey).toBe(created.key);
+            expect(created.metadata.clientId).toBeUndefined();
+            expect(created.metadata.createdForUserId).toBeUndefined();
+            expect(created.metadata.createdForApp).toBeUndefined();
+            expect(created.byopClientKeyId).toBeNull();
             expect(created.metadata.appUrl).toBe(
                 "https://legit.example/callback",
+            );
+        });
+
+        test("stores BYOP attribution only through authorize creation", async ({
+            sessionToken,
+        }) => {
+            const appResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "trusted-byop-app",
+                        type: "publishable",
+                        metadata: {
+                            appUrl: "https://trusted-byop.example/callback",
+                        },
+                    }),
+                },
+            );
+            expect(appResponse.status).toBe(200);
+            const appKey = await appResponse.json();
+
+            const dashboardResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "dashboard-byop-attempt",
+                        type: "secret",
+                        byopClientKeyId: appKey.id,
+                        metadata: {
+                            clientId: "forged-client",
+                            createdForUserId: "forged-user",
+                            createdForApp: "forged-app",
+                            redirectOrigin: "https://trusted-byop.example",
+                        },
+                    }),
+                },
+            );
+
+            expect(dashboardResponse.status).toBe(200);
+            const dashboardKey = await dashboardResponse.json();
+            expect(dashboardKey.byopClientKeyId).toBeNull();
+            expect(dashboardKey.metadata.createdVia).toBe("dashboard");
+            expect(dashboardKey.metadata.clientId).toBeUndefined();
+
+            const secretResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys/authorize",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "trusted-byop-secret",
+                        type: "secret",
+                        byopClientKeyId: appKey.id,
+                        metadata: {
+                            clientId: "forged-client",
+                            createdForUserId: "forged-user",
+                            createdForApp: "forged-app",
+                            redirectOrigin: "https://trusted-byop.example",
+                        },
+                    }),
+                },
+            );
+
+            expect(secretResponse.status).toBe(200);
+            const created = await secretResponse.json();
+            expect(created.key.startsWith("sk_")).toBe(true);
+            expect(created.byopClientKeyId).toBe(appKey.id);
+            expect(created.metadata.createdVia).toBe("redirect-auth");
+            expect(created.metadata.clientId).toBeUndefined();
+            expect(created.metadata.createdForUserId).toBeUndefined();
+            expect(created.metadata.createdForApp).toBeUndefined();
+
+            const listResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+            expect(listResponse.status).toBe(200);
+            const list = (await listResponse.json()) as {
+                data: Array<{ id: string; byopClientKeyId?: string | null }>;
+            };
+            const listed = list.data.find((k) => k.id === created.id);
+            expect(listed?.byopClientKeyId).toBe(appKey.id);
+        });
+
+        test("rejects BYOP attribution to non-publishable keys", async ({
+            sessionToken,
+        }) => {
+            const secretKeyResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys/authorize",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "not-a-client-key",
+                        type: "secret",
+                    }),
+                },
+            );
+            expect(secretKeyResponse.status).toBe(200);
+            const secretKey = await secretKeyResponse.json();
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys/authorize",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "bad-byop-secret",
+                        type: "secret",
+                        byopClientKeyId: secretKey.id,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(400);
+            const error = (await response.json()) as {
+                message?: string;
+                error?: { message?: string };
+            };
+            expect(error.message ?? error.error?.message).toMatch(
+                /Invalid BYOP client key/,
             );
         });
     });

@@ -1,8 +1,8 @@
 import type { TierName } from "./tier-config.ts";
 
 /**
- * BYOP markup applied to requests authenticated by a BYOP-issued sk_ token
- * (one carrying metadata.clientId). Payer is billed baseline × (1 + MARKUP_PCT);
+ * BYOP markup applied to requests authenticated by a BYOP-issued sk_ token with
+ * a trusted byop_client_key_id. Payer is billed baseline × (1 + MARKUP_PCT);
  * the delta is credited to the app owner's dev_balance.
  *
  * Kill switch: set to 0 to disable entirely.
@@ -21,7 +21,9 @@ export const MARKUP_ELIGIBLE_PAYER_TIERS: ReadonlyArray<TierName> = [
 ];
 
 export function isMarkupEligiblePayerTier(tier: string): boolean {
-    return (MARKUP_ELIGIBLE_PAYER_TIERS as ReadonlyArray<string>).includes(tier);
+    return (MARKUP_ELIGIBLE_PAYER_TIERS as ReadonlyArray<string>).includes(
+        tier,
+    );
 }
 
 export function computeDevCredit(baselinePrice: number): number {

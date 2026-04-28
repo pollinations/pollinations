@@ -9,6 +9,7 @@ export interface ApiKey {
     permissions: Record<string, string[]> | null;
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
+    byopClientKeyId?: string | null;
 }
 
 export interface ApiKeyUpdateParams {

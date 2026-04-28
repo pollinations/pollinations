@@ -81,6 +81,7 @@ describe("BYOP markup", () => {
                 id: pkId,
                 userId: devId,
                 name: "test-app",
+                prefix: "pk",
                 key: `hashed-${pkId}`,
                 enabled: true,
                 createdAt: new Date(),
@@ -90,7 +91,7 @@ describe("BYOP markup", () => {
             return { db, devId, payerId, pkId };
         }
 
-        test("returns null when clientId missing", async () => {
+        test("returns null when BYOP client key id missing", async () => {
             const db = drizzle(env.DB);
             expect(await resolveDevMarkup(db, undefined, 1, "u")).toBeNull();
             expect(await resolveDevMarkup(db, "", 1, "u")).toBeNull();
@@ -113,6 +114,25 @@ describe("BYOP markup", () => {
             expect(
                 await resolveDevMarkup(db, "pk_doesnotexist", 1, "u"),
             ).toBeNull();
+        });
+
+        test("requires an enabled, unexpired publishable app key", async () => {
+            const invalidAppKeyStates = [
+                { prefix: "sk" },
+                { enabled: false },
+                { expiresAt: new Date(Date.now() - 1000) },
+            ];
+
+            for (const patch of invalidAppKeyStates) {
+                const { db, payerId, pkId } =
+                    await setupResolveFixture("spore");
+                await db
+                    .update(apikeyTable)
+                    .set(patch)
+                    .where(sql`${apikeyTable.id} = ${pkId}`);
+
+                expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
+            }
         });
 
         test("returns markup resolution when payer is spore", async () => {
@@ -276,6 +296,7 @@ describe("BYOP markup", () => {
                 id: pkId,
                 userId: devId,
                 name: "markup-app",
+                prefix: "pk",
                 key: `hashed-${pkId}`,
                 enabled: true,
                 createdAt: new Date(),
@@ -293,7 +314,7 @@ describe("BYOP markup", () => {
                 isBilledUsage: true,
                 totalPrice: 0.5,
                 userId: payerId,
-                apiKeyClientId: undefined,
+                byopClientKeyId: undefined,
             });
 
             expect(markup).toBeNull();
@@ -311,7 +332,7 @@ describe("BYOP markup", () => {
                 isBilledUsage: true,
                 totalPrice: 1,
                 userId: payerId,
-                apiKeyClientId: pkId,
+                byopClientKeyId: pkId,
             });
 
             expect(markup).not.toBeNull();
@@ -354,6 +375,7 @@ describe("BYOP markup", () => {
                 id: pkId,
                 userId,
                 name: "self-deal-app",
+                prefix: "pk",
                 key: `hashed-${pkId}`,
                 enabled: true,
                 createdAt: new Date(),
@@ -365,7 +387,7 @@ describe("BYOP markup", () => {
                 isBilledUsage: true,
                 totalPrice: 1,
                 userId,
-                apiKeyClientId: pkId,
+                byopClientKeyId: pkId,
             });
 
             expect(markup).toBeNull();
@@ -387,7 +409,7 @@ describe("BYOP markup", () => {
                 isBilledUsage: true,
                 totalPrice: 1,
                 userId: payerId,
-                apiKeyClientId: pkId,
+                byopClientKeyId: pkId,
             });
 
             expect(markup).toBeNull();
@@ -409,7 +431,7 @@ describe("BYOP markup", () => {
                 isBilledUsage: true,
                 totalPrice: 1,
                 userId: payerId,
-                apiKeyClientId: pkId,
+                byopClientKeyId: pkId,
             });
 
             expect(markup).not.toBeNull();
@@ -424,7 +446,7 @@ describe("BYOP markup", () => {
                 isBilledUsage: false,
                 totalPrice: 1,
                 userId: payerId,
-                apiKeyClientId: pkId,
+                byopClientKeyId: pkId,
             });
 
             expect(markup).toBeNull();
@@ -433,7 +455,7 @@ describe("BYOP markup", () => {
         });
 
         test("unknown pk_: markup=null, payer billed baseline only", async () => {
-            // Sk_ carries a clientId that resolves to no pk_ row.
+            // Sk_ carries a trusted BYOP client key id that resolves to no pk_ row.
             // resolveDevMarkup returns null, no markup is levied, payer
             // pays baseline. Event will record dev_credit=0.
             const db = drizzle(env.DB);
@@ -444,7 +466,7 @@ describe("BYOP markup", () => {
                 id: payerId,
                 email: `${payerId}@test.com`,
                 name: payerId,
-                tier: "flower",
+                tier: "spore",
                 tierBalance: 2,
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -455,7 +477,7 @@ describe("BYOP markup", () => {
                 isBilledUsage: true,
                 totalPrice: 1,
                 userId: payerId,
-                apiKeyClientId: "pk_nonexistent_creator",
+                byopClientKeyId: "pk_nonexistent_creator",
             });
 
             expect(markup).toBeNull();
@@ -473,7 +495,7 @@ describe("BYOP markup", () => {
                     isBilledUsage: true,
                     totalPrice: 1,
                     userId: "missing-payer-row",
-                    apiKeyClientId: pkId,
+                    byopClientKeyId: pkId,
                 }),
             ).rejects.toThrow(/affected 0 rows/);
 

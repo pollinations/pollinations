@@ -69,8 +69,16 @@ function SocialIcons() {
 const tertiaryBtn =
     "h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark";
 const labelCls = "font-headline text-[7px] font-black uppercase tracking-wider";
+const desktopFooterLabelCls =
+    "font-headline text-[9px] font-black uppercase tracking-wider";
 
-function FooterLinks({ layoutCopy }: { layoutCopy: Record<string, string> }) {
+function FooterLinks({
+    layoutCopy,
+    labelClassName = labelCls,
+}: {
+    layoutCopy: Record<string, string>;
+    labelClassName?: string;
+}) {
     return (
         <>
             <Button
@@ -80,7 +88,7 @@ function FooterLinks({ layoutCopy }: { layoutCopy: Record<string, string> }) {
                 size={null}
                 className={tertiaryBtn}
             >
-                <span className={labelCls}>{layoutCopy.termsLink}</span>
+                <span className={labelClassName}>{layoutCopy.termsLink}</span>
             </Button>
             <Button
                 as={Link}
@@ -89,7 +97,7 @@ function FooterLinks({ layoutCopy }: { layoutCopy: Record<string, string> }) {
                 size={null}
                 className={tertiaryBtn}
             >
-                <span className={labelCls}>{layoutCopy.privacyLink}</span>
+                <span className={labelClassName}>{layoutCopy.privacyLink}</span>
             </Button>
             <Button
                 as={Link}
@@ -98,7 +106,7 @@ function FooterLinks({ layoutCopy }: { layoutCopy: Record<string, string> }) {
                 size={null}
                 className={tertiaryBtn}
             >
-                <span className={labelCls}>{layoutCopy.refundsLink}</span>
+                <span className={labelClassName}>{layoutCopy.refundsLink}</span>
             </Button>
         </>
     );
@@ -107,9 +115,11 @@ function FooterLinks({ layoutCopy }: { layoutCopy: Record<string, string> }) {
 function EnterButton({
     isLoggedIn,
     authCopy,
+    labelClassName = labelCls,
 }: {
     isLoggedIn: boolean;
     authCopy: Record<string, string>;
+    labelClassName?: string;
 }) {
     return (
         <Button
@@ -121,7 +131,7 @@ function EnterButton({
             size={null}
             className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
         >
-            <span className={labelCls}>
+            <span className={labelClassName}>
                 {isLoggedIn ? authCopy.enterButton : authCopy.registerButton}
             </span>
             <ExternalLinkIcon className="w-3 h-3" />
@@ -261,17 +271,20 @@ function Layout() {
                         <div className="flex items-center justify-between gap-4">
                             {/* Left: Branding Text */}
                             <div className="text-left flex-shrink-0">
-                                <p className="font-headline text-[7px] font-black text-dark uppercase tracking-wider">
+                                <p className="font-headline text-[9px] font-black text-dark uppercase tracking-wider">
                                     {layoutCopy.footerBranding}
                                 </p>
-                                <p className="font-body text-[9px] text-dark">
+                                <p className="font-body text-[11px] text-dark">
                                     {layoutCopy.footerTagline}
                                 </p>
                             </div>
 
                             {/* Center: Links */}
                             <div className="flex items-center flex-shrink-0 gap-2">
-                                <FooterLinks layoutCopy={layoutCopy} />
+                                <FooterLinks
+                                    layoutCopy={layoutCopy}
+                                    labelClassName={desktopFooterLabelCls}
+                                />
                             </div>
 
                             {/* Right: Social + Enter */}
@@ -282,6 +295,7 @@ function Layout() {
                                 <EnterButton
                                     isLoggedIn={isLoggedIn}
                                     authCopy={authCopy}
+                                    labelClassName={desktopFooterLabelCls}
                                 />
                             </div>
                         </div>

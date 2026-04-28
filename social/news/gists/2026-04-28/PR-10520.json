@@ -1,0 +1,34 @@
+{
+  "pr_number": 10520,
+  "title": "fix: handle empty scribe transcription instead of returning 500",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10520",
+  "merged_at": "2026-04-28T15:28:05Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The sound of silence",
+    "blurb": "Fixed a bug where sending silent audio to our transcription API caused a server error. Now, when you say nothing at all, we politely return nothing at all.",
+    "summary": "Fixed an issue where the ElevenLabs Scribe integration would throw a 500 internal server error when processing audio with no detectable speech.",
+    "impact": "Users sending silent or noisy audio clips will now receive a successful empty transcription response instead of a server error.",
+    "keywords": [
+      "audio",
+      "transcription",
+      "bug fix",
+      "api",
+      "scribe"
+    ],
+    "visual_concept": "Audio transcription handling silence. Polly the bee wearing headphones, looking at a flat audio wave on the Monitor Robot's screen, representing the successful processing of silence.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, listening to a retro cassette player. Next to her, a chunky pixel robot with a CRT monitor head displays a flat, silent audio wave on its screen glowing lime green (#ecf874). Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-28/PR-10520.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny headphones, listening to a retro cassette player. Next to her, a chunky pixel robot with a CRT monitor head displays a flat, silent audio wave on its screen glowing lime green (#ecf874). Soft pastel lavender and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-28T15:29:10.027255+00:00"
+}

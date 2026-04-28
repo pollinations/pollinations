@@ -32,12 +32,14 @@ import { formatPollen } from "../lib/format-pollen.ts";
 
 type Attribution = {
     found: boolean;
+    error?: "redirect_uri_mismatch";
     clientId?: string;
     userId?: string;
     userName?: string;
     githubUsername?: string;
     appName?: string;
     appUrl?: string;
+    redirectUris?: string[];
 };
 
 function parseList(val: unknown): string[] | null {
@@ -232,9 +234,21 @@ function AuthorizeComponent() {
             // consent screen falls back to the hostname display.
             if (!app_key) return;
 
-            fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
+            const lookupParams = new URLSearchParams({ client_id: app_key });
+            if (!isDeviceMode && redirect_url) {
+                lookupParams.set("redirect_uri", redirect_url);
+            }
+            fetch(`/api/app-lookup?${lookupParams.toString()}`)
                 .then((r) => r.json())
-                .then((data) => setAttribution(data as Attribution))
+                .then((data) => {
+                    const attr = data as Attribution;
+                    setAttribution(attr);
+                    if (attr.error === "redirect_uri_mismatch") {
+                        setError(
+                            "This redirect URL is not registered for this app. Authorization blocked.",
+                        );
+                    }
+                })
                 .catch(() => {});
         }
     }, [

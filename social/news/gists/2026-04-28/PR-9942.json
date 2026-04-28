@@ -1,0 +1,37 @@
+{
+  "pr_number": 9942,
+  "title": "feat: add OpenClaw setup integration (Pollinations as provider)",
+  "author": "CloudCompile",
+  "url": "https://github.com/pollinations/pollinations/pull/9942",
+  "merged_at": "2026-04-28T18:48:59Z",
+  "labels": [
+    "TEXT",
+    "API",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive gets claws",
+    "blurb": "We've added a specialized OpenClaw model to our text endpoints, pre-prompted for agentic coding magic. Plus, a slick new setup script makes connecting your CLI an absolute breeze.",
+    "summary": "Introduced a specialized 'openclaw' model alias backed by Qwen3-Coder-30B, alongside a dedicated landing page and CLI installer for seamless provider integration.",
+    "impact": "Developers can now instantly configure the OpenClaw CLI to use Pollinations for automated coding workflows, complete with built-in tool-call sequencing and verification gates.",
+    "keywords": [
+      "openclaw",
+      "text-model",
+      "cli",
+      "agent",
+      "qwen",
+      "integration"
+    ],
+    "visual_concept": "OpenClaw implies a crab or claw motif. The scene should feature Polly the bee collaborating with a cute pixel art crab at a retro computer terminal, symbolizing the integration between Pollinations and the OpenClaw CLI.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny hacker hoodie, high-fiving a cute little red crab with chunky claws sitting on a retro computer keyboard. The glowing CRT monitor displays lime green (#ecf874) code blocks. Soft pastel gradient background of lavender and peach. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and collaborative."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-28/PR-9942.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny hacker hoodie, high-fiving a cute little red crab with chunky claws sitting on a retro computer keyboard. The glowing CRT monitor displays lime green (#ecf874) code blocks. Soft pastel gradient background of lavender and peach. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and collaborative."
+  },
+  "generated_at": "2026-04-28T18:50:04.986936+00:00"
+}

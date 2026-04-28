@@ -16,16 +16,16 @@
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
  */
 
+import { type Context, Hono } from "hono";
 import { createGenerationApp } from "./generation.ts";
-import { resolveRoute } from "./routing.ts";
 
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
-interface Env extends CloudflareBindings {
-    ENTER: Fetcher;
-}
+type Env = CloudflareBindings & { ENTER: Fetcher };
+type BoundaryEnv = { Bindings: Env };
 
 const generationApp = createGenerationApp();
+const app = new Hono<BoundaryEnv>();
 
 /** Append X-Robots-Tag to prevent search engines from indexing API responses. */
 function noIndex(response: Response): Response {
@@ -38,57 +38,56 @@ function rewriteRequest(request: Request, url: URL): Request {
     return new Request(url.toString(), request);
 }
 
-async function fetchGeneration(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext,
-    url: URL,
-    shouldNoIndex = true,
-): Promise<Response> {
-    const response = await generationApp.fetch(
-        rewriteRequest(request, url),
-        env,
-        ctx,
+function notFound(): Response {
+    return noIndex(new Response("Not Found", { status: 404 }));
+}
+
+function robotsTxt(): Response {
+    return new Response(
+        [
+            "User-agent: *",
+            "Allow: /docs",
+            "Allow: /docs/llm.txt",
+            "Disallow: /image/",
+            "Disallow: /text/",
+            "Disallow: /video/",
+            "Disallow: /audio/",
+            "Disallow: /v1/",
+            "Disallow: /api/",
+        ].join("\n"),
+        { headers: { "Content-Type": "text/plain" } },
     );
-    return shouldNoIndex ? noIndex(response) : response;
 }
 
 async function fetchEnter(
-    request: Request,
-    env: Env,
+    c: Context<BoundaryEnv>,
     url: URL,
-    shouldNoIndex: boolean,
 ): Promise<Response> {
-    const response = await env.ENTER.fetch(rewriteRequest(request, url));
-    return shouldNoIndex ? noIndex(response) : response;
+    const response = await c.env.ENTER.fetch(rewriteRequest(c.req.raw, url));
+    return noIndex(response);
 }
 
+async function fetchGeneration(c: Context<BoundaryEnv>): Promise<Response> {
+    return generationApp.fetch(c.req.raw, c.env, c.executionCtx);
+}
+
+function stripTrailingSlash(path: string): string {
+    return path.length > 1 ? path.replace(/\/+$/, "") : path;
+}
+
+app.get("/robots.txt", () => robotsTxt())
+    .get("/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
+    .all("/api", () => notFound())
+    .all("/api/*", () => notFound())
+    .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))
+    .all("/account/", (c) => fetchEnter(c, new URL(c.req.url)))
+    .all("/account/*", (c) => {
+        const url = new URL(c.req.url);
+        url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
+        return fetchEnter(c, url);
+    })
+    .all("*", fetchGeneration);
+
 export default {
-    async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-        const route = resolveRoute(new URL(request.url));
-
-        if (route.kind === "robots") {
-            return route.response;
-        }
-
-        if (route.kind === "redirect") {
-            return Response.redirect(route.location, route.status);
-        }
-
-        if (route.kind === "generation") {
-            return fetchGeneration(
-                request,
-                env,
-                ctx,
-                route.url,
-                !route.url.pathname.startsWith("/docs"),
-            );
-        }
-
-        if (route.kind === "notFound") {
-            return noIndex(new Response("Not Found", { status: 404 }));
-        }
-
-        return fetchEnter(request, env, route.url, route.noIndex);
-    },
+    fetch: app.fetch,
 };

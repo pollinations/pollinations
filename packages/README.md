@@ -1,6 +1,6 @@
 # Packages
 
-This folder is the home for the small, reusable pieces of Pollinations that live outside the main services. If `pollinations.ai`, `image.pollinations.ai`, and `text.pollinations.ai` are the *engines*, the things in this folder are the *tools and adapters* that let people plug Pollinations into wherever they already work — their code, their terminal, their AI assistant, their automation flows.
+This folder is the home for the small, reusable pieces of Pollinations that live outside the main services.
 
 Everything here is meant to be picked up and used on its own. You shouldn't need to understand the rest of the repo to make sense of any single package.
 

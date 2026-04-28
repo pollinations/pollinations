@@ -1,0 +1,34 @@
+{
+  "pr_number": 10525,
+  "title": "spread gpt-image-2 across 5 azure regions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10525",
+  "merged_at": "2026-04-28T15:23:55Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Spreading our wings globally",
+    "blurb": "We've expanded our gpt-image-2 model across five global regions to keep your image generations fast and reliable. More servers, more art, zero bottlenecks!",
+    "summary": "Distributed gpt-image-2 traffic across five global regions to ensure high availability and consistent generation speeds.",
+    "impact": "Users will experience highly reliable image generation with significantly increased capacity for concurrent requests.",
+    "keywords": [
+      "infrastructure",
+      "scaling",
+      "reliability",
+      "images",
+      "azure"
+    ],
+    "visual_concept": "Polly the bee acting as a global traffic router. Five glowing server-plants distributed across a cozy pixel map or globe, representing the five new Azure regions. The bee is happily watering or tending to all of them.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny pilot's hat, flying over a small pixelated globe with five glowing lime green (#ecf874) server-plants sprouting from it. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-28/PR-10525.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny pilot's hat, flying over a small pixelated globe with five glowing lime green (#ecf874) server-plants sprouting from it. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-28T15:25:26.007750+00:00"
+}

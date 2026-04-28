@@ -234,10 +234,16 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         </svg>
                     </a>
                     <SidebarExternalLink href="https://discord.com/channels/885844321461485618/1432378056126894343">
-                        #pollen-beta 🧪
+                        #pollen-beta
+                        <span className="h-4 w-4 shrink-0">
+                            <DiscordIcon />
+                        </span>
                     </SidebarExternalLink>
                     <SidebarExternalLink href="https://github.com/pollinations/pollinations/issues">
-                        Report an issue 🐛
+                        Report an issue
+                        <span className="h-4 w-4 shrink-0">
+                            <GitHubIcon />
+                        </span>
                     </SidebarExternalLink>
                 </div>
             </nav>
@@ -301,7 +307,7 @@ const SidebarExternalLink: FC<PropsWithChildren<{ href: string }>> = ({
         rel="noopener noreferrer"
         className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-[15px] font-medium text-gray-800 transition-colors hover:bg-white/60 hover:text-gray-950 focus:outline-none focus-visible:bg-white/60"
     >
-        <span>{children}</span>
+        <span className="flex min-w-0 items-center gap-1.5">{children}</span>
         <svg
             viewBox="0 0 24 24"
             className="h-4 w-4 shrink-0 text-gray-500"

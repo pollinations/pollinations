@@ -22,21 +22,25 @@ runpodctl pod list             # list pods
 runpodctl pod get <id>         # pod details
 ```
 
-### Pod pi90tfk3sa9t12 — Klein 4B
+### Pod lqh6weiexk4sth — Klein 4B
+
+> Pod ID changes if recreated. Check `runpodctl pod list` and the `KLEIN_URL` env var (sops: `image.pollinations.ai/secrets/env.json`).
 
 - **GPU**: 1x RTX 3090 (24GB) | **Cost**: $0.22/hr (community cloud)
-- **SSH**: `ssh -i <SSH_RUNPOD_KLEIN from SOPS> root@213.144.200.243 -p 10207`
-- **HTTP**: `https://pi90tfk3sa9t12-8000.proxy.runpod.net`
+- **SSH**: RunPod relay — interactive only: `ssh <pod-id>-<key-id>@ssh.runpod.io -i ~/.ssh/id_ed25519` (full command from dashboard "Connect" tab)
+- **HTTP**: `https://lqh6weiexk4sth-8000.proxy.runpod.net`
 - **Service**: FLUX.2 Klein 4B (FastAPI on port 8000)
 - **Auth**: `x-backend-token` header with `PLN_GPU_TOKEN`
-- **Code**: `/workspace/handler.py`
-- **Logs**: `/workspace/handler.log`
-- **Restart**: `ssh ... "/workspace/restart.sh"`
+- **Code**: `/workspace/handler.py` (mirrors `image.pollinations.ai/klein-runpod/handler.py`)
+- **Logs**: `/workspace/klein.log`
+- **Restart**: `bash /workspace/restart.sh` (in-pod)
 
 **Health check:**
 ```bash
-curl -s https://pi90tfk3sa9t12-8000.proxy.runpod.net/health
+curl -s https://lqh6weiexk4sth-8000.proxy.runpod.net/health
 ```
+
+**Recovery from RunPod host outage**: see `.claude/skills/monitor-services/SKILL.md` Klein section. Pod volume is destroyed on terminate; `handler.py`/`restart.sh` must be redeployed onto a fresh pod.
 
 ### Pod hsl3ksl31lvrcc — Flux + Z-Image (4x RTX 4090)
 
@@ -98,14 +102,14 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 ### Production — enter services
 
 - **Host**: `54.147.14.220`
-- **SSH**: `ssh -i ~/.ssh/enter-services-shared-key ubuntu@54.147.14.220`
+- **SSH**: `ssh -i ~/.ssh/enter-services-shared ubuntu@54.147.14.220`
 - **Image service**: port 16384
 - **Text service**: port 16385
 
 ### Staging
 
 - **Host**: `44.222.254.250`
-- **SSH**: `ssh -i ~/.ssh/enter-services-staging-key ubuntu@44.222.254.250`
+- **SSH**: `ssh -i ~/.ssh/enter-services-staging ubuntu@44.222.254.250`
 
 ## Heartbeat Registration
 
@@ -122,12 +126,13 @@ Extract for use: `sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '
 | SOPS key | Provider | Instances |
 |----------|----------|-----------|
 | `SSH_RUNPOD_FLUX_ZIMAGE` | RunPod | Flux+Z-Image pod (`hsl3ksl31lvrcc`) |
-| `SSH_RUNPOD_KLEIN` | RunPod | Klein pod (`pi90tfk3sa9t12`) |
 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | Lambda Labs | GH200 (LTX-2, ACE-Step, Sana) |
+
+Klein uses the RunPod relay (`ssh.runpod.io`) with `~/.ssh/id_ed25519` — no SOPS key. Get the full SSH command from the dashboard "Connect" tab.
 
 EC2 keys (not in SOPS):
 
 | Key | Provider | Location |
 |-----|----------|----------|
-| `~/.ssh/enter-services-shared-key` | EC2 prod | enter services |
-| `~/.ssh/enter-services-staging-key` | EC2 staging | enter services |
+| `~/.ssh/enter-services-shared` | EC2 prod | enter services |
+| `~/.ssh/enter-services-staging` | EC2 staging | enter services |

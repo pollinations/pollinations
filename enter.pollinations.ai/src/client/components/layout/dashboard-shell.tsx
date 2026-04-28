@@ -234,16 +234,16 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         </svg>
                     </a>
                     <SidebarExternalLink href="https://discord.com/channels/885844321461485618/1432378056126894343">
-                        #pollen-beta
                         <span className="h-4 w-4 shrink-0">
                             <DiscordIcon />
                         </span>
+                        #pollen-beta
                     </SidebarExternalLink>
                     <SidebarExternalLink href="https://github.com/pollinations/pollinations/issues">
-                        Report an issue
                         <span className="h-4 w-4 shrink-0">
                             <GitHubIcon />
                         </span>
+                        Report an issue
                     </SidebarExternalLink>
                 </div>
             </nav>

@@ -7,7 +7,7 @@ const HIGHLIGHTS_RAW_URL =
 export const HIGHLIGHTS_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
 
-const TOTAL_NEWS_COUNT = 5;
+const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
     date: string;
@@ -19,14 +19,14 @@ interface Highlight {
 /**
  * Pinned news items that stay visible regardless of daily updates.
  * Edit this array to add/remove pinned announcements.
- * When empty, the full TOTAL_NEWS_COUNT dynamic highlights are shown.
  */
 const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-04-28",
         emoji: "💸",
         title: "ElevenLabs Music, ElevenLabs TTS and GPT Image 2 moving to paid",
-        description: "Starting May 1, 2026, these models will no longer be free.",
+        description:
+            "Starting May 1, 2026, these models will no longer be free.",
     },
 ];
 
@@ -97,16 +97,15 @@ type NewsItem = Highlight & {
 
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
-    const dynamicCount = TOTAL_NEWS_COUNT - PINNED_NEWS.length;
 
     useEffect(() => {
         fetch(HIGHLIGHTS_RAW_URL)
             .then((res) => res.text())
             .then((md) =>
-                setHighlights(parseHighlights(md).slice(0, dynamicCount)),
+                setHighlights(parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT)),
             )
             .catch((err) => console.error("Failed to fetch highlights:", err));
-    }, [dynamicCount]);
+    }, []);
 
     if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
 
@@ -124,7 +123,7 @@ export const NewsBanner: FC = () => {
     ];
 
     return (
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {items.map((item) => (
                 <NewsCard key={item.key} item={item} />
             ))}
@@ -136,21 +135,23 @@ const NewsCard: FC<{ item: NewsItem }> = ({ item }) => (
     <Card
         color="violet"
         className={cn(
-            "leading-relaxed",
+            "flex leading-relaxed",
             item.pinned
-                ? "!border-transparent !bg-violet-200/70 text-base"
-                : "!border-transparent text-sm",
+                ? "min-h-0 md:col-span-2 xl:col-span-3 !border-transparent !bg-violet-200/70 text-base"
+                : "min-h-48 !border-transparent text-sm",
         )}
     >
-        <div className="flex items-start gap-2">
-            <span
-                className={cn(
-                    "shrink-0",
-                    item.pinned ? "text-2xl leading-none" : "mt-0.5",
-                )}
-            >
-                {item.emoji}
-            </span>
+        <div
+            className={cn(
+                "flex min-h-0 flex-1 items-start gap-3",
+                item.pinned ? "flex-row" : "flex-col",
+            )}
+        >
+            {!item.pinned && (
+                <span className="shrink-0 text-2xl leading-none">
+                    {item.emoji}
+                </span>
+            )}
             <div className="min-w-0">
                 <div
                     className={cn(
@@ -159,13 +160,15 @@ const NewsCard: FC<{ item: NewsItem }> = ({ item }) => (
                     )}
                 >
                     <span>{item.title}</span>
-                    {item.date && !item.pinned && (
-                        <span className="font-medium text-gray-400">
-                            {" "}
-                            - {formatNewsDate(item.date)}
-                        </span>
+                    {item.pinned && item.emoji && (
+                        <span className="ml-2">{item.emoji}</span>
                     )}
                 </div>
+                {item.date && !item.pinned && (
+                    <div className="mt-1 text-xs font-medium text-gray-400">
+                        {formatNewsDate(item.date)}
+                    </div>
+                )}
                 <p className="mt-1 text-gray-700">
                     {renderWithLinks(item.description)}
                 </p>

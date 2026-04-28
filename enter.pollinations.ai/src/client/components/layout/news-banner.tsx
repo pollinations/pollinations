@@ -24,9 +24,8 @@ const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-04-28",
         emoji: "💸",
-        title: "ElevenLabs Music, ElevenLabs TTS and GPT Image 2 moved to paid",
-        description:
-            "These models are no longer free. See the [pricing table](/#models) for current rates.",
+        title: "ElevenLabs Music, ElevenLabs TTS and GPT Image 2 moving to paid",
+        description: "Starting May 1, 2026, these models will no longer be free.",
     },
 ];
 

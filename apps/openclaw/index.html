@@ -116,10 +116,11 @@
                                     target="_blank" style="font-weight:600; color:var(--text)">setup script</a>:</div>
                             <div class="code-block" id="setup-cmd"><button class="copy-btn"
                                     onclick="copyCode('setup-cmd')">Copy</button>
-                                <div class="code-inner">curl -fsSL
-                                    https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh
-                                    \
-                                    | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span></div>
+                                <div class="code-inner">
+    curl -fsSL
+    https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh
+    \
+    | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span></div>
                             </div>
                             <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
                                 <li>🔑 Saves API key to <code
@@ -215,9 +216,10 @@
                             <p style="margin-bottom:8px;">Add pollinations.ai as a model provider. Run this command:</p>
                             <div class="code-block" id="agent-msg" style="font-size:12px; line-height:1.6"><button
                                     class="copy-btn" onclick="copyCode('agent-msg')">Copy</button>
-                                <div class="code-inner" style="white-space:pre-wrap">curl -fsSL
-                                    https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh
-                                    | bash -s -- <span class="key-in-json">YOUR_API_KEY</span></div>
+                                <div class="code-inner" style="white-space:pre-wrap">
+        curl -fsSL
+        https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh
+        | bash -s -- <span class="key-in-json">YOUR_API_KEY</span></div>
                             </div>
                             <p style="margin-top:8px;">The script will restart the gateway automatically. After that,
                                 switch to the new provider with: <code>/model pollinations/kimi</code></p>

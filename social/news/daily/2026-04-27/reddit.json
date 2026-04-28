@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-27",
+  "period_start": "2026-04-27",
+  "period_end": "2026-04-27",
+  "generated_at": "2026-04-28T06:51:50.995459+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-27/images/reddit.jpg"
+    }
+  ],
+  "title": "Fixing Grok and DeepSeek Pro routing, adding StoryForge and Frieze",
+  "text": "Just pushed a few plumbing updates to keep the text models stable. If you were getting timeouts or dropped connections from Grok or DeepSeek Pro recently, that should be cleared up now.\n\nWe re-routed DeepSeek Pro through Fireworks (PR #10493), which seems to be handling the inference load much better than the previous setup. For Grok, we bumped the routing over to a stable Azure 4.20 non-reasoning deployment (PR #10502). It is a pragmatic patch until the upstream API settles down, but it works and response times are back to normal.\n\nAlso merged two new community apps into the ecosystem today:\n- StoryForge was added to the writing section (PR #10505). It is a solid implementation if you are looking at structured prompt chaining for long-form text generation.\n- Frieze is now live in the image section (PR #10508).\n\nAll routing logic and source code are updated in the main repo: https://github.com/pollinations/pollinations\n\nIf the text endpoints start dropping packets again or if you notice any weird latency spikes with the new Fireworks routing, open an issue on GitHub so we can track it."
+}

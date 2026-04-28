@@ -881,8 +881,8 @@
                                 <li>🔑 Saves API key to <code
                                         style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code>
                                 </li>
-                                <li>🤖 Adds 9 OpenClaw models: 7 free — OpenClaw, Kimi K2.5, DeepSeek, DeepSeek Pro,
-                                    GLM, Gemini + Search, Claude Haiku — plus 2 paid: Claude Large, Gemini Large</li>
+                                <li>🤖 Adds 10 OpenClaw models: 7 free — OpenClaw, Kimi K2.5, DeepSeek, DeepSeek Pro,
+                                    GLM, Gemini + Search, Claude Haiku — plus 3 paid: Kimi K2.6, Claude Large, Gemini Large</li>
                                 <li>🔍 Also enables Perplexity Fast for the <code
                                         style="color:var(--accent); font-size:13px">web_search</code> tool <em>via
                                         pollinations.ai</em> (preserves existing if already set)</li>
@@ -902,7 +902,8 @@
       },
       "models": {
         "pollinations/openclaw": { "alias": "OpenClaw" },
-        "pollinations/kimi": { "alias": "Kimi K2.6" },
+        "pollinations/kimi": { "alias": "Kimi K2.5" },
+        "pollinations/kimi-k2.6": { "alias": "Kimi K2.6" },
         "pollinations/deepseek": { "alias": "DeepSeek V4 Flash" },
         "pollinations/deepseek-pro": { "alias": "DeepSeek V4 Pro" },
         "pollinations/glm": { "alias": "GLM 5.1" },
@@ -925,11 +926,12 @@
             "input": ["text"], "contextWindow": 262144 },
           { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
             "input": ["text","image"], "contextWindow": 256000 },
-            "input": ["text","image"], "contextLength": 256000 },
+          { "id": "kimi-k2.6", "name": "Kimi K2.6 (Paid)", "reasoning": true,
+            "input": ["text","image"], "contextWindow": 262000 },
           { "id": "deepseek", "name": "DeepSeek V4 Flash",
-            "input": ["text"], "contextLength": 1000000 },
+            "input": ["text"], "contextWindow": 1000000 },
           { "id": "deepseek-pro", "name": "DeepSeek V4 Pro",
-            "input": ["text"], "contextLength": 65536 },
+            "input": ["text"], "contextWindow": 65536 },
           { "id": "glm", "name": "GLM 5.1",
             "input": ["text"], "contextWindow": 128000 },
           { "id": "gemini-search", "name": "Gemini + Search",
@@ -1078,8 +1080,9 @@
 
         function startAuthorize() {
             var redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
-            var models = encodeURIComponent('openclaw,kimi,deepseek,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
-            window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}`;
+            var models = encodeURIComponent('openclaw,kimi,kimi-k2.6,deepseek,deepseek-pro,glm,gemini-search,perplexity-fast,claude-fast,claude-large,gemini-large');
+            var appKey = encodeURIComponent('pk_openclaw');
+            window.location.href = `https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}&models=${models}&app_key=${appKey}`;
         }
 
         function switchTab(tab, btn) {

@@ -16,7 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps
 
 This works for both fresh installs and existing OpenClaw setups. It:
 - Runs `openclaw onboard` for fresh installs (creates config + workspace)
-- Adds the Pollinations provider with 9 models to `~/.openclaw/openclaw.json`
+- Adds the Pollinations provider with 10 models to `~/.openclaw/openclaw.json`
 - Sets OpenClaw as default with Kimi + DeepSeek + GLM fallbacks
 
 **Step 3 (fresh install only):** Start the gateway:
@@ -32,7 +32,8 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 | Model | ID | Best for |
 |---|---|---|
 | **OpenClaw** (default) | `pollinations/openclaw` | Agentic coding, terminal workflows, computer-use reliability |
-| **Kimi K2.6** | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+| **Kimi K2.5** | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+| **Kimi K2.6** | `pollinations/kimi-k2.6` | Flagship agentic, vision, reasoning (262K context, paid) |
 | **DeepSeek V4 Flash** | `pollinations/deepseek` | Fast reasoning & tool calling (paid) |
 | **DeepSeek V4 Pro** | `pollinations/deepseek-pro` | Advanced reasoning & coding (paid) |
 | **GLM 5.1** | `pollinations/glm` | Coding, reasoning, agentic workflows |
@@ -67,6 +68,14 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
             "reasoning": true,
             "input": ["text", "image"],
             "contextWindow": 256000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "kimi-k2.6",
+            "name": "Kimi K2.6",
+            "reasoning": true,
+            "input": ["text", "image"],
+            "contextWindow": 262000,
             "maxTokens": 8192
           }
         ]

@@ -1,0 +1,35 @@
+{
+  "date": "2026-04-28",
+  "period_start": "2026-04-28",
+  "period_end": "2026-04-28",
+  "title": "The gpt-image-2 infrastructure dance",
+  "summary": "A solid day of infrastructure tuning, bringing massive capacity upgrades to gpt-image-2 and a slick new integration for OpenClaw coding agents.\n\nWe did a little routing shuffle with `gpt-image-2` today to handle load. First, we spread traffic across five Azure regions. Shortly after, we decided to drop the round-robin entirely and route directly to OpenAI. The end result is what matters: significantly higher generation capacity and fewer rate limits for your image requests.\n\nPollinations is now a built-in provider for OpenClaw. We spun up a dedicated `openclaw` model alias backed by Qwen3-Coder-30B and added a CLI installer. Hooking up automated coding agents with built-in tool-call sequencing just got a lot faster.\n\nFixed two API quirks that were causing unnecessary server panics. Sending dead silence to the Scribe audio transcription endpoint now returns an empty string instead of a 500 error. Also, requesting a text model on an image endpoint now politely returns a 400 instead of a confusing 502, which keeps our analytics cleaner and your debugging faster.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 9942,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10517,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10520,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10525,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10527,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10531,
+      "date": "2026-04-28"
+    }
+  ],
+  "generated_at": "2026-04-29T06:47:56.134419+00:00"
+}

@@ -32,12 +32,13 @@ import { formatPollen } from "../lib/format-pollen.ts";
 
 type Attribution = {
     found: boolean;
+    error?: "redirect_uri_mismatch";
     clientId?: string;
     userId?: string;
     userName?: string;
     githubUsername?: string;
     appName?: string;
-    appUrl?: string;
+    redirectUris?: string[];
 };
 
 function parseList(val: unknown): string[] | null {
@@ -174,8 +175,11 @@ function AuthorizeComponent() {
         requestedScopes.has(p),
     );
     const hasBudget = keyPermissions.permissions.pollenBudget !== null;
+    const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
-        (isDeviceMode || parsedRedirectUrl !== null) && hasBudget;
+        (isDeviceMode || parsedRedirectUrl !== null) &&
+        hasBudget &&
+        !isAttributionPending;
 
     useScrollLock();
 
@@ -215,8 +219,20 @@ function AuthorizeComponent() {
             if (app_key) {
                 fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
                     .then((r) => r.json())
-                    .then((data) => setAttribution(data as Attribution))
-                    .catch(() => {});
+                    .then((data) => {
+                        const attr = data as Attribution;
+                        setAttribution(attr);
+                        if (!attr.found) {
+                            setError(
+                                "This app key could not be verified. Authorization blocked.",
+                            );
+                        }
+                    })
+                    .catch(() => {
+                        setError(
+                            "Could not verify this app key. Authorization blocked.",
+                        );
+                    });
             }
         } else {
             if (!redirect_url) {
@@ -232,10 +248,30 @@ function AuthorizeComponent() {
             // consent screen falls back to the hostname display.
             if (!app_key) return;
 
-            fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
+            const lookupParams = new URLSearchParams({ client_id: app_key });
+            if (!isDeviceMode && redirect_url) {
+                lookupParams.set("redirect_uri", redirect_url);
+            }
+            fetch(`/api/app-lookup?${lookupParams.toString()}`)
                 .then((r) => r.json())
-                .then((data) => setAttribution(data as Attribution))
-                .catch(() => {});
+                .then((data) => {
+                    const attr = data as Attribution;
+                    setAttribution(attr);
+                    if (attr.error === "redirect_uri_mismatch") {
+                        setError(
+                            "This redirect URL is not registered for this app. Authorization blocked.",
+                        );
+                    } else if (!attr.found) {
+                        setError(
+                            "This app key could not be verified. Authorization blocked.",
+                        );
+                    }
+                })
+                .catch(() => {
+                    setError(
+                        "Could not verify this app key. Authorization blocked.",
+                    );
+                });
         }
     }, [
         isDeviceMode,
@@ -278,9 +314,14 @@ function AuthorizeComponent() {
                 expiryDays: keyPermissions.permissions.expiryDays,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
+                    ...(app_key &&
+                        (!isDeviceMode || attribution?.found) && {
+                            requestedClientId: app_key,
+                        }),
                     ...(!isDeviceMode &&
                         parsedRedirectUrl && {
                             redirectOrigin: parsedRedirectUrl.origin,
+                            redirectUri: parsedRedirectUrl.href,
                         }),
                     ...(attribution?.found && {
                         clientId: attribution.clientId,

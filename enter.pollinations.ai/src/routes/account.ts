@@ -131,6 +131,12 @@ const CreateKeySchema = z.object({
         .describe(
             'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
         ),
+    redirectUris: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Allowed OAuth redirect URIs for publishable app keys. Loopback ports are matched port-agnostically.",
+        ),
 });
 
 // CSV escape helper
@@ -1094,6 +1100,7 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
+                redirectUris,
             } = c.req.valid("json");
 
             const created = await createApiKeyForUser({
@@ -1106,6 +1113,10 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
+                metadata:
+                    type === "publishable" && redirectUris?.length
+                        ? { redirectUris }
+                        : undefined,
                 allowAccountKeysPermission: false,
                 defaultCreatedVia: "api",
             });

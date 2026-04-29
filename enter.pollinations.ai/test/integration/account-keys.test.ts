@@ -30,7 +30,9 @@ describe("Account Key Management API", () => {
             expect(data.type).toBe("secret");
         });
 
-        test("should create a publishable key", async ({ sessionToken }) => {
+        test("should create a publishable app key with redirect URIs", async ({
+            sessionToken,
+        }) => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
                 {
@@ -42,6 +44,7 @@ describe("Account Key Management API", () => {
                     body: JSON.stringify({
                         name: "test-pub-key",
                         type: "publishable",
+                        redirectUris: ["https://cli.example/callback"],
                     }),
                 },
             );
@@ -50,6 +53,9 @@ describe("Account Key Management API", () => {
             const data = await response.json();
             expect(data.key.startsWith("pk_")).toBe(true);
             expect(data.type).toBe("publishable");
+            expect(data.metadata.redirectUris).toEqual([
+                "https://cli.example/callback",
+            ]);
         });
 
         test("should create key with permissions and budget", async ({

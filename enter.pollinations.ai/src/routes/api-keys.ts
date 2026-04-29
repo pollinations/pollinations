@@ -1,6 +1,6 @@
 import {
     createApiKeyForUser,
-    validateAppUrlFormat,
+    validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -180,14 +180,24 @@ const CreateApiKeySchema = z.object({
  * Only caller-owned fields are accepted. Server-controlled fields like
  * keyType, createdVia, and plaintextKey cannot be modified after creation.
  */
+const UrlWithSchemeSchema = z.string().refine(
+    (val) => {
+        if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val)) return false;
+        try {
+            return new URL(val).hash === "";
+        } catch {
+            return false;
+        }
+    },
+    {
+        message:
+            "Must be a valid URL with a scheme and no fragment (e.g. https://...)",
+    },
+);
+
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
-    appUrl: z
-        .string()
-        .refine((val) => /^[a-z][a-z0-9+\-.]*:\/\/.+/.test(val), {
-            message: "Must be a valid URL with a scheme (e.g. https://...)",
-        })
-        .optional(),
+    redirectUris: z.array(UrlWithSchemeSchema).optional(),
 });
 
 /**
@@ -213,6 +223,11 @@ export const apiKeysRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
+            const createdVia =
+                typeof input.metadata?.redirectUri === "string" ||
+                typeof input.metadata?.deviceUserCode === "string"
+                    ? "redirect-auth"
+                    : "dashboard";
 
             const created = await createApiKeyForUser({
                 authClient: c.var.auth.client,
@@ -226,7 +241,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
                 allowAccountKeysPermission: true,
-                defaultCreatedVia: "dashboard",
+                defaultCreatedVia: createdVia,
             });
 
             return c.json(created);
@@ -370,8 +385,10 @@ export const apiKeysRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const existingKey = await requireOwnedKey(db, id, user.id);
 
-            if (metadataUpdate.appUrl) {
-                validateAppUrlFormat(metadataUpdate.appUrl);
+            if (metadataUpdate.redirectUris) {
+                for (const uri of metadataUpdate.redirectUris) {
+                    validateRedirectUriFormat(uri);
+                }
             }
 
             const metadata = await updateKeyMetadata(

@@ -112,8 +112,8 @@ function RouteComponent() {
             metadata: {
                 description: formState.description,
                 keyType,
-                ...(isPublishable && formState.appUrl
-                    ? { appUrl: formState.appUrl }
+                ...(isPublishable && formState.redirectUris?.length
+                    ? { redirectUris: formState.redirectUris }
                     : {}),
             },
             permissions: {

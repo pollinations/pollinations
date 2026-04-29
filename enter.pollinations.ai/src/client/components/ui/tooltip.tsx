@@ -6,6 +6,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { cn } from "@/util.ts";
 
 type TooltipProps = {
     children: ReactNode;
@@ -40,9 +41,10 @@ export const Tooltip: FC<TooltipProps> = ({
         }
     };
 
-    const triggerClassName =
-        className ??
-        "relative cursor-default text-left inline-flex items-center";
+    const triggerClassName = cn(
+        "relative cursor-default text-left inline-flex items-center",
+        className,
+    );
 
     const contentNode = (
         <>
@@ -81,6 +83,9 @@ export const Tooltip: FC<TooltipProps> = ({
             e.stopPropagation();
             if (onClick) {
                 onClick();
+            }
+            if (triggerAs === "span") {
+                return;
             }
             updateTooltipPosition();
             setShowTooltip((prev) => !prev);

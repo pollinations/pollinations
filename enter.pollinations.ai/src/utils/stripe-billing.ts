@@ -383,7 +383,6 @@ const TAX_ID_TYPE_BY_COUNTRY: Record<
     KZ: "kz_bin",
     LA: "la_tin",
     LI: "li_vat",
-    LK: "lk_vat",
     MA: "ma_vat",
     MD: "md_vat",
     ME: "me_pib",

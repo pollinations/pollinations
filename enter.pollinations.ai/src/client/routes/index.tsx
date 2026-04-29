@@ -47,7 +47,6 @@ export const Route = createFileRoute("/")({
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
-        const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
@@ -59,7 +58,6 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
-            cryptoBalance,
         };
     },
 });
@@ -73,7 +71,6 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
-        cryptoBalance,
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -115,8 +112,8 @@ function RouteComponent() {
             metadata: {
                 description: formState.description,
                 keyType,
-                ...(isPublishable && formState.appUrl
-                    ? { appUrl: formState.appUrl }
+                ...(isPublishable && formState.redirectUris?.length
+                    ? { redirectUris: formState.redirectUris }
                     : {}),
             },
             permissions: {
@@ -195,7 +192,7 @@ function RouteComponent() {
                     />
                     <Button
                         as="a"
-                        href="/api/docs"
+                        href="https://gen.pollinations.ai/docs"
                         className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap"
                     >
                         API Reference
@@ -248,8 +245,8 @@ function RouteComponent() {
                                         strokeWidth="2"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
+                                        aria-hidden="true"
                                     >
-                                        <title>Download</title>
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                         <polyline points="7 10 12 15 17 10" />
                                         <line x1="12" y1="15" x2="12" y2="3" />
@@ -263,7 +260,6 @@ function RouteComponent() {
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
-                            cryptoBalance={cryptoBalance}
                             tier={tierData?.active?.tier}
                         />
                     )}
@@ -288,11 +284,7 @@ function RouteComponent() {
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
-                <Pricing
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                    cryptoBalance={cryptoBalance}
-                />
+                <Pricing tierBalance={tierBalance} packBalance={packBalance} />
                 <FAQ />
                 <Footer />
             </div>

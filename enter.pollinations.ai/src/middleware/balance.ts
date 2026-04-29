@@ -1,44 +1,20 @@
-import { eq } from "drizzle-orm";
+import {
+    type BalanceCheckResult,
+    createBalanceCheckResult,
+    getAvailableBalance,
+    getUserBalance,
+    hasPositiveBalance,
+    hasPositivePaidBalance,
+    type UserBalance,
+} from "@shared/billing/balance.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 
-type BalanceCheckResult = {
-    selectedMeterId: string;
-    selectedMeterSlug: string;
-    balances: Record<string, number>;
-};
-
-export type UserBalance = {
-    tierBalance: number;
-    packBalance: number;
-    cryptoBalance: number;
-};
-
-/**
- * Get the total available balance across relevant buckets.
- * For paid-only models: crypto + pack only.
- * For regular models: tier + crypto + pack (only positive buckets).
- */
-export function getAvailableBalance(
-    balances: UserBalance,
-    isPaidOnly = false,
-): number {
-    if (isPaidOnly) {
-        return (
-            Math.max(0, balances.cryptoBalance) +
-            Math.max(0, balances.packBalance)
-        );
-    }
-    return (
-        Math.max(0, balances.tierBalance) +
-        Math.max(0, balances.cryptoBalance) +
-        Math.max(0, balances.packBalance)
-    );
-}
+export { getAvailableBalance };
+export type { UserBalance };
 
 export type BalanceVariables = {
     balance: {
@@ -61,33 +37,12 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const log = c.get("log").getChild("balance");
     const db = drizzle(c.env.DB);
 
-    // Get balance from D1 only
-    // Pack balance is updated via webhooks, tier balance via hourly cron refill
-    const getBalance = async (userId: string): Promise<UserBalance> => {
-        const users = await db
-            .select({
-                tierBalance: userTable.tierBalance,
-                packBalance: userTable.packBalance,
-                cryptoBalance: userTable.cryptoBalance,
-            })
-            .from(userTable)
-            .where(eq(userTable.id, userId))
-            .limit(1);
-
-        const user = users[0];
-        return {
-            tierBalance: user?.tierBalance ?? 0,
-            packBalance: user?.packBalance ?? 0,
-            cryptoBalance: user?.cryptoBalance ?? 0,
-        };
-    };
-
     // Helper to fetch balance with error handling
     const fetchBalanceWithErrorHandling = async (
         userId: string,
     ): Promise<UserBalance> => {
         try {
-            return await getBalance(userId);
+            return await getUserBalance(db, userId);
         } catch (error) {
             log.error("Failed to get balance for user {userId}", {
                 userId,
@@ -99,58 +54,21 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         }
     };
 
-    // Helper to determine selected balance source
-    const determineBalanceSource = (
-        balances: UserBalance,
-        isPaidOnly = false,
-    ): { source: string; slug: string } => {
-        if (isPaidOnly) {
-            // For paid-only: crypto → pack
-            if (balances.cryptoBalance > 0) {
-                return { source: "crypto", slug: "v1:meter:crypto" };
-            }
-            return { source: "pack", slug: "v1:meter:pack" };
-        }
-
-        // Regular: tier → crypto → pack
-        if (balances.tierBalance > 0) {
-            return { source: "tier", slug: "v1:meter:tier" };
-        }
-        if (balances.cryptoBalance > 0) {
-            return { source: "crypto", slug: "v1:meter:crypto" };
-        }
-        return { source: "pack", slug: "v1:meter:pack" };
-    };
-
     const requirePositiveBalance = async (userId: string, message?: string) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
-        // Check if any individual bucket is positive (don't sum — negative buckets shouldn't cancel out positive ones)
-        const hasPositiveBalance =
-            balances.tierBalance > 0 ||
-            balances.cryptoBalance > 0 ||
-            balances.packBalance > 0;
 
         log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, crypto={cryptoBalance}",
+            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}",
             {
                 userId,
                 tierBalance: balances.tierBalance,
                 packBalance: balances.packBalance,
-                cryptoBalance: balances.cryptoBalance,
             },
         );
 
-        if (hasPositiveBalance) {
-            const { source, slug } = determineBalanceSource(balances);
-            c.var.balance.balanceCheckResult = {
-                selectedMeterId: `local:${source}`,
-                selectedMeterSlug: slug,
-                balances: {
-                    "v1:meter:tier": balances.tierBalance,
-                    "v1:meter:crypto": balances.cryptoBalance,
-                    "v1:meter:pack": balances.packBalance,
-                },
-            };
+        if (hasPositiveBalance(balances)) {
+            c.var.balance.balanceCheckResult =
+                createBalanceCheckResult(balances);
             return;
         }
 
@@ -163,30 +81,16 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const requirePaidBalance = async (userId: string, message?: string) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
-        // Check if any paid bucket is positive (don't sum — negative buckets shouldn't cancel out positive ones)
-        const hasPositivePaidBalance =
-            balances.cryptoBalance > 0 || balances.packBalance > 0;
+        log.debug("Paid balance check for user {userId}: pack={packBalance}", {
+            userId,
+            packBalance: balances.packBalance,
+        });
 
-        log.debug(
-            "Paid balance check for user {userId}: crypto={cryptoBalance}, pack={packBalance}",
-            {
-                userId,
-                cryptoBalance: balances.cryptoBalance,
-                packBalance: balances.packBalance,
-            },
-        );
-
-        if (hasPositivePaidBalance) {
-            const { source, slug } = determineBalanceSource(balances, true);
-            c.var.balance.balanceCheckResult = {
-                selectedMeterId: `local:${source}`,
-                selectedMeterSlug: slug,
-                balances: {
-                    "v1:meter:tier": 0, // Tier not available for paid-only
-                    "v1:meter:crypto": balances.cryptoBalance,
-                    "v1:meter:pack": balances.packBalance,
-                },
-            };
+        if (hasPositivePaidBalance(balances)) {
+            c.var.balance.balanceCheckResult = createBalanceCheckResult(
+                balances,
+                true,
+            );
             return;
         }
 
@@ -201,7 +105,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     c.set("balance", {
         requirePositiveBalance,
         requirePaidBalance,
-        getBalance,
+        getBalance: (userId: string) => getUserBalance(db, userId),
     });
 
     await next();

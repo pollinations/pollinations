@@ -1,10 +1,10 @@
-import type { FC } from "react";
 import {
     TIER_COLORS,
     TIER_EMOJIS,
     TIER_POLLEN,
     type TierStatus,
-} from "@/tier-config.ts";
+} from "@shared/tier-config.ts";
+import type { FC } from "react";
 import { Tooltip } from "../pricing/Tooltip.tsx";
 
 const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
@@ -105,7 +105,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <p className={requirementLabelStyle}>To unlock</p>
                         <p className="text-xs text-gray-500">
                             <Tooltip content={<SeedTooltipContent />}>
-                                <span className="underline decoration-dotted cursor-help">
+                                <span className="cursor-default underline decoration-dotted">
                                     7+ dev points
                                 </span>
                             </Tooltip>

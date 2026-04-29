@@ -3,8 +3,8 @@ import {
     calculateCost,
     getActivePriceDefinition,
 } from "@shared/registry/registry.ts";
+import { priceToEventParams } from "@shared/schemas/generation-event.ts";
 import { expect, test } from "vitest";
-import { priceToEventParams } from "@/db/schema/event.ts";
 
 // Test image model cost tracking
 // Tests cost calculation properties without hardcoding specific values

@@ -7,6 +7,7 @@ import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Input } from "../ui/input.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
@@ -15,6 +16,21 @@ interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
+}
+
+function readInitialRedirectUris(
+    metadata: Record<string, unknown> | null | undefined,
+): string[] {
+    const list = metadata?.redirectUris;
+    if (Array.isArray(list)) {
+        return list.filter((v): v is string => typeof v === "string" && !!v);
+    }
+    return [];
+}
+
+function sameRedirectUris(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((v, i) => v === b[i]);
 }
 
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
@@ -30,9 +46,10 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const isPublishable = apiKey.metadata?.keyType === "publishable";
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
-    const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
-    const isAppKey = isPublishable && !!initialAppUrl;
-    const [appUrl, setAppUrl] = useState(initialAppUrl);
+    const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
+    const isAppKey = isPublishable && initialRedirectUris.length > 0;
+    const [redirectUris, setRedirectUris] =
+        useState<string[]>(initialRedirectUris);
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -73,16 +90,20 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             });
 
             // Save app settings for publishable keys
-            if (isPublishable && appUrl !== initialAppUrl) {
+            if (
+                isPublishable &&
+                !sameRedirectUris(redirectUris, initialRedirectUris)
+            ) {
+                const cleaned = redirectUris
+                    .map((v) => v.trim())
+                    .filter((v) => v !== "");
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
-                        body: JSON.stringify({
-                            appUrl: appUrl || undefined,
-                        }),
+                        body: JSON.stringify({ redirectUris: cleaned }),
                     },
                 );
                 if (!metaRes.ok) {
@@ -139,19 +160,26 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                       : "🔒 Secret"}
                             </Badge>
                             {isPublishable && plaintextKey ? (
-                                <button
-                                    type="button"
-                                    onClick={handleCopyKey}
-                                    className={cn(
-                                        "font-mono text-sm cursor-pointer transition-all",
-                                        copied
-                                            ? "text-green-600 font-semibold"
-                                            : "text-blue-600 hover:text-blue-800 hover:underline",
-                                    )}
-                                    title={copied ? "Copied!" : "Click to copy"}
+                                <Tooltip
+                                    triggerAs="span"
+                                    content={
+                                        copied ? "Copied!" : "Click to copy"
+                                    }
+                                    className="inline-flex min-w-0"
                                 >
-                                    {copied ? "✓ Copied!" : plaintextKey}
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyKey}
+                                        className={cn(
+                                            "font-mono text-sm cursor-pointer transition-all",
+                                            copied
+                                                ? "text-green-600 font-semibold"
+                                                : "text-blue-600 hover:text-blue-800 hover:underline",
+                                        )}
+                                    >
+                                        {copied ? "✓ Copied!" : plaintextKey}
+                                    </button>
+                                </Tooltip>
                             ) : (
                                 <span className="font-mono text-sm text-gray-500">
                                     {apiKey.start}...
@@ -188,8 +216,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                             {isPublishable && (
                                 <PublishableKeySettings
-                                    appUrl={appUrl}
-                                    onAppUrlChange={setAppUrl}
+                                    redirectUris={redirectUris}
+                                    onRedirectUrisChange={setRedirectUris}
                                     disabled={isSubmitting}
                                 />
                             )}

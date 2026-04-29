@@ -1,7 +1,7 @@
+import { getTierColor, getTierEmoji } from "@shared/tier-config.ts";
 import { type FC, useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
-import { getTierColor, getTierEmoji } from "@/tier-config.ts";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
@@ -11,7 +11,6 @@ import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
-    cryptoBalance: number;
     tier?: string;
 };
 
@@ -20,7 +19,7 @@ type GaugeSegmentProps = {
     value: number;
     label: string;
     color: "amber" | "orange" | "blue" | "green" | "pink" | "gray" | "violet";
-    title: string;
+    tooltipText: string;
     position: "left" | "right";
     offset?: number;
 };
@@ -40,7 +39,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     value,
     label,
     color,
-    title,
+    tooltipText,
     position,
     offset = 0,
 }) => {
@@ -48,30 +47,34 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
 
     const style =
         position === "left"
-            ? { width: `${percentage}%` }
+            ? { left: 0, width: `${percentage}%` }
             : { left: `${offset}%`, width: `${percentage}%` };
 
     return (
-        <div
-            className={`absolute inset-y-0 ${bgColor} transition-all duration-500 ease-out cursor-help`}
+        <Tooltip
+            triggerAs="span"
+            className={`absolute inset-y-0 ${bgColor} cursor-default transition-all duration-500 ease-out`}
             style={style}
-            title={title}
+            content={
+                <span className="block whitespace-pre-line leading-snug">
+                    {tooltipText}
+                </span>
+            }
         >
-            <div className="absolute inset-0 flex items-center justify-center gap-1">
+            <span className="absolute inset-0 flex items-center justify-center gap-1">
                 <span
                     className={`${textColor} font-bold text-sm whitespace-nowrap`}
                 >
                     {label} {formatPollen(value)}
                 </span>
-            </div>
-        </div>
+            </span>
+        </Tooltip>
     );
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
-    cryptoBalance,
     tier = "spore",
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
@@ -85,7 +88,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     };
     // Clamp at 0 for display — individual buckets can go slightly negative from overage
     const displayTier = Math.max(0, tierBalance);
-    const displayPaid = Math.max(0, packBalance) + Math.max(0, cryptoBalance);
+    const displayPaid = Math.max(0, packBalance);
     const totalPollen = displayTier + displayPaid;
 
     function calculatePercentage(value: number, total: number): number {
@@ -128,14 +131,14 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         <div
                             className={`relative ${gaugeHeightClass} bg-gray-200 rounded-full overflow-hidden border-2 border-amber-300`}
                         >
-                            {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
+                            {/* Paid Pollen - Soft purple for paid (pack) */}
                             {paidPercentage > 0 && (
                                 <PollenGaugeSegment
                                     percentage={paidPercentage}
                                     value={displayPaid}
                                     label="🪷"
                                     color="amber"
-                                    title={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants for others`}
+                                    tooltipText={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants for others`}
                                     position="left"
                                 />
                             )}
@@ -146,7 +149,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     value={displayTier}
                                     label={tierEmoji}
                                     color={tierColor}
-                                    title={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
+                                    tooltipText={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
                                     position="right"
                                     offset={paidPercentage}
                                 />
@@ -181,7 +184,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                     href={`/api/stripe/checkout/${pack.amountUsd}`}
                                     color="amber"
                                     weight="light"
-                                    title={`Buy $${pack.amountUsd} pollen pack`}
                                     className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:w-[132px] sm:justify-self-center sm:text-sm"
                                 >
                                     <span className="font-semibold text-amber-900">

@@ -14,3 +14,17 @@ export function parseMetadata(
         return {};
     }
 }
+
+/**
+ * Resolve the effective redirect URI allowlist for a `pk_` key.
+ *
+ * Reads the migrated `redirectUris: string[]` field. Legacy `appUrl` metadata
+ * is removed by the D1 migration and is intentionally not used at runtime.
+ */
+export function getRedirectUris(meta: Record<string, unknown>): string[] {
+    const list = meta.redirectUris;
+    if (Array.isArray(list)) {
+        return list.filter((v): v is string => typeof v === "string" && !!v);
+    }
+    return [];
+}

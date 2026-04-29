@@ -28,6 +28,7 @@ export function openaiUsageToUsage(openaiUsage: {
     prompt_tokens_details?: {
         cached_tokens?: number;
         audio_tokens?: number;
+        image_tokens?: number;
     } | null;
     completion_tokens_details?: {
         reasoning_tokens?: number;
@@ -38,7 +39,8 @@ export function openaiUsageToUsage(openaiUsage: {
 }): Usage {
     const promptDetailTokens =
         (openaiUsage.prompt_tokens_details?.cached_tokens || 0) +
-        (openaiUsage.prompt_tokens_details?.audio_tokens || 0);
+        (openaiUsage.prompt_tokens_details?.audio_tokens || 0) +
+        (openaiUsage.prompt_tokens_details?.image_tokens || 0);
 
     const completionDetailTokens =
         (openaiUsage.completion_tokens_details?.accepted_prediction_tokens ||
@@ -56,6 +58,8 @@ export function openaiUsageToUsage(openaiUsage: {
             openaiUsage.prompt_tokens_details?.cached_tokens || 0,
         promptAudioTokens: 
             openaiUsage.prompt_tokens_details?.audio_tokens || 0,
+        promptImageTokens:
+            openaiUsage.prompt_tokens_details?.image_tokens || 0,
         completionTextTokens:
             openaiUsage.completion_tokens - completionDetailTokens,
         completionAudioTokens:

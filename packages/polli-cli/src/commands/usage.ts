@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { Command } from "commander";
-import { enter, requireKey } from "../lib/api.js";
+import { gen, requireKey } from "../lib/api.js";
 import {
     getOutputMode,
     printError,
@@ -51,10 +51,9 @@ export const usageCommand = new Command("usage")
         try {
             // Default: show balance (unless --history or --daily)
             if (!opts.history && !opts.daily) {
-                const data = await enter<BalanceResponse>(
-                    "/api/account/balance",
-                    { apiKey: key },
-                );
+                const data = await gen<BalanceResponse>("/account/balance", {
+                    apiKey: key,
+                });
                 if (getOutputMode() !== "human") {
                     printResult({ pollen: data.balance });
                     return;
@@ -68,8 +67,8 @@ export const usageCommand = new Command("usage")
             }
 
             if (opts.daily) {
-                const data = await enter<DailyUsageResponse>(
-                    "/api/account/usage/daily",
+                const data = await gen<DailyUsageResponse>(
+                    "/account/usage/daily",
                     { apiKey: key },
                 );
                 printTable(
@@ -92,8 +91,8 @@ export const usageCommand = new Command("usage")
                 printError("--limit must be a positive integer");
                 process.exit(1);
             }
-            const data = await enter<UsageResponse>(
-                `/api/account/usage?limit=${limit}`,
+            const data = await gen<UsageResponse>(
+                `/account/usage?limit=${limit}`,
                 { apiKey: key },
             );
             printTable(

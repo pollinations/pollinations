@@ -32,15 +32,6 @@ binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 remote = true
 
-[[durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-script_name = "pollinations-enter"
-
-[[migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
-
 [vars]
 ENVIRONMENT = "development"
 CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
@@ -51,13 +42,10 @@ POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
-TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
-# NOWPayments crypto payments (sandbox for dev)
-NOWPAYMENTS_ENV = "sandbox"
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
@@ -84,11 +72,6 @@ bucket_name = "pollinations-images"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
-[[env.local.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-script_name = "pollinations-enter"
-
 [env.local.vars]
 ENVIRONMENT = "local"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; local dashboard usage data
@@ -100,13 +83,10 @@ POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
-TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
-# NOWPayments crypto payments (sandbox for local development)
-NOWPAYMENTS_ENV = "sandbox"
 # Stripe payments (sandbox for local development)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
@@ -151,13 +131,9 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.production.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
 [[env.production.migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
+tag = "remove-pollen-rate-limiter"
+deleted_classes = ["PollenRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -169,14 +145,11 @@ POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
-TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
 POLLEN_REFILL_PER_HOUR = 1
-# NOWPayments crypto payments (production)
-NOWPAYMENTS_ENV = "production"
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
@@ -216,13 +189,9 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.staging.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
 [[env.staging.migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
+tag = "remove-pollen-rate-limiter"
+deleted_classes = ["PollenRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -234,7 +203,6 @@ POLAR_SUCCESS_URL = "https://staging.enter.pollinations.ai"
 POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
-TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
@@ -271,14 +239,6 @@ binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 remote = true
 
-[[env.dev.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
-[[env.dev.migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
-
 [env.dev.vars]
 ENVIRONMENT = "dev"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
@@ -290,7 +250,6 @@ POLAR_SUCCESS_URL = "https://dev.enter.pollinations.ai"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=polar_event"
-TINYBIRD_CRYPTO_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=crypto_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # TODO: Change back to staging endpoints once staging services are available
@@ -330,10 +289,6 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.test.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
 [env.test.vars]
 ENVIRONMENT = "test"
 CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
@@ -347,7 +302,6 @@ POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 TINYBIRD_POLAR_INGEST_URL = "http://localhost:7181/v0/events?name=polar_event"
-TINYBIRD_CRYPTO_INGEST_URL = "http://localhost:7181/v0/events?name=crypto_event"
 TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"

@@ -3,7 +3,7 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:wan-image:ops");
 const logError = debug("pollinations:wan-image:error");
@@ -111,8 +111,10 @@ export async function callWanImageAPI(
 
         for (const url of imageUrls) {
             if (!url) continue;
-            const { base64, mimeType } = await downloadImageAsBase64(url);
-            content.push({ image: `data:${mimeType};base64,${base64}` });
+            const { buffer, mimeType } = await downloadUserImage(url);
+            content.push({
+                image: `data:${mimeType};base64,${buffer.toString("base64")}`,
+            });
         }
     }
 

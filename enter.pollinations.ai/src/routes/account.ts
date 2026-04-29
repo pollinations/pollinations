@@ -1,19 +1,19 @@
+import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+import {
+    apikey as apikeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
+import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
+import { getTierCadence, tierNames } from "@shared/tier-config.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import {
-    apikey as apikeyTable,
-    user as userTable,
-} from "@/db/schema/better-auth.ts";
-import type { ApiKeyType } from "@/db/schema/event.ts";
-import { getTierCadence, tierNames } from "@/tier-config.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
-import { createApiKeyForUser } from "./api-key-creation.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).
@@ -130,6 +130,12 @@ const CreateKeySchema = z.object({
         .optional()
         .describe(
             'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
+        ),
+    redirectUris: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Allowed OAuth redirect URIs for publishable app keys. Loopback ports are matched port-agnostically.",
         ),
 });
 
@@ -367,6 +373,15 @@ async function fetchTinybirdRows<T>(
 
     const data = (await response.json()) as { data: T[] };
     return data.data;
+}
+
+function requireTinybirdReadToken(env: CloudflareBindings): string {
+    if (!env.TINYBIRD_READ_TOKEN) {
+        throw new HTTPException(500, {
+            message: "Tinybird read token is not configured",
+        });
+    }
+    return env.TINYBIRD_READ_TOKEN;
 }
 
 // Query params schema for usage
@@ -720,7 +735,6 @@ export const accountRoutes = new Hono<Env>()
                 .select({
                     tierBalance: userTable.tierBalance,
                     packBalance: userTable.packBalance,
-                    cryptoBalance: userTable.cryptoBalance,
                 })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
@@ -728,15 +742,11 @@ export const accountRoutes = new Hono<Env>()
 
             const tierBalance = users[0]?.tierBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
-            const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
             // Clamp each bucket at 0 before summing — individual buckets can go negative
             // from overage but shouldn't reduce the visible total
             return c.json({
-                balance:
-                    Math.max(0, tierBalance) +
-                    Math.max(0, packBalance) +
-                    Math.max(0, cryptoBalance),
+                balance: Math.max(0, tierBalance) + Math.max(0, packBalance),
             });
         },
     )
@@ -796,7 +806,7 @@ export const accountRoutes = new Hono<Env>()
                 period,
             });
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
                 "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
 
@@ -906,7 +916,7 @@ export const accountRoutes = new Hono<Env>()
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
             const kv = c.env.KV;
             const cacheKeyPrefix = usageUserOverridden
                 ? `usage:daily:debug:${usageUserId}`
@@ -1090,6 +1100,7 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
+                redirectUris,
             } = c.req.valid("json");
 
             const created = await createApiKeyForUser({
@@ -1102,6 +1113,10 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
+                metadata:
+                    type === "publishable" && redirectUris?.length
+                        ? { redirectUris }
+                        : undefined,
                 allowAccountKeysPermission: false,
                 defaultCreatedVia: "api",
             });
@@ -1302,7 +1317,7 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
-                // Rate limiting applies to publishable keys only (see rate-limit-durable.ts)
+                // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
             });
         },
@@ -1354,7 +1369,7 @@ export const accountRoutes = new Hono<Env>()
                 period,
             });
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-            const tinybirdToken = c.env.TINYBIRD_READ_TOKEN;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
             const header =
                 "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
 

@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { enter } from "../lib/api.js";
+import { gen } from "../lib/api.js";
 import {
     clearCredentials,
     ENTER_URL,
@@ -76,7 +76,7 @@ function storeKey(key: string): void {
 }
 
 async function fetchProfileLabel(key: string): Promise<string | null> {
-    const profile = await enter<ProfileResponse>("/api/account/profile", {
+    const profile = await gen<ProfileResponse>("/account/profile", {
         apiKey: key,
     }).catch(() => null);
     if (!profile) return null;
@@ -213,10 +213,10 @@ export async function showAuthStatus(): Promise<void> {
     const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
 
     const [profile, balance] = await Promise.all([
-        enter<ProfileResponse>("/api/account/profile", { apiKey: key }).catch(
+        gen<ProfileResponse>("/account/profile", { apiKey: key }).catch(
             () => null,
         ),
-        enter<BalanceResponse>("/api/account/balance", { apiKey: key }).catch(
+        gen<BalanceResponse>("/account/balance", { apiKey: key }).catch(
             () => null,
         ),
     ]);

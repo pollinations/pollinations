@@ -1,3 +1,9 @@
+import {
+    CONSENT_PERMISSIONS,
+    getAuthorizeInitialPermissions,
+    parseScopeList,
+    sanitizeAuthorizeAccountPermissions,
+} from "@shared/auth/authorize-config.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { cn } from "../../util.ts";
@@ -21,23 +27,18 @@ import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
-import {
-    CONSENT_PERMISSIONS,
-    getAuthorizeInitialPermissions,
-    parseScopeList,
-    sanitizeAuthorizeAccountPermissions,
-} from "../lib/authorize-config.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { formatPollen } from "../lib/format-pollen.ts";
 
 type Attribution = {
     found: boolean;
+    error?: "redirect_uri_mismatch";
     clientId?: string;
     userId?: string;
     userName?: string;
     githubUsername?: string;
     appName?: string;
-    appUrl?: string;
+    redirectUris?: string[];
 };
 
 function parseList(val: unknown): string[] | null {
@@ -200,6 +201,9 @@ function AuthorizeComponent() {
     );
     const canAuthorize =
         (isDeviceMode || redirectAllowed) && hasBudget;
+    const isAttributionPending = !!app_key && !attribution;
+    const canAuthorize =
+        (isDeviceMode || parsedRedirectUrl !== null) && !isAttributionPending;
 
     useScrollLock();
 
@@ -239,8 +243,20 @@ function AuthorizeComponent() {
             if (app_key) {
                 fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
                     .then((r) => r.json())
-                    .then((data) => setAttribution(data as Attribution))
-                    .catch(() => {});
+                    .then((data) => {
+                        const attr = data as Attribution;
+                        setAttribution(attr);
+                        if (!attr.found) {
+                            setError(
+                                "This app key could not be verified. Authorization blocked.",
+                            );
+                        }
+                    })
+                    .catch(() => {
+                        setError(
+                            "Could not verify this app key. Authorization blocked.",
+                        );
+                    });
             }
         } else {
             if (!redirect_url) {
@@ -259,10 +275,30 @@ function AuthorizeComponent() {
                 return;
             }
 
-            fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
+            const lookupParams = new URLSearchParams({ client_id: app_key });
+            if (!isDeviceMode && redirect_url) {
+                lookupParams.set("redirect_uri", redirect_url);
+            }
+            fetch(`/api/app-lookup?${lookupParams.toString()}`)
                 .then((r) => r.json())
-                .then((data) => setAttribution(data as Attribution))
-                .catch(() => {});
+                .then((data) => {
+                    const attr = data as Attribution;
+                    setAttribution(attr);
+                    if (attr.error === "redirect_uri_mismatch") {
+                        setError(
+                            "This redirect URL is not registered for this app. Authorization blocked.",
+                        );
+                    } else if (!attr.found) {
+                        setError(
+                            "This app key could not be verified. Authorization blocked.",
+                        );
+                    }
+                })
+                .catch(() => {
+                    setError(
+                        "Could not verify this app key. Authorization blocked.",
+                    );
+                });
         }
     }, [
         isDeviceMode,
@@ -296,9 +332,7 @@ function AuthorizeComponent() {
             .then((data) => {
                 if (!data) return;
                 setTotalBalance(
-                    (data.tierBalance ?? 0) +
-                        (data.packBalance ?? 0) +
-                        (data.cryptoBalance ?? 0),
+                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
                 );
             })
             .catch(() => {});
@@ -321,9 +355,14 @@ function AuthorizeComponent() {
                 expiryDays: keyPermissions.permissions.expiryDays,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
+                    ...(app_key &&
+                        (!isDeviceMode || attribution?.found) && {
+                            requestedClientId: app_key,
+                        }),
                     ...(!isDeviceMode &&
                         parsedRedirectUrl && {
                             redirectOrigin: parsedRedirectUrl.origin,
+                            redirectUri: parsedRedirectUrl.href,
                         }),
                     ...(attribution?.found && {
                         clientId: attribution.clientId,

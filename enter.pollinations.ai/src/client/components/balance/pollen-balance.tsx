@@ -47,7 +47,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
 
     const style =
         position === "left"
-            ? { width: `${percentage}%` }
+            ? { left: 0, width: `${percentage}%` }
             : { left: `${offset}%`, width: `${percentage}%` };
 
     return (

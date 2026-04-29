@@ -341,11 +341,7 @@ const Brand: FC = () => (
 );
 
 const HelpUsGrowCard: FC = () => (
-    <div className="mt-3 flex flex-col gap-3 rounded-xl border border-green-950/10 bg-white/45 p-3">
-        <div className="flex items-center gap-2 font-serif text-[15px] font-bold text-green-950">
-            <span aria-hidden="true">🌱</span>
-            <span>help us grow</span>
-        </div>
+    <div className="mt-3 flex items-center gap-2 px-1">
         <a
             href="https://github.com/pollinations/pollinations"
             target="_blank"

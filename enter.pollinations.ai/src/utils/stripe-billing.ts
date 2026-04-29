@@ -690,6 +690,7 @@ export async function createPaymentMethodSetupSession(
     return stripe.checkout.sessions.create({
         mode: "setup",
         customer,
+        payment_method_types: ["card"],
         setup_intent_data: {
             metadata: { [METADATA_USER_ID]: userId },
         },

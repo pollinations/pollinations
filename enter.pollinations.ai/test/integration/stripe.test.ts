@@ -462,6 +462,11 @@ test("POST /api/stripe/payment-methods/setup creates a setup Checkout session", 
     expect(data.url).toContain("checkout.stripe.test");
     expect(mocks.stripe.state.checkoutSessions[0].mode).toBe("setup");
     expect(mocks.stripe.state.checkoutSessions[0].customer).toBe("cus_mock_1");
+    expect(
+        mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/checkout/sessions",
+        )?.body["payment_method_types[0]"],
+    ).toBe("card");
 });
 
 test("GET /api/stripe/billing paginates invoices", async ({

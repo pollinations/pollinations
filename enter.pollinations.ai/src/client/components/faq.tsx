@@ -4,7 +4,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import faqMarkdown from "../../../POLLEN_FAQ.md?raw";
 import { PollenExamples } from "./pricing/pollen-examples.tsx";
-import { Card } from "./ui/card.tsx";
 
 export const FAQ_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md";
@@ -151,18 +150,14 @@ export const FAQ: FC<FAQProps> = ({ showTitle = true }) => {
                                 </span>
                             </button>
                             {openIndices.has(index) && (
-                                <Card
-                                    color="violet"
-                                    bg="bg-white/80"
-                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800"
-                                >
+                                <div className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-600 prose-p:mb-3 prose-a:text-purple-600 prose-a:underline prose-a:font-medium hover:prose-a:text-purple-800">
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {item.answer}
                                     </ReactMarkdown>
                                     {item.question.includes(
                                         "What can I create with Pollen",
                                     ) && <PollenExamples />}
-                                </Card>
+                                </div>
                             )}
                         </div>
                     );

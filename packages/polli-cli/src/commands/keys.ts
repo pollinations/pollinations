@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { Command } from "commander";
-import { enter, requireKey } from "../lib/api.js";
+import { gen, requireKey } from "../lib/api.js";
 import {
     getOutputMode,
     printError,
@@ -60,7 +60,7 @@ const list = new Command("list")
         const key = requireKey();
 
         try {
-            const res = await enter<{ data: KeyInfo[] }>("/api/account/keys", {
+            const res = await gen<{ data: KeyInfo[] }>("/account/keys", {
                 apiKey: key,
             });
 
@@ -133,7 +133,7 @@ const info = new Command("info")
         const key = requireKey();
 
         try {
-            const keyInfo = await enter<SingleKeyInfo>("/api/account/key", {
+            const keyInfo = await gen<SingleKeyInfo>("/account/key", {
                 apiKey: key,
             });
 
@@ -199,14 +199,11 @@ const create = new Command("create")
             if (opts.permissions) body.accountPermissions = opts.permissions;
             if (opts.redirectUri) body.redirectUris = opts.redirectUri;
 
-            const created = await enter<CreateKeyResponse>(
-                "/api/account/keys",
-                {
-                    apiKey: key,
-                    method: "POST",
-                    body,
-                },
-            );
+            const created = await gen<CreateKeyResponse>("/account/keys", {
+                apiKey: key,
+                method: "POST",
+                body,
+            });
 
             if (getOutputMode() === "human") {
                 printSuccess(`Key created: ${created.name}`);
@@ -240,7 +237,7 @@ const revoke = new Command("revoke")
         const key = requireKey();
 
         try {
-            await enter<{ success: boolean }>(`/api/account/keys/${id}`, {
+            await gen<{ success: boolean }>(`/account/keys/${id}`, {
                 apiKey: key,
                 method: "DELETE",
             });

@@ -1,6 +1,6 @@
+import { getTierColor, type TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getTierColor, type TierStatus } from "@/tier-config.ts";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {

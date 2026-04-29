@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
+import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import * as schema from "@/db/schema/better-auth.ts";
 import { test } from "../fixtures.ts";
 
 describe("API Key Management", () => {
@@ -1019,13 +1019,7 @@ describe("API Key Management", () => {
     });
 
     describe("Permission enforcement", () => {
-        test("should reject requests with expired keys", async ({
-            auth,
-            sessionToken,
-            mocks,
-        }) => {
-            await mocks.enable("polar", "tinybird", "vcr");
-
+        test("should reject expired keys", async ({ auth, sessionToken }) => {
             // Create a key that expires immediately
             const createResponse = await auth.apiKey.create({
                 name: "expired-key",
@@ -1056,7 +1050,7 @@ describe("API Key Management", () => {
                 },
             );
             expect(updateResp.status).toBe(200);
-            const updateResult = await updateResp.json();
+            await updateResp.json();
 
             // Verify the key was updated with expiry
             const listResp = await SELF.fetch(
@@ -1072,90 +1066,17 @@ describe("API Key Management", () => {
             expect(updatedKey).toBeTruthy();
             expect(updatedKey.expiresAt).toBeTruthy();
 
-            // Try to use the expired key
+            // Try to inspect the expired key via an enter-owned API key route.
             const response = await SELF.fetch(
-                "http://localhost:3000/api/generate/v1/chat/completions",
+                "http://localhost:3000/api/account/key",
                 {
-                    method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
                         Authorization: `Bearer ${apiKey}`,
                     },
-                    body: JSON.stringify({
-                        model: "openai",
-                        messages: [{ role: "user", content: "Hello" }],
-                    }),
                 },
             );
 
             expect(response.status).toBe(401);
-        });
-
-        test("should enforce model restrictions", async ({
-            restrictedApiKey,
-            mocks,
-        }) => {
-            await mocks.enable("polar", "tinybird", "vcr");
-
-            // Should work with allowed model
-            const allowedResponse = await SELF.fetch(
-                "http://localhost:3000/api/generate/v1/chat/completions",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${restrictedApiKey}`,
-                    },
-                    body: JSON.stringify({
-                        model: "openai-fast",
-                        messages: [{ role: "user", content: "Hello" }],
-                        max_tokens: 5,
-                    }),
-                },
-            );
-            expect(allowedResponse.status).toBe(200);
-
-            // Should fail with non-allowed model
-            const deniedResponse = await SELF.fetch(
-                "http://localhost:3000/api/generate/v1/chat/completions",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${restrictedApiKey}`,
-                    },
-                    body: JSON.stringify({
-                        model: "openai-large",
-                        messages: [{ role: "user", content: "Hello" }],
-                        max_tokens: 5,
-                    }),
-                },
-            );
-            expect(deniedResponse.status).toBe(403);
-        });
-
-        test("should enforce budget restrictions", async ({
-            exhaustedBudgetApiKey,
-            mocks,
-        }) => {
-            await mocks.enable("polar", "tinybird", "vcr");
-
-            // Should fail with exhausted budget
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/generate/v1/chat/completions",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${exhaustedBudgetApiKey}`,
-                    },
-                    body: JSON.stringify({
-                        model: "openai",
-                        messages: [{ role: "user", content: "Hello" }],
-                    }),
-                },
-            );
-            expect(response.status).toBe(402);
         });
     });
 });

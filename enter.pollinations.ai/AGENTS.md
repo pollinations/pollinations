@@ -2,9 +2,9 @@
 
 > 🔧 **Internal testing only** — For production API usage, use [`gen.pollinations.ai`](https://gen.pollinations.ai). This cheatsheet tests the Enter gateway directly for debugging purposes.
 
-> Quick reference for testing image and text models via **enter.pollinations.ai**
+> Quick reference for testing image and text models via **gen.pollinations.ai**. Enter keeps the dashboard and internal `/api/*` control-plane routes.
 
-> ⚠️ **Note**: The current endpoint structure (`/api/generate/image/*`, `/api/generate/v1/*`, `/api/generate/text/*`) is transitional and will be simplified in future releases.
+> ⚠️ **Note**: Generation routes now live on gen without an internal `/api/generate` prefix.
 
 ---
 
@@ -12,9 +12,9 @@
 
 ### Endpoints
 
-- **Image:** `GET /api/generate/image/{prompt}?model=flux`
-- **Text (OpenAI):** `POST /api/generate/v1/chat/completions` with JSON body
-- **Text (Simple):** `GET /api/generate/text/{prompt}?model=openai`
+- **Image:** `GET /image/{prompt}?model=flux`
+- **Text (OpenAI):** `POST /v1/chat/completions` with JSON body
+- **Text (Simple):** `GET /text/{prompt}?model=openai`
 
 ### Authentication
 
@@ -23,8 +23,8 @@
 
 ### Model Discovery
 
-- **Image models:** `/api/generate/image/models`
-- **Text models:** `/api/generate/v1/models`
+- **Image models:** `/image/models`
+- **Text models:** `/v1/models`
 
 ---
 
@@ -680,7 +680,7 @@ npx wrangler d1 execute DB --remote --env production \
 
 ## API Documentation Pipeline
 
-The API reference at `gen.pollinations.ai/api/docs` is auto-generated from source code. **Never edit `APIDOCS.md` directly** — it gets overwritten by CI.
+The API reference at `gen.pollinations.ai/docs` is auto-generated from source code. **Never edit `APIDOCS.md` directly** — it gets overwritten by CI.
 
 ### How It Works
 
@@ -691,11 +691,11 @@ Source files (routes + Zod schemas)
 hono-openapi introspects describeRoute() + validators
         │
         ▼
-OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
+OpenAPI 3.x JSON served at /docs/open-api/generate-schema
         │
-        ├──► Scalar UI at /api/docs (interactive, runtime)
-        ├──► /api/docs/llm.txt (compact plain text for AI agents)
-        └──► scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
+        ├──► Scalar UI at gen.pollinations.ai/docs (interactive, runtime)
+        ├──► /docs/llm.txt (compact plain text for AI agents)
+        └──► gen.pollinations.ai/scripts/generate-apidocs.ts → APIDOCS.md (offline, via CI)
 ```
 
 ### Source Files (what you edit)
@@ -719,19 +719,19 @@ OpenAPI 3.x JSON served at /api/docs/open-api/generate-schema
   1. Strips `/generate/` prefix from paths (internal mount point → public API paths)
   2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
   3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
-- **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/api/docs/llm.txt`, separate from OpenAPI
+- **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/docs/llm.txt`, separate from OpenAPI
 - **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`, `/tiers/view`)
 
 ### Three Output Surfaces
 
-1. **Scalar UI** (`/api/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
-2. **LLM text** (`/api/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
-3. **APIDOCS.md** — markdown version, generated offline by `scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
+1. **Scalar UI** (`gen.pollinations.ai/docs`) — interactive docs page, fetches OpenAPI JSON client-side at runtime
+2. **LLM text** (`/docs/llm.txt`) — compact plain text for AI agents, generated from `generateLLMDoc()` at startup
+3. **APIDOCS.md** — markdown version, generated offline by `gen.pollinations.ai/scripts/generate-apidocs.ts` using `@scalar/openapi-to-markdown`
 
 ### Regenerating APIDOCS.md
 
-- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy enter.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
-- **Manual**: `npm run docs:generate` (fetches from production `enter.pollinations.ai`, so changes must be deployed first)
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy gen.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
+- **Manual**: `npm run docs:generate --prefix gen.pollinations.ai` (fetches from production `gen.pollinations.ai`, so changes must be deployed first)
 
 ### Where to Make Changes
 

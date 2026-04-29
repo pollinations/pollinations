@@ -82,7 +82,7 @@ polli usage --daily          # daily spend
 
 - [gen.pollinations.ai](https://gen.pollinations.ai) — API
 - [enter.pollinations.ai](https://enter.pollinations.ai) — dashboard, keys, billing
-- [API docs](https://gen.pollinations.ai/api/docs)
+- [API docs](https://gen.pollinations.ai/docs)
 - [Source](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 

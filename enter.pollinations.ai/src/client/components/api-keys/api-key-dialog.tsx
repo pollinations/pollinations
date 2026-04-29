@@ -245,7 +245,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Publishable keys (<code>pk_</code>)
                                     deprecated – create via{" "}
                                     <a
-                                        href="https://enter.pollinations.ai/api/docs#tag/-account/POST/account/keys"
+                                        href="https://gen.pollinations.ai/docs#tag/-account/POST/account/keys"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 underline hover:text-blue-800"

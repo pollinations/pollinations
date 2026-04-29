@@ -40,6 +40,11 @@ import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
 import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import {
+    handleChatCompletionLocal,
+    handleSimpleTextLocal,
+    handleTextContentLocal,
+} from "@/text/handler.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
 import {
@@ -114,15 +119,7 @@ const chatCompletionHandlers = factory.createHandlers(
             model: c.var.model.resolved,
         };
 
-        const textServiceUrl =
-            c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-        const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-        const rawResponse = await proxy(targetUrl, {
-            method: c.req.method,
-            headers: proxyHeaders(c),
-            body: JSON.stringify(requestBody),
-        });
-        const response = await ensureUpstreamOk(rawResponse, targetUrl);
+        const response = await handleChatCompletionLocal(c, requestBody);
 
         // Validate streaming responses: if client requested stream but upstream
         // returned non-SSE, throw rather than forwarding broken data.
@@ -131,7 +128,7 @@ const chatCompletionHandlers = factory.createHandlers(
             if (!contentType.includes("text/event-stream")) {
                 throw new UpstreamError(502, {
                     message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                    requestUrl: targetUrl,
+                    requestUrl: new URL(c.req.url),
                     upstreamStatus: response.status,
                     responseBody: contentType,
                 });
@@ -256,6 +253,7 @@ export const proxyRoutes = new Hono<Env>()
                     ...textModels.map((m) =>
                         toModelEntry(m, [
                             "/v1/chat/completions",
+                            "/text",
                             "/text/{prompt}",
                         ]),
                     ),
@@ -450,8 +448,54 @@ export const proxyRoutes = new Hono<Env>()
         }),
         ...chatCompletionHandlers,
     )
+    .post(
+        "/text",
+        describeRoute({
+            tags: ["✍️ Text Generation"],
+            summary: "Text Generation With Messages",
+            description: [
+                "Generate text from an OpenAI-style messages array and return the assistant content directly.",
+                "",
+                "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description:
+                        "Generated text response, audio bytes, JSON message object, or SSE when stream=true",
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator("json", CreateChatCompletionRequestSchema),
+        resolveModel("generate.text"),
+        track("generate.text"),
+        generationAccess,
+        textCache,
+        async (c) => {
+            const requestBody: CreateChatCompletionRequest = {
+                ...(c.req.valid(
+                    "json" as never,
+                ) as CreateChatCompletionRequest),
+                model: c.var.model.resolved,
+            };
+
+            const response = await handleTextContentLocal(c, requestBody);
+            if (c.var.track.streamRequested) {
+                const contentType = response.headers.get("content-type") || "";
+                if (!contentType.includes("text/event-stream")) {
+                    throw new UpstreamError(502, {
+                        message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
+                        requestUrl: new URL(c.req.url),
+                        upstreamStatus: response.status,
+                        responseBody: contentType,
+                    });
+                }
+            }
+            return response;
+        },
+    )
     .get(
-        "/text/:prompt",
+        "/text/:prompt{[\\s\\S]+}",
         describeRoute({
             tags: ["✍️ Text Generation"],
             summary: "Simple Text Generation",
@@ -490,25 +534,9 @@ export const proxyRoutes = new Hono<Env>()
             // Use resolved model from middleware
             const model = c.var.model.resolved;
 
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
             const prompt = c.req.param("prompt");
-            const targetUrl = proxyUrl(
-                c,
-                `${textServiceUrl}/${encodeURIComponent(prompt)}`,
-            );
-            // Add model param after proxyUrl() to ensure it's always present
-            targetUrl.searchParams.set("model", model);
 
-            const rawResponse = await fetch(targetUrl, {
-                method: "GET",
-                headers: proxyHeaders(c),
-            });
-            const response = await ensureUpstreamOk(rawResponse, targetUrl);
-
-            // Backend returns plain text for text models and raw audio for audio models
-            // No JSON parsing needed for GET endpoint - just pass through the response
-            return response;
+            return handleSimpleTextLocal(c, prompt, model);
         },
     )
     .get(

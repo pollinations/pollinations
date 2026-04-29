@@ -141,6 +141,26 @@ function RouteComponent() {
         router.invalidate();
     }
 
+    async function handleRotateApiKey(
+        id: string,
+    ): Promise<{ key: string; warning?: string }> {
+        const response = await fetch(`/api/api-keys/${id}/rotate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => null);
+            throw new Error(
+                (err as { message?: string })?.message ||
+                    "Failed to rotate key",
+            );
+        }
+        const data = await response.json();
+        router.invalidate();
+        return data as { key: string; warning?: string };
+    }
+
     async function handleUpdateApiKey(
         id: string,
         updates: {
@@ -283,6 +303,7 @@ function RouteComponent() {
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
+                    onRotate={handleRotateApiKey}
                 />
                 <Pricing tierBalance={tierBalance} packBalance={packBalance} />
                 <FAQ />

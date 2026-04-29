@@ -11,6 +11,7 @@ import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { KeyDisplay } from "./key-display.tsx";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
+import { RotateKeyDialog } from "./rotate-key-dialog.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
@@ -18,9 +19,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    onRotate,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
+    const [rotatingKey, setRotatingKey] = useState<ApiKey | null>(null);
 
     async function handleDelete(): Promise<void> {
         if (deleteId) {
@@ -159,7 +162,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             >
                                                 <button
                                                     type="button"
-                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer text-sm"
                                                     onClick={() =>
                                                         setEditingKey(apiKey)
                                                     }
@@ -173,6 +176,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 content="Delete key"
                                                 className="inline-flex"
                                             >
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-orange-50 hover:bg-orange-100 text-orange-400 hover:text-orange-600 transition-colors cursor-pointer"
+                                                    onClick={() =>
+                                                        setRotatingKey(apiKey)
+                                                    }
+                                                    title="Rotate key"
+                                                >
+                                                    ↻
+                                                </button>
                                                 <button
                                                     type="button"
                                                     className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
@@ -301,6 +314,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     onClose={() => setEditingKey(null)}
                 />
             )}
+            <RotateKeyDialog
+                apiKey={rotatingKey}
+                onRotate={onRotate}
+                onClose={() => setRotatingKey(null)}
+            />
         </>
     );
 };

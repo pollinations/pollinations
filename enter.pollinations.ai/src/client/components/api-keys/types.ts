@@ -24,6 +24,7 @@ export interface ApiKeyManagerProps {
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    onRotate: (id: string) => Promise<{ key: string; warning?: string }>;
 }
 
 export type CreateApiKey = {

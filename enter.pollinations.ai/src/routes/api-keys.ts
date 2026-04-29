@@ -313,9 +313,8 @@ export const apiKeysRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const existingKey = await requireOwnedKey(db, id, user.id);
 
-            const existingPermissions = existingKey.permissions
-                ? JSON.parse(existingKey.permissions as string)
-                : {};
+            const existingPermissions =
+                parsePermissions(existingKey.permissions as string) ?? {};
 
             // Whitelist to known scopes (drops unknown / legacy names like "balance").
             // Dashboard-only endpoint, so "keys" is allowed here.
@@ -398,5 +397,126 @@ export const apiKeysRoutes = new Hono<Env>()
                 existingKey.metadata,
             );
             return c.json({ id, metadata });
+        },
+    )
+    /**
+     * Rotate an API key: creates a new key with the same settings, then deletes the old one.
+     * Returns the new plaintext key (shown once, like creation).
+     */
+    .post(
+        "/:id/rotate",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Rotate an API key. Creates a new key with identical settings, deletes the old one.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const authClient = c.var.auth.client;
+            const { id } = c.req.param();
+
+            const db = drizzle(c.env.DB, { schema });
+            const existingKey = await requireOwnedKey(db, id, user.id);
+
+            // Parse existing metadata and permissions
+            const existingMeta = existingKey.metadata
+                ? parseMetadata(existingKey.metadata)
+                : {};
+            const existingPermissions =
+                parsePermissions(existingKey.permissions as string) ?? {};
+
+            const keyType =
+                (existingMeta.keyType as string) ||
+                (existingKey.prefix === "pk" ? "publishable" : "secret");
+            const isPublishable = keyType === "publishable";
+            const prefix = isPublishable ? "pk" : "sk";
+
+            // Step 1: Create new key
+            const createResult = await authClient.api.createApiKey({
+                body: { name: existingKey.name || "rotated-key", prefix },
+                headers: c.req.raw.headers,
+            });
+
+            if (!createResult?.key) {
+                throw new HTTPException(500, {
+                    message: "Failed to create replacement key",
+                });
+            }
+
+            const newKeyId = createResult.id;
+            const newPlaintextKey = createResult.key;
+
+            // Step 2: Copy over metadata
+            const metadataPatch: Record<string, unknown> = { ...existingMeta };
+            if (isPublishable) {
+                metadataPatch.plaintextKey = newPlaintextKey;
+            }
+            await updateKeyMetadata(db, newKeyId, metadataPatch, null);
+
+            // Step 3: Copy permissions, budget, expiry, prefix, and preserve createdAt
+            const d1Updates: Record<string, unknown> = {
+                createdAt: existingKey.createdAt,
+                prefix,
+            };
+            if (existingKey.pollenBalance !== null) {
+                d1Updates.pollenBalance = existingKey.pollenBalance;
+            }
+            if (existingKey.expiresAt) {
+                d1Updates.expiresAt = existingKey.expiresAt;
+            }
+            await db
+                .update(schema.apikey)
+                .set(d1Updates)
+                .where(eq(schema.apikey.id, newKeyId));
+
+            if (Object.keys(existingPermissions).length > 0) {
+                await authClient.api.updateApiKey({
+                    body: {
+                        keyId: newKeyId,
+                        userId: user.id,
+                        permissions: existingPermissions,
+                    },
+                });
+            }
+
+            // Step 4: Invalidate KV cache for both old and new keys
+            // New key was modified directly in D1 after creation, so its cache is stale
+            const newKeyRow = await db.query.apikey.findFirst({
+                where: eq(schema.apikey.id, newKeyId),
+            });
+            await c.env.KV.delete(`auth:api-key:${newKeyId}`);
+            if (newKeyRow?.key) {
+                await c.env.KV.delete(`auth:api-key:${newKeyRow.key}`);
+            }
+
+            // Step 5: Delete old key (non-fatal — user still gets the new key)
+            let oldKeyDeleted = true;
+            try {
+                await authClient.api.deleteApiKey({
+                    body: { keyId: id },
+                    headers: c.req.raw.headers,
+                });
+            } catch {
+                oldKeyDeleted = false;
+            }
+
+            // Invalidate KV cache for old key
+            await c.env.KV.delete(`auth:api-key:${id}`);
+            if (existingKey.key) {
+                await c.env.KV.delete(`auth:api-key:${existingKey.key}`);
+            }
+
+            return c.json({
+                id: newKeyId,
+                key: newPlaintextKey,
+                name: existingKey.name,
+                ...(oldKeyDeleted
+                    ? {}
+                    : {
+                          warning:
+                              "Old key could not be deleted. Please delete it manually.",
+                      }),
+            });
         },
     );

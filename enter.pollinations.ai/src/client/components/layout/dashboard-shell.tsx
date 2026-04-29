@@ -121,32 +121,32 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
-                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-green-950/10 px-4 py-3">
-                        <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 flex-col gap-2 border-b border-green-950/10 px-4 py-3">
+                        <div className="flex items-center justify-between gap-2">
                             <Brand />
-                            <BrandSocialLinks />
-                        </div>
-                        <button
-                            type="button"
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
-                            onClick={() => setIsDrawerOpen(false)}
-                            aria-label="Close navigation"
-                        >
-                            <svg
-                                viewBox="0 0 24 24"
-                                className="h-5 w-5"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                aria-hidden="true"
+                            <button
+                                type="button"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
+                                onClick={() => setIsDrawerOpen(false)}
+                                aria-label="Close navigation"
                             >
-                                <path
-                                    d="M18 6 6 18M6 6l12 12"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-                        </button>
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M18 6 6 18M6 6l12 12"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                        <BrandSocialChips />
                     </div>
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                         {rail}
@@ -201,9 +201,9 @@ const DashboardRail: FC<DashboardRailProps> = ({
             className="flex h-full min-h-0 flex-col gap-1 px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
             aria-label="Dashboard navigation"
         >
-            <div className="hidden items-center justify-between gap-1 pb-4 pl-1 md:flex">
+            <div className="hidden flex-col gap-2 pb-4 pl-1 md:flex">
                 <Brand />
-                <BrandSocialLinks />
+                <BrandSocialChips />
             </div>
             <nav className="flex flex-col gap-1">
                 {DASHBOARD_NAV_ITEMS.map((item) => (
@@ -334,36 +334,45 @@ const Brand: FC = () => (
     </a>
 );
 
-const BrandSocialLinks: FC = () => (
-    <div className="flex items-center">
-        <BrandIconLink
-            href="https://discord.gg/pollinations-ai-885844321461485618"
-            label="Discord community"
-        >
-            <DiscordIcon />
-        </BrandIconLink>
-        <BrandIconLink
+const BrandSocialChips: FC = () => (
+    <div className="flex flex-wrap gap-1">
+        <BrandChip
             href="https://github.com/pollinations/pollinations"
             label="Pollinations on GitHub"
-        >
-            <GitHubIcon />
-        </BrandIconLink>
+            icon={<GitHubIcon />}
+            text="github"
+            count="★ 4.4k"
+        />
+        <BrandChip
+            href="https://discord.gg/pollinations-ai-885844321461485618"
+            label="Discord community"
+            icon={<DiscordIcon />}
+            text="discord"
+        />
     </div>
 );
 
-const BrandIconLink: FC<PropsWithChildren<{ href: string; label: string }>> = ({
-    href,
-    label,
-    children,
-}) => (
+const BrandChip: FC<{
+    href: string;
+    label: string;
+    icon: ReactNode;
+    text: string;
+    count?: string;
+}> = ({ href, label, icon, text, count }) => (
     <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="flex h-5 w-5 items-center justify-center rounded-full text-green-950/70 transition-colors hover:bg-white/70 hover:text-green-950"
+        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pl-[7px] pr-[9px] text-[11px] font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
     >
-        <span className="h-[14px] w-[14px]">{children}</span>
+        <span className="h-[11px] w-[11px]">{icon}</span>
+        <span>{text}</span>
+        {count && (
+            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-[10px] text-green-950/55">
+                {count}
+            </span>
+        )}
     </a>
 );
 

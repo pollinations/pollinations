@@ -2,9 +2,10 @@
 import { DEFAULT_API_KEY, isValidApiKey } from "../config/auth";
 
 const BASE_IMAGE_URL = "https://gen.pollinations.ai/image";
+const BASE_VIDEO_URL = "https://gen.pollinations.ai/video";
 const TEXT_MODELS_ENDPOINT = "https://gen.pollinations.ai/v1/models";
 const IMAGE_MODELS_ENDPOINT = "https://gen.pollinations.ai/image/models";
-const BALANCE_ENDPOINT = "https://enter.pollinations.ai/customer/d1-balance";
+const BALANCE_ENDPOINT = "https://gen.pollinations.ai/account/balance";
 const FALLBACK_API_TOKEN =
     import.meta.env.VITE_POLLINATIONS_API_KEY || DEFAULT_API_KEY;
 
@@ -766,7 +767,7 @@ export const generateVideo = async (prompt, options = {}) => {
 
         // Encode the prompt for URL path
         const encodedPrompt = encodeURIComponent(prompt);
-        const url = `${BASE_IMAGE_URL}/${encodedPrompt}?${params.toString()}`;
+        const url = `${BASE_VIDEO_URL}/${encodedPrompt}?${params.toString()}`;
 
         console.log(`🎬 Generating video with prompt: "${prompt}"`);
         console.log(`📐 Parameters: model: ${model}, seed: ${seed}`);
@@ -811,14 +812,13 @@ export const generateVideo = async (prompt, options = {}) => {
 
 /**
  * Fetch the user's pollen balance
- * Only works with user API keys (sk_), not publishable keys
+ * Returns the visible account balance or API key budget for the provided key.
  * @param {string} apiToken - The API token to use for fetching balance
  * @returns {Promise<{totalBalance: number, tierBalance: number, packBalance: number, cryptoBalance: number} | null>}
  */
 export const fetchPollenBalance = async (apiToken) => {
     try {
-        // Only fetch balance if using a user key (secret key starting with sk_)
-        if (!apiToken || !apiToken.startsWith("sk_")) {
+        if (!isValidApiKey(apiToken)) {
             return null;
         }
 
@@ -835,8 +835,11 @@ export const fetchPollenBalance = async (apiToken) => {
         }
 
         const data = await response.json();
-        const { tierBalance = 0, packBalance = 0, cryptoBalance = 0 } = data;
-        const totalBalance = tierBalance + packBalance + cryptoBalance;
+        const tierBalance = data.tierBalance ?? 0;
+        const packBalance = data.packBalance ?? 0;
+        const cryptoBalance = data.cryptoBalance ?? 0;
+        const totalBalance =
+            data.balance ?? tierBalance + packBalance + cryptoBalance;
 
         return {
             totalBalance,

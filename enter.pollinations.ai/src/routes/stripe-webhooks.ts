@@ -1,9 +1,9 @@
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import { getPollenPack } from "@/pollen-packs.ts";
-import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 

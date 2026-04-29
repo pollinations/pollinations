@@ -94,11 +94,10 @@ app.get("/models", (c) => {
         {
             error: "Endpoint moved",
             message:
-                "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
+                "The /models endpoint has been moved to the API gateway. Please use: https://gen.pollinations.ai/text/models",
             deprecated_endpoint: `${c.req.url}`,
-            new_endpoint:
-                "https://enter.pollinations.ai/api/generate/text/models",
-            documentation: "https://enter.pollinations.ai/api/docs",
+            new_endpoint: "https://gen.pollinations.ai/text/models",
+            documentation: "https://gen.pollinations.ai/docs",
         },
         410,
     );
@@ -266,7 +265,6 @@ function sendErrorResponse(
         error: errorType,
         message: error.message || "An error occurred",
         requestId: Math.random().toString(36).substring(7),
-        requestParameters: requestData || {},
     };
     if (errorDetails) errorResponse.details = errorDetails;
 

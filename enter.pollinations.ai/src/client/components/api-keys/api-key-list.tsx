@@ -103,10 +103,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 apiKey.metadata?.keyType === "publishable";
                             const plaintextKey = apiKey.metadata
                                 ?.plaintextKey as string | undefined;
-                            const appUrl = apiKey.metadata?.appUrl as
-                                | string
-                                | undefined;
-                            const isAppKey = isPublishable && !!appUrl;
+                            const redirectUrisMeta = Array.isArray(
+                                apiKey.metadata?.redirectUris,
+                            )
+                                ? (apiKey.metadata?.redirectUris as string[])
+                                : [];
+                            const primaryRedirectUri =
+                                redirectUrisMeta[0] || "";
+                            const isAppKey =
+                                isPublishable && !!primaryRedirectUri;
 
                             return (
                                 <div
@@ -119,14 +124,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             className={cn(
                                                 "px-2 py-0.5 rounded text-xs font-medium shrink-0",
                                                 isPublishable
-                                                    ? appUrl
+                                                    ? primaryRedirectUri
                                                         ? "bg-amber-100 text-amber-700"
                                                         : "bg-blue-100 text-blue-700"
                                                     : "bg-purple-100 text-purple-700",
                                             )}
                                         >
                                             {isPublishable
-                                                ? appUrl
+                                                ? primaryRedirectUri
                                                     ? "🖥️ App"
                                                     : "🌐 Publishable"
                                                 : "🔒 Secret"}
@@ -205,24 +210,29 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     : "never"}
                                             </span>
                                         </span>
-                                        {isPublishable && appUrl && (
-                                            <span title={appUrl}>
-                                                <span className="text-gray-400">
-                                                    URL:{" "}
-                                                </span>
-                                                <a
-                                                    href={appUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 hover:underline truncate max-w-[200px] inline-block align-bottom"
+                                        {isPublishable &&
+                                            primaryRedirectUri && (
+                                                <span
+                                                    title={primaryRedirectUri}
                                                 >
-                                                    {appUrl.replace(
-                                                        /^https?:\/\//,
-                                                        "",
-                                                    )}
-                                                </a>
-                                            </span>
-                                        )}
+                                                    <span className="text-gray-400">
+                                                        Redirect:{" "}
+                                                    </span>
+                                                    <a
+                                                        href={
+                                                            primaryRedirectUri
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:underline truncate max-w-[200px] inline-block align-bottom"
+                                                    >
+                                                        {primaryRedirectUri.replace(
+                                                            /^https?:\/\//,
+                                                            "",
+                                                        )}
+                                                    </a>
+                                                </span>
+                                            )}
                                         {!isAppKey && (
                                             <>
                                                 <LimitsBadge

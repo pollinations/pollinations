@@ -1,13 +1,14 @@
-import { eq, sql } from "drizzle-orm";
+import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import { createAuth } from "../auth.ts";
-import * as schema from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { validator } from "../middleware/validator.ts";
-import { parseMetadata } from "./metadata-utils.ts";
+import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
+import { redirectUriMatchesAllowlist } from "./url-utils.ts";
 
 async function resolveAttribution(
     db: ReturnType<typeof drizzle<typeof schema>>,
@@ -17,6 +18,7 @@ async function resolveAttribution(
     const user = await db.query.user.findFirst({
         where: eq(schema.user.id, keyRow.userId),
     });
+    const redirectUris = getRedirectUris(meta);
     return {
         found: true as const,
         clientId: keyRow.id,
@@ -24,13 +26,17 @@ async function resolveAttribution(
         userName: user?.name,
         githubUsername: user?.githubUsername || undefined,
         appName: keyRow.name,
-        appUrl: (meta.appUrl as string) || undefined,
+        redirectUris,
     };
 }
 
 /**
- * Public endpoint to resolve an app_key or redirect_url to attribution info.
+ * Public endpoint to resolve an app_key (client_id) to attribution info.
  * No auth required — used during the /authorize flow.
+ *
+ * Identity comes from client_id only. Redirect URLs are not used to infer
+ * which app is calling: any developer can claim any URL by writing it into
+ * their key's metadata, so URL-based attribution is not trustworthy.
  */
 const AppLookupQuerySchema = z.object({
     client_id: z
@@ -38,7 +44,7 @@ const AppLookupQuerySchema = z.object({
         .startsWith("pk_")
         .optional()
         .describe(
-            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username instead of a generic hostname. Canonical OAuth name.",
+            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username. Canonical OAuth name.",
         ),
     app_key: z
         .string()
@@ -49,17 +55,9 @@ const AppLookupQuerySchema = z.object({
         ),
     redirect_uri: z
         .string()
-        .url()
         .optional()
         .describe(
-            "The URL users return to after authorizing. If no client_id is provided, the system tries to match this URL against registered app URLs. Canonical OAuth name.",
-        ),
-    redirect_url: z
-        .string()
-        .url()
-        .optional()
-        .describe(
-            "Legacy alias for `redirect_uri`. Accepted for backwards compatibility.",
+            "OAuth redirect URI. When provided alongside client_id, validated against the key's registered allowlist; mismatches return { found: false } so attribution and a minted key cannot be delivered to a redirect the app didn't register (RFC 6749 §3.1.2).",
         ),
 });
 
@@ -68,7 +66,7 @@ export const appLookupRoutes = new Hono<Env>().get(
     describeRoute({
         tags: ["Account"],
         description:
-            "Look up app attribution by app_key or redirect_url. No auth required. Used during the /authorize BYOP flow to resolve the app name and author shown on the consent screen.",
+            "Look up app attribution by client_id. No auth required. Used during the /authorize BYOP flow to resolve the app name and author shown on the consent screen. Without a client_id the consent screen falls back to a hostname-only display.",
         hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
     }),
     validator("query", AppLookupQuerySchema),
@@ -77,54 +75,38 @@ export const appLookupRoutes = new Hono<Env>().get(
             client_id: clientId,
             app_key: appKey,
             redirect_uri: redirectUri,
-            redirect_url: redirectUrl,
         } = c.req.valid("query");
         const resolvedAppKey = clientId ?? appKey;
-        const resolvedRedirect = redirectUri ?? redirectUrl;
-        const db = drizzle(c.env.DB, { schema });
-
-        // Strategy 1: Explicit client_id — verify via better-auth
-        if (resolvedAppKey) {
-            const auth = createAuth(c.env);
-            const result = await auth.api.verifyApiKey({
-                body: { key: resolvedAppKey },
-            });
-            if (result.valid && result.key) {
-                const keyRow = await db.query.apikey.findFirst({
-                    where: eq(schema.apikey.id, result.key.id),
-                });
-                if (keyRow) {
-                    return c.json(await resolveAttribution(db, keyRow));
-                }
-            }
+        if (!resolvedAppKey) {
+            return c.json({ found: false });
         }
 
-        // Strategy 2: Match redirect_uri against registered appUrl values
-        // Fetch all publishable keys with appUrl and match in JS
-        // (D1 rejects the LIKE pattern at scale with "pattern too complex")
-        if (resolvedRedirect) {
-            const candidates = await db.query.apikey.findMany({
-                where: sql`json_extract(${schema.apikey.metadata}, '$.keyType') = 'publishable' AND json_extract(${schema.apikey.metadata}, '$.appUrl') IS NOT NULL`,
+        const db = drizzle(c.env.DB, { schema });
+        const auth = createAuth(c.env);
+        const result = await auth.api.verifyApiKey({
+            body: { key: resolvedAppKey },
+        });
+        if (result.valid && result.key) {
+            const keyRow = await db.query.apikey.findFirst({
+                where: eq(schema.apikey.id, result.key.id),
             });
-            // Find the best match: longest appUrl that is a prefix of resolvedRedirect
-            // Case-insensitive to handle mixed-case registrations
-            const redirectLower = resolvedRedirect.toLowerCase();
-            let bestMatch: (typeof candidates)[number] | null = null;
-            let bestLen = 0;
-            for (const row of candidates) {
-                const meta = parseMetadata(row.metadata);
-                const appUrl = meta.appUrl as string;
-                if (
-                    appUrl &&
-                    redirectLower.startsWith(appUrl.toLowerCase()) &&
-                    appUrl.length > bestLen
-                ) {
-                    bestMatch = row;
-                    bestLen = appUrl.length;
+            if (keyRow) {
+                // Bind client_id to redirect_uri before delivering attribution.
+                // Without this, a stolen client_id could be paired with any
+                // redirect: the consent screen would brand the legitimate app
+                // (confused-deputy) and the minted sk_ would land at the
+                // attacker's URL. RFC 6749 §3.1.2 / RFC 8252 §7.3.
+                if (redirectUri) {
+                    const meta = parseMetadata(keyRow.metadata);
+                    const allowlist = getRedirectUris(meta);
+                    if (!redirectUriMatchesAllowlist(redirectUri, allowlist)) {
+                        return c.json({
+                            found: false as const,
+                            error: "redirect_uri_mismatch" as const,
+                        });
+                    }
                 }
-            }
-            if (bestMatch) {
-                return c.json(await resolveAttribution(db, bestMatch));
+                return c.json(await resolveAttribution(db, keyRow));
             }
         }
 

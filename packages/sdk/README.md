@@ -514,7 +514,7 @@ const client = new Pollinations({
 ## Links
 
 - [Pollinations.AI](https://pollinations.ai)
-- [API Documentation](https://enter.pollinations.ai/api/docs) - Full API reference
+- [API Documentation](https://gen.pollinations.ai/docs) - Full API reference
 - [Get API Key](https://enter.pollinations.ai)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - [GitHub](https://github.com/pollinations/pollinations)

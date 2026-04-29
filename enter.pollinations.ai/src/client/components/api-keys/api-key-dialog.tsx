@@ -45,7 +45,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const keyType: "secret" | "publishable" = simplified
         ? "publishable"
         : "secret";
-    const [appUrl, setAppUrl] = useState("");
+    const [redirectUris, setRedirectUris] = useState<string[]>([]);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -75,7 +75,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 description,
                 keyType,
                 ...keyPermissions.permissions,
-                ...(isPublishable && appUrl && { appUrl }),
+                ...(isPublishable &&
+                    redirectUris.filter((v) => v.trim()).length > 0 && {
+                        redirectUris: redirectUris
+                            .map((v) => v.trim())
+                            .filter(Boolean),
+                    }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -108,8 +113,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         !simplified &&
         Array.isArray(allowedModels) &&
         allowedModels.length === 0;
+    const isMissingRedirectUris =
+        simplified && redirectUris.filter((v) => v.trim()).length === 0;
     const isCreateDisabled =
-        !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
+        !createdKey &&
+        (!name.trim() ||
+            isSubmitting ||
+            noModelsSelected ||
+            isMissingRedirectUris);
     const keyTypeStyles =
         keyType === "publishable"
             ? {
@@ -139,7 +150,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setCopied(false);
                     setError(null);
                     setName(generateFunName());
-                    setAppUrl("");
+                    setRedirectUris([]);
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
                         month: "2-digit",
@@ -234,7 +245,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Publishable keys (<code>pk_</code>)
                                     deprecated – create via{" "}
                                     <a
-                                        href="https://enter.pollinations.ai/api/docs#tag/-account/POST/account/keys"
+                                        href="https://gen.pollinations.ai/docs#tag/-account/POST/account/keys"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 underline hover:text-blue-800"
@@ -268,8 +279,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                             {simplified && !createdKey && (
                                 <PublishableKeySettings
-                                    appUrl={appUrl}
-                                    onAppUrlChange={setAppUrl}
+                                    redirectUris={redirectUris}
+                                    onRedirectUrisChange={setRedirectUris}
                                     disabled={isSubmitting}
                                 />
                             )}
@@ -298,8 +309,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             )}
                             <span
                                 title={
-                                    noModelsSelected && !createdKey
-                                        ? "Select at least one model"
+                                    !createdKey
+                                        ? noModelsSelected
+                                            ? "Select at least one model"
+                                            : isMissingRedirectUris
+                                              ? "Add at least one redirect URI"
+                                              : undefined
                                         : undefined
                                 }
                             >

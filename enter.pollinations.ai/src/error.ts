@@ -1,8 +1,9 @@
 import type { Logger } from "@logtape/logtape";
+import { ValidationError } from "@shared/http/validation-error.ts";
 import { APIError } from "better-auth";
-import type { Context, ErrorHandler } from "hono";
+import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { routePath } from "hono/route";
+import type { RequestIdVariables } from "hono/request-id";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import {
@@ -10,8 +11,14 @@ import {
     sendErrorEventToTinybird,
     type TinybirdErrorEvent,
 } from "@/events.ts";
-import { ValidationError } from "@/middleware/validator";
-import type { Env } from "./env.ts";
+import { getRoutePath } from "@/util.ts";
+import type { ErrorVariables } from "./env.ts";
+import type { LoggerVariables } from "./middleware/logger.ts";
+
+type ErrorHandlerEnv = {
+    Bindings: CloudflareBindings;
+    Variables: RequestIdVariables & LoggerVariables & ErrorVariables;
+};
 
 type UpstreamErrorOptions = {
     res?: Response;
@@ -37,6 +44,39 @@ export class UpstreamError extends HTTPException {
         this.upstreamStatus = options?.upstreamStatus;
         this.responseBody = options?.responseBody;
     }
+}
+
+export async function ensureUpstreamOk(
+    response: Response,
+    requestUrl: string | URL,
+): Promise<Response> {
+    if (response.ok) return response;
+    const responseBody = await response.text();
+    const rawMessage =
+        extractUpstreamMessage(responseBody) ||
+        getDefaultErrorMessage(response.status);
+    throw new UpstreamError(remapUpstreamStatus(response.status), {
+        message: truncateString(rawMessage, MAX_ERROR_MESSAGE_LENGTH) ?? "",
+        requestUrl:
+            typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
+        upstreamStatus: response.status,
+        responseBody,
+    });
+}
+
+function extractUpstreamMessage(body: string): string {
+    try {
+        const parsed = JSON.parse(body);
+        const extracted =
+            parsed?.details?.error?.message ||
+            parsed?.error?.message ||
+            parsed?.message ||
+            (typeof parsed?.error === "string" ? parsed.error : null);
+        if (typeof extracted === "string" && extracted) return extracted;
+    } catch {
+        // Not JSON — fall through to raw body
+    }
+    return body;
 }
 
 const GenericErrorDetailsSchema = z
@@ -126,9 +166,12 @@ type ServerErrorEnvelope = {
 
 const MAX_ERROR_MESSAGE_LENGTH = 2000;
 const MAX_STACK_LENGTH = 12000;
-const MAX_UPSTREAM_BODY_LENGTH = 4000;
+const MAX_UPSTREAM_BODY_LENGTH = 16000;
 
-export const handleError: ErrorHandler<Env> = async (err, c) => {
+export async function handleError<TEnv extends ErrorHandlerEnv>(
+    err: Error,
+    c: Context<TEnv>,
+) {
     const log = c.get("log");
     const timestamp = new Date().toISOString();
 
@@ -178,7 +221,7 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
     emitServerError(c, err, status, timestamp, log);
     const response = createInternalErrorResponse(err, status, timestamp);
     return c.json(response, status);
-};
+}
 
 /**
  * Creates a standardized error response
@@ -241,11 +284,13 @@ function createUpstreamErrorResponse(
 }
 
 /**
- * Remap upstream 429s to 502 so clients can distinguish between our own rate
- * limit (429) and a downstream provider quota issue (502 Bad Gateway).
+ * Remap upstream 4xx statuses that are our operational concern (auth, routing,
+ * quota, conflicts) to 502 Bad Gateway. Leaves input-content errors
+ * (400/413/422) as-is since those can reflect user input we failed to validate.
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
-    if (status === 429) return 502;
+    const remapTo502 = new Set([401, 403, 404, 409, 415, 429]);
+    if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }
 
@@ -291,8 +336,8 @@ export function getDefaultErrorMessage(status: number): string {
     return messages[status] || "UNKNOWN_ERROR";
 }
 
-function emitServerError(
-    c: Context<Env>,
+function emitServerError<TEnv extends ErrorHandlerEnv>(
+    c: Context<TEnv>,
     error: Error,
     status: number,
     timestamp: string,
@@ -317,8 +362,8 @@ function emitServerError(
     );
 }
 
-function createServerErrorEnvelope(
-    c: Context<Env>,
+function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
+    c: Context<TEnv>,
     error: Error,
     status: number,
     timestamp: string,
@@ -340,7 +385,7 @@ function createServerErrorEnvelope(
             MAX_ERROR_MESSAGE_LENGTH,
         ) || getDefaultErrorMessage(status);
     const stack = truncateString(error.stack, MAX_STACK_LENGTH);
-    const resolvedRoutePath = routePath(c) || c.req.path;
+    const resolvedRoutePath = getRoutePath(c);
 
     return {
         kind: "server_error",

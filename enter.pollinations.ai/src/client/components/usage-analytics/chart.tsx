@@ -1,6 +1,6 @@
+import { getTierColor, type TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getTierColor, type TierStatus } from "@/tier-config.ts";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
@@ -69,7 +69,13 @@ export const Chart: FC<ChartProps> = ({
     }, []);
 
     const height = 180;
-    const pad = { top: 24, right: 20, bottom: 32, left: 55 };
+    const isCompact = width < 480;
+    const pad = {
+        top: 24,
+        right: isCompact ? 10 : 20,
+        bottom: 32,
+        left: isCompact ? 36 : 55,
+    };
     const cw = width - pad.left - pad.right;
     const ch = height - pad.top - pad.bottom;
 
@@ -131,17 +137,32 @@ export const Chart: FC<ChartProps> = ({
         }).filter((t) => t.value <= niceMaxVal);
 
         return { bars: barData, yTicks: ticks };
-    }, [data, cw, ch]);
+    }, [data, cw, ch, pad.left, pad.top]);
 
-    const formatVal = (v: number) => {
-        if (v >= 1e6) {
+    const formatCompactVal = (v: number): string => {
+        const abs = Math.abs(v);
+        if (abs >= 1e6) {
             const m = v / 1e6;
             return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
         }
-        if (v >= 1e3) {
+        if (abs >= 1e3) {
             const k = v / 1e3;
             return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
         }
+        return Number.isInteger(v) ? v.toString() : Number(v).toString();
+    };
+
+    const formatPollenAxisVal = (v: number) => {
+        if (Math.abs(v) >= 1e3) return formatCompactVal(v);
+        if (Number.isInteger(v)) return v.toString();
+        const decimals = Math.abs(v) < 1 ? 4 : 2;
+        const formatted = Number(v.toFixed(decimals)).toString();
+        return formatted === "0" ? v.toExponential(1) : formatted;
+    };
+
+    const formatVal = (v: number) => {
+        if (metric === "pollen") return formatPollenAxisVal(v);
+        if (Math.abs(v) >= 1e3) return formatCompactVal(v);
         return Math.round(v).toString();
     };
 

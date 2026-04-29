@@ -6,18 +6,14 @@ import {
     createFetchMock,
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
-import { createMockTextService } from "@shared/test/mocks/text-service.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
-import { createMockVcr } from "@shared/test/mocks/vcr.ts";
 import { createAuthClient } from "better-auth/client";
 import { adminClient, apiKeyClient } from "better-auth/client/plugins";
 import { drizzle } from "drizzle-orm/d1";
-import { test as base, expect, inject } from "vitest";
+import { test as base, expect } from "vitest";
 import { ensureConfigured } from "@/logger.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockPolar } from "./mocks/polar.ts";
-
-const snapshotServerUrl = inject("snapshotServerUrl");
 
 const createAuthClientInstance = () =>
     createAuthClient({
@@ -33,16 +29,6 @@ const createMocks = () => ({
     polar: createMockPolar(),
     tinybird: createMockTinybird(),
     github: createMockGithub(),
-    text: createMockTextService(),
-    vcr: createMockVcr({
-        originalFetch: globalThis.fetch,
-        hosts: [
-            { name: "text", host: new URL(env.TEXT_SERVICE_URL).host },
-            { name: "image", host: new URL(env.IMAGE_SERVICE_URL).host },
-        ],
-        snapshotServerUrl,
-        mode: env.TEST_VCR_MODE,
-    }),
 });
 
 type Mocks = ReturnType<typeof createMocks>;

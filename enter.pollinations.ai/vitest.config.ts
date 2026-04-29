@@ -30,7 +30,6 @@ export default defineWorkersConfig(async ({ mode }) => {
             ],
         },
         test: {
-            globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: [
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",
@@ -48,8 +47,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                     miniflare: {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
-                            TEST_VCR_MODE:
-                                env.TEST_VCR_MODE || "replay-or-record",
                         },
                     },
                 },

@@ -45,7 +45,9 @@ export const callFluxKleinAPI = async (
             const downloads = await Promise.all(
                 imageUrls.map((url) => downloadUserImage(url)),
             );
-            imagesB64 = downloads.map(({ buffer }) => buffer.toString("base64"));
+            imagesB64 = downloads.map(({ buffer }) =>
+                buffer.toString("base64"),
+            );
             progress.updateBar(
                 requestId,
                 50,

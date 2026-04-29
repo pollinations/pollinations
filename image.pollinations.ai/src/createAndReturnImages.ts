@@ -7,7 +7,6 @@ import {
     fetchFromLeastBusyServer,
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
-import { downloadUserImage } from "./utils/imageDownload.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
@@ -32,6 +31,7 @@ import {
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
+import { downloadUserImage } from "./utils/imageDownload.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";

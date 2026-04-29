@@ -261,10 +261,7 @@ async function generateWithSeedream(
         }
 
         if (processedImages.length === 0) {
-            throw new HttpError(
-                "Failed to download any reference images",
-                400,
-            );
+            throw new HttpError("Failed to download any reference images", 400);
         }
 
         // For single image, pass as string; for multiple images, pass as array

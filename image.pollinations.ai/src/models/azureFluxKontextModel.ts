@@ -10,11 +10,11 @@ import {
     analyzeImageSafety,
     analyzeTextSafety,
 } from "../utils/azureContentSafety.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
 import {
     logGptImageError,
     logGptImagePrompt,
 } from "../utils/gptImageLogger.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 
 const logError = debug("pollinations:error");
 const logCloudflare = debug("pollinations:cloudflare");

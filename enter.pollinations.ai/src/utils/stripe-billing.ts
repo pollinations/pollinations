@@ -1,7 +1,4 @@
-import {
-    stripeCustomerLink as stripeCustomerLinkTable,
-    user as userTable,
-} from "@shared/db/better-auth.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { and, eq, isNull } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
@@ -13,7 +10,6 @@ const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_ACCOUNT_TYPE = "pollinations_account_type";
 
 const INVOICE_PAGE_SIZE = 8;
-const STRIPE_LIST_LIMIT = 8;
 
 export type BillingAccountType = "individual" | "company";
 
@@ -40,12 +36,8 @@ type UserBillingRow = {
     id: string;
     name: string;
     email: string;
-    emailVerified: boolean;
     stripeCustomerId: string | null;
-    stripeLegacyCustomerSearchEmail: string | null;
 };
-
-type InvoiceCursor = Record<string, string>;
 
 const ISO_COUNTRY_CODES = [
     "AD",
@@ -473,21 +465,6 @@ export async function getOrCreateStripeCustomerId(
     const user = await getUserBillingRow(db, userId);
 
     if (user.stripeCustomerId) {
-        if (!isStripeCustomerId(user.stripeCustomerId)) {
-            await clearInvalidStripeCustomerId(
-                db,
-                user.id,
-                user.stripeCustomerId,
-            );
-            return getOrCreateStripeCustomerId(env, userId);
-        }
-
-        await ensureStripeCustomerLink(db, {
-            userId,
-            stripeCustomerId: user.stripeCustomerId,
-            email: user.email,
-            source: "primary",
-        });
         return user.stripeCustomerId;
     }
 
@@ -506,10 +483,6 @@ export async function getOrCreateStripeCustomerId(
         },
     );
 
-    if (!isStripeCustomerId(customer.id)) {
-        throw new Error("Stripe returned an invalid customer id");
-    }
-
     await db
         .update(userTable)
         .set({ stripeCustomerId: customer.id })
@@ -518,16 +491,7 @@ export async function getOrCreateStripeCustomerId(
         );
 
     const updated = await getUserBillingRow(db, userId);
-    const stripeCustomerId = isStripeCustomerId(updated.stripeCustomerId)
-        ? updated.stripeCustomerId
-        : customer.id;
-    await ensureStripeCustomerLink(db, {
-        userId,
-        stripeCustomerId,
-        email: updated.email,
-        source: "primary",
-    });
-    return stripeCustomerId;
+    return updated.stripeCustomerId ?? customer.id;
 }
 
 export async function getBillingState(
@@ -535,12 +499,8 @@ export async function getBillingState(
     userId: string,
     invoiceCursor?: string | null,
 ) {
-    const db = drizzle(env.DB);
     const stripe = createStripeClient(env);
     const stripeCustomerId = await getOrCreateStripeCustomerId(env, userId);
-    const user = await getUserBillingRow(db, userId);
-    await ensureLegacyStripeCustomerLinks(db, stripe, user, stripeCustomerId);
-    const linkedCustomerIds = await getLinkedStripeCustomerIds(db, userId);
 
     const [customer, paymentMethods, taxIds, invoicePage] = await Promise.all([
         retrieveActiveCustomer(stripe, stripeCustomerId),
@@ -549,7 +509,7 @@ export async function getBillingState(
             limit: 100,
         }),
         stripe.customers.listTaxIds(stripeCustomerId, { limit: 100 }),
-        listInvoicesForCustomers(stripe, linkedCustomerIds, invoiceCursor),
+        listInvoicesForCustomer(stripe, stripeCustomerId, invoiceCursor),
     ]);
 
     const cardPaymentMethods = paymentMethods.data.filter(
@@ -781,10 +741,7 @@ async function getUserBillingRow(
             id: userTable.id,
             name: userTable.name,
             email: userTable.email,
-            emailVerified: userTable.emailVerified,
             stripeCustomerId: userTable.stripeCustomerId,
-            stripeLegacyCustomerSearchEmail:
-                userTable.stripeLegacyCustomerSearchEmail,
         })
         .from(userTable)
         .where(eq(userTable.id, userId))
@@ -792,82 +749,6 @@ async function getUserBillingRow(
 
     if (!user) throw new Error("User not found");
     return user;
-}
-
-async function ensureStripeCustomerLink(
-    db: DrizzleD1Database,
-    input: {
-        userId: string;
-        stripeCustomerId: string;
-        email: string;
-        source: "primary" | "legacy_email";
-    },
-): Promise<void> {
-    if (!isStripeCustomerId(input.stripeCustomerId)) {
-        throw new Error("Invalid Stripe customer id");
-    }
-
-    await db
-        .insert(stripeCustomerLinkTable)
-        .values({
-            stripeCustomerId: input.stripeCustomerId,
-            userId: input.userId,
-            email: input.email,
-            source: input.source,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        })
-        .onConflictDoNothing();
-}
-
-async function ensureLegacyStripeCustomerLinks(
-    db: DrizzleD1Database,
-    stripe: Stripe,
-    user: UserBillingRow,
-    primaryStripeCustomerId: string,
-): Promise<void> {
-    if (user.stripeLegacyCustomerSearchEmail) return;
-    if (!user.emailVerified || !user.email) return;
-
-    const result = await stripe.customers.search({
-        query: `email:'${escapeStripeSearchValue(user.email)}'`,
-        limit: 100,
-    });
-
-    for (const customer of result.data) {
-        if (customer.deleted) continue;
-        if (customer.email !== user.email) continue;
-        if (customer.id === primaryStripeCustomerId) continue;
-
-        await ensureStripeCustomerLink(db, {
-            userId: user.id,
-            stripeCustomerId: customer.id,
-            email: user.email,
-            source: "legacy_email",
-        });
-    }
-
-    await db
-        .update(userTable)
-        .set({ stripeLegacyCustomerSearchEmail: user.email })
-        .where(
-            and(
-                eq(userTable.id, user.id),
-                isNull(userTable.stripeLegacyCustomerSearchEmail),
-            ),
-        );
-}
-
-async function getLinkedStripeCustomerIds(
-    db: DrizzleD1Database,
-    userId: string,
-): Promise<string[]> {
-    const rows = await db
-        .select({ stripeCustomerId: stripeCustomerLinkTable.stripeCustomerId })
-        .from(stripeCustomerLinkTable)
-        .where(eq(stripeCustomerLinkTable.userId, userId));
-
-    return [...new Set(rows.map((row) => row.stripeCustomerId))];
 }
 
 async function retrieveActiveCustomer(
@@ -923,48 +804,20 @@ function toBillingProfile(
     };
 }
 
-async function listInvoicesForCustomers(
+async function listInvoicesForCustomer(
     stripe: Stripe,
-    customerIds: string[],
-    encodedCursor?: string | null,
+    customerId: string,
+    invoiceCursor?: string | null,
 ) {
-    const cursor = decodeInvoiceCursor(encodedCursor);
-    const invoicesByCustomer = await Promise.all(
-        customerIds.map(async (customerId) => {
-            const page = await stripe.invoices.list({
-                customer: customerId,
-                limit: STRIPE_LIST_LIMIT,
-                starting_after: cursor[customerId],
-            });
-            return { customerId, page };
-        }),
-    );
-
-    const seenInvoiceIds = new Set<string>();
-    const candidates = invoicesByCustomer.flatMap(({ customerId, page }) =>
-        page.data
-            .filter((invoice) => {
-                if (seenInvoiceIds.has(invoice.id)) return false;
-                seenInvoiceIds.add(invoice.id);
-                return true;
-            })
-            .map((invoice) => ({ customerId, invoice })),
-    );
-
-    candidates.sort((a, b) => b.invoice.created - a.invoice.created);
-    const selected = candidates.slice(0, INVOICE_PAGE_SIZE);
-    const nextCursorMap = { ...cursor };
-
-    for (const { customerId, invoice } of selected) {
-        nextCursorMap[customerId] = invoice.id;
-    }
-
-    const hasMore =
-        candidates.length > selected.length ||
-        invoicesByCustomer.some(({ page }) => page.has_more);
+    const page = await stripe.invoices.list({
+        customer: customerId,
+        limit: INVOICE_PAGE_SIZE,
+        starting_after: invoiceCursor ?? undefined,
+    });
+    const nextCursor = page.has_more ? (page.data.at(-1)?.id ?? null) : null;
 
     return {
-        invoices: selected.map(({ invoice }) => ({
+        invoices: page.data.map((invoice) => ({
             id: invoice.id,
             number: invoice.number ?? invoice.id,
             created: invoice.created,
@@ -976,8 +829,8 @@ async function listInvoicesForCustomers(
             hostedInvoiceUrl: invoice.hosted_invoice_url,
             invoicePdf: invoice.invoice_pdf,
         })),
-        hasMore,
-        nextCursor: hasMore ? encodeInvoiceCursor(nextCursorMap) : null,
+        hasMore: Boolean(nextCursor),
+        nextCursor,
     };
 }
 
@@ -1054,59 +907,6 @@ function getStripeId(
     if (!value) return null;
     if (typeof value === "string") return value;
     return value.id ?? null;
-}
-
-function encodeInvoiceCursor(cursor: InvoiceCursor): string {
-    const json = JSON.stringify(cursor);
-    return btoa(json)
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/g, "");
-}
-
-function decodeInvoiceCursor(encoded?: string | null): InvoiceCursor {
-    if (!encoded) return {};
-    try {
-        const padded = encoded.replace(/-/g, "+").replace(/_/g, "/");
-        const json = atob(padded);
-        const value = JSON.parse(json) as unknown;
-        if (!value || typeof value !== "object" || Array.isArray(value)) {
-            return {};
-        }
-        return Object.fromEntries(
-            Object.entries(value).filter(
-                (entry): entry is [string, string] =>
-                    typeof entry[0] === "string" &&
-                    typeof entry[1] === "string",
-            ),
-        );
-    } catch {
-        return {};
-    }
-}
-
-function isStripeCustomerId(value: string | null | undefined): value is string {
-    return /^cus_[A-Za-z0-9_]+$/.test(value ?? "");
-}
-
-async function clearInvalidStripeCustomerId(
-    db: DrizzleD1Database,
-    userId: string,
-    stripeCustomerId: string,
-): Promise<void> {
-    await db
-        .update(userTable)
-        .set({ stripeCustomerId: null })
-        .where(
-            and(
-                eq(userTable.id, userId),
-                eq(userTable.stripeCustomerId, stripeCustomerId),
-            ),
-        );
-}
-
-function escapeStripeSearchValue(value: string): string {
-    return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 function stripeParamToField(param: string): string | null {

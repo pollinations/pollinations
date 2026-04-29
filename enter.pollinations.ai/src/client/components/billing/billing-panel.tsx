@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
+import { InfoTip } from "../ui/info-tip.tsx";
 import { Input } from "../ui/input.tsx";
 import { Panel } from "../ui/panel.tsx";
 
@@ -716,8 +717,13 @@ export const BillingPanel: FC = () => {
             </Card>
 
             <Card color="amber" className="space-y-3 bg-white/90">
-                <h3 className="text-lg font-semibold text-amber-950">
+                <h3 className="flex items-center text-lg font-semibold text-amber-950">
                     Invoices
+                    <InfoTip
+                        text="Purchases before May 1, 2026 remain available from the Stripe receipt email sent at purchase time."
+                        label="Older invoice availability"
+                        tone="amber"
+                    />
                 </h3>
 
                 <div className="overflow-x-auto">

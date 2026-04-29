@@ -110,40 +110,37 @@ test("GET /api/stripe/checkout/invalid returns 400 for invalid amount", async ({
     expect(data.error).toBe("Invalid pack amount");
 });
 
-test("GET /api/stripe/billing creates a stable customer and includes stored legacy invoices once", async ({
+test("GET /api/stripe/billing creates a stable customer and ignores old customer invoices", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
     mocks.stripe.state.customers.push(
-        mockCustomer("cus_legacy", "test@example.com"),
+        mockCustomer("cus_old_checkout", "test@example.com"),
     );
     mocks.stripe.state.invoices.push(
-        mockInvoice("in_legacy", "cus_legacy", 2_000, 1_000),
+        mockInvoice("in_old_checkout", "cus_old_checkout", 2_000, 1_000),
     );
 
-    const firstResponse = await SELF.fetch(`${base}/billing`, {
+    const response = await SELF.fetch(`${base}/billing`, {
         headers: { cookie: `better-auth.session_token=${sessionToken}` },
     });
-    expect(firstResponse.status).toBe(200);
-    const first = (await firstResponse.json()) as {
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
         invoices: { id: string }[];
     };
-    expect(first.invoices.map((invoice) => invoice.id)).toContain("in_legacy");
+    expect(data.invoices.map((invoice) => invoice.id)).not.toContain(
+        "in_old_checkout",
+    );
     expect(mocks.stripe.state.customers).toHaveLength(2);
     expect(
         mocks.stripe.state.requests.filter(
             (request) => request.path === "/v1/customers/search",
         ),
-    ).toHaveLength(1);
-
-    const secondResponse = await SELF.fetch(`${base}/billing`, {
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-    });
-    expect(secondResponse.status).toBe(200);
+    ).toHaveLength(0);
     expect(
         mocks.stripe.state.requests.filter(
-            (request) => request.path === "/v1/customers/search",
+            (request) => request.path === "/v1/invoices",
         ),
     ).toHaveLength(1);
 });
@@ -179,72 +176,6 @@ test("GET /api/stripe/billing handles concurrent first customer creation", async
                 request.idempotencyKey === createRequests[0].idempotencyKey,
         ),
     ).toBe(true);
-});
-
-test("GET /api/stripe/billing repairs invalid stored Stripe customer ids", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const db = drizzle(env.DB);
-    const [user] = await db
-        .select({ id: userTable.id })
-        .from(userTable)
-        .limit(1);
-    await db
-        .update(userTable)
-        .set({ stripeCustomerId: "stripe_customer_id" })
-        .where(eq(userTable.id, user.id));
-
-    const response = await SELF.fetch(`${base}/billing`, {
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-    });
-
-    expect(response.status).toBe(200);
-    expect(mocks.stripe.state.customers).toHaveLength(1);
-
-    const [updated] = await db
-        .select({ stripeCustomerId: userTable.stripeCustomerId })
-        .from(userTable)
-        .where(eq(userTable.id, user.id))
-        .limit(1);
-    expect(updated.stripeCustomerId).toBe("cus_mock_1");
-});
-
-test("GET /api/stripe/billing does not import legacy customers for unverified email", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const db = drizzle(env.DB);
-    const [user] = await db
-        .select({ id: userTable.id })
-        .from(userTable)
-        .limit(1);
-    await db
-        .update(userTable)
-        .set({ emailVerified: false })
-        .where(eq(userTable.id, user.id));
-    mocks.stripe.state.customers.push(
-        mockCustomer("cus_legacy_unverified", "test@example.com"),
-    );
-    mocks.stripe.state.invoices.push(
-        mockInvoice("in_unverified", "cus_legacy_unverified", 2_000, 1_000),
-    );
-
-    const response = await SELF.fetch(`${base}/billing`, {
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-    });
-    expect(response.status).toBe(200);
-    const data = (await response.json()) as { invoices: { id: string }[] };
-    expect(data.invoices.map((invoice) => invoice.id)).not.toContain(
-        "in_unverified",
-    );
-    expect(
-        mocks.stripe.state.requests.filter(
-            (request) => request.path === "/v1/customers/search",
-        ),
-    ).toHaveLength(0);
 });
 
 test("GET /api/stripe/checkout/:amount passes the stable customer to Checkout", async ({

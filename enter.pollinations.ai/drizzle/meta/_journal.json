@@ -153,14 +153,7 @@
       "idx": 21,
       "version": "6",
       "when": 1777453891069,
-      "tag": "0021_stripe_billing_customer_links",
-      "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "6",
-      "when": 1777456000000,
-      "tag": "0022_cleanup_invalid_stripe_customer_ids",
+      "tag": "0021_stripe_billing_customer_id",
       "breakpoints": true
     }
   ]

@@ -10,7 +10,7 @@ import type {
 } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
-import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
+import { downloadUserImage } from "./utils/imageDownload.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
@@ -195,11 +195,11 @@ export async function callVertexAIGemini(
                     );
 
                     // Download and detect MIME type from magic bytes
-                    const { base64, mimeType } =
-                        await downloadImageAsBase64(imageUrl);
+                    const { buffer, mimeType } =
+                        await downloadUserImage(imageUrl);
 
                     processedImages.push({
-                        base64: base64,
+                        base64: buffer.toString("base64"),
                         mimeType: mimeType,
                     });
 

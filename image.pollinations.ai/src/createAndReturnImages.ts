@@ -7,6 +7,7 @@ import {
     fetchFromLeastBusyServer,
 } from "./availableServers.ts";
 import { HttpError } from "./httpError.ts";
+import { downloadUserImage } from "./utils/imageDownload.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
@@ -530,15 +531,8 @@ const callGPTImageWithEndpoint = async (
                         `Fetching image ${i + 1}/${imageUrls.length} from URL: ${imageUrl}`,
                     );
 
-                    const imageResponse = await fetch(imageUrl);
-                    if (!imageResponse.ok) {
-                        throw new Error(
-                            `Failed to fetch image from URL: ${imageUrl}`,
-                        );
-                    }
-
-                    const imageArrayBuffer = await imageResponse.arrayBuffer();
-                    const originalBuffer = Buffer.from(imageArrayBuffer);
+                    const { buffer: originalBuffer, mimeType } =
+                        await downloadUserImage(imageUrl);
 
                     // Resize large input images to reduce token costs
                     // GPT Image 1.5 calculates input tokens as: (width × height) / 750
@@ -564,35 +558,16 @@ const callGPTImageWithEndpoint = async (
                         throw error;
                     }
 
-                    // Determine file extension and MIME type from Content-Type header
-                    const contentType =
-                        imageResponse.headers.get("content-type") || "";
-                    let extension = ".png"; // Default extension
-                    let mimeType = "image/png"; // Default MIME type
-
-                    // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
-                    if (contentType.startsWith("image/")) {
-                        const mimeExtension = contentType
-                            .split("/")[1]
-                            .split(";")[0]; // Handle cases like "image/jpeg; charset=utf-8"
-                        extension = `.${mimeExtension}`;
-                        mimeType = `image/${mimeExtension}`;
-                    } else {
-                        // If content-type is not image/*, try to detect from URL or default to PNG
-                        logCloudflare(
-                            `Content-Type not detected as image (${contentType}), defaulting to image/png`,
-                        );
-                    }
-
                     // Use the image[] array notation as required by Azure OpenAI API
                     // Create a Blob with explicit MIME type to avoid application/octet-stream
-                    const imageBlob = new Blob([imageArrayBuffer], {
-                        type: mimeType,
-                    });
+                    const extension = `.${mimeType.split("/")[1]}`;
+                    const imageBlob = new Blob([buffer], { type: mimeType });
                     formData.append("image[]", imageBlob, `image${extension}`);
                 } catch (error) {
-                    // More specific error handling for image processing
+                    // Preserve HttpError status (e.g. 400 from downloadUserImage);
+                    // wrap other errors as generic processing failures.
                     logError(`Error processing image ${i + 1}:`, error.message);
+                    if (error instanceof HttpError) throw error;
                     throw new Error(
                         `Failed to process image: ${error.message}`,
                     );
@@ -600,6 +575,7 @@ const callGPTImageWithEndpoint = async (
             }
         } catch (error) {
             logError("Error processing image for editing:", error);
+            if (error instanceof HttpError) throw error;
             throw new Error(`Failed to process image: ${error.message}`);
         }
 

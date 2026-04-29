@@ -7,8 +7,9 @@ const CHART_COLORS = {
     grid: "#e5e7eb", // gray-200
     paidBar: "#fde68a", // amber-200
     paidBarHover: "#fcd34d", // amber-300
-    tooltipBg: "#18181b", // zinc-950
-    tooltipSep: "#374151", // gray-700
+    tooltipBg: "#ffffff",
+    tooltipBorder: "#e5e7eb", // gray-200
+    tooltipSep: "#e5e7eb", // gray-200
 } as const;
 
 const TIER_BAR_COLORS = {
@@ -199,8 +200,6 @@ export const Chart: FC<ChartProps> = ({
                 role="img"
                 aria-label="Usage chart"
             >
-                <title>Usage statistics chart</title>
-
                 {/* Grid lines */}
                 {yTicks.map((t) => (
                     <g key={`tick-${t.value}`}>
@@ -381,13 +380,14 @@ export const Chart: FC<ChartProps> = ({
                                     height={tooltipHeight}
                                     rx="8"
                                     fill={CHART_COLORS.tooltipBg}
-                                    opacity="0.95"
+                                    stroke={CHART_COLORS.tooltipBorder}
+                                    strokeWidth="1"
                                 />
                                 <text
                                     x={tooltipX + 12}
                                     y={tooltipY + 18}
                                     textAnchor="start"
-                                    className="text-xs fill-gray-400"
+                                    className="text-xs fill-gray-500"
                                 >
                                     {dateOnly}
                                 </text>
@@ -395,7 +395,7 @@ export const Chart: FC<ChartProps> = ({
                                     x={tooltipX + 12}
                                     y={tooltipY + 36}
                                     textAnchor="start"
-                                    className="text-sm font-bold fill-white"
+                                    className="text-sm font-bold fill-gray-900"
                                 >
                                     {metric === "requests"
                                         ? "requests"
@@ -433,7 +433,7 @@ export const Chart: FC<ChartProps> = ({
                                                         4 +
                                                         i * lineHeight
                                                     }
-                                                    className="text-xs fill-gray-300"
+                                                    className="text-xs fill-gray-600"
                                                 >
                                                     {truncateLabel(m.label, 22)}
                                                 </text>
@@ -451,7 +451,7 @@ export const Chart: FC<ChartProps> = ({
                                                         i * lineHeight
                                                     }
                                                     textAnchor="end"
-                                                    className="text-xs fill-white font-medium"
+                                                    className="text-xs fill-gray-900 font-medium"
                                                 >
                                                     {formatTooltipVal(
                                                         metric === "requests"

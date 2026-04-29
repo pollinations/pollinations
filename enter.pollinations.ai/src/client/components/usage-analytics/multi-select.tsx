@@ -138,8 +138,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    aria-hidden="true"
                 >
-                    <title>Toggle dropdown</title>
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -149,7 +149,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 </svg>
             </button>
             {disabled && (
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
                     No items available
                 </span>
             )}

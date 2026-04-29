@@ -57,10 +57,29 @@ function parseNumber(val: unknown): number | null {
 
 function safeParseUrl(url: string): URL | null {
     try {
-        return new URL(url);
+        const parsed = new URL(url);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+            return null;
+        }
+        return parsed;
     } catch {
         return null;
     }
+}
+
+function isRedirectUriAllowed(
+    parsedRedirectUrl: URL | null,
+    clientId: string | undefined,
+    attribution: Attribution | null,
+): boolean {
+    if (!parsedRedirectUrl) return false;
+    if (!clientId) return false;
+    if (!attribution?.found) return false;
+    const appUrl = attribution.appUrl
+        ? safeParseUrl(attribution.appUrl)
+        : null;
+    if (!appUrl) return false;
+    return appUrl.origin === parsedRedirectUrl.origin;
 }
 
 export const Route = createFileRoute("/authorize")({
@@ -174,8 +193,13 @@ function AuthorizeComponent() {
         requestedScopes.has(p),
     );
     const hasBudget = keyPermissions.permissions.pollenBudget !== null;
+    const redirectAllowed = isRedirectUriAllowed(
+        parsedRedirectUrl,
+        app_key,
+        attribution,
+    );
     const canAuthorize =
-        (isDeviceMode || parsedRedirectUrl !== null) && hasBudget;
+        (isDeviceMode || redirectAllowed) && hasBudget;
 
     useScrollLock();
 
@@ -228,9 +252,12 @@ function AuthorizeComponent() {
                 return;
             }
 
-            // Attribution is identified by client_id only. Without one, the
-            // consent screen falls back to the hostname display.
-            if (!app_key) return;
+            if (!app_key) {
+                setError(
+                    "Missing client_id. The authorize flow requires a registered app key.",
+                );
+                return;
+            }
 
             fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
                 .then((r) => r.json())
@@ -245,6 +272,20 @@ function AuthorizeComponent() {
         redirect_url,
         setAccountPermissions,
     ]);
+
+    useEffect(() => {
+        if (isDeviceMode) return;
+        if (!parsedRedirectUrl) return;
+        if (!app_key) return;
+        if (!attribution) return;
+        if (
+            !isRedirectUriAllowed(parsedRedirectUrl, app_key, attribution)
+        ) {
+            setError(
+                "redirect_uri does not match the registered app URL for this client_id.",
+            );
+        }
+    }, [isDeviceMode, redirect_url, app_key, attribution]);
 
     useEffect(() => {
         if (!user) return;
@@ -327,6 +368,17 @@ function AuthorizeComponent() {
                 if (!parsedRedirectUrl) {
                     throw new Error("Invalid redirect URL format");
                 }
+                if (
+                    !isRedirectUriAllowed(
+                        parsedRedirectUrl,
+                        app_key,
+                        attribution,
+                    )
+                ) {
+                    throw new Error(
+                        "redirect_uri does not match the registered app URL for this client_id.",
+                    );
+                }
                 const url = new URL(parsedRedirectUrl.href);
                 const hash = new URLSearchParams({ api_key: key });
                 if (state) hash.set("state", state);
@@ -354,7 +406,10 @@ function AuthorizeComponent() {
                 // Best-effort deny
             }
             setDeviceOutcome("denied");
-        } else if (parsedRedirectUrl) {
+        } else if (
+            isRedirectUriAllowed(parsedRedirectUrl, app_key, attribution) &&
+            parsedRedirectUrl
+        ) {
             const url = new URL(parsedRedirectUrl.href);
             const hash = new URLSearchParams({ error: "access_denied" });
             if (state) hash.set("state", state);

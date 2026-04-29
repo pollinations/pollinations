@@ -10,7 +10,7 @@ import type {
 } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
-import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
+import { downloadUserImage } from "./utils/imageDownload.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
@@ -195,12 +195,13 @@ export async function callVertexAIGemini(
                     );
 
                     // Download and detect MIME type from magic bytes
-                    const { base64, mimeType } =
-                        await downloadImageAsBase64(imageUrl);
+                    const { buffer, mimeType } =
+                        await downloadUserImage(imageUrl);
+                    const base64 = buffer.toString("base64");
 
                     processedImages.push({
-                        base64: base64,
-                        mimeType: mimeType,
+                        base64,
+                        mimeType,
                     });
 
                     log(
@@ -211,7 +212,9 @@ export async function callVertexAIGemini(
                         `Error processing reference image ${i + 1}:`,
                         error,
                     );
-                    // Continue with other images
+                    // User-supplied URL failure is client error — surface as 400.
+                    if (error instanceof HttpError) throw error;
+                    // Continue with other images on non-HTTP errors
                 }
             }
         }

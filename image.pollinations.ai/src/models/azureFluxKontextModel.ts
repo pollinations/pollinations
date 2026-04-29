@@ -14,6 +14,7 @@ import {
     logGptImageError,
     logGptImagePrompt,
 } from "../utils/gptImageLogger.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 
 const logError = debug("pollinations:error");
 const logCloudflare = debug("pollinations:cloudflare");
@@ -135,13 +136,7 @@ export async function callAzureFluxKontext(
             const imageUrl = imageUrls[0];
             logCloudflare(`Fetching image from URL: ${imageUrl}`);
 
-            const imageResponse = await fetch(imageUrl);
-            if (!imageResponse.ok) {
-                throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
-            }
-
-            const imageArrayBuffer = await imageResponse.arrayBuffer();
-            const buffer = Buffer.from(imageArrayBuffer);
+            const { buffer, mimeType } = await downloadUserImage(imageUrl);
 
             // Check safety of input image (with 30s timeout)
             logCloudflare("Checking safety of input image");
@@ -164,22 +159,13 @@ export async function callAzureFluxKontext(
                 throw error;
             }
 
-            // Determine file extension from Content-Type header
-            const contentType = imageResponse.headers.get("content-type") || "";
-            let extension = ".png"; // Default extension
-
-            if (contentType.startsWith("image/")) {
-                const mimeExtension = contentType.split("/")[1].split(";")[0];
-                extension = `.${mimeExtension}`;
-            }
-
             // Create a Blob and append to FormData
-            const imageBlob = new Blob([imageArrayBuffer], {
-                type: contentType,
-            });
+            const extension = `.${mimeType.split("/")[1]}`;
+            const imageBlob = new Blob([buffer], { type: mimeType });
             formData.append("image", imageBlob, `image${extension}`);
         } catch (error) {
             logError("Error processing image for editing:", error);
+            if (error instanceof HttpError) throw error;
             throw new Error(`Failed to process image: ${error.message}`);
         }
 

@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 let lastFetchUrl = "";
 let lastFetchBody: Record<string, unknown> = {};
 
-// Mock downloadImageAsBase64 before importing the module
+// Mock downloadUserImage before importing the module
 vi.mock("../src/utils/imageDownload.ts", () => ({
-    downloadImageAsBase64: async () => ({
-        base64: "dGVzdA==",
+    downloadUserImage: async () => ({
+        buffer: Buffer.from("test", "utf8"),
         mimeType: "image/jpeg",
     }),
 }));

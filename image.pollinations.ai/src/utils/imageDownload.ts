@@ -1,29 +1,40 @@
 import { fileTypeFromBuffer } from "file-type";
+import { HttpError } from "../httpError.ts";
 
 /**
- * Download image from URL and convert to base64 with correct MIME type detection
- * Uses magic bytes instead of trusting content-type header (fixes Telegram CDN issues)
+ * Download a user-supplied image URL into a Buffer, with magic-byte MIME detection.
+ *
+ * Throws HttpError(400) on any fetch failure — non-OK status, network/DNS/TLS
+ * errors, malformed URLs, etc. This is for fetching images the *user* gave us
+ * (input images for editing, reference images), so a fetch failure is client
+ * error. Do NOT use this for downloading provider-generated results.
+ *
+ * Some CDNs (e.g. Telegram) return application/octet-stream, so we sniff magic
+ * bytes instead of trusting content-type. Falls back to image/jpeg if the type
+ * can't be detected.
  */
-export async function downloadImageAsBase64(
+export async function downloadUserImage(
     imageUrl: string,
     signal?: AbortSignal,
-): Promise<{ base64: string; mimeType: string }> {
-    const imageResponse = await fetch(imageUrl, { signal });
+): Promise<{ buffer: Buffer; mimeType: string }> {
+    let imageResponse: Response;
+    try {
+        imageResponse = await fetch(imageUrl, { signal });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HttpError(`Failed to fetch image: ${message}`, 400);
+    }
 
     if (!imageResponse.ok) {
-        throw new Error(
+        throw new HttpError(
             `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`,
+            400,
         );
     }
 
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const bufferNode = Buffer.from(imageBuffer);
-    const base64 = bufferNode.toString("base64");
-
-    // Detect MIME type from magic bytes (don't trust content-type header)
-    // Some CDNs like Telegram return application/octet-stream for images
-    const fileType = await fileTypeFromBuffer(bufferNode);
+    const buffer = Buffer.from(await imageResponse.arrayBuffer());
+    const fileType = await fileTypeFromBuffer(buffer);
     const mimeType = fileType?.mime || "image/jpeg";
 
-    return { base64, mimeType };
+    return { buffer, mimeType };
 }

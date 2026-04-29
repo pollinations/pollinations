@@ -4,7 +4,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 // Logger
@@ -19,9 +19,9 @@ async function processImageForVeo(
     label: string,
 ): Promise<{ bytesBase64Encoded: string; mimeType: string }> {
     try {
-        const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+        const { buffer, mimeType } = await downloadUserImage(imageUrl);
         logOps(`${label} processed successfully, mimeType:`, mimeType);
-        return { bytesBase64Encoded: base64, mimeType };
+        return { bytesBase64Encoded: buffer.toString("base64"), mimeType };
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);

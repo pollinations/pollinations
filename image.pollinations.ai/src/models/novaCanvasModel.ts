@@ -2,7 +2,7 @@ import debug from "debug";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:nova-canvas:ops");
 const logError = debug("pollinations:nova-canvas:error");
@@ -122,12 +122,12 @@ export async function callNovaCanvasAPI(
 
     if (rawImageUrl) {
         // Image variation mode - download and convert to base64
-        const { base64 } = await downloadImageAsBase64(rawImageUrl);
+        const { buffer } = await downloadUserImage(rawImageUrl);
         requestBody = {
             taskType: "IMAGE_VARIATION",
             imageVariationParams: {
                 text: prompt,
-                images: [base64],
+                images: [buffer.toString("base64")],
                 similarityStrength: 0.7,
             },
             imageGenerationConfig,

@@ -19,6 +19,7 @@ export type { DashboardPage } from "./dashboard-theme.ts";
 
 type DashboardShellProps = PropsWithChildren<{
     activePage: DashboardPage;
+    navItems?: typeof DASHBOARD_NAV_ITEMS;
     githubUsername?: string;
     githubAvatarUrl?: string;
     onPageChange: (page: DashboardPage) => void;
@@ -28,6 +29,7 @@ type DashboardShellProps = PropsWithChildren<{
 
 export const DashboardShell: FC<DashboardShellProps> = ({
     activePage,
+    navItems = DASHBOARD_NAV_ITEMS,
     githubUsername,
     githubAvatarUrl,
     onPageChange,
@@ -83,6 +85,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const rail = (
         <DashboardRail
             activePage={activePage}
+            navItems={navItems}
             githubUsername={githubUsername}
             githubAvatarUrl={githubAvatarUrl}
             onPageChange={handlePageChange}
@@ -181,6 +184,7 @@ function useDashboardBodyClass(): void {
 
 type DashboardRailProps = {
     activePage: DashboardPage;
+    navItems: typeof DASHBOARD_NAV_ITEMS;
     githubUsername?: string;
     githubAvatarUrl?: string;
     onPageChange: (page: DashboardPage) => void;
@@ -190,6 +194,7 @@ type DashboardRailProps = {
 
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
+    navItems,
     githubUsername,
     githubAvatarUrl,
     onPageChange,
@@ -206,7 +211,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 <BrandSocialChips />
             </div>
             <nav className="flex flex-col gap-1">
-                {DASHBOARD_NAV_ITEMS.map((item) => (
+                {navItems.map((item) => (
                     <NavButton
                         key={item.id}
                         item={item}
@@ -238,6 +243,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         </svg>
                     </a>
                 </div>
+                <HelpUsGrowCard />
             </nav>
             <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
                 {accountArea ??
@@ -332,6 +338,30 @@ const Brand: FC = () => (
             className="h-10 w-auto"
         />
     </a>
+);
+
+const HelpUsGrowCard: FC = () => (
+    <div className="mt-3 flex flex-col gap-3 rounded-xl border border-green-950/10 bg-white/45 p-3">
+        <div className="flex items-center gap-2 font-serif text-[15px] font-bold text-green-950">
+            <span aria-hidden="true">🌱</span>
+            <span>help us grow</span>
+        </div>
+        <a
+            href="https://github.com/pollinations/pollinations"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Star Pollinations on GitHub"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-green-950 py-2 pl-3 pr-4 text-[13px] font-semibold text-emerald-50 transition-colors hover:bg-green-900"
+        >
+            <span className="h-4 w-4">
+                <GitHubIcon />
+            </span>
+            <span>star us</span>
+            <span className="border-l border-emerald-50/30 pl-2 font-mono text-[12px] text-emerald-50/70">
+                4.4k
+            </span>
+        </a>
+    </div>
 );
 
 const BrandSocialChips: FC = () => (

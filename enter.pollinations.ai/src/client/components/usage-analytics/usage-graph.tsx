@@ -253,14 +253,13 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             </div>
                         </div>
                     )}
-
-                    {!loading && !error && (
-                        <p className="text-[10px] text-gray-400">
-                            Data refreshes every hour. Times shown in UTC.
-                        </p>
-                    )}
                 </div>
             </DashboardSection>
+            {!loading && !error && (
+                <p className="text-[10px] text-gray-400">
+                    Data refreshes every hour. Times shown in UTC.
+                </p>
+            )}
         </div>
     );
 };

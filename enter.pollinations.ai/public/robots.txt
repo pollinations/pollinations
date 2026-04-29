@@ -1,7 +1,5 @@
 User-agent: *
 Allow: /
-Allow: /api/docs
-Allow: /api/docs/llm.txt
 Disallow: /api/
 Disallow: /sign-in
 Disallow: /authorize

@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| 🖼️ Frieze | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |
-| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@Giyuu7777](https://github.com/Giyuu7777) |
-| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@timemachine-studio](https://github.com/timemachine-studio) |
-| [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@tatn](https://github.com/tatn) |
-| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@OSK0020](https://github.com/OSK0020) |
-| [🧠 Reporay](https://repo-ray.vercel.app) | Reporay is an AI-powered GitHub repository analyzer. Paste a GitHub URL to get insights into the technology stack, project architecture, and smart summaries. | [@Jadu07](https://github.com/Jadu07) |
-| [🧠 Insight Engine](https://erbharatmalhotra.github.io/Insight_Engine/) | Requests re-approval for Insight Engine after temporary removal during endpoint migration and update to current gen.pollinations.ai endpoints; previously approved as Flower tier. | [@ErBharatMalhotra](https://github.com/ErBharatMalhotra) |
-| [🧠 Deals King & Radar Ai](https://deal.pm/en/extension) | Deals King & Radar Ai supports viewing deals and running radar AI functions. | [@MrAhmedElkady](https://github.com/MrAhmedElkady) |
-| [📚 ManhwaGen](https://manhwagen.vercel.app/) | ManhwaGen provides a way to work with Manhwa content. | [@AmanAutomates](https://github.com/AmanAutomates) |
-| [🖼️ Aureon](https://aureon.gold) | Use Pollinations API in Aureon to generate images via gen.pollinations.ai/image/ (Flux model) in generateMediaForAgent, and integrate video via gen.pollinations.ai/video/ (LTX-2.3, Seedance). | [@quantumquantara-arch](https://github.com/quantumquantara-arch) |
+| [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |
+| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@web](https://github.com/web) |
+| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |
+| [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@web](https://github.com/web) |
+| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@web](https://github.com/web) |
+| [🧠 Reporay](https://repo-ray.vercel.app) | Reporay is an AI-powered GitHub repository analyzer. Paste a GitHub URL to get insights into the technology stack, project architecture, and smart summaries. | [@web](https://github.com/web) |
+| [🧠 Insight Engine](https://erbharatmalhotra.github.io/Insight_Engine/) | Requests re-approval for Insight Engine after temporary removal during endpoint migration and update to current gen.pollinations.ai endpoints; previously approved as Flower tier. | [@web](https://github.com/web) |
+| [🧠 Deals King & Radar Ai](https://deal.pm/en/extension) | Deals King & Radar Ai supports viewing deals and running radar AI functions. | [@browser-ext](https://github.com/browser-ext) |
+| [📚 ManhwaGen](https://manhwagen.vercel.app/) | ManhwaGen provides a way to work with Manhwa content. | [@web](https://github.com/web) |
+| [🖼️ Aureon](https://aureon.gold) | Use Pollinations API in Aureon to generate images via gen.pollinations.ai/image/ (Flux model) in generateMediaForAgent, and integrate video via gen.pollinations.ai/video/ (LTX-2.3, Seedance). | [@web](https://github.com/web) |
 
-[View all apps →](apps/APPS.md)
+[Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -44,7 +44,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **API keys** — publishable keys for frontend, secret keys for backend
 - **CLI** — `npx @pollinations_ai/cli` for humans and AI agents ([source](packages/polli-cli))
 
-> Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://enter.pollinations.ai/api/docs)
+> Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)
 
 ## 🆕 Latest News
 
@@ -134,7 +134,7 @@ curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -o speech.mp3
 ```
 
-Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://enter.pollinations.ai/api/docs).
+Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://gen.pollinations.ai/docs).
 
 ### MCP Server for AI Assistants
 

@@ -8,7 +8,7 @@
  *   npm run test:e2e
  *
  *   # Custom endpoint:
- *   POLLINATIONS_BASE_URL=http://localhost:3000/api/generate/v1 npm run test:e2e
+ *   POLLINATIONS_BASE_URL=http://localhost:8788/v1 npm run test:e2e
  *
  * Env vars:
  *   POLLINATIONS_BASE_URL  - OpenAI-compatible base URL (must end with /v1).

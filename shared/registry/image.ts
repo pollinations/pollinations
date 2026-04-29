@@ -202,7 +202,7 @@ export const IMAGE_SERVICES = {
     "gpt-image-2": {
         aliases: [],
         modelId: "gpt-image-2",
-        provider: "azure",
+        provider: "openai",
         brand: "OpenAI",
         category: "image",
         cost: [

@@ -1,9 +1,9 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
+import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import { user as userTable } from "@/db/schema/better-auth.ts";
-import { atomicDeductUserBalance } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
 
 // Helper to trigger tier refill via admin API

@@ -5,7 +5,7 @@
 gen.pollinations.ai → enter.pollinations.ai (auth/billing) → text.|image.pollinations.ai (backends)
 ```
 Repo: `pollinations/pollinations` (main branch) | Discord: guild `885844321461485618`
-Docs: https://enter.pollinations.ai/api/docs | Monitor: https://model-monitor.pollinations.ai
+Docs: https://gen.pollinations.ai/docs | Monitor: https://model-monitor.pollinations.ai
 
 ## API — gen.pollinations.ai (the ONLY public URL)
 

@@ -329,19 +329,18 @@ const Brand: FC = () => (
         <img
             src="/logo_text_black.svg"
             alt="pollinations.ai"
-            className="h-9 w-auto"
+            className="h-10 w-auto"
         />
     </a>
 );
 
 const BrandSocialChips: FC = () => (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1.5">
         <BrandChip
             href="https://github.com/pollinations/pollinations"
             label="Pollinations on GitHub"
             icon={<GitHubIcon />}
             text="github"
-            count="★ 4.4k"
         />
         <BrandChip
             href="https://discord.gg/pollinations-ai-885844321461485618"
@@ -357,22 +356,16 @@ const BrandChip: FC<{
     label: string;
     icon: ReactNode;
     text: string;
-    count?: string;
-}> = ({ href, label, icon, text, count }) => (
+}> = ({ href, label, icon, text }) => (
     <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pl-[7px] pr-[9px] text-[11px] font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
+        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pl-[7px] pr-[10px] text-[11px] font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
     >
         <span className="h-[11px] w-[11px]">{icon}</span>
         <span>{text}</span>
-        {count && (
-            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-[10px] text-green-950/55">
-                {count}
-            </span>
-        )}
     </a>
 );
 

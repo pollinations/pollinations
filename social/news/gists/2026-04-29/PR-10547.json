@@ -1,0 +1,33 @@
+{
+  "pr_number": 10547,
+  "title": "fix(image): return 400 (not 500) when user-supplied image URL fails",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10547",
+  "merged_at": "2026-04-29T05:50:20Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Return to sender",
+    "blurb": "We've polished up how the image API handles broken URLs. Instead of panicking with a 500 error, the hive now politely returns a 400, and we've fixed a quirk that was blocking Telegram images.",
+    "summary": "Unified image downloading across 12 models to correctly return 400 client errors for broken URLs instead of 500 server errors, while adding magic-byte MIME detection.",
+    "impact": "Developers will see accurate 400 status codes for invalid image inputs, and image-to-image generation now correctly supports Telegram CDN links.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "image-generation",
+      "bug-fix"
+    ],
+    "visual_concept": "The pollinations.ai bee mascot acting as a helpful mail sorter. A cute chunky robot with a monitor head is holding a broken picture frame (representing a bad URL), and the bee is gently pointing them to a 'Return to Sender' bin instead of a 'Server Panic' button.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny mail carrier hat, gently guiding a chunky monitor-head robot to drop a broken picture frame into a lime green (#ecf874) 'Return to Sender' bin. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10547.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny mail carrier hat, gently guiding a chunky monitor-head robot to drop a broken picture frame into a lime green (#ecf874) 'Return to Sender' bin. Soft pastel lavender and peach gradient background. Chunky retro sprites, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-29T05:51:31.486669+00:00"
+}

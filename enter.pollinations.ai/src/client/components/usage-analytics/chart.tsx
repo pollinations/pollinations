@@ -332,22 +332,28 @@ export const Chart: FC<ChartProps> = ({
                     (() => {
                         const bar = bars[hovered];
                         const allBreakdown = bar.modelBreakdown || [];
-                        const breakdown = allBreakdown.filter((m) => {
-                            const val =
-                                metric === "requests" ? m.requests : m.pollen;
-                            return val > 0;
-                        });
+                        const valOf = (m: {
+                            requests: number;
+                            pollen: number;
+                        }) => (metric === "requests" ? m.requests : m.pollen);
+                        const threshold = bar.value * 0.005;
+                        const ranked = allBreakdown
+                            .filter((m) => valOf(m) > threshold)
+                            .sort((a, b) => valOf(b) - valOf(a));
+                        const MAX_ROWS = 5;
+                        const breakdown = ranked.slice(0, MAX_ROWS);
+                        const hiddenCount = ranked.length - breakdown.length;
                         const hasBreakdown =
                             showModelBreakdown && breakdown.length > 0;
                         const lineHeight = 16;
                         const headerHeight = 48;
                         const separatorHeight = hasBreakdown ? 12 : 0;
+                        const breakdownRows =
+                            breakdown.length + (hiddenCount > 0 ? 1 : 0);
                         const tooltipHeight =
                             headerHeight +
                             separatorHeight +
-                            (hasBreakdown
-                                ? breakdown.length * lineHeight + 8
-                                : 0);
+                            (hasBreakdown ? breakdownRows * lineHeight + 8 : 0);
                         const tooltipWidth = hasBreakdown ? 280 : 160;
                         const tooltipX = Math.max(
                             pad.left,
@@ -462,6 +468,21 @@ export const Chart: FC<ChartProps> = ({
                                             </g>
                                         ),
                                     )}
+                                {hasBreakdown && hiddenCount > 0 && (
+                                    <text
+                                        x={tooltipX + 12}
+                                        y={
+                                            tooltipY +
+                                            headerHeight +
+                                            separatorHeight +
+                                            4 +
+                                            breakdown.length * lineHeight
+                                        }
+                                        className="text-xs fill-gray-400 italic"
+                                    >
+                                        +{hiddenCount} more
+                                    </text>
+                                )}
                             </g>
                         );
                     })()}

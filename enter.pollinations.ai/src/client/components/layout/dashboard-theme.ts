@@ -14,7 +14,7 @@ export const DASHBOARD_NAV_ITEMS: {
     label: string;
     theme: DashboardTheme;
 }[] = [
-    { id: "updates", label: "Updates", theme: "violet" },
+    { id: "updates", label: "News & FAQ", theme: "violet" },
     { id: "pollen", label: "Pollen", theme: "amber" },
     { id: "usage", label: "Usage", theme: "pink" },
     { id: "keys", label: "Keys", theme: "blue" },

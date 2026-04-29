@@ -19,10 +19,11 @@ function envWithEnter(
 async function fetchWorker(
     path: string,
     env = envWithEnter(),
+    init: RequestInit = {},
 ): Promise<Response> {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
-        new Request(`https://staging.gen.pollinations.ai${path}`),
+        new Request(`https://staging.gen.pollinations.ai${path}`, init),
         env,
         ctx,
     );
@@ -196,18 +197,55 @@ describe("gen worker routing", () => {
             data: {
                 id: string;
                 supported_endpoints?: string[];
+                input_modalities?: string[];
+                output_modalities?: string[];
             }[];
         };
         expect(models.object).toBe("list");
-        expect(models.data).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    id: expect.any(String),
-                    supported_endpoints: expect.arrayContaining([
-                        "/v1/chat/completions",
-                    ]),
-                }),
-            ]),
+        const textModel = models.data.find((model) =>
+            model.supported_endpoints?.includes("/v1/chat/completions"),
         );
+        const imageModel = models.data.find((model) =>
+            model.supported_endpoints?.includes("/v1/images/generations"),
+        );
+        const audioModel = models.data.find((model) =>
+            model.supported_endpoints?.includes("/audio/{text}"),
+        );
+
+        expect(textModel).toMatchObject({
+            id: expect.any(String),
+            input_modalities: expect.any(Array),
+            output_modalities: expect.any(Array),
+            supported_endpoints: expect.arrayContaining(["/text/{prompt}"]),
+        });
+        expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
+        expect(audioModel).toBeDefined();
+    });
+
+    it("adds CORS headers on public model responses", async () => {
+        const response = await fetchWorker("/image/models", envWithEnter(), {
+            headers: { Origin: "https://pollinations.ai" },
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    });
+
+    it("includes context windows on text model metadata", async () => {
+        const response = await fetchWorker("/text/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            context_length?: number;
+        }[];
+        const modelsWithContext = models.filter(
+            (model) => model.context_length != null,
+        );
+
+        expect(modelsWithContext.length).toBeGreaterThan(10);
+        for (const model of modelsWithContext) {
+            expect(model.context_length).toBeGreaterThan(0);
+        }
     });
 });

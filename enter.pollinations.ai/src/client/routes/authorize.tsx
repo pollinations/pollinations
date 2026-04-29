@@ -56,9 +56,22 @@ function parseNumber(val: unknown): number | null {
     return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * Parse a caller-supplied redirect URL and reject anything that isn't a
+ * plain http(s) target. `new URL()` happily accepts `javascript:`, `data:`,
+ * `file:`, `blob:`, etc. — assigning any of those to `window.location.href`
+ * would execute attacker-controlled JS in the enter.pollinations.ai origin
+ * (full session-cookie + same-origin compromise), or load attacker payloads
+ * straight into the user's browser. Only http/https are valid OAuth-style
+ * callbacks for this flow.
+ */
 function safeParseUrl(url: string): URL | null {
     try {
-        return new URL(url);
+        const parsed = new URL(url);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+            return null;
+        }
+        return parsed;
     } catch {
         return null;
     }
@@ -390,15 +403,15 @@ function AuthorizeComponent() {
                 // Best-effort deny
             }
             setDeviceOutcome("denied");
-        } else if (parsedRedirectUrl) {
-            const url = new URL(parsedRedirectUrl.href);
-            const hash = new URLSearchParams({ error: "access_denied" });
-            if (state) hash.set("state", state);
-            url.hash = hash.toString();
-            window.location.href = url.toString();
-        } else {
-            navigate({ to: "/" });
+            return;
         }
+        // Browser flow: do NOT navigate to the caller-supplied redirect_uri
+        // on Deny. Mirroring it (even with `error=access_denied`) hands the
+        // attacker a one-click handoff to their own page after the user
+        // explicitly refused — the perfect setup for a "your auth failed,
+        // click to retry" phishing follow-up. A Deny click should be a
+        // terminal action that keeps the user on enter.pollinations.ai.
+        navigate({ to: "/" });
     }
 
     if (deviceOutcome !== "pending") {

@@ -31,6 +31,16 @@ export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 const app = new Hono<Env>();
 
+const PERMISSIVE_CORS_OPTIONS = {
+    origin: "*",
+    allowMethods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    // Empty allowHeaders makes Hono reflect Access-Control-Request-Headers.
+    allowHeaders: [],
+    // Public API responses are bearer-token based, not credentialed cookies.
+    exposeHeaders: ["*"],
+    maxAge: 600,
+};
+
 /** Append X-Robots-Tag to prevent search engines from indexing API responses. */
 function noIndex(response: Response): Response {
     const res = new Response(response.body, response);
@@ -83,16 +93,7 @@ function redirectLegacyDocs(c: Context<Env>): Response {
     return c.redirect(url.toString(), 301);
 }
 
-app.use(
-    "*",
-    cors({
-        origin: "*",
-        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowHeaders: [],
-        exposeHeaders: ["Content-Length", "Content-Disposition"],
-        maxAge: 600,
-    }),
-)
+app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())

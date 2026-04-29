@@ -27,6 +27,23 @@ function fetchWorker(path: string, env = envWithEnter()): Promise<Response> {
     );
 }
 
+function optionsWorker(
+    path: string,
+    headers: Record<string, string>,
+    env = envWithEnter(),
+): Promise<Response> {
+    return Promise.resolve(
+        worker.fetch(
+            new Request(`https://staging.gen.pollinations.ai${path}`, {
+                method: "OPTIONS",
+                headers,
+            }),
+            env,
+            executionContext,
+        ),
+    );
+}
+
 describe("gen worker routing", () => {
     it("redirects root to docs", async () => {
         const response = await fetchWorker("/");
@@ -62,6 +79,25 @@ describe("gen worker routing", () => {
 
         expect(response.status).toBe(404);
         expect(response.headers.get("Location")).toBeNull();
+    });
+
+    it("allows permissive CORS preflights for public API routes", async () => {
+        const response = await optionsWorker("/v1/chat/completions", {
+            Origin: "https://example.com",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers":
+                "Authorization, Content-Type, X-Pollinations-Test",
+        });
+
+        expect(response.status).toBe(204);
+        expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+        expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
+            "PATCH",
+        );
+        expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
+            "Authorization,Content-Type,X-Pollinations-Test",
+        );
+        expect(response.headers.get("Access-Control-Expose-Headers")).toBe("*");
     });
 
     it("serves robots.txt locally", async () => {

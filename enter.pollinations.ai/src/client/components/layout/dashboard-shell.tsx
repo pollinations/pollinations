@@ -335,7 +335,7 @@ const Brand: FC = () => (
 );
 
 const BrandSocialChips: FC = () => (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex items-center gap-1.5">
         <BrandChip
             href="https://github.com/pollinations/pollinations"
             label="Pollinations on GitHub"

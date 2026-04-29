@@ -1,0 +1,34 @@
+{
+  "pr_number": 10533,
+  "title": "fix: surface Portkey provider errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10533",
+  "merged_at": "2026-04-29T04:14:27Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Clearer signals from the hive",
+    "blurb": "We've made Portkey provider errors much easier to read by bubbling them up to the top level. No more digging through nested payloads to figure out what went wrong!",
+    "summary": "Promoted nested Portkey and provider error messages to the top-level error response in the text generation API.",
+    "impact": "Developers will now see the actual provider error message immediately without having to parse deeply nested error details.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "portkey",
+      "text-generation",
+      "dx"
+    ],
+    "visual_concept": "Polly the bee using a magnifying glass to inspect a glowing terminal, revealing a clear message instead of a messy one. Represents surfacing hidden/nested error details.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot using a tiny magnifying glass to read a glowing lime green (#ecf874) retro terminal screen. A chunky pixel robot companion points happily at a clear, readable message on the monitor. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10533.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot using a tiny magnifying glass to read a glowing lime green (#ecf874) retro terminal screen. A chunky pixel robot companion points happily at a clear, readable message on the monitor. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-29T04:15:20.042496+00:00"
+}

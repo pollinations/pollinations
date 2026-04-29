@@ -7,7 +7,19 @@ import {
 } from "@/pollen-packs.ts";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
 import { createStripeClient } from "../utils/stripe.ts";
+import {
+    type BillingProfileInput,
+    COUNTRY_OPTIONS,
+    createPaymentMethodSetupSession,
+    detachUserPaymentMethod,
+    getBillingState,
+    getOrCreateStripeCustomerId,
+    setDefaultUserPaymentMethod,
+    stripeFieldErrors,
+    updateBillingProfile,
+} from "../utils/stripe-billing.ts";
 
 /**
  * Stripe pack configuration
@@ -15,6 +27,21 @@ import { createStripeClient } from "../utils/stripe.ts";
  * require Stripe catalog edits.
  */
 export const stripeRoutes = new Hono<Env>()
+    /**
+     * GET /api/stripe/billing/countries
+     * Static ISO country list with Stripe-supported tax ID metadata.
+     */
+    // Public: keep this before the authenticated billing middleware below.
+    .get("/billing/countries", (c) => {
+        c.header("Cache-Control", "public, max-age=86400, immutable");
+        return c.json({ countries: COUNTRY_OPTIONS });
+    })
+    .use("/billing", auth({ allowApiKey: false, allowSessionCookie: true }))
+    .use("/billing/*", auth({ allowApiKey: false, allowSessionCookie: true }))
+    .use(
+        "/payment-methods/*",
+        auth({ allowApiKey: false, allowSessionCookie: true }),
+    )
     /**
      * GET /api/stripe/checkout/:amount
      * Create a Stripe Checkout Session for pack purchases
@@ -38,13 +65,17 @@ export const stripeRoutes = new Hono<Env>()
         }
 
         const userId = session.user.id;
-        const userEmail = session.user.email;
 
         const pack = getPollenPack(amount);
 
         if (!pack) {
             return c.json({ error: "Invalid pack amount" }, 400);
         }
+
+        const stripeCustomerId = await getOrCreateStripeCustomerId(
+            c.env,
+            userId,
+        );
 
         // Create Stripe client
         const stripe = createStripeClient(c.env);
@@ -84,9 +115,17 @@ export const stripeRoutes = new Hono<Env>()
                 billing_address_collection: "auto",
                 // Optional VAT/Tax ID collection for businesses (not enforced)
                 tax_id_collection: { enabled: true },
-                // Always create customer for invoicing
-                customer_creation: "always",
-                customer_email: userEmail,
+                customer: stripeCustomerId,
+                customer_update: {
+                    address: "auto",
+                    name: "auto",
+                },
+                payment_intent_data: {
+                    metadata: {
+                        userId,
+                        packAmount: String(pack.amountUsd),
+                    },
+                },
                 // Invoice creation after payment
                 invoice_creation: {
                     enabled: true,
@@ -133,4 +172,116 @@ export const stripeRoutes = new Hono<Env>()
                 description: describePollenPack(pack),
             })),
         });
+    })
+
+    /**
+     * GET /api/stripe/billing
+     * Return Stripe-backed billing profile, cards, and paginated invoices.
+     */
+    .get("/billing", async (c) => {
+        const user = c.var.auth.requireUser();
+        const billing = await getBillingState(
+            c.env,
+            user.id,
+            c.req.query("invoice_cursor"),
+        );
+        return c.json(billing);
+    })
+
+    /**
+     * PATCH /api/stripe/billing/profile
+     * Update Stripe Customer billing profile and tax ID.
+     */
+    .patch("/billing/profile", async (c) => {
+        const user = c.var.auth.requireUser();
+        const body = await c.req.text();
+        if (body.length > 16_384) {
+            return c.json({ error: "Billing profile is too large" }, 413);
+        }
+        const input = JSON.parse(body) as BillingProfileInput;
+
+        try {
+            const result = await updateBillingProfile(c.env, user.id, input);
+            if (!result.ok) {
+                return c.json(
+                    {
+                        error: "Billing profile is invalid",
+                        fieldErrors: result.fieldErrors,
+                    },
+                    400,
+                );
+            }
+
+            return c.json({ profile: result.profile });
+        } catch (error) {
+            const fieldErrors = stripeFieldErrors(error);
+            if (fieldErrors) {
+                return c.json(
+                    {
+                        error: "Billing profile is invalid",
+                        fieldErrors,
+                    },
+                    400,
+                );
+            }
+
+            console.error("Stripe billing profile update error:", error);
+            return c.json({ error: "Failed to update billing profile" }, 500);
+        }
+    })
+
+    /**
+     * POST /api/stripe/payment-methods/setup
+     * Create a Stripe Checkout setup session for adding a card.
+     */
+    .post("/payment-methods/setup", async (c) => {
+        const user = c.var.auth.requireUser();
+        const session = await createPaymentMethodSetupSession(c.env, user.id);
+
+        if (!session.url) {
+            return c.json(
+                { error: "Failed to create payment method setup session" },
+                500,
+            );
+        }
+
+        return c.json({ url: session.url });
+    })
+
+    /**
+     * DELETE /api/stripe/payment-methods/:id
+     * Detach a saved card after verifying ownership.
+     */
+    .delete("/payment-methods/:id", async (c) => {
+        const user = c.var.auth.requireUser();
+        const result = await detachUserPaymentMethod(
+            c.env,
+            user.id,
+            c.req.param("id"),
+        );
+
+        if (result === "forbidden") {
+            return c.json({ error: "Payment method not found" }, 403);
+        }
+
+        return c.body(null, 204);
+    })
+
+    /**
+     * PATCH /api/stripe/payment-methods/:id/default
+     * Set a saved card as the Stripe Customer default payment method.
+     */
+    .patch("/payment-methods/:id/default", async (c) => {
+        const user = c.var.auth.requireUser();
+        const result = await setDefaultUserPaymentMethod(
+            c.env,
+            user.id,
+            c.req.param("id"),
+        );
+
+        if (result === "forbidden") {
+            return c.json({ error: "Payment method not found" }, 403);
+        }
+
+        return c.json({ ok: true });
     });

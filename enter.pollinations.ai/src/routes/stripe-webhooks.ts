@@ -6,6 +6,7 @@ import type Stripe from "stripe";
 import { getPollenPack } from "@/pollen-packs.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import { setSetupSessionPaymentMethodAsDefault } from "../utils/stripe-billing.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -202,6 +203,17 @@ export const stripeWebhooksRoutes = new Hono<Env>()
         switch (event.type) {
             case "checkout.session.completed": {
                 const session = event.data.object as Stripe.Checkout.Session;
+
+                if (session.mode === "setup") {
+                    await setSetupSessionPaymentMethodAsDefault(
+                        stripe,
+                        session,
+                    );
+                    console.log(
+                        `Stripe setup session completed: ${session.id}`,
+                    );
+                    break;
+                }
 
                 // Only process completed payments (not pending async payments)
                 if (session.payment_status === "paid") {

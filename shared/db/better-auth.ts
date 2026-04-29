@@ -5,7 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
 export const user = sqliteTable("user", {
@@ -33,8 +33,30 @@ export const user = sqliteTable("user", {
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
   lastTierGrant: integer("last_tier_grant"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeLegacyCustomerSearchEmail: text("stripe_legacy_customer_search_email"),
 }, (table) => [
   index("idx_user_email").on(table.email),
+  uniqueIndex("idx_user_stripe_customer_id").on(table.stripeCustomerId),
+]);
+
+export const stripeCustomerLink = sqliteTable("stripe_customer_link", {
+  stripeCustomerId: text("stripe_customer_id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  source: text("source").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_customer_link_user_id").on(table.userId),
+  index("idx_stripe_customer_link_email").on(table.email),
 ]);
 
 export const session = sqliteTable("session", {
@@ -139,6 +161,14 @@ export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
   sessions: many(session),
   accounts: many(account),
+  stripeCustomerLinks: many(stripeCustomerLink),
+}));
+
+export const stripeCustomerLinkRelations = relations(stripeCustomerLink, ({ one }) => ({
+  user: one(user, {
+    fields: [stripeCustomerLink.userId],
+    references: [user.id],
+  }),
 }));
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({

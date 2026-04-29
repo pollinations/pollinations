@@ -1,0 +1,34 @@
+{
+  "pr_number": 10544,
+  "title": "Add YSOAI IMAGE GENERATOR to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10544",
+  "merged_at": "2026-04-29T05:25:38Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "YSOAI joins the garden",
+    "blurb": "The YSOAI Image Generator has officially sprouted in our community greenhouse. Generate images quickly and for free using this sweet new integration!",
+    "summary": "Added the YSOAI Image Generator to the Pollinations community app showcase.",
+    "impact": "Users can now discover and use the YSOAI Image Generator directly from the Pollinations app directory.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-generation",
+      "showcase",
+      "ysoai"
+    ],
+    "visual_concept": "A greenhouse setting representing the community apps directory. Polly the bee and the Monitor Robot looking at a newly generated picture/canvas, symbolizing the new YSOAI image generator.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, flying inside a lush digital greenhouse with code-plants. A chunky pixel robot with a CRT monitor head holds up a glowing picture frame showing a beautiful generated landscape. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10544.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, flying inside a lush digital greenhouse with code-plants. A chunky pixel robot with a CRT monitor head holds up a glowing picture frame showing a beautiful generated landscape. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-04-29T05:26:38.509798+00:00",
+  "app_name": "YSOAI IMAGE GENERATOR",
+  "app_url": "https://huggingface.co/spaces/yassinovich/YSOAI"
+}

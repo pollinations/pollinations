@@ -1,0 +1,33 @@
+{
+  "pr_number": 10546,
+  "title": "Add LAHgen to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10546",
+  "merged_at": "2026-04-29T05:34:07Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New bloom: LAHgen",
+    "blurb": "A new app has sprouted in the greenhouse! LAHgen uses Pollinations to generate unlimited AI images across tons of artistic styles.",
+    "summary": "Added LAHgen, a text-to-image generation app, to the community showcase and greenhouse directories.",
+    "impact": "The community directory now features LAHgen, highlighting another creative way developers are using our image generation API.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee as an artist in the greenhouse. Since LAHgen is an image generator with different artistic styles, Polly should be wearing a painter's beret and watering a canvas or easel that is blooming with colorful pixel art paintings.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, watering a glowing lime green (#ecf874) easel that is sprouting beautiful pixelated paintings like flowers. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10546.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, watering a glowing lime green (#ecf874) easel that is sprouting beautiful pixelated paintings like flowers. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-29T05:35:03.899407+00:00",
+  "app_name": "LAHgen",
+  "app_url": "https://image.khminds.com/"
+}

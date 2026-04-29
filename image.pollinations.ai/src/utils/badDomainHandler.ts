@@ -183,7 +183,9 @@ async function processPrompt(
                     `Transformed prompt for bad domain: ${transformedPrompt}`,
                 );
             } catch (error) {
-                logger(`Error transforming prompt: ${error.message}`);
+                const msg =
+                    error instanceof Error ? error.message : String(error);
+                logger(`Error transforming prompt: ${msg}`);
                 // On error, continue with original prompt
             }
         } else {

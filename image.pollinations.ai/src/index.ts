@@ -165,7 +165,7 @@ const imageGen = async ({
         if (maturity.isChild && maturity.isMature) {
             logApi("isChild and isMature, delaying response by 15 seconds");
             progress.updateBar(requestId, 85, "Safety", "Additional review...");
-            await sleep(5000);
+            await sleep(15000);
         }
         progress.updateBar(requestId, 90, "Safety", "Check complete");
 
@@ -181,9 +181,10 @@ const imageGen = async ({
         progress.stop();
 
         // Log detailed error information
+        const err = error instanceof Error ? error : new Error(String(error));
         console.error("Image generation failed:", {
-            error: error.message,
-            stack: error.stack,
+            error: err.message,
+            stack: err.stack,
             requestId,
             prompt: originalPrompt,
             params: safeParams,
@@ -195,16 +196,28 @@ const imageGen = async ({
 };
 
 /** Read JSON body from a POST request. Returns empty object for non-POST or parse errors. */
+const MAX_JSON_BODY_BYTES = 5 * 1024 * 1024; // 5 MB
 function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
     if (req.method !== "POST") return Promise.resolve({});
     return new Promise((resolve) => {
-        let data = "";
+        const chunks: Buffer[] = [];
+        let total = 0;
+        let aborted = false;
         req.on("data", (chunk: Buffer) => {
-            data += chunk.toString();
+            if (aborted) return;
+            total += chunk.length;
+            if (total > MAX_JSON_BODY_BYTES) {
+                aborted = true;
+                req.destroy();
+                resolve({});
+                return;
+            }
+            chunks.push(chunk);
         });
         req.on("end", () => {
+            if (aborted) return;
             try {
-                resolve(JSON.parse(data));
+                resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
             } catch {
                 resolve({});
             }

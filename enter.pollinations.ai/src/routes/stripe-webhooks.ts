@@ -89,7 +89,7 @@ const handleCheckoutSessionCompleted = async (
     }
 
     const userId = metadata.userId;
-    const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
+    const amountPaid = Math.round((session.amount_total || 0) / 100);
     const pack = metadata.packAmount
         ? getPollenPack(metadata.packAmount)
         : undefined;

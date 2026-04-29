@@ -81,7 +81,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         try {
             return await getBalance(userId);
         } catch (error) {
-            log.error("Failed to get balance for user {userId}", {
+            log.error("Failed to get balance for user {userId}: {error}", {
                 userId,
                 error: error instanceof Error ? error.message : String(error),
             });

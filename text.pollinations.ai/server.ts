@@ -3,6 +3,7 @@ import debug from "debug";
 import dotenv from "dotenv";
 import type { Context } from "hono";
 import { Hono } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { stream } from "hono/streaming";
@@ -286,7 +287,7 @@ function sendErrorResponse(
         errorLog("Error details: %O", error.details);
     }
 
-    return c.json(errorResponse, responseStatus as 400);
+    return c.json(errorResponse, responseStatus as ContentfulStatusCode);
 }
 
 async function sendAsOpenAIStream(
@@ -301,7 +302,10 @@ async function sendAsOpenAIStream(
 
     if (completion.error) {
         errorLog("Error detected in streaming request");
-        return c.text("");
+        return c.json(
+            { error: completion.error.message || "Stream error" },
+            (completion.error.status || 500) as ContentfulStatusCode,
+        );
     }
 
     const responseStream = completion.responseStream;

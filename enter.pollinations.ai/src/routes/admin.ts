@@ -35,7 +35,9 @@ async function getLastRefillTime(
     key: string,
 ): Promise<number> {
     const value = await kv.get(key);
-    return value ? Number.parseInt(value, 10) : 0;
+    if (!value) return 0;
+    const parsed = Number.parseInt(value, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 function calculateTierBreakdown(

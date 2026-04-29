@@ -4,24 +4,33 @@ const API_BASE_URL = "https://gen.pollinations.ai";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const cache = new Map();
+const inFlight = new Map();
 
 async function fetchCached(path) {
     const hit = cache.get(path);
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        headers: getAuthHeaders(),
-        signal: controller.signal,
-    }).finally(() => clearTimeout(timeoutId));
+    const pending = inFlight.get(path);
+    if (pending) return pending;
 
-    if (!response.ok) {
-        throw new Error(`Failed to fetch ${path}: ${response.status}`);
-    }
-    const data = await response.json();
-    cache.set(path, { data, at: Date.now() });
-    return data;
+    const promise = (async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        const response = await fetch(`${API_BASE_URL}${path}`, {
+            headers: getAuthHeaders(),
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch ${path}: ${response.status}`);
+        }
+        const data = await response.json();
+        cache.set(path, { data, at: Date.now() });
+        return data;
+    })().finally(() => inFlight.delete(path));
+
+    inFlight.set(path, promise);
+    return promise;
 }
 
 export const getImageModels = () => fetchCached("/image/models");

@@ -85,7 +85,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 value={period}
                                 onChange={onPeriodChange}
                             />
-                            <div className="flex gap-1.5 items-center">
+                            <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
                                 {(["requests", "pollen"] as Metric[]).map(
                                     (m) => (
                                         <TabButton
@@ -217,14 +217,37 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                         </span>
                                     }
                                     detail={
-                                        stats.topModel
-                                            ? formatMetricValue(
-                                                  filters.metric === "requests"
-                                                      ? stats.topModel.requests
-                                                      : stats.topModel.pollen,
-                                                  filters.metric,
-                                              )
-                                            : "No model usage yet"
+                                        stats.topModel ? (
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span
+                                                    title={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
+                                                    className="inline-flex items-center gap-1 rounded-full bg-pink-200 px-2.5 py-1 text-xs font-semibold text-pink-900"
+                                                >
+                                                    <span aria-hidden="true">
+                                                        🔁
+                                                    </span>
+                                                    <span className="tabular-nums">
+                                                        {stats.topModel.requests.toLocaleString()}
+                                                    </span>
+                                                </span>
+                                                <span
+                                                    title={`${formatPollen(stats.topModel.pollen)} pollen`}
+                                                    className="inline-flex items-center gap-1 rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900"
+                                                >
+                                                    <span aria-hidden="true">
+                                                        🪷
+                                                    </span>
+                                                    <span className="tabular-nums">
+                                                        {formatPollen(
+                                                            stats.topModel
+                                                                .pollen,
+                                                        )}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            "No model usage yet"
+                                        )
                                     }
                                 />
                             </div>
@@ -246,14 +269,6 @@ const formatPollen = (value: number): string => {
     if (value === 0) return "0";
     if (Math.abs(value) < 0.01) return value.toPrecision(2);
     return value.toFixed(2);
-};
-
-const formatMetricValue = (value: number, metric: Metric): string => {
-    if (metric === "requests") {
-        const rounded = Math.round(value);
-        return `${rounded.toLocaleString()} request${rounded === 1 ? "" : "s"}`;
-    }
-    return `${formatPollen(value)} pollen`;
 };
 
 const UsageStatCard: FC<{

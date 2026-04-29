@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/util.ts";
 import { TabButton } from "../ui/tab-button.tsx";
@@ -142,7 +142,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
 
     return (
         <div ref={ref} className="relative flex flex-wrap items-center gap-2">
-            <div className="flex gap-1.5">
+            <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
                 {(["day", "week", "month"] as PeriodGranularity[]).map(
                     (granularity) => (
                         <TabButton

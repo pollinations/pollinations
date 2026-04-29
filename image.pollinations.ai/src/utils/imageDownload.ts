@@ -10,8 +10,8 @@ import { HttpError } from "../httpError.ts";
  * error. Do NOT use this for downloading provider-generated results.
  *
  * Some CDNs (e.g. Telegram) return application/octet-stream, so we sniff magic
- * bytes instead of trusting content-type. SVG has no magic bytes; we sniff the
- * leading text for `<svg`/`<?xml` and fall back to image/jpeg otherwise.
+ * bytes instead of trusting content-type. Falls back to image/jpeg if the type
+ * can't be detected.
  */
 export async function downloadUserImage(
     imageUrl: string,
@@ -34,14 +34,7 @@ export async function downloadUserImage(
 
     const buffer = Buffer.from(await imageResponse.arrayBuffer());
     const fileType = await fileTypeFromBuffer(buffer);
-    if (fileType?.mime) {
-        return { buffer, mimeType: fileType.mime };
-    }
+    const mimeType = fileType?.mime || "image/jpeg";
 
-    const head = buffer.slice(0, 256).toString("utf8").trimStart();
-    if (head.startsWith("<svg") || head.startsWith("<?xml")) {
-        return { buffer, mimeType: "image/svg+xml" };
-    }
-
-    return { buffer, mimeType: "image/jpeg" };
+    return { buffer, mimeType };
 }

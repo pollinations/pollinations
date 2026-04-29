@@ -1,0 +1,34 @@
+{
+  "pr_number": 10530,
+  "title": "chore: deploy synced Portkey gateway",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10530",
+  "merged_at": "2026-04-29T04:16:32Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polishing the Portkey",
+    "blurb": "We've updated our deployment scripts to sync the production Portkey gateway with the latest upstream changes. Just keeping the text-generation infrastructure humming along smoothly!",
+    "summary": "Updated the production Portkey deployment script to pin the gateway to the latest synced commit.",
+    "impact": "Maintains the reliability and currency of the text generation infrastructure by syncing with upstream gateway improvements.",
+    "keywords": [
+      "infrastructure",
+      "deployment",
+      "portkey",
+      "gateway",
+      "text-generation"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny hardhat, adjusting a glowing stone archway (representing the Portkey gateway) with a wrench. Focus on infrastructure maintenance and portals.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hardhat, using a wrench to adjust a glowing lime green (#ecf874) stone archway portal. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10530.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hardhat, using a wrench to adjust a glowing lime green (#ecf874) stone archway portal. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-29T04:17:28.172303+00:00"
+}

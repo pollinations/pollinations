@@ -211,10 +211,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     </div>
                 </Card>
             </div>
-            <AutoTopUpPanel
-                initialBillingState={billingState}
-                paidBalance={displayPaid}
-            />
+            <AutoTopUpPanel initialBillingState={billingState} />
             <div className="mt-4 space-y-3 text-sm text-amber-900">
                 <p className="font-medium">
                     💳 Want to pay with a different method?{" "}

@@ -22,14 +22,12 @@ export type BillingState = {
 
 type AutoTopUpPanelProps = {
     initialBillingState: BillingState | null;
-    paidBalance: number;
 };
 
 const THRESHOLD_OPTIONS = [1, 2, 5, 10, 20, 50] as const;
 
 export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
-    paidBalance,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
     const [thresholdPollen, setThresholdPollen] = useState(
@@ -117,13 +115,13 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     }
 
     return (
-        <Card color="teal" className="mt-4 space-y-4 bg-white/90">
+        <Card color="amber" className="mt-4 space-y-4 bg-white/90">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-teal-950 sm:text-xl">
+                    <h3 className="text-lg font-semibold text-amber-950 sm:text-xl">
                         Auto Top-Up
                     </h3>
-                    <p className="text-sm text-teal-900">
+                    <p className="text-sm text-amber-900">
                         Charge your Stripe default payment method when purchased
                         pollen falls below your threshold.
                     </p>
@@ -131,7 +129,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 <div
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
                         billingState?.autoTopUp.enabled
-                            ? "bg-teal-100 text-teal-900"
+                            ? "bg-amber-100 text-amber-900"
                             : "bg-gray-100 text-gray-700"
                     }`}
                 >
@@ -139,21 +137,15 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
-                <div className="space-y-1 text-sm font-medium text-teal-950">
-                    <span>Current paid balance</span>
-                    <div className="rounded-lg bg-teal-50 px-3 py-2 text-base font-semibold text-teal-950">
-                        {formatPollen(Math.max(0, paidBalance))} pollen
-                    </div>
-                </div>
-                <label className="space-y-1 text-sm font-medium text-teal-950">
+            <div className="grid gap-3 md:grid-cols-2">
+                <label className="space-y-1 text-sm font-medium text-amber-950">
                     <span>When below</span>
                     <select
                         value={thresholdPollen}
                         onChange={(event) =>
                             setThresholdPollen(Number(event.target.value))
                         }
-                        className="w-full rounded-lg border border-teal-200 bg-white px-3 py-2 text-base text-teal-950"
+                        className="w-full rounded-lg bg-amber-50 px-3 py-2 text-base text-amber-950"
                     >
                         {THRESHOLD_OPTIONS.map((value) => (
                             <option key={value} value={value}>
@@ -162,14 +154,14 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         ))}
                     </select>
                 </label>
-                <label className="space-y-1 text-sm font-medium text-teal-950">
+                <label className="space-y-1 text-sm font-medium text-amber-950">
                     <span>Top up with</span>
                     <select
                         value={packAmountUsd}
                         onChange={(event) =>
                             setPackAmountUsd(Number(event.target.value))
                         }
-                        className="w-full rounded-lg border border-teal-200 bg-white px-3 py-2 text-base text-teal-950"
+                        className="w-full rounded-lg bg-amber-50 px-3 py-2 text-base text-amber-950"
                     >
                         {POLLEN_PACKS.map((pack) => (
                             <option key={pack.amountUsd} value={pack.amountUsd}>
@@ -181,7 +173,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 </label>
             </div>
 
-            <div className="rounded-lg bg-teal-50/80 px-3 py-2 text-sm text-teal-950">
+            <div className="rounded-lg bg-amber-50/80 px-3 py-2 text-sm text-amber-950">
                 {hasPaymentMethod ? (
                     <span>
                         Stripe default: {billingState?.paymentMethod.brand} ****
@@ -219,7 +211,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <Button
                     as="button"
-                    color="teal"
+                    color="amber"
                     weight="outline"
                     onClick={openBillingPortal}
                     disabled={isOpeningPortal}
@@ -243,7 +235,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     )}
                     <Button
                         as="button"
-                        color="teal"
+                        color="amber"
                         weight="strong"
                         onClick={() => saveAutoTopUp(true)}
                         disabled={isSaving || !canEnable}

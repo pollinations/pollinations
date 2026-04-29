@@ -1,3 +1,4 @@
+import { isRewardEligibleCreatorTier } from "@shared/billing/markup.ts";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -61,6 +62,7 @@ export const Route = createFileRoute("/")({
             ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
+        const devBalance = d1BalanceResult?.devBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
@@ -72,6 +74,7 @@ export const Route = createFileRoute("/")({
             apiKeys,
             tierData,
             tierBalance,
+            devBalance,
             packBalance,
         };
     },
@@ -85,6 +88,7 @@ function RouteComponent() {
         apiKeys,
         tierData,
         tierBalance,
+        devBalance,
         packBalance,
     } = Route.useLoaderData();
 
@@ -94,6 +98,10 @@ function RouteComponent() {
     );
     const [usagePeriod, setUsagePeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+    const canReceiveRewards = isRewardEligibleCreatorTier(
+        tierData?.active?.tier ?? user?.tier,
+    );
+    const visibleDevBalance = canReceiveRewards ? devBalance : 0;
 
     useEffect(() => {
         function syncPageFromHash(): void {
@@ -140,6 +148,9 @@ function RouteComponent() {
                 keyType,
                 ...(isPublishable && formState.redirectUris?.length
                     ? { redirectUris: formState.redirectUris }
+                    : {}),
+                ...(isPublishable && canReceiveRewards
+                    ? { byopEnabled: formState.byopEnabled ?? false }
                     : {}),
             },
             permissions: {
@@ -231,6 +242,7 @@ function RouteComponent() {
                     <DashboardSection title="Balance" theme="amber" framed>
                         <PollenBalance
                             tierBalance={tierBalance}
+                            devBalance={visibleDevBalance}
                             packBalance={packBalance}
                             tier={tierData?.active?.tier}
                         />
@@ -291,10 +303,15 @@ function RouteComponent() {
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
+                    canReceiveRewards={canReceiveRewards}
                 />
             )}
             {activePage === "models" && (
-                <Pricing tierBalance={tierBalance} packBalance={packBalance} />
+                <Pricing
+                    tierBalance={tierBalance}
+                    devBalance={visibleDevBalance}
+                    packBalance={packBalance}
+                />
             )}
         </DashboardShell>
     );

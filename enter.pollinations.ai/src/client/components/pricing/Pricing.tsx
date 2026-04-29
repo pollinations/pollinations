@@ -14,10 +14,15 @@ import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
+export const Pricing: FC<PricingProps> = ({
+    tierBalance,
+    devBalance,
+    packBalance,
+}) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
@@ -81,6 +86,7 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                         textModels={textModels}
                         activeTab={activeTab}
                         tierBalance={tierBalance}
+                        devBalance={devBalance}
                         packBalance={packBalance}
                     />
                 </div>
@@ -94,15 +100,12 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                         </div>
                         <div className="space-y-1 text-xs text-gray-500">
                             <div>
-                                1. Tier grants (refilled hourly) are used first
+                                1. Regular models spend tier grants, then
+                                developer earnings, then purchased pollen
                             </div>
-                            <div>
-                                2. Purchased pollen is used after tier grants
-                                are depleted
-                            </div>
-                            <div className="text-purple-700 mt-2">
-                                ⚠️ <strong>Exception:</strong> 🪷 Paid Only
-                                models require purchased pollen only
+                            <div className="text-purple-700">
+                                2. 🪷 Paid Only models require purchased pollen
+                                only
                             </div>
                         </div>
                     </Card>

@@ -161,7 +161,7 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
-// Helper to filter models by API key permissions and paid balance
+// Helper to filter models by API key permissions and Top-up Pollen balance
 function filterModelsByPermissions<
     T extends { name: string; paid_only?: boolean },
 >(
@@ -177,7 +177,7 @@ function filterModelsByPermissions<
     });
 }
 
-// Check if authenticated user has paid balance (pack > 0)
+// Check if authenticated user has Top-up Pollen balance (pack > 0)
 // Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
 // Returns undefined if no user (unauthenticated), true/false otherwise.
 // biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
@@ -202,7 +202,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models (text, image, audio) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, or `/audio/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                'Returns available models (text, image, audio) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, or `/audio/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no Top-up Pollen balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -317,7 +317,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no Top-up Pollen balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -359,7 +359,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available text generation models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no Top-up Pollen balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -394,7 +394,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Audio Models",
             description:
-                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no Top-up Pollen balance.",
             responses: {
                 200: {
                     description: "Success",

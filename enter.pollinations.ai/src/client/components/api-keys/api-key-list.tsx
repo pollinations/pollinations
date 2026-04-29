@@ -18,6 +18,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    canReceiveRewards,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
@@ -60,6 +61,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             : [];
         const primaryRedirectUri = redirectUrisMeta[0] || "";
         const isApp = isPublishable && !!primaryRedirectUri;
+        const byopEnabled = apiKey.metadata?.byopEnabled === true;
 
         return (
             <Card
@@ -142,6 +144,18 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             >
                                 {primaryRedirectUri.replace(/^https?:\/\//, "")}
                             </a>
+                        </span>
+                    )}
+                    {isApp && canReceiveRewards && (
+                        <span
+                            className={`rounded px-2 py-0.5 font-medium ${
+                                byopEnabled
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-500"
+                            }`}
+                            title="Developer earnings"
+                        >
+                            Earnings {byopEnabled ? "on" : "off"}
                         </span>
                     )}
                     {!isApp && (
@@ -230,6 +244,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 triggerLabel="🖥️ + Add App"
                                 triggerColor="blue"
                                 simplified
+                                canReceiveRewards={canReceiveRewards}
                             />
                         </div>
                         {!sortedAppKeys.length && (
@@ -261,6 +276,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     apiKey={editingKey}
                     onUpdate={onUpdate}
                     onClose={() => setEditingKey(null)}
+                    canReceiveRewards={canReceiveRewards}
                 />
             )}
         </>

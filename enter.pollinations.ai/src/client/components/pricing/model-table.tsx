@@ -35,6 +35,7 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     activeTab: SectionType;
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
@@ -135,6 +136,7 @@ type TabContentProps = {
     sortKey: SortKey;
     sortDir: SortDir;
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
@@ -144,6 +146,7 @@ const TabContent: FC<TabContentProps> = ({
     sortKey,
     sortDir,
     tierBalance,
+    devBalance,
     packBalance,
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
@@ -161,6 +164,7 @@ const TabContent: FC<TabContentProps> = ({
                         key={model.name}
                         model={model}
                         tierBalance={tierBalance}
+                        devBalance={devBalance}
                         packBalance={packBalance}
                     />
                 ))}
@@ -176,6 +180,7 @@ const TabContent: FC<TabContentProps> = ({
                                 key={model.name}
                                 model={model}
                                 tierBalance={tierBalance}
+                                devBalance={devBalance}
                                 packBalance={packBalance}
                             />
                         ))}
@@ -190,6 +195,7 @@ const TabContent: FC<TabContentProps> = ({
                         key={model.name}
                         model={model}
                         tierBalance={tierBalance}
+                        devBalance={devBalance}
                         packBalance={packBalance}
                     />
                 ))}
@@ -205,6 +211,7 @@ const TabContent: FC<TabContentProps> = ({
                                 key={model.name}
                                 model={model}
                                 tierBalance={tierBalance}
+                                devBalance={devBalance}
                                 packBalance={packBalance}
                             />
                         ))}
@@ -220,12 +227,14 @@ const TabContent: FC<TabContentProps> = ({
 type MobileModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({
     model,
     tierBalance,
+    devBalance,
     packBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
@@ -241,7 +250,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
     const isSignedIn = packBalance !== undefined;
     const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
+    const totalBalance = (tierBalance ?? 0) + (devBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 
     const perPollen = calculatePerPollen(model);
@@ -557,6 +566,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     audioModels,
     activeTab,
     tierBalance,
+    devBalance,
     packBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
@@ -656,6 +666,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     sortKey={sortKey}
                     sortDir={sortDir}
                     tierBalance={tierBalance}
+                    devBalance={devBalance}
                     packBalance={packBalance}
                 />
             )}

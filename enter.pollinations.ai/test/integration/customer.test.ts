@@ -53,6 +53,7 @@ test("/balance should return all balance types and lastTierGrant", async ({
     // Set up test balances for the user
     const testBalances = {
         tierBalance: 10.5,
+        devBalance: 2.25,
         packBalance: 25.3,
     };
     const lastTierGrant = Date.now() - 3600000; // 1 hour ago
@@ -61,6 +62,7 @@ test("/balance should return all balance types and lastTierGrant", async ({
         .update(userTable)
         .set({
             ...testBalances,
+            tier: "seed",
             lastTierGrant,
         })
         .where(eq(userTable.id, userId));
@@ -79,8 +81,54 @@ test("/balance should return all balance types and lastTierGrant", async ({
     // Verify all balance fields are returned correctly
     expect(data).toEqual({
         tierBalance: testBalances.tierBalance,
+        devBalance: testBalances.devBalance,
         packBalance: testBalances.packBalance,
         lastTierGrant,
+    });
+});
+
+test("/balance should hide dev balance below seed tier", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("polar", "tinybird");
+    const db = drizzle(env.DB);
+
+    const sessionResponse = await SELF.fetch(
+        "http://localhost:3000/api/auth/get-session",
+        {
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    const session = await sessionResponse.json();
+    const userId = session.user.id;
+
+    await db
+        .update(userTable)
+        .set({
+            tier: "spore",
+            tierBalance: 1,
+            devBalance: 2,
+            packBalance: 3,
+            lastTierGrant: null,
+        })
+        .where(eq(userTable.id, userId));
+
+    const response = await SELF.fetch(`${base}/balance`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        tierBalance: 1,
+        devBalance: 0,
+        packBalance: 3,
+        lastTierGrant: null,
     });
 });
 
@@ -108,6 +156,7 @@ test("/balance should return zero balances for new users", async ({
         .update(userTable)
         .set({
             tierBalance: 0,
+            devBalance: 0,
             packBalance: 0,
             lastTierGrant: null,
         })
@@ -125,6 +174,7 @@ test("/balance should return zero balances for new users", async ({
 
     expect(data).toEqual({
         tierBalance: 0,
+        devBalance: 0,
         packBalance: 0,
         lastTierGrant: null,
     });

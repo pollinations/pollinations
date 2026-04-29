@@ -5,6 +5,8 @@ import { Button } from "../button.tsx";
 type PublishableKeySettingsProps = {
     redirectUris: string[];
     onRedirectUrisChange: (uris: string[]) => void;
+    byopEnabled?: boolean;
+    onByopEnabledChange?: (enabled: boolean) => void;
     disabled?: boolean;
 };
 
@@ -18,6 +20,8 @@ type PublishableKeySettingsProps = {
 export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     redirectUris,
     onRedirectUrisChange,
+    byopEnabled = false,
+    onByopEnabledChange,
     disabled = false,
 }) => {
     const rows = redirectUris.length > 0 ? redirectUris : [""];
@@ -38,51 +42,68 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     }
 
     return (
-        <Field.Root className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-                <Field.Label className="text-sm font-semibold">
-                    Redirect URIs
-                </Field.Label>
-                <span className="text-xs text-gray-600">
-                    Loopback URLs match any port (RFC 8252).
-                </span>
-            </div>
-            {rows.map((uri, index) => (
-                <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
-                    key={index}
-                    className="flex items-center gap-2"
-                >
-                    <Field.Input
-                        type="text"
-                        value={uri}
-                        onChange={(e) => update(index, e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-600"
-                        placeholder="https://myapp.com/auth/callback"
+        <div className="space-y-3">
+            <Field.Root className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    <Field.Label className="text-sm font-semibold">
+                        Redirect URIs
+                    </Field.Label>
+                    <span className="text-xs text-gray-600">
+                        Loopback URLs match any port (RFC 8252).
+                    </span>
+                </div>
+                {rows.map((uri, index) => (
+                    <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
+                        key={index}
+                        className="flex items-center gap-2"
+                    >
+                        <Field.Input
+                            type="text"
+                            value={uri}
+                            onChange={(e) => update(index, e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-600"
+                            placeholder="https://myapp.com/auth/callback"
+                            disabled={disabled}
+                        />
+                        {rows.length > 1 && (
+                            <Button
+                                type="button"
+                                weight="outline"
+                                onClick={() => remove(index)}
+                                disabled={disabled}
+                            >
+                                Remove
+                            </Button>
+                        )}
+                    </div>
+                ))}
+                <div>
+                    <Button
+                        type="button"
+                        weight="outline"
+                        onClick={add}
+                        disabled={disabled}
+                    >
+                        + Add redirect URI
+                    </Button>
+                </div>
+            </Field.Root>
+            {onByopEnabledChange && (
+                <label className="flex items-center gap-3 text-sm">
+                    <input
+                        type="checkbox"
+                        checked={byopEnabled}
+                        onChange={(e) => onByopEnabledChange(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-green-700 focus:ring-green-600"
                         disabled={disabled}
                     />
-                    {rows.length > 1 && (
-                        <Button
-                            type="button"
-                            weight="outline"
-                            onClick={() => remove(index)}
-                            disabled={disabled}
-                        >
-                            Remove
-                        </Button>
-                    )}
-                </div>
-            ))}
-            <div>
-                <Button
-                    type="button"
-                    weight="outline"
-                    onClick={add}
-                    disabled={disabled}
-                >
-                    + Add redirect URI
-                </Button>
-            </div>
-        </Field.Root>
+                    <span className="font-semibold">Developer earnings</span>
+                    <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                        {byopEnabled ? "On" : "Off"}
+                    </span>
+                </label>
+            )}
+        </div>
     );
 };

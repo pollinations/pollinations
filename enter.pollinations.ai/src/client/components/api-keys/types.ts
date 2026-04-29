@@ -9,6 +9,7 @@ export interface ApiKey {
     permissions: Record<string, string[]> | null;
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
+    byopClientKeyId?: string | null;
 }
 
 export interface ApiKeyUpdateParams {
@@ -24,6 +25,7 @@ export interface ApiKeyManagerProps {
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    canReceiveRewards: boolean;
 }
 
 export type CreateApiKey = {
@@ -40,6 +42,8 @@ export type CreateApiKey = {
     accountPermissions?: string[] | null;
     /** Allowed OAuth redirect URIs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];
+    /** Enable BYOP developer earnings for publishable app keys */
+    byopEnabled?: boolean;
 };
 
 export type CreateApiKeyResponse = ApiKey & {

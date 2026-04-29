@@ -15,6 +15,7 @@ export interface AuthenticatedApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    byopClientKeyId?: string | null;
     rawKey?: string;
 }
 
@@ -163,7 +164,10 @@ export async function authenticateApiKeyRequest(opts: {
     const userId = typeof key.userId === "string" ? key.userId : undefined;
     const [apiKeyExtra, userData] = await Promise.all([
         db
-            .select({ pollenBalance: schema.apikey.pollenBalance })
+            .select({
+                pollenBalance: schema.apikey.pollenBalance,
+                byopClientKeyId: schema.apikey.byopClientKeyId,
+            })
             .from(schema.apikey)
             .where(eq(schema.apikey.id, keyId))
             .get(),
@@ -188,6 +192,7 @@ export async function authenticateApiKeyRequest(opts: {
             permissions: normalizePermissions(key.permissions),
             metadata: normalizeMetadata(key.metadata),
             pollenBalance: apiKeyExtra?.pollenBalance ?? null,
+            byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
             rawKey: rawApiKey,
         },
         rawApiKey,

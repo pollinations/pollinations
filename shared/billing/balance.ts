@@ -10,12 +10,13 @@ export type BalanceCheckResult = {
 
 export type UserBalance = {
     tierBalance: number;
+    devBalance: number;
     packBalance: number;
 };
 
 export type BalanceSource = {
-    source: "tier" | "pack";
-    slug: "v1:meter:tier" | "v1:meter:pack";
+    source: "tier" | "dev" | "pack";
+    slug: "v1:meter:tier" | "v1:meter:dev" | "v1:meter:pack";
 };
 
 export async function getUserBalance(
@@ -25,6 +26,7 @@ export async function getUserBalance(
     const users = await db
         .select({
             tierBalance: userTable.tierBalance,
+            devBalance: userTable.devBalance,
             packBalance: userTable.packBalance,
         })
         .from(userTable)
@@ -34,6 +36,7 @@ export async function getUserBalance(
     const user = users[0];
     return {
         tierBalance: user?.tierBalance ?? 0,
+        devBalance: user?.devBalance ?? 0,
         packBalance: user?.packBalance ?? 0,
     };
 }
@@ -41,7 +44,7 @@ export async function getUserBalance(
 /**
  * Get the total available balance across relevant buckets.
  * For paid-only models: pack only.
- * For regular models: tier + pack (only positive buckets).
+ * For regular models: tier + dev + pack (only positive buckets).
  */
 export function getAvailableBalance(
     balances: UserBalance,
@@ -51,12 +54,18 @@ export function getAvailableBalance(
         return Math.max(0, balances.packBalance);
     }
     return (
-        Math.max(0, balances.tierBalance) + Math.max(0, balances.packBalance)
+        Math.max(0, balances.tierBalance) +
+        Math.max(0, balances.devBalance) +
+        Math.max(0, balances.packBalance)
     );
 }
 
 export function hasPositiveBalance(balances: UserBalance): boolean {
-    return balances.tierBalance > 0 || balances.packBalance > 0;
+    return (
+        balances.tierBalance > 0 ||
+        balances.devBalance > 0 ||
+        balances.packBalance > 0
+    );
 }
 
 export function hasPositivePaidBalance(balances: UserBalance): boolean {
@@ -74,6 +83,9 @@ export function determineBalanceSource(
     if (balances.tierBalance > 0) {
         return { source: "tier", slug: "v1:meter:tier" };
     }
+    if (balances.devBalance > 0) {
+        return { source: "dev", slug: "v1:meter:dev" };
+    }
     return { source: "pack", slug: "v1:meter:pack" };
 }
 
@@ -87,6 +99,7 @@ export function createBalanceCheckResult(
         selectedMeterSlug: slug,
         balances: {
             "v1:meter:tier": isPaidOnly ? 0 : balances.tierBalance,
+            "v1:meter:dev": isPaidOnly ? 0 : balances.devBalance,
             "v1:meter:pack": balances.packBalance,
         },
     };

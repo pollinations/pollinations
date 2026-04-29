@@ -3,6 +3,8 @@ import { InfoTip } from "../ui/info-tip.tsx";
 type Attribution = {
     appName?: string;
     githubUsername?: string;
+    found?: boolean;
+    byopEnabled?: boolean;
 };
 
 type AppAttributionProps = {
@@ -21,12 +23,16 @@ export function AppAttribution({
     const displayName =
         attribution?.appName ??
         (isDeviceMode ? "A device" : redirectHostname || "An app");
+    const tipText =
+        attribution?.found && attribution.byopEnabled
+            ? "Same as copy-pasting an API key into their app. Only share with apps you trust. The developer earns 20%."
+            : "Same as copy-pasting an API key into their app. Only share with apps you trust.";
     return (
         <>
             <p className="text-gray-900">
                 <span className="font-bold text-lg">{displayName}</span>{" "}
                 <InfoTip
-                    text="Same as copy-pasting an API key into their app. Only share with apps you trust."
+                    text={tipText}
                     label="API key sharing warning"
                     tone="amber"
                     icon="!"

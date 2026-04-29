@@ -30,7 +30,11 @@ function createTestApp(consumePollen: (amount: number) => Promise<void>) {
         c.set("balance", {
             requirePositiveBalance: async () => {},
             requirePaidBalance: async () => {},
-            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            getBalance: async () => ({
+                tierBalance: 1,
+                devBalance: 0,
+                packBalance: 0,
+            }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {

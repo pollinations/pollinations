@@ -1,3 +1,4 @@
+import { isRewardEligibleCreatorTier } from "@shared/billing/markup.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -19,24 +20,30 @@ export const customerRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Get detailed balance breakdown for the current user (tier, pack).",
+                "Get detailed balance breakdown for the current user (tier, dev, pack).",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const { tierBalance, packBalance } = await c.var.balance.getBalance(
-                user.id,
-            );
+            const { tierBalance, devBalance, packBalance } =
+                await c.var.balance.getBalance(user.id);
             const db = drizzle(c.env.DB);
             const users = await db
-                .select({ lastTierGrant: userTable.lastTierGrant })
+                .select({
+                    lastTierGrant: userTable.lastTierGrant,
+                    tier: userTable.tier,
+                })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
                 .limit(1);
             const lastTierGrant = users[0]?.lastTierGrant ?? null;
+            const rewardEligible = isRewardEligibleCreatorTier(
+                users[0]?.tier ?? user.tier,
+            );
 
             return c.json({
                 tierBalance,
+                devBalance: rewardEligible ? devBalance : 0,
                 packBalance,
                 lastTierGrant,
             });

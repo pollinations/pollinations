@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
+import { isRewardEligibleCreatorTier } from "../billing/markup.ts";
 import * as schema from "../db/better-auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 
@@ -16,6 +17,7 @@ export type CallerMetadata = {
     createdForUserId?: string;
     createdForApp?: string;
     description?: string;
+    byopEnabled?: boolean;
 };
 
 type CreateApiKeyForUserInput = {
@@ -62,6 +64,7 @@ type VerifiedClientAttribution = {
     clientId: string;
     createdForUserId: string;
     createdForApp: string;
+    byopEnabled: boolean;
 };
 
 export function validateRedirectUriFormat(redirectUri: string): void {
@@ -115,6 +118,12 @@ function cleanRedirectUris(redirectUris: string[]): string[] {
 function rejectInvalidClientId(): never {
     throw new HTTPException(400, {
         message: "Invalid client_id",
+    });
+}
+
+function rejectRewardIneligible(): never {
+    throw new HTTPException(403, {
+        message: "Developer earnings require seed tier or higher",
     });
 }
 
@@ -173,6 +182,7 @@ function isLoopbackHostname(hostname: string): boolean {
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
     attribution: VerifiedClientAttribution | null,
+    isPublishable: boolean,
 ): Record<string, unknown> {
     if (!metadata) return {};
     const out: Record<string, unknown> = {};
@@ -185,6 +195,9 @@ function pickCallerMetadata(
         out.deviceUserCode = metadata.deviceUserCode;
     if (typeof metadata.description === "string")
         out.description = metadata.description;
+    if (isPublishable && typeof metadata.byopEnabled === "boolean") {
+        out.byopEnabled = metadata.byopEnabled;
+    }
     if (attribution) {
         out.clientId = attribution.clientId;
         out.createdForUserId = attribution.createdForUserId;
@@ -235,10 +248,21 @@ async function validateClientRedirectBinding(
     if (!clientKey || clientKey.prefix !== "pk") {
         rejectInvalidClientId();
     }
+    const clientMetadata = parseMetadata(clientKey.metadata);
+    const [creatorRow] = await db
+        .select({ tier: schema.user.tier })
+        .from(schema.user)
+        .where(eq(schema.user.id, clientKey.userId))
+        .limit(1);
+    const creatorCanReceiveRewards = isRewardEligibleCreatorTier(
+        creatorRow?.tier,
+    );
     const attribution = {
         clientId: clientKey.id,
         createdForUserId: clientKey.userId,
         createdForApp: clientKey.name ?? "Unknown app",
+        byopEnabled:
+            clientMetadata.byopEnabled === true && creatorCanReceiveRewards,
     };
 
     if (typeof metadata.deviceUserCode === "string") {
@@ -298,7 +322,27 @@ export async function createApiKeyForUser({
         metadata,
     );
 
-    const callerMetadata = pickCallerMetadata(metadata, attribution);
+    const isPublishable = type === "publishable";
+    const [creatorRow] = await db
+        .select({ tier: schema.user.tier })
+        .from(schema.user)
+        .where(eq(schema.user.id, userId))
+        .limit(1);
+    const creatorCanReceiveRewards = isRewardEligibleCreatorTier(
+        creatorRow?.tier,
+    );
+    if (
+        isPublishable &&
+        metadata?.byopEnabled === true &&
+        !creatorCanReceiveRewards
+    ) {
+        rejectRewardIneligible();
+    }
+    const callerMetadata = pickCallerMetadata(
+        metadata,
+        attribution,
+        isPublishable,
+    );
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
             validateRedirectUriFormat(uri);
@@ -317,7 +361,6 @@ export async function createApiKeyForUser({
         permissions.account = safeAccountPerms;
     }
 
-    const isPublishable = type === "publishable";
     const prefix = isPublishable ? "pk" : "sk";
     const baseMetadata = {
         ...callerMetadata,
@@ -352,6 +395,9 @@ export async function createApiKeyForUser({
         metadata: JSON.stringify(finalMetadata),
     };
     if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
+    if (!isPublishable && attribution?.byopEnabled === true) {
+        d1Updates.byopClientKeyId = attribution.clientId;
+    }
 
     await db
         .update(schema.apikey)
@@ -369,6 +415,10 @@ export async function createApiKeyForUser({
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: pollenBudget ?? null,
+        byopClientKeyId:
+            !isPublishable && attribution?.byopEnabled === true
+                ? attribution.clientId
+                : null,
         metadata: finalMetadata,
     };
 }

@@ -39,6 +39,7 @@ type Attribution = {
     githubUsername?: string;
     appName?: string;
     redirectUris?: string[];
+    byopEnabled?: boolean;
 };
 
 function parseList(val: unknown): string[] | null {
@@ -288,7 +289,9 @@ function AuthorizeComponent() {
             .then((data) => {
                 if (!data) return;
                 setTotalBalance(
-                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
+                    (data.tierBalance ?? 0) +
+                        (data.devBalance ?? 0) +
+                        (data.packBalance ?? 0),
                 );
             })
             .catch(() => {});

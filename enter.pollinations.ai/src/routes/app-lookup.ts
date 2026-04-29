@@ -1,3 +1,4 @@
+import { isRewardEligibleCreatorTier } from "@shared/billing/markup.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -27,6 +28,9 @@ async function resolveAttribution(
         githubUsername: user?.githubUsername || undefined,
         appName: keyRow.name,
         redirectUris,
+        byopEnabled:
+            meta.byopEnabled === true &&
+            isRewardEligibleCreatorTier(user?.tier),
     };
 }
 

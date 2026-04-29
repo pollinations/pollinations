@@ -16,6 +16,7 @@ interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
+    canReceiveRewards: boolean;
 }
 
 function readInitialRedirectUris(
@@ -37,6 +38,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
     onClose,
+    canReceiveRewards,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
@@ -47,9 +49,11 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
     const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
+    const initialByopEnabled = apiKey.metadata?.byopEnabled === true;
     const isAppKey = isPublishable && initialRedirectUris.length > 0;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
+    const [byopEnabled, setByopEnabled] = useState(initialByopEnabled);
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -92,18 +96,28 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             // Save app settings for publishable keys
             if (
                 isPublishable &&
-                !sameRedirectUris(redirectUris, initialRedirectUris)
+                (!sameRedirectUris(redirectUris, initialRedirectUris) ||
+                    (canReceiveRewards && byopEnabled !== initialByopEnabled) ||
+                    (!canReceiveRewards && initialByopEnabled))
             ) {
                 const cleaned = redirectUris
                     .map((v) => v.trim())
                     .filter((v) => v !== "");
+                const metadataBody = {
+                    redirectUris: cleaned,
+                    ...(canReceiveRewards
+                        ? { byopEnabled }
+                        : initialByopEnabled
+                          ? { byopEnabled: false }
+                          : {}),
+                };
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
-                        body: JSON.stringify({ redirectUris: cleaned }),
+                        body: JSON.stringify(metadataBody),
                     },
                 );
                 if (!metaRes.ok) {
@@ -210,6 +224,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
+                                    byopEnabled={byopEnabled}
+                                    onByopEnabledChange={
+                                        canReceiveRewards
+                                            ? setByopEnabled
+                                            : undefined
+                                    }
                                     disabled={isSubmitting}
                                 />
                             )}

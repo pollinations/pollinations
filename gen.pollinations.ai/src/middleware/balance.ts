@@ -61,10 +61,11 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         const balances = await fetchBalanceWithErrorHandling(userId);
 
         log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}",
+            "Local pollen balance for user {userId}: tier={tierBalance}, dev={devBalance}, pack={packBalance}",
             {
                 userId,
                 tierBalance: balances.tierBalance,
+                devBalance: balances.devBalance,
                 packBalance: balances.packBalance,
             },
         );
@@ -99,7 +100,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         throw new HTTPException(402, {
             message:
                 message ||
-                "This model requires a paid balance. Tier balance cannot be used.",
+                "This model requires 💳 Top-up Pollen. 🌱 Tier Pollen and 🌻 Dev earnings cannot be used.",
         });
     };
 

@@ -1,5 +1,8 @@
 import { getLogger } from "@logtape/logtape";
-import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import {
+    handleBalanceDeduction,
+    type MarkupResolution,
+} from "@shared/billing/track-helpers.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
@@ -65,6 +68,7 @@ function checkedUserBalance(balance: BalanceVariables["balance"]) {
 
     return {
         tierBalance: balances["v1:meter:tier"] ?? 0,
+        devBalance: balances["v1:meter:dev"] ?? 0,
         packBalance: balances["v1:meter:pack"] ?? 0,
     };
 }
@@ -132,6 +136,7 @@ export const track = (eventType: EventType) =>
         const apiKeyMetadata = c.var.auth.apiKey?.metadata as
             | Record<string, unknown>
             | undefined;
+        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
@@ -142,14 +147,18 @@ export const track = (eventType: EventType) =>
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,
-            apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
+            apiKeyCreatedVia: byopClientKeyId
+                ? "redirect-auth"
+                : (apiKeyMetadata?.createdVia as string | undefined),
             apiKeyCreatedForApp: apiKeyMetadata?.createdForApp as
                 | string
                 | undefined,
             apiKeyCreatedForUserId: apiKeyMetadata?.createdForUserId as
                 | string
                 | undefined,
-            apiKeyClientId: apiKeyMetadata?.clientId as string | undefined,
+            apiKeyClientId:
+                byopClientKeyId ??
+                (apiKeyMetadata?.clientId as string | undefined),
         } satisfies UserData;
 
         let responseOverride = null;
@@ -176,11 +185,6 @@ export const track = (eventType: EventType) =>
                     response,
                 );
 
-                // register pollen consumption with rate limiter
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.price?.totalPrice || 0,
-                );
-
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
@@ -191,6 +195,25 @@ export const track = (eventType: EventType) =>
                 } satisfies BalanceData;
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
+
+                // Deduct payer + credit dev before emitting the event so dev_credit
+                // reflects the ledger, not just the intended credit.
+                const balanceDb = db as unknown as Parameters<
+                    typeof handleBalanceDeduction
+                >[0]["db"];
+                const { markup } = await handleBalanceDeduction({
+                    db: balanceDb,
+                    isBilledUsage: responseTracking.isBilledUsage,
+                    totalPrice: responseTracking.price?.totalPrice,
+                    userId: userTracking.userId,
+                    apiKeyId: c.var.auth?.apiKey?.id,
+                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                    byopClientKeyId,
+                    modelResolved: c.var.model?.resolved,
+                    userBalanceBeforeDeduction: c.var.balance
+                        ? checkedUserBalance(c.var.balance)
+                        : undefined,
+                });
 
                 const finalEvent = createTrackingEvent({
                     id: generateRandomId(),
@@ -206,8 +229,13 @@ export const track = (eventType: EventType) =>
                     balanceTracking,
                     requestTracking,
                     responseTracking,
+                    markup,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
+
+                await c.var.frontendKeyRateLimit?.consumePollen(
+                    finalEvent.totalPrice || 0,
+                );
 
                 log.trace(
                     [
@@ -218,6 +246,7 @@ export const track = (eventType: EventType) =>
                         '  selectedMeterSlug="{event.selectedMeterSlug}"',
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
+                        "  devCredit={event.devCredit}",
                     ].join("\n"),
                     { event: finalEvent },
                 );
@@ -228,23 +257,6 @@ export const track = (eventType: EventType) =>
                     c.env.TINYBIRD_INGEST_TOKEN,
                     log,
                 );
-
-                // Handle balance deduction for both API keys and users
-                const balanceDb = db as unknown as Parameters<
-                    typeof handleBalanceDeduction
-                >[0]["db"];
-                await handleBalanceDeduction({
-                    db: balanceDb,
-                    isBilledUsage: responseTracking.isBilledUsage,
-                    totalPrice: responseTracking.price?.totalPrice,
-                    userId: userTracking.userId,
-                    apiKeyId: c.var.auth?.apiKey?.id,
-                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                    modelResolved: c.var.model?.resolved,
-                    userBalanceBeforeDeduction: c.var.balance
-                        ? checkedUserBalance(c.var.balance)
-                        : undefined,
-                });
             })(),
         );
     });
@@ -454,6 +466,7 @@ type TrackingEventInput = {
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
+    markup: MarkupResolution | null;
     errorTracking?: ErrorData;
 };
 
@@ -471,6 +484,7 @@ function createTrackingEvent({
     balanceTracking,
     requestTracking,
     responseTracking,
+    markup,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
@@ -503,7 +517,11 @@ function createTrackingEvent({
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
-        totalPrice: responseTracking.price?.totalPrice || 0,
+        totalPrice:
+            (responseTracking.price?.totalPrice || 0) +
+            (markup?.devCredit ?? 0),
+        devCredit: markup?.devCredit ?? 0,
+        byopMarkupPct: markup?.markupPct ?? 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,

@@ -24,12 +24,14 @@ import type { ModelPrice } from "./types.ts";
 type ModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
+    devBalance?: number;
     packBalance?: number;
 };
 
 export const ModelRow: FC<ModelRowProps> = ({
     model,
     tierBalance,
+    devBalance,
     packBalance,
 }) => {
     const modelDisplayName = getModelDisplayName(model.name);
@@ -46,7 +48,7 @@ export const ModelRow: FC<ModelRowProps> = ({
 
     const isSignedIn = packBalance !== undefined;
     const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
+    const totalBalance = (tierBalance ?? 0) + (devBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 
     const genPerPollen = calculatePerPollen(model);
@@ -234,7 +236,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     content={
                                         isDisabled
                                             ? TOP_UP_TOOLTIP
-                                            : "This model uses purchased pollen only."
+                                            : "This model uses Top-up Pollen only."
                                     }
                                 >
                                     <Badge color="purple" size="sm">

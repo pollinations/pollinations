@@ -9,6 +9,7 @@ import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
+    devBalance: number;
     packBalance: number;
     tier?: string;
 };
@@ -63,6 +64,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
+    devBalance,
     packBalance,
     tier = "spore",
 }) => {
@@ -71,24 +73,33 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
     // Clamp at 0 for display — individual buckets can go slightly negative from overage
     const displayTier = Math.max(0, tierBalance);
+    const displayDev = Math.max(0, devBalance);
     const displayPaid = Math.max(0, packBalance);
-    const totalPollen = displayTier + displayPaid;
+    const totalPollen = displayTier + displayDev + displayPaid;
 
     function calculatePercentage(value: number, total: number): number {
         return total > 0 ? (value / total) * 100 : 0;
     }
 
     const rawPaidPercentage = calculatePercentage(displayPaid, totalPollen);
+    const rawDevPercentage = calculatePercentage(displayDev, totalPollen);
     const gaugeHeightClass = "h-[30px] sm:h-[34px]";
     const hideTierGaugeSegment = tier === "microbe" && displayTier === 0;
 
     // Ensure both segments are always visible (min width to fit labels)
     const MIN_SEGMENT = 20;
     let paidPercentage: number;
+    let devPercentage = 0;
     let freePercentage: number;
     if (hideTierGaugeSegment) {
-        paidPercentage = displayPaid > 0 ? 100 : 0;
+        paidPercentage =
+            totalPollen > 0 ? calculatePercentage(displayPaid, totalPollen) : 0;
+        devPercentage = rawDevPercentage;
         freePercentage = 0;
+    } else if (displayDev > 0 && totalPollen > 0) {
+        paidPercentage = rawPaidPercentage;
+        devPercentage = rawDevPercentage;
+        freePercentage = calculatePercentage(displayTier, totalPollen);
     } else if (totalPollen > 0) {
         paidPercentage = Math.max(
             MIN_SEGMENT,
@@ -120,8 +131,19 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayPaid}
                                 label="🪷"
                                 color="amber"
-                                tooltipText={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants for others`}
+                                tooltipText={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants and developer earnings for regular models`}
                                 position="left"
+                            />
+                        )}
+                        {displayDev > 0 && (
+                            <PollenGaugeSegment
+                                percentage={devPercentage}
+                                value={displayDev}
+                                label="🌻"
+                                color="green"
+                                tooltipText={`🌻 Developer earnings: ${formatPollen(displayDev)} pollen\nEarned when users spend Pollen in your BYOP apps\nUsed after tier grants for regular models`}
+                                position="right"
+                                offset={paidPercentage}
                             />
                         )}
                         {/* Free Pollen - Soft teal for free */}
@@ -133,7 +155,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 color={tierColor}
                                 tooltipText={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
                                 position="right"
-                                offset={paidPercentage}
+                                offset={paidPercentage + devPercentage}
                             />
                         )}
                     </div>

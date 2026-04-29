@@ -174,12 +174,9 @@ function AuthorizeComponent() {
     const visibleOptionalPermissions = CONSENT_PERMISSIONS.filter((p) =>
         requestedScopes.has(p),
     );
-    const hasBudget = keyPermissions.permissions.pollenBudget !== null;
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
-        (isDeviceMode || parsedRedirectUrl !== null) &&
-        hasBudget &&
-        !isAttributionPending;
+        (isDeviceMode || parsedRedirectUrl !== null) && !isAttributionPending;
 
     useScrollLock();
 

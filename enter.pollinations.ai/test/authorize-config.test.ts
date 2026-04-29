@@ -98,6 +98,19 @@ describe("getAuthorizeInitialPermissions", () => {
             accountPermissions: null,
         });
     });
+
+    it("preserves an explicit unlimited budget instead of falling back to the default", () => {
+        expect(
+            getAuthorizeInitialPermissions({
+                budget: null,
+            }),
+        ).toEqual({
+            allowedModels: undefined,
+            pollenBudget: null,
+            expiryDays: DEFAULT_CONSENT_EXPIRY_DAYS,
+            accountPermissions: null,
+        });
+    });
 });
 
 describe("sanitizeAuthorizeAccountPermissions", () => {

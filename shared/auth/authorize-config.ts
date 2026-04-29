@@ -61,7 +61,7 @@ export function getAuthorizeInitialPermissions({
 }: AuthorizeDefaultsInput) {
     return {
         allowedModels: models,
-        pollenBudget: budget ?? DEFAULT_CONSENT_BUDGET,
+        pollenBudget: budget === undefined ? DEFAULT_CONSENT_BUDGET : budget,
         expiryDays: expiry ?? DEFAULT_CONSENT_EXPIRY_DAYS,
         accountPermissions: sanitizeAuthorizeAccountPermissions(permissions),
     };

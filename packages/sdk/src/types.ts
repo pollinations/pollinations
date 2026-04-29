@@ -578,7 +578,7 @@ export interface AuthorizeOptions {
     appKey?: string;
     /** Restrict to specific models */
     models?: string[];
-    /** Cap pollen usage */
+    /** Numeric pollen cap. Omit for the default cap. */
     budget?: number;
     /** Key lifetime in days (default: 30) */
     expiry?: number;

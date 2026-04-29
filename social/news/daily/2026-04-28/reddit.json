@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-28",
+  "period_start": "2026-04-28",
+  "period_end": "2026-04-28",
+  "generated_at": "2026-04-29T06:47:56.134419+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-28/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged 6 PRs: gpt-image-2 routing changes, OpenClaw support, API fixes",
+  "text": "Merged 6 PRs today, mostly focused on routing and cleaning up some API edge cases.\n\nThe main event was a bit of an infrastructure round-trip with gpt-image-2. Initially, we merged PR #10525 to spread the model across 5 different Azure regions to handle increased load. A few hours later, we realized it made more sense to just route directly to OpenAI and drop the Azure round-robin entirely (PR #10531). Sometimes you build a complex distribution setup just to delete it the same afternoon. The direct route is much cleaner and latency is better.\n\nOn the integration side, OpenClaw now supports Pollinations as a provider out of the box (PR #9942). You can just select us in the setup and start making HTTP calls.\n\nWe also polished a few API edge cases that were probably annoying some of you:\n- Scribe transcriptions no longer throw a 500 error if you send an empty audio file. It handles it gracefully now (PR #10520).\n- If you try to call a text model on an image endpoint (or vice versa), we now return a proper 400 instead of failing silently or doing something weird (PR #10527).\n\nFinally, we updated the app submission protocol (PR #10517). If you are building something and want to hit the Flower tier for higher rate limits, the path to getting your app approved is documented much more clearly now.\n\nCode, roadmap, and the updated submission docs are in the repo: github.com/pollinations/pollinations"
+}

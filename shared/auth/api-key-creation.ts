@@ -58,6 +58,12 @@ type CreateApiKeyAuthClient = {
     };
 };
 
+type VerifiedClientAttribution = {
+    clientId: string;
+    createdForUserId: string;
+    createdForApp: string;
+};
+
 export function validateRedirectUriFormat(redirectUri: string): void {
     if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(redirectUri)) {
         throw new HTTPException(400, {
@@ -162,10 +168,11 @@ function isLoopbackHostname(hostname: string): boolean {
 }
 
 // Caller-provided metadata is restricted to a typed allowlist. Server-controlled
-// fields like keyType / createdVia / plaintextKey can never be set or overridden
-// by callers, even via /api/api-keys metadata patches.
+// fields like keyType / createdVia / plaintextKey / app attribution can never
+// be set or overridden by callers, even via /api/api-keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
+    attribution: VerifiedClientAttribution | null,
 ): Record<string, unknown> {
     if (!metadata) return {};
     const out: Record<string, unknown> = {};
@@ -176,13 +183,13 @@ function pickCallerMetadata(
         out.redirectOrigin = metadata.redirectOrigin;
     if (typeof metadata.deviceUserCode === "string")
         out.deviceUserCode = metadata.deviceUserCode;
-    if (typeof metadata.clientId === "string") out.clientId = metadata.clientId;
-    if (typeof metadata.createdForUserId === "string")
-        out.createdForUserId = metadata.createdForUserId;
-    if (typeof metadata.createdForApp === "string")
-        out.createdForApp = metadata.createdForApp;
     if (typeof metadata.description === "string")
         out.description = metadata.description;
+    if (attribution) {
+        out.clientId = attribution.clientId;
+        out.createdForUserId = attribution.createdForUserId;
+        out.createdForApp = attribution.createdForApp;
+    }
     return out;
 }
 
@@ -190,15 +197,16 @@ async function validateClientRedirectBinding(
     authClient: CreateApiKeyAuthClient,
     db: ReturnType<typeof drizzle<typeof schema>>,
     metadata: CallerMetadata | undefined,
-): Promise<void> {
-    if (!metadata) return;
+): Promise<VerifiedClientAttribution | null> {
+    if (!metadata) return null;
     const requestedClientId = metadata.requestedClientId;
     const storedClientId = metadata.clientId;
+
     if (
         typeof requestedClientId !== "string" &&
         typeof storedClientId !== "string"
     ) {
-        return;
+        return null;
     }
 
     if (
@@ -227,6 +235,11 @@ async function validateClientRedirectBinding(
     if (!clientKey || clientKey.prefix !== "pk") {
         rejectInvalidClientId();
     }
+    const attribution = {
+        clientId: clientKey.id,
+        createdForUserId: clientKey.userId,
+        createdForApp: clientKey.name ?? "Unknown app",
+    };
 
     if (typeof metadata.deviceUserCode === "string") {
         const device = await db.query.deviceCode.findFirst({
@@ -245,7 +258,7 @@ async function validateClientRedirectBinding(
                 message: "client_id mismatch",
             });
         }
-        return;
+        return attribution;
     }
 
     if (typeof metadata.redirectUri !== "string") {
@@ -261,6 +274,7 @@ async function validateClientRedirectBinding(
             message: "redirect_uri not in allowlist for this client_id",
         });
     }
+    return attribution;
 }
 
 export async function createApiKeyForUser({
@@ -278,9 +292,13 @@ export async function createApiKeyForUser({
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
-    await validateClientRedirectBinding(authClient, db, metadata);
+    const attribution = await validateClientRedirectBinding(
+        authClient,
+        db,
+        metadata,
+    );
 
-    const callerMetadata = pickCallerMetadata(metadata);
+    const callerMetadata = pickCallerMetadata(metadata, attribution);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
             validateRedirectUriFormat(uri);

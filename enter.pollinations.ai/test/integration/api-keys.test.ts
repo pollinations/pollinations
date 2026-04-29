@@ -120,6 +120,8 @@ describe("API Key Management", () => {
                         metadata: {
                             redirectUri: "https://solo.example/callback",
                             redirectOrigin: "https://solo.example",
+                            createdForUserId: "spoofed-user",
+                            createdForApp: "spoofed-app",
                         },
                     }),
                 },
@@ -132,6 +134,8 @@ describe("API Key Management", () => {
             );
             expect(created.metadata.createdVia).toBe("redirect-auth");
             expect(created.metadata.clientId).toBeUndefined();
+            expect(created.metadata.createdForUserId).toBeUndefined();
+            expect(created.metadata.createdForApp).toBeUndefined();
         });
 
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
@@ -215,6 +219,8 @@ describe("API Key Management", () => {
                         metadata: {
                             requestedClientId: appKey.key,
                             clientId: appKey.id,
+                            createdForUserId: "spoofed-user",
+                            createdForApp: "spoofed-app",
                             redirectUri: "https://legit.example/callback",
                             redirectOrigin: "https://legit.example",
                         },
@@ -225,6 +231,13 @@ describe("API Key Management", () => {
             expect(matchingResponse.status).toBe(200);
             const matchingCreated = await matchingResponse.json();
             expect(matchingCreated.metadata.createdVia).toBe("redirect-auth");
+            expect(matchingCreated.metadata.clientId).toBe(appKey.id);
+            expect(matchingCreated.metadata.createdForApp).toBe(
+                "registered-app",
+            );
+            expect(matchingCreated.metadata.createdForUserId).not.toBe(
+                "spoofed-user",
+            );
         });
 
         test("allows device-flow attribution without redirect_uri when client_id matches the device code", async ({
@@ -280,7 +293,8 @@ describe("API Key Management", () => {
                             deviceUserCode: userCode,
                             requestedClientId: appKey.key,
                             clientId: appKey.id,
-                            createdForApp: "device-registered-app",
+                            createdForUserId: "spoofed-user",
+                            createdForApp: "spoofed-device-app",
                         },
                     }),
                 },
@@ -289,6 +303,60 @@ describe("API Key Management", () => {
             expect(response.status).toBe(200);
             const created = await response.json();
             expect(created.metadata.createdVia).toBe("redirect-auth");
+            expect(created.metadata.deviceUserCode).toBe(userCode);
+            expect(created.metadata.clientId).toBe(appKey.id);
+            expect(created.metadata.createdForApp).toBe(
+                "device-registered-app",
+            );
+            expect(created.metadata.createdForUserId).not.toBe("spoofed-user");
+        });
+
+        test("allows unbranded device-flow key creation without caller attribution", async ({
+            sessionToken,
+        }) => {
+            const db = drizzle(env.DB, { schema });
+            const userCode = crypto
+                .randomUUID()
+                .replace(/-/g, "")
+                .slice(0, 8)
+                .toUpperCase();
+            await db.insert(schema.deviceCode).values({
+                id: crypto.randomUUID(),
+                deviceCode: crypto.randomUUID(),
+                userCode,
+                status: "pending",
+                expiresAt: new Date(Date.now() + 600_000),
+                clientId: null,
+                scope: "generate",
+            });
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "unbranded-device-auth-key",
+                        type: "secret",
+                        metadata: {
+                            deviceUserCode: userCode,
+                            createdForUserId: "victim-user",
+                            createdForApp: "spoofed-device-app",
+                        },
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.metadata.createdVia).toBe("redirect-auth");
+            expect(created.metadata.deviceUserCode).toBe(userCode);
+            expect(created.metadata.clientId).toBeUndefined();
+            expect(created.metadata.createdForUserId).toBeUndefined();
+            expect(created.metadata.createdForApp).toBeUndefined();
         });
 
         test("rejects forged device-flow attribution when client_id does not match the device code", async ({

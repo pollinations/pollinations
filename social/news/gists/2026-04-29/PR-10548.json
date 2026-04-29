@@ -1,0 +1,34 @@
+{
+  "pr_number": 10548,
+  "title": "fix: allow unlimited BYOP budget",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10548",
+  "merged_at": "2026-04-29T05:57:18Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The sky is the limit",
+    "blurb": "The Bring Your Own Pollen consent screen now accepts an empty budget as 'unlimited'. The safety rails are officially optional.",
+    "summary": "Updated the BYOP consent screen and SDK to allow setting an explicit unlimited budget by passing a null value.",
+    "impact": "Users can now bypass the default budget cap when authorizing BYOP apps, enabling unrestricted usage for trusted applications.",
+    "keywords": [
+      "byop",
+      "billing",
+      "auth",
+      "sdk",
+      "budget"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot dealing with an overflowing, infinite amount of pollen/data. The concept of 'unlimited' represented by an infinity symbol or an overflowing container.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, holding a glowing lime green (#ecf874) infinity symbol. A chunky retro robot with a CRT monitor head stands nearby, its screen showing a chart line going straight up and off the top edge. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10548.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, holding a glowing lime green (#ecf874) infinity symbol. A chunky retro robot with a CRT monitor head stands nearby, its screen showing a chart line going straight up and off the top edge. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-29T05:58:14.075877+00:00"
+}

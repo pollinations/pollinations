@@ -17,6 +17,21 @@ interface EditApiKeyDialogProps {
     onClose: () => void;
 }
 
+function readInitialRedirectUris(
+    metadata: Record<string, unknown> | null | undefined,
+): string[] {
+    const list = metadata?.redirectUris;
+    if (Array.isArray(list)) {
+        return list.filter((v): v is string => typeof v === "string" && !!v);
+    }
+    return [];
+}
+
+function sameRedirectUris(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((v, i) => v === b[i]);
+}
+
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
@@ -30,9 +45,10 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const isPublishable = apiKey.metadata?.keyType === "publishable";
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
-    const initialAppUrl = (apiKey.metadata?.appUrl as string) || "";
-    const isAppKey = isPublishable && !!initialAppUrl;
-    const [appUrl, setAppUrl] = useState(initialAppUrl);
+    const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
+    const isAppKey = isPublishable && initialRedirectUris.length > 0;
+    const [redirectUris, setRedirectUris] =
+        useState<string[]>(initialRedirectUris);
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -73,16 +89,20 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             });
 
             // Save app settings for publishable keys
-            if (isPublishable && appUrl !== initialAppUrl) {
+            if (
+                isPublishable &&
+                !sameRedirectUris(redirectUris, initialRedirectUris)
+            ) {
+                const cleaned = redirectUris
+                    .map((v) => v.trim())
+                    .filter((v) => v !== "");
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
-                        body: JSON.stringify({
-                            appUrl: appUrl || undefined,
-                        }),
+                        body: JSON.stringify({ redirectUris: cleaned }),
                     },
                 );
                 if (!metaRes.ok) {
@@ -188,8 +208,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                             {isPublishable && (
                                 <PublishableKeySettings
-                                    appUrl={appUrl}
-                                    onAppUrlChange={setAppUrl}
+                                    redirectUris={redirectUris}
+                                    onRedirectUrisChange={setRedirectUris}
                                     disabled={isSubmitting}
                                 />
                             )}

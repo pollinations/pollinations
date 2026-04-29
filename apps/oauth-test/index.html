@@ -157,6 +157,13 @@
         return $('auth-server').value.replace(/\/+$/, '');
     }
 
+    function generationServer() {
+        const srv = server();
+        if (srv === 'https://enter.pollinations.ai') return 'https://gen.pollinations.ai';
+        if (srv === 'http://localhost:3000') return 'http://localhost:8788';
+        return srv.replace('://enter.pollinations.ai', '://gen.pollinations.ai');
+    }
+
     // ── Client Registration (cached in sessionStorage) ──
     async function getOrRegisterClient() {
         const srv = server();
@@ -381,7 +388,7 @@
             return;
         }
         try {
-            const url = `${server()}/api/generate/v1/chat/completions`;
+            const url = `${generationServer()}/v1/chat/completions`;
             setStatus(`Calling ${url}...`);
 
             const resp = await fetch(url, {

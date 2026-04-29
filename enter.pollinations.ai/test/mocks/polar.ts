@@ -1,9 +1,18 @@
+import {
+    createHonoMockHandler,
+    type MockAPI,
+} from "@shared/test/mocks/fetch.ts";
 import { Hono } from "hono";
-import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
-import { PolarEvent } from "@/events.ts";
+import type { PolarEvent } from "@/events.ts";
 
 export type MockPolarState = {
     events: PolarEvent[];
+};
+
+type MockCustomerBody = {
+    external_id?: string;
+    name?: string;
+    email?: string;
 };
 
 export function createMockPolar(): MockAPI<MockPolarState> {
@@ -22,7 +31,7 @@ export function createMockPolar(): MockAPI<MockPolarState> {
             });
         })
         .post("/v1/customers", async (c) => {
-            const body = await c.req.json();
+            const body = await c.req.json<MockCustomerBody>();
             return c.json(createMockCustomer(body), 201);
         })
         .get("/v1/customers/external/:id/state", async (c) => {
@@ -157,7 +166,7 @@ function createMockCustomerState(
     };
 }
 
-function createMockCustomer(body: any) {
+function createMockCustomer(body: MockCustomerBody) {
     return {
         id: "test-customer-id-1234",
         external_id: body.external_id || "",

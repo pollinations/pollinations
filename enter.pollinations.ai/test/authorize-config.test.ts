@@ -1,12 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { normalizeAllowedModelSelection } from "@/client/components/api-keys/model-selection.ts";
 import {
     CONSENT_PERMISSIONS,
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     getAuthorizeInitialPermissions,
     sanitizeAuthorizeAccountPermissions,
-} from "@/client/lib/authorize-config.ts";
+} from "@shared/auth/authorize-config.ts";
+import { describe, expect, it } from "vitest";
+import { normalizeAllowedModelSelection } from "@/client/components/api-keys/model-selection.ts";
 
 describe("normalizeAllowedModelSelection", () => {
     it("collapses fully selected model lists back to null", () => {

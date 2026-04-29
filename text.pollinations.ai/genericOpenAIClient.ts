@@ -18,13 +18,31 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 
+function extractErrorMessage(details: unknown): string | null {
+    if (typeof details === "string") return details.trim() || null;
+    if (!details || typeof details !== "object") return null;
+
+    const error = (details as { error?: unknown }).error;
+    if (error && typeof error === "object") {
+        const message = (error as { message?: unknown }).message;
+        if (typeof message === "string" && message.trim()) {
+            return message;
+        }
+    }
+
+    const message = (details as { message?: unknown }).message;
+    return typeof message === "string" && message.trim() ? message : null;
+}
+
 function createApiError(
     response: { status: number; statusText: string },
     details: unknown,
     modelName: string,
 ): ServiceError {
+    const statusMessage = `${response.status} ${response.statusText}`;
+    const detailMessage = extractErrorMessage(details);
     const error = new Error(
-        `${response.status} ${response.statusText}`,
+        detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
     error.status = response.status;
     error.details = details;

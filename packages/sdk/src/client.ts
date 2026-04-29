@@ -56,6 +56,9 @@ const NON_RETRIABLE_CODES = [400, 401, 402, 403, 404, 422];
 
 // Default Retry-After delay when header is missing (seconds)
 const DEFAULT_RETRY_AFTER = 60;
+// Cap honored Retry-After so a malicious or misconfigured upstream
+// cannot force the client into an indefinite sleep.
+const MAX_RETRY_AFTER_SECONDS = 300;
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -110,10 +113,13 @@ function parseRetryAfter(response: Response): number | undefined {
     const retryAfter = response.headers.get("Retry-After");
     if (!retryAfter) return undefined;
 
-    // Try parsing as number of seconds
-    const seconds = Number.parseInt(retryAfter, 10);
-    if (!Number.isNaN(seconds)) {
-        return seconds;
+    // Try parsing as number of seconds.
+    // Use Number() (not parseInt) so malformed values like "5abc" or "5e2x"
+    // are rejected instead of being silently truncated into an aggressive
+    // retry delay.
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+        return Math.min(seconds, MAX_RETRY_AFTER_SECONDS);
     }
 
     // Try parsing as HTTP date

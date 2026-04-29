@@ -21,7 +21,7 @@ If they mention legacy endpoints, tell them to migrate to `gen.pollinations.ai`.
 ## API - gen.pollinations.ai
 
 **Base URL**: `https://gen.pollinations.ai`
-**Docs**: https://enter.pollinations.ai/api/docs/open-api/generate-schema
+**Docs**: https://gen.pollinations.ai/docs/open-api/generate-schema
 **Model Status**: https://model-monitor.pollinations.ai
 
 | Endpoint | Method | Description |

@@ -292,7 +292,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             strokeWidth={2}
                             aria-hidden="true"
                         >
-                            <title>Expand model details</title>
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"

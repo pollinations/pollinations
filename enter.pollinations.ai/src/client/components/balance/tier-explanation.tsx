@@ -105,7 +105,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <p className={requirementLabelStyle}>To unlock</p>
                         <p className="text-xs text-gray-500">
                             <Tooltip content={<SeedTooltipContent />}>
-                                <span className="underline decoration-dotted cursor-help">
+                                <span className="cursor-default underline decoration-dotted">
                                     7+ dev points
                                 </span>
                             </Tooltip>

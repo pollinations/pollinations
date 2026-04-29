@@ -7,6 +7,7 @@ import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Input } from "../ui/input.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
@@ -159,19 +160,26 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                       : "🔒 Secret"}
                             </Badge>
                             {isPublishable && plaintextKey ? (
-                                <button
-                                    type="button"
-                                    onClick={handleCopyKey}
-                                    className={cn(
-                                        "font-mono text-sm cursor-pointer transition-all",
-                                        copied
-                                            ? "text-green-600 font-semibold"
-                                            : "text-blue-600 hover:text-blue-800 hover:underline",
-                                    )}
-                                    title={copied ? "Copied!" : "Click to copy"}
+                                <Tooltip
+                                    triggerAs="span"
+                                    content={
+                                        copied ? "Copied!" : "Click to copy"
+                                    }
+                                    className="inline-flex min-w-0"
                                 >
-                                    {copied ? "✓ Copied!" : plaintextKey}
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyKey}
+                                        className={cn(
+                                            "font-mono text-sm cursor-pointer transition-all",
+                                            copied
+                                                ? "text-green-600 font-semibold"
+                                                : "text-blue-600 hover:text-blue-800 hover:underline",
+                                        )}
+                                    >
+                                        {copied ? "✓ Copied!" : plaintextKey}
+                                    </button>
+                                </Tooltip>
                             ) : (
                                 <span className="font-mono text-sm text-gray-500">
                                     {apiKey.start}...

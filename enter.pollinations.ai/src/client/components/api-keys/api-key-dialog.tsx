@@ -9,6 +9,7 @@ import {
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
@@ -140,6 +141,24 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         if (isSubmitting) return "Creating...";
         return "Create";
     }
+
+    const createDisabledReason =
+        !createdKey && noModelsSelected
+            ? "Select at least one model"
+            : !createdKey && isMissingRedirectUris
+              ? "Add at least one redirect URI"
+              : undefined;
+
+    const submitButton = (
+        <Button
+            type={createdKey ? "button" : "submit"}
+            onClick={createdKey ? handleCopyAndClose : undefined}
+            className="disabled:opacity-50"
+            disabled={isCreateDisabled}
+        >
+            {getButtonText()}
+        </Button>
+    );
 
     return (
         <Dialog.Root
@@ -307,30 +326,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Cancel
                                 </Button>
                             )}
-                            <span
-                                title={
-                                    !createdKey
-                                        ? noModelsSelected
-                                            ? "Select at least one model"
-                                            : isMissingRedirectUris
-                                              ? "Add at least one redirect URI"
-                                              : undefined
-                                        : undefined
-                                }
-                            >
-                                <Button
-                                    type={createdKey ? "button" : "submit"}
-                                    onClick={
-                                        createdKey
-                                            ? handleCopyAndClose
-                                            : undefined
-                                    }
-                                    className="disabled:opacity-50"
-                                    disabled={isCreateDisabled}
+                            {createDisabledReason ? (
+                                <Tooltip
+                                    triggerAs="span"
+                                    content={createDisabledReason}
+                                    className="inline-flex"
                                 >
-                                    {getButtonText()}
-                                </Button>
-                            </span>
+                                    {submitButton}
+                                </Tooltip>
+                            ) : (
+                                submitButton
+                            )}
                         </div>
                     </form>
                 </Dialog.Content>

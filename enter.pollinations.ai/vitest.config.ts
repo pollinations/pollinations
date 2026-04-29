@@ -7,20 +7,6 @@ import { loadEnv } from "vite";
 import { configDefaults } from "vitest/config";
 import viteConfig from "./vite.config";
 
-const generationRouteTests = [
-    "test/deduplication.test.ts",
-    "test/rate-limit.test.ts",
-    "test/integration/api-keys.test.ts",
-    "test/integration/audio.test.ts",
-    "test/integration/error-observability.test.ts",
-    "test/integration/image.test.ts",
-    "test/integration/public-endpoints.test.ts",
-    "test/integration/text-cache.test.ts",
-    "test/integration/text.test.ts",
-    "test/integration/tier-balance.test.ts",
-    "test/integration/video.test.ts",
-];
-
 export default defineWorkersConfig(async ({ mode }) => {
     const migrationsPath = path.join(__dirname, "drizzle");
     const migrations = await readD1Migrations(migrationsPath);
@@ -34,11 +20,7 @@ export default defineWorkersConfig(async ({ mode }) => {
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",
             ],
-            exclude: [
-                ...configDefaults.exclude,
-                "test/e2e/**",
-                ...generationRouteTests,
-            ],
+            exclude: [...configDefaults.exclude, "test/e2e/**"],
             reporters: ["default"],
             teardownTimeout: 5000,
             poolOptions: {

@@ -1,3 +1,7 @@
+import {
+    createExecutionContext,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { Hono } from "hono";
@@ -47,21 +51,6 @@ function createTextBucket(): R2Bucket {
     } as unknown as R2Bucket;
 }
 
-function createExecutionContext() {
-    const promises: Promise<unknown>[] = [];
-    return {
-        ctx: {
-            waitUntil(promise: Promise<unknown>) {
-                promises.push(promise);
-            },
-            passThroughOnException() {},
-        } as unknown as ExecutionContext,
-        async flush() {
-            await Promise.all(promises.splice(0));
-        },
-    };
-}
-
 type TestEnv = {
     Bindings: CloudflareBindings;
     Variables: LoggerVariables & RequestIdVariables;
@@ -91,12 +80,12 @@ describe("text cache", () => {
         const env = {
             TEXT_BUCKET: createTextBucket(),
         } as CloudflareBindings;
-        const executionContext = createExecutionContext();
         const body = JSON.stringify({
             model: "openai-fast",
             messages: [{ role: "user", content: "cache me" }],
         });
 
+        const firstCtx = createExecutionContext();
         const first = await app.fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -104,11 +93,12 @@ describe("text cache", () => {
                 body,
             }),
             env,
-            executionContext.ctx,
+            firstCtx,
         );
         expect(await first.json()).toEqual({ originHits: 1 });
-        await executionContext.flush();
+        await waitOnExecutionContext(firstCtx);
 
+        const secondCtx = createExecutionContext();
         const second = await app.fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -116,8 +106,9 @@ describe("text cache", () => {
                 body,
             }),
             env,
-            executionContext.ctx,
+            secondCtx,
         );
+        await waitOnExecutionContext(secondCtx);
 
         expect(second.headers.get("X-Cache")).toBe("HIT");
         expect(await second.json()).toEqual({ originHits: 1 });

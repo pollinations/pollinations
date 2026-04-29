@@ -1,10 +1,9 @@
+import {
+    createExecutionContext,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import worker from "./index.ts";
-
-const executionContext = {
-    waitUntil() {},
-    passThroughOnException() {},
-} as unknown as ExecutionContext;
 
 function envWithEnterSchema(schema: unknown): CloudflareBindings {
     return {
@@ -22,6 +21,7 @@ function envWithEnterSchema(schema: unknown): CloudflareBindings {
 
 describe("docs routes", () => {
     it("serves a gen-owned OpenAPI schema and merges non-generation enter paths", async () => {
+        const ctx = createExecutionContext();
         const enterSchema = {
             openapi: "3.1.0",
             info: { title: "Enter", version: "0.0.0" },
@@ -42,8 +42,9 @@ describe("docs routes", () => {
                 "https://gen.pollinations.ai/docs/open-api/generate-schema",
             ),
             envWithEnterSchema(enterSchema),
-            executionContext,
+            ctx,
         );
+        await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
         const schema = (await response.json()) as {
@@ -64,11 +65,13 @@ describe("docs routes", () => {
     });
 
     it("does not add noindex to docs responses at the worker boundary", async () => {
+        const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt"),
             envWithEnterSchema({}),
-            executionContext,
+            ctx,
         );
+        await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
         expect(response.headers.get("X-Robots-Tag")).toBeNull();

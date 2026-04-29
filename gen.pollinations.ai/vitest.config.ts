@@ -1,11 +1,14 @@
+import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import {
+    defineWorkersConfig,
+    readD1Migrations,
+} from "@cloudflare/vitest-pool-workers/config";
+import { loadEnv } from "vite";
+import { configDefaults, defineConfig } from "vitest/config";
 
 const genSrc = fileURLToPath(new URL("./src/", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
-const cloudflareWorkersStub = fileURLToPath(
-    new URL("./test/cloudflare-workers.ts", import.meta.url),
-);
 
 const genAliases = [
     "content-filter.ts",
@@ -37,7 +40,7 @@ const genAliases = [
     "utils/text-cache.ts",
 ];
 
-export default defineConfig({
+const baseConfig = defineConfig({
     resolve: {
         alias: [
             ...genAliases.map((path) => ({
@@ -48,13 +51,57 @@ export default defineConfig({
                 find: /^@shared\/(.*)$/,
                 replacement: `${sharedSrc}$1`,
             },
-            {
-                find: "cloudflare:workers",
-                replacement: cloudflareWorkersStub,
-            },
         ],
     },
-    test: {
-        environment: "node",
-    },
+});
+
+export default defineWorkersConfig(async ({ mode }) => {
+    const migrationsPath = path.join(
+        __dirname,
+        "../enter.pollinations.ai/drizzle",
+    );
+    const migrations = await readD1Migrations(migrationsPath);
+    const env = loadEnv(mode, process.cwd(), "");
+
+    return {
+        ...baseConfig,
+        test: {
+            setupFiles: ["./test/setup/apply-migrations.ts"],
+            exclude: [...configDefaults.exclude],
+            poolOptions: {
+                workers: {
+                    singleWorker: true,
+                    wrangler: {
+                        configPath: "./wrangler.toml",
+                        environment: env.TEST_ENV || "test",
+                    },
+                    miniflare: {
+                        bindings: {
+                            TEST_MIGRATIONS: migrations,
+                        },
+                        serviceBindings: {
+                            ENTER: async (request: Request) => {
+                                const url = new URL(request.url);
+                                if (
+                                    url.pathname ===
+                                    "/api/docs/open-api/generate-schema"
+                                ) {
+                                    return Response.json({
+                                        openapi: "3.1.0",
+                                        info: {
+                                            title: "Enter",
+                                            version: "0.0.0",
+                                        },
+                                        paths: {},
+                                        components: {},
+                                    });
+                                }
+                                return new Response("enter test stub");
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    };
 });

@@ -1,10 +1,9 @@
+import {
+    createExecutionContext,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import worker from "./index.ts";
-
-const executionContext = {
-    waitUntil() {},
-    passThroughOnException() {},
-} as unknown as ExecutionContext;
 
 function envWithEnter(
     fetch: Fetcher["fetch"] = async () => new Response("enter"),
@@ -17,31 +16,36 @@ function envWithEnter(
     } as CloudflareBindings;
 }
 
-function fetchWorker(path: string, env = envWithEnter()): Promise<Response> {
-    return Promise.resolve(
-        worker.fetch(
-            new Request(`https://staging.gen.pollinations.ai${path}`),
-            env,
-            executionContext,
-        ),
+async function fetchWorker(
+    path: string,
+    env = envWithEnter(),
+): Promise<Response> {
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(`https://staging.gen.pollinations.ai${path}`),
+        env,
+        ctx,
     );
+    await waitOnExecutionContext(ctx);
+    return response;
 }
 
-function optionsWorker(
+async function optionsWorker(
     path: string,
     headers: Record<string, string>,
     env = envWithEnter(),
 ): Promise<Response> {
-    return Promise.resolve(
-        worker.fetch(
-            new Request(`https://staging.gen.pollinations.ai${path}`, {
-                method: "OPTIONS",
-                headers,
-            }),
-            env,
-            executionContext,
-        ),
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(`https://staging.gen.pollinations.ai${path}`, {
+            method: "OPTIONS",
+            headers,
+        }),
+        env,
+        ctx,
     );
+    await waitOnExecutionContext(ctx);
+    return response;
 }
 
 describe("gen worker routing", () => {
@@ -166,14 +170,43 @@ describe("gen worker routing", () => {
         expect(response.headers.get("X-Robots-Tag")).toBeNull();
     });
 
-    it("routes public generation paths through the generation app", async () => {
-        const response = await fetchWorker("/models", envWithEnter());
+    it.each([
+        "/models",
+        "/text/models",
+        "/image/models",
+        "/audio/models",
+    ] as const)("routes public model path %s through gen", async (path) => {
+        const response = await fetchWorker(path, envWithEnter());
 
         expect(response.status).toBe(200);
         const models = (await response.json()) as unknown[];
         expect(models).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({ name: expect.any(String) }),
+            ]),
+        );
+    });
+
+    it("serves OpenAI-compatible models without auth", async () => {
+        const response = await fetchWorker("/v1/models", envWithEnter());
+
+        expect(response.status).toBe(200);
+        const models = (await response.json()) as {
+            object: string;
+            data: {
+                id: string;
+                supported_endpoints?: string[];
+            }[];
+        };
+        expect(models.object).toBe("list");
+        expect(models.data).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: expect.any(String),
+                    supported_endpoints: expect.arrayContaining([
+                        "/v1/chat/completions",
+                    ]),
+                }),
             ]),
         );
     });

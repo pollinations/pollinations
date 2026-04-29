@@ -125,7 +125,8 @@ function UnrecognizedAttribution({
     const displayHost = isDeviceMode
         ? "A device"
         : redirectHostname || "An app";
-    const isLoopback = !isDeviceMode && !!redirectUrl && isLoopbackUrl(redirectUrl);
+    const isLoopback = 
+        !isDeviceMode && !!redirectUrl && isLoopbackUrl(redirectUrl);
 
     return (
         <div
@@ -144,7 +145,9 @@ function UnrecognizedAttribution({
                         Unverified app
                     </p>
                     <p className="text-sm text-red-900 mt-1">
-                        <span className="font-mono break-all">{displayHost}</span>{" "}
+                            <span className="font-mono break-all">
+                                {displayHost}
+                            </span>{" "}
                         is not registered with Pollinations. We can&apos;t
                         verify who&apos;s asking for your key.
                     </p>

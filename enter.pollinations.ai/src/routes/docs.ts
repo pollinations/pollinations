@@ -192,7 +192,7 @@ function generateLLMDoc(): string {
     lines.push('- model (string, default: "zimage"): Image or video model');
     lines.push("- width (int, default: 1024), height (int, default: 1024)");
     lines.push(
-        "- seed (int, default: 0): Works with flux, zimage, seedream, klein, seedance. -1 for random",
+        "- seed (int, default: 0): Works with flux, zimage, seedream, klein, seedance, nova-reel. -1 for random",
     );
     lines.push("- enhance (boolean, default: false): AI prompt enhancement");
     lines.push("- negative_prompt (string): Only flux, zimage");
@@ -1282,7 +1282,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "",
                                 `**Available models:** ${videoModelDisplayNames}`,
                                 "",
-                                "**Video parameters:** `duration` (seconds), `aspectRatio` (`16:9` or `9:16`), `audio` (enable soundtrack), `image` (reference frames)",
+                                "**Video parameters:** `duration` (seconds), `aspectRatio` (`16:9` or `9:16`), `audio` (enable soundtrack), `image` (reference frames), `seed` (reproducibility; supported by veo, seedance, nova-reel)",
                             ].join("\n"),
                         },
                         {

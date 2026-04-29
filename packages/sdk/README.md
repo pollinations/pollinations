@@ -79,11 +79,13 @@ node my-first-ai.mjs
   // Generate image
   const image = await generateImage('a cute robot');
 
-  // Display both
-  document.body.innerHTML = `
-    <p>${text}</p>
-    <img src="${image.toDataURL()}">
-  `;
+  // Display both — build nodes instead of interpolating into innerHTML
+  // so model output cannot inject markup or script into the page.
+  const p = document.createElement('p');
+  p.textContent = text;
+  const img = document.createElement('img');
+  img.src = image.toDataURL();
+  document.body.replaceChildren(p, img);
 </script>
 ```
 

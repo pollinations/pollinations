@@ -329,13 +329,13 @@ const Brand: FC = () => (
         <img
             src="/logo_text_black.svg"
             alt="pollinations.ai"
-            className="h-7 w-auto"
+            className="h-9 w-auto"
         />
     </a>
 );
 
 const BrandSocialLinks: FC = () => (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center">
         <BrandIconLink
             href="https://discord.gg/pollinations-ai-885844321461485618"
             label="Discord community"
@@ -361,7 +361,7 @@ const BrandIconLink: FC<PropsWithChildren<{ href: string; label: string }>> = ({
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-green-950/70 transition-colors hover:bg-white/70 hover:text-green-950"
+        className="flex h-6 w-6 items-center justify-center rounded-full text-green-950/70 transition-colors hover:bg-white/70 hover:text-green-950"
     >
         <span className="h-4 w-4">{children}</span>
     </a>

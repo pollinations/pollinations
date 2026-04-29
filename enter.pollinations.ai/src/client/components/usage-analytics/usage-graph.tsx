@@ -7,6 +7,7 @@ import { pillColors } from "../layout/dashboard-theme.ts";
 import { Card } from "../ui/card.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
 import { Chart } from "./chart";
+import { MODALITY_META, type ModelModality } from "./constants";
 import { MultiSelect } from "./multi-select";
 import { PeriodPicker } from "./period-picker.tsx";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
@@ -172,6 +173,11 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             <UsageStatCard
                                 label="Requests"
                                 value={stats.totalRequests.toLocaleString()}
+                                detail={
+                                    <ModalityPills
+                                        breakdown={stats.requestsByModality}
+                                    />
+                                }
                             />
                             <UsageStatCard
                                 label="Pollen spent"
@@ -191,22 +197,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 }
                             />
                             <UsageStatCard
-                                label="Average"
-                                value={formatPollen(
-                                    stats.averagePollenPerRequest,
-                                )}
-                                detail="Pollen per request"
-                            />
-                            <UsageStatCard
-                                label="Active models"
-                                value={stats.activeModelCount.toLocaleString()}
-                                detail={
-                                    stats.activeModelCount === 1
-                                        ? "Model used"
-                                        : "Models used"
-                                }
-                            />
-                            <UsageStatCard
                                 label="Top model"
                                 value={
                                     <span className="text-xl leading-tight">
@@ -222,22 +212,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                               filters.metric,
                                           )
                                         : "No model usage yet"
-                                }
-                            />
-                            <UsageStatCard
-                                label={
-                                    period.granularity === "day"
-                                        ? "Peak hour"
-                                        : "Peak day"
-                                }
-                                value={stats.peakPeriod?.label || "None"}
-                                detail={
-                                    stats.peakPeriod
-                                        ? formatMetricValue(
-                                              stats.peakPeriod.value,
-                                              filters.metric,
-                                          )
-                                        : "No activity yet"
                                 }
                             />
                         </div>
@@ -282,5 +256,34 @@ const UsageStatCard: FC<{
         )}
     </Card>
 );
+
+const ModalityPills: FC<{ breakdown: Record<ModelModality, number> }> = ({
+    breakdown,
+}) => {
+    const entries = (Object.keys(MODALITY_META) as ModelModality[])
+        .map((modality) => ({ modality, count: breakdown[modality] }))
+        .filter(({ count }) => count > 0);
+    if (entries.length === 0) return null;
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            {entries.map(({ modality, count }) => (
+                <span
+                    key={modality}
+                    className="inline-flex items-center gap-1 rounded-full bg-pink-200 px-2.5 py-1 text-xs font-semibold text-pink-900"
+                >
+                    <span aria-hidden="true">
+                        {MODALITY_META[modality].emoji}
+                    </span>
+                    <span className="tabular-nums">
+                        {count.toLocaleString()}
+                    </span>
+                    <span className="text-pink-900/70">
+                        {MODALITY_META[modality].label}
+                    </span>
+                </span>
+            ))}
+        </div>
+    );
+};
 
 export default UsageGraph;

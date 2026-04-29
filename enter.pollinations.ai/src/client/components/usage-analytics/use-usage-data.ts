@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ALL_MODELS } from "./constants";
+import { ALL_MODELS, type ModelModality } from "./constants";
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type {
     DailyUsageRecord,
@@ -32,6 +32,7 @@ type UsageDataResult = {
             label: string;
             value: number;
         } | null;
+        requestsByModality: Record<ModelModality, number>;
     };
     filteredData: DailyUsageRecord[];
 };
@@ -287,6 +288,18 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             return best;
         }, null);
 
+        const requestsByModality: Record<ModelModality, number> = {
+            text: 0,
+            image: 0,
+            audio: 0,
+        };
+        for (const r of filtered) {
+            if (!r.model || !r.requests) continue;
+            const registered = ALL_MODELS.find((m) => m.id === r.model);
+            if (!registered) continue;
+            requestsByModality[registered.type] += r.requests;
+        }
+
         return {
             chartData: sorted,
             stats: {
@@ -299,6 +312,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 activeModelCount: modelTotals.size,
                 topModel,
                 peakPeriod,
+                requestsByModality,
             },
             filteredData: filtered,
         };

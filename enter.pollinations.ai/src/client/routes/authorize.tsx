@@ -5,7 +5,7 @@ import {
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "../../util.ts";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
@@ -168,7 +168,13 @@ function AuthorizeComponent() {
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
 
-    const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
+    // Memoize so React/biome can use it as a stable dependency in effects
+    // below without re-firing on every render (safeParseUrl returns a new
+    // URL instance each call).
+    const parsedRedirectUrl = useMemo(
+        () => (redirect_url ? safeParseUrl(redirect_url) : null),
+        [redirect_url],
+    );
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
 
     const keyPermissions = useKeyPermissions(
@@ -199,11 +205,14 @@ function AuthorizeComponent() {
         app_key,
         attribution,
     );
-    const canAuthorize =
-        (isDeviceMode || redirectAllowed) && hasBudget;
+    // Block the Authorize button while the /api/app-lookup round-trip for
+    // a provided client_id is still in flight — otherwise a user could
+    // click through before the redirect_uri / attribution check completes.
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
-        (isDeviceMode || parsedRedirectUrl !== null) && !isAttributionPending;
+        (isDeviceMode || redirectAllowed) &&
+        hasBudget &&
+        !isAttributionPending;
 
     useScrollLock();
 
@@ -321,7 +330,7 @@ function AuthorizeComponent() {
                 "redirect_uri does not match the registered app URL for this client_id.",
             );
         }
-    }, [isDeviceMode, redirect_url, app_key, attribution]);
+    }, [isDeviceMode, parsedRedirectUrl, app_key, attribution]);
 
     useEffect(() => {
         if (!user) return;

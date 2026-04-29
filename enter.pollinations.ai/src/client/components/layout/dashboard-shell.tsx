@@ -368,33 +368,20 @@ const BrandIconLink: FC<PropsWithChildren<{ href: string; label: string }>> = ({
 );
 
 const AccountMenuLinks: FC = () => (
-    <>
-        <div className="flex flex-col gap-1">
-            <AccountIconLink
-                href="https://discord.gg/pollinations-ai-885844321461485618"
-                label="Discord community"
-                icon={<DiscordIcon />}
-            />
-            <AccountIconLink
-                href="https://discord.com/channels/885844321461485618/1432378056126894343"
-                label="#pollen-beta"
-                icon={<DiscordIcon />}
-                ariaLabel="#pollen-beta Discord channel"
-            />
-            <AccountIconLink
-                href="https://github.com/pollinations/pollinations"
-                label="OSS repository"
-                icon={<GitHubIcon />}
-                ariaLabel="Pollinations GitHub repository"
-            />
-            <AccountIconLink
-                href="https://github.com/pollinations/pollinations/issues"
-                label="Report an issue"
-                icon={<GitHubIcon />}
-                ariaLabel="Report an issue on GitHub"
-            />
-        </div>
-    </>
+    <div className="flex flex-col gap-1">
+        <AccountIconLink
+            href="https://discord.com/channels/885844321461485618/1432378056126894343"
+            label="#pollen-beta"
+            icon={<DiscordIcon />}
+            ariaLabel="#pollen-beta Discord channel"
+        />
+        <AccountIconLink
+            href="https://github.com/pollinations/pollinations/issues"
+            label="Report an issue"
+            icon={<GitHubIcon />}
+            ariaLabel="Report an issue on GitHub"
+        />
+    </div>
 );
 
 const AccountIconLink: FC<{

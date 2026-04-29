@@ -34,6 +34,9 @@ export type VideoModel = string;
 /** Image quality options */
 export type ImageQuality = "low" | "medium" | "high" | "hd";
 
+/** Reasoning depth for supported image models */
+export type ImageReasoningMode = "fast" | "balanced" | "pro";
+
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
     /** Image model to use (default: 'zimage') */
@@ -65,11 +68,11 @@ export interface ImageGenerateOptions extends RequestOptions {
     /** How closely to follow prompt, 1-20 (higher = stricter) */
     guidanceScale?: number;
     /**
-     * Enable reasoning mode on supported models (nanobanana-pro,
-     * gptimage family). Silently ignored by models that don't advertise
-     * `reasoning: true`.
+     * Reasoning mode for supported image models.
+     * Booleans are accepted for backward compatibility: true = "pro",
+     * false = "balanced".
      */
-    reasoning?: boolean;
+    reasoning?: boolean | ImageReasoningMode;
 }
 
 /** Options for image editing (POST /v1/images/edits) */
@@ -591,6 +594,10 @@ export interface AuthorizeOptions {
 export interface AccountProfile {
     githubUsername: string | null;
     image: string | null;
+    /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
+    tier: string;
+    /** ISO 8601 timestamp of the next pollen refill. `null` for tiers with no refill. */
+    nextResetAt: string | null;
     /** Only returned when the API key has the `profile` permission */
     name?: string | null;
     /** Only returned when the API key has the `profile` permission */
@@ -852,8 +859,8 @@ export interface ImageGenerateV1Options extends RequestOptions {
     n?: number;
     /** Response format (default: server decides — usually b64_json) */
     responseFormat?: "url" | "b64_json";
-    /** Enable reasoning mode (nanobanana-pro, gptimage family). Silently ignored by other models. */
-    reasoning?: boolean;
+    /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */
+    reasoning?: boolean | ImageReasoningMode;
     /** Seed for reproducible generation */
     seed?: number;
     /** Output quality */

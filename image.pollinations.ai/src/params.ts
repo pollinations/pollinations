@@ -80,7 +80,16 @@ export const ImageParamsSchema = z
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),
-        reasoning: sanitizedBoolean.catch(false),
+        reasoning: z
+            .union([z.string(), z.boolean()])
+            .transform((v) => {
+                if (v === true || v === "true") return "pro";
+                if (v === false || v === "false") return "balanced";
+                const mode = String(v).toLowerCase();
+                if (["fast", "balanced", "pro"].includes(mode)) return mode;
+                return "balanced";
+            })
+            .catch("balanced"),
         guidance_scale: z.coerce.number().optional().catch(undefined),
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),

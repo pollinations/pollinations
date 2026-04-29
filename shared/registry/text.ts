@@ -29,6 +29,8 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-5.4-nano", "gpt-5-mini"],
         modelId: "gpt-5.4-nano",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -48,6 +50,8 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
         modelId: "gpt-5-nano-2025-08-07",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -73,6 +77,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "gpt-5.4",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -93,6 +99,8 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         modelId: "qwen3-coder-30b-a3b-instruct",
         provider: "ovhcloud",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),
@@ -115,6 +123,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "Mistral-Small-3.2-24B-Instruct-2506",
         provider: "ovhcloud",
+        brand: "Mistral",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -138,6 +148,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "gpt-audio-mini-2025-12-15",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -159,6 +171,8 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
         modelId: "gpt-audio-1.5",
         provider: "azure",
+        brand: "OpenAI",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -180,6 +194,8 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
+        brand: "Google",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -188,6 +204,15 @@ export const TEXT_SERVICES = {
                 promptCachedTokens: perMillion(0.05),
                 promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
                 completionTextTokens: perMillion(3.0),
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.75),
+                promptCachedTokens: perMillion(0.075),
+                promptAudioTokens: perMillion(0.75),
+                completionTextTokens: perMillion(4.5),
             },
         ],
         description: "Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
@@ -207,6 +232,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "gemini-3.1-flash-lite-preview",
         provider: "google",
+        brand: "Google",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -215,6 +242,15 @@ export const TEXT_SERVICES = {
                 promptCachedTokens: perMillion(0.025),
                 promptAudioTokens: perMillion(0.5),
                 completionTextTokens: perMillion(1.5),
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.375),
+                promptCachedTokens: perMillion(0.0375),
+                promptAudioTokens: perMillion(0.75),
+                completionTextTokens: perMillion(2.25),
             },
         ],
         description: "Gemini 3.1 Flash Lite - Fast & Cost-Effective",
@@ -230,6 +266,8 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
         provider: "google",
+        brand: "Google",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -258,48 +296,86 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
-        modelId: "accounts/fireworks/models/deepseek-v3p2",
-        provider: "fireworks",
+        aliases: [
+            "deepseek-v4",
+            "deepseek-v4-flash",
+            "deepseek-v4-lite",
+            "deepseek-lite",
+            "deepseek-flash",
+        ],
+        modelId: "deepseek-ai/DeepSeek-V4-Flash",
+        provider: "deepinfra",
+        brand: "DeepSeek",
+        category: "text",
         cost: [
             {
-                date: new Date("2026-04-12").getTime(),
-                promptTextTokens: perMillion(0.56),
-                promptCachedTokens: perMillion(0.28),
-                completionTextTokens: perMillion(1.68),
+                date: new Date("2026-04-24").getTime(),
+                promptTextTokens: perMillion(0.14),
+                promptCachedTokens: perMillion(0.028),
+                completionTextTokens: perMillion(0.28),
             },
         ],
-        description: "DeepSeek V3.2 - Efficient Reasoning & Agentic AI",
+        description: "DeepSeek V4 Flash (Lite) - Fast Reasoning & Coding",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 163840,
+        contextLength: 1048576,
         isSpecialized: false,
+        paidOnly: true,
+    },
+    "deepseek-pro": {
+        aliases: ["deepseek-v4-pro"],
+        modelId: "accounts/fireworks/models/deepseek-v4-pro",
+        provider: "fireworks",
+        brand: "DeepSeek",
+        category: "text",
+        cost: [
+            {
+                date: new Date("2026-04-24").getTime(),
+                promptTextTokens: perMillion(1.74),
+                promptCachedTokens: perMillion(0.14),
+                completionTextTokens: perMillion(3.48),
+            },
+        ],
+        description: "DeepSeek V4 Pro - Advanced Reasoning & Coding",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+        paidOnly: true,
     },
     "grok": {
         aliases: [
             "grok-fast",
             "grok-4-1-fast",
+            "grok-4-1-fast-non-reasoning",
             "grok-legacy",
             "grok-4",
             "grok-4-fast",
+            "grok-4-20-non-reasoning",
+            "grok-non-reasoning",
         ],
-        modelId: "grok-4-1-fast-non-reasoning",
+        modelId: "grok-4-20-non-reasoning",
         provider: "azure",
+        brand: "xAI",
+        category: "text",
         cost: [
             {
-                date: new Date("2026-03-22").getTime(),
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.05),
-                completionTextTokens: perMillion(0.5),
+                date: new Date("2026-04-27").getTime(),
+                promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.2),
+                promptImageTokens: perMillion(2.0),
+                completionTextTokens: perMillion(6.0),
             },
         ],
-        description: "Grok 4.1 Fast - High Speed & Real-Time",
-        inputModalities: ["text"],
+        description: "Grok 4.20 Non-Reasoning - Fast multimodal tool-calling",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        contextLength: 2000000,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "grok-large": {
@@ -311,26 +387,33 @@ export const TEXT_SERVICES = {
         ],
         modelId: "grok-4-20-reasoning",
         provider: "azure",
+        brand: "xAI",
+        category: "text",
         cost: [
             {
-                date: new Date("2026-04-08").getTime(),
+                date: new Date("2026-04-27").getTime(),
                 promptTextTokens: perMillion(2.0),
                 promptCachedTokens: perMillion(0.2),
+                promptImageTokens: perMillion(2.0),
                 completionTextTokens: perMillion(6.0),
             },
         ],
-        description: "Grok 4.20 Reasoning - Most Powerful Grok",
-        inputModalities: ["text"],
+        description:
+            "Grok 4.20 Reasoning - Multimodal reasoning and agentic tasks",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 2000000,
+        contextLength: 262144,
         isSpecialized: false,
+        paidOnly: true,
     },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-search", "gemini-2.5-flash-lite-search"],
         modelId: "gemini-2.5-flash-lite",
         provider: "google",
+        brand: "Google",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -363,6 +446,8 @@ export const TEXT_SERVICES = {
         aliases: [],
         modelId: "claude-haiku-4-5-20251001",
         provider: "bedrock",
+        brand: "Pollinations",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -381,6 +466,8 @@ export const TEXT_SERVICES = {
         aliases: [],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
+        brand: "Pollinations",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -400,6 +487,8 @@ export const TEXT_SERVICES = {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "claude-haiku-4-5-20251001",
         provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -419,6 +508,8 @@ export const TEXT_SERVICES = {
         aliases: ["claude-sonnet-4.6", "claude-sonnet"],
         modelId: "claude-sonnet-4-6",
         provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -436,9 +527,11 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-4.6", "claude-opus"],
+        aliases: ["claude-opus-4.6", "claude-opus", "claude-opus-4.5"],
         modelId: "claude-opus-4-6",
         provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -455,12 +548,13 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude-legacy": {
-        aliases: ["claude-opus-4.5", "claude-large-legacy"],
-        modelId: "claude-opus-4-5-20251101",
+    "claude-opus-4.7": {
+        aliases: [],
+        modelId: "claude-opus-4-7",
         provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
         paidOnly: true,
-        hidden: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -469,7 +563,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(27.5),
             },
         ],
-        description: "Claude Opus 4.5 - Legacy",
+        description: "Claude Opus 4.7 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -480,6 +574,8 @@ export const TEXT_SERVICES = {
         aliases: ["sonar"],
         modelId: "sonar",
         provider: "perplexity",
+        brand: "Perplexity",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -499,6 +595,8 @@ export const TEXT_SERVICES = {
         aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
         modelId: "sonar-reasoning-pro",
         provider: "perplexity",
+        brand: "Perplexity",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -527,6 +625,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "accounts/fireworks/models/kimi-k2p5",
         provider: "fireworks",
+        brand: "Moonshot AI",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -544,10 +644,35 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
+    "kimi-k2.6": {
+        aliases: ["kimi-k2p6"],
+        modelId: "accounts/fireworks/models/kimi-k2p6",
+        provider: "fireworks",
+        brand: "Moonshot AI",
+        category: "text",
+        cost: [
+            {
+                date: new Date("2026-04-21").getTime(),
+                promptTextTokens: perMillion(0.95),
+                promptCachedTokens: perMillion(0.16),
+                completionTextTokens: perMillion(4.0),
+            },
+        ],
+        description:
+            "Moonshot Kimi K2.6 - Flagship Agentic Model with CoT Reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262000,
+        isSpecialized: false,
+    },
     "gemini-large": {
-        aliases: ["gemini-3.1-pro"],
+        aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
         modelId: "gemini-3.1-pro-preview",
         provider: "google",
+        brand: "Google",
+        category: "text",
         paidOnly: true,
         cost: [
             {
@@ -555,6 +680,14 @@ export const TEXT_SERVICES = {
                 promptTextTokens: perMillion(2.0),
                 promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(12.0),
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(3.0),
+                promptCachedTokens: perMillion(0.3),
+                completionTextTokens: perMillion(18.0),
             },
         ],
         description:
@@ -568,34 +701,12 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-legacy": {
-        aliases: ["gemini-2.5-pro"],
-        modelId: "gemini-2.5-pro",
-        provider: "google",
-        paidOnly: true,
-        hidden: true,
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25),
-                promptCachedTokens: perMillion(0.31), // Google rate: $0.125 — marked up for margin
-                completionTextTokens: perMillion(10.0),
-            },
-        ],
-        description: "Gemini 2.5 Pro - Stable Reasoning Model with 1M Context",
-        inputModalities: ["text", "image", "audio", "video"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
-        search: true,
-        codeExecution: true,
-        contextLength: 1048576,
-        isSpecialized: false,
-    },
     "nova-fast": {
         aliases: ["amazon-nova-micro", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
         provider: "bedrock",
+        brand: "Amazon",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -614,6 +725,8 @@ export const TEXT_SERVICES = {
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
         modelId: "us.amazon.nova-2-lite-v1:0",
         provider: "bedrock",
+        brand: "Amazon",
+        category: "text",
         cost: [
             {
                 date: COST_START_DATE,
@@ -633,6 +746,8 @@ export const TEXT_SERVICES = {
         aliases: ["glm-5", "glm-5.1", "glm-5p1", "glm-4.7", "glm-4p7"],
         modelId: "accounts/fireworks/models/glm-5p1",
         provider: "fireworks",
+        brand: "Z.ai",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -659,6 +774,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "accounts/fireworks/models/minimax-m2p7",
         provider: "fireworks",
+        brand: "MiniMax",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-19").getTime(),
@@ -679,6 +796,8 @@ export const TEXT_SERVICES = {
         aliases: ["mistral-large-3"],
         modelId: "Mistral-Large-3",
         provider: "azure",
+        brand: "Mistral",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-08").getTime(),
@@ -699,6 +818,8 @@ export const TEXT_SERVICES = {
         aliases: ["pollinations-ai", "polly-ai"],
         modelId: "polly",
         provider: "community",
+        brand: "Pollinations",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-02-23").getTime(),
@@ -719,6 +840,8 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3-coder-next"],
         modelId: "qwen3-coder-next",
         provider: "alibaba",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -745,6 +868,8 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3.6", "qwen3.6-plus", "qwen3p6-plus"],
         modelId: "accounts/fireworks/models/qwen3p6-plus",
         provider: "fireworks",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -772,6 +897,8 @@ export const TEXT_SERVICES = {
         ],
         modelId: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
         provider: "fireworks",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-04-19").getTime(),
@@ -793,6 +920,8 @@ export const TEXT_SERVICES = {
         aliases: ["qwen3guard-gen-8b"],
         modelId: "Qwen3Guard-Gen-8B",
         provider: "ovhcloud",
+        brand: "Qwen",
+        category: "text",
         cost: [
             {
                 date: new Date("2026-02-15").getTime(),

@@ -14,7 +14,3 @@ export const ALL_MODELS = [
         type: "image" as const,
     })),
 ];
-
-export const MS_PER_DAY = 86400000;
-export const MS_PER_WEEK = MS_PER_DAY * 7;
-export const MS_PER_30_DAYS = MS_PER_DAY * 30;

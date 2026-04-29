@@ -1,9 +1,9 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
+import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import { user as userTable } from "@/db/schema/better-auth.ts";
-import { atomicDeductUserBalance } from "@/utils/balance-deduction.ts";
 import { test } from "../fixtures.ts";
 
 // Helper to trigger tier refill via admin API
@@ -38,7 +38,6 @@ describe("Tier System End-to-End", () => {
                     tier: "flower",
                     tierBalance: 0.4,
                     packBalance: 50,
-                    cryptoBalance: 0,
                     lastTierGrant: Date.now() - 86400000, // Yesterday
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -49,7 +48,6 @@ describe("Tier System End-to-End", () => {
                         tier: "flower",
                         tierBalance: 0.4,
                         packBalance: 50,
-                        cryptoBalance: 0,
                         lastTierGrant: Date.now() - 86400000,
                     },
                 });
@@ -126,7 +124,6 @@ describe("Tier System End-to-End", () => {
                         tier: user.tier,
                         tierBalance: 0,
                         packBalance: 0,
-                        cryptoBalance: 0,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     })
@@ -247,8 +244,7 @@ describe("Tier System End-to-End", () => {
                     name: "Concurrent User",
                     tier: "flower",
                     tierBalance: 20,
-                    packBalance: 30,
-                    cryptoBalance: 10,
+                    packBalance: 40,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -256,8 +252,7 @@ describe("Tier System End-to-End", () => {
                     target: userTable.id,
                     set: {
                         tierBalance: 20,
-                        packBalance: 30,
-                        cryptoBalance: 10,
+                        packBalance: 40,
                     },
                 });
 
@@ -273,22 +268,19 @@ describe("Tier System End-to-End", () => {
                 .select({
                     tierBalance: userTable.tierBalance,
                     packBalance: userTable.packBalance,
-                    cryptoBalance: userTable.cryptoBalance,
                 })
                 .from(userTable)
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
             // Total deducted: 50 pollen
-            // Should have used: 20 from tier, 10 from crypto, 20 from pack
+            // Should have used: 20 from tier, 30 from pack
             expect(finalBalance[0]?.tierBalance).toBe(0);
-            expect(finalBalance[0]?.cryptoBalance).toBe(0);
             expect(finalBalance[0]?.packBalance).toBe(10);
 
             // Total remaining should be exactly 10
             const totalRemaining =
                 (finalBalance[0]?.tierBalance ?? 0) +
-                (finalBalance[0]?.cryptoBalance ?? 0) +
                 (finalBalance[0]?.packBalance ?? 0);
             expect(totalRemaining).toBe(10);
         });
@@ -318,7 +310,6 @@ describe("Tier System End-to-End", () => {
                 .set({
                     tierBalance: 0,
                     packBalance: 0,
-                    cryptoBalance: 0,
                 })
                 .where(sql`${userTable.id} = ${userId}`);
 
@@ -337,7 +328,6 @@ describe("Tier System End-to-End", () => {
             const balance = await response.json();
             expect(balance.tierBalance).toBe(0);
             expect(balance.packBalance).toBe(0);
-            expect(balance.cryptoBalance).toBe(0);
         });
     });
 
@@ -378,7 +368,6 @@ describe("Tier System End-to-End", () => {
                         tier: user.tier,
                         tierBalance: user.tierBalance,
                         packBalance: user.packBalance,
-                        cryptoBalance: 0,
                         lastTierGrant: Date.now() - 86400000, // Yesterday
                         createdAt: new Date(),
                         updatedAt: new Date(),
@@ -440,7 +429,6 @@ describe("Tier System End-to-End", () => {
                     tier: "seed",
                     tierBalance: 2, // Partially used seed balance
                     packBalance: 0,
-                    cryptoBalance: 0,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -471,21 +459,20 @@ describe("Tier System End-to-End", () => {
             expect(result[0]?.tierBalance).toBe(0.4);
         });
 
-        test("crypto balance is consumed before pack balance", async () => {
+        test("tier balance is consumed before pack balance", async () => {
             const db = drizzle(env.DB);
-            const userId = "crypto-user";
+            const userId = "tier-pack-user";
 
-            // User with crypto payment and pack purchase
+            // User with tier balance and pack purchase
             await db
                 .insert(userTable)
                 .values({
                     id: userId,
-                    email: "crypto@test.com",
-                    name: "Crypto User",
+                    email: "tier-pack@test.com",
+                    name: "Tier Pack User",
                     tier: "spore",
                     tierBalance: 1,
                     packBalance: 100,
-                    cryptoBalance: 50, // From crypto payment
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -494,7 +481,6 @@ describe("Tier System End-to-End", () => {
                     set: {
                         tierBalance: 1,
                         packBalance: 100,
-                        cryptoBalance: 50,
                     },
                 });
 
@@ -504,7 +490,6 @@ describe("Tier System End-to-End", () => {
             const balance = await db
                 .select({
                     tierBalance: userTable.tierBalance,
-                    cryptoBalance: userTable.cryptoBalance,
                     packBalance: userTable.packBalance,
                 })
                 .from(userTable)
@@ -512,7 +497,6 @@ describe("Tier System End-to-End", () => {
                 .limit(1);
 
             expect(balance[0]?.tierBalance).toBe(-29); // 1 - 30 (single bucket, goes negative)
-            expect(balance[0]?.cryptoBalance).toBe(50); // Untouched
             expect(balance[0]?.packBalance).toBe(100); // Untouched
         });
     });

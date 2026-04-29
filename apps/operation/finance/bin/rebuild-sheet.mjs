@@ -14,6 +14,7 @@ import {
 import {
     loadConfig,
     loadDotenv,
+    loadSharedModelSecrets,
     loadVendors,
     saveVendors,
 } from "../lib/io.mjs";
@@ -108,7 +109,9 @@ async function resolveVendorsInteractively(rawRows) {
 }
 
 async function main() {
-    // Load secrets (WISE_API_TOKEN, etc.)
+    // Load secrets — shared SOPS file first (provider/model API keys), then
+    // finance's local .env (WISE_API_TOKEN and any local overrides).
+    await loadSharedModelSecrets();
     await loadDotenv();
 
     const config = await loadConfig();
@@ -298,6 +301,21 @@ async function main() {
                 }
             }
         }
+    }
+
+    // One-time events from vendors.json._one_time_events: explicit
+    // (month, vendor, amount) entries for things that don't fit the forecast
+    // rules — one-off fundraises, deposits, refunds, etc. If the vendor has
+    // no Wise history, it's added as a synthetic vendor so it gets its own
+    // row. Remove the entry from vendors.json once the real Wise transaction
+    // lands so the actual amount takes over.
+    const oneTimeEvents = vendors._one_time_events ?? [];
+    for (const event of oneTimeEvents) {
+        if (!extended.data[event.month]) continue;
+        if (!extended.vendors[event.vendor_canonical]) {
+            extended.vendors[event.vendor_canonical] = event.category;
+        }
+        extended.data[event.month][event.vendor_canonical] = event.amount_eur;
     }
 
     const layout = buildLayout(extended, config, {

@@ -5,7 +5,7 @@
 gen.pollinations.ai → enter.pollinations.ai (auth/billing) → text.|image.pollinations.ai (backends)
 ```
 Repo: `pollinations/pollinations` (main branch) | Discord: guild `885844321461485618`
-Docs: https://enter.pollinations.ai/api/docs | Monitor: https://model-monitor.pollinations.ai
+Docs: https://gen.pollinations.ai/docs | Monitor: https://model-monitor.pollinations.ai
 
 ## API — gen.pollinations.ai (the ONLY public URL)
 
@@ -21,7 +21,7 @@ Image (default: zimage): flux, zimage, gptimage, klein|klein-large, imagen-4, gr
 Video: seedance (free default), veo (audio), seedance-pro, wan (audio), ltx-2 (audio), grok-video
 Audio: elevenlabs (TTS), elevenmusic, whisper (STT alpha), scribe (STT 90+ lang)
 
-Paid-only models (require purchased/crypto pollen, tier grants won't work): claude, claude-large, claude-legacy, gemini, gemini-large, gemini-legacy, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
+Paid-only models (require purchased/crypto pollen, tier grants won't work): claude, claude-large, claude-opus-4.7, gemini, gemini-large, grok, kontext, nanobanana(-pro), seedream(-pro), gptimage-large, veo, seedance-pro, wan, ltx-2
 
 Tool calling supported: openai (all), claude (all), gemini (non-search), deepseek, kimi, glm, minimax, mistral, qwen-coder, nova-fast, grok. NOT supported: perplexity-*, gemini-search
 

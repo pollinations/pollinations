@@ -6,11 +6,11 @@ import {
     validateEvent,
     WebhookVerificationError,
 } from "@polar-sh/sdk/webhooks";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 
 const log = getLogger(["hono", "webhooks"]);

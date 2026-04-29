@@ -71,9 +71,47 @@ npx vitest run test/integration/text.test.ts --testNamePattern="<service-name> "
 # Secrets (sops)
 
 ```bash
-sops -d <service>/secrets/env.json > /tmp/plain.json
-# Edit with jq or manually
-cp /tmp/plain.json <service>/secrets/env.json
-sops -e -i <service>/secrets/env.json
-rm /tmp/plain.json
+# Decrypt, inspect keys
+sops --decrypt image.pollinations.ai/secrets/env.json | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin)]"
+
+# Add/update a key
+sops set image.pollinations.ai/secrets/env.json '["KEY_NAME"]' '"value"'
+
+# Decrypt to .env (used before local dev/tests)
+npm run decrypt-vars   # from image.pollinations.ai/
 ```
+
+---
+
+# Azure OpenAI Resources (gptimage)
+
+## Current resources
+
+| Resource | Region | Used for |
+|----------|--------|----------|
+| `myceli-prod-eastus2` | East US 2 | `gptimage` (gpt-image-1-mini), `gptimage-large` (gpt-image-1.5) |
+| `myceli-prod-swedencentral` | Sweden Central | Flux Kontext, text models |
+
+Env var: `AZURE_MYCELI_PROD_EASTUS2_API_KEY` (in `image.pollinations.ai/secrets/env.json`)
+
+## Login
+
+```bash
+brew install azure-cli   # if not installed
+az login --use-device-code
+# Use thomas@myceli.ai account
+```
+
+## If a resource gets content-policy blocked
+
+Azure blocks the whole resource (not just one deployment). Signs: all gptimage calls return 403 with *"temporarily blocked because we detected behavior that may violate our content policy"*.
+
+Recovery steps:
+1. Check which region supports the model: `az cognitiveservices model list -l <region> --query "[?model.name=='gpt-image-1-mini']" -o json`
+2. Create new resource: `az cognitiveservices account create --name myceli-prod-<region> --resource-group rg-myceli-prod --kind AIServices --sku S0 --location <region>`
+3. Deploy model: `az cognitiveservices account deployment create --name <resource> --resource-group rg-myceli-prod --deployment-name gpt-image-1-mini --model-name gpt-image-1-mini --model-version 2025-10-06 --model-format OpenAI --sku-capacity 60 --sku-name GlobalStandard`
+4. Get key: `az cognitiveservices account keys list --name <resource> --resource-group rg-myceli-prod --query 'key1' -o tsv`
+5. Add to SOPS: `sops set image.pollinations.ai/secrets/env.json '["AZURE_MYCELI_PROD_EASTUS2_API_KEY"]' '"<key>"'`
+6. Update endpoint URLs in `createAndReturnImages.ts` (`AZURE_GPTIMAGE_CONFIGS`)
+7. Delete broken deployments from old resource to free quota: `az cognitiveservices account deployment delete --name <old-resource> --resource-group rg-myceli-prod --deployment-name <deployment>`
+8. Test locally: `npm run dev` then `curl -H "x-enter-token: $PLN_ENTER_TOKEN" "http://localhost:16384/prompt/a+cat?model=gptimage"`

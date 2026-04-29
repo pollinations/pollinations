@@ -1,4 +1,4 @@
-import { BASE_URL, ENTER_URL, resolveApiKey } from "./config.js";
+import { BASE_URL, resolveApiKey } from "./config.js";
 import { printError } from "./output.js";
 
 export class ApiError extends Error {
@@ -59,6 +59,3 @@ const request = async <T>(
 
 export const gen = <T>(path: string, options?: RequestOptions) =>
     request<T>(BASE_URL, path, options);
-
-export const enter = <T>(path: string, options?: RequestOptions) =>
-    request<T>(ENTER_URL, path, options);

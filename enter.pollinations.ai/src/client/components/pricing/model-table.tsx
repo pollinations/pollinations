@@ -1,28 +1,29 @@
-import { type FC, useState } from "react";
+import {
+    getActivePriceDefinition,
+    type ModelName,
+} from "@shared/registry/registry.ts";
+import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 
+import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
 import {
-    calculateForBalance,
-    calculatePerPollen,
-    TOP_UP_TOOLTIP,
-} from "./calculations.ts";
-import {
+    getModelBrandLogoPath,
+    getModelCapabilityIcons,
     getModelDisplayName,
-    hasAudioInput,
-    hasAudioOutput,
-    hasCodeExecution,
-    hasReasoning,
-    hasSearch,
-    hasVision,
+    getModelModalityIcons,
     isAlpha,
     isNewModel,
     isPaidOnly,
     isPersona,
 } from "./model-info.ts";
 import { ModelRow } from "./model-row.tsx";
-import { PriceBadge } from "./price-badge.tsx";
+import {
+    groupPriceBadges,
+    PriceBadge,
+    type PriceBadgeConfig,
+} from "./price-badge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
@@ -33,7 +34,6 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     tierBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -45,13 +45,69 @@ const getPerPollenNumeric = (perPollen: string): number => {
     return parseFloat(cleaned) || -1;
 };
 
-const sortModels = (models: ModelPrice[]) => {
+type SortKey = "name" | "perPollen" | "input" | "output";
+type SortDir = "asc" | "desc";
+
+const DEFAULT_DIR: Record<SortKey, SortDir> = {
+    name: "asc",
+    perPollen: "desc",
+    input: "asc",
+    output: "asc",
+};
+
+const getInputSortValue = (modelName: string): number => {
+    const p = getActivePriceDefinition(modelName as ModelName);
+    if (!p) return -1;
+    const sum =
+        (p.promptTextTokens ?? 0) +
+        (p.promptCachedTokens ?? 0) +
+        (p.promptAudioTokens ?? 0) +
+        (p.promptAudioSeconds ?? 0) +
+        (p.promptImageTokens ?? 0);
+    return sum > 0 ? sum : -1;
+};
+
+const getOutputSortValue = (modelName: string): number => {
+    const p = getActivePriceDefinition(modelName as ModelName);
+    if (!p) return -1;
+    const sum =
+        (p.completionTextTokens ?? 0) +
+        (p.completionAudioTokens ?? 0) +
+        (p.completionAudioSeconds ?? 0) +
+        (p.completionImageTokens ?? 0) +
+        (p.completionVideoSeconds ?? 0) +
+        (p.completionVideoTokens ?? 0);
+    return sum > 0 ? sum : -1;
+};
+
+const sortModels = (
+    models: ModelPrice[],
+    sortKey: SortKey,
+    sortDir: SortDir,
+) => {
+    const sign = sortDir === "asc" ? 1 : -1;
     return [...models].sort((a, b) => {
-        const aPerPollen = calculatePerPollen(a);
-        const bPerPollen = calculatePerPollen(b);
-        return (
-            getPerPollenNumeric(bPerPollen) - getPerPollenNumeric(aPerPollen)
-        );
+        if (sortKey === "name") {
+            const an = (getModelDisplayName(a.name) ?? a.name).toLowerCase();
+            const bn = (getModelDisplayName(b.name) ?? b.name).toLowerCase();
+            return an < bn ? -sign : an > bn ? sign : 0;
+        }
+        const av =
+            sortKey === "perPollen"
+                ? getPerPollenNumeric(calculatePerPollen(a))
+                : sortKey === "input"
+                  ? getInputSortValue(a.name)
+                  : getOutputSortValue(a.name);
+        const bv =
+            sortKey === "perPollen"
+                ? getPerPollenNumeric(calculatePerPollen(b))
+                : sortKey === "input"
+                  ? getInputSortValue(b.name)
+                  : getOutputSortValue(b.name);
+        // Missing values always sort last regardless of direction
+        if (av < 0 && bv >= 0) return 1;
+        if (bv < 0 && av >= 0) return -1;
+        return (av - bv) * sign;
     });
 };
 
@@ -69,35 +125,26 @@ const sectionLabels: Record<string, string> = {
     text: "Text",
 };
 
-// --- Badge type for mobile price groups ---
-
-type PriceBadgeEntry = {
-    price: string | undefined;
-    emoji: string;
-    perToken?: boolean;
-    perImage?: boolean;
-    perSecond?: boolean;
-    perKChar?: boolean;
-};
-
 // --- Tab content ---
 
 type TabContentProps = {
     type: "text" | "image" | "video" | "audio";
     models: ModelPrice[];
+    sortKey: SortKey;
+    sortDir: SortDir;
     tierBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 const TabContent: FC<TabContentProps> = ({
     type,
     models,
+    sortKey,
+    sortDir,
     tierBalance,
     packBalance,
-    cryptoBalance,
 }) => {
-    const sorted = sortModels(models);
+    const sorted = sortModels(models, sortKey, sortDir);
     const regularModels =
         type === "text" ? sorted.filter((m) => !isPersona(m.name)) : sorted;
     const personaModels =
@@ -113,7 +160,6 @@ const TabContent: FC<TabContentProps> = ({
                         model={model}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -129,7 +175,6 @@ const TabContent: FC<TabContentProps> = ({
                                 model={model}
                                 tierBalance={tierBalance}
                                 packBalance={packBalance}
-                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -144,7 +189,6 @@ const TabContent: FC<TabContentProps> = ({
                         model={model}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -160,7 +204,6 @@ const TabContent: FC<TabContentProps> = ({
                                 model={model}
                                 tierBalance={tierBalance}
                                 packBalance={packBalance}
-                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -176,24 +219,26 @@ type MobileModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({
     model,
     tierBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
     const displayName = getModelDisplayName(model.name);
+    const brandLogoPath = getModelBrandLogoPath(model.name);
+    const modalityIcons = getModelModalityIcons(model.name);
+    const capabilityIcons = getModelCapabilityIcons(model.name);
+    const publicModelName = displayName || model.name;
     const showNew = isNewModel(model.name);
     const showPaidOnly = isPaidOnly(model.name);
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
+    const paidBalance = packBalance ?? 0;
     const totalBalance = (tierBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 
@@ -202,19 +247,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
         ? calculateForBalance(model, effectiveBalance)
         : null;
     const isDisabled = isSignedIn && balanceRequests === "0";
-    const capabilities = [
-        hasVision(model.name) && "👁️",
-        hasAudioInput(model.name) && "🎙️",
-        hasAudioOutput(model.name) && "🔊",
-        hasReasoning(model.name) && "🧠",
-        hasSearch(model.name) && "🔍",
-        hasCodeExecution(model.name) && "💻",
-    ].filter(Boolean) as string[];
 
-    const copyModelName = async () => {
+    const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
         await navigator.clipboard.writeText(model.name);
         setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
+        setTimeout(() => setCopied(false), 900);
     };
 
     return (
@@ -230,116 +268,120 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
             )}
         >
             {/* Clickable header */}
-            <button
-                type="button"
-                className="w-full text-left p-4 cursor-pointer flex items-start justify-between gap-2"
-                onClick={() => setExpanded(!expanded)}
-            >
-                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                    <svg
-                        className={cn(
-                            "w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
-                            expanded && "rotate-180",
-                        )}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        aria-hidden="true"
-                    >
-                        <title>Expand model details</title>
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19 9l-7 7-7-7"
-                        />
-                    </svg>
-                    {isDisabled ? (
-                        <Tooltip content={TOP_UP_TOOLTIP}>
-                            <span className="text-sm font-medium opacity-75">
-                                {displayName || model.name}
-                            </span>
-                        </Tooltip>
-                    ) : (
-                        <span
+            <div className="relative">
+                <button
+                    type="button"
+                    aria-label={
+                        expanded
+                            ? "Collapse model details"
+                            : "Expand model details"
+                    }
+                    className="absolute inset-0 w-full rounded-xl cursor-pointer"
+                    onClick={() => setExpanded(!expanded)}
+                />
+                <div className="relative z-10 pointer-events-none flex items-start justify-between gap-2 p-4">
+                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                        <svg
                             className={cn(
-                                "text-sm",
-                                showNew ? "font-bold" : "font-medium",
+                                "mt-1 w-3.5 h-3.5 text-gray-300 transition-transform duration-200 shrink-0",
+                                expanded && "rotate-180",
                             )}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            aria-hidden="true"
                         >
-                            {displayName || model.name}
-                        </span>
-                    )}
-                    {(showNew || showAlpha || showPaidOnly) && (
-                        <span
-                            className={cn(
-                                "flex items-center gap-1.5 basis-full min-[500px]:basis-auto",
-                                isDisabled && "opacity-50",
-                            )}
-                        >
-                            {showNew && (
-                                <Badge color="green" size="sm">
-                                    NEW
-                                </Badge>
-                            )}
-                            {showAlpha && (
-                                <Badge color="amber" size="sm">
-                                    ALPHA
-                                </Badge>
-                            )}
-                            {showPaidOnly && (
-                                <Badge color="purple" size="sm">
-                                    PAID
-                                </Badge>
-                            )}
-                        </span>
-                    )}
-                </div>
-                <span
-                    className={cn(
-                        "text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full shrink-0",
-                        isDisabled && "opacity-50",
-                    )}
-                >
-                    {perPollen}
-                </span>
-            </button>
-
-            {/* Expanded: model ID + capabilities + full pricing */}
-            {expanded && (
-                <div className="px-4 pb-4 pt-0 space-y-2">
-                    <div
-                        className={cn(
-                            "flex items-center gap-2",
-                            isDisabled && "opacity-50",
-                        )}
-                    >
-                        <button
-                            type="button"
-                            className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer"
-                            onClick={copyModelName}
-                        >
-                            {copied ? "✓ copied" : model.name}
-                        </button>
-                        {capabilities.length > 0 &&
-                            capabilities.map((emoji) => (
-                                <span key={emoji} className="text-sm">
-                                    {emoji}
+                            <title>Expand model details</title>
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19 9l-7 7-7-7"
+                            />
+                        </svg>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                                <span className="inline-flex shrink-0 items-center gap-2 text-sm font-medium">
+                                    {brandLogoPath && (
+                                        <span
+                                            aria-hidden="true"
+                                            className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
+                                            style={{
+                                                maskImage: `url(${brandLogoPath})`,
+                                                WebkitMaskImage: `url(${brandLogoPath})`,
+                                                maskRepeat: "no-repeat",
+                                                WebkitMaskRepeat: "no-repeat",
+                                                maskPosition: "center",
+                                                WebkitMaskPosition: "center",
+                                                maskSize: "contain",
+                                                WebkitMaskSize: "contain",
+                                            }}
+                                        />
+                                    )}
+                                    <span>{publicModelName}</span>
                                 </span>
-                            ))}
-                    </div>
-
-                    {balanceRequests !== null && (
-                        <div className="text-xs text-teal-700">
-                            {isDisabled
-                                ? TOP_UP_TOOLTIP
-                                : `≈ ${balanceRequests} with current balance`}
+                                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 content-center">
+                                    {showNew && (
+                                        <Badge color="green" size="sm">
+                                            NEW
+                                        </Badge>
+                                    )}
+                                    {showAlpha && (
+                                        <Badge color="orange" size="sm">
+                                            ALPHA
+                                        </Badge>
+                                    )}
+                                    {showPaidOnly && (
+                                        <Badge color="purple" size="sm">
+                                            PAID
+                                        </Badge>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={copyModelName}
+                                className={cn(
+                                    "pointer-events-auto mt-1 inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium leading-none text-gray-500 transition-colors",
+                                    copied
+                                        ? "text-teal-700"
+                                        : "hover:text-gray-700",
+                                )}
+                                aria-label={`Copy API model name ${model.name}`}
+                            >
+                                <span>{model.name}</span>
+                                {copied && (
+                                    <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+                                        copied
+                                    </span>
+                                )}
+                            </button>
+                            {expanded &&
+                                (modalityIcons.length > 0 ||
+                                    capabilityIcons.length > 0) && (
+                                    <div className="mt-2">
+                                        <MobileMetadataBadges
+                                            modalityIcons={modalityIcons}
+                                            capabilityIcons={capabilityIcons}
+                                        />
+                                    </div>
+                                )}
                         </div>
-                    )}
-
-                    <div
-                        className={cn("space-y-2", isDisabled && "opacity-50")}
+                    </div>
+                    <span
+                        className={cn(
+                            "text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full shrink-0",
+                        )}
                     >
+                        {perPollen}
+                    </span>
+                </div>
+            </div>
+
+            {/* Expanded: capabilities + full pricing */}
+            {expanded && (
+                <div className="px-4 pb-4 pt-0">
+                    <div className="flex min-w-0 flex-col gap-2 pl-6">
                         <MobilePriceGroup
                             label="In"
                             model={model}
@@ -371,91 +413,136 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
     model,
     direction,
 }) => {
-    const badges: PriceBadgeEntry[] =
+    const badges: PriceBadgeConfig[] = groupPriceBadges(
         direction === "input"
             ? [
                   {
-                      price: model.promptTextPrice,
+                      prices: [model.promptTextPrice],
                       emoji: "💬",
+                      subEmojis: ["💬"],
                       perToken: model.perToken,
                   },
                   {
-                      price: model.promptCachedPrice,
+                      prices: [model.promptCachedPrice],
                       emoji: "💾",
+                      subEmojis: ["💾"],
                       perToken: model.perToken,
                   },
                   {
-                      price: model.promptAudioPrice,
-                      emoji: "🔊",
+                      prices: [model.promptAudioPrice],
+                      emoji: "🎙️",
+                      subEmojis: ["🎙️"],
                       perToken: model.perToken,
                   },
                   {
-                      price: model.promptImagePrice,
+                      prices: [model.promptImagePrice],
                       emoji: "🖼️",
+                      subEmojis: ["🖼️"],
                       perToken: model.perToken,
                   },
               ]
             : [
                   {
-                      price: model.completionTextPrice,
+                      prices: [model.completionTextPrice],
                       emoji: "💬",
+                      subEmojis: ["💬"],
                       perToken: model.perToken,
                   },
                   {
-                      price: model.completionAudioPrice,
+                      prices: [model.completionAudioPrice],
                       emoji: "🔊",
+                      subEmojis: ["🔊"],
                       perToken: model.perToken,
                   },
-                  { price: model.perCharPrice, emoji: "🔊", perKChar: true },
                   {
-                      price: model.perSecondPrice,
+                      prices: [model.perSecondPrice],
                       emoji: model.type === "audio" ? "🔊" : "🎬",
+                      subEmojis: [model.type === "audio" ? "🔊" : "🎬"],
                       perSecond: true,
                   },
                   {
-                      price: model.perAudioSecondPrice,
+                      prices: [model.perAudioSecondPrice],
                       emoji: "🔊",
+                      subEmojis: ["🔊"],
                       perSecond: true,
                   },
                   {
-                      price: model.perTokenPrice,
+                      prices: [model.perTokenPrice],
                       emoji: "🎬",
+                      subEmojis: ["🎬"],
                       perToken: true,
                   },
                   {
-                      price: model.perImagePrice,
+                      prices: [model.perImagePrice],
                       emoji: "🖼️",
+                      subEmojis: ["🖼️"],
                       perImage: true,
                   },
                   {
-                      price: model.completionImagePrice,
+                      prices: [model.completionImagePrice],
                       emoji: "🖼️",
+                      subEmojis: ["🖼️"],
                       perToken: model.perToken,
                   },
-              ];
+              ],
+    );
 
-    const validBadges = badges.filter((b) => b.price && b.price !== "—");
-    if (validBadges.length === 0) return null;
+    if (badges.length === 0) return null;
 
     return (
-        <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide shrink-0 w-7">
+        <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-1">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                 {label}
             </span>
-            <div className="flex flex-wrap gap-1.5">
-                {validBadges.map((b, i) => (
+            <div className="flex min-w-0 flex-wrap justify-end gap-1">
+                {badges.map((badge) => (
                     <PriceBadge
-                        key={`${b.emoji}-${b.price}-${i}`}
-                        prices={[b.price]}
-                        emoji={b.emoji}
-                        subEmojis={[b.emoji]}
-                        perToken={b.perToken}
-                        perImage={b.perImage}
-                        perSecond={b.perSecond}
-                        perKChar={b.perKChar}
+                        key={`${badge.subEmojis.join("")}-${badge.prices[0]}-${badge.perToken ? "token" : ""}-${badge.perImage ? "img" : ""}-${badge.perSecond ? "sec" : ""}`}
+                        {...badge}
                     />
                 ))}
             </div>
+        </div>
+    );
+};
+
+type MobileMetadataBadgesProps = {
+    modalityIcons: string[];
+    capabilityIcons: string[];
+};
+
+const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
+    modalityIcons,
+    capabilityIcons,
+}) => {
+    if (modalityIcons.length === 0 && capabilityIcons.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
+            {modalityIcons.length > 0 && (
+                <Badge
+                    color="gray"
+                    size="sm"
+                    className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
+                >
+                    {modalityIcons.map((emoji) => (
+                        <span key={emoji}>{emoji}</span>
+                    ))}
+                </Badge>
+            )}
+            {capabilityIcons.length > 0 && (
+                <Badge
+                    color="gray"
+                    size="sm"
+                    className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
+                >
+                    {capabilityIcons.map((emoji) => (
+                        <span key={emoji}>{emoji}</span>
+                    ))}
+                </Badge>
+            )}
         </div>
     );
 };
@@ -471,7 +558,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     audioModels,
     tierBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
@@ -483,7 +569,21 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     ];
 
     const [activeTab, setActiveTab] = useState<SectionType>("image");
+    const [sortKey, setSortKey] = useState<SortKey>("perPollen");
+    const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
+
+    const onSort = (key: SortKey) => {
+        if (key === sortKey) {
+            setSortDir(sortDir === "asc" ? "desc" : "asc");
+        } else {
+            setSortKey(key);
+            setSortDir(DEFAULT_DIR[key]);
+        }
+    };
+
+    const sortArrow = (key: SortKey) =>
+        sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
     const tabButtons = sections.map((section) => (
         <Button
@@ -493,7 +593,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             size="small"
             className={cn(
                 "px-3",
-                activeTab !== section.type && "!bg-white/80 text-gray-500",
+                activeTab === section.type
+                    ? "!bg-gray-900 !text-white hover:!bg-gray-800"
+                    : "!bg-white/80 text-gray-500",
             )}
             onClick={() => setActiveTab(section.type)}
         >
@@ -503,16 +605,35 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
 
     return (
         <div>
-            {/* Tabs + column headers - single responsive row */}
-            <div className="flex items-center py-2 pr-4 md:pr-8 gap-y-2">
-                <div className="grid grid-cols-2 min-[500px]:flex gap-1.5 min-w-0 shrink-0">
-                    {tabButtons}
-                </div>
-                <div className="flex-1 min-w-6" />
-                <Tooltip content="Based on average community usage. Actual costs vary with modality and output.">
-                    <div className="cursor-help text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px]">
+            {/* Row 1: tab selectors on their own line */}
+            <div className="flex flex-wrap gap-1.5 pt-2 pb-5">{tabButtons}</div>
+
+            {/* Row 2: column headers (sortable) */}
+            <div className="flex items-center pb-2 pr-4 md:pr-8">
+                <button
+                    type="button"
+                    onClick={() => onSort("name")}
+                    className="flex-1 min-w-6 text-left pl-[52px] cursor-pointer hover:text-gray-700"
+                >
+                    <span className="text-sm font-bold text-gray-900">
+                        Model {sortArrow("name")}
+                    </span>
+                </button>
+                <Tooltip
+                    content={
+                        <span className="block w-[220px] whitespace-normal leading-snug">
+                            Based on average community usage. Actual costs vary
+                            with modality and output.
+                        </span>
+                    }
+                >
+                    <button
+                        type="button"
+                        onClick={() => onSort("perPollen")}
+                        className="text-right min-[500px]:text-center shrink-0 w-[90px] translate-x-[14px] cursor-pointer hover:text-gray-700"
+                    >
                         <div className="text-sm font-bold text-gray-900">
-                            1 pollen
+                            1 pollen {sortArrow("perPollen")}
                         </div>
                         <div className="text-xs font-normal text-gray-700 opacity-70 italic">
                             ≈{" "}
@@ -520,22 +641,32 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                                 ? unitLabels[activeSection.type]
                                 : ""}
                         </div>
-                    </div>
+                    </button>
                 </Tooltip>
-                <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
-                    <div className="text-sm font-bold text-gray-900">Input</div>
-                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
-                        pollen
-                    </div>
-                </div>
-                <div className="hidden md:block text-center w-[100px] pl-7 shrink-0">
+                <button
+                    type="button"
+                    onClick={() => onSort("input")}
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-gray-700"
+                >
                     <div className="text-sm font-bold text-gray-900">
-                        Output
+                        Input {sortArrow("input")}
                     </div>
                     <div className="text-xs font-normal text-gray-700 opacity-70 italic">
                         pollen
                     </div>
-                </div>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onSort("output")}
+                    className="hidden md:block text-center w-[100px] pl-7 shrink-0 cursor-pointer hover:text-gray-700"
+                >
+                    <div className="text-sm font-bold text-gray-900">
+                        Output {sortArrow("output")}
+                    </div>
+                    <div className="text-xs font-normal text-gray-700 opacity-70 italic">
+                        pollen
+                    </div>
+                </button>
             </div>
 
             {/* Tab content */}
@@ -543,9 +674,10 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                 <TabContent
                     type={activeSection.type}
                     models={activeSection.models}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
                     tierBalance={tierBalance}
                     packBalance={packBalance}
-                    cryptoBalance={cryptoBalance}
                 />
             )}
         </div>

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ALL_MODELS, MS_PER_30_DAYS, MS_PER_WEEK } from "./constants";
+import { ALL_MODELS } from "./constants";
+import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type {
     DailyUsageRecord,
     DataPoint,
     FilterState,
     ModelBreakdown,
 } from "./types";
-import { TIME_RANGE_DAYS } from "./types";
 
 type UsageDataResult = {
     dailyUsage: DailyUsageRecord[];
@@ -33,7 +33,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         setLoading(true);
         setError(null);
         const params = new URLSearchParams({
-            days: TIME_RANGE_DAYS[filters.timeRange].toString(),
+            granularity: filters.period.granularity,
+            period: filters.period.period,
         });
         if (filters.selectedKeyIds.length > 0) {
             params.set("api_key_ids", filters.selectedKeyIds.join(","));
@@ -54,31 +55,19 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 setDailyUsage([]);
             })
             .finally(() => setLoading(false));
-    }, [filters.timeRange, filters.selectedKeyIds]);
+    }, [
+        filters.period.granularity,
+        filters.period.period,
+        filters.selectedKeyIds,
+    ]);
 
     useEffect(() => {
         fetchUsage();
     }, [fetchUsage]);
 
-    const cutoff = useMemo(() => {
-        const now = new Date();
-        return filters.timeRange === "7d"
-            ? new Date(now.getTime() - MS_PER_WEEK)
-            : filters.timeRange === "30d"
-              ? new Date(now.getTime() - MS_PER_30_DAYS)
-              : new Date(0);
-    }, [filters.timeRange]);
-
-    const timeFilteredData = useMemo(() => {
-        return dailyUsage.filter((r) => {
-            const recordDate = new Date(`${r.date}T00:00:00`);
-            return recordDate >= cutoff;
-        });
-    }, [dailyUsage, cutoff]);
-
     const usedModels = useMemo(() => {
         const modelIds = new Set<string>();
-        for (const r of timeFilteredData) {
+        for (const r of dailyUsage) {
             if (r.model) modelIds.add(r.model);
         }
 
@@ -88,12 +77,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 return { id, label: registered?.label || id };
             })
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [timeFilteredData]);
+    }, [dailyUsage]);
 
     const { chartData, stats, filteredData } = useMemo(() => {
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
-            const recordDate = new Date(`${r.date}T00:00:00`);
-            if (recordDate < cutoff) return false;
             if (
                 filters.selectedModels.length > 0 &&
                 r.model &&
@@ -149,26 +136,15 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             buckets.set(dateKey, cur);
         });
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const startDate = new Date(
-            Math.max(
-                cutoff.getTime(),
-                today.getTime() - 90 * 24 * 60 * 60 * 1000,
-            ),
-        );
-        startDate.setHours(0, 0, 0, 0);
+        const isHourly = filters.period.granularity === "day";
+        const bucketKeys = getPeriodBucketKeys(filters.period);
 
-        const allDates: string[] = [];
-        const currentDate = new Date(startDate);
-        while (currentDate <= today) {
-            allDates.push(currentDate.toISOString().split("T")[0]);
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        const sorted = allDates.map((dateStr) => {
-            const date = new Date(`${dateStr}T00:00:00`);
-            const d = buckets.get(dateStr) || {
+        const sorted = bucketKeys.map((bucketKey) => {
+            const date = periodBucketKeyToDate(
+                bucketKey,
+                filters.period.granularity,
+            );
+            const d = buckets.get(bucketKey) || {
                 requests: 0,
                 pollen: 0,
                 tierRequests: 0,
@@ -197,15 +173,29 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 filters.metric === "requests" ? "paidRequests" : "paidPollen";
 
             return {
-                label: date.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                }),
+                label: isHourly
+                    ? date.toLocaleTimeString("en-US", {
+                          timeZone: "UTC",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                      })
+                    : date.toLocaleDateString("en-US", {
+                          timeZone: "UTC",
+                          month: "short",
+                          day: "numeric",
+                      }),
                 fullDate: date.toLocaleDateString("en-US", {
+                    timeZone: "UTC",
                     weekday: "short",
                     year: "numeric",
                     month: "short",
                     day: "numeric",
+                    ...(isHourly && {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                    }),
                 }),
                 value: d[filters.metric],
                 tierValue: d[tierKey],
@@ -245,7 +235,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             },
             filteredData: filtered,
         };
-    }, [dailyUsage, filters.selectedModels, filters.metric, cutoff]);
+    }, [dailyUsage, filters.selectedModels, filters.metric, filters.period]);
 
     return {
         dailyUsage,

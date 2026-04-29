@@ -3,6 +3,7 @@ import {
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDashScopeModelConfig,
+    createDeepInfraModelConfig,
     createFireworksModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
@@ -73,11 +74,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
-    "grok-4-1-fast-non-reasoning": () =>
+    "grok-4-20-non-reasoning": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-1-fast-non-reasoning/chat/completions?api-version=2024-12-01-preview",
-            "grok-4-1-fast-non-reasoning",
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-non-reasoning/chat/completions?api-version=2024-12-01-preview",
+            "grok-4-20-non-reasoning",
         ),
     "grok-4-20-reasoning": () =>
         createAzureModelConfig(
@@ -86,14 +87,26 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4-20-reasoning",
         ),
 
-    // -- Fireworks AI (DeepSeek, Kimi, GLM, Qwen) --------------------------------
-    "accounts/fireworks/models/deepseek-v3p2": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v3p2",
+    // -- DeepInfra (DeepSeek) -------------------------------------------------
+    "deepseek-ai/DeepSeek-V4-Flash": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4-Flash",
         }),
+
+    // -- Fireworks AI (DeepSeek) ---------------------------------------------
+    "accounts/fireworks/models/deepseek-v4-pro": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4-pro",
+        }),
+
+    // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k2p5": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k2p5",
+        }),
+    "accounts/fireworks/models/kimi-k2p6": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/kimi-k2p6",
         }),
 
     // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
@@ -121,10 +134,10 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "us.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "claude-opus-4-5": () =>
+    "claude-opus-4-7": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-5-20251101-v1:0",
-            defaultOptions: { max_tokens: 64000 },
+            model: "us.anthropic.claude-opus-4-7",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
@@ -172,7 +185,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-flash-lite-preview",
         "global",
     ),
-    "gemini-2.5-pro": createVertexGeminiConfig("gemini-2.5-pro", "us-central1"),
 
     // -- Perplexity -----------------------------------------------------------
     "sonar": () => createPerplexityModelConfig({ model: "sonar" }),

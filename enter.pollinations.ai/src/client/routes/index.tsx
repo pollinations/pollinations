@@ -17,9 +17,9 @@ import { NewsBanner } from "../components/layout/news-banner.tsx";
 import { User } from "../components/layout/user.tsx";
 import { Pricing } from "../components/pricing";
 import {
-    TIME_RANGE_DAYS,
-    type TimeRange,
+    currentUsagePeriod,
     UsageGraph,
+    type UsagePeriodSelection,
 } from "../components/usage-analytics";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
@@ -52,7 +52,6 @@ export const Route = createFileRoute("/")({
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
-        const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
@@ -65,7 +64,6 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
-            cryptoBalance,
         };
     },
 });
@@ -80,13 +78,12 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
-        cryptoBalance,
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
-    const [usageTimeRange, setUsageTimeRange] = useState<TimeRange>("7d");
-    const usageDays = TIME_RANGE_DAYS[usageTimeRange];
+    const [usagePeriod, setUsagePeriod] =
+        useState<UsagePeriodSelection>(currentUsagePeriod);
 
     const selectableKeys = useMemo(
         () =>
@@ -122,7 +119,9 @@ function RouteComponent() {
             metadata: {
                 description: formState.description,
                 keyType,
-                ...(isPublishable && { plaintextKey: "" }), // Placeholder, updated below
+                ...(isPublishable && formState.redirectUris?.length
+                    ? { redirectUris: formState.redirectUris }
+                    : {}),
             },
             permissions: {
                 allowedModels: formState.allowedModels,
@@ -132,31 +131,6 @@ function RouteComponent() {
                     : undefined,
             },
         });
-
-        // Store plaintext key and app settings for publishable keys
-        if (isPublishable) {
-            const metaRes = await fetch(
-                `/api/api-keys/${created.id}/metadata`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        description: formState.description,
-                        keyType,
-                        plaintextKey: created.key,
-                        ...(formState.appUrl && { appUrl: formState.appUrl }),
-                    }),
-                },
-            );
-            if (!metaRes.ok) {
-                const err = await metaRes.json().catch(() => null);
-                throw new Error(
-                    (err as { error?: { message?: string } })?.error?.message ||
-                        "Failed to save key metadata",
-                );
-            }
-        }
 
         router.invalidate();
         return {
@@ -202,7 +176,8 @@ function RouteComponent() {
     function downloadDetailedUsage(): void {
         const params = new URLSearchParams({
             format: "csv",
-            days: usageDays.toString(),
+            granularity: usagePeriod.granularity,
+            period: usagePeriod.period,
             limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
         });
         const anchor = document.createElement("a");
@@ -224,7 +199,7 @@ function RouteComponent() {
                     />
                     <Button
                         as="a"
-                        href="/api/docs"
+                        href="https://gen.pollinations.ai/docs"
                         className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap"
                     >
                         API Reference
@@ -292,15 +267,14 @@ function RouteComponent() {
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
-                            cryptoBalance={cryptoBalance}
                             tier={tierData?.active?.tier}
                         />
                     )}
                     {activeTab === "usage" && (
                         <UsageGraph
                             tier={tierData?.active?.tier}
-                            timeRange={usageTimeRange}
-                            onTimeRangeChange={setUsageTimeRange}
+                            period={usagePeriod}
+                            onPeriodChange={setUsagePeriod}
                             apiKeys={selectableKeys}
                         />
                     )}
@@ -318,11 +292,7 @@ function RouteComponent() {
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
-                <Pricing
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                    cryptoBalance={cryptoBalance}
-                />
+                <Pricing tierBalance={tierBalance} packBalance={packBalance} />
                 <FAQ />
                 <Footer />
             </div>

@@ -79,11 +79,13 @@ node my-first-ai.mjs
   // Generate image
   const image = await generateImage('a cute robot');
 
-  // Display both
-  document.body.innerHTML = `
-    <p>${text}</p>
-    <img src="${image.toDataURL()}">
-  `;
+  // Display both — build nodes instead of interpolating into innerHTML
+  // so model output cannot inject markup or script into the page.
+  const p = document.createElement('p');
+  p.textContent = text;
+  const img = document.createElement('img');
+  img.src = image.toDataURL();
+  document.body.replaceChildren(p, img);
 </script>
 ```
 
@@ -137,7 +139,7 @@ const created = await createKey({
   name: 'my-bot',
   type: 'secret',
   pollenBudget: 1000,
-  accountPermissions: ['balance', 'usage'],
+  accountPermissions: ['usage'],
 });
 console.log('Save now — will not be shown again:', created.key);
 
@@ -189,7 +191,7 @@ const url = await imageUrl('a sunset');
 | `referenceImage` | string | - | URL for image-to-image |
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
-| `reasoning` | boolean | `false` | Enable reasoning (nanobanana-pro, gptimage). Ignored by other models. |
+| `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for nanobanana models. Booleans are accepted for backward compatibility. |
 | `n` | number | `1` | Number of images |
 
 ## Image Editing
@@ -512,7 +514,7 @@ const client = new Pollinations({
 ## Links
 
 - [Pollinations.AI](https://pollinations.ai)
-- [API Documentation](https://enter.pollinations.ai/api/docs) - Full API reference
+- [API Documentation](https://gen.pollinations.ai/docs) - Full API reference
 - [Get API Key](https://enter.pollinations.ai)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - [GitHub](https://github.com/pollinations/pollinations)

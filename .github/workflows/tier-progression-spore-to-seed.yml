@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd enter.pollinations.ai && npm install
+          npm install
           pip install tqdm
 
       - name: Run upgrade script

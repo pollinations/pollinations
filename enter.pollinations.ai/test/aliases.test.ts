@@ -4,6 +4,7 @@ import {
     calculateCost,
     calculatePrice,
     getActivePriceDefinition,
+    getModelDefinition,
     resolveModelName,
 } from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
@@ -90,4 +91,32 @@ test("model without explicit price falls back to cost for both values", () => {
     const price = calculatePrice("flux", usage);
 
     expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
+});
+
+test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
+    const usage = {
+        promptTextTokens: 1_000_000,
+        promptCachedTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
+    };
+
+    const expectedCosts = {
+        deepseek: 0.448,
+        "deepseek-pro": 5.36,
+    } as const;
+    const expectedProviders = {
+        deepseek: "deepinfra",
+        "deepseek-pro": "fireworks",
+    } as const;
+
+    for (const model of ["deepseek", "deepseek-pro"] as const) {
+        const definition = getModelDefinition(model);
+        const cost = calculateCost(model, usage);
+        const price = calculatePrice(model, usage);
+
+        expect(definition.provider).toBe(expectedProviders[model]);
+        expect(definition.paidOnly).toBe(true);
+        expect(cost.totalCost).toBeCloseTo(expectedCosts[model], 8);
+        expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
+    }
 });

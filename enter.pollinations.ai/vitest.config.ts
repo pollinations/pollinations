@@ -1,4 +1,5 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
     defineWorkersConfig,
     readD1Migrations,
@@ -7,6 +8,8 @@ import { loadEnv } from "vite";
 import { configDefaults } from "vitest/config";
 import viteConfig from "./vite.config";
 
+const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
+
 export default defineWorkersConfig(async ({ mode }) => {
     const migrationsPath = path.join(__dirname, "drizzle");
     const migrations = await readD1Migrations(migrationsPath);
@@ -14,6 +17,18 @@ export default defineWorkersConfig(async ({ mode }) => {
 
     return {
         ...viteConfig,
+        resolve: {
+            ...viteConfig.resolve,
+            alias: [
+                ...(Array.isArray(viteConfig.resolve?.alias)
+                    ? viteConfig.resolve.alias
+                    : []),
+                {
+                    find: /^@shared\/(.*)$/,
+                    replacement: `${sharedSrc}$1`,
+                },
+            ],
+        },
         test: {
             globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: [

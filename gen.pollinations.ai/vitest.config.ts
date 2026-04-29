@@ -66,6 +66,7 @@ export default defineWorkersConfig(async ({ mode }) => {
     return {
         ...baseConfig,
         test: {
+            globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: ["./test/setup/apply-migrations.ts"],
             exclude: [...configDefaults.exclude],
             poolOptions: {
@@ -78,6 +79,8 @@ export default defineWorkersConfig(async ({ mode }) => {
                     miniflare: {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
+                            TEST_VCR_MODE:
+                                env.TEST_VCR_MODE || "replay-or-record",
                         },
                         serviceBindings: {
                             ENTER: async (request: Request) => {

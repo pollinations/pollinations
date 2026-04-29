@@ -1,4 +1,3 @@
-import { env } from "cloudflare:test";
 import crypto from "node:crypto";
 import { getLogger } from "@logtape/logtape";
 import {
@@ -6,15 +5,23 @@ import {
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
-import { expect, inject } from "vitest";
-import { createHonoMockHandler, type MockAPI } from "./fetch";
+import { expect } from "vitest";
+import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
 
 const log = getLogger(["test", "mock", "vcr"]);
-const snapshotServerUrl = inject("snapshotServerUrl");
 
 // Limit binary/stream snapshot bodies to 16KB to avoid multi-MB video snapshots.
 // Tests only need enough data to verify content-type and minimum size.
 const MAX_SNAPSHOT_BODY_BYTES = 16 * 1024;
+export type VcrMode = "record-only" | "replay-only" | "replay-or-record";
+export type VcrHost = { name: string; host: string };
+
+type CreateMockVcrOptions = {
+    originalFetch: typeof fetch;
+    hosts: VcrHost[];
+    snapshotServerUrl: string;
+    mode?: VcrMode;
+};
 
 type RequestBodySnapshot = {
     type: "json" | "text" | "binary" | "formdata" | "empty";
@@ -46,11 +53,6 @@ type Snapshot = {
     request: RequestSnapshot;
     response: ResponseSnapshot;
 };
-
-const hosts = [
-    { name: "text", host: new URL(env.TEXT_SERVICE_URL).host },
-    { name: "image", host: new URL(env.IMAGE_SERVICE_URL).host },
-];
 
 async function getSnapshotHash(request: Request): Promise<string> {
     const hash = crypto.createHash("md5");
@@ -100,7 +102,10 @@ async function getSnapshotFilename(
     return `${host}-${hash}.json`;
 }
 
-async function getSnapshot(filename: string): Promise<Snapshot> {
+async function getSnapshot(
+    snapshotServerUrl: string,
+    filename: string,
+): Promise<Snapshot> {
     log.trace(`Reading snapshot: ${filename}`);
     const response = await fetch(`${snapshotServerUrl}/${filename}`);
     if (!response.ok) {
@@ -111,6 +116,7 @@ async function getSnapshot(filename: string): Promise<Snapshot> {
 }
 
 async function writeSnapshot(
+    snapshotServerUrl: string,
     filename: string,
     snapshot: Snapshot,
 ): Promise<void> {
@@ -125,7 +131,12 @@ async function writeSnapshot(
     }
 }
 
-export function createMockVcr(originalFetch: typeof fetch): MockAPI<{}> {
+export function createMockVcr({
+    originalFetch,
+    hosts,
+    snapshotServerUrl,
+    mode = "replay-or-record",
+}: CreateMockVcrOptions): MockAPI<{}> {
     const vcr = new Hono()
         .all("*", async (c) => {
             const snapshotFilename = await getSnapshotFilename(
@@ -133,17 +144,20 @@ export function createMockVcr(originalFetch: typeof fetch): MockAPI<{}> {
                 c.req.raw,
             );
 
-            if (env.TEST_VCR_MODE !== "record-only") {
+            if (mode !== "record-only") {
                 // Replay snapshot if it exists
                 try {
-                    const snapshot = await getSnapshot(snapshotFilename);
+                    const snapshot = await getSnapshot(
+                        snapshotServerUrl,
+                        snapshotFilename,
+                    );
                     return replaySnapshotResponse(snapshot);
-                } catch (error: any) {
+                } catch {
                     log.warn(`Missing snapshot: ${snapshotFilename}`);
                 }
             }
 
-            if (env.TEST_VCR_MODE !== "replay-only") {
+            if (mode !== "replay-only") {
                 // Record actual upstream response
                 log.trace(`Recording: ${c.req.method} ${c.req.url}`);
                 // Clone request before fetch since it will consume the body
@@ -154,7 +168,11 @@ export function createMockVcr(originalFetch: typeof fetch): MockAPI<{}> {
                     requestClone,
                     responseClone,
                 );
-                await writeSnapshot(snapshotFilename, snapshot);
+                await writeSnapshot(
+                    snapshotServerUrl,
+                    snapshotFilename,
+                    snapshot,
+                );
                 return response;
             }
 

@@ -1,12 +1,12 @@
+import { getLogger } from "@logtape/logtape";
 import type { Hono } from "hono";
 import { vi } from "vitest";
-import { getLogger } from "@logtape/logtape";
 
 const originalFetch = globalThis.fetch;
-const activeRequests = new Set<Promise<any>>();
+const activeRequests = new Set<Promise<unknown>>();
 
 export type MockMap = {
-    [name: string]: MockAPI<any>;
+    [name: string]: MockAPI<unknown>;
 };
 export type MockHandler = (request: Request) => Promise<Response>;
 export type MockHandlerMap = { [hostname: string]: MockHandler };

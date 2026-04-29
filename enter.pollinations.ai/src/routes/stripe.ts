@@ -175,22 +175,33 @@ export const stripeRoutes = new Hono<Env>()
         const body = (await c.req.json().catch(() => ({}))) as {
             flow?: BillingPortalFlow;
         };
-        const session = await createBillingPortalSession(
-            c.env,
-            user.id,
-            body.flow === "payment_method_update"
-                ? "payment_method_update"
-                : "default",
-        );
 
-        if (!session.url) {
+        try {
+            const session = await createBillingPortalSession(
+                c.env,
+                user.id,
+                body.flow === "payment_method_update"
+                    ? "payment_method_update"
+                    : "default",
+            );
+
+            if (!session.url) {
+                return c.json(
+                    { error: "Failed to create billing portal session" },
+                    500,
+                );
+            }
+
+            return c.json({ url: session.url });
+        } catch (error) {
+            console.error("Stripe billing portal error:", error);
             return c.json(
-                { error: "Failed to create billing portal session" },
+                {
+                    error: normalizeStripePortalError(error),
+                },
                 500,
             );
         }
-
-        return c.json({ url: session.url });
     })
 
     /**
@@ -259,4 +270,19 @@ async function requireSessionUser(c: Context<Env>) {
 function isInternalRequest(request: Request, env: CloudflareBindings): boolean {
     const header = request.headers.get("Authorization") ?? "";
     return header === `Bearer ${env.PLN_ENTER_TOKEN}`;
+}
+
+function normalizeStripePortalError(error: unknown): string {
+    const message =
+        error instanceof Error
+            ? error.message
+            : typeof error === "string"
+              ? error
+              : "";
+
+    if (message.toLowerCase().includes("configuration")) {
+        return "Stripe Billing Portal is not configured for this Stripe account.";
+    }
+
+    return message || "Failed to create billing portal session";
 }

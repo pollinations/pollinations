@@ -55,18 +55,13 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({
-                    flow: hasPaymentMethod
-                        ? "default"
-                        : "payment_method_update",
-                }),
+                body: JSON.stringify({ flow: "default" }),
             });
-            const payload = (await response.json()) as {
-                url?: string;
-                error?: string;
-            };
+            const payload = await readJsonPayload(response);
             if (!response.ok || !payload.url) {
-                throw new Error(payload.error ?? "Failed to open Stripe");
+                throw new Error(
+                    getErrorMessage(payload, "Failed to open Stripe"),
+                );
             }
             window.location.href = payload.url;
         } catch (err) {
@@ -91,11 +86,10 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     packAmountUsd,
                 }),
             });
-            const payload = await response.json();
+            const payload = await readJsonPayload(response);
             if (!response.ok) {
                 throw new Error(
-                    (payload as { error?: string }).error ??
-                        "Failed to save auto top-up",
+                    getErrorMessage(payload, "Failed to save auto top-up"),
                 );
             }
             const nextBillingState = payload as BillingState;
@@ -240,3 +234,43 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         </div>
     );
 };
+
+type JsonPayload = {
+    url?: string;
+    error?: unknown;
+    message?: unknown;
+    autoTopUp?: BillingState["autoTopUp"];
+    paymentMethod?: BillingState["paymentMethod"];
+    billingDetailsComplete?: boolean;
+};
+
+async function readJsonPayload(response: Response): Promise<JsonPayload> {
+    const payload = await response.json().catch(() => ({}));
+    return payload as JsonPayload;
+}
+
+function getErrorMessage(
+    payload: { error?: unknown; message?: unknown },
+    fallback: string,
+): string {
+    return (
+        coerceMessage(payload.error) ??
+        coerceMessage(payload.message) ??
+        fallback
+    );
+}
+
+function coerceMessage(value: unknown): string | null {
+    if (typeof value === "string") return value;
+    if (!value || typeof value !== "object") return null;
+
+    if ("message" in value) {
+        return coerceMessage(value.message);
+    }
+
+    if ("error" in value) {
+        return coerceMessage(value.error);
+    }
+
+    return null;
+}

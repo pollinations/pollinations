@@ -1,0 +1,34 @@
+{
+  "pr_number": 10554,
+  "title": "fix: standardize Enter tooltip hovers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10554",
+  "merged_at": "2026-04-29T12:44:23Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Tooltips, tamed",
+    "blurb": "We took a feather duster to the Enter dashboard's tooltips. Hovering over your API keys and usage stats is now a consistently snappy experience, free of weird nested buttons.",
+    "summary": "Standardized tooltip hover behaviors and styling across the Enter dashboard's pricing, balance, API keys, and usage interfaces.",
+    "impact": "Users will experience faster, more consistent tooltips without nested button glitches or delayed native browser titles.",
+    "keywords": [
+      "ui",
+      "tooltips",
+      "dashboard",
+      "enter",
+      "frontend"
+    ],
+    "visual_concept": "The bee mascot organizing or polishing small floating text boxes (tooltips) in a UI dashboard setting. Maybe holding a feather duster or a tiny wrench, making the floating boxes look neat and uniform.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, carefully polishing a glowing floating text box with a small cloth. A retro computer monitor in the background shows a clean dashboard interface. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10554.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, carefully polishing a glowing floating text box with a small cloth. A retro computer monitor in the background shows a clean dashboard interface. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-29T12:45:19.039919+00:00"
+}

@@ -41,10 +41,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         .post("/v0/events", async (c) => {
             const eventName = c.req.query("name");
             const body = await c.req.text();
-            const rows = parseNdjson(body);
 
             if (eventName === "generation_event") {
-                const events: TinybirdGenerationEvent[] = rows;
+                const events = parseNdjson<TinybirdGenerationEvent>(body);
                 if (
                     events.find((event) =>
                         event.id.includes("simulate_tinybird_error"),
@@ -55,7 +54,13 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                     );
                 }
                 state.events.push(...events);
+                return c.json(
+                    { successful_rows: events.length, quarantined_rows: 0 },
+                    200,
+                );
             }
+
+            const rows = parseNdjson<Record<string, unknown>>(body);
 
             if (eventName === "error_event") {
                 state.errorEvents.push(...rows);
@@ -90,9 +95,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
     return { state, reset, handlerMap };
 }
 
-function parseNdjson(input: string): unknown[] {
+function parseNdjson<T>(input: string): T[] {
     return input
         .split("\n")
         .filter((line) => line.trim().length > 0)
-        .map((line) => JSON.parse(line));
+        .map((line) => JSON.parse(line) as T);
 }

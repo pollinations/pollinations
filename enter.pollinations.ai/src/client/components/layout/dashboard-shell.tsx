@@ -341,12 +341,14 @@ const BrandSocialChips: FC = () => (
             label="Pollinations on GitHub"
             icon={<GitHubIcon />}
             text="github"
+            count="★ 4.4k"
         />
         <BrandChip
             href="https://discord.gg/pollinations-ai-885844321461485618"
             label="Discord community"
             icon={<DiscordIcon />}
             text="discord"
+            count="18k"
         />
     </div>
 );
@@ -356,7 +358,8 @@ const BrandChip: FC<{
     label: string;
     icon: ReactNode;
     text: string;
-}> = ({ href, label, icon, text }) => (
+    count?: string;
+}> = ({ href, label, icon, text, count }) => (
     <a
         href={href}
         target="_blank"
@@ -366,6 +369,11 @@ const BrandChip: FC<{
     >
         <span className="h-[11px] w-[11px]">{icon}</span>
         <span>{text}</span>
+        {count && (
+            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-[10px] text-green-950/55">
+                {count}
+            </span>
+        )}
     </a>
 );
 

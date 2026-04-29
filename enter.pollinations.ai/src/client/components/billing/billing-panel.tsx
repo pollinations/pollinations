@@ -8,9 +8,9 @@ import {
 } from "react";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
 import { Input } from "../ui/input.tsx";
 import { Panel } from "../ui/panel.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 
 type BillingAccountType = "individual" | "company";
 
@@ -430,7 +430,7 @@ export const BillingPanel: FC = () => {
             )}
 
             {form && (
-                <Card color="amber" className="space-y-4 bg-white/90">
+                <Card color="gray" className="space-y-4 bg-white/90">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                             <h3 className="text-lg font-semibold text-amber-950">
@@ -456,7 +456,7 @@ export const BillingPanel: FC = () => {
 
                     {editingBillingDetails ? (
                         <form className="space-y-4" onSubmit={saveProfile}>
-                            <div className="flex w-fit rounded-full border border-amber-300 bg-amber-50 p-1">
+                            <div className="flex w-fit rounded-full bg-amber-50 p-1">
                                 {(["individual", "company"] as const).map(
                                     (type) => (
                                         <button
@@ -647,7 +647,7 @@ export const BillingPanel: FC = () => {
                 </Card>
             )}
 
-            <Card color="amber" className="space-y-3 bg-white/90">
+            <Card color="gray" className="space-y-3 bg-white/90">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <h3 className="text-lg font-semibold text-amber-950">
                         Payment methods
@@ -666,7 +666,7 @@ export const BillingPanel: FC = () => {
                 {sortedCards.length === 0 ? (
                     <p className="text-sm text-amber-800">No saved cards.</p>
                 ) : (
-                    <div className="divide-y divide-amber-100 rounded-lg border border-amber-100">
+                    <div className="divide-y divide-gray-100 rounded-lg bg-white/60">
                         {sortedCards.map((card) => (
                             <div
                                 key={card.id}
@@ -716,19 +716,23 @@ export const BillingPanel: FC = () => {
                 )}
             </Card>
 
-            <Card color="amber" className="space-y-3 bg-white/90">
+            <Card color="gray" className="space-y-3 bg-white/90">
                 <h3 className="flex items-center text-lg font-semibold text-amber-950">
                     Invoices
-                    <InfoTip
-                        text="Purchases before May 1, 2026 remain available from the Stripe receipt email sent at purchase time."
-                        label="Older invoice availability"
-                        tone="amber"
-                    />
+                    <Tooltip
+                        content="Purchases before May 1, 2026 remain available from the Stripe receipt email sent at purchase time."
+                        ariaLabel="Older invoice availability"
+                        className="ml-1"
+                    >
+                        <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-gray-300 bg-white font-body text-[10px] font-bold leading-none text-gray-600">
+                            i
+                        </span>
+                    </Tooltip>
                 </h3>
 
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[640px] table-fixed text-left text-sm">
-                        <thead className="border-b border-amber-200 text-amber-900">
+                        <thead className="border-b border-gray-200 text-amber-900">
                             <tr>
                                 <th className="w-[18%] py-2 pr-3 font-semibold">
                                     Date
@@ -747,7 +751,7 @@ export const BillingPanel: FC = () => {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-amber-100">
+                        <tbody className="divide-y divide-gray-100">
                             {invoices.map((invoice) => (
                                 <tr key={invoice.id} className="h-11">
                                     <td className="py-2 pr-3 text-amber-950">

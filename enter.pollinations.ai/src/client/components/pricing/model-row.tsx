@@ -261,7 +261,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                     >
                         <span
                             className={cn(
-                                "inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full cursor-help",
+                                "inline-block cursor-default text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full",
                             )}
                         >
                             {genPerPollen}

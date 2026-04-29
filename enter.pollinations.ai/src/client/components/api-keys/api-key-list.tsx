@@ -3,6 +3,7 @@ import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Panel } from "../ui/panel.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { AccountBadge } from "./account-badge.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { DeleteConfirmation } from "./delete-confirmation.tsx";
@@ -136,10 +137,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     : "🌐 Publishable"
                                                 : "🔒 Secret"}
                                         </span>
-                                        <span
-                                            className="text-sm font-medium truncate"
-                                            title={apiKey.name ?? undefined}
-                                        >
+                                        <span className="text-sm font-medium truncate">
                                             {apiKey.name}
                                         </span>
                                         <span className="flex-1" />
@@ -154,31 +152,43 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             </span>
                                         )}
                                         <div className="flex gap-1 shrink-0 ml-2 items-center">
-                                            <button
-                                                type="button"
-                                                className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
-                                                onClick={() =>
-                                                    setEditingKey(apiKey)
-                                                }
-                                                title="Edit key"
+                                            <Tooltip
+                                                triggerAs="span"
+                                                content="Edit key"
+                                                className="inline-flex"
                                             >
-                                                ✎
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
-                                                onClick={() =>
-                                                    setDeleteId(apiKey.id)
-                                                }
-                                                title="Delete key"
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                    onClick={() =>
+                                                        setEditingKey(apiKey)
+                                                    }
+                                                    aria-label="Edit key"
+                                                >
+                                                    ✎
+                                                </button>
+                                            </Tooltip>
+                                            <Tooltip
+                                                triggerAs="span"
+                                                content="Delete key"
+                                                className="inline-flex"
                                             >
-                                                ×
-                                            </button>
+                                                <button
+                                                    type="button"
+                                                    className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
+                                                    onClick={() =>
+                                                        setDeleteId(apiKey.id)
+                                                    }
+                                                    aria-label="Delete key"
+                                                >
+                                                    ×
+                                                </button>
+                                            </Tooltip>
                                         </div>
                                     </div>
                                     {/* Row 2: Stats and Permissions */}
                                     <div className="flex flex-wrap items-center gap-4 text-xs">
-                                        <span title="Created">
+                                        <span>
                                             <span className="text-gray-400">
                                                 Created:{" "}
                                             </span>
@@ -192,7 +202,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 )}
                                             </span>
                                         </span>
-                                        <span title="Last used">
+                                        <span>
                                             <span className="text-gray-400">
                                                 Used:{" "}
                                             </span>
@@ -212,9 +222,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                         </span>
                                         {isPublishable &&
                                             primaryRedirectUri && (
-                                                <span
-                                                    title={primaryRedirectUri}
-                                                >
+                                                <span>
                                                     <span className="text-gray-400">
                                                         Redirect:{" "}
                                                     </span>

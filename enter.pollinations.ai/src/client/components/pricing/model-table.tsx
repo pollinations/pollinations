@@ -292,7 +292,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             strokeWidth={2}
                             aria-hidden="true"
                         >
-                            <title>Expand model details</title>
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -620,6 +619,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     </span>
                 </button>
                 <Tooltip
+                    triggerAs="span"
                     content={
                         <span className="block w-[220px] whitespace-normal leading-snug">
                             Based on average community usage. Actual costs vary

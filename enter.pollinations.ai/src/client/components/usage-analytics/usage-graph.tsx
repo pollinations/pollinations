@@ -266,22 +266,21 @@ const ModalityPills: FC<{ breakdown: Record<ModelModality, number> }> = ({
     if (entries.length === 0) return null;
     return (
         <div className="flex flex-wrap items-center gap-2">
-            {entries.map(({ modality, count }) => (
-                <span
-                    key={modality}
-                    className="inline-flex items-center gap-1 rounded-full bg-pink-200 px-2.5 py-1 text-xs font-semibold text-pink-900"
-                >
-                    <span aria-hidden="true">
-                        {MODALITY_META[modality].emoji}
+            {entries.map(({ modality, count }) => {
+                const { emoji, label } = MODALITY_META[modality];
+                return (
+                    <span
+                        key={modality}
+                        title={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
+                        className="inline-flex items-center gap-1 rounded-full bg-pink-200 px-2.5 py-1 text-xs font-semibold text-pink-900"
+                    >
+                        <span aria-hidden="true">{emoji}</span>
+                        <span className="tabular-nums">
+                            {count.toLocaleString()}
+                        </span>
                     </span>
-                    <span className="tabular-nums">
-                        {count.toLocaleString()}
-                    </span>
-                    <span className="text-pink-900/70">
-                        {MODALITY_META[modality].label}
-                    </span>
-                </span>
-            ))}
+                );
+            })}
         </div>
     );
 };

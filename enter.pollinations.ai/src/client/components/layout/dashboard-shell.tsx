@@ -341,7 +341,7 @@ const BrandSocialChips: FC = () => (
             label="Pollinations on GitHub"
             icon={<GitHubIcon />}
             text="github"
-            count="★ 4.4k"
+            count="4.4k"
         />
         <BrandChip
             href="https://discord.gg/pollinations-ai-885844321461485618"

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10451,
+  "title": "patch(sdk): Updated the docs fixed DOM construction and parsing",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10451",
+  "merged_at": "2026-04-29T04:50:08Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Safety first in the SDK",
+    "blurb": "We did a little spring cleaning in the SDK! Quick-start examples are now safer to copy-paste, and our retry logic is smarter about weird headers.",
+    "summary": "Updated the SDK documentation to use safe DOM construction methods and improved the strictness of Retry-After header parsing.",
+    "impact": "Developers copying the quick-start examples will get safer code by default, and the SDK client now handles malformed retry headers more gracefully.",
+    "keywords": [
+      "sdk",
+      "security",
+      "docs",
+      "retry-after",
+      "dom"
+    ],
+    "visual_concept": "The pollinations bee wearing a tiny hard hat and safety goggles, sweeping up some code blocks with a broom. A chunky pixel robot with a monitor head is holding a shield with a checkmark on it, representing safety and robustness.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat and safety goggles, sweeping up glowing code blocks with a small broom. A chunky pixel robot with a CRT monitor head stands nearby holding a shield with a green checkmark. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10451.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat and safety goggles, sweeping up glowing code blocks with a small broom. A chunky pixel robot with a CRT monitor head stands nearby holding a shield with a green checkmark. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-29T04:51:00.397210+00:00"
+}

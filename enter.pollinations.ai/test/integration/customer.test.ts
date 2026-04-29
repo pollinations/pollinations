@@ -1,8 +1,8 @@
 import { env, SELF } from "cloudflare:test";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import { test } from "../fixtures.ts";
 
 const base = "http://localhost:3000/api/customer";
@@ -54,7 +54,6 @@ test("/balance should return all balance types and lastTierGrant", async ({
     const testBalances = {
         tierBalance: 10.5,
         packBalance: 25.3,
-        cryptoBalance: 5.0,
     };
     const lastTierGrant = Date.now() - 3600000; // 1 hour ago
 
@@ -81,7 +80,6 @@ test("/balance should return all balance types and lastTierGrant", async ({
     expect(data).toEqual({
         tierBalance: testBalances.tierBalance,
         packBalance: testBalances.packBalance,
-        cryptoBalance: testBalances.cryptoBalance,
         lastTierGrant,
     });
 });
@@ -111,7 +109,6 @@ test("/balance should return zero balances for new users", async ({
         .set({
             tierBalance: 0,
             packBalance: 0,
-            cryptoBalance: 0,
             lastTierGrant: null,
         })
         .where(eq(userTable.id, userId));
@@ -129,7 +126,6 @@ test("/balance should return zero balances for new users", async ({
     expect(data).toEqual({
         tierBalance: 0,
         packBalance: 0,
-        cryptoBalance: 0,
         lastTierGrant: null,
     });
 });

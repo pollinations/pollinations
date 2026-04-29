@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
+import { Tooltip } from "../ui/tooltip.tsx";
 
 export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     fullKey,
@@ -19,18 +20,23 @@ export const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     };
 
     return (
-        <button
-            type="button"
-            onClick={handleCopy}
-            className={cn(
-                "font-mono text-xs text-left cursor-pointer transition-all",
-                copied
-                    ? "text-green-600 font-semibold"
-                    : "text-blue-600 hover:text-blue-800 hover:underline",
-            )}
-            title={copied ? "Copied!" : "Click to copy full key"}
+        <Tooltip
+            triggerAs="span"
+            content={copied ? "Copied!" : "Click to copy full key"}
+            className="inline-flex"
         >
-            {copied ? "✓ Copied!" : `${start}...`}
-        </button>
+            <button
+                type="button"
+                onClick={handleCopy}
+                className={cn(
+                    "font-mono text-xs text-left cursor-pointer transition-all",
+                    copied
+                        ? "text-green-600 font-semibold"
+                        : "text-blue-600 hover:text-blue-800 hover:underline",
+                )}
+            >
+                {copied ? "✓ Copied!" : `${start}...`}
+            </button>
+        </Tooltip>
     );
 };

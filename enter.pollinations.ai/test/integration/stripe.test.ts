@@ -1,9 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import { test } from "../fixtures.ts";
 
 const base = "http://localhost:3000/api/stripe";

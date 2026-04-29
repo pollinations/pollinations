@@ -1,0 +1,25 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385/vcr%20simple%20text?model=openai-fast&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "content-type": "text/plain; charset=utf-8",
+      "x-model-used": "openai-fast",
+      "x-usage-completion-text-tokens": "4",
+      "x-usage-prompt-text-tokens": "6"
+    },
+    "body": {
+      "type": "text",
+      "data": "snapshot text response"
+    }
+  }
+}

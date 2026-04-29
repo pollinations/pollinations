@@ -98,8 +98,8 @@ jobs:
       - name: Install wrangler
         run: npm install -g wrangler
 
-      - name: Install enter dependencies
-        run: cd enter.pollinations.ai && npm install
+      - name: Install dependencies
+        run: npm install
 
       - name: Check comment author permissions
         id: auth

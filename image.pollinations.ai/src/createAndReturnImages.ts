@@ -31,6 +31,7 @@ import {
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
+import { downloadUserImage } from "./utils/imageDownload.ts";
 import type { TrackingData } from "./utils/trackingHeaders.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
@@ -394,65 +395,60 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
     return buffer;
 }
 
-/**
- * Configuration for Azure GPT Image endpoints
- * All models use myceli-prod-eastus2 with a shared API key
- */
-interface AzureGPTImageConfig {
+interface GPTImageConfig {
+    provider: "azure" | "openai";
     baseUrl: string;
     modelName: string;
+    apiKeyEnv: string;
 }
 
-const AZURE_GPTIMAGE_API_VERSION = "2025-04-01-preview";
+const AZURE_API_VERSION = "2025-04-01-preview";
 
-const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
+const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig> = {
     gptimage: {
+        provider: "azure",
         baseUrl:
             "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
         modelName: "gpt-image-1-mini",
+        apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
     },
     "gptimage-large": {
+        provider: "azure",
         baseUrl:
             "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
         modelName: "gpt-image-1.5",
+        apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
     },
     "gpt-image-2": {
-        baseUrl:
-            "https://myceli-prod-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
+        provider: "openai",
+        baseUrl: "https://api.openai.com/v1",
         modelName: "gpt-image-2",
+        apiKeyEnv: "OPENAI_API_KEY",
     },
 };
 
-/**
- * Helper function to call Azure GPT Image with specific endpoint
- * @param {string} prompt - The prompt for image generation or editing
- * @param {Object} safeParams - The parameters for image generation or editing
- * @param {Object} userInfo - User authentication info object
- * @param {AzureGPTImageConfig} config - Configuration for the specific GPT Image model
- * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
- */
-const callAzureGPTImageWithEndpoint = async (
+const callGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
+    config: GPTImageConfig = GPTIMAGE_CONFIGS.gptimage,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env.AZURE_MYCELI_PROD_EASTUS2_API_KEY;
+    const apiKey = process.env[config.apiKeyEnv];
 
     if (!apiKey) {
         throw new Error(
-            "AZURE_MYCELI_PROD_EASTUS2_API_KEY not found in environment variables",
+            `${config.apiKeyEnv} not found in environment variables`,
         );
     }
 
-    // Check if we have input images for edit mode
     const isEditMode = safeParams.image && safeParams.image.length > 0;
-
-    // Construct the full endpoint URL based on mode
     const path = isEditMode ? "images/edits" : "images/generations";
-    const endpoint = `${config.baseUrl}/${path}?api-version=${AZURE_GPTIMAGE_API_VERSION}`;
+    const endpoint =
+        config.provider === "azure"
+            ? `${config.baseUrl}/${path}?api-version=${AZURE_API_VERSION}`
+            : `${config.baseUrl}/${path}`;
     logCloudflare(
-        `Using Azure ${config.modelName} in ${isEditMode ? "edit" : "generation"} mode`,
+        `Using ${config.provider} ${config.modelName} in ${isEditMode ? "edit" : "generation"} mode`,
     );
 
     // Map safeParams to Azure API parameters
@@ -473,14 +469,14 @@ const callAzureGPTImageWithEndpoint = async (
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";
-    // Build request body
+    // Build request body. OpenAI's direct API requires model in body; Azure
+    // routes by deployment name in the URL path so model is implicit there.
     const requestBody = {
+        ...(config.provider === "openai" ? { model: config.modelName } : {}),
         prompt: sanitizeString(prompt),
-        size: size, // "auto" for default size, otherwise width×height
+        size,
         quality,
         output_format: outputFormat,
-        // output_compression: outputCompression,
-        // moderation: "low",
         n: 1,
         background: safeParams.transparent ? "transparent" : undefined,
     };
@@ -495,15 +491,13 @@ const callAzureGPTImageWithEndpoint = async (
     // We'll only use the requestBody for generation mode
     // For edit mode, we'll use FormData instead
 
-    // Note: Azure GPT Image API doesn't support the 'seed' parameter
-    // We'll log the seed for reference but not include it in the request
     if (safeParams.seed) {
         logCloudflare(
-            `Seed value ${safeParams.seed} not supported by Azure GPT Image API, ignoring`,
+            `Seed value ${safeParams.seed} not supported by GPT Image API, ignoring`,
         );
     }
 
-    logCloudflare("Calling Azure GPT Image API with params:", requestBody);
+    logCloudflare("Calling GPT Image API with params:", requestBody);
 
     let response = null;
 
@@ -537,15 +531,8 @@ const callAzureGPTImageWithEndpoint = async (
                         `Fetching image ${i + 1}/${imageUrls.length} from URL: ${imageUrl}`,
                     );
 
-                    const imageResponse = await fetch(imageUrl);
-                    if (!imageResponse.ok) {
-                        throw new Error(
-                            `Failed to fetch image from URL: ${imageUrl}`,
-                        );
-                    }
-
-                    const imageArrayBuffer = await imageResponse.arrayBuffer();
-                    const originalBuffer = Buffer.from(imageArrayBuffer);
+                    const { buffer: originalBuffer, mimeType } =
+                        await downloadUserImage(imageUrl);
 
                     // Resize large input images to reduce token costs
                     // GPT Image 1.5 calculates input tokens as: (width × height) / 750
@@ -571,35 +558,16 @@ const callAzureGPTImageWithEndpoint = async (
                         throw error;
                     }
 
-                    // Determine file extension and MIME type from Content-Type header
-                    const contentType =
-                        imageResponse.headers.get("content-type") || "";
-                    let extension = ".png"; // Default extension
-                    let mimeType = "image/png"; // Default MIME type
-
-                    // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
-                    if (contentType.startsWith("image/")) {
-                        const mimeExtension = contentType
-                            .split("/")[1]
-                            .split(";")[0]; // Handle cases like "image/jpeg; charset=utf-8"
-                        extension = `.${mimeExtension}`;
-                        mimeType = `image/${mimeExtension}`;
-                    } else {
-                        // If content-type is not image/*, try to detect from URL or default to PNG
-                        logCloudflare(
-                            `Content-Type not detected as image (${contentType}), defaulting to image/png`,
-                        );
-                    }
-
                     // Use the image[] array notation as required by Azure OpenAI API
                     // Create a Blob with explicit MIME type to avoid application/octet-stream
-                    const imageBlob = new Blob([imageArrayBuffer], {
-                        type: mimeType,
-                    });
+                    const extension = `.${mimeType.split("/")[1]}`;
+                    const imageBlob = new Blob([buffer], { type: mimeType });
                     formData.append("image[]", imageBlob, `image${extension}`);
                 } catch (error) {
-                    // More specific error handling for image processing
+                    // Preserve HttpError status (e.g. 400 from downloadUserImage);
+                    // wrap other errors as generic processing failures.
                     logError(`Error processing image ${i + 1}:`, error.message);
+                    if (error instanceof HttpError) throw error;
                     throw new Error(
                         `Failed to process image: ${error.message}`,
                     );
@@ -607,10 +575,14 @@ const callAzureGPTImageWithEndpoint = async (
             }
         } catch (error) {
             logError("Error processing image for editing:", error);
+            if (error instanceof HttpError) throw error;
             throw new Error(`Failed to process image: ${error.message}`);
         }
 
-        // Add other parameters
+        // OpenAI direct requires model in form data; Azure uses URL deployment.
+        if (config.provider === "openai") {
+            formData.append("model", config.modelName);
+        }
         formData.append("quality", quality);
         formData.append("n", "1");
 
@@ -650,18 +622,20 @@ const callAzureGPTImageWithEndpoint = async (
 
     if (!response.ok) {
         const errorText = await response.text();
-        // Azure 403 = provider blocked us (content policy, key disabled,
-        // deployment quota) — not a client auth problem. Remap to 502 so the
-        // caller sees an upstream failure instead of being told they're
-        // forbidden.
-        const status = response.status === 403 ? 502 : response.status;
+        // Provider 403 on Azure means content/quota block, not client auth.
+        // Remap to 502 so callers see it as upstream. OpenAI 403 is genuine
+        // auth failure, leave as-is.
+        const status =
+            config.provider === "azure" && response.status === 403
+                ? 502
+                : response.status;
         throw new HttpError(errorText, status);
     }
 
     const data = await response.json();
 
     if (!data.data || !data.data[0] || !data.data[0].b64_json) {
-        throw new Error("Invalid response from Azure GPT Image API");
+        throw new Error("Invalid response from GPT Image API");
     }
 
     // Convert base64 to buffer
@@ -690,24 +664,15 @@ const callAzureGPTImageWithEndpoint = async (
     };
 };
 
-/**
- * Calls the Azure GPT Image API to generate or edit images
- * @param {string} prompt - The prompt for image generation or editing
- * @param {Object} safeParams - The parameters for image generation or editing
- * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
- * @param {string} model - Model name (gptimage or gptimage-large)
- * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
- */
-export const callAzureGPTImage = async (
+export const callGPTImage = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
     model: string = "gptimage",
 ): Promise<ImageGenerationResult> => {
-    const config =
-        AZURE_GPTIMAGE_CONFIGS[model] || AZURE_GPTIMAGE_CONFIGS.gptimage;
+    const config = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
     try {
-        return await callAzureGPTImageWithEndpoint(
+        return await callGPTImageWithEndpoint(
             prompt,
             safeParams,
             userInfo,
@@ -715,7 +680,7 @@ export const callAzureGPTImage = async (
         );
     } catch (error) {
         logError(
-            `Error calling Azure GPT Image API (${config.modelName}):`,
+            `Error calling ${config.provider} GPT Image API (${config.modelName}):`,
             error,
         );
         throw error;
@@ -780,7 +745,7 @@ const generateImage = async (
         case "gptimage":
         case "gptimage-large":
         case "gpt-image-2": {
-            const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
+            const gptConfig = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,
                 formatAuthInfo(userInfo),
@@ -805,9 +770,9 @@ const generateImage = async (
                     requestId,
                     35,
                     "Processing",
-                    `Trying Azure GPT Image (${gptConfig.modelName})...`,
+                    `Trying ${gptConfig.provider} GPT Image (${gptConfig.modelName})...`,
                 );
-                return await callAzureGPTImage(
+                return await callGPTImage(
                     prompt,
                     safeParams,
                     userInfo,
@@ -815,7 +780,7 @@ const generateImage = async (
                 );
             } catch (error) {
                 logError(
-                    "Azure GPT Image generation or safety check failed:",
+                    `${gptConfig.provider} GPT Image generation or safety check failed:`,
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);

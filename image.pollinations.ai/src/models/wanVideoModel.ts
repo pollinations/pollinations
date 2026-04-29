@@ -4,7 +4,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -257,8 +257,8 @@ async function callWanAlibabaAPI(
     let imageDataUri: string | undefined;
     if (rawImageUrl) {
         logOps("Downloading image for base64 encoding:", rawImageUrl);
-        const { base64, mimeType } = await downloadImageAsBase64(rawImageUrl);
-        imageDataUri = `data:${mimeType};base64,${base64}`;
+        const { buffer, mimeType } = await downloadUserImage(rawImageUrl);
+        imageDataUri = `data:${mimeType};base64,${buffer.toString("base64")}`;
         logOps("Image downloaded and encoded, mimeType:", mimeType);
     }
 

@@ -34,7 +34,6 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     tierBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -135,7 +134,6 @@ type TabContentProps = {
     sortDir: SortDir;
     tierBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 const TabContent: FC<TabContentProps> = ({
@@ -145,7 +143,6 @@ const TabContent: FC<TabContentProps> = ({
     sortDir,
     tierBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const sorted = sortModels(models, sortKey, sortDir);
     const regularModels =
@@ -163,7 +160,6 @@ const TabContent: FC<TabContentProps> = ({
                         model={model}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -179,7 +175,6 @@ const TabContent: FC<TabContentProps> = ({
                                 model={model}
                                 tierBalance={tierBalance}
                                 packBalance={packBalance}
-                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -194,7 +189,6 @@ const TabContent: FC<TabContentProps> = ({
                         model={model}
                         tierBalance={tierBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 ))}
                 {personaModels.length > 0 && (
@@ -210,7 +204,6 @@ const TabContent: FC<TabContentProps> = ({
                                 model={model}
                                 tierBalance={tierBalance}
                                 packBalance={packBalance}
-                                cryptoBalance={cryptoBalance}
                             />
                         ))}
                     </>
@@ -226,14 +219,12 @@ type MobileModelRowProps = {
     model: ModelPrice;
     tierBalance?: number;
     packBalance?: number;
-    cryptoBalance?: number;
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({
     model,
     tierBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const [expanded, setExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -247,7 +238,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = (packBalance ?? 0) + (cryptoBalance ?? 0);
+    const paidBalance = packBalance ?? 0;
     const totalBalance = (tierBalance ?? 0) + paidBalance;
     const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
 
@@ -301,7 +292,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             strokeWidth={2}
                             aria-hidden="true"
                         >
-                            <title>Expand model details</title>
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -567,7 +557,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     audioModels,
     tierBalance,
     packBalance,
-    cryptoBalance,
 }) => {
     const sections: { type: SectionType; models: ModelPrice[] }[] = [
         { type: "image", models: imageModels },
@@ -630,6 +619,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     </span>
                 </button>
                 <Tooltip
+                    triggerAs="span"
                     content={
                         <span className="block w-[220px] whitespace-normal leading-snug">
                             Based on average community usage. Actual costs vary
@@ -688,7 +678,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     sortDir={sortDir}
                     tierBalance={tierBalance}
                     packBalance={packBalance}
-                    cryptoBalance={cryptoBalance}
                 />
             )}
         </div>

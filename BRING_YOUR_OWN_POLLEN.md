@@ -31,7 +31,7 @@ To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → 
 
 ![Create New App Key](https://media.pollinations.ai/aa8ca9fe3110aff7)
 
-Set the **Name** (shows on the consent screen) and **App URL** (your app's domain). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
+Set the **Name** (shows on the consent screen) and at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
 When users authorize, this is what they see:
 
@@ -63,7 +63,7 @@ https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
 | `models` | Restrict to specific models | `flux,openai,gptimage` |
-| `budget` | Pollen cap | `10` |
+| `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | Key lifetime in days (default: 30) | `7` |
 
 Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.

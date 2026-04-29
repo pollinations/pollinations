@@ -102,7 +102,11 @@ test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
 
     const expectedCosts = {
         deepseek: 0.448,
-        "deepseek-pro": 5.365,
+        "deepseek-pro": 5.36,
+    } as const;
+    const expectedProviders = {
+        deepseek: "deepinfra",
+        "deepseek-pro": "fireworks",
     } as const;
 
     for (const model of ["deepseek", "deepseek-pro"] as const) {
@@ -110,7 +114,7 @@ test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);
 
-        expect(definition.provider).toBe("deepinfra");
+        expect(definition.provider).toBe(expectedProviders[model]);
         expect(definition.paidOnly).toBe(true);
         expect(cost.totalCost).toBeCloseTo(expectedCosts[model], 8);
         expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);

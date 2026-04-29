@@ -3,7 +3,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:nova-reel:ops");
@@ -86,11 +86,11 @@ export async function callNovaReelAPI(
             "Processing",
             "Processing reference image...",
         );
-        const { base64 } = await downloadImageAsBase64(imageUrl);
+        const { buffer } = await downloadUserImage(imageUrl);
         textToVideoParams.images = [
             {
                 format: "png",
-                source: { bytes: base64 },
+                source: { bytes: buffer.toString("base64") },
             },
         ];
     }

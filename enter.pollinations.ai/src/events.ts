@@ -1,5 +1,5 @@
 import type { Logger } from "@logtape/logtape";
-import type { TinybirdEvent } from "./db/schema/event.ts";
+import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { capitalize, exponentialBackoffDelay, removeUnset } from "./util.ts";
 
 const MAX_RETRIES = 3;

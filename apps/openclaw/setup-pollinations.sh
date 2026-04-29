@@ -72,6 +72,15 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
+      "id": "kimi-k2.6",
+      "name": "Kimi K2.6 — Flagship agentic, vision, reasoning (paid)",
+      "reasoning": true,
+      "input": ["text", "image"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 262000,
+      "maxTokens": 8192
+    },
+    {
       "id": "deepseek",
       "name": "DeepSeek V4 Flash — Fast reasoning & tool calling (paid)",
       "reasoning": true,
@@ -91,7 +100,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "glm",
-      "name": "GLM-4.7 — Coding, reasoning, agentic workflows",
+      "name": "GLM 5 — Coding, reasoning, agentic workflows",
       "reasoning": false,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -147,6 +156,7 @@ jq --argjson provider "$POLLINATIONS_PROVIDER" --arg key "$API_KEY" \
 # --- Step 3: Set default model + fallbacks via CLI ---
 
 openclaw models set pollinations/kimi >/dev/null
+openclaw models fallbacks add pollinations/deepseek >/dev/null
 openclaw models fallbacks add pollinations/glm >/dev/null
 
 # --- Step 4: Restart gateway if running ---
@@ -161,7 +171,7 @@ echo "Done! Pollinations.ai is ready."
 echo ""
 echo "  API Key:   $MASKED"
 echo "  Default:   pollinations/kimi (256K context, vision, reasoning)"
-echo "  Fallbacks: glm"
+echo "  Fallbacks: deepseek, glm"
 echo ""
 echo "  Switch models:  /model pollinations/deepseek or /model pollinations/deepseek-pro"
 echo "  Your account:   https://enter.pollinations.ai"

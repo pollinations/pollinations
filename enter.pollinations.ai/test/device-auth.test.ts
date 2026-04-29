@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
+import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import * as schema from "@/db/schema/better-auth.ts";
 import { test } from "./fixtures.ts";
 
 const BASE = "http://localhost:3000";

@@ -3,13 +3,14 @@ import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");
 
 // RunPod pod endpoint for Klein 4B (read lazily so dotenv has time to load)
 const getKleinGenerateUrl = () =>
-    `${process.env.KLEIN_URL || "https://pi90tfk3sa9t12-8000.proxy.runpod.net"}/generate`;
+    `${process.env.KLEIN_URL || "https://lqh6weiexk4sth-8000.proxy.runpod.net"}/generate`;
 const MAX_INPUT_IMAGES = 10;
 
 /**
@@ -41,19 +42,12 @@ export const callFluxKleinAPI = async (
                 0,
                 MAX_INPUT_IMAGES,
             );
-            const imageBuffers = await Promise.all(
-                imageUrls.map(async (url) => {
-                    const resp = await fetch(url);
-                    if (!resp.ok) {
-                        throw new HttpError(
-                            `Failed to download reference image: ${resp.status}`,
-                            resp.status,
-                        );
-                    }
-                    return Buffer.from(await resp.arrayBuffer());
-                }),
+            const downloads = await Promise.all(
+                imageUrls.map((url) => downloadUserImage(url)),
             );
-            imagesB64 = imageBuffers.map((buf) => buf.toString("base64"));
+            imagesB64 = downloads.map(({ buffer }) =>
+                buffer.toString("base64"),
+            );
             progress.updateBar(
                 requestId,
                 50,

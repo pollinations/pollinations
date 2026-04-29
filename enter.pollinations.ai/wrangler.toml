@@ -131,6 +131,10 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
+[[env.production.migrations]]
+tag = "remove-pollen-rate-limiter"
+deleted_classes = ["PollenRateLimiter"]
+
 [env.production.vars]
 ENVIRONMENT = "production"
 CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"

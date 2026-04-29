@@ -43,11 +43,15 @@ function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }
 
+function isApiDocsPath(path: string): boolean {
+    return path === "/api/docs" || path.startsWith("/api/docs/");
+}
+
 function redirectLegacyDocs(c: Context<Env>): Response {
     const url = new URL(c.req.url);
     url.protocol = "https:";
     url.hostname = "gen.pollinations.ai";
-    url.pathname = url.pathname.replace(/^\/api\/docs\/?/, "/docs/");
+    url.pathname = url.pathname.replace(/^\/api\/docs(?=\/|$)/, "/docs");
     url.pathname = stripTrailingSlash(url.pathname);
     return c.redirect(url.toString(), 301);
 }
@@ -69,13 +73,13 @@ const app = new Hono<Env>()
     // Prevent search engines from indexing API responses (except docs)
     .use("/api/*", async (c, next) => {
         await next();
-        if (!c.req.path.startsWith("/api/docs")) {
+        if (!isApiDocsPath(c.req.path)) {
             c.header("X-Robots-Tag", "noindex, nofollow");
         }
     })
-    .get("/api/docs", redirectLegacyDocs)
-    .get("/api/docs/", redirectLegacyDocs)
-    .get("/api/docs/*", redirectLegacyDocs)
+    .all("/api/docs", redirectLegacyDocs)
+    .all("/api/docs/", redirectLegacyDocs)
+    .all("/api/docs/*", redirectLegacyDocs)
     .route("/api", api);
 
 app.notFound(async (c: Context<Env>) => {

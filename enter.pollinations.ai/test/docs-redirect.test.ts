@@ -12,3 +12,15 @@ test("legacy enter docs paths redirect to gen docs", async () => {
         "https://gen.pollinations.ai/docs/open-api/generate-schema?format=json",
     );
 });
+
+test("legacy enter docs redirect keeps the docs path boundary", async () => {
+    const response = await SELF.fetch(
+        "https://enter.pollinations.ai/api/docss",
+        {
+            redirect: "manual",
+        },
+    );
+
+    expect(response.status).not.toBe(301);
+    expect(response.headers.get("Location")).toBeNull();
+});

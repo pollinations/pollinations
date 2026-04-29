@@ -267,78 +267,84 @@ const ThinkingSchema = z
     .nullable()
     .optional();
 
-export const CreateChatCompletionRequestSchema = z.object({
-    messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
-        description:
-            "AI model for text generation. See /v1/models for full list.",
-    }),
-    modalities: z.array(z.enum(["text", "audio"])).optional(),
-    audio: z
-        .object({
-            voice: z.enum(AUDIO_VOICES),
-            format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
-        })
-        .optional(),
-    frequency_penalty: z
-        .number()
-        .min(-2)
-        .max(2)
-        .nullable()
-        .optional()
-        .default(0),
-    repetition_penalty: z.number().min(0).max(2).nullable().optional(),
-    logit_bias: z
-        .record(z.string(), z.number().int())
-        .nullable()
-        .optional()
-        .default(null),
-    logprobs: z.boolean().nullable().optional().default(false),
-    top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
-    max_tokens: z.number().int().min(0).nullable().optional(),
-    presence_penalty: z
-        .number()
-        .min(-2)
-        .max(2)
-        .nullable()
-        .optional()
-        .default(0),
-    response_format: ResponseFormatUnionSchema.optional(),
-    seed: z
-        .number()
-        .int()
-        .min(-1)
-        .max(Number.MAX_SAFE_INTEGER)
-        .nullable()
-        .optional(),
-    stop: z
-        .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
-        .optional(),
-    stream: z.boolean().nullable().optional().default(false),
-    stream_options: ChatCompletionStreamOptionsSchema,
-    thinking: ThinkingSchema,
-    reasoning_effort: z
-        .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
-        .optional(),
-    thinking_budget: z.number().int().min(0).optional(),
-    temperature: z.number().min(0).max(2).nullable().optional().default(1),
-    top_p: z.number().min(0).max(1).nullable().optional().default(1),
-    tools: z.array(ChatCompletionToolSchema).optional(),
-    tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
-    parallel_tool_calls: z.boolean().optional().default(true),
-    user: z.string().optional(),
-    function_call: z
-        .union([
-            z.enum(["none", "auto"]),
-            ChatCompletionFunctionCallOptionSchema,
-        ])
-        .optional(), // deprecated, supported
-    functions: z
-        .array(ChatCompletionFunctionsSchema)
-        .min(1)
-        .max(128)
-        .optional(), // deprecated, supported
-});
+export const CreateChatCompletionRequestSchema = z
+    .object({
+        messages: z.array(ChatCompletionRequestMessageSchema),
+        model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+            description:
+                "AI model for text generation. See /v1/models for full list.",
+        }),
+        modalities: z.array(z.enum(["text", "audio"])).optional(),
+        audio: z
+            .object({
+                voice: z.enum(AUDIO_VOICES),
+                format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+            })
+            .optional(),
+        frequency_penalty: z
+            .number()
+            .min(-2)
+            .max(2)
+            .nullable()
+            .optional()
+            .default(0),
+        repetition_penalty: z.number().min(0).max(2).nullable().optional(),
+        logit_bias: z
+            .record(z.string(), z.number().int())
+            .nullable()
+            .optional()
+            .default(null),
+        logprobs: z.boolean().nullable().optional().default(false),
+        top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
+        max_tokens: z.number().int().min(0).nullable().optional(),
+        presence_penalty: z
+            .number()
+            .min(-2)
+            .max(2)
+            .nullable()
+            .optional()
+            .default(0),
+        response_format: ResponseFormatUnionSchema.optional(),
+        seed: z
+            .number()
+            .int()
+            .min(-1)
+            .max(Number.MAX_SAFE_INTEGER)
+            .nullable()
+            .optional(),
+        stop: z
+            .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
+            .optional(),
+        stream: z.boolean().nullable().optional().default(false),
+        stream_options: ChatCompletionStreamOptionsSchema,
+        thinking: ThinkingSchema,
+        reasoning_effort: z
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .optional(),
+        thinking_budget: z.number().int().min(0).optional(),
+        temperature: z.number().min(0).max(2).nullable().optional().default(1),
+        top_p: z.number().min(0).max(1).nullable().optional().default(1),
+        tools: z.array(ChatCompletionToolSchema).optional(),
+        tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
+        parallel_tool_calls: z.boolean().optional().default(true),
+        user: z.string().optional(),
+        function_call: z
+            .union([
+                z.enum(["none", "auto"]),
+                ChatCompletionFunctionCallOptionSchema,
+            ])
+            .optional(), // deprecated, supported
+        functions: z
+            .array(ChatCompletionFunctionsSchema)
+            .min(1)
+            .max(128)
+            .optional(), // deprecated, supported
+    })
+    .passthrough();
+
+export type CreateChatCompletionRequest = z.infer<
+    typeof CreateChatCompletionRequestSchema
+>;
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,

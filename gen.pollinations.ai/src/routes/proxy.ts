@@ -25,6 +25,7 @@ import {
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
 import {
+    type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
@@ -108,8 +109,10 @@ const chatCompletionHandlers = factory.createHandlers(
     textCache,
     async (c) => {
         // Use resolved model from middleware for the backend request
-        const requestBody = await c.req.json();
-        requestBody.model = c.var.model.resolved;
+        const requestBody: CreateChatCompletionRequest = {
+            ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
+            model: c.var.model.resolved,
+        };
 
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";

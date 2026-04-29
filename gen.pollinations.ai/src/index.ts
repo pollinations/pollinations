@@ -72,24 +72,43 @@ function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }
 
+function isDocsPath(path: string): boolean {
+    return path === "/docs" || path.startsWith("/docs/");
+}
+
 function redirectLegacyDocs(c: Context<Env>): Response {
     const url = new URL(c.req.url);
-    url.pathname = url.pathname.replace(/^\/api\/docs\/?/, "/docs/");
+    url.pathname = url.pathname.replace(/^\/api\/docs(?=\/|$)/, "/docs");
     url.pathname = stripTrailingSlash(url.pathname);
     return c.redirect(url.toString(), 301);
 }
 
-// Boundary routes: these are handled before generation middleware.
-app.get("/robots.txt", () => robotsTxt())
+function redirectAccountRoot(): Response {
+    return Response.redirect("https://enter.pollinations.ai", 301);
+}
+
+app.use(
+    "*",
+    cors({
+        origin: "*",
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowHeaders: [],
+        exposeHeaders: ["Content-Length", "Content-Disposition"],
+        maxAge: 600,
+    }),
+)
+    .use("*", requestId())
+    .use("*", logger)
+    .get("/robots.txt", () => robotsTxt())
     .get("/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
     .get("/docs/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
-    .get("/api/docs", redirectLegacyDocs)
-    .get("/api/docs/", redirectLegacyDocs)
-    .get("/api/docs/*", redirectLegacyDocs)
+    .all("/api/docs", redirectLegacyDocs)
+    .all("/api/docs/", redirectLegacyDocs)
+    .all("/api/docs/*", redirectLegacyDocs)
     .all("/api", () => notFound())
     .all("/api/*", () => notFound())
-    .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))
-    .all("/account/", (c) => fetchEnter(c, new URL(c.req.url)))
+    .all("/account", () => redirectAccountRoot())
+    .all("/account/", () => redirectAccountRoot())
     .all("/account/*", (c) => {
         const url = new URL(c.req.url);
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
@@ -97,21 +116,9 @@ app.get("/robots.txt", () => robotsTxt())
     })
     // Generation routes: docs, models, and media/text/audio/video APIs live at
     // the public gen origin without an internal /api prefix.
-    .use(
-        "*",
-        cors({
-            origin: "*",
-            allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allowHeaders: [],
-            exposeHeaders: ["Content-Length", "Content-Disposition"],
-            maxAge: 600,
-        }),
-    )
-    .use("*", requestId())
-    .use("*", logger)
     .use("*", async (c, next) => {
         await next();
-        if (!c.req.path.startsWith("/docs")) {
+        if (!isDocsPath(c.req.path)) {
             c.header("X-Robots-Tag", "noindex, nofollow");
         }
     })

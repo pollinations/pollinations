@@ -181,8 +181,7 @@ function getGenerationSchema(genApp: Hono<Env>): Promise<OpenApiSchema> {
 function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
-        const publicPath =
-            path.replace(/^\/api\/account(?=\/|$)/, "/account") || "/";
+        const publicPath = path.replace(/^\/api\/account(?=\/|$)/, "/account");
         paths[publicPath] = value;
     }
 

@@ -34,12 +34,18 @@ export type BalanceEnv = {
 export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
     const log = c.get("log").getChild("balance");
     const db = drizzle(c.env.DB);
+    const balanceCache = new Map<string, UserBalance>();
 
     const fetchBalanceWithErrorHandling = async (
         userId: string,
     ): Promise<UserBalance> => {
+        const cached = balanceCache.get(userId);
+        if (cached) return cached;
+
         try {
-            return await getUserBalance(db, userId);
+            const userBalance = await getUserBalance(db, userId);
+            balanceCache.set(userId, userBalance);
+            return userBalance;
         } catch (error) {
             log.error("Failed to get balance for user {userId}", {
                 userId,
@@ -64,7 +70,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         );
 
         if (hasPositiveBalance(balances)) {
-            c.var.balance.balanceCheckResult =
+            balanceState.balanceCheckResult =
                 createBalanceCheckResult(balances);
             return;
         }
@@ -83,7 +89,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         });
 
         if (hasPositivePaidBalance(balances)) {
-            c.var.balance.balanceCheckResult = createBalanceCheckResult(
+            balanceState.balanceCheckResult = createBalanceCheckResult(
                 balances,
                 true,
             );
@@ -97,11 +103,13 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         });
     };
 
-    c.set("balance", {
+    const balanceState: BalanceVariables["balance"] = {
         requirePositiveBalance,
         requirePaidBalance,
-        getBalance: (userId: string) => getUserBalance(db, userId),
-    });
+        getBalance: fetchBalanceWithErrorHandling,
+    };
+
+    c.set("balance", balanceState);
 
     await next();
 });

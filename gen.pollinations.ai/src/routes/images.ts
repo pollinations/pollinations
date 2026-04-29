@@ -207,7 +207,7 @@ export function handleImageGeneration(
     return async (c: Context) => {
         await requireAuthAndBalance(c, checkBalance);
 
-        const body = (await c.req.json()) as CreateImageRequest &
+        const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
         const model = c.var.model.resolved;
         const resolved = resolveParams(body);

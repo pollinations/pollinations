@@ -57,6 +57,13 @@ describe("gen worker routing", () => {
         );
     });
 
+    it("does not treat /api/docssomething as a docs alias", async () => {
+        const response = await fetchWorker("/api/docssomething");
+
+        expect(response.status).toBe(404);
+        expect(response.headers.get("Location")).toBeNull();
+    });
+
     it("serves robots.txt locally", async () => {
         const response = await fetchWorker("/robots.txt");
 
@@ -88,30 +95,22 @@ describe("gen worker routing", () => {
         expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     });
 
-    it("forwards account root to enter unchanged", async () => {
-        let proxiedUrl: string | undefined;
-        const env = envWithEnter(async (request) => {
-            proxiedUrl = new Request(request).url;
-            return new Response("account-ui");
-        });
+    it("redirects account root to the enter dashboard", async () => {
+        const response = await fetchWorker("/account");
 
-        const response = await fetchWorker("/account", env);
-
-        expect(response.status).toBe(200);
-        expect(proxiedUrl).toBe("https://staging.gen.pollinations.ai/account");
+        expect(response.status).toBe(301);
+        expect(response.headers.get("Location")).toBe(
+            "https://enter.pollinations.ai/",
+        );
     });
 
-    it("forwards account root with a trailing slash to enter unchanged", async () => {
-        let proxiedUrl: string | undefined;
-        const env = envWithEnter(async (request) => {
-            proxiedUrl = new Request(request).url;
-            return new Response("account-ui");
-        });
+    it("redirects account root with a trailing slash to the enter dashboard", async () => {
+        const response = await fetchWorker("/account/");
 
-        const response = await fetchWorker("/account/", env);
-
-        expect(response.status).toBe(200);
-        expect(proxiedUrl).toBe("https://staging.gen.pollinations.ai/account/");
+        expect(response.status).toBe(301);
+        expect(response.headers.get("Location")).toBe(
+            "https://enter.pollinations.ai/",
+        );
     });
 
     it("routes docs through the generation app without noindex", async () => {

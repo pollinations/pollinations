@@ -32,6 +32,20 @@ type ResolveModelOptions = {
     defaultModel?: string;
 };
 
+function hasJsonContentType(contentType: string): boolean {
+    return /\bjson\b/i.test(contentType);
+}
+
+function getValidatedJsonBody<T>(req: {
+    valid: (target: never) => unknown;
+}): T | undefined {
+    try {
+        return req.valid("json" as never) as T | undefined;
+    } catch {
+        return undefined;
+    }
+}
+
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
  * Must run before auth and track middlewares.
@@ -57,18 +71,18 @@ export function resolveModel(
                 } catch {
                     // Form parsing failed, use default
                 }
-            } else {
+            } else if (hasJsonContentType(contentType)) {
                 try {
                     const body =
-                        (c.req.valid("json" as never) as
-                            | { model?: string }
-                            | undefined) ||
-                        ((await c.req.json()) as
+                        getValidatedJsonBody<{ model?: string }>(c.req) ||
+                        ((await c.req.raw.clone().json()) as
                             | { model?: string }
                             | undefined);
                     rawModel = body?.model || null;
                 } catch {
-                    // Body parsing failed, use default
+                    throw new HTTPException(400, {
+                        message: "Invalid JSON body",
+                    });
                 }
             }
         }

@@ -15,7 +15,7 @@ test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
     const event = {
         id: "test-event-id",
         requestId: "test-request-id",
-        requestPath: "/api/generate/openai",
+        requestPath: "/v1/chat/completions",
         startTime: new Date(),
         endTime: new Date(Date.now() + 100),
         responseTime: 100,
@@ -70,7 +70,7 @@ test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
     const event = {
         id: "simulate_tinybird_error:test-event-id",
         requestId: "test-request-id",
-        requestPath: "/api/generate/openai",
+        requestPath: "/v1/chat/completions",
         startTime: new Date(),
         endTime: new Date(Date.now() + 100),
         responseTime: 100,
@@ -132,7 +132,7 @@ test("sendErrorEventToTinybird sends structured error events", async ({
             kind: "server_error",
             severity: "error",
             request_id: "req_123",
-            route_path: "/api/generate/image",
+            route_path: "/image/test",
             method: "POST",
             status: 502,
             error_code: "BAD_GATEWAY",
@@ -147,7 +147,7 @@ test("sendErrorEventToTinybird sends structured error events", async ({
 
     expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
     expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
-        route_path: "/api/generate/image",
+        route_path: "/image/test",
         status: 502,
         kind: "server_error",
     });

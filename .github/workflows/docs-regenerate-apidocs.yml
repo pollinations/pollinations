@@ -2,11 +2,11 @@ name: Regenerate API Docs
 
 # Runs only AFTER a successful production deploy so the fetched OpenAPI spec
 # reflects the code that's actually live. Avoids the isolate-rollout flapping
-# that happens when fetching prod right after a `main` push (enter.pollinations.ai
+# that happens when fetching prod right after a `main` push (gen.pollinations.ai
 # deploys from the `production` branch, not `main`).
 on:
   workflow_run:
-    workflows: ["Deploy enter.pollinations.ai"]
+    workflows: ["Deploy gen.pollinations.ai"]
     types:
       - completed
     branches:
@@ -63,7 +63,6 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        working-directory: enter.pollinations.ai
         run: npm ci
 
       # Cloudflare rolls out new worker versions across isolates progressively.
@@ -74,8 +73,7 @@ jobs:
         run: sleep 60
 
       - name: Regenerate APIDOCS.md
-        working-directory: enter.pollinations.ai
-        run: npx tsx scripts/generate-apidocs.ts
+        run: npm run docs:generate --workspace pollinations-gen
 
       - name: Check for changes
         id: changes

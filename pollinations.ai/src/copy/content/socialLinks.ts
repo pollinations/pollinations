@@ -55,8 +55,8 @@ export const SOCIAL_LINKS = {
 // Additional links (not rendered as social icons)
 export const LINKS = {
     enter: "https://enter.pollinations.ai",
-    enterDocs: "https://enter.pollinations.ai/api/docs",
-    enterApiDocs: "https://enter.pollinations.ai/api/docs",
+    enterDocs: "https://gen.pollinations.ai/docs",
+    enterApiDocs: "https://gen.pollinations.ai/docs",
     enterTiersFaq: "https://enter.pollinations.ai#what-are-tiers",
     enterModels: "https://enter.pollinations.ai#models",
     apidocsRaw:
@@ -71,13 +71,11 @@ export const LINKS = {
     githubGoodFirstIssue:
         "https://github.com/pollinations/pollinations/labels/good%20first%20issue",
     githubNewIssue: "https://github.com/pollinations/pollinations/issues/new",
-    docsText:
-        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation",
+    docsText: "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-text-generation",
     docsStreaming:
-        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-text-generation/POST/v1/chat/completions",
+        "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-text-generation/POST/v1/chat/completions",
     docsImage:
-        "https://enter.pollinations.ai/api/docs#tag/%EF%B8%8F-image-generation",
-    docsAudio: "https://enter.pollinations.ai/api/docs#tag/-audio-generation",
-    docsAuth:
-        "https://enter.pollinations.ai/api/docs#description/-authentication",
+        "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image-generation",
+    docsAudio: "https://gen.pollinations.ai/docs#tag/-audio-generation",
+    docsAuth: "https://gen.pollinations.ai/docs#description/-authentication",
 };

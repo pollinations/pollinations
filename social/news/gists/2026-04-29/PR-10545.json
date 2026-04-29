@@ -1,0 +1,33 @@
+{
+  "pr_number": 10545,
+  "title": "(patch) Update the publish-package CI",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10545",
+  "merged_at": "2026-04-29T05:24:14Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the pipeline",
+    "blurb": "We've tidied up our automated publishing workflows by removing some deprecated packages. Just keeping the garden neat and tidy!",
+    "summary": "Removed the deprecated @pollinations_ai/ompc package from the automated package publishing CI pipeline.",
+    "impact": "Streamlines the CI/CD process by skipping builds for deprecated packages, saving build time and keeping the workflow clean.",
+    "keywords": [
+      "ci",
+      "github-actions",
+      "infrastructure",
+      "cleanup"
+    ],
+    "visual_concept": "The PR is about cleaning up a CI pipeline and removing old/deprecated things. The Nomnom creature loves eating deprecated code/logs. The bee can be sweeping or organizing.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a stack of old deprecated CI workflow files while the bee mascot sweeps the floor with a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10545.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating a stack of old deprecated CI workflow files while the bee mascot sweeps the floor with a tiny broom. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-29T05:25:01.316656+00:00"
+}

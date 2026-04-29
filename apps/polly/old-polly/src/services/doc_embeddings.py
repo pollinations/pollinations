@@ -26,7 +26,7 @@ DOC_EMBEDDINGS_DIR = DATA_DIR / "doc_embeddings"
 DOC_CACHE_DIR = DATA_DIR / "doc_cache"
 
 DEFAULT_DOC_SITES = [
-    "https://enter.pollinations.ai/api/docs/open-api/generate-schema",
+    "https://gen.pollinations.ai/docs/open-api/generate-schema",
 ]
 
 MAX_PAGES_PER_SITE = 500

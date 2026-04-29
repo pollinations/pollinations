@@ -476,11 +476,10 @@ const server = http.createServer((req, res) => {
             JSON.stringify({
                 error: "Endpoint moved",
                 message:
-                    "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/image/models",
+                    "The /models endpoint has been moved to the API gateway. Please use: https://gen.pollinations.ai/image/models",
                 deprecated_endpoint: `${req.headers["x-forwarded-proto"] || "http"}://${req.headers.host}/models`,
-                new_endpoint:
-                    "https://enter.pollinations.ai/api/generate/image/models",
-                documentation: "https://enter.pollinations.ai/api/docs",
+                new_endpoint: "https://gen.pollinations.ai/image/models",
+                documentation: "https://gen.pollinations.ai/docs",
             }),
         );
         return;

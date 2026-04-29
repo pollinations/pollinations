@@ -1,0 +1,36 @@
+{
+  "pr_number": 10445,
+  "title": "feat(image): add seed support for Nova Reel",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/10445",
+  "merged_at": "2026-04-29T14:34:54Z",
+  "labels": [
+    "VIDEO",
+    "API",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Planting seeds in Nova Reel",
+    "blurb": "Nova Reel video generation now supports the seed parameter! Plant a specific number to recreate that perfect generation, or let it grow wild with a random seed.",
+    "summary": "Added seed parameter support to the Nova Reel video generation model and updated the API documentation to reflect supported video parameters.",
+    "impact": "Creators can now generate reproducible videos with Nova Reel by passing a specific seed value, making iterative prompting and tweaking much easier.",
+    "keywords": [
+      "video",
+      "nova-reel",
+      "seed",
+      "api",
+      "reproducibility"
+    ],
+    "visual_concept": "The pollinations bee planting a glowing digital seed into a chunky retro film reel. The monitor robot companion holding a clapperboard with 'SEED 42' on it.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot planting a glowing digital seed into a chunky retro film reel. A cute robot with a CRT monitor head holds a movie clapperboard reading 'SEED 42'. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10445.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot planting a glowing digital seed into a chunky retro film reel. A cute robot with a CRT monitor head holds a movie clapperboard reading 'SEED 42'. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-29T14:35:48.911887+00:00"
+}

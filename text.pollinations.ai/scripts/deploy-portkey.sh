@@ -5,11 +5,11 @@
 set -e
 
 # Configuration
-# Using pollinations fork with upstream v1.15.1 merged + our custom video_url support
-# Includes: code_execution, url_context, google_search tools for Gemini
-# PR: https://github.com/Portkey-AI/gateway/pull/1458
+# Using pollinations fork with upstream v1.15.2 merged + our custom patches
+# Includes: upstream vulnerability fixes, forward-header loop prevention, and Gemini/Vertex additions
+# PR: https://github.com/pollinations/gateway/pull/5
 PORTKEY_REPO="https://github.com/pollinations/gateway.git"
-PORTKEY_COMMIT="${PORTKEY_COMMIT:-5632cf45f58c5dadf1f217cc9a6cee2efbe5dfe5}"  # v1.15.1 + video_url + code_execution + url_context + gemini token fix + custom domain + executable_code/code_execution_result content blocks + reasoning_effort thinking fix + always normalize finish_reason
+PORTKEY_COMMIT="${PORTKEY_COMMIT:-c0de03381d2aad52045b405ac21aef1972cd9d8e}"  # v1.15.2 sync + fork patches (merge commit on main)
 CLONE_DIR="/tmp/portkey-gateway-$$"
 ENVIRONMENT="${PORTKEY_ENV:-production}"
 

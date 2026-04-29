@@ -20,6 +20,10 @@ interface DeductionParams {
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
     modelResolved?: string;
+    userBalanceBeforeDeduction?: {
+        tierBalance: number;
+        packBalance: number;
+    };
 }
 
 /**
@@ -36,6 +40,7 @@ export async function handleBalanceDeduction(
         apiKeyId,
         apiKeyPollenBalance,
         modelResolved,
+        userBalanceBeforeDeduction,
     } = params;
 
     if (!isBilledUsage || !totalPrice) return;
@@ -47,7 +52,13 @@ export async function handleBalanceDeduction(
 
     // Handle user balance deduction
     if (userId) {
-        await deductUserBalance(db, userId, totalPrice, modelResolved);
+        await deductUserBalance(
+            db,
+            userId,
+            totalPrice,
+            modelResolved,
+            userBalanceBeforeDeduction,
+        );
     }
 }
 
@@ -81,6 +92,7 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
+    userBalanceBeforeDeduction?: { tierBalance: number; packBalance: number },
 ): Promise<void> {
     try {
         const isPaidOnly = modelResolved
@@ -100,7 +112,8 @@ async function deductUserBalance(
         // Note: TOCTOU — balances may shift between this read and the UPDATE in
         // atomicDeductUserBalance due to concurrent requests.  The SQL CASE always
         // picks the correct bucket; only the logged split below may mismatch.
-        const balancesBefore = await getUserBalances(db, userId);
+        const balancesBefore =
+            userBalanceBeforeDeduction ?? (await getUserBalances(db, userId));
         const deductionSource = identifyDeductionSource(
             balancesBefore.tierBalance,
             balancesBefore.packBalance,

@@ -95,22 +95,32 @@ describe("gen worker routing", () => {
         expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     });
 
-    it("redirects account root to the enter dashboard", async () => {
-        const response = await fetchWorker("/account");
+    it("forwards account root to enter unchanged", async () => {
+        let proxiedUrl: string | undefined;
+        const env = envWithEnter(async (request) => {
+            proxiedUrl = new Request(request).url;
+            return new Response("account-ui");
+        });
 
-        expect(response.status).toBe(301);
-        expect(response.headers.get("Location")).toBe(
-            "https://enter.pollinations.ai/",
-        );
+        const response = await fetchWorker("/account", env);
+
+        expect(response.status).toBe(200);
+        expect(proxiedUrl).toBe("https://staging.gen.pollinations.ai/account");
+        expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     });
 
-    it("redirects account root with a trailing slash to the enter dashboard", async () => {
-        const response = await fetchWorker("/account/");
+    it("forwards account root with a trailing slash to enter unchanged", async () => {
+        let proxiedUrl: string | undefined;
+        const env = envWithEnter(async (request) => {
+            proxiedUrl = new Request(request).url;
+            return new Response("account-ui");
+        });
 
-        expect(response.status).toBe(301);
-        expect(response.headers.get("Location")).toBe(
-            "https://enter.pollinations.ai/",
-        );
+        const response = await fetchWorker("/account/", env);
+
+        expect(response.status).toBe(200);
+        expect(proxiedUrl).toBe("https://staging.gen.pollinations.ai/account/");
+        expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     });
 
     it("routes docs through the generation app without noindex", async () => {

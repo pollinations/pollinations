@@ -41,6 +41,13 @@ if (missing.length > 0) {
     process.exit(1);
 }
 
+const omitted = Object.keys(source)
+    .filter((key) => !REQUIRED_SECRET_KEYS.includes(key))
+    .sort();
+if (omitted.length > 0) {
+    console.log(`Skipping non-generation secrets: ${omitted.join(", ")}`);
+}
+
 if (environment === "local") {
     const scriptDir = dirname(fileURLToPath(import.meta.url));
     const outputPath = join(scriptDir, "..", ".dev.vars");

@@ -83,10 +83,6 @@ function redirectLegacyDocs(c: Context<Env>): Response {
     return c.redirect(url.toString(), 301);
 }
 
-function redirectAccountRoot(): Response {
-    return Response.redirect("https://enter.pollinations.ai", 301);
-}
-
 app.use(
     "*",
     cors({
@@ -107,8 +103,8 @@ app.use(
     .all("/api/docs/*", redirectLegacyDocs)
     .all("/api", () => notFound())
     .all("/api/*", () => notFound())
-    .all("/account", () => redirectAccountRoot())
-    .all("/account/", () => redirectAccountRoot())
+    .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))
+    .all("/account/", (c) => fetchEnter(c, new URL(c.req.url)))
     .all("/account/*", (c) => {
         const url = new URL(c.req.url);
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;

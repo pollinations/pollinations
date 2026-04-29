@@ -12,6 +12,10 @@ on:
       - '.github/workflows/deploy-gen-cloudflare.yml'
   workflow_dispatch:
 
+concurrency:
+  group: pollinations-cloudflare-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -32,6 +36,11 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck --workspace pollinations-gen
+
+      - name: Run database migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run migrate:production --workspace pollinations-enter
 
       - name: Setup SOPS
         uses: nhedger/setup-sops@v2

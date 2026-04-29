@@ -31,13 +31,13 @@ type TextCacheEnv = {
 export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     const log = c.get("log").getChild("text-cache");
 
-    // Read request body for POST/PUT requests (needed for cache key)
-    // IMPORTANT: Use c.req.raw.clone().text() to avoid consuming the body
-    // so that downstream handlers can still read it with c.req.json()
+    // Read request body for POST/PUT requests (needed for cache key).
+    // Hono caches body text across c.req.json()/text(), so this still works
+    // after upstream validators have parsed JSON.
     let bodyText: string | undefined;
     if (c.req.method === "POST" || c.req.method === "PUT") {
         try {
-            bodyText = await c.req.raw.clone().text();
+            bodyText = await c.req.text();
             if (!bodyText) {
                 // Empty body for POST/PUT - skip cache to avoid key collision
                 log.debug(

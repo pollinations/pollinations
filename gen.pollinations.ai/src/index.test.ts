@@ -46,6 +46,17 @@ describe("gen worker routing", () => {
         );
     });
 
+    it("redirects legacy /api/docs paths to gen docs", async () => {
+        const response = await fetchWorker(
+            "/api/docs/open-api/generate-schema?format=json",
+        );
+
+        expect(response.status).toBe(301);
+        expect(response.headers.get("Location")).toBe(
+            "https://staging.gen.pollinations.ai/docs/open-api/generate-schema?format=json",
+        );
+    });
+
     it("serves robots.txt locally", async () => {
         const response = await fetchWorker("/robots.txt");
 

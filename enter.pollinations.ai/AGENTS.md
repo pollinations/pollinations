@@ -2,9 +2,9 @@
 
 > 🔧 **Internal testing only** — For production API usage, use [`gen.pollinations.ai`](https://gen.pollinations.ai). This cheatsheet tests the Enter gateway directly for debugging purposes.
 
-> Quick reference for testing image and text models via **enter.pollinations.ai**
+> Quick reference for testing image and text models via **gen.pollinations.ai**. Enter keeps the dashboard and internal `/api/*` control-plane routes.
 
-> ⚠️ **Note**: The current endpoint structure (`/api/generate/image/*`, `/api/generate/v1/*`, `/api/generate/text/*`) is transitional and will be simplified in future releases.
+> ⚠️ **Note**: Generation routes now live on gen without an internal `/api/generate` prefix.
 
 ---
 
@@ -12,9 +12,9 @@
 
 ### Endpoints
 
-- **Image:** `GET /api/generate/image/{prompt}?model=flux`
-- **Text (OpenAI):** `POST /api/generate/v1/chat/completions` with JSON body
-- **Text (Simple):** `GET /api/generate/text/{prompt}?model=openai`
+- **Image:** `GET /image/{prompt}?model=flux`
+- **Text (OpenAI):** `POST /v1/chat/completions` with JSON body
+- **Text (Simple):** `GET /text/{prompt}?model=openai`
 
 ### Authentication
 
@@ -23,8 +23,8 @@
 
 ### Model Discovery
 
-- **Image models:** `/api/generate/image/models`
-- **Text models:** `/api/generate/v1/models`
+- **Image models:** `/image/models`
+- **Text models:** `/v1/models`
 
 ---
 

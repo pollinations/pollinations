@@ -13,7 +13,6 @@ import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
-import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
@@ -40,7 +39,18 @@ export const api = new Hono<Env>()
 
 export type ApiRoutes = typeof api;
 
-const docsRoutes = createDocsRoutes(api);
+function stripTrailingSlash(path: string): string {
+    return path.length > 1 ? path.replace(/\/+$/, "") : path;
+}
+
+function redirectLegacyDocs(c: Context<Env>): Response {
+    const url = new URL(c.req.url);
+    url.protocol = "https:";
+    url.hostname = "gen.pollinations.ai";
+    url.pathname = url.pathname.replace(/^\/api\/docs\/?/, "/docs/");
+    url.pathname = stripTrailingSlash(url.pathname);
+    return c.redirect(url.toString(), 301);
+}
 
 const app = new Hono<Env>()
     // Permissive CORS for all API endpoints (all require API keys for auth)
@@ -63,8 +73,10 @@ const app = new Hono<Env>()
             c.header("X-Robots-Tag", "noindex, nofollow");
         }
     })
-    .route("/api", api)
-    .route("/api/docs", docsRoutes);
+    .get("/api/docs", redirectLegacyDocs)
+    .get("/api/docs/", redirectLegacyDocs)
+    .get("/api/docs/*", redirectLegacyDocs)
+    .route("/api", api);
 
 app.notFound(async (c: Context<Env>) => {
     return await handleError(new HTTPException(404), c);

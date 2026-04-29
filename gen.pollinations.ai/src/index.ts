@@ -72,10 +72,20 @@ function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }
 
+function redirectLegacyDocs(c: Context<Env>): Response {
+    const url = new URL(c.req.url);
+    url.pathname = url.pathname.replace(/^\/api\/docs\/?/, "/docs/");
+    url.pathname = stripTrailingSlash(url.pathname);
+    return c.redirect(url.toString(), 301);
+}
+
 // Boundary routes: these are handled before generation middleware.
 app.get("/robots.txt", () => robotsTxt())
     .get("/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
     .get("/docs/", (c) => c.redirect(`${new URL(c.req.url).origin}/docs`, 301))
+    .get("/api/docs", redirectLegacyDocs)
+    .get("/api/docs/", redirectLegacyDocs)
+    .get("/api/docs/*", redirectLegacyDocs)
     .all("/api", () => notFound())
     .all("/api/*", () => notFound())
     .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))

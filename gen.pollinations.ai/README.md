@@ -24,7 +24,6 @@ Simplified API gateway for pollinations.ai, providing clean URLs via Cloudflare 
 | `/image/*`          | generation worker |
 | `/text/*`           | generation worker |
 | `/v1/*`             | generation worker |
-| `/openai`           | generation worker |
 | `/account/*`        | enter account API |
 
 ## Development

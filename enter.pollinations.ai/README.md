@@ -4,7 +4,7 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 ## Documentation
 
 - **[API Authentication Guide](./API_AUTHENTICATION.md)** - How to use API keys for server-to-server requests
-- **[API Documentation](https://enter.pollinations.ai/api/docs)** - Interactive API reference
+- **[API Documentation](https://gen.pollinations.ai/docs)** - Interactive API reference
 - **[FAQ](./POLLEN_FAQ.md)** - Frequently asked questions about Pollen and pricing 
 
 # Local development

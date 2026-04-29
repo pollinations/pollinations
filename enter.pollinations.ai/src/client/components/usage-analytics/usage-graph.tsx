@@ -4,7 +4,6 @@ import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { pillColors } from "../layout/dashboard-theme.ts";
-import { Card } from "../ui/card.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
@@ -73,7 +72,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
 
     return (
         <div className="flex flex-col gap-6">
-            <DashboardSection title="Filters" theme="pink" framed>
+            <DashboardSection title="Activity" theme="pink" framed>
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <PeriodPicker
@@ -83,7 +82,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                         {action}
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-pink-300/70 pt-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex gap-1.5 items-center">
                             <span className="text-xs font-medium text-pink-800/75 mr-1">
                                 Type
@@ -134,92 +133,103 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             label="API Keys"
                         />
                     </div>
-                </div>
-            </DashboardSection>
 
-            <DashboardSection title="Activity" theme="pink" framed>
-                {loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
-                            Fetching usage data…
-                        </p>
+                    <div className="border-t border-pink-300/70 pt-4">
+                        {loading && (
+                            <div className="flex items-center justify-center h-[180px]">
+                                <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
+                                    Fetching usage data…
+                                </p>
+                            </div>
+                        )}
+                        {error && !loading && (
+                            <div className="flex items-center justify-center h-[180px]">
+                                <div className="text-center">
+                                    <p className="text-sm text-red-500 font-medium">
+                                        {error}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => fetchUsage()}
+                                        className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {!loading && !error && (
+                            <Chart
+                                data={chartData}
+                                metric={filters.metric}
+                                showModelBreakdown={showModelBreakdown}
+                                tier={tier}
+                            />
+                        )}
                     </div>
-                )}
-                {error && !loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <div className="text-center">
-                            <p className="text-sm text-red-500 font-medium">
-                                {error}
-                            </p>
-                            <button
-                                type="button"
-                                onClick={() => fetchUsage()}
-                                className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
-                            >
-                                Try again
-                            </button>
-                        </div>
-                    </div>
-                )}
-                {!loading && !error && (
-                    <div className="flex flex-col gap-4">
-                        <Chart
-                            data={chartData}
-                            metric={filters.metric}
-                            showModelBreakdown={showModelBreakdown}
-                            tier={tier}
-                        />
-                        <div className="grid gap-3 border-t border-pink-300/70 pt-4 sm:grid-cols-2 lg:grid-cols-3">
-                            <UsageStatCard
-                                label="Requests"
-                                value={stats.totalRequests.toLocaleString()}
-                                detail={
-                                    <ModalityPills
-                                        breakdown={stats.requestsByModality}
-                                    />
-                                }
-                            />
-                            <UsageStatCard
-                                label="Pollen spent"
-                                value={formatPollen(stats.totalPollen)}
-                                detail={
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span
-                                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${tierPill.bg} ${tierPill.text}`}
-                                        >
-                                            {tierEmoji}{" "}
-                                            {formatPollen(stats.tierPollen)}
+
+                    {!loading && !error && (
+                        <div className="flex flex-col gap-4 border-t border-pink-300/70 pt-4 sm:flex-row sm:gap-0 sm:divide-x sm:divide-pink-300/70">
+                            <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                                <UsageStatCard
+                                    label="Requests"
+                                    value={stats.totalRequests.toLocaleString()}
+                                    detail={
+                                        <ModalityPills
+                                            breakdown={stats.requestsByModality}
+                                        />
+                                    }
+                                />
+                            </div>
+                            <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                                <UsageStatCard
+                                    label="Pollen spent"
+                                    value={formatPollen(stats.totalPollen)}
+                                    detail={
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span
+                                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${tierPill.bg} ${tierPill.text}`}
+                                            >
+                                                {tierEmoji}{" "}
+                                                {formatPollen(stats.tierPollen)}
+                                            </span>
+                                            <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                                                🪷{" "}
+                                                {formatPollen(stats.paidPollen)}
+                                            </span>
+                                        </div>
+                                    }
+                                />
+                            </div>
+                            <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                                <UsageStatCard
+                                    label="Top model"
+                                    value={
+                                        <span className="text-xl leading-tight">
+                                            {stats.topModel?.label || "None"}
                                         </span>
-                                        <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">
-                                            🪷 {formatPollen(stats.paidPollen)}
-                                        </span>
-                                    </div>
-                                }
-                            />
-                            <UsageStatCard
-                                label="Top model"
-                                value={
-                                    <span className="text-xl leading-tight">
-                                        {stats.topModel?.label || "None"}
-                                    </span>
-                                }
-                                detail={
-                                    stats.topModel
-                                        ? formatMetricValue(
-                                              filters.metric === "requests"
-                                                  ? stats.topModel.requests
-                                                  : stats.topModel.pollen,
-                                              filters.metric,
-                                          )
-                                        : "No model usage yet"
-                                }
-                            />
+                                    }
+                                    detail={
+                                        stats.topModel
+                                            ? formatMetricValue(
+                                                  filters.metric === "requests"
+                                                      ? stats.topModel.requests
+                                                      : stats.topModel.pollen,
+                                                  filters.metric,
+                                              )
+                                            : "No model usage yet"
+                                    }
+                                />
+                            </div>
                         </div>
+                    )}
+
+                    {!loading && !error && (
                         <p className="text-[10px] text-gray-400">
                             Data refreshes every hour. Times shown in UTC.
                         </p>
-                    </div>
-                )}
+                    )}
+                </div>
             </DashboardSection>
         </div>
     );
@@ -244,7 +254,7 @@ const UsageStatCard: FC<{
     value: ReactNode;
     detail?: ReactNode;
 }> = ({ label, value, detail }) => (
-    <Card color="pink" className="text-sm !border-transparent">
+    <div className="text-sm">
         <div className="text-[10px] uppercase tracking-wide text-pink-600 font-bold">
             {label}
         </div>
@@ -254,7 +264,7 @@ const UsageStatCard: FC<{
         {detail && (
             <div className="mt-2 text-xs text-pink-800/75">{detail}</div>
         )}
-    </Card>
+    </div>
 );
 
 const ModalityPills: FC<{ breakdown: Record<ModelModality, number> }> = ({

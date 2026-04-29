@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-28",
+  "period_start": "2026-04-28",
+  "period_end": "2026-04-28",
+  "generated_at": "2026-04-29T06:47:56.134419+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-28/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped today:\n- openclaw integration is live\n- updated app submission protocol\n- fixed 500s on empty audio\n- spent the morning spreading gpt-image-2 across 5 azure regions, then deleted it all to just use openai direct instead. nature is healing."
+}

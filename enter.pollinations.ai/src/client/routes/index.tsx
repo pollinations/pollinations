@@ -8,6 +8,7 @@ import {
     type CreateApiKeyResponse,
 } from "../components/api-keys";
 import { PollenBalance, TierPanel } from "../components/balance";
+import { BillingPanel } from "../components/billing";
 import { Button } from "../components/button.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Footer } from "../components/layout/footer.tsx";
@@ -23,6 +24,11 @@ import {
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
+
+type SelectableApiKey = {
+    id: string;
+    name?: string | null;
+};
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -74,13 +80,21 @@ function RouteComponent() {
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
-    const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
+    const [activeTab, setActiveTab] = useState<"balance" | "usage" | "billing">(
+        () => {
+            if (typeof window === "undefined") return "balance";
+            return new URLSearchParams(window.location.search).get("tab") ===
+                "billing"
+                ? "billing"
+                : "balance";
+        },
+    );
     const [usagePeriod, setUsagePeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
 
     const selectableKeys = useMemo(
         () =>
-            apiKeys
+            (apiKeys as SelectableApiKey[])
                 .filter((k): k is typeof k & { name: string } => !!k.name)
                 .map((k) => ({ id: k.id, name: k.name })),
         [apiKeys],
@@ -181,6 +195,27 @@ function RouteComponent() {
         anchor.remove();
     }
 
+    function selectTab(tab: "balance" | "usage" | "billing"): void {
+        setActiveTab(tab);
+        if (typeof window === "undefined") return;
+
+        const url = new URL(window.location.href);
+        if (tab === "billing") {
+            url.searchParams.set("tab", "billing");
+        } else {
+            url.searchParams.delete("tab");
+        }
+        window.history.replaceState(null, "", url.toString());
+    }
+
+    function tabButtonClass(tab: "balance" | "usage" | "billing"): string {
+        return `font-bold ${
+            activeTab === tab
+                ? "text-amber-900"
+                : "text-gray-400 hover:text-gray-600 cursor-pointer"
+        }`;
+    }
+
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-20">
@@ -204,26 +239,26 @@ function RouteComponent() {
                         <h2 className="flex items-center gap-3">
                             <button
                                 type="button"
-                                onClick={() => setActiveTab("balance")}
-                                className={`font-bold ${
-                                    activeTab === "balance"
-                                        ? "text-amber-900"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
-                                }`}
+                                onClick={() => selectTab("balance")}
+                                className={tabButtonClass("balance")}
                             >
                                 Balance
                             </button>
                             <span className="text-gray-300">·</span>
                             <button
                                 type="button"
-                                onClick={() => setActiveTab("usage")}
-                                className={`font-bold ${
-                                    activeTab === "usage"
-                                        ? "text-amber-900"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
-                                }`}
+                                onClick={() => selectTab("usage")}
+                                className={tabButtonClass("usage")}
                             >
                                 Usage
+                            </button>
+                            <span className="text-gray-300">·</span>
+                            <button
+                                type="button"
+                                onClick={() => selectTab("billing")}
+                                className={tabButtonClass("billing")}
+                            >
+                                Billing
                             </button>
                         </h2>
                         <div className="flex flex-wrap items-center gap-2">
@@ -271,6 +306,7 @@ function RouteComponent() {
                             apiKeys={selectableKeys}
                         />
                     )}
+                    {activeTab === "billing" && <BillingPanel />}
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">

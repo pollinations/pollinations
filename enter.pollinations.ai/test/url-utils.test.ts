@@ -18,12 +18,12 @@ describe("isLoopbackUrl", () => {
 
 describe("redirectUriMatchesAllowlist", () => {
     test("returns false when allowlist is empty or missing", () => {
-        expect(
-            redirectUriMatchesAllowlist("https://app.com/cb", []),
-        ).toBe(false);
-        expect(
-            redirectUriMatchesAllowlist("https://app.com/cb", null),
-        ).toBe(false);
+        expect(redirectUriMatchesAllowlist("https://app.com/cb", [])).toBe(
+            false,
+        );
+        expect(redirectUriMatchesAllowlist("https://app.com/cb", null)).toBe(
+            false,
+        );
         expect(
             redirectUriMatchesAllowlist("https://app.com/cb", undefined),
         ).toBe(false);
@@ -35,6 +35,24 @@ describe("redirectUriMatchesAllowlist", () => {
                 "https://app.com/cb",
             ]),
         ).toBe(true);
+    });
+
+    test("matches query strings exactly and rejects fragments", () => {
+        expect(
+            redirectUriMatchesAllowlist("https://app.com/cb?flow=byop", [
+                "https://app.com/cb?flow=byop",
+            ]),
+        ).toBe(true);
+        expect(
+            redirectUriMatchesAllowlist("https://app.com/cb?next=/admin", [
+                "https://app.com/cb",
+            ]),
+        ).toBe(false);
+        expect(
+            redirectUriMatchesAllowlist("https://app.com/cb#token", [
+                "https://app.com/cb#token",
+            ]),
+        ).toBe(false);
     });
 
     test("rejects different host (the confused-deputy attack)", () => {

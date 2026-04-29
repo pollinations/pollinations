@@ -4,14 +4,17 @@ import { HTTPException } from "hono/http-exception";
 import type { createAuth } from "../auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
 import * as schema from "../db/schema/better-auth.ts";
+import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
+import { redirectUriMatchesAllowlist } from "./url-utils.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
 export type CallerMetadata = {
-    appUrl?: string;
     redirectUris?: string[];
+    redirectUri?: string;
     redirectOrigin?: string;
     deviceUserCode?: string;
+    requestedClientId?: string;
     clientId?: string;
     createdForUserId?: string;
     createdForApp?: string;
@@ -33,12 +36,37 @@ type CreateApiKeyForUserInput = {
     defaultCreatedVia: string;
 };
 
-export function validateAppUrlFormat(appUrl: string): void {
-    if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(appUrl)) {
+export function validateRedirectUriFormat(redirectUri: string): void {
+    if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(redirectUri)) {
         throw new HTTPException(400, {
             message: "Must be a valid URL with a scheme (e.g. https://...)",
         });
     }
+    let parsed: URL;
+    try {
+        parsed = new URL(redirectUri);
+    } catch {
+        throw new HTTPException(400, {
+            message: "Must be a valid URL with a scheme (e.g. https://...)",
+        });
+    }
+    if (parsed.hash) {
+        throw new HTTPException(400, {
+            message: "Redirect URI must not include a fragment",
+        });
+    }
+}
+
+function cleanRedirectUris(redirectUris: string[]): string[] {
+    return redirectUris
+        .map((uri) => uri.trim())
+        .filter((uri): uri is string => uri.length > 0);
+}
+
+function rejectInvalidClientId(): never {
+    throw new HTTPException(400, {
+        message: "Invalid client_id",
+    });
 }
 
 // Caller-provided metadata is restricted to a typed allowlist. Server-controlled
@@ -49,11 +77,8 @@ function pickCallerMetadata(
 ): Record<string, unknown> {
     if (!metadata) return {};
     const out: Record<string, unknown> = {};
-    if (typeof metadata.appUrl === "string") out.appUrl = metadata.appUrl;
     if (Array.isArray(metadata.redirectUris)) {
-        out.redirectUris = metadata.redirectUris.filter(
-            (v): v is string => typeof v === "string" && !!v,
-        );
+        out.redirectUris = cleanRedirectUris(metadata.redirectUris);
     }
     if (typeof metadata.redirectOrigin === "string")
         out.redirectOrigin = metadata.redirectOrigin;
@@ -67,6 +92,83 @@ function pickCallerMetadata(
     if (typeof metadata.description === "string")
         out.description = metadata.description;
     return out;
+}
+
+async function validateClientRedirectBinding(
+    authClient: ReturnType<typeof createAuth>,
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    metadata: CallerMetadata | undefined,
+): Promise<void> {
+    if (!metadata) return;
+    const requestedClientId = metadata.requestedClientId;
+    const storedClientId = metadata.clientId;
+    if (
+        typeof requestedClientId !== "string" &&
+        typeof storedClientId !== "string"
+    ) {
+        return;
+    }
+
+    if (
+        typeof requestedClientId !== "string" ||
+        !requestedClientId.startsWith("pk_")
+    ) {
+        rejectInvalidClientId();
+    }
+
+    const result = await authClient.api.verifyApiKey({
+        body: { key: requestedClientId },
+    });
+    if (!result.valid || !result.key?.id) {
+        rejectInvalidClientId();
+    }
+    const clientKeyId = result.key.id;
+    if (typeof storedClientId === "string" && storedClientId !== clientKeyId) {
+        throw new HTTPException(400, {
+            message: "client_id mismatch",
+        });
+    }
+
+    const clientKey = await db.query.apikey.findFirst({
+        where: eq(schema.apikey.id, clientKeyId),
+    });
+    if (!clientKey || clientKey.prefix !== "pk") {
+        rejectInvalidClientId();
+    }
+
+    if (typeof metadata.deviceUserCode === "string") {
+        const device = await db.query.deviceCode.findFirst({
+            where: eq(
+                schema.deviceCode.userCode,
+                metadata.deviceUserCode.toUpperCase(),
+            ),
+        });
+        if (
+            !device ||
+            device.status !== "pending" ||
+            device.expiresAt < new Date() ||
+            device.clientId !== requestedClientId
+        ) {
+            throw new HTTPException(400, {
+                message: "client_id mismatch",
+            });
+        }
+        return;
+    }
+
+    if (typeof metadata.redirectUri !== "string") {
+        throw new HTTPException(400, {
+            message: "redirect_uri is required when client_id is provided",
+        });
+    }
+    validateRedirectUriFormat(metadata.redirectUri);
+
+    const allowlist = getRedirectUris(parseMetadata(clientKey.metadata));
+    if (!redirectUriMatchesAllowlist(metadata.redirectUri, allowlist)) {
+        throw new HTTPException(400, {
+            message: "redirect_uri not in allowlist for this client_id",
+        });
+    }
 }
 
 export async function createApiKeyForUser({
@@ -84,13 +186,12 @@ export async function createApiKeyForUser({
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
+    await validateClientRedirectBinding(authClient, db, metadata);
+
     const callerMetadata = pickCallerMetadata(metadata);
-    if (typeof callerMetadata.appUrl === "string") {
-        validateAppUrlFormat(callerMetadata.appUrl);
-    }
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
-            validateAppUrlFormat(uri);
+            validateRedirectUriFormat(uri);
         }
     }
 

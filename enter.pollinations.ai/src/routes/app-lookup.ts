@@ -26,7 +26,6 @@ async function resolveAttribution(
         userName: user?.name,
         githubUsername: user?.githubUsername || undefined,
         appName: keyRow.name,
-        appUrl: redirectUris[0],
         redirectUris,
     };
 }
@@ -100,10 +99,7 @@ export const appLookupRoutes = new Hono<Env>().get(
                 if (redirectUri) {
                     const meta = parseMetadata(keyRow.metadata);
                     const allowlist = getRedirectUris(meta);
-                    if (
-                        allowlist.length > 0 &&
-                        !redirectUriMatchesAllowlist(redirectUri, allowlist)
-                    ) {
+                    if (!redirectUriMatchesAllowlist(redirectUri, allowlist)) {
                         return c.json({
                             found: false as const,
                             error: "redirect_uri_mismatch" as const,

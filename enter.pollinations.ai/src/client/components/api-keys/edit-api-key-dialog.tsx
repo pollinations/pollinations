@@ -24,8 +24,6 @@ function readInitialRedirectUris(
     if (Array.isArray(list)) {
         return list.filter((v): v is string => typeof v === "string" && !!v);
     }
-    const legacy = metadata?.appUrl;
-    if (typeof legacy === "string" && legacy) return [legacy];
     return [];
 }
 
@@ -95,7 +93,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 isPublishable &&
                 !sameRedirectUris(redirectUris, initialRedirectUris)
             ) {
-                const cleaned = redirectUris.filter((v) => v.trim() !== "");
+                const cleaned = redirectUris
+                    .map((v) => v.trim())
+                    .filter((v) => v !== "");
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {

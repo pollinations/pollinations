@@ -38,8 +38,6 @@ export type CreateApiKey = {
     expiryDays?: number | null;
     /** Account permissions: ["profile", "usage", "keys"]. null = no permissions */
     accountPermissions?: string[] | null;
-    /** App URL for publishable keys (legacy single-URL field; prefer `redirectUris`) */
-    appUrl?: string;
     /** Allowed OAuth redirect URIs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];
 };

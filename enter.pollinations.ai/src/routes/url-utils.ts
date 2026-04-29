@@ -34,12 +34,12 @@ function safeParse(url: string): URL | null {
  * Match an incoming `redirect_uri` against a registered allowlist for a `pk_`.
  *
  * Comparison rules:
- * - Scheme + hostname + path are matched exactly (after lowercasing host).
+ * - Scheme + hostname + path + query are matched exactly (after lowercasing
+ *   host).
  * - For loopback entries (RFC 8252 §7.3): port is ignored — any port matches.
  *   This covers native/CLI apps that bind to ephemeral ports each run.
  * - For non-loopback entries: port must match (default ports normalized).
- * - Query string and fragment on the allowlist entry are ignored; only the
- *   incoming origin + path is what matters for routing the secret.
+ * - Fragments are rejected; redirect URIs must not contain them.
  *
  * Returns false on any parse error or empty allowlist.
  */
@@ -56,6 +56,7 @@ export function redirectUriMatchesAllowlist(
 function matchesEntry(incoming: URL, entryUrl: string): boolean {
     const entry = safeParse(entryUrl);
     if (!entry) return false;
+    if (incoming.hash || entry.hash) return false;
     if (incoming.protocol !== entry.protocol) return false;
     if (
         normalizeHostname(incoming.hostname) !==
@@ -64,6 +65,7 @@ function matchesEntry(incoming: URL, entryUrl: string): boolean {
         return false;
     }
     if (incoming.pathname !== entry.pathname) return false;
+    if (incoming.search !== entry.search) return false;
     if (isLoopbackHostname(entry.hostname)) return true;
     return incoming.port === entry.port;
 }

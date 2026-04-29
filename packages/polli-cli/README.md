@@ -70,6 +70,7 @@ polli docs --open            # open in browser
 ```bash
 polli keys list
 polli keys create --name mybot --budget 100
+polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback
 polli keys revoke <id>
 
 polli usage                  # pollen balance

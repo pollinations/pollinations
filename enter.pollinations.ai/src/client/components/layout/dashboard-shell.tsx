@@ -351,13 +351,13 @@ const HelpUsGrowCard: FC = () => (
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Star Pollinations on GitHub"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-green-950 py-2 pl-3 pr-4 text-[13px] font-semibold text-emerald-50 transition-colors hover:bg-green-900"
+            className="inline-flex items-center gap-1.5 self-start rounded-full bg-green-950 py-1 pl-2.5 pr-3 text-[12px] font-semibold text-emerald-50 transition-colors hover:bg-green-900"
         >
-            <span className="h-4 w-4">
+            <span className="h-3.5 w-3.5">
                 <GitHubIcon />
             </span>
             <span>star us</span>
-            <span className="border-l border-emerald-50/30 pl-2 font-mono text-[12px] text-emerald-50/70">
+            <span className="border-l border-emerald-50/30 pl-1.5 font-mono text-[11px] text-emerald-50/70">
                 4.4k
             </span>
         </a>

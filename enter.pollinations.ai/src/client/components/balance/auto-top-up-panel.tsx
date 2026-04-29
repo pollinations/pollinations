@@ -2,7 +2,6 @@ import { type FC, useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
-import { Card } from "../ui/card.tsx";
 
 export type BillingState = {
     autoTopUp: {
@@ -115,7 +114,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     }
 
     return (
-        <Card color="amber" className="mt-4 space-y-4 bg-white/90">
+        <div className="mt-4 space-y-4 rounded-xl bg-white/90 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1">
                     <h3 className="text-lg font-semibold text-amber-950 sm:text-xl">
@@ -125,15 +124,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         Charge your Stripe default payment method when purchased
                         pollen falls below your threshold.
                     </p>
-                </div>
-                <div
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        billingState?.autoTopUp.enabled
-                            ? "bg-amber-100 text-amber-900"
-                            : "bg-gray-100 text-gray-700"
-                    }`}
-                >
-                    {billingState?.autoTopUp.enabled ? "Enabled" : "Off"}
                 </div>
             </div>
 
@@ -247,6 +237,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     </Button>
                 </div>
             </div>
-        </Card>
+        </div>
     );
 };

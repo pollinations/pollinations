@@ -1686,6 +1686,8 @@ export class Pollinations {
      * });
      * // Redirect user to this URL
      * ```
+     *
+     * Omit `budget` for the default cap.
      */
     authorizeUrl(options: AuthorizeOptions): string {
         const params = new URLSearchParams();

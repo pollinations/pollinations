@@ -63,7 +63,7 @@ https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
 | `models` | Restrict to specific models | `flux,openai,gptimage` |
-| `budget` | Pollen cap | `10` |
+| `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | Key lifetime in days (default: 30) | `7` |
 
 Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.

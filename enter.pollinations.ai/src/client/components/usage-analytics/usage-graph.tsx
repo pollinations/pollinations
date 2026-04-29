@@ -79,28 +79,36 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                 action={action}
             >
                 <div className="flex flex-col gap-4">
-                    <PeriodPicker value={period} onChange={onPeriodChange} />
-
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="flex gap-1.5 items-center">
-                            <span className="text-xs font-medium text-pink-800/75 mr-1">
-                                Type
-                            </span>
-                            {(["requests", "pollen"] as Metric[]).map((m) => (
-                                <TabButton
-                                    key={m}
-                                    theme="pink"
-                                    active={filters.metric === m}
-                                    onClick={() =>
-                                        setFilters((f) => ({
-                                            ...f,
-                                            metric: m,
-                                        }))
-                                    }
-                                >
-                                    {m === "requests" ? "Request" : "Pollen"}
-                                </TabButton>
-                            ))}
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="flex flex-col gap-4">
+                            <PeriodPicker
+                                value={period}
+                                onChange={onPeriodChange}
+                            />
+                            <div className="flex gap-1.5 items-center">
+                                <span className="text-xs font-medium text-pink-800/75 mr-1">
+                                    Type
+                                </span>
+                                {(["requests", "pollen"] as Metric[]).map(
+                                    (m) => (
+                                        <TabButton
+                                            key={m}
+                                            theme="pink"
+                                            active={filters.metric === m}
+                                            onClick={() =>
+                                                setFilters((f) => ({
+                                                    ...f,
+                                                    metric: m,
+                                                }))
+                                            }
+                                        >
+                                            {m === "requests"
+                                                ? "Request"
+                                                : "Pollen"}
+                                        </TabButton>
+                                    ),
+                                )}
+                            </div>
                         </div>
                         <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
                             <MultiSelect

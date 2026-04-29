@@ -3,7 +3,6 @@
 declare namespace Cloudflare {
     interface GlobalProps {
         mainModule: typeof import("./src/index");
-        durableNamespaces: "PollenRateLimiter";
     }
     interface LocalEnv {
         KV: KVNamespace;
@@ -46,7 +45,6 @@ declare namespace Cloudflare {
         TINYBIRD_INGEST_TOKEN: string;
         TINYBIRD_SYNC_TOKEN: string;
         DASHSCOPE_API_KEY: string;
-        POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
     }
     interface ProductionEnv {
         KV: KVNamespace;
@@ -89,9 +87,6 @@ declare namespace Cloudflare {
         TINYBIRD_INGEST_TOKEN: string;
         TINYBIRD_SYNC_TOKEN: string;
         DASHSCOPE_API_KEY: string;
-        POLLEN_RATE_LIMITER: DurableObjectNamespace<
-            import("./src/index").PollenRateLimiter
-        >;
     }
     interface StagingEnv {
         KV: KVNamespace;
@@ -133,9 +128,6 @@ declare namespace Cloudflare {
         TINYBIRD_INGEST_TOKEN: string;
         TINYBIRD_SYNC_TOKEN: string;
         DASHSCOPE_API_KEY: string;
-        POLLEN_RATE_LIMITER: DurableObjectNamespace<
-            import("./src/index").PollenRateLimiter
-        >;
     }
     interface DevEnv {
         KV: KVNamespace;
@@ -177,9 +169,6 @@ declare namespace Cloudflare {
         TINYBIRD_INGEST_TOKEN: string;
         TINYBIRD_SYNC_TOKEN: string;
         DASHSCOPE_API_KEY: string;
-        POLLEN_RATE_LIMITER: DurableObjectNamespace<
-            import("./src/index").PollenRateLimiter
-        >;
     }
     interface TestEnv {
         KV: KVNamespace;
@@ -219,9 +208,6 @@ declare namespace Cloudflare {
         TINYBIRD_INGEST_TOKEN: string;
         TINYBIRD_SYNC_TOKEN: string;
         DASHSCOPE_API_KEY: string;
-        POLLEN_RATE_LIMITER: DurableObjectNamespace<
-            import("./src/index").PollenRateLimiter
-        >;
     }
     interface Env {
         BETTER_AUTH_SECRET: string;
@@ -290,9 +276,6 @@ declare namespace Cloudflare {
             | "https://staging.enter.pollinations.ai"
             | "https://dev.enter.pollinations.ai";
         POLLEN_REFILL_PER_HOUR?: 1;
-        POLLEN_RATE_LIMITER:
-            | DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */
-            | DurableObjectNamespace<import("./src/index").PollenRateLimiter>;
         EDGE_RATE_LIMITER?: RateLimit;
     }
 }

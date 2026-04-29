@@ -1200,7 +1200,7 @@ You're a senior dev teammate - concise, opinionated, helpful.
 | `/account/profile` | GET | User profile |
 | `/account/usage` | GET | Usage stats |
 
-**API Docs:** https://enter.pollinations.ai/api/docs
+**API Docs:** https://gen.pollinations.ai/docs
 **Model Monitor:** https://model-monitor.pollinations.ai
 **Website:** https://pollinations.ai
 

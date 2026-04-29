@@ -44,7 +44,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **API keys** — publishable keys for frontend, secret keys for backend
 - **CLI** — `npx @pollinations_ai/cli` for humans and AI agents ([source](packages/polli-cli))
 
-> Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://enter.pollinations.ai/api/docs)
+> Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)
 
 ## 🆕 Latest News
 
@@ -134,7 +134,7 @@ curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -o speech.mp3
 ```
 
-Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://enter.pollinations.ai/api/docs).
+Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+ ElevenLabs voices](https://gen.pollinations.ai/docs).
 
 ### MCP Server for AI Assistants
 

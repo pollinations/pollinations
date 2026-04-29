@@ -63,8 +63,8 @@ jobs:
           GITHUB_USERNAME: ${{ github.event.issue.user.login }}
         run: |
           npm install -g wrangler
-          cd enter.pollinations.ai
           npm install
+          cd enter.pollinations.ai
           
           echo "Checking registration for $GITHUB_USERNAME..."
           

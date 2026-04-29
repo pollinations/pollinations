@@ -1,10 +1,10 @@
-import type { FC } from "react";
 import {
     TIER_COLORS,
     TIER_EMOJIS,
     TIER_POLLEN,
     type TierStatus,
-} from "@/tier-config.ts";
+} from "@shared/tier-config.ts";
+import type { FC } from "react";
 import { Tooltip } from "../pricing/Tooltip.tsx";
 
 const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {

@@ -1,3 +1,9 @@
+import {
+    CONSENT_PERMISSIONS,
+    getAuthorizeInitialPermissions,
+    parseScopeList,
+    sanitizeAuthorizeAccountPermissions,
+} from "@shared/auth/authorize-config.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { cn } from "../../util.ts";
@@ -21,12 +27,6 @@ import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
-import {
-    CONSENT_PERMISSIONS,
-    getAuthorizeInitialPermissions,
-    parseScopeList,
-    sanitizeAuthorizeAccountPermissions,
-} from "../lib/authorize-config.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { formatPollen } from "../lib/format-pollen.ts";
 

@@ -1,8 +1,8 @@
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { balance } from "../middleware/balance.ts";

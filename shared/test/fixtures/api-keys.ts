@@ -1,12 +1,12 @@
 import { env } from "cloudflare:test";
-import { createApiKeyAuth } from "@shared/auth/api-key.ts";
+import { drizzle } from "drizzle-orm/d1";
+import { createApiKeyAuth } from "../../auth/api-key.ts";
 import {
     type ApiKeyType,
     type CallerMetadata,
     createApiKeyForUser,
-} from "@shared/auth/api-key-creation.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
-import { drizzle } from "drizzle-orm/d1";
+} from "../../auth/api-key-creation.ts";
+import { user as userTable } from "../../db/better-auth.ts";
 
 export type CreateTestUserOptions = {
     id?: string;

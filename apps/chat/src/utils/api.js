@@ -2,6 +2,7 @@
 import { DEFAULT_API_KEY, isValidApiKey } from "../config/auth";
 
 const BASE_IMAGE_URL = "https://gen.pollinations.ai/image";
+const BASE_VIDEO_URL = "https://gen.pollinations.ai/video";
 const TEXT_MODELS_ENDPOINT = "https://gen.pollinations.ai/v1/models";
 const IMAGE_MODELS_ENDPOINT = "https://gen.pollinations.ai/image/models";
 const BALANCE_ENDPOINT = "https://gen.pollinations.ai/account/balance";
@@ -766,7 +767,7 @@ export const generateVideo = async (prompt, options = {}) => {
 
         // Encode the prompt for URL path
         const encodedPrompt = encodeURIComponent(prompt);
-        const url = `${BASE_IMAGE_URL}/${encodedPrompt}?${params.toString()}`;
+        const url = `${BASE_VIDEO_URL}/${encodedPrompt}?${params.toString()}`;
 
         console.log(`🎬 Generating video with prompt: "${prompt}"`);
         console.log(`📐 Parameters: model: ${model}, seed: ${seed}`);

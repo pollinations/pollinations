@@ -1,11 +1,11 @@
 import crypto from "node:crypto";
 import { getLogger } from "@logtape/logtape";
+import { Hono } from "hono";
+import { expect } from "vitest";
 import {
     getModelDefinition,
     resolveModelName,
-} from "@shared/registry/registry.ts";
-import { Hono } from "hono";
-import { expect } from "vitest";
+} from "../../registry/registry.ts";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
 
 const log = getLogger(["test", "mock", "vcr"]);

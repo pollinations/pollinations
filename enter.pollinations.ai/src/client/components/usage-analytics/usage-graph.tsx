@@ -81,7 +81,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                 <div className="flex flex-col gap-4">
                     <PeriodPicker value={period} onChange={onPeriodChange} />
 
-                    <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="flex gap-1.5 items-center">
                             <span className="text-xs font-medium text-pink-800/75 mr-1">
                                 Type
@@ -102,35 +102,38 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 </TabButton>
                             ))}
                         </div>
-                        <MultiSelect
-                            options={modelSelectOptions}
-                            selected={filters.selectedModels}
-                            onChange={(v) =>
-                                setFilters((f) => ({
-                                    ...f,
-                                    selectedModels: v,
-                                }))
-                            }
-                            placeholder="All"
-                            disabled={modelSelectOptions.length === 0}
-                            disabledText="None"
-                            label="Models"
-                        />
-                        <MultiSelect
-                            options={keySelectOptions}
-                            selected={filters.selectedKeyIds}
-                            onChange={(v) =>
-                                setFilters((f) => ({
-                                    ...f,
-                                    selectedKeyIds: v,
-                                }))
-                            }
-                            placeholder="All"
-                            disabled={keySelectOptions.length === 0}
-                            disabledText="None"
-                            align="end"
-                            label="API Keys"
-                        />
+                        <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
+                            <MultiSelect
+                                options={modelSelectOptions}
+                                selected={filters.selectedModels}
+                                onChange={(v) =>
+                                    setFilters((f) => ({
+                                        ...f,
+                                        selectedModels: v,
+                                    }))
+                                }
+                                placeholder="All"
+                                disabled={modelSelectOptions.length === 0}
+                                disabledText="None"
+                                align="end"
+                                label="Models"
+                            />
+                            <MultiSelect
+                                options={keySelectOptions}
+                                selected={filters.selectedKeyIds}
+                                onChange={(v) =>
+                                    setFilters((f) => ({
+                                        ...f,
+                                        selectedKeyIds: v,
+                                    }))
+                                }
+                                placeholder="All"
+                                disabled={keySelectOptions.length === 0}
+                                disabledText="None"
+                                align="end"
+                                label="API Keys"
+                            />
+                        </div>
                     </div>
 
                     <div className="border-t border-pink-300/70 pt-4">

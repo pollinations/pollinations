@@ -98,6 +98,10 @@ export default {
         ctx: ExecutionContext,
     ) {
         const { runTierRefill } = await import("./routes/admin.ts");
+        const { processDueAutoTopUps } = await import(
+            "./utils/stripe-billing.ts"
+        );
         await runTierRefill(env, ctx);
+        await processDueAutoTopUps(env);
     },
 } satisfies ExportedHandler<CloudflareBindings>;

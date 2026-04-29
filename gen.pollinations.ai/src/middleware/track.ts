@@ -1,5 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
@@ -33,6 +34,8 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
+import { eq } from "drizzle-orm";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -245,9 +248,71 @@ export const track = (eventType: EventType) =>
                         ? checkedUserBalance(c.var.balance)
                         : undefined,
                 });
+
+                if (
+                    responseTracking.isBilledUsage &&
+                    userTracking.userId &&
+                    (await shouldTriggerAutoTopUp(db, userTracking.userId))
+                ) {
+                    await triggerAutoTopUp(c.env, userTracking.userId, log);
+                }
             })(),
         );
     });
+
+async function shouldTriggerAutoTopUp(
+    db: DrizzleD1Database,
+    userId: string,
+): Promise<boolean> {
+    const [user] = await db
+        .select({
+            enabled: userTable.autoTopUpEnabled,
+            threshold: userTable.autoTopUpThresholdPollen,
+            amountUsd: userTable.autoTopUpAmountUsd,
+            packBalance: userTable.packBalance,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .limit(1);
+
+    if (!user?.enabled || user.threshold == null || user.amountUsd == null) {
+        return false;
+    }
+
+    return (user.packBalance ?? 0) <= user.threshold;
+}
+
+async function triggerAutoTopUp(
+    env: CloudflareBindings,
+    userId: string,
+    log: ReturnType<typeof getLogger>,
+): Promise<void> {
+    try {
+        const response = await env.ENTER.fetch(
+            "https://enter.pollinations.ai/api/stripe/auto-top-up/trigger",
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ userId }),
+            },
+        );
+
+        if (!response.ok) {
+            log.warn("Auto top-up trigger failed for user {userId}", {
+                userId,
+                status: response.status,
+            });
+        }
+    } catch (error) {
+        log.warn("Auto top-up trigger errored for user {userId}: {error}", {
+            userId,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
 
 async function trackRequest(
     modelInfo: ModelVariables["model"],

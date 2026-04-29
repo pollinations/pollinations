@@ -1,11 +1,12 @@
-import { user as userTable } from "@shared/db/better-auth.ts";
-import { eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import { getPollenPack } from "@/pollen-packs.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import {
+    creditAutoTopUpInvoice,
+    markAutoTopUpInvoiceFailed,
+} from "../utils/stripe-billing.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -22,6 +23,11 @@ interface StripeEventData {
 }
 
 const LEGACY_BETA_MULTIPLIER = 2;
+
+type CheckoutUserRow = {
+    id: string;
+    packBalance: number | null;
+};
 
 async function sendStripeEventToTinybird(
     env: CloudflareBindings,
@@ -124,14 +130,12 @@ const handleCheckoutSessionCompleted = async (
         );
     }
 
-    const db = drizzle(env.DB);
-
     // Check if user exists
-    const [user] = await db
-        .select({ id: userTable.id, packBalance: userTable.packBalance })
-        .from(userTable)
-        .where(eq(userTable.id, userId))
-        .limit(1);
+    const user = await env.DB.prepare(
+        "SELECT id, pack_balance AS packBalance FROM user WHERE id = ? LIMIT 1",
+    )
+        .bind(userId)
+        .first<CheckoutUserRow>();
 
     if (!user) {
         console.error("User not found:", userId);
@@ -139,12 +143,11 @@ const handleCheckoutSessionCompleted = async (
     }
 
     // Credit pollen to packBalance (cumulative)
-    await db
-        .update(userTable)
-        .set({
-            packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${creditsToAdd}`,
-        })
-        .where(eq(userTable.id, userId));
+    await env.DB.prepare(
+        "UPDATE user SET pack_balance = COALESCE(pack_balance, 0) + ? WHERE id = ?",
+    )
+        .bind(creditsToAdd, userId)
+        .run();
 
     console.log(
         pack
@@ -347,6 +350,27 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     }).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
+                );
+                break;
+            }
+
+            case "invoice.paid": {
+                const invoice = event.data.object as Stripe.Invoice;
+                const result = await creditAutoTopUpInvoice(c.env, invoice);
+                if (result.credited) {
+                    console.log(
+                        `Stripe auto top-up invoice credited: ${invoice.id} (+${result.pollenCredited} pollen)`,
+                    );
+                }
+                break;
+            }
+
+            case "invoice.payment_failed": {
+                const invoice = event.data.object as Stripe.Invoice;
+                await markAutoTopUpInvoiceFailed(
+                    c.env,
+                    invoice,
+                    "Stripe could not charge the default payment method.",
                 );
                 break;
             }

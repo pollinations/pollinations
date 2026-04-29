@@ -33,8 +33,19 @@ export const user = sqliteTable("user", {
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
   lastTierGrant: integer("last_tier_grant"),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  autoTopUpThresholdPollen: real("auto_top_up_threshold_pollen"),
+  autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
+  autoTopUpLastFailure: text("auto_top_up_last_failure"),
+  autoTopUpLastFailureAt: integer("auto_top_up_last_failure_at", {
+    mode: "timestamp",
+  }),
 }, (table) => [
   index("idx_user_email").on(table.email),
+  index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
 ]);
 
 export const session = sqliteTable("session", {
@@ -134,11 +145,35 @@ export const apikey = sqliteTable("apikey", {
   index("idx_apikey_user_id").on(table.userId),
 ]);
 
+export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  stripeInvoiceId: text("stripe_invoice_id").notNull().unique(),
+  amountUsd: integer("amount_usd").notNull(),
+  pollenGrant: real("pollen_grant").notNull(),
+  status: text("status").notNull(),
+  failureReason: text("failure_reason"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+}, (table) => [
+  index("idx_stripe_auto_top_up_attempt_user_id").on(table.userId),
+  index("idx_stripe_auto_top_up_attempt_status").on(table.status),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
   sessions: many(session),
   accounts: many(account),
+  stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
 }));
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
@@ -161,6 +196,16 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const stripeAutoTopUpAttemptRelations = relations(
+  stripeAutoTopUpAttempt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [stripeAutoTopUpAttempt.userId],
+      references: [user.id],
+    }),
+  }),
+);
 
 // Device Authorization Grant (RFC 8628) table
 export const deviceCode = sqliteTable("device_code", {

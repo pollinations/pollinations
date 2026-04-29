@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
+    type ApiKey,
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
@@ -29,27 +30,36 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [tierData, apiKeysResult, d1BalanceResult, profileResult] =
-            await Promise.all([
-                apiClient.tiers.view
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient["api-keys"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : { data: [] })),
-                apiClient.customer.balance
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient.account.profile
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-            ]);
-        const apiKeys = apiKeysResult.data || [];
+        const [
+            tierData,
+            apiKeysResult,
+            d1BalanceResult,
+            profileResult,
+            billingState,
+        ] = await Promise.all([
+            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            apiClient.account.profile
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            apiClient.stripe.billing
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+        ]);
+        const apiKeys = (apiKeysResult.data || []) as ApiKey[];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
-        // Prefer D1 — session (KV-cached) may hold a stale username after relog.
+        // Prefer D1; session (KV-cached) may hold a stale username after relog.
+        const sessionUser = context.user as
+            | (typeof context.user & { githubUsername?: string | null })
+            | undefined;
         const githubUsername =
-            profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
+            profileResult?.githubUsername ?? sessionUser?.githubUsername ?? "";
 
         return {
             user: context.user,
@@ -58,6 +68,7 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
+            billingState,
         };
     },
 });
@@ -71,6 +82,7 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
+        billingState,
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -261,6 +273,7 @@ function RouteComponent() {
                             tierBalance={tierBalance}
                             packBalance={packBalance}
                             tier={tierData?.active?.tier}
+                            billingState={billingState}
                         />
                     )}
                     {activeTab === "usage" && (

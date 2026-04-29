@@ -1,4 +1,6 @@
+import type { Context } from "hono";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import {
     describePollenPack,
     getPollenPack,
@@ -8,6 +10,14 @@ import {
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient } from "../utils/stripe.ts";
+import {
+    type BillingPortalFlow,
+    createBillingPortalSession,
+    getBillingOverview,
+    getOrCreateStripeCustomerId,
+    processAutoTopUpForUser,
+    updateAutoTopUpSettings,
+} from "../utils/stripe-billing.ts";
 
 /**
  * Stripe pack configuration
@@ -38,7 +48,6 @@ export const stripeRoutes = new Hono<Env>()
         }
 
         const userId = session.user.id;
-        const userEmail = session.user.email;
 
         const pack = getPollenPack(amount);
 
@@ -55,6 +64,11 @@ export const stripeRoutes = new Hono<Env>()
         const cancelUrl = successUrl;
 
         try {
+            const stripeCustomerId = await getOrCreateStripeCustomerId(
+                c.env,
+                userId,
+            );
+
             // Create Checkout Session with automatic tax, VAT, and invoice creation
             // Checkout copy is derived from the shared pack catalog so it stays
             // in sync with the credited pollen amount.
@@ -84,9 +98,17 @@ export const stripeRoutes = new Hono<Env>()
                 billing_address_collection: "auto",
                 // Optional VAT/Tax ID collection for businesses (not enforced)
                 tax_id_collection: { enabled: true },
-                // Always create customer for invoicing
-                customer_creation: "always",
-                customer_email: userEmail,
+                customer: stripeCustomerId,
+                customer_update: {
+                    address: "auto",
+                    name: "auto",
+                },
+                payment_intent_data: {
+                    metadata: {
+                        userId,
+                        packAmount: String(pack.amountUsd),
+                    },
+                },
                 // Invoice creation after payment
                 invoice_creation: {
                     enabled: true,
@@ -133,4 +155,108 @@ export const stripeRoutes = new Hono<Env>()
                 description: describePollenPack(pack),
             })),
         });
+    })
+
+    /**
+     * GET /api/stripe/billing
+     * Return Stripe Portal-backed billing and auto top-up state.
+     */
+    .get("/billing", async (c) => {
+        const user = await requireSessionUser(c);
+        return c.json(await getBillingOverview(c.env, user.id));
+    })
+
+    /**
+     * POST /api/stripe/billing/portal
+     * Create a Stripe Customer Portal session for billing management.
+     */
+    .post("/billing/portal", async (c) => {
+        const user = await requireSessionUser(c);
+        const body = (await c.req.json().catch(() => ({}))) as {
+            flow?: BillingPortalFlow;
+        };
+        const session = await createBillingPortalSession(
+            c.env,
+            user.id,
+            body.flow === "payment_method_update"
+                ? "payment_method_update"
+                : "default",
+        );
+
+        if (!session.url) {
+            return c.json(
+                { error: "Failed to create billing portal session" },
+                500,
+            );
+        }
+
+        return c.json({ url: session.url });
+    })
+
+    /**
+     * PATCH /api/stripe/auto-top-up
+     * Save current user's auto top-up preferences.
+     */
+    .patch("/auto-top-up", async (c) => {
+        const user = await requireSessionUser(c);
+        const body = (await c.req.json()) as {
+            enabled?: boolean;
+            thresholdPollen?: number;
+            packAmountUsd?: number;
+        };
+
+        const result = await updateAutoTopUpSettings(c.env, user.id, {
+            enabled: body.enabled === true,
+            thresholdPollen: Number(body.thresholdPollen),
+            packAmountUsd: Number(body.packAmountUsd),
+        });
+
+        if (!result.ok) {
+            return c.json({ error: result.error }, result.status);
+        }
+
+        if (result.overview.autoTopUp.enabled) {
+            c.executionCtx.waitUntil(processAutoTopUpForUser(c.env, user.id));
+        }
+
+        return c.json(result.overview);
+    })
+
+    /**
+     * POST /api/stripe/auto-top-up/trigger
+     * Internal endpoint called by gen after billing deductions.
+     */
+    .post("/auto-top-up/trigger", async (c) => {
+        if (!isInternalRequest(c.req.raw, c.env)) {
+            return c.json({ error: "Unauthorized" }, 401);
+        }
+
+        const body = (await c.req.json().catch(() => ({}))) as {
+            userId?: string;
+        };
+        if (!body.userId) {
+            return c.json({ error: "Missing userId" }, 400);
+        }
+
+        return c.json(await processAutoTopUpForUser(c.env, body.userId));
     });
+
+async function requireSessionUser(c: Context<Env>) {
+    const auth = createAuth(c.env, c.executionCtx);
+    const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+    });
+
+    if (!session?.user?.id) {
+        throw new HTTPException(401, {
+            message: "Authentication required",
+        });
+    }
+
+    return session.user;
+}
+
+function isInternalRequest(request: Request, env: CloudflareBindings): boolean {
+    const header = request.headers.get("Authorization") ?? "";
+    return header === `Bearer ${env.PLN_ENTER_TOKEN}`;
+}

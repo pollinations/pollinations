@@ -6,12 +6,14 @@ import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
+import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
     tier?: string;
+    billingState?: BillingState | null;
 };
 
 type GaugeSegmentProps = {
@@ -76,6 +78,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
     tier = "spore",
+    billingState = null,
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const tierEmoji = getTierEmoji(tier);
@@ -208,6 +211,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     </div>
                 </Card>
             </div>
+            <AutoTopUpPanel
+                initialBillingState={billingState}
+                paidBalance={displayPaid}
+            />
             <div className="mt-4 space-y-3 text-sm text-amber-900">
                 <p className="font-medium">
                     💳 Want to pay with a different method?{" "}

@@ -14,6 +14,7 @@ import { test as base, expect } from "vitest";
 import { ensureConfigured } from "@/logger.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockPolar } from "./mocks/polar.ts";
+import { createMockStripe } from "./mocks/stripe.ts";
 
 const createAuthClientInstance = () =>
     createAuthClient({
@@ -29,6 +30,7 @@ const createMocks = () => ({
     polar: createMockPolar(),
     tinybird: createMockTinybird(),
     github: createMockGithub(),
+    stripe: createMockStripe(),
 });
 
 type Mocks = ReturnType<typeof createMocks>;

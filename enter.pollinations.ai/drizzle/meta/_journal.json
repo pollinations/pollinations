@@ -148,6 +148,13 @@
       "when": 1777418896875,
       "tag": "0020_migrate-appurl-to-redirect-uris",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1777476932532,
+      "tag": "0021_stripe_portal_auto_top_up",
+      "breakpoints": true
     }
   ]
 }

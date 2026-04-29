@@ -86,9 +86,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 onChange={onPeriodChange}
                             />
                             <div className="flex gap-1.5 items-center">
-                                <span className="text-xs font-medium text-pink-800/75 mr-1">
-                                    Type
-                                </span>
                                 {(["requests", "pollen"] as Metric[]).map(
                                     (m) => (
                                         <TabButton

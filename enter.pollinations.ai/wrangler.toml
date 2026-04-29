@@ -32,15 +32,6 @@ binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 remote = true
 
-[[durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-script_name = "pollinations-enter"
-
-[[migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
-
 [vars]
 ENVIRONMENT = "development"
 CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
@@ -80,11 +71,6 @@ bucket_name = "pollinations-images"
 [[env.local.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
-
-[[env.local.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-script_name = "pollinations-enter"
 
 [env.local.vars]
 ENVIRONMENT = "local"
@@ -145,13 +131,9 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.production.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
 [[env.production.migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
+tag = "remove-pollen-rate-limiter"
+deleted_classes = ["PollenRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
@@ -207,13 +189,9 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.staging.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
 [[env.staging.migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
+tag = "remove-pollen-rate-limiter"
+deleted_classes = ["PollenRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -260,14 +238,6 @@ remote = true
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 remote = true
-
-[[env.dev.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
-
-[[env.dev.migrations]]
-tag = "v2"
-new_classes = ["PollenRateLimiter"]
 
 [env.dev.vars]
 ENVIRONMENT = "dev"
@@ -318,10 +288,6 @@ bucket_name = "pollinations-text-enter"
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
-
-[[env.test.durable_objects.bindings]]
-name = "POLLEN_RATE_LIMITER"
-class_name = "PollenRateLimiter"
 
 [env.test.vars]
 ENVIRONMENT = "test"

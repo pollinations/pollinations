@@ -1,7 +1,7 @@
+import type { TierStatus } from "@shared/tier-config.ts";
+import { getTierColor, TIER_EMOJIS } from "@shared/tier-config.ts";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import { getTierColor, TIER_EMOJIS } from "@/tier-config.ts";
-import type { TierStatus } from "../../../tier-config";
 import { Card } from "../ui/card.tsx";
 import { Panel } from "../ui/panel.tsx";
 import { Chart } from "./chart";

@@ -78,7 +78,7 @@ function RouteComponent() {
                     </div>
                     <Button
                         as="a"
-                        href="/api/docs"
+                        href="https://gen.pollinations.ai/docs"
                         className="bg-gray-900 text-white hover:brightness-90! whitespace-nowrap"
                     >
                         API Ref.

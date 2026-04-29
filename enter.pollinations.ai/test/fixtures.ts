@@ -1,18 +1,19 @@
 import { env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
+import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    createFetchMock,
+    teardownFetchMock,
+} from "@shared/test/mocks/fetch.ts";
+import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createAuthClient } from "better-auth/client";
 import { adminClient, apiKeyClient } from "better-auth/client/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import { ensureConfigured } from "@/logger.ts";
-import { createFetchMock, teardownFetchMock } from "./mocks/fetch.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockPolar } from "./mocks/polar.ts";
-import { createMockTextService } from "./mocks/text-service.ts";
-import { createMockTinybird } from "./mocks/tinybird.ts";
-import { createMockVcr } from "./mocks/vcr.ts";
 
 const createAuthClientInstance = () =>
     createAuthClient({
@@ -28,8 +29,6 @@ const createMocks = () => ({
     polar: createMockPolar(),
     tinybird: createMockTinybird(),
     github: createMockGithub(),
-    text: createMockTextService(),
-    vcr: createMockVcr(globalThis.fetch),
 });
 
 type Mocks = ReturnType<typeof createMocks>;

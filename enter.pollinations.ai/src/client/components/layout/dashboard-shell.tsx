@@ -341,20 +341,17 @@ const Brand: FC = () => (
 );
 
 const HelpUsGrowCard: FC = () => (
-    <div className="mt-3 flex flex-col gap-2 rounded-xl border border-green-950/10 bg-white/45 p-3">
-        <div className="flex items-center gap-2 font-serif text-[15px] font-bold text-green-950">
-            <span aria-hidden="true">🌱</span>
-            <span>help us grow</span>
-        </div>
-        <p className="text-[12px] leading-snug text-green-950/70">
-            We're MIT-licensed and built in the open.
+    <div className="mt-3 flex flex-col gap-1.5 px-1">
+        <p className="font-serif text-[13px] font-bold text-green-950">
+            <span aria-hidden="true">🌱</span> help us grow — we're MIT-licensed
+            and built in the open.
         </p>
         <a
             href="https://github.com/pollinations/pollinations"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Star Pollinations on GitHub"
-            className="inline-flex items-center justify-center gap-1.5 self-start rounded-full bg-green-950 py-1 pl-2.5 pr-3 text-[12px] font-semibold text-emerald-50 transition-colors hover:bg-green-900"
+            className="inline-flex items-center gap-1.5 self-start rounded-full bg-green-950 py-1 pl-2.5 pr-3 text-[12px] font-semibold text-emerald-50 transition-colors hover:bg-green-900"
         >
             <span className="h-3.5 w-3.5">
                 <GitHubIcon />

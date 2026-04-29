@@ -198,10 +198,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
 }) => {
     return (
         <aside
-            className="flex h-full min-h-0 flex-col gap-1 px-4 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
+            className="flex h-full min-h-0 flex-col gap-1 px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
             aria-label="Dashboard navigation"
         >
-            <div className="hidden items-center justify-between gap-2 px-2 pb-4 md:flex">
+            <div className="hidden items-center justify-between gap-1 pb-4 pl-1 md:flex">
                 <Brand />
                 <BrandSocialLinks />
             </div>
@@ -361,9 +361,9 @@ const BrandIconLink: FC<PropsWithChildren<{ href: string; label: string }>> = ({
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="flex h-6 w-6 items-center justify-center rounded-full text-green-950/70 transition-colors hover:bg-white/70 hover:text-green-950"
+        className="flex h-5 w-5 items-center justify-center rounded-full text-green-950/70 transition-colors hover:bg-white/70 hover:text-green-950"
     >
-        <span className="h-4 w-4">{children}</span>
+        <span className="h-[14px] w-[14px]">{children}</span>
     </a>
 );
 

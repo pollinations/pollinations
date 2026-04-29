@@ -1,0 +1,34 @@
+{
+  "pr_number": 10518,
+  "title": "[FEAT] Update the `pollinations_ai/ompc` package and list community version",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10518",
+  "merged_at": "2026-04-29T05:17:50Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Passing the torch",
+    "blurb": "We've officially passed the baton for the OpenCode plugin to the community! Huge shoutout to @fkom13 for building the new go-to version.",
+    "summary": "Transitioned the OpenCode plugin to a community-maintained version and updated the packages documentation.",
+    "impact": "Developers looking to integrate OpenCode will now use the community-supported plugin, streamlining our core packages.",
+    "keywords": [
+      "community",
+      "opencode",
+      "plugin",
+      "packages",
+      "docs"
+    ],
+    "visual_concept": "Polly the bee handing a glowing package or code-plant to a community member (represented by the Monitor Robot), symbolizing the handoff of the OpenCode plugin to the community.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing lime green (#ecf874) wrapped package to a chunky pixel robot with a CRT monitor head. They are standing in a digital garden with small code-plants sprouting. Soft pastel gradient background with lavender and peach. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-29/PR-10518.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot handing a glowing lime green (#ecf874) wrapped package to a chunky pixel robot with a CRT monitor head. They are standing in a digital garden with small code-plants sprouting. Soft pastel gradient background with lavender and peach. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-29T05:19:01.388024+00:00"
+}

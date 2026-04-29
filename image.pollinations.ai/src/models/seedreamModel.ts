@@ -254,12 +254,17 @@ async function generateWithSeedream(
                     `Error processing reference image ${i + 1}:`,
                     error.message,
                 );
-                // Continue with other images
+                // User-supplied URL failure is client error — surface as 400.
+                if (error instanceof HttpError) throw error;
+                // Continue with other images on non-HTTP errors
             }
         }
 
         if (processedImages.length === 0) {
-            throw new Error("Failed to download any reference images");
+            throw new HttpError(
+                "Failed to download any reference images",
+                400,
+            );
         }
 
         // For single image, pass as string; for multiple images, pass as array

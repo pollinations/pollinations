@@ -121,8 +121,11 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
                 >
-                    <div className="flex shrink-0 items-center justify-between border-b border-green-950/10 px-4 py-3">
-                        <Brand />
+                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-green-950/10 px-4 py-3">
+                        <div className="flex items-center gap-2">
+                            <Brand />
+                            <BrandSocialLinks />
+                        </div>
                         <button
                             type="button"
                             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
@@ -198,8 +201,9 @@ const DashboardRail: FC<DashboardRailProps> = ({
             className="flex h-full min-h-0 flex-col gap-1 px-4 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
             aria-label="Dashboard navigation"
         >
-            <div className="hidden px-2 pb-4 md:block">
+            <div className="hidden items-center justify-between gap-2 px-2 pb-4 md:flex">
                 <Brand />
+                <BrandSocialLinks />
             </div>
             <nav className="flex flex-col gap-1">
                 {DASHBOARD_NAV_ITEMS.map((item) => (
@@ -233,18 +237,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             />
                         </svg>
                     </a>
-                    <SidebarExternalLink href="https://discord.com/channels/885844321461485618/1432378056126894343">
-                        <span className="h-4 w-4 shrink-0">
-                            <DiscordIcon />
-                        </span>
-                        #pollen-beta
-                    </SidebarExternalLink>
-                    <SidebarExternalLink href="https://github.com/pollinations/pollinations/issues">
-                        <span className="h-4 w-4 shrink-0">
-                            <GitHubIcon />
-                        </span>
-                        Report an issue
-                    </SidebarExternalLink>
                 </div>
             </nav>
             <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
@@ -297,34 +289,6 @@ const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
     );
 };
 
-const SidebarExternalLink: FC<PropsWithChildren<{ href: string }>> = ({
-    href,
-    children,
-}) => (
-    <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-[15px] font-medium text-gray-800 transition-colors hover:bg-white/60 hover:text-gray-950 focus:outline-none focus-visible:bg-white/60"
-    >
-        <span className="flex min-w-0 items-center gap-1.5">{children}</span>
-        <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4 shrink-0 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-        >
-            <path
-                d="M7 17 17 7M9 7h8v8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </svg>
-    </a>
-);
-
 const MobileHeader: FC<{ onOpen: () => void }> = ({ onOpen }) => {
     return (
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-green-950/10 bg-emerald-100 px-4 py-3 md:hidden">
@@ -370,6 +334,39 @@ const Brand: FC = () => (
     </a>
 );
 
+const BrandSocialLinks: FC = () => (
+    <div className="flex items-center gap-1">
+        <BrandIconLink
+            href="https://discord.gg/pollinations-ai-885844321461485618"
+            label="Discord community"
+        >
+            <DiscordIcon />
+        </BrandIconLink>
+        <BrandIconLink
+            href="https://github.com/pollinations/pollinations"
+            label="Pollinations on GitHub"
+        >
+            <GitHubIcon />
+        </BrandIconLink>
+    </div>
+);
+
+const BrandIconLink: FC<PropsWithChildren<{ href: string; label: string }>> = ({
+    href,
+    label,
+    children,
+}) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        className="flex h-7 w-7 items-center justify-center rounded-full text-green-950/70 transition-colors hover:bg-white/70 hover:text-green-950"
+    >
+        <span className="h-4 w-4">{children}</span>
+    </a>
+);
+
 const AccountMenuLinks: FC = () => (
     <>
         <div className="flex flex-col gap-1">
@@ -379,10 +376,22 @@ const AccountMenuLinks: FC = () => (
                 icon={<DiscordIcon />}
             />
             <AccountIconLink
+                href="https://discord.com/channels/885844321461485618/1432378056126894343"
+                label="#pollen-beta"
+                icon={<DiscordIcon />}
+                ariaLabel="#pollen-beta Discord channel"
+            />
+            <AccountIconLink
                 href="https://github.com/pollinations/pollinations"
                 label="OSS repository"
                 icon={<GitHubIcon />}
                 ariaLabel="Pollinations GitHub repository"
+            />
+            <AccountIconLink
+                href="https://github.com/pollinations/pollinations/issues"
+                label="Report an issue"
+                icon={<GitHubIcon />}
+                ariaLabel="Report an issue on GitHub"
             />
         </div>
     </>

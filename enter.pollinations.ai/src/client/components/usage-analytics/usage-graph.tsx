@@ -72,15 +72,14 @@ export const UsageGraph: FC<UsageGraphProps> = ({
 
     return (
         <div className="flex flex-col gap-6">
-            <DashboardSection title="Activity" theme="pink" framed>
+            <DashboardSection
+                title="Activity"
+                theme="pink"
+                framed
+                action={action}
+            >
                 <div className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <PeriodPicker
-                            value={period}
-                            onChange={onPeriodChange}
-                        />
-                        {action}
-                    </div>
+                    <PeriodPicker value={period} onChange={onPeriodChange} />
 
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex gap-1.5 items-center">

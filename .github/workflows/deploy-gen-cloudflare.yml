@@ -33,6 +33,15 @@ jobs:
       - name: Typecheck
         run: npm run typecheck --workspace pollinations-gen
 
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v2
+
+      - name: Push generation secrets
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run push-secrets:production --workspace pollinations-gen
+
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

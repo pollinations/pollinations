@@ -9,7 +9,7 @@ set -e
 # Includes: upstream vulnerability fixes, forward-header loop prevention, and Gemini/Vertex additions
 # PR: https://github.com/pollinations/gateway/pull/5
 PORTKEY_REPO="https://github.com/pollinations/gateway.git"
-PORTKEY_COMMIT="${PORTKEY_COMMIT:-0a4297613d67fa09109c4295942c1a2cad125226}"  # v1.15.2 sync + fork patches
+PORTKEY_COMMIT="${PORTKEY_COMMIT:-c0de03381d2aad52045b405ac21aef1972cd9d8e}"  # v1.15.2 sync + fork patches (merge commit on main)
 CLONE_DIR="/tmp/portkey-gateway-$$"
 ENVIRONMENT="${PORTKEY_ENV:-production}"
 

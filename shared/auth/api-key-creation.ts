@@ -2,8 +2,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
-import type { createAuth } from "../auth.ts";
-import { sanitizeAuthorizeAccountPermissions } from "../client/lib/authorize-config.ts";
+import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
@@ -18,7 +17,7 @@ export type CallerMetadata = {
 };
 
 type CreateApiKeyForUserInput = {
-    authClient: ReturnType<typeof createAuth>;
+    authClient: CreateApiKeyAuthClient;
     dbBinding: D1Database;
     userId: string;
     name: string;
@@ -30,6 +29,27 @@ type CreateApiKeyForUserInput = {
     metadata?: CallerMetadata;
     allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
+};
+
+type CreateApiKeyAuthClient = {
+    api: {
+        createApiKey: (args: {
+            body: {
+                name: string;
+                prefix: string;
+                userId: string;
+                expiresIn?: number;
+                metadata?: Record<string, unknown>;
+                permissions?: Record<string, string[]>;
+            };
+        }) => Promise<{
+            id?: string;
+            key?: string;
+            name?: string | null;
+            start?: string | null;
+            expiresAt?: Date | null;
+        }>;
+    };
 };
 
 export function validateAppUrlFormat(appUrl: string): void {

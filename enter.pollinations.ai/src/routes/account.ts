@@ -1,3 +1,4 @@
+import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
@@ -13,7 +14,6 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
-import { createApiKeyForUser } from "./api-key-creation.ts";
 import { parseMetadata } from "./metadata-utils.ts";
 
 // Calculate next tier refill time (null for tiers with no refill).

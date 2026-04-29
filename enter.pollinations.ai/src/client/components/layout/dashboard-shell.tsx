@@ -243,7 +243,6 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         </svg>
                     </a>
                 </div>
-                <HelpUsGrowCard />
             </nav>
             <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
                 {accountArea ??
@@ -338,26 +337,6 @@ const Brand: FC = () => (
             className="h-10 w-auto"
         />
     </a>
-);
-
-const HelpUsGrowCard: FC = () => (
-    <div className="mt-3 flex items-center gap-2 px-1">
-        <a
-            href="https://github.com/pollinations/pollinations"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Star Pollinations on GitHub"
-            className="inline-flex items-center gap-1.5 self-start rounded-full bg-green-950 py-1 pl-2.5 pr-3 text-[12px] font-semibold text-emerald-50 transition-colors hover:bg-green-900"
-        >
-            <span className="h-3.5 w-3.5">
-                <GitHubIcon />
-            </span>
-            <span>star us</span>
-            <span className="border-l border-emerald-50/30 pl-1.5 font-mono text-[11px] text-emerald-50/70">
-                4.4k
-            </span>
-        </a>
-    </div>
 );
 
 const BrandSocialChips: FC = () => (

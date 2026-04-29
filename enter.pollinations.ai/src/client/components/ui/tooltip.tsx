@@ -1,41 +1,38 @@
-import { type FC, type ReactNode, useRef, useState } from "react";
+import {
+    type FC,
+    type MouseEvent,
+    type ReactNode,
+    useRef,
+    useState,
+} from "react";
 
 type TooltipProps = {
     children: ReactNode;
     content: ReactNode;
     onClick?: () => void;
+    triggerAs?: "button" | "span";
 };
 
-export const Tooltip: FC<TooltipProps> = ({ children, content, onClick }) => {
+export const Tooltip: FC<TooltipProps> = ({
+    children,
+    content,
+    onClick,
+    triggerAs = "button",
+}) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [mobileTop, setMobileTop] = useState(0);
-    const buttonRef = useRef<HTMLButtonElement>(null);
+    const triggerRef = useRef<HTMLElement | null>(null);
 
     const updateMobilePosition = () => {
-        if (buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
+        if (triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
             setMobileTop(rect.bottom + 4);
         }
     };
 
-    return (
-        <button
-            ref={buttonRef}
-            type="button"
-            className="relative cursor-default text-left inline-flex items-center"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            onClick={(e) => {
-                e.stopPropagation();
-                if (onClick) {
-                    onClick();
-                }
-                updateMobilePosition();
-                setShowTooltip((prev) => !prev);
-            }}
-        >
+    const contentNode = (
+        <>
             <span className="md:cursor-default cursor-pointer">{children}</span>
-            {/* Desktop: positioned relative to trigger */}
             <span
                 className={`${
                     showTooltip ? "visible opacity-100" : "invisible opacity-0"
@@ -43,7 +40,6 @@ export const Tooltip: FC<TooltipProps> = ({ children, content, onClick }) => {
             >
                 {content}
             </span>
-            {/* Mobile: horizontally centered on screen, vertically below trigger */}
             <span
                 style={{ top: mobileTop }}
                 className={`${
@@ -52,6 +48,48 @@ export const Tooltip: FC<TooltipProps> = ({ children, content, onClick }) => {
             >
                 {content}
             </span>
+        </>
+    );
+
+    const sharedProps = {
+        className: "relative cursor-default text-left inline-flex items-center",
+        onMouseEnter: () => setShowTooltip(true),
+        onMouseLeave: () => setShowTooltip(false),
+        onClick: (e: MouseEvent) => {
+            e.stopPropagation();
+            if (onClick) {
+                onClick();
+            }
+            updateMobilePosition();
+            setShowTooltip((prev) => !prev);
+        },
+    };
+
+    if (triggerAs === "span") {
+        return (
+            <span
+                ref={(node) => {
+                    triggerRef.current = node;
+                }}
+                {...sharedProps}
+            >
+                {contentNode}
+            </span>
+        );
+    }
+
+    return (
+        <button
+            ref={(node) => {
+                triggerRef.current = node;
+            }}
+            type="button"
+            className="relative cursor-default text-left inline-flex items-center"
+            onMouseEnter={sharedProps.onMouseEnter}
+            onMouseLeave={sharedProps.onMouseLeave}
+            onClick={sharedProps.onClick}
+        >
+            {contentNode}
         </button>
     );
 };

@@ -7,9 +7,11 @@ import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 export type ApiKeyType = "secret" | "publishable";
 
 export type CallerMetadata = {
-    appUrl?: string;
+    redirectUris?: string[];
+    redirectUri?: string;
     redirectOrigin?: string;
     deviceUserCode?: string;
+    requestedClientId?: string;
     clientId?: string;
     createdForUserId?: string;
     createdForApp?: string;
@@ -49,38 +51,230 @@ type CreateApiKeyAuthClient = {
             start?: string | null;
             expiresAt?: Date | null;
         }>;
+        verifyApiKey: (args: { body: { key: string } }) => Promise<{
+            valid: boolean;
+            key?: { id?: string | null } | null;
+        }>;
     };
 };
 
-export function validateAppUrlFormat(appUrl: string): void {
-    if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(appUrl)) {
+type VerifiedClientAttribution = {
+    clientId: string;
+    createdForUserId: string;
+    createdForApp: string;
+};
+
+export function validateRedirectUriFormat(redirectUri: string): void {
+    if (!/^[a-z][a-z0-9+\-.]*:\/\/.+/.test(redirectUri)) {
         throw new HTTPException(400, {
             message: "Must be a valid URL with a scheme (e.g. https://...)",
         });
     }
+    let parsed: URL;
+    try {
+        parsed = new URL(redirectUri);
+    } catch {
+        throw new HTTPException(400, {
+            message: "Must be a valid URL with a scheme (e.g. https://...)",
+        });
+    }
+    if (parsed.hash) {
+        throw new HTTPException(400, {
+            message: "Redirect URI must not include a fragment",
+        });
+    }
+}
+
+function parseMetadata(
+    raw: string | null | undefined,
+): Record<string, unknown> {
+    if (!raw) return {};
+    try {
+        let parsed = JSON.parse(raw);
+        if (typeof parsed === "string") parsed = JSON.parse(parsed);
+        return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+        return {};
+    }
+}
+
+function getRedirectUris(meta: Record<string, unknown>): string[] {
+    const list = meta.redirectUris;
+    if (Array.isArray(list)) {
+        return list.filter((v): v is string => typeof v === "string" && !!v);
+    }
+    return [];
+}
+
+function cleanRedirectUris(redirectUris: string[]): string[] {
+    return redirectUris
+        .map((uri) => uri.trim())
+        .filter((uri): uri is string => uri.length > 0);
+}
+
+function rejectInvalidClientId(): never {
+    throw new HTTPException(400, {
+        message: "Invalid client_id",
+    });
+}
+
+function redirectUriMatchesAllowlist(
+    uri: string,
+    allowlist: readonly string[] | null | undefined,
+): boolean {
+    if (!allowlist?.length) return false;
+    const incoming = safeParse(uri);
+    if (!incoming) return false;
+    return allowlist.some((entry) => matchesRedirectEntry(incoming, entry));
+}
+
+function matchesRedirectEntry(incoming: URL, entryUrl: string): boolean {
+    const entry = safeParse(entryUrl);
+    if (!entry) return false;
+    if (incoming.hash || entry.hash) return false;
+    if (incoming.protocol !== entry.protocol) return false;
+    if (
+        normalizeHostname(incoming.hostname) !==
+        normalizeHostname(entry.hostname)
+    ) {
+        return false;
+    }
+    if (incoming.pathname !== entry.pathname) return false;
+    if (incoming.search !== entry.search) return false;
+    if (isLoopbackHostname(entry.hostname)) return true;
+    return incoming.port === entry.port;
+}
+
+function safeParse(url: string): URL | null {
+    try {
+        return new URL(url);
+    } catch {
+        return null;
+    }
+}
+
+function normalizeHostname(hostname: string): string {
+    return hostname
+        .toLowerCase()
+        .replace(/^\[(.*)\]$/, "$1")
+        .replace(/\.$/, "");
+}
+
+function isLoopbackHostname(hostname: string): boolean {
+    const h = normalizeHostname(hostname);
+    if (h === "localhost" || h === "0.0.0.0" || h === "::1") return true;
+    if (/^127\.\d+\.\d+\.\d+$/.test(h)) return true;
+    return false;
 }
 
 // Caller-provided metadata is restricted to a typed allowlist. Server-controlled
-// fields like keyType / createdVia / plaintextKey can never be set or overridden
-// by callers, even via /api/api-keys metadata patches.
+// fields like keyType / createdVia / plaintextKey / app attribution can never
+// be set or overridden by callers, even via /api/api-keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
+    attribution: VerifiedClientAttribution | null,
 ): Record<string, unknown> {
     if (!metadata) return {};
     const out: Record<string, unknown> = {};
-    if (typeof metadata.appUrl === "string") out.appUrl = metadata.appUrl;
+    if (Array.isArray(metadata.redirectUris)) {
+        out.redirectUris = cleanRedirectUris(metadata.redirectUris);
+    }
     if (typeof metadata.redirectOrigin === "string")
         out.redirectOrigin = metadata.redirectOrigin;
     if (typeof metadata.deviceUserCode === "string")
         out.deviceUserCode = metadata.deviceUserCode;
-    if (typeof metadata.clientId === "string") out.clientId = metadata.clientId;
-    if (typeof metadata.createdForUserId === "string")
-        out.createdForUserId = metadata.createdForUserId;
-    if (typeof metadata.createdForApp === "string")
-        out.createdForApp = metadata.createdForApp;
     if (typeof metadata.description === "string")
         out.description = metadata.description;
+    if (attribution) {
+        out.clientId = attribution.clientId;
+        out.createdForUserId = attribution.createdForUserId;
+        out.createdForApp = attribution.createdForApp;
+    }
     return out;
+}
+
+async function validateClientRedirectBinding(
+    authClient: CreateApiKeyAuthClient,
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    metadata: CallerMetadata | undefined,
+): Promise<VerifiedClientAttribution | null> {
+    if (!metadata) return null;
+    const requestedClientId = metadata.requestedClientId;
+    const storedClientId = metadata.clientId;
+
+    if (
+        typeof requestedClientId !== "string" &&
+        typeof storedClientId !== "string"
+    ) {
+        return null;
+    }
+
+    if (
+        typeof requestedClientId !== "string" ||
+        !requestedClientId.startsWith("pk_")
+    ) {
+        rejectInvalidClientId();
+    }
+
+    const result = await authClient.api.verifyApiKey({
+        body: { key: requestedClientId },
+    });
+    if (!result.valid || !result.key?.id) {
+        rejectInvalidClientId();
+    }
+    const clientKeyId = result.key.id;
+    if (typeof storedClientId === "string" && storedClientId !== clientKeyId) {
+        throw new HTTPException(400, {
+            message: "client_id mismatch",
+        });
+    }
+
+    const clientKey = await db.query.apikey.findFirst({
+        where: eq(schema.apikey.id, clientKeyId),
+    });
+    if (!clientKey || clientKey.prefix !== "pk") {
+        rejectInvalidClientId();
+    }
+    const attribution = {
+        clientId: clientKey.id,
+        createdForUserId: clientKey.userId,
+        createdForApp: clientKey.name ?? "Unknown app",
+    };
+
+    if (typeof metadata.deviceUserCode === "string") {
+        const device = await db.query.deviceCode.findFirst({
+            where: eq(
+                schema.deviceCode.userCode,
+                metadata.deviceUserCode.toUpperCase(),
+            ),
+        });
+        if (
+            !device ||
+            device.status !== "pending" ||
+            device.expiresAt < new Date() ||
+            device.clientId !== requestedClientId
+        ) {
+            throw new HTTPException(400, {
+                message: "client_id mismatch",
+            });
+        }
+        return attribution;
+    }
+
+    if (typeof metadata.redirectUri !== "string") {
+        throw new HTTPException(400, {
+            message: "redirect_uri is required when client_id is provided",
+        });
+    }
+    validateRedirectUriFormat(metadata.redirectUri);
+
+    const allowlist = getRedirectUris(parseMetadata(clientKey.metadata));
+    if (!redirectUriMatchesAllowlist(metadata.redirectUri, allowlist)) {
+        throw new HTTPException(400, {
+            message: "redirect_uri not in allowlist for this client_id",
+        });
+    }
+    return attribution;
 }
 
 export async function createApiKeyForUser({
@@ -98,9 +292,17 @@ export async function createApiKeyForUser({
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
-    const callerMetadata = pickCallerMetadata(metadata);
-    if (typeof callerMetadata.appUrl === "string") {
-        validateAppUrlFormat(callerMetadata.appUrl);
+    const attribution = await validateClientRedirectBinding(
+        authClient,
+        db,
+        metadata,
+    );
+
+    const callerMetadata = pickCallerMetadata(metadata, attribution);
+    if (Array.isArray(callerMetadata.redirectUris)) {
+        for (const uri of callerMetadata.redirectUris as string[]) {
+            validateRedirectUriFormat(uri);
+        }
     }
 
     const sanitizedAccountPerms =

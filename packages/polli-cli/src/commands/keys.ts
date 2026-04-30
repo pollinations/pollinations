@@ -37,6 +37,7 @@ interface CreateKeyResponse {
     expiresAt: string | null;
     permissions: { models?: string[]; account?: string[] } | null;
     pollenBudget: number | null;
+    metadata?: Record<string, unknown> | null;
 }
 
 interface SingleKeyInfo {
@@ -165,6 +166,10 @@ const create = new Command("create")
     .option("--models <models...>", "Restrict to specific model IDs")
     .option("--budget <pollen>", "Pollen budget cap")
     .option(
+        "--redirect-uri <uri...>",
+        "Allowed BYOP redirect URI(s) for publishable app keys",
+    )
+    .option(
         "--permissions <perms...>",
         'Account permissions (e.g. profile usage). "keys" is auto-stripped.',
     )
@@ -176,6 +181,10 @@ const create = new Command("create")
                 name: opts.name,
                 type: opts.type,
             };
+            if (opts.redirectUri && opts.type !== "publishable") {
+                printError("--redirect-uri requires --type publishable");
+                process.exit(1);
+            }
             if (opts.expiresIn !== undefined)
                 body.expiresIn = Number(opts.expiresIn);
             if (opts.models) body.allowedModels = opts.models;
@@ -188,6 +197,7 @@ const create = new Command("create")
                 body.pollenBudget = budget;
             }
             if (opts.permissions) body.accountPermissions = opts.permissions;
+            if (opts.redirectUri) body.redirectUris = opts.redirectUri;
 
             const created = await gen<CreateKeyResponse>("/account/keys", {
                 apiKey: key,
@@ -210,6 +220,7 @@ const create = new Command("create")
                 expires: created.expiresAt ?? "never",
                 permissions: created.permissions,
                 budget: created.pollenBudget ?? "unlimited",
+                redirectUris: created.metadata?.redirectUris,
             });
         } catch (err) {
             printError(

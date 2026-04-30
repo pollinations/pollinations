@@ -4,7 +4,7 @@ import { HttpError } from "../httpError.ts";
 import { getScaledDimensions } from "../models.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 
 // Logger
 const logOps = debug("pollinations:seedream:ops");
@@ -239,8 +239,8 @@ async function generateWithSeedream(
                 );
 
                 // Download and detect MIME type from magic bytes
-                const { base64, mimeType } =
-                    await downloadImageAsBase64(imageUrl);
+                const { buffer, mimeType } = await downloadUserImage(imageUrl);
+                const base64 = buffer.toString("base64");
 
                 // Create data URL format: data:image/jpeg;base64,<base64data>
                 const dataUrl = `data:${mimeType};base64,${base64}`;
@@ -254,12 +254,14 @@ async function generateWithSeedream(
                     `Error processing reference image ${i + 1}:`,
                     error.message,
                 );
-                // Continue with other images
+                // User-supplied URL failure is client error — surface as 400.
+                if (error instanceof HttpError) throw error;
+                // Continue with other images on non-HTTP errors
             }
         }
 
         if (processedImages.length === 0) {
-            throw new Error("Failed to download any reference images");
+            throw new HttpError("Failed to download any reference images", 400);
         }
 
         // For single image, pass as string; for multiple images, pass as array

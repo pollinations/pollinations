@@ -9,6 +9,7 @@ import {
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
@@ -18,6 +19,7 @@ type ApiKeyDialogProps = {
     onComplete: () => void;
     triggerLabel?: string;
     triggerColor?: "blue" | "green" | "purple" | "amber";
+    triggerClassName?: string;
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only name + URL. */
     simplified?: boolean;
 };
@@ -27,6 +29,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onComplete,
     triggerLabel = "Create new key",
     triggerColor = "blue",
+    triggerClassName,
     simplified = false,
 }) => {
     function generateFunName(): string {
@@ -45,7 +48,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const keyType: "secret" | "publishable" = simplified
         ? "publishable"
         : "secret";
-    const [appUrl, setAppUrl] = useState("");
+    const [redirectUris, setRedirectUris] = useState<string[]>([]);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -75,7 +78,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 description,
                 keyType,
                 ...keyPermissions.permissions,
-                ...(isPublishable && appUrl && { appUrl }),
+                ...(isPublishable &&
+                    redirectUris.filter((v) => v.trim()).length > 0 && {
+                        redirectUris: redirectUris
+                            .map((v) => v.trim())
+                            .filter(Boolean),
+                    }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -108,8 +116,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         !simplified &&
         Array.isArray(allowedModels) &&
         allowedModels.length === 0;
+    const isMissingRedirectUris =
+        simplified && redirectUris.filter((v) => v.trim()).length === 0;
     const isCreateDisabled =
-        !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
+        !createdKey &&
+        (!name.trim() ||
+            isSubmitting ||
+            noModelsSelected ||
+            isMissingRedirectUris);
     const keyTypeStyles =
         keyType === "publishable"
             ? {
@@ -130,6 +144,24 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         return "Create";
     }
 
+    const createDisabledReason =
+        !createdKey && noModelsSelected
+            ? "Select at least one model"
+            : !createdKey && isMissingRedirectUris
+              ? "Add at least one redirect URI"
+              : undefined;
+
+    const submitButton = (
+        <Button
+            type={createdKey ? "button" : "submit"}
+            onClick={createdKey ? handleCopyAndClose : undefined}
+            className="disabled:opacity-50"
+            disabled={isCreateDisabled}
+        >
+            {getButtonText()}
+        </Button>
+    );
+
     return (
         <Dialog.Root
             open={isOpen}
@@ -139,7 +171,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setCopied(false);
                     setError(null);
                     setName(generateFunName());
-                    setAppUrl("");
+                    setRedirectUris([]);
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
                         month: "2-digit",
@@ -150,8 +182,18 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 setIsOpen(open);
             }}
         >
-            <Dialog.Trigger>
-                <Button as="div" color={triggerColor} weight="light">
+            <Dialog.Trigger
+                className={cn(
+                    "inline-flex shrink-0 self-start whitespace-nowrap",
+                    triggerClassName,
+                )}
+            >
+                <Button
+                    as="div"
+                    color={triggerColor}
+                    weight="light"
+                    className="shrink-0 whitespace-nowrap"
+                >
                     {triggerLabel}
                 </Button>
             </Dialog.Trigger>
@@ -268,8 +310,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                             {simplified && !createdKey && (
                                 <PublishableKeySettings
-                                    appUrl={appUrl}
-                                    onAppUrlChange={setAppUrl}
+                                    redirectUris={redirectUris}
+                                    onRedirectUrisChange={setRedirectUris}
                                     disabled={isSubmitting}
                                 />
                             )}
@@ -296,26 +338,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Cancel
                                 </Button>
                             )}
-                            <span
-                                title={
-                                    noModelsSelected && !createdKey
-                                        ? "Select at least one model"
-                                        : undefined
-                                }
-                            >
-                                <Button
-                                    type={createdKey ? "button" : "submit"}
-                                    onClick={
-                                        createdKey
-                                            ? handleCopyAndClose
-                                            : undefined
-                                    }
-                                    className="disabled:opacity-50"
-                                    disabled={isCreateDisabled}
+                            {createDisabledReason ? (
+                                <Tooltip
+                                    triggerAs="span"
+                                    content={createDisabledReason}
+                                    className="inline-flex"
                                 >
-                                    {getButtonText()}
-                                </Button>
-                            </span>
+                                    {submitButton}
+                                </Tooltip>
+                            ) : (
+                                submitButton
+                            )}
                         </div>
                     </form>
                 </Dialog.Content>

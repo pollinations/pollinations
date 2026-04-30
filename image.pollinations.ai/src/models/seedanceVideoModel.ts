@@ -4,7 +4,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 // Logger
@@ -164,10 +164,12 @@ async function generateSeedanceVideo(
         );
 
         try {
-            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+            const { buffer, mimeType } = await downloadUserImage(imageUrl);
             requestBody.content.push({
                 type: "image_url",
-                image_url: { url: `data:${mimeType};base64,${base64}` },
+                image_url: {
+                    url: `data:${mimeType};base64,${buffer.toString("base64")}`,
+                },
                 role: "first_frame",
             });
             logOps("Image processed successfully");

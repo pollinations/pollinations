@@ -607,7 +607,7 @@ https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL&app_key=pk_you
 
 ### App Registration
 
-Register a `pk_` key at enter.pollinations.ai with **App URL** + **BYOP** toggle enabled. The key name becomes the app display name on the consent screen.
+Register a `pk_` key at enter.pollinations.ai with at least one **Redirect URI** + **BYOP** toggle enabled. The key name becomes the app display name on the consent screen.
 
 ### Example
 
@@ -625,7 +625,7 @@ https://myapp.com/callback#api_key=sk_xxxxx
 `GET /api/app-lookup` — resolves app attribution (no auth required):
 - `?app_key=pk_xxx` (or `?client_id=pk_xxx`) — direct key lookup; returns `{ found: false }` if absent
 
-URL-based lookup (matching `redirect_url` against registered `appUrl` values) was removed — identity is derived from `client_id` only, never from the redirect URL. See PR #10447.
+URL-based identity lookup was removed — identity is derived from `client_id` only, never from the redirect URL. When `client_id` is present, the requested `redirect_uri` must exactly match one registered redirect URI. See PR #10447.
 
 ---
 

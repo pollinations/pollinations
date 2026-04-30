@@ -72,10 +72,10 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 📈 <strong>Grow Your Tier:</strong> For developers building with
                 pollinations.ai. Level up to earn more pollen.
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {/* Spore */}
                 <div
-                    className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.spore].bg} ${currentTier === "spore" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.spore].ring}` : ""}`}
+                    className={`min-w-0 rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.spore].bg} ${currentTier === "spore" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.spore].ring}` : ""}`}
                 >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.spore}</span>
@@ -92,7 +92,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
 
                 {/* Seed */}
                 <div
-                    className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.seed].bg} ${currentTier === "seed" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.seed].ring}` : ""}`}
+                    className={`min-w-0 rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.seed].bg} ${currentTier === "seed" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.seed].ring}` : ""}`}
                 >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.seed}</span>
@@ -105,7 +105,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                         <p className={requirementLabelStyle}>To unlock</p>
                         <p className="text-xs text-gray-500">
                             <Tooltip content={<SeedTooltipContent />}>
-                                <span className="underline decoration-dotted cursor-help">
+                                <span className="cursor-default underline decoration-dotted">
                                     7+ dev points
                                 </span>
                             </Tooltip>
@@ -118,7 +118,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
 
                 {/* Flower */}
                 <div
-                    className={`rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.flower].bg} ${currentTier === "flower" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.flower].ring}` : ""}`}
+                    className={`min-w-0 rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.flower].bg} ${currentTier === "flower" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.flower].ring}` : ""}`}
                 >
                     <div className="flex items-center gap-1.5">
                         <span>{TIER_EMOJIS.flower}</span>

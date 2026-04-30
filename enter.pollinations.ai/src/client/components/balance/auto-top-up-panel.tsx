@@ -1,15 +1,16 @@
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { apiClient } from "@/client/api.ts";
-import {
-    formatPollenPackValue,
-    POLLEN_PACKS,
-    type PollenPack,
-} from "@/pollen-packs.ts";
+import { POLLEN_PACKS, type PollenPack } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
+import {
+    PollenPackBonusPill,
+    PollenPackReadout,
+    PollenPackSlider,
+} from "./pollen-pack-controls.tsx";
 
 export type BillingState = {
     autoTopUp: {
@@ -44,6 +45,7 @@ type AutoTopUpPanelProps = {
 const AUTO_TOP_UP_PACK_MIN = 10;
 const AUTO_TOP_UP_PACK_MAX = 100;
 const DEFAULT_PACK_AMOUNT_USD = 20;
+const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";
 const AUTO_TOP_UP_TOOLTIP =
     "Auto top-up charges your Stripe default payment method for the selected pollen pack when purchased pollen is at or below 5 pollen.";
 const AUTO_TOP_UP_PACKS = POLLEN_PACKS.filter(
@@ -51,6 +53,13 @@ const AUTO_TOP_UP_PACKS = POLLEN_PACKS.filter(
         pack.amountUsd >= AUTO_TOP_UP_PACK_MIN &&
         pack.amountUsd <= AUTO_TOP_UP_PACK_MAX,
 );
+
+type SetupReadiness = {
+    paymentMethodReady: boolean;
+    billingDetailsReady: boolean;
+    hasSelectedPack: boolean;
+    isSaving: boolean;
+};
 
 export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
@@ -63,20 +72,25 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const [isOpeningPortal, setIsOpeningPortal] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const hasPaymentMethod = billingState?.paymentMethod.hasDefault ?? false;
-    const billingDetailsComplete =
-        billingState?.billingDetailsComplete ?? false;
-    const canEnable = hasPaymentMethod && billingDetailsComplete;
+    const paymentMethodReady = billingState?.paymentMethod.hasDefault ?? false;
+    const billingDetailsReady = billingState?.billingDetailsComplete ?? false;
     const selectedPack = AUTO_TOP_UP_PACKS.find(
         (pack) => pack.amountUsd === packAmountUsd,
     );
     const isEnabled = billingState?.autoTopUp.enabled ?? false;
-    const hasUnsavedChanges = billingState
-        ? packAmountUsd !== billingState.autoTopUp.packAmountUsd
-        : false;
+    const hasUnsavedChanges =
+        billingState !== null &&
+        packAmountUsd !== billingState.autoTopUp.packAmountUsd;
     const lastFailureTime = formatFailureTime(
         billingState?.autoTopUp.lastFailureAt ?? null,
     );
+
+    const setup: SetupReadiness = {
+        paymentMethodReady,
+        billingDetailsReady,
+        hasSelectedPack: Boolean(selectedPack),
+        isSaving,
+    };
 
     useEffect(() => {
         setBillingState(initialBillingState);
@@ -92,11 +106,15 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             const response = await apiClient.stripe.billing.portal.$post({
                 json: { flow: "default" },
             });
-            const payload = await readJsonPayload(response);
-            const portalUrl = coerceString(payload.url);
+            const payload = (await response.json().catch(() => ({}))) as {
+                url?: unknown;
+                error?: unknown;
+            };
+            const portalUrl =
+                typeof payload.url === "string" ? payload.url : null;
             if (!response.ok || !portalUrl) {
                 throw new Error(
-                    getErrorMessage(payload, "Failed to open Stripe"),
+                    extractErrorMessage(payload, "Failed to open Stripe"),
                 );
             }
             window.location.href = portalUrl;
@@ -113,15 +131,12 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         setError(null);
         try {
             const response = await apiClient.stripe["auto-top-up"].$patch({
-                json: {
-                    enabled,
-                    packAmountUsd,
-                },
+                json: { enabled, packAmountUsd },
             });
-            const payload = await readJsonPayload(response);
+            const payload = await response.json().catch(() => ({}));
             if (!response.ok) {
                 throw new Error(
-                    getErrorMessage(payload, "Failed to save auto top-up"),
+                    extractErrorMessage(payload, "Failed to save auto top-up"),
                 );
             }
             const nextBillingState = payload as BillingState;
@@ -142,263 +157,75 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 
     return (
         <div className="space-y-4">
-            <AutoTopUpActions
+            <AutoTopUpToggle
                 isEnabled={isEnabled}
-                paymentMethodReady={hasPaymentMethod}
-                billingDetailsReady={billingDetailsComplete}
-                canEnable={canEnable}
-                hasSelectedPack={Boolean(selectedPack)}
-                isSaving={isSaving}
+                setup={setup}
                 onToggle={(enabled) => saveAutoTopUp(enabled)}
             />
 
-            <DividerGroup>
-                <div className="grid gap-4">
-                    <PackSlider
-                        label="Select amount"
-                        value={packAmountUsd}
-                        onChange={setPackAmountUsd}
-                        disabled={isSaving}
-                    />
-                    <AutoTopUpSaveChanges
-                        isEnabled={isEnabled}
-                        hasUnsavedChanges={hasUnsavedChanges}
-                        paymentMethodReady={hasPaymentMethod}
-                        billingDetailsReady={billingDetailsComplete}
-                        hasSelectedPack={Boolean(selectedPack)}
-                        isSaving={isSaving}
-                        selectedPack={selectedPack}
-                        onSave={() => saveAutoTopUp(true)}
-                    />
-                </div>
-            </DividerGroup>
+            <div className={cn(DIVIDER_CLASS, "grid gap-4")}>
+                <PollenPackSlider
+                    value={packAmountUsd}
+                    onChange={setPackAmountUsd}
+                    packs={AUTO_TOP_UP_PACKS}
+                    disabled={isSaving}
+                />
+                <AutoTopUpSaveChanges
+                    isEnabled={isEnabled}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    setup={setup}
+                    selectedPack={selectedPack}
+                    onSave={() => saveAutoTopUp(true)}
+                />
+            </div>
 
-            <DividerGroup>
+            <div className={DIVIDER_CLASS}>
                 <BillingSetup
-                    paymentMethodReady={hasPaymentMethod}
+                    paymentMethodReady={paymentMethodReady}
                     paymentMethodValue={formatPaymentMethod(billingState)}
-                    billingDetailsReady={billingDetailsComplete}
+                    billingDetailsReady={billingDetailsReady}
                     billingDetailsValue={formatBillingDetails(billingState)}
                     onAction={openBillingPortal}
-                    disabled={isOpeningPortal}
                     loading={isOpeningPortal}
                 />
-            </DividerGroup>
+            </div>
 
             {billingState?.autoTopUp.lastFailure && (
-                <Notice role="alert">
+                <ErrorNotice>
                     {billingState.autoTopUp.lastFailure}
                     {lastFailureTime && (
                         <span className="block pt-1 text-red-700/75">
                             Last failed {lastFailureTime}
                         </span>
                     )}
-                </Notice>
+                </ErrorNotice>
             )}
 
-            {error && <Notice role="alert">{error}</Notice>}
+            {error && <ErrorNotice>{error}</ErrorNotice>}
         </div>
     );
 };
 
-type JsonPayload = {
-    url?: string;
-    error?: unknown;
-    message?: unknown;
-    autoTopUp?: BillingState["autoTopUp"];
-    paymentMethod?: BillingState["paymentMethod"];
-    billingDetails?: BillingState["billingDetails"];
-    billingDetailsComplete?: boolean;
-};
-
-type SliderHeaderProps = {
-    label: string;
-    displayValue?: ReactNode;
-};
-
-const SliderHeader: FC<SliderHeaderProps> = ({ label, displayValue }) => (
-    <div className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
-                <span>{label}</span>
-            </div>
-            {displayValue && (
-                <div className="min-w-0 text-right text-sm font-bold text-amber-950 tabular-nums">
-                    {displayValue}
-                </div>
-            )}
-        </div>
-    </div>
-);
-
-type PackSliderProps = {
-    label: string;
-    value: number;
-    onChange: (value: number) => void;
-    disabled?: boolean;
-};
-
-const PackSlider: FC<PackSliderProps> = ({
-    label,
-    value,
-    onChange,
-    disabled = false,
-}) => {
-    const selectedIndex = Math.max(
-        0,
-        AUTO_TOP_UP_PACKS.findIndex((pack) => pack.amountUsd === value),
-    );
-    const selectedPack =
-        AUTO_TOP_UP_PACKS[selectedIndex] ?? AUTO_TOP_UP_PACKS[0];
-    const ariaValue = selectedPack
-        ? formatPackValue(selectedPack)
-        : "Unavailable";
-    const progressPercent =
-        AUTO_TOP_UP_PACKS.length > 1
-            ? (selectedIndex / (AUTO_TOP_UP_PACKS.length - 1)) * 100
-            : 100;
-
-    return (
-        <div className="space-y-3">
-            <SliderHeader label={label} />
-            <div className="flex h-8 items-center">
-                <input
-                    type="range"
-                    min={0}
-                    max={Math.max(0, AUTO_TOP_UP_PACKS.length - 1)}
-                    step={1}
-                    value={selectedIndex}
-                    onChange={(event) => {
-                        const pack =
-                            AUTO_TOP_UP_PACKS[
-                                Number(event.currentTarget.value)
-                            ];
-                        if (pack) onChange(pack.amountUsd);
-                    }}
-                    disabled={disabled}
-                    aria-label={label}
-                    aria-valuetext={ariaValue}
-                    style={{
-                        background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${progressPercent}%, #fde68a ${progressPercent}%, #fde68a 100%)`,
-                    }}
-                    className="h-2 w-full cursor-grab appearance-none rounded-full outline-none transition active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60 [&::-moz-range-thumb]:h-[22px] [&::-moz-range-thumb]:w-[22px] [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-amber-600 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-moz-range-thumb]:transition-transform [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-7px] [&::-webkit-slider-thumb]:h-[22px] [&::-webkit-slider-thumb]:w-[22px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-amber-600 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-webkit-slider-thumb]:transition-transform hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-105"
-                />
-            </div>
-            <div className="relative -mt-1 h-4 px-[11px] text-[10px] font-semibold text-amber-700/80 tabular-nums">
-                <div className="relative h-full">
-                    {AUTO_TOP_UP_PACKS.map((pack, index) => {
-                        const labelPercent =
-                            AUTO_TOP_UP_PACKS.length > 1
-                                ? (index / (AUTO_TOP_UP_PACKS.length - 1)) * 100
-                                : 0;
-
-                        return (
-                            <span
-                                key={pack.amountUsd}
-                                style={{ left: `${labelPercent}%` }}
-                                className={cn(
-                                    "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
-                                    pack.amountUsd === selectedPack.amountUsd &&
-                                        "font-bold text-amber-900",
-                                )}
-                            >
-                                ${pack.amountUsd}
-                            </span>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-type PackValueReadoutProps = {
-    compact?: boolean;
-    pack: PollenPack;
-    showBonus?: boolean;
-};
-
-const PackValueReadout: FC<PackValueReadoutProps> = ({
-    compact = false,
-    pack,
-    showBonus = true,
-}) => {
-    const bonusPercent = getPackBonusPercent(pack);
-    const hasBonus = bonusPercent > 0;
-    const valueClass = "text-base font-bold text-amber-950";
-    const arrowClass = compact ? "text-amber-600" : "text-amber-400";
-
-    return (
-        <span className="flex flex-wrap items-center justify-end gap-2">
-            <span className="inline-flex items-baseline gap-1.5">
-                <span className={valueClass}>${pack.amountUsd}</span>
-                <span className={arrowClass}>-&gt;</span>
-                <span className={valueClass}>
-                    {formatPollenPackValue(pack.pollenGrant)} pollen
-                </span>
-            </span>
-            {showBonus && hasBonus && <PackBonusPill pack={pack} />}
-        </span>
-    );
-};
-
-type PackBonusPillProps = {
-    pack: PollenPack;
-    className?: string;
-};
-
-const PackBonusPill: FC<PackBonusPillProps> = ({ pack, className }) => {
-    const bonusPercent = getPackBonusPercent(pack);
-    if (bonusPercent <= 0) return null;
-
-    return (
-        <span className={cn("text-sm font-medium text-amber-700", className)}>
-            +{bonusPercent}% bonus
-        </span>
-    );
-};
-
-type DividerGroupProps = {
-    children: ReactNode;
-};
-
-const DividerGroup: FC<DividerGroupProps> = ({ children }) => (
-    <div className="border-t border-amber-300/70 pt-4">{children}</div>
-);
-
-type AutoTopUpActionsProps = {
+type AutoTopUpToggleProps = {
     isEnabled: boolean;
-    paymentMethodReady: boolean;
-    billingDetailsReady: boolean;
-    canEnable: boolean;
-    hasSelectedPack: boolean;
-    isSaving: boolean;
+    setup: SetupReadiness;
     onToggle: (enabled: boolean) => void;
 };
 
-const AutoTopUpActions: FC<AutoTopUpActionsProps> = ({
+const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
     isEnabled,
-    paymentMethodReady,
-    billingDetailsReady,
-    canEnable,
-    hasSelectedPack,
-    isSaving,
+    setup,
     onToggle,
 }) => {
-    const canToggleOn = canEnable && hasSelectedPack;
-    const switchDisabled = isSaving || (!isEnabled && !canToggleOn);
-    const switchDisabledReason = getSwitchDisabledReason({
-        isEnabled,
-        isSaving,
-        hasSelectedPack,
-        paymentMethodReady,
-        billingDetailsReady,
-    });
+    const switchDisabled = setup.isSaving || (!isEnabled && !canEnable(setup));
+    const disabledReason = isEnabled
+        ? null
+        : getDisabledReason(setup, "enabling auto top-up");
 
     return (
         <div className="flex min-w-0 items-center gap-3">
             <DisabledControlTooltip
-                content={switchDisabled ? switchDisabledReason : null}
+                content={switchDisabled ? disabledReason : null}
                 className="shrink-0"
             >
                 <button
@@ -413,10 +240,8 @@ const AutoTopUpActions: FC<AutoTopUpActionsProps> = ({
                     onClick={() => onToggle(!isEnabled)}
                     disabled={switchDisabled}
                     className={cn(
-                        "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60",
-                        isEnabled
-                            ? "border-amber-300 bg-amber-200"
-                            : "border-amber-300 bg-amber-100",
+                        "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border border-amber-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60",
+                        isEnabled ? "bg-amber-200" : "bg-amber-100",
                     )}
                 >
                     <span
@@ -447,10 +272,7 @@ const AutoTopUpActions: FC<AutoTopUpActionsProps> = ({
 type AutoTopUpSaveChangesProps = {
     isEnabled: boolean;
     hasUnsavedChanges: boolean;
-    paymentMethodReady: boolean;
-    billingDetailsReady: boolean;
-    hasSelectedPack: boolean;
-    isSaving: boolean;
+    setup: SetupReadiness;
     selectedPack?: PollenPack;
     onSave: () => void;
 };
@@ -458,62 +280,48 @@ type AutoTopUpSaveChangesProps = {
 const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
     isEnabled,
     hasUnsavedChanges,
-    paymentMethodReady,
-    billingDetailsReady,
-    hasSelectedPack,
-    isSaving,
+    setup,
     selectedPack,
     onSave,
 }) => {
-    const saveDisabled =
-        isSaving ||
-        !isEnabled ||
-        !paymentMethodReady ||
-        !billingDetailsReady ||
-        !hasSelectedPack ||
-        !hasUnsavedChanges;
-    const saveDisabledReason = getSaveDisabledReason({
+    const saveDisabled = !isEnabled || !canEnable(setup) || !hasUnsavedChanges;
+    const disabledReason = getSaveDisabledReason({
         isEnabled,
-        isSaving,
         hasUnsavedChanges,
-        hasSelectedPack,
-        paymentMethodReady,
-        billingDetailsReady,
+        ...setup,
     });
 
     return (
         <div className="flex flex-wrap items-center gap-2">
             <DisabledControlTooltip
-                content={saveDisabled ? saveDisabledReason : null}
+                content={saveDisabled ? disabledReason : null}
                 className="w-full sm:w-auto"
             >
-                <span className="inline-flex w-full sm:w-auto">
-                    <Button
-                        as="button"
-                        type="button"
-                        color="amber"
-                        weight="light"
-                        onClick={onSave}
-                        disabled={saveDisabled}
-                        className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-3 text-center text-sm shadow-none sm:w-fit"
-                    >
-                        <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
-                            <span className="text-base font-bold text-amber-950">
-                                Save
-                            </span>
-                            {selectedPack && (
-                                <PackValueReadout
-                                    compact
-                                    pack={selectedPack}
-                                    showBonus={false}
-                                />
-                            )}
+                <Button
+                    as="button"
+                    type="button"
+                    color="amber"
+                    weight="light"
+                    onClick={onSave}
+                    disabled={saveDisabled}
+                    className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-3 text-center text-sm shadow-none sm:w-fit"
+                >
+                    <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                        <span className="text-base font-bold text-amber-950">
+                            Save
                         </span>
-                    </Button>
-                </span>
+                        {selectedPack && (
+                            <PollenPackReadout
+                                pack={selectedPack}
+                                showBonus={false}
+                                tone="button"
+                            />
+                        )}
+                    </span>
+                </Button>
             </DisabledControlTooltip>
             {selectedPack && (
-                <PackBonusPill
+                <PollenPackBonusPill
                     pack={selectedPack}
                     className="w-full text-center sm:w-auto sm:text-left"
                 />
@@ -536,81 +344,48 @@ const DisabledControlTooltip: FC<DisabledControlTooltipProps> = ({
     if (!content) return children;
 
     return (
-        <Tooltip
-            triggerAs="span"
-            content={content}
-            className={cn(
-                "inline-flex [&>span:first-child]:inline-flex [&>span:first-child]:w-full",
-                className,
-            )}
-        >
+        <Tooltip triggerAs="span" content={content} className={className}>
             {children}
         </Tooltip>
     );
 };
 
-type AutoTopUpActionState = {
-    isEnabled: boolean;
-    isSaving: boolean;
-    hasSelectedPack: boolean;
-    paymentMethodReady: boolean;
-    billingDetailsReady: boolean;
-};
-
-function getSwitchDisabledReason({
-    isEnabled,
-    isSaving,
-    hasSelectedPack,
-    paymentMethodReady,
-    billingDetailsReady,
-}: AutoTopUpActionState): string | null {
-    if (isSaving) return "Saving auto top-up...";
-    if (isEnabled) return null;
-    if (!hasSelectedPack) return "Choose a valid pollen pack first.";
-    return getSetupDisabledReason(
-        paymentMethodReady,
-        billingDetailsReady,
-        "enabling auto top-up",
+function canEnable(setup: SetupReadiness): boolean {
+    return (
+        setup.paymentMethodReady &&
+        setup.billingDetailsReady &&
+        setup.hasSelectedPack
     );
 }
 
-function getSaveDisabledReason({
-    isEnabled,
-    isSaving,
-    hasUnsavedChanges,
-    hasSelectedPack,
-    paymentMethodReady,
-    billingDetailsReady,
-}: AutoTopUpActionState & { hasUnsavedChanges: boolean }): string | null {
-    if (isSaving) return "Saving changes...";
-    if (!hasSelectedPack) return "Choose a valid pollen pack first.";
-
-    const setupReason = getSetupDisabledReason(
-        paymentMethodReady,
-        billingDetailsReady,
-        "saving changes",
-    );
-    if (setupReason) return setupReason;
-
-    if (!isEnabled) return "Use the switch to enable auto top-up first.";
-    if (!hasUnsavedChanges) return "No changes to save.";
+function getDisabledReason(
+    setup: SetupReadiness,
+    action: string,
+): string | null {
+    if (setup.isSaving) return "Saving auto top-up...";
+    if (!setup.hasSelectedPack) return "Choose a valid pollen pack first.";
+    if (!setup.paymentMethodReady && !setup.billingDetailsReady) {
+        return `Add a default payment method and billing details in Stripe before ${action}.`;
+    }
+    if (!setup.paymentMethodReady) {
+        return `Add a default payment method in Stripe before ${action}.`;
+    }
+    if (!setup.billingDetailsReady) {
+        return `Add billing details in Stripe before ${action}.`;
+    }
     return null;
 }
 
-function getSetupDisabledReason(
-    paymentMethodReady: boolean,
-    billingDetailsReady: boolean,
-    action: string,
+function getSaveDisabledReason(
+    state: SetupReadiness & {
+        isEnabled: boolean;
+        hasUnsavedChanges: boolean;
+    },
 ): string | null {
-    if (!paymentMethodReady && !billingDetailsReady) {
-        return `Add a default payment method and billing details in Stripe before ${action}.`;
-    }
-    if (!paymentMethodReady) {
-        return `Add a default payment method in Stripe before ${action}.`;
-    }
-    if (!billingDetailsReady) {
-        return `Add billing details in Stripe before ${action}.`;
-    }
+    const setupReason = getDisabledReason(state, "saving changes");
+    if (setupReason) return setupReason;
+    if (!state.isEnabled) return "Use the switch to enable auto top-up first.";
+    if (!state.hasUnsavedChanges) return "No changes to save.";
     return null;
 }
 
@@ -620,7 +395,6 @@ type BillingSetupProps = {
     billingDetailsReady: boolean;
     billingDetailsValue: ReactNode;
     onAction: () => void;
-    disabled: boolean;
     loading: boolean;
 };
 
@@ -630,21 +404,18 @@ const BillingSetup: FC<BillingSetupProps> = ({
     billingDetailsReady,
     billingDetailsValue,
     onAction,
-    disabled,
     loading,
 }) => (
     <div className="space-y-4">
         <div className="grid gap-3 md:grid-cols-2">
             <SetupSnippet
                 title="Billing details"
-                badge={billingDetailsReady ? "Ready" : "Required"}
-                badgeColor={billingDetailsReady ? "green" : "red"}
+                ready={billingDetailsReady}
                 value={billingDetailsValue}
             />
             <SetupSnippet
                 title="Payment method"
-                badge={paymentMethodReady ? "Ready" : "Required"}
-                badgeColor={paymentMethodReady ? "green" : "red"}
+                ready={paymentMethodReady}
                 value={paymentMethodValue}
             />
         </div>
@@ -654,7 +425,7 @@ const BillingSetup: FC<BillingSetupProps> = ({
             color="amber"
             weight="light"
             onClick={onAction}
-            disabled={disabled}
+            disabled={loading}
             className="btn-shimmer w-fit max-w-full min-w-0 self-start gap-2 whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:text-sm"
         >
             <span>
@@ -667,24 +438,18 @@ const BillingSetup: FC<BillingSetupProps> = ({
 
 type SetupSnippetProps = {
     title: string;
-    badge: string;
-    badgeColor: "green" | "red";
+    ready: boolean;
     value: ReactNode;
 };
 
-const SetupSnippet: FC<SetupSnippetProps> = ({
-    title,
-    badge,
-    badgeColor,
-    value,
-}) => (
+const SetupSnippet: FC<SetupSnippetProps> = ({ title, ready, value }) => (
     <div className="min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
             <span className="text-[15px] font-bold text-amber-950">
                 {title}
             </span>
-            <Badge color={badgeColor} size="sm">
-                {badge}
+            <Badge color={ready ? "green" : "red"} size="sm">
+                {ready ? "Ready" : "Required"}
             </Badge>
         </div>
         <div className="break-words text-sm font-medium leading-relaxed text-amber-950">
@@ -693,15 +458,10 @@ const SetupSnippet: FC<SetupSnippetProps> = ({
     </div>
 );
 
-type NoticeProps = {
-    children: ReactNode;
-    role?: "alert" | "status";
-};
-
-const Notice: FC<NoticeProps> = ({ children, role }) => (
+const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
     <div
+        role="alert"
         className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
-        role={role}
     >
         {children}
     </div>
@@ -726,10 +486,8 @@ const ExternalLinkIcon: FC = () => (
 
 function formatPaymentMethod(billingState: BillingState | null): string {
     if (!billingState) return "Unavailable";
-
     const { paymentMethod } = billingState;
     if (!paymentMethod.hasDefault) return "None";
-
     const brand = paymentMethod.brand ?? "Card";
     return paymentMethod.last4 ? `${brand} ****${paymentMethod.last4}` : brand;
 }
@@ -738,46 +496,40 @@ function formatBillingDetails(billingState: BillingState | null): ReactNode {
     const details = billingState?.billingDetails;
     if (!details) return "None";
 
+    const lines: string[] = [];
     const primary = details.name ?? details.email;
-    const streets = [details.line1, details.line2].filter(Boolean).join(", ");
-    const cityRegionPostal = [details.city, details.state, details.postalCode]
-        .filter(Boolean)
-        .join(" ");
-    const cityAndCountry = [cityRegionPostal, details.country]
-        .filter(Boolean)
-        .join(", ");
-    const lines = [
-        { key: "primary", value: primary },
-        { key: "streets", value: streets },
-        { key: "city-country", value: cityAndCountry },
-    ].filter((line): line is { key: string; value: string } =>
-        Boolean(line.value),
+    if (primary) lines.push(primary);
+
+    const street = joinNonEmpty([details.line1, details.line2], ", ");
+    if (street) lines.push(street);
+
+    const cityRegion = joinNonEmpty(
+        [details.city, details.state, details.postalCode],
+        " ",
     );
+    const cityCountry = joinNonEmpty([cityRegion, details.country], ", ");
+    if (cityCountry) lines.push(cityCountry);
 
     if (!lines.length) return "None";
 
     return (
         <span className="block space-y-0.5">
             {lines.map((line) => (
-                <span key={line.key} className="block">
-                    {line.value}
+                <span key={line} className="block">
+                    {line}
                 </span>
             ))}
         </span>
     );
 }
 
-function formatPackValue(pack: PollenPack): string {
-    const bonusPercent = getPackBonusPercent(pack);
-    const bonusLabel = bonusPercent > 0 ? `, +${bonusPercent}% bonus` : "";
-
-    return `$${pack.amountUsd} to ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusLabel}`;
-}
-
-function getPackBonusPercent(pack: PollenPack): number {
-    if (!pack.amountUsd) return 0;
-
-    return Math.round((pack.bonusPollen / pack.amountUsd) * 100);
+function joinNonEmpty(
+    parts: ReadonlyArray<string | null | undefined>,
+    separator: string,
+): string {
+    return parts
+        .filter((part): part is string => Boolean(part))
+        .join(separator);
 }
 
 function normalizePackAmount(value: number | null | undefined): number {
@@ -809,37 +561,13 @@ function formatFailureTime(value: string | null): string | null {
     });
 }
 
-async function readJsonPayload(response: Response): Promise<JsonPayload> {
-    const payload = await response.json().catch(() => ({}));
-    return payload as JsonPayload;
-}
-
-function getErrorMessage(
-    payload: { error?: unknown; message?: unknown },
-    fallback: string,
-): string {
-    return (
-        coerceMessage(payload.error) ??
-        coerceMessage(payload.message) ??
-        fallback
-    );
-}
-
-function coerceString(value: unknown): string | null {
-    return typeof value === "string" ? value : null;
-}
-
-function coerceMessage(value: unknown): string | null {
-    if (typeof value === "string") return value;
-    if (!value || typeof value !== "object") return null;
-
-    if ("message" in value) {
-        return coerceMessage(value.message);
-    }
-
-    if ("error" in value) {
-        return coerceMessage(value.error);
-    }
-
-    return null;
+function extractErrorMessage(payload: unknown, fallback: string): string {
+    if (!payload || typeof payload !== "object") return fallback;
+    const { error, message } = payload as {
+        error?: unknown;
+        message?: unknown;
+    };
+    if (typeof error === "string") return error;
+    if (typeof message === "string") return message;
+    return fallback;
 }

@@ -411,31 +411,21 @@ const PackValueReadout: FC<PackValueReadoutProps> = ({
                     {formatPollenPackValue(pack.pollenGrant)} pollen
                 </span>
             </span>
-            {showBonus && hasBonus && (
-                <PackBonusPill pack={pack} strong={bonusPercent >= 60} />
-            )}
+            {showBonus && hasBonus && <PackBonusPill pack={pack} />}
         </span>
     );
 };
 
 type PackBonusPillProps = {
     pack: PollenPack;
-    strong?: boolean;
 };
 
-const PackBonusPill: FC<PackBonusPillProps> = ({ pack, strong = true }) => {
+const PackBonusPill: FC<PackBonusPillProps> = ({ pack }) => {
     const bonusPercent = getPackBonusPercent(pack);
     if (bonusPercent <= 0) return null;
 
     return (
-        <span
-            className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                strong
-                    ? "bg-amber-500 text-white shadow-sm"
-                    : "bg-amber-200 text-amber-900",
-            )}
-        >
+        <span className="text-sm font-medium text-amber-700">
             +{bonusPercent}% bonus
         </span>
     );

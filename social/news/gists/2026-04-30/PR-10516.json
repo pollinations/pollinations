@@ -1,0 +1,34 @@
+{
+  "pr_number": 10516,
+  "title": "refactor: unify dashboard sections, panels, and buttons",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10516",
+  "merged_at": "2026-04-30T09:19:43Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the hive",
+    "blurb": "We spent some time untangling the dashboard's UI components. Fewer wrapper divs, a single source of truth for colors, and a much happier codebase.",
+    "summary": "Refactored the dashboard UI to use unified layout primitives and a single theme palette, eliminating duplicated styles and unnecessary wrapper components.",
+    "impact": "The frontend codebase is now significantly cleaner, making it faster to build and maintain dashboard features.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "refactor",
+      "frontend",
+      "components"
+    ],
+    "visual_concept": "Polly the bee organizing colorful building blocks or painting a canvas, representing UI components and themes being unified and cleaned up.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, organizing colorful glowing blocks on a tidy wooden workbench. A retro computer monitor in the background displays clean, organized code. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-30/PR-10516.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, organizing colorful glowing blocks on a tidy wooden workbench. A retro computer monitor in the background displays clean, organized code. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-30T09:20:50.514157+00:00"
+}

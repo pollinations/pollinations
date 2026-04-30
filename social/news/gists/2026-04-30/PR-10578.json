@@ -1,0 +1,33 @@
+{
+  "pr_number": 10578,
+  "title": "fix: rotate stale TINYBIRD_INGEST_TOKEN",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10578",
+  "merged_at": "2026-04-30T16:00:22Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Feeding the Tinybird",
+    "blurb": "We updated our internal telemetry tokens to keep the data flowing smoothly. Just some routine maintenance to keep our analytics happy!",
+    "summary": "Rotated the Tinybird ingest token in SOPS to match the active workspace token, ensuring event ingestion continues smoothly.",
+    "impact": "Internal analytics and event logging are back online and syncing correctly for future deployments.",
+    "keywords": [
+      "infrastructure",
+      "telemetry",
+      "secrets",
+      "tinybird"
+    ],
+    "visual_concept": "The bee mascot feeding glowing data seeds to a tiny bird (representing Tinybird analytics) perched on a server rack.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot feeding glowing lime green (#ecf874) data seeds to a tiny, chunky pixel bird perched on a retro server rack. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-30/PR-10578.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot feeding glowing lime green (#ecf874) data seeds to a tiny, chunky pixel bird perched on a retro server rack. Soft pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-30T16:01:15.412306+00:00"
+}

@@ -167,7 +167,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nova-fast",
-        config: portkeyConfig["nova-micro-fallback"],
+        config: portkeyConfig["nova-micro"],
     },
     {
         name: "nova",

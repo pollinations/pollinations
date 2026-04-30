@@ -18,9 +18,7 @@ const BILLING_PORTAL_CUSTOMER_UPDATES = [
     "tax_id",
 ] satisfies Stripe.BillingPortal.ConfigurationCreateParams.Features.CustomerUpdate.AllowedUpdate[];
 
-export const AUTO_TOP_UP_THRESHOLD_MIN = 1;
-export const AUTO_TOP_UP_THRESHOLD_MAX = 100;
-export const AUTO_TOP_UP_PACK_AMOUNTS = [5, 10, 20, 50, 100] as const;
+export const AUTO_TOP_UP_PACK_AMOUNTS = [10, 20, 50, 100] as const;
 export const DEFAULT_AUTO_TOP_UP_THRESHOLD = 5;
 export const DEFAULT_AUTO_TOP_UP_AMOUNT_USD = 20;
 
@@ -65,7 +63,6 @@ export type BillingPortalFlow = "default" | "payment_method_update";
 
 export type AutoTopUpInput = {
     enabled: boolean;
-    thresholdPollen: number;
     packAmountUsd: number;
 };
 
@@ -157,8 +154,7 @@ export async function getBillingOverview(
     return {
         autoTopUp: {
             enabled: autoTopUpEnabled,
-            thresholdPollen:
-                user.autoTopUpThresholdPollen ?? DEFAULT_AUTO_TOP_UP_THRESHOLD,
+            thresholdPollen: DEFAULT_AUTO_TOP_UP_THRESHOLD,
             packAmountUsd:
                 user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
             lastFailure: autoTopUpEnabled ? user.autoTopUpLastFailure : null,
@@ -303,7 +299,7 @@ export async function updateAutoTopUpSettings(
         return { ok: false, status: 400, error: validationError };
     }
 
-    const thresholdPollen = input.thresholdPollen;
+    const thresholdPollen = DEFAULT_AUTO_TOP_UP_THRESHOLD;
     const packAmountUsd = input.packAmountUsd;
 
     if (input.enabled) {
@@ -357,9 +353,9 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "auto top-up disabled" };
     }
 
-    const threshold = user.autoTopUpThresholdPollen;
+    const threshold = DEFAULT_AUTO_TOP_UP_THRESHOLD;
     const amountUsd = user.autoTopUpAmountUsd;
-    if (threshold == null || amountUsd == null) {
+    if (amountUsd == null) {
         return { status: "skipped", reason: "auto top-up not configured" };
     }
 
@@ -705,14 +701,6 @@ function firstString(
 }
 
 function validateAutoTopUpInput(input: AutoTopUpInput): string | null {
-    if (
-        !Number.isFinite(input.thresholdPollen) ||
-        !Number.isInteger(input.thresholdPollen) ||
-        input.thresholdPollen < AUTO_TOP_UP_THRESHOLD_MIN ||
-        input.thresholdPollen > AUTO_TOP_UP_THRESHOLD_MAX
-    ) {
-        return "Invalid auto top-up threshold.";
-    }
     if (
         !(AUTO_TOP_UP_PACK_AMOUNTS as readonly number[]).includes(
             input.packAmountUsd,

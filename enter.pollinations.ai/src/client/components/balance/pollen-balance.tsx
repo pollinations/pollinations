@@ -196,7 +196,10 @@ export const BuyPollenPanel: FC = () => {
                                     />
                                 </span>
                             </Button>
-                            <PollenPackBonusPill pack={selectedPack} />
+                            <PollenPackBonusPill
+                                pack={selectedPack}
+                                className="w-full text-center sm:w-auto sm:text-left"
+                            />
                         </div>
                     </div>
                 )}
@@ -276,30 +279,29 @@ const PollenPackSlider: FC<PollenPackSliderProps> = ({ value, onChange }) => {
                     className="h-2 w-full cursor-grab appearance-none rounded-full outline-none transition active:cursor-grabbing [&::-moz-range-thumb]:h-[22px] [&::-moz-range-thumb]:w-[22px] [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-amber-600 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-moz-range-thumb]:transition-transform [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-7px] [&::-webkit-slider-thumb]:h-[22px] [&::-webkit-slider-thumb]:w-[22px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-amber-600 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-webkit-slider-thumb]:transition-transform hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-105"
                 />
             </div>
-            <div className="relative h-4 text-[10px] font-semibold text-amber-700/80 tabular-nums">
-                {POLLEN_PACKS.map((pack, index) => {
-                    const labelPercent =
-                        POLLEN_PACKS.length > 1
-                            ? (index / (POLLEN_PACKS.length - 1)) * 100
-                            : 0;
+            <div className="relative -mt-1 h-4 px-[11px] text-[10px] font-semibold text-amber-700/80 tabular-nums">
+                <div className="relative h-full">
+                    {POLLEN_PACKS.map((pack, index) => {
+                        const labelPercent =
+                            POLLEN_PACKS.length > 1
+                                ? (index / (POLLEN_PACKS.length - 1)) * 100
+                                : 0;
 
-                    return (
-                        <span
-                            key={pack.amountUsd}
-                            style={{ left: `${labelPercent}%` }}
-                            className={cn(
-                                "absolute top-0",
-                                index === 0
-                                    ? "translate-x-0 text-left"
-                                    : index === POLLEN_PACKS.length - 1
-                                      ? "-translate-x-full text-right"
-                                      : "-translate-x-1/2 text-center",
-                            )}
-                        >
-                            ${pack.amountUsd}
-                        </span>
-                    );
-                })}
+                        return (
+                            <span
+                                key={pack.amountUsd}
+                                style={{ left: `${labelPercent}%` }}
+                                className={cn(
+                                    "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
+                                    pack.amountUsd === selectedPack.amountUsd &&
+                                        "font-bold text-amber-900",
+                                )}
+                            >
+                                ${pack.amountUsd}
+                            </span>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
@@ -349,14 +351,18 @@ const PollenPackReadout: FC<PollenPackReadoutProps> = ({
 
 type PollenPackBonusPillProps = {
     pack: PollenPack;
+    className?: string;
 };
 
-const PollenPackBonusPill: FC<PollenPackBonusPillProps> = ({ pack }) => {
+const PollenPackBonusPill: FC<PollenPackBonusPillProps> = ({
+    pack,
+    className,
+}) => {
     const bonusPercent = getPackBonusPercent(pack);
     if (bonusPercent <= 0) return null;
 
     return (
-        <span className="text-sm font-medium text-amber-700">
+        <span className={cn("text-sm font-medium text-amber-700", className)}>
             +{bonusPercent}% bonus
         </span>
     );

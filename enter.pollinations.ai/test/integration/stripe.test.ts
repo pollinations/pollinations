@@ -422,7 +422,7 @@ test("GET /api/stripe/billing disables auto top-up when billing address is missi
     expect(updatedUser?.autoTopUpEnabled).toBe(false);
 });
 
-test("PATCH /api/stripe/auto-top-up accepts integer threshold and rejects invalid values", async ({
+test("PATCH /api/stripe/auto-top-up uses fixed threshold and rejects invalid pack values", async ({
     sessionToken,
     mocks,
 }) => {
@@ -445,7 +445,7 @@ test("PATCH /api/stripe/auto-top-up accepts integer threshold and rejects invali
     const customThresholdData = (await customThresholdResponse.json()) as {
         autoTopUp: { thresholdPollen: number; packAmountUsd: number };
     };
-    expect(customThresholdData.autoTopUp.thresholdPollen).toBe(37);
+    expect(customThresholdData.autoTopUp.thresholdPollen).toBe(5);
     expect(customThresholdData.autoTopUp.packAmountUsd).toBe(10);
 
     const unsupportedPackResponse = await SELF.fetch(`${base}/auto-top-up`, {
@@ -456,8 +456,7 @@ test("PATCH /api/stripe/auto-top-up accepts integer threshold and rejects invali
         },
         body: JSON.stringify({
             enabled: false,
-            thresholdPollen: 37,
-            packAmountUsd: 2,
+            packAmountUsd: 5,
         }),
     });
 
@@ -466,25 +465,6 @@ test("PATCH /api/stripe/auto-top-up accepts integer threshold and rejects invali
         error: string;
     };
     expect(unsupportedPackData.error).toBe("Invalid auto top-up pack amount.");
-
-    const decimalThresholdResponse = await SELF.fetch(`${base}/auto-top-up`, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "application/json",
-            cookie: `better-auth.session_token=${sessionToken}`,
-        },
-        body: JSON.stringify({
-            enabled: false,
-            thresholdPollen: 37.5,
-            packAmountUsd: 10,
-        }),
-    });
-
-    expect(decimalThresholdResponse.status).toBe(400);
-    const decimalThresholdData = (await decimalThresholdResponse.json()) as {
-        error: string;
-    };
-    expect(decimalThresholdData.error).toBe("Invalid auto top-up threshold.");
 });
 
 test("PATCH /api/stripe/auto-top-up requires a default card before enabling", async ({
@@ -501,7 +481,6 @@ test("PATCH /api/stripe/auto-top-up requires a default card before enabling", as
         },
         body: JSON.stringify({
             enabled: true,
-            thresholdPollen: 5,
             packAmountUsd: 10,
         }),
     });

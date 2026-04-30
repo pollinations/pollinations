@@ -41,12 +41,11 @@ type AutoTopUpPanelProps = {
     initialBillingState: BillingState | null;
 };
 
-const AUTO_TOP_UP_THRESHOLD_MIN = 1;
-const AUTO_TOP_UP_THRESHOLD_MAX = 100;
-const AUTO_TOP_UP_PACK_MIN = 5;
+const AUTO_TOP_UP_PACK_MIN = 10;
 const AUTO_TOP_UP_PACK_MAX = 100;
-const DEFAULT_THRESHOLD_POLLEN = 5;
 const DEFAULT_PACK_AMOUNT_USD = 20;
+const AUTO_TOP_UP_TOOLTIP =
+    "Auto top-up charges your Stripe default payment method for the selected pollen pack when purchased pollen is at or below 5 pollen.";
 const AUTO_TOP_UP_PACKS = POLLEN_PACKS.filter(
     (pack) =>
         pack.amountUsd >= AUTO_TOP_UP_PACK_MIN &&
@@ -57,9 +56,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
-    const [thresholdPollen, setThresholdPollen] = useState(
-        normalizeThreshold(initialBillingState?.autoTopUp.thresholdPollen),
-    );
     const [packAmountUsd, setPackAmountUsd] = useState(
         normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
     );
@@ -76,8 +72,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     );
     const isEnabled = billingState?.autoTopUp.enabled ?? false;
     const hasUnsavedChanges = billingState
-        ? thresholdPollen !== billingState.autoTopUp.thresholdPollen ||
-          packAmountUsd !== billingState.autoTopUp.packAmountUsd
+        ? packAmountUsd !== billingState.autoTopUp.packAmountUsd
         : false;
     const lastFailureTime = formatFailureTime(
         billingState?.autoTopUp.lastFailureAt ?? null,
@@ -85,9 +80,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 
     useEffect(() => {
         setBillingState(initialBillingState);
-        setThresholdPollen(
-            normalizeThreshold(initialBillingState?.autoTopUp.thresholdPollen),
-        );
         setPackAmountUsd(
             normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
         );
@@ -123,7 +115,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             const response = await apiClient.stripe["auto-top-up"].$patch({
                 json: {
                     enabled,
-                    thresholdPollen,
                     packAmountUsd,
                 },
             });
@@ -135,9 +126,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             }
             const nextBillingState = payload as BillingState;
             setBillingState(nextBillingState);
-            setThresholdPollen(
-                normalizeThreshold(nextBillingState.autoTopUp.thresholdPollen),
-            );
             setPackAmountUsd(
                 normalizePackAmount(nextBillingState.autoTopUp.packAmountUsd),
             );
@@ -166,18 +154,8 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 
             <DividerGroup>
                 <div className="grid gap-4">
-                    <IntegerInput
-                        label="When below"
-                        info="Auto top-up runs when purchased pollen falls at or below this amount."
-                        value={thresholdPollen}
-                        min={AUTO_TOP_UP_THRESHOLD_MIN}
-                        max={AUTO_TOP_UP_THRESHOLD_MAX}
-                        onChange={setThresholdPollen}
-                        disabled={isSaving}
-                    />
                     <PackSlider
-                        label="Top up with"
-                        info="Choose the pollen pack Stripe will charge when auto top-up runs."
+                        label="Select amount"
                         value={packAmountUsd}
                         onChange={setPackAmountUsd}
                         disabled={isSaving}
@@ -235,20 +213,14 @@ type JsonPayload = {
 
 type SliderHeaderProps = {
     label: string;
-    info: string;
     displayValue?: ReactNode;
 };
 
-const SliderHeader: FC<SliderHeaderProps> = ({ label, info, displayValue }) => (
+const SliderHeader: FC<SliderHeaderProps> = ({ label, displayValue }) => (
     <div className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
                 <span>{label}</span>
-                <InfoTip
-                    text={info}
-                    label={`${label} information`}
-                    tone="amber"
-                />
             </div>
             {displayValue && (
                 <div className="min-w-0 text-right text-sm font-bold text-amber-950 tabular-nums">
@@ -259,54 +231,8 @@ const SliderHeader: FC<SliderHeaderProps> = ({ label, info, displayValue }) => (
     </div>
 );
 
-type IntegerInputProps = {
-    label: string;
-    info: string;
-    value: number;
-    min: number;
-    max: number;
-    onChange: (value: number) => void;
-    disabled?: boolean;
-};
-
-const IntegerInput: FC<IntegerInputProps> = ({
-    label,
-    info,
-    value,
-    min,
-    max,
-    onChange,
-    disabled = false,
-}) => (
-    <div className="space-y-2">
-        <SliderHeader label={label} info={info} />
-        <div className="flex items-center gap-2">
-            <input
-                type="number"
-                min={min}
-                max={max}
-                step={1}
-                inputMode="numeric"
-                value={value}
-                onChange={(event) => {
-                    const next = event.currentTarget.valueAsNumber;
-                    if (Number.isFinite(next)) {
-                        onChange(normalizeThreshold(next));
-                    }
-                }}
-                onBlur={() => onChange(normalizeThreshold(value))}
-                disabled={disabled}
-                aria-label={label}
-                className="w-28 rounded-lg border border-amber-300/70 bg-white/70 px-3 py-2 text-sm font-semibold text-amber-950 tabular-nums outline-none transition [appearance:textfield] focus:border-amber-500 focus:ring-2 focus:ring-amber-300/50 disabled:cursor-not-allowed disabled:opacity-60 [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <span className="text-sm font-medium text-amber-900">pollen</span>
-        </div>
-    </div>
-);
-
 type PackSliderProps = {
     label: string;
-    info: string;
     value: number;
     onChange: (value: number) => void;
     disabled?: boolean;
@@ -314,7 +240,6 @@ type PackSliderProps = {
 
 const PackSlider: FC<PackSliderProps> = ({
     label,
-    info,
     value,
     onChange,
     disabled = false,
@@ -335,7 +260,7 @@ const PackSlider: FC<PackSliderProps> = ({
 
     return (
         <div className="space-y-3">
-            <SliderHeader label={label} info={info} />
+            <SliderHeader label={label} />
             <div className="flex h-8 items-center">
                 <input
                     type="range"
@@ -359,55 +284,56 @@ const PackSlider: FC<PackSliderProps> = ({
                     className="h-2 w-full cursor-grab appearance-none rounded-full outline-none transition active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-60 [&::-moz-range-thumb]:h-[22px] [&::-moz-range-thumb]:w-[22px] [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-amber-600 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-moz-range-thumb]:transition-transform [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-7px] [&::-webkit-slider-thumb]:h-[22px] [&::-webkit-slider-thumb]:w-[22px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-amber-600 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-webkit-slider-thumb]:transition-transform hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-105"
                 />
             </div>
-            <div className="relative h-4 text-[10px] font-semibold text-amber-700/80 tabular-nums">
-                {AUTO_TOP_UP_PACKS.map((pack, index) => {
-                    const labelPercent =
-                        AUTO_TOP_UP_PACKS.length > 1
-                            ? (index / (AUTO_TOP_UP_PACKS.length - 1)) * 100
-                            : 0;
+            <div className="relative -mt-1 h-4 px-[11px] text-[10px] font-semibold text-amber-700/80 tabular-nums">
+                <div className="relative h-full">
+                    {AUTO_TOP_UP_PACKS.map((pack, index) => {
+                        const labelPercent =
+                            AUTO_TOP_UP_PACKS.length > 1
+                                ? (index / (AUTO_TOP_UP_PACKS.length - 1)) * 100
+                                : 0;
 
-                    return (
-                        <span
-                            key={pack.amountUsd}
-                            style={{ left: `${labelPercent}%` }}
-                            className={cn(
-                                "absolute top-0",
-                                index === 0
-                                    ? "translate-x-0 text-left"
-                                    : index === AUTO_TOP_UP_PACKS.length - 1
-                                      ? "-translate-x-full text-right"
-                                      : "-translate-x-1/2 text-center",
-                            )}
-                        >
-                            ${pack.amountUsd}
-                        </span>
-                    );
-                })}
+                        return (
+                            <span
+                                key={pack.amountUsd}
+                                style={{ left: `${labelPercent}%` }}
+                                className={cn(
+                                    "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
+                                    pack.amountUsd === selectedPack.amountUsd &&
+                                        "font-bold text-amber-900",
+                                )}
+                            >
+                                ${pack.amountUsd}
+                            </span>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
 };
 
 type PackValueReadoutProps = {
+    compact?: boolean;
     pack: PollenPack;
     showBonus?: boolean;
 };
 
 const PackValueReadout: FC<PackValueReadoutProps> = ({
+    compact = false,
     pack,
     showBonus = true,
 }) => {
     const bonusPercent = getPackBonusPercent(pack);
     const hasBonus = bonusPercent > 0;
+    const valueClass = "text-base font-bold text-amber-950";
+    const arrowClass = compact ? "text-amber-600" : "text-amber-400";
 
     return (
         <span className="flex flex-wrap items-center justify-end gap-2">
             <span className="inline-flex items-baseline gap-1.5">
-                <span className="text-base font-bold text-amber-950">
-                    ${pack.amountUsd}
-                </span>
-                <span className="text-amber-400">-&gt;</span>
-                <span className="text-base font-bold text-amber-950">
+                <span className={valueClass}>${pack.amountUsd}</span>
+                <span className={arrowClass}>-&gt;</span>
+                <span className={valueClass}>
                     {formatPollenPackValue(pack.pollenGrant)} pollen
                 </span>
             </span>
@@ -418,14 +344,15 @@ const PackValueReadout: FC<PackValueReadoutProps> = ({
 
 type PackBonusPillProps = {
     pack: PollenPack;
+    className?: string;
 };
 
-const PackBonusPill: FC<PackBonusPillProps> = ({ pack }) => {
+const PackBonusPill: FC<PackBonusPillProps> = ({ pack, className }) => {
     const bonusPercent = getPackBonusPercent(pack);
     if (bonusPercent <= 0) return null;
 
     return (
-        <span className="text-sm font-medium text-amber-700">
+        <span className={cn("text-sm font-medium text-amber-700", className)}>
             +{bonusPercent}% bonus
         </span>
     );
@@ -501,8 +428,13 @@ const AutoTopUpActions: FC<AutoTopUpActionsProps> = ({
                 </button>
             </DisabledControlTooltip>
             <div className="min-w-0">
-                <div className="text-[15px] font-bold text-amber-950">
+                <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
                     Auto top-up
+                    <InfoTip
+                        text={AUTO_TOP_UP_TOOLTIP}
+                        label="Auto top-up information"
+                        tone="amber"
+                    />
                 </div>
                 <div className="text-xs font-medium text-amber-800/75">
                     {isEnabled ? "On" : "Off"}
@@ -563,7 +495,7 @@ const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
                         weight="light"
                         onClick={onSave}
                         disabled={saveDisabled}
-                        className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-4 text-center text-sm shadow-none sm:w-fit"
+                        className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-3 text-center text-sm shadow-none sm:w-fit"
                     >
                         <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
                             <span className="text-base font-bold text-amber-950">
@@ -571,6 +503,7 @@ const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
                             </span>
                             {selectedPack && (
                                 <PackValueReadout
+                                    compact
                                     pack={selectedPack}
                                     showBonus={false}
                                 />
@@ -579,7 +512,12 @@ const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
                     </Button>
                 </span>
             </DisabledControlTooltip>
-            {selectedPack && <PackBonusPill pack={selectedPack} />}
+            {selectedPack && (
+                <PackBonusPill
+                    pack={selectedPack}
+                    className="w-full text-center sm:w-auto sm:text-left"
+                />
+            )}
         </div>
     );
 };
@@ -601,7 +539,10 @@ const DisabledControlTooltip: FC<DisabledControlTooltipProps> = ({
         <Tooltip
             triggerAs="span"
             content={content}
-            className={cn("inline-flex", className)}
+            className={cn(
+                "inline-flex [&>span:first-child]:inline-flex [&>span:first-child]:w-full",
+                className,
+            )}
         >
             {children}
         </Tooltip>
@@ -695,16 +636,16 @@ const BillingSetup: FC<BillingSetupProps> = ({
     <div className="space-y-4">
         <div className="grid gap-3 md:grid-cols-2">
             <SetupSnippet
-                title="Payment method"
-                badge={paymentMethodReady ? "Ready" : "Required"}
-                badgeColor={paymentMethodReady ? "green" : "red"}
-                value={paymentMethodValue}
-            />
-            <SetupSnippet
                 title="Billing details"
                 badge={billingDetailsReady ? "Ready" : "Required"}
                 badgeColor={billingDetailsReady ? "green" : "red"}
                 value={billingDetailsValue}
+            />
+            <SetupSnippet
+                title="Payment method"
+                badge={paymentMethodReady ? "Ready" : "Required"}
+                badgeColor={paymentMethodReady ? "green" : "red"}
+                value={paymentMethodValue}
             />
         </div>
         <Button
@@ -714,7 +655,7 @@ const BillingSetup: FC<BillingSetupProps> = ({
             weight="light"
             onClick={onAction}
             disabled={disabled}
-            className="btn-shimmer w-full min-w-0 gap-2 whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:w-fit sm:text-sm"
+            className="btn-shimmer w-fit max-w-full min-w-0 self-start gap-2 whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:text-sm"
         >
             <span>
                 {loading ? "Opening Stripe..." : "Manage billing details"}
@@ -837,19 +778,6 @@ function getPackBonusPercent(pack: PollenPack): number {
     if (!pack.amountUsd) return 0;
 
     return Math.round((pack.bonusPollen / pack.amountUsd) * 100);
-}
-
-function normalizeThreshold(value: number | null | undefined): number {
-    const numeric =
-        typeof value === "number" && Number.isFinite(value)
-            ? value
-            : DEFAULT_THRESHOLD_POLLEN;
-    const integer = Math.round(numeric);
-
-    return Math.min(
-        AUTO_TOP_UP_THRESHOLD_MAX,
-        Math.max(AUTO_TOP_UP_THRESHOLD_MIN, integer),
-    );
 }
 
 function normalizePackAmount(value: number | null | undefined): number {

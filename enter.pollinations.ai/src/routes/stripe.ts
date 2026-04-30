@@ -212,13 +212,11 @@ export const stripeRoutes = new Hono<Env>()
         const user = await requireSessionUser(c);
         const body = (await c.req.json()) as {
             enabled?: boolean;
-            thresholdPollen?: number;
             packAmountUsd?: number;
         };
 
         const result = await updateAutoTopUpSettings(c.env, user.id, {
             enabled: body.enabled === true,
-            thresholdPollen: Number(body.thresholdPollen),
             packAmountUsd: Number(body.packAmountUsd),
         });
 

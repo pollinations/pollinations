@@ -486,6 +486,7 @@ export async function processAutoTopUpForUser(
     } catch (error) {
         const message =
             error instanceof Error ? error.message : "Auto top-up failed.";
+        await failPendingAutoTopUpAttempts(env.DB, userId, message);
         await recordAutoTopUpFailure(env.DB, userId, message);
         return { status: "failed", reason: message };
     }
@@ -807,6 +808,25 @@ async function recordAutoTopUpFailure(
                 WHERE id = ?`,
         )
         .bind(message, Date.now(), userId)
+        .run();
+}
+
+async function failPendingAutoTopUpAttempts(
+    db: D1Database,
+    userId: string,
+    reason: string,
+): Promise<void> {
+    const now = Date.now();
+    await db
+        .prepare(
+            `UPDATE stripe_auto_top_up_attempt
+                SET status = 'failed',
+                    failure_reason = ?,
+                    updated_at = ?,
+                    completed_at = ?
+                WHERE user_id = ? AND status = 'pending'`,
+        )
+        .bind(reason, now, now, userId)
         .run();
 }
 

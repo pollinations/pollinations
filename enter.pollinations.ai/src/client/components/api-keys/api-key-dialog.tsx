@@ -152,7 +152,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         !createdKey && noModelsSelected
             ? "Select at least one model"
             : !createdKey && isMissingRedirectUris
-              ? "Add at least one redirect URI"
+              ? "Add at least one redirect URL"
               : undefined;
 
     const submitButton = (
@@ -214,25 +214,32 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         <Dialog.Title className="text-lg font-semibold">
                             {simplified ? "Create App Key" : "Create API Key"}
                         </Dialog.Title>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <div className="mt-1 text-sm text-gray-500">
                             {simplified ? (
-                                <>
-                                    🪷 Register your app for{" "}
-                                    <a
-                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-green-700 underline hover:text-green-900"
-                                    >
-                                        BYOP
-                                    </a>
-                                    <br />🪷 Let your users connect and use
-                                    their own pollen in your app.
-                                </>
+                                <ul className="list-disc space-y-1 pl-5">
+                                    <li>
+                                        Register your app for{" "}
+                                        <a
+                                            href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-700 underline underline-offset-2 hover:text-blue-900"
+                                        >
+                                            BYOP
+                                        </a>
+                                    </li>
+                                    <li>
+                                        Let your users connect and use their own
+                                        pollen in your app.
+                                    </li>
+                                </ul>
                             ) : (
-                                "Access AI models for text, image, and audio generation."
+                                <p>
+                                    Access AI models for text, image, and audio
+                                    generation.
+                                </p>
                             )}
-                        </p>
+                        </div>
                     </div>
 
                     <form

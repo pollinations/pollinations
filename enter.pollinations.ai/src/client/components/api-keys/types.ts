@@ -40,7 +40,7 @@ export type CreateApiKey = {
     expiryDays?: number | null;
     /** Account permissions: ["profile", "usage", "keys"]. null = no permissions */
     accountPermissions?: string[] | null;
-    /** Allowed OAuth redirect URIs for publishable keys (RFC 8252 port-agnostic loopback) */
+    /** Allowed OAuth redirect URLs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];
     /** Enable BYOP developer earnings for publishable app keys */
     byopEnabled?: boolean;

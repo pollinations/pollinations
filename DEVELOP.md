@@ -24,7 +24,7 @@ By default, sops will look for your key file in `$HOME/.config/sops/age/keys.txt
 To decrypt service env files, run the command that matches the service:
 ```bash
 sops --output-type dotenv decrypt secrets/dev.vars.json > .dev.vars   # enter.pollinations.ai
-sops --output-type dotenv decrypt secrets/env.json > .env             # image/text services
+sops --output-type dotenv decrypt secrets/env.json > .env             # image and gen service secrets
 ``` 
 
 The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets; `tools/scripts/rotation/secrets.vars.json` is only for local operator admin credentials used by rotation scripts. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
@@ -46,12 +46,12 @@ To run multiple services simultaneously during development:
 # Install dependencies for all services
 npm run install:all
 
-# Run all services (enter, text, image) with auto-restart
+# Run all services (enter, gen, image) with auto-restart
 npm run dev
 
 # Run individual services
 npm run dev:enter
-npm run dev:text
+npm run dev:gen
 npm run dev:image
 ```
 
@@ -91,11 +91,11 @@ graph LR
 
     CLIENTS --> ENTER
 
-    ENTER -->|"~1,340 RPM"| TEXT_SVC
+    ENTER -->|"~1,340 RPM"| PORTKEY
     ENTER -->|"~441 img/min"| IMG_SVC
     ENTER -->|"TTS/music"| AUD
 
-    subgraph TEXT_SVC["📝 Text · EC2 :16385 · systemd"]
+    subgraph TEXT_API["📝 Text · gen Worker"]
         PORTKEY["🔀 Portkey Gateway\nCF Worker · 25+ models\n10+ providers"]
     end
 
@@ -156,7 +156,7 @@ graph LR
     LB --> MORE_IMG
 
     style CLIENTS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
-    style TEXT_SVC fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
+    style TEXT_API fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
     style IMG_SVC fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
     style AUD fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
     style AZURE fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
@@ -208,15 +208,13 @@ graph TD
     ENTER --> DO
 
     subgraph COMPUTE["🖥️ AWS EC2 · us-east-1 · g6e"]
-        TEXT["📝 text :16385\nNode.js · Hono · systemd\nOpenAI-compat API"]:::ec2
         IMAGE["🎨 image :16384\nNode.js · Hono · systemd\nQueue router + heartbeat\nSharp · ImageMagick"]:::ec2
     end
 
-    ENTER -->|"text / chat"| TEXT
     ENTER -->|"image / video"| IMAGE
     ENTER -->|"audio"| AUD_API
 
-    TEXT --> PORTKEY_W
+    GEN -->|"text / chat"| PORTKEY_W
 
     subgraph PROVIDERS["🔌 AI Provider APIs"]
         PROV_TEXT["☁️ Text Providers\nAzure · Anthropic · Vertex\nBedrock · Fireworks · OVH\nPerplexity · airforce"]:::provider

@@ -26,7 +26,7 @@ source "$SCRIPT_DIR/_log.sh"
 source "$SCRIPT_DIR/_pr-deploy.sh"
 
 REPO="pollinations/pollinations"
-TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
+TEXT_SOPS="$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 API_BASE="https://api.deepinfra.com"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
 GEN_BASE="https://gen.pollinations.ai"
@@ -95,7 +95,7 @@ if $DRY_RUN; then
     echo
     log "Plan:"
     echo "  1. Create new DeepInfra key via /v1/api-tokens (old stays valid)"
-    echo "  2. Update SOPS: text.pollinations.ai/env.json"
+    echo "  2. Update SOPS: gen.pollinations.ai/env.json"
     echo "  3. Verify new key via /v1/openai/chat/completions"
     echo "  4. Open PR: rotate/deepinfra-<date> → main, auto-merge"
     echo "  5. Push main → production (admin)"
@@ -158,7 +158,7 @@ log "New key: ${NEW_KEY:0:4}..."
 section "Updating SOPS"
 
 sops --set "[\"DEEPINFRA_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$TEXT_SOPS"
-log "  text.pollinations.ai/env.json updated"
+log "  gen.pollinations.ai/env.json updated"
 
 #######################################
 # 4. Verify new key
@@ -247,4 +247,4 @@ echo ""
 log "Old key: ${OLD_KEY:0:4}... (deleted if HTTP 200 above)"
 log "New key: ${NEW_KEY:0:4}..."
 echo ""
-log "SOPS + production + EC2 text service now using the new key."
+log "SOPS + production gen worker now using the new key."

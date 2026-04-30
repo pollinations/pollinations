@@ -1,6 +1,6 @@
 /**
  * Text caching utilities for gen.pollinations.ai
- * Adapted from text.pollinations.ai/cloudflare-cache
+ * Adapted from gen.pollinations.ai/cloudflare-cache
  * Following the "thin proxy" design principle - keeping logic simple and minimal
  */
 

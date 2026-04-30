@@ -1,7 +1,7 @@
 /**
  * Text cache middleware for gen.pollinations.ai
  * Implements cache lookup before access checks.
- * Adapted from text.pollinations.ai/cloudflare-cache
+ * Adapted from gen.pollinations.ai/cloudflare-cache
  */
 
 import { createMiddleware } from "hono/factory";

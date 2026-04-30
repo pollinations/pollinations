@@ -1219,7 +1219,6 @@ Users MUST level up through each tier in sequence. E.g. a Spore user asking for 
 **Dead URLs - NEVER suggest these:**
 - `image.pollinations.ai/prompt/...` - DEAD
 - `pollinations.ai/p/...` - DEAD
-- `text.pollinations.ai` - LEGACY (redirect to gen.pollinations.ai)
 - `enter.pollinations.ai` is auth gateway only, NOT for generation
 
 **Pricing fields** (all in Pollen, returned from `/text/models` and `/image/models`):

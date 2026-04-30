@@ -74,10 +74,10 @@ Out of scope for this branch — listed here so they don't get forgotten during 
 
 | Provider | Env var(s) | Used by | SOPS file(s) | Dashboard |
 |---|---|---|---|---|
-| **Alibaba (DashScope)** | `DASHSCOPE_API_KEY` | image + text (Wan image, Qwen text) | `image.pollinations.ai/secrets/env.json`, `text.pollinations.ai/secrets/env.json` | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
+| **Alibaba (DashScope)** | `DASHSCOPE_API_KEY` | image + text (Wan image, Qwen text) | `image.pollinations.ai/secrets/env.json`, `gen.pollinations.ai/secrets/env.json` | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
 | **ByteDance** | `BYTEDANCE_API_KEY` | image (SeedEdit, Seedream) | `image.pollinations.ai/secrets/env.json` | [volcengine.com](https://www.volcengine.com) |
 | **Pruna** | `PRUNA_API_KEY` | image (Pruna-optimised models) | `image.pollinations.ai/secrets/env.json` | [pruna.ai dashboard](https://pruna.ai) |
-| **OVHCloud** | `OVHCLOUD_API_KEY` | text (OVH AI) + enter worker (audio fallback) | `text.pollinations.ai/secrets/env.json`, `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [ovh.com manager](https://www.ovh.com/manager/) |
+| **OVHCloud** | `OVHCLOUD_API_KEY` | text (OVH AI) + enter worker (audio fallback) | `gen.pollinations.ai/secrets/env.json`, `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [ovh.com manager](https://www.ovh.com/manager/) |
 
 Manual recipe: dashboard → new key → SOPS edit → (worker keys also need `wrangler secret put`) → PR → merge → push to production → wait for deploy + health check → revoke old key in dashboard.
 

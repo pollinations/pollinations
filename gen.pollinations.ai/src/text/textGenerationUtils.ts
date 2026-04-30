@@ -1,11 +1,15 @@
 import debug from "debug";
-import type { ChatMessage, TransformOptions } from "./types.js";
+import type { ChatMessage, ServiceError, TransformOptions } from "./types.js";
 
 const log = debug("pollinations:utils");
 
 export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
     if (!Array.isArray(messages) || messages.length === 0) {
-        throw new Error("Messages must be a non-empty array");
+        const error = new Error(
+            "Messages must be a non-empty array",
+        ) as ServiceError;
+        error.status = 400;
+        throw error;
     }
 
     return messages.map((raw: unknown) => {

@@ -1,0 +1,51 @@
+{
+  "date": "2026-04-29",
+  "period_start": "2026-04-29",
+  "period_end": "2026-04-29",
+  "title": "BYOP gets unlimited budgets and stricter auth",
+  "summary": "A solid day of API developer experience upgrades, BYOP flexibility, and splitting our generation gateway onto dedicated infrastructure.\n\nBring Your Own Provider (BYOP) is now more flexible. You can set an explicit unlimited budget for trusted apps by passing a null value, bypassing the default cap. We also added support for multiple redirect URIs per API key with strict RFC 8252-compliant loopback handling. Better security, fewer auth headaches.\n\nNova Reel video generation now supports seeds for reproducible outputs. We also fixed how we handle user-supplied image URLs across 12 models—broken links now correctly return a 400 instead of a 500, and magic-byte MIME detection means Telegram CDN links finally work. Plus, Portkey provider errors are now surfaced at the top level so you don't have to parse nested JSON to figure out why a text generation failed.\n\nWe extracted the core generation gateway into its own dedicated service at gen.pollinations.ai. This separates heavy API traffic from the dashboard, meaning more reliable and scalable performance for everyone hitting the endpoints.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 10445,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10466,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10518,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10524,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10533,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10544,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10546,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10547,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10548,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10554,
+      "date": "2026-04-29"
+    }
+  ],
+  "generated_at": "2026-04-30T06:49:48.842923+00:00"
+}

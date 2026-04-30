@@ -218,19 +218,24 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             {simplified ? (
                                 <ul className="list-disc space-y-1 pl-5">
                                     <li>
-                                        Register your app for{" "}
+                                        Add the callback URL your app will use
+                                        after consent.
+                                    </li>
+                                    <li>
+                                        We return a scoped API key in the URL
+                                        fragment.
+                                    </li>
+                                    <li>
+                                        Use that key for API requests paid with
+                                        the user&apos;s Pollen.{" "}
                                         <a
                                             href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-blue-700 underline underline-offset-2 hover:text-blue-900"
                                         >
-                                            BYOP
+                                            Read the guide
                                         </a>
-                                    </li>
-                                    <li>
-                                        Let your users connect and use their own
-                                        pollen in your app.
                                     </li>
                                 </ul>
                             ) : (

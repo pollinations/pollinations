@@ -42,7 +42,6 @@ ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
-TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
 
 [dev]
 port = 8788
@@ -99,7 +98,6 @@ ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
-TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
 POLLEN_REFILL_PER_HOUR = 1
 
 # Staging routes
@@ -153,7 +151,6 @@ ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
-TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
 
 [env.test]
 
@@ -203,5 +200,17 @@ TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
 IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
-TEXT_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16385"
+PORTKEY_GATEWAY_URL = "https://portkey.test"
+AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
+AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
+AWS_REGION = "us-east-1"
+AZURE_MYCELI_PROD_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
+DEEPINFRA_API_KEY = "not-a-secret-workers-test-only"
+FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
+GOOGLE_CLIENT_EMAIL = "test@example.com"
+GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"
+GOOGLE_PRIVATE_KEY_ID = "not-a-secret-workers-test-only"
+GOOGLE_PROJECT_ID = "test-project"
+PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"
 POLLEN_REFILL_PER_HOUR = 1

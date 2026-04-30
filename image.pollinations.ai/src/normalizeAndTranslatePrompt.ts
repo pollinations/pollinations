@@ -3,7 +3,6 @@ import debug from "debug";
 import type { ImageParams } from "./params.ts";
 import { pimpPrompt } from "./promptEnhancer.ts";
 import { detectLanguage, sanitizeString } from "./translateIfNecessary.ts";
-import { badDomainHandler } from "./utils/badDomainHandler.ts";
 
 const logPrompt = debug("pollinations:prompt");
 const logPerf = debug("pollinations:perf");
@@ -17,7 +16,6 @@ export const normalizeAndTranslatePrompt = async (
     req: IncomingMessage,
     timingInfo: TimingStep[],
     safeParams: ImageParams,
-    referrer = null,
 ) => {
     // if it is not a string make it a string
     originalPrompt = `${originalPrompt}`;
@@ -37,52 +35,33 @@ export const normalizeAndTranslatePrompt = async (
         timestamp: Date.now(),
     });
 
-    // Process the prompt through the bad domain handler
-    const badDomainResult = await badDomainHandler.processPrompt(
-        originalPrompt,
-        req.headers,
-        referrer,
-    );
-
-    // Extract the potentially transformed prompt
-    let prompt = badDomainResult.prompt;
-    const wasTransformedForBadDomain = badDomainResult.wasTransformed;
-
-    if (wasTransformedForBadDomain) {
-        timingInfo.push({
-            step: "Prompt transformed for bad domain",
-            timestamp: Date.now(),
-        });
-    }
+    let prompt = originalPrompt;
 
     // Sanitize prompt
     prompt = sanitizeString(prompt);
 
-    // Skip enhancement for bad domains
-    if (!wasTransformedForBadDomain) {
-        // check from the request headers if the user most likely speaks english (value starts with en)
-        const englishLikely = req.headers["accept-language"]?.startsWith("en");
+    // check from the request headers if the user most likely speaks english (value starts with en)
+    const englishLikely = req.headers["accept-language"]?.startsWith("en");
 
-        if (!englishLikely) {
-            const startTime = Date.now();
-            try {
-                const detectedLanguage = await detectLanguage(prompt);
-                if (detectedLanguage !== "en") {
-                    enhance = true;
-                }
-            } catch (error) {
-                logError(error);
+    if (!englishLikely) {
+        const startTime = Date.now();
+        try {
+            const detectedLanguage = await detectLanguage(prompt);
+            if (detectedLanguage !== "en") {
                 enhance = true;
             }
-            const endTime = Date.now();
-            logPerf(`Translation time: ${endTime - startTime}ms`);
+        } catch (error) {
+            logError(error);
+            enhance = true;
         }
+        const endTime = Date.now();
+        logPerf(`Translation time: ${endTime - startTime}ms`);
+    }
 
-        if (enhance) {
-            logPrompt("pimping prompt", prompt, seed);
-            prompt = await pimpPrompt(prompt, seed);
-            logPrompt(`Pimped prompt: ${prompt}`);
-        }
+    if (enhance) {
+        logPrompt("pimping prompt", prompt, seed);
+        prompt = await pimpPrompt(prompt, seed);
+        logPrompt(`Pimped prompt: ${prompt}`);
     }
 
     timingInfo.push({
@@ -91,9 +70,8 @@ export const normalizeAndTranslatePrompt = async (
     });
 
     const result = {
-        prompt, // The processed prompt (transformed or enhanced)
-        wasPimped: enhance && !wasTransformedForBadDomain, // Only mark as pimped if not from bad domain
-        wasTransformedForBadDomain, // Flag indicating if the prompt was transformed due to bad domain
+        prompt, // The processed prompt
+        wasPimped: enhance,
     };
 
     memoizedPrompts.set(memoKey, result);

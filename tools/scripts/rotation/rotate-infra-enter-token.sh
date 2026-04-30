@@ -1,12 +1,12 @@
 #!/bin/bash
 # Rotate PLN_ENTER_TOKEN — the token enter.pollinations.ai uses to authenticate
-# requests to the EC2 backend services (image.pollinations.ai, text.pollinations.ai).
+# requests to the image backend service.
 #
 # Usage: ./rotate-infra-enter-token.sh [--execute] [NEW_TOKEN]
 #
 # Default: dry-run. Pass --execute for the full end-to-end cycle.
 #
-# Trust boundary: Cloudflare Worker (enter) → EC2 (image/text services)
+# Trust boundary: Cloudflare Worker (enter) → EC2 image service
 #
 # Order matters: update SOPS first (so EC2 picks up the new token via
 # deploy-enter-services.yml), then update Wrangler secrets (so enter worker
@@ -58,7 +58,7 @@ SOPS_FILES=(
     "$ENTER_DIR/secrets/staging.vars.json"
     "$ENTER_DIR/secrets/prod.vars.json"
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 )
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
 GEN_BASE="https://gen.pollinations.ai"

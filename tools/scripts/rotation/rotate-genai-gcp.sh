@@ -41,7 +41,7 @@ ROTATOR_SA_EMAIL="key-rotator@stellar-verve-465920-b7.iam.gserviceaccount.com"
 
 SOPS_FILES=(
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 )
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
 GEN_BASE="https://gen.pollinations.ai"

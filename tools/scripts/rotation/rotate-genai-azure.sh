@@ -14,7 +14,7 @@
 # 5. Next rotation regenerates what was previously active.
 #
 # Resources managed:
-#   east   — AZURE_MYCELI_PROD_API_KEY         (text.pollinations.ai)
+#   east   — AZURE_MYCELI_PROD_API_KEY         (gen.pollinations.ai)
 #   sweden — AZURE_MYCELI_PROD_SWEDEN_API_KEY  (text + image)
 #   safety — AZURE_CONTENT_SAFETY_API_KEY       (image.pollinations.ai)
 
@@ -38,7 +38,7 @@ source "$SCRIPT_DIR/_pr-deploy.sh"
 
 REPO="pollinations/pollinations"
 IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
+TEXT_SOPS="$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"

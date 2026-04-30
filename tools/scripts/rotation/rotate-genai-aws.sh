@@ -45,7 +45,7 @@ source "$SCRIPT_DIR/_pr-deploy.sh"
 REPO="pollinations/pollinations"
 SOPS_FILES=(
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 )
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
 GEN_BASE="https://gen.pollinations.ai"
@@ -113,7 +113,7 @@ if $DRY_RUN; then
     echo
     log "Plan:"
     echo "  1. Create new IAM access key for $IAM_USER (old $OLD_KEY_ID stays valid)"
-    echo "  2. Update SOPS: image.pollinations.ai/env.json, text.pollinations.ai/env.json"
+    echo "  2. Update SOPS: image.pollinations.ai/env.json, gen.pollinations.ai/env.json"
     echo "  3. Verify new key via sts"
     echo "  4. Open PR: rotate/aws-<date> → main, auto-merge"
     echo "  5. Push main → production (admin)"

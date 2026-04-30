@@ -301,7 +301,6 @@ graph LR
     GEN["gen.pollinations.ai"]:::cfWorker --> ENTER["enter.pollinations.ai Gateway"]:::cfWorker
 
     ENTER --> IMG["Image Service"]:::ec2
-    ENTER --> TXT["Text Service"]:::ec2
     ENTER --> AUD["Audio Service"]:::ec2
 
     IMG --> CF["Cloudflare Worker with R2 Cache"]:::cfWorkerLight
@@ -310,11 +309,10 @@ graph LR
 
     AUD --> EL["ElevenLabs TTS API"]:::provider
 
-    TXT --> C["text.pollinations.ai"]:::ec2
-    C --> SC["Scaleway API"]:::provider
-    C --> DS["Deepseek API"]:::provider
-    C --> G["Azure-hosted LLMs"]:::provider
-    C --> CFM["Cloudflare AI"]:::provider
+    GEN --> SC["Scaleway API"]:::provider
+    GEN --> DS["Deepseek API"]:::provider
+    GEN --> G["Azure-hosted LLMs"]:::provider
+    GEN --> CFM["Cloudflare AI"]:::provider
 
     style CLIENTS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
 
@@ -377,7 +375,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 
-- [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
+- [`gen.pollinations.ai/`](./gen.pollinations.ai/): Cloudflare Worker for API routing, auth handoff, text generation, and caching.
 
 - [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.
 

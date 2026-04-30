@@ -82,6 +82,17 @@ const app = new Hono<Env>()
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
     .all("/api/docs/*", redirectLegacyDocs)
+    .all("/api/generate/*", (c) => {
+        const url = new URL(c.req.url);
+        url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+        url.pathname = url.pathname.replace(/^\/api\/generate/, "");
+        c.header("Deprecation", "true");
+        c.header(
+            "Link",
+            '<https://gen.pollinations.ai>; rel="successor-version"',
+        );
+        return c.redirect(url.toString(), 308);
+    })
     .route("/api", api);
 
 app.notFound(async (c: Context<Env>) => {

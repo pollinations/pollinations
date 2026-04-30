@@ -415,7 +415,7 @@ const AutoTopUpActions: FC<AutoTopUpActionsProps> = ({
                     className={cn(
                         "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60",
                         isEnabled
-                            ? "border-amber-500 bg-amber-500"
+                            ? "border-amber-300 bg-amber-200"
                             : "border-amber-300 bg-amber-100",
                     )}
                 >

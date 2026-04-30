@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import type { Usage } from "@shared/registry/registry.ts";
@@ -267,7 +268,6 @@ async function shouldTriggerAutoTopUp(
     const [user] = await db
         .select({
             enabled: userTable.autoTopUpEnabled,
-            threshold: userTable.autoTopUpThresholdPollen,
             amountUsd: userTable.autoTopUpAmountUsd,
             packBalance: userTable.packBalance,
         })
@@ -275,11 +275,11 @@ async function shouldTriggerAutoTopUp(
         .where(eq(userTable.id, userId))
         .limit(1);
 
-    if (!user?.enabled || user.threshold == null || user.amountUsd == null) {
+    if (!user?.enabled || user.amountUsd == null) {
         return false;
     }
 
-    return (user.packBalance ?? 0) <= user.threshold;
+    return (user.packBalance ?? 0) <= AUTO_TOP_UP_THRESHOLD_POLLEN;
 }
 
 async function triggerAutoTopUp(

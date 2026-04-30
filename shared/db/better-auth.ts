@@ -37,7 +37,6 @@ export const user = sqliteTable("user", {
   autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })
     .default(false)
     .notNull(),
-  autoTopUpThresholdPollen: real("auto_top_up_threshold_pollen"),
   autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
   autoTopUpLastFailure: text("auto_top_up_last_failure"),
   autoTopUpLastFailureAt: integer("auto_top_up_last_failure_at", {

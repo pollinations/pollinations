@@ -329,7 +329,6 @@ test("GET /api/stripe/billing disables auto top-up when default card is removed"
         .set({
             stripeCustomerId: customer.id,
             autoTopUpEnabled: true,
-            autoTopUpThresholdPollen: 5,
             autoTopUpAmountUsd: 10,
             autoTopUpLastFailure: "Previous failure",
         })
@@ -390,7 +389,6 @@ test("GET /api/stripe/billing disables auto top-up when billing address is missi
         .set({
             stripeCustomerId: customer.id,
             autoTopUpEnabled: true,
-            autoTopUpThresholdPollen: 5,
             autoTopUpAmountUsd: 10,
             autoTopUpLastFailure: "Previous failure",
         })
@@ -518,7 +516,6 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
             packBalance: 1,
             stripeCustomerId: customer.id,
             autoTopUpEnabled: false,
-            autoTopUpThresholdPollen: 5,
             autoTopUpAmountUsd: 100,
         })
         .where(eq(userTable.id, user.id));
@@ -589,7 +586,6 @@ test("POST /api/stripe/auto-top-up/trigger charges default card and credits poll
             packBalance: 1,
             stripeCustomerId: customer.id,
             autoTopUpEnabled: true,
-            autoTopUpThresholdPollen: 5,
             autoTopUpAmountUsd: 10,
         })
         .where(eq(userTable.id, user.id));
@@ -652,7 +648,6 @@ test("POST /api/stripe/auto-top-up/trigger disables auto top-up when setup is in
             packBalance: 1,
             stripeCustomerId: customer.id,
             autoTopUpEnabled: true,
-            autoTopUpThresholdPollen: 5,
             autoTopUpAmountUsd: 10,
         })
         .where(eq(userTable.id, user.id));

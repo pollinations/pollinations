@@ -155,6 +155,13 @@
       "when": 1777476932532,
       "tag": "0021_stripe_portal_auto_top_up",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1777570803169,
+      "tag": "0022_drop_auto_top_up_threshold_column",
+      "breakpoints": true
     }
   ]
 }

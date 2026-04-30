@@ -1,3 +1,4 @@
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import type Stripe from "stripe";
 import { getPollenPack } from "@/pollen-packs.ts";
 import { createStripeClient } from "./stripe.ts";
@@ -19,7 +20,6 @@ const BILLING_PORTAL_CUSTOMER_UPDATES = [
 ] satisfies Stripe.BillingPortal.ConfigurationCreateParams.Features.CustomerUpdate.AllowedUpdate[];
 
 export const AUTO_TOP_UP_PACK_AMOUNTS = [10, 20, 50, 100] as const;
-export const DEFAULT_AUTO_TOP_UP_THRESHOLD = 5;
 export const DEFAULT_AUTO_TOP_UP_AMOUNT_USD = 20;
 
 type UserStripeBillingDbRow = {
@@ -29,7 +29,6 @@ type UserStripeBillingDbRow = {
     packBalance: number | null;
     stripeCustomerId: string | null;
     autoTopUpEnabled: number | boolean | null;
-    autoTopUpThresholdPollen: number | null;
     autoTopUpAmountUsd: number | null;
     autoTopUpLastFailure: string | null;
     autoTopUpLastFailureAt: number | string | null;
@@ -42,7 +41,6 @@ type UserStripeBillingRow = {
     packBalance: number | null;
     stripeCustomerId: string | null;
     autoTopUpEnabled: boolean;
-    autoTopUpThresholdPollen: number | null;
     autoTopUpAmountUsd: number | null;
     autoTopUpLastFailure: string | null;
     autoTopUpLastFailureAt: number | null;
@@ -162,7 +160,7 @@ export async function getBillingOverview(
     return {
         autoTopUp: {
             enabled: autoTopUpEnabled,
-            thresholdPollen: DEFAULT_AUTO_TOP_UP_THRESHOLD,
+            thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,
             packAmountUsd:
                 user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
             lastFailure,
@@ -306,7 +304,6 @@ export async function updateAutoTopUpSettings(
         return { ok: false, status: 400, error: validationError };
     }
 
-    const thresholdPollen = DEFAULT_AUTO_TOP_UP_THRESHOLD;
     const packAmountUsd = input.packAmountUsd;
 
     if (input.enabled) {
@@ -338,13 +335,12 @@ export async function updateAutoTopUpSettings(
     await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = ?,
-                auto_top_up_threshold_pollen = ?,
                 auto_top_up_amount_usd = ?,
                 auto_top_up_last_failure = NULL,
                 auto_top_up_last_failure_at = NULL
             WHERE id = ?`,
     )
-        .bind(input.enabled ? 1 : 0, thresholdPollen, packAmountUsd, userId)
+        .bind(input.enabled ? 1 : 0, packAmountUsd, userId)
         .run();
 
     return { ok: true, overview: await getBillingOverview(env, userId) };
@@ -360,7 +356,7 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "auto top-up disabled" };
     }
 
-    const threshold = DEFAULT_AUTO_TOP_UP_THRESHOLD;
+    const threshold = AUTO_TOP_UP_THRESHOLD_POLLEN;
     const amountUsd = user.autoTopUpAmountUsd;
     if (amountUsd == null) {
         return { status: "skipped", reason: "auto top-up not configured" };
@@ -500,12 +496,11 @@ export async function processDueAutoTopUps(
         `SELECT id
             FROM user
             WHERE auto_top_up_enabled = 1
-                AND auto_top_up_threshold_pollen IS NOT NULL
                 AND auto_top_up_amount_usd IS NOT NULL
-                AND COALESCE(pack_balance, 0) <= auto_top_up_threshold_pollen
+                AND COALESCE(pack_balance, 0) <= ?
             LIMIT ?`,
     )
-        .bind(limit)
+        .bind(AUTO_TOP_UP_THRESHOLD_POLLEN, limit)
         .all<{ id: string }>();
 
     const results: AutoTopUpProcessResult[] = [];
@@ -622,7 +617,6 @@ async function getUserStripeBillingRow(
                 pack_balance AS packBalance,
                 stripe_customer_id AS stripeCustomerId,
                 auto_top_up_enabled AS autoTopUpEnabled,
-                auto_top_up_threshold_pollen AS autoTopUpThresholdPollen,
                 auto_top_up_amount_usd AS autoTopUpAmountUsd,
                 auto_top_up_last_failure AS autoTopUpLastFailure,
                 auto_top_up_last_failure_at AS autoTopUpLastFailureAt
@@ -811,6 +805,24 @@ async function recordAutoTopUpFailure(
         .run();
 }
 
+async function disableAutoTopUp(
+    db: D1Database,
+    userId: string,
+    reason: string,
+): Promise<void> {
+    await db
+        .prepare(
+            `UPDATE user
+                SET auto_top_up_enabled = 0,
+                    auto_top_up_last_failure = ?,
+                    auto_top_up_last_failure_at = ?
+                WHERE id = ?
+                    AND auto_top_up_enabled = 1`,
+        )
+        .bind(reason, Date.now(), userId)
+        .run();
+}
+
 async function failPendingAutoTopUpAttempts(
     db: D1Database,
     userId: string,
@@ -827,24 +839,6 @@ async function failPendingAutoTopUpAttempts(
                 WHERE user_id = ? AND status = 'pending'`,
         )
         .bind(reason, now, now, userId)
-        .run();
-}
-
-async function disableAutoTopUp(
-    db: D1Database,
-    userId: string,
-    reason: string,
-): Promise<void> {
-    await db
-        .prepare(
-            `UPDATE user
-                SET auto_top_up_enabled = 0,
-                    auto_top_up_last_failure = ?,
-                    auto_top_up_last_failure_at = ?
-                WHERE id = ?
-                    AND auto_top_up_enabled = 1`,
-        )
-        .bind(reason, Date.now(), userId)
         .run();
 }
 

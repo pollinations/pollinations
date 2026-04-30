@@ -61,13 +61,13 @@ export const Tooltip: FC<TooltipProps> = ({
     };
 
     const triggerClassName = cn(
-        "relative cursor-default text-left inline-flex items-center",
+        "relative cursor-pointer md:cursor-default text-left inline-flex items-center",
         className,
     );
 
     const contentNode = (
         <>
-            <span className="md:cursor-default cursor-pointer">{children}</span>
+            {children}
             <span
                 style={{
                     top: tooltipPosition.top,

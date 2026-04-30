@@ -50,7 +50,7 @@ function isApiDocsPath(path: string): boolean {
 function redirectLegacyDocs(c: Context<Env>): Response {
     const url = new URL(c.req.url);
     url.protocol = "https:";
-    url.hostname = "gen.pollinations.ai";
+    url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
     url.pathname = url.pathname.replace(/^\/api\/docs(?=\/|$)/, "/docs");
     url.pathname = stripTrailingSlash(url.pathname);
     return c.redirect(url.toString(), 301);

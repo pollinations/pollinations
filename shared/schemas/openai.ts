@@ -408,21 +408,21 @@ export const CompletionUsageSchema = z
                     .number()
                     .int()
                     .nonnegative()
-                    .optional(),
-                audio_tokens: z.number().int().nonnegative().optional(),
-                reasoning_tokens: z.number().int().nonnegative().optional(),
+                    .nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                reasoning_tokens: z.number().int().nonnegative().nullish(),
                 rejected_prediction_tokens: z
                     .number()
                     .int()
                     .nonnegative()
-                    .optional(),
+                    .nullish(),
             })
             .nullish(),
         prompt_tokens: z.number().int().nonnegative(),
         prompt_tokens_details: z
             .object({
-                audio_tokens: z.number().int().nonnegative().optional(),
-                cached_tokens: z.number().int().nonnegative().optional(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                cached_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
         total_tokens: z.number().int().nonnegative(),

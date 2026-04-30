@@ -349,7 +349,7 @@ test("GET /api/stripe/billing disables auto top-up when default card is removed"
         billingDetailsComplete: boolean;
     };
     expect(data.autoTopUp.enabled).toBe(false);
-    expect(data.autoTopUp.lastFailure).toBeNull();
+    expect(data.autoTopUp.lastFailure).toMatch(/payment method/i);
     expect(data.paymentMethod.hasDefault).toBe(false);
     expect(data.billingDetailsComplete).toBe(true);
 
@@ -410,7 +410,7 @@ test("GET /api/stripe/billing disables auto top-up when billing address is missi
         billingDetailsComplete: boolean;
     };
     expect(data.autoTopUp.enabled).toBe(false);
-    expect(data.autoTopUp.lastFailure).toBeNull();
+    expect(data.autoTopUp.lastFailure).toMatch(/billing details/i);
     expect(data.paymentMethod.hasDefault).toBe(true);
     expect(data.billingDetailsComplete).toBe(false);
 

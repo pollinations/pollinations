@@ -146,9 +146,17 @@ export async function getBillingOverview(
         ? isBillingDetailsComplete(customer)
         : false;
     let autoTopUpEnabled = user.autoTopUpEnabled;
+    let lastFailure = user.autoTopUpLastFailure;
+    let lastFailureAt = user.autoTopUpLastFailureAt;
     if (autoTopUpEnabled && (!paymentMethod || !billingDetailsComplete)) {
-        await disableAutoTopUp(env.DB, userId);
+        const reason = describeMissingBillingSetup(
+            paymentMethod,
+            billingDetailsComplete,
+        );
+        await disableAutoTopUp(env.DB, userId, reason);
         autoTopUpEnabled = false;
+        lastFailure = reason;
+        lastFailureAt = Date.now();
     }
 
     return {
@@ -157,11 +165,10 @@ export async function getBillingOverview(
             thresholdPollen: DEFAULT_AUTO_TOP_UP_THRESHOLD,
             packAmountUsd:
                 user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
-            lastFailure: autoTopUpEnabled ? user.autoTopUpLastFailure : null,
-            lastFailureAt:
-                autoTopUpEnabled && user.autoTopUpLastFailureAt
-                    ? new Date(user.autoTopUpLastFailureAt).toISOString()
-                    : null,
+            lastFailure,
+            lastFailureAt: lastFailureAt
+                ? new Date(lastFailureAt).toISOString()
+                : null,
         },
         paymentMethod: paymentMethod
             ? {
@@ -391,7 +398,11 @@ export async function processAutoTopUpForUser(
         );
 
         if (!paymentMethod) {
-            await disableAutoTopUp(env.DB, userId);
+            await disableAutoTopUp(
+                env.DB,
+                userId,
+                "Auto top-up was disabled because your default payment method was removed in Stripe.",
+            );
             return {
                 status: "skipped",
                 reason: "missing default payment method",
@@ -399,7 +410,11 @@ export async function processAutoTopUpForUser(
         }
 
         if (!isBillingDetailsComplete(customer)) {
-            await disableAutoTopUp(env.DB, userId);
+            await disableAutoTopUp(
+                env.DB,
+                userId,
+                "Auto top-up was disabled because your billing details were removed in Stripe.",
+            );
             return { status: "skipped", reason: "missing billing details" };
         }
 
@@ -665,6 +680,19 @@ function isBillingDetailsComplete(customer: Stripe.Customer): boolean {
     );
 }
 
+function describeMissingBillingSetup(
+    paymentMethod: Stripe.PaymentMethod | null,
+    billingDetailsComplete: boolean,
+): string {
+    if (!paymentMethod && !billingDetailsComplete) {
+        return "Auto top-up was disabled because your default payment method and billing details were removed in Stripe.";
+    }
+    if (!paymentMethod) {
+        return "Auto top-up was disabled because your default payment method was removed in Stripe.";
+    }
+    return "Auto top-up was disabled because your billing details were removed in Stripe.";
+}
+
 function getBillingDetailsSummary(
     customer: Stripe.Customer,
     paymentMethod: Stripe.PaymentMethod | null,
@@ -782,17 +810,21 @@ async function recordAutoTopUpFailure(
         .run();
 }
 
-async function disableAutoTopUp(db: D1Database, userId: string): Promise<void> {
+async function disableAutoTopUp(
+    db: D1Database,
+    userId: string,
+    reason: string,
+): Promise<void> {
     await db
         .prepare(
             `UPDATE user
                 SET auto_top_up_enabled = 0,
-                    auto_top_up_last_failure = NULL,
-                    auto_top_up_last_failure_at = NULL
+                    auto_top_up_last_failure = ?,
+                    auto_top_up_last_failure_at = ?
                 WHERE id = ?
                     AND auto_top_up_enabled = 1`,
         )
-        .bind(userId)
+        .bind(reason, Date.now(), userId)
         .run();
 }
 

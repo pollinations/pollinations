@@ -1,7 +1,12 @@
 import { getTierColor, getTierEmoji } from "@shared/tier-config.ts";
 import { type FC, useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
-import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
+import {
+    formatPollenPackValue,
+    POLLEN_PACKS,
+    type PollenPack,
+} from "@/pollen-packs.ts";
+import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { pillColors } from "../layout/dashboard-theme.ts";
 import { Tooltip } from "../ui/tooltip.tsx";
@@ -145,6 +150,16 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
 export const BuyPollenPanel: FC = () => {
     const [emailCopied, setEmailCopied] = useState(false);
+    const [selectedPackAmount, setSelectedPackAmount] = useState(
+        POLLEN_PACKS.find((pack) => pack.amountUsd === 5)?.amountUsd ??
+            POLLEN_PACKS[0]?.amountUsd ??
+            5,
+    );
+    const selectedPackIndex = Math.max(
+        0,
+        POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
+    );
+    const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
 
     const copyEmail = () => {
         navigator.clipboard.writeText("billing@pollinations.ai");
@@ -155,34 +170,30 @@ export const BuyPollenPanel: FC = () => {
     return (
         <>
             <div className="space-y-4">
-                <div className="space-y-1 text-center">
-                    <p className="text-sm text-amber-800">
-                        Choose a pack below. 🧪 Beta bonus is already included,
-                        with larger packs getting more.
-                    </p>
-                </div>
-
-                <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:grid-cols-3">
-                    {POLLEN_PACKS.map((pack) => (
+                {selectedPack && (
+                    <div className="w-full space-y-3">
+                        <PollenPackSlider
+                            value={selectedPack.amountUsd}
+                            onChange={setSelectedPackAmount}
+                        />
                         <Button
-                            key={pack.amountUsd}
                             as="a"
-                            href={`/api/stripe/checkout/${pack.amountUsd}`}
+                            href={`/api/stripe/checkout/${selectedPack.amountUsd}`}
                             color="amber"
                             weight="light"
-                            title={`Buy $${pack.amountUsd} pollen pack`}
-                            className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:text-sm"
+                            title={`Buy $${selectedPack.amountUsd} pollen pack`}
+                            className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-4 text-center text-sm shadow-none sm:w-fit"
                         >
-                            <span className="font-semibold text-amber-900">
-                                ${pack.amountUsd}
-                            </span>
-                            <span className="mx-2 text-amber-400">/</span>
-                            <span className="font-medium text-amber-900">
-                                🪷 {formatPollenPackValue(pack.pollenGrant)}
+                            <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                                <span className="font-semibold">Buy</span>
+                                <PollenPackReadout
+                                    pack={selectedPack}
+                                    tone="button"
+                                />
                             </span>
                         </Button>
-                    ))}
-                </div>
+                    </div>
+                )}
 
                 <PaymentTrustBadge className="mt-0 pt-2" />
             </div>
@@ -216,3 +227,141 @@ export const BuyPollenPanel: FC = () => {
         </>
     );
 };
+
+type PollenPackSliderProps = {
+    value: number;
+    onChange: (value: number) => void;
+};
+
+const PollenPackSlider: FC<PollenPackSliderProps> = ({ value, onChange }) => {
+    const selectedIndex = Math.max(
+        0,
+        POLLEN_PACKS.findIndex((pack) => pack.amountUsd === value),
+    );
+    const selectedPack = POLLEN_PACKS[selectedIndex] ?? POLLEN_PACKS[0];
+    const progressPercent =
+        POLLEN_PACKS.length > 1
+            ? (selectedIndex / (POLLEN_PACKS.length - 1)) * 100
+            : 100;
+
+    return (
+        <div className="space-y-2">
+            <div className="text-[15px] font-bold text-amber-950">
+                Select amount
+            </div>
+            <div className="flex h-8 items-center">
+                <input
+                    type="range"
+                    min={0}
+                    max={Math.max(0, POLLEN_PACKS.length - 1)}
+                    step={1}
+                    value={selectedIndex}
+                    onChange={(event) => {
+                        const pack =
+                            POLLEN_PACKS[Number(event.currentTarget.value)];
+                        if (pack) onChange(pack.amountUsd);
+                    }}
+                    aria-label="Choose pollen pack"
+                    aria-valuetext={
+                        selectedPack ? formatPackValue(selectedPack) : undefined
+                    }
+                    style={{
+                        background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${progressPercent}%, #fde68a ${progressPercent}%, #fde68a 100%)`,
+                    }}
+                    className="h-2 w-full cursor-grab appearance-none rounded-full outline-none transition active:cursor-grabbing [&::-moz-range-thumb]:h-[22px] [&::-moz-range-thumb]:w-[22px] [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-amber-600 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-moz-range-thumb]:transition-transform [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-7px] [&::-webkit-slider-thumb]:h-[22px] [&::-webkit-slider-thumb]:w-[22px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-amber-600 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-webkit-slider-thumb]:transition-transform hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-105"
+                />
+            </div>
+            <div className="relative h-4 text-[10px] font-semibold text-amber-700/80 tabular-nums">
+                {POLLEN_PACKS.map((pack, index) => {
+                    const labelPercent =
+                        POLLEN_PACKS.length > 1
+                            ? (index / (POLLEN_PACKS.length - 1)) * 100
+                            : 0;
+
+                    return (
+                        <span
+                            key={pack.amountUsd}
+                            style={{ left: `${labelPercent}%` }}
+                            className={cn(
+                                "absolute top-0",
+                                index === 0
+                                    ? "translate-x-0 text-left"
+                                    : index === POLLEN_PACKS.length - 1
+                                      ? "-translate-x-full text-right"
+                                      : "-translate-x-1/2 text-center",
+                            )}
+                        >
+                            ${pack.amountUsd}
+                        </span>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+type PollenPackReadoutProps = {
+    pack: PollenPack;
+    tone?: "panel" | "button";
+};
+
+const PollenPackReadout: FC<PollenPackReadoutProps> = ({
+    pack,
+    tone = "panel",
+}) => {
+    const bonusPercent = getPackBonusPercent(pack);
+    const hasBonus = bonusPercent > 0;
+    const isButtonTone = tone === "button";
+
+    return (
+        <span
+            className={cn(
+                "flex flex-wrap items-center gap-2",
+                isButtonTone ? "justify-center" : "justify-end",
+            )}
+        >
+            <span className="inline-flex items-baseline gap-1.5">
+                <span className="text-base font-bold text-amber-950">
+                    ${pack.amountUsd}
+                </span>
+                <span
+                    className={
+                        isButtonTone ? "text-amber-600" : "text-amber-400"
+                    }
+                >
+                    -&gt;
+                </span>
+                <span className="text-base font-bold text-amber-950">
+                    {formatPollenPackValue(pack.pollenGrant)} pollen
+                </span>
+            </span>
+            {hasBonus && (
+                <span
+                    className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                        isButtonTone
+                            ? "bg-amber-500 text-white shadow-sm"
+                            : bonusPercent >= 60
+                              ? "bg-amber-500 text-white shadow-sm"
+                              : "bg-amber-200 text-amber-900",
+                    )}
+                >
+                    +{bonusPercent}% bonus
+                </span>
+            )}
+        </span>
+    );
+};
+
+function getPackBonusPercent(pack: PollenPack): number {
+    if (!pack.amountUsd) return 0;
+
+    return Math.round((pack.bonusPollen / pack.amountUsd) * 100);
+}
+
+function formatPackValue(pack: PollenPack): string {
+    const bonusPercent = getPackBonusPercent(pack);
+    const bonusLabel = bonusPercent > 0 ? `, +${bonusPercent}% bonus` : "";
+
+    return `$${pack.amountUsd} to ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusLabel}`;
+}

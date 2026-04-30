@@ -143,6 +143,10 @@ test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
         metadata: {
             pollinations_portal: "billing_details_v1",
         },
+        business_profile: {
+            headline:
+                "Manage your payment methods, billing details, and invoices.",
+        },
         features: {
             customer_update: {
                 enabled: true,
@@ -156,6 +160,69 @@ test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
             },
         },
     });
+});
+
+test("POST /api/stripe/billing/portal updates existing Stripe Portal headline", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "polar", "tinybird");
+
+    mocks.stripe.state.portalConfigurations.push({
+        id: "bpc_existing",
+        object: "billing_portal.configuration",
+        active: true,
+        is_default: false,
+        metadata: {
+            pollinations_portal: "billing_details_v1",
+        },
+        name: "Pollinations Billing Portal",
+        default_return_url: null,
+        business_profile: {
+            headline: null,
+        },
+        features: {
+            customer_update: {
+                enabled: true,
+                allowed_updates: ["name", "address", "tax_id"],
+            },
+            invoice_history: {
+                enabled: true,
+            },
+            payment_method_update: {
+                enabled: true,
+            },
+        },
+    });
+
+    const response = await SELF.fetch(`${base}/billing/portal`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({ flow: "default" }),
+    });
+
+    expect(response.status).toBe(200);
+    const portalRequest = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/billing_portal/sessions",
+    );
+    expect(portalRequest?.body.configuration).toBe("bpc_existing");
+
+    const updateRequest = mocks.stripe.state.requests.find(
+        (request) =>
+            request.path === "/v1/billing_portal/configurations/bpc_existing",
+    );
+    expect(updateRequest?.body["business_profile[headline]"]).toBe(
+        "Manage your payment methods, billing details, and invoices.",
+    );
+    expect(mocks.stripe.state.portalConfigurations[0].business_profile).toEqual(
+        {
+            headline:
+                "Manage your payment methods, billing details, and invoices.",
+        },
+    );
 });
 
 test("GET /api/stripe/billing returns default card billing address", async ({

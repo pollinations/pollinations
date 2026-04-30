@@ -36,11 +36,11 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
     return (
         <div
             className={cn(
-                "flex flex-col items-center gap-3 pt-6 mt-2",
+                "mt-2 flex w-full flex-col items-start gap-3 pt-6",
                 className,
             )}
         >
-            <div className="flex flex-wrap justify-center items-center gap-2">
+            <div className="flex flex-wrap items-center justify-start gap-2">
                 {paymentMethods.map((method) => (
                     <img
                         key={method.name}

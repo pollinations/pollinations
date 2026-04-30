@@ -10,6 +10,8 @@ const AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
 const BILLING_PORTAL_CONFIGURATION_METADATA_KEY = "pollinations_portal";
 const BILLING_PORTAL_CONFIGURATION_METADATA_VALUE = "billing_details_v1";
 const BILLING_PORTAL_CONFIGURATION_NAME = "Pollinations Billing Portal";
+const BILLING_PORTAL_HEADLINE =
+    "Manage your payment methods, billing details, and invoices.";
 const BILLING_PORTAL_CUSTOMER_UPDATES = [
     "name",
     "address",
@@ -20,7 +22,7 @@ export const AUTO_TOP_UP_THRESHOLD_MIN = 1;
 export const AUTO_TOP_UP_THRESHOLD_MAX = 100;
 export const AUTO_TOP_UP_PACK_AMOUNTS = [5, 10, 20, 50, 100] as const;
 export const DEFAULT_AUTO_TOP_UP_THRESHOLD = 5;
-export const DEFAULT_AUTO_TOP_UP_AMOUNT_USD = 10;
+export const DEFAULT_AUTO_TOP_UP_AMOUNT_USD = 20;
 
 type UserStripeBillingDbRow = {
     id: string;
@@ -250,6 +252,9 @@ function createBillingPortalConfigurationParams(
     return {
         name: BILLING_PORTAL_CONFIGURATION_NAME,
         default_return_url: returnUrl,
+        business_profile: {
+            headline: BILLING_PORTAL_HEADLINE,
+        },
         metadata: {
             [BILLING_PORTAL_CONFIGURATION_METADATA_KEY]:
                 BILLING_PORTAL_CONFIGURATION_METADATA_VALUE,
@@ -272,6 +277,10 @@ function createBillingPortalConfigurationParams(
 function isBillingPortalConfigurationCurrent(
     configuration: Stripe.BillingPortal.Configuration,
 ): boolean {
+    if (configuration.business_profile.headline !== BILLING_PORTAL_HEADLINE) {
+        return false;
+    }
+
     const customerUpdate = configuration.features.customer_update;
     if (!customerUpdate.enabled) return false;
 

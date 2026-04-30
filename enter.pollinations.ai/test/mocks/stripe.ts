@@ -74,6 +74,9 @@ type StripePortalConfiguration = {
     metadata: Record<string, string>;
     name: string | null;
     default_return_url: string | null;
+    business_profile: {
+        headline: string | null;
+    };
     features: {
         customer_update: {
             enabled: boolean;
@@ -413,6 +416,7 @@ function createPortalConfiguration(
         metadata: parseMetadata(form),
         name: form.get("name"),
         default_return_url: form.get("default_return_url"),
+        business_profile: parsePortalBusinessProfile(form),
         features: parsePortalConfigurationFeatures(form),
     };
 }
@@ -428,10 +432,26 @@ function applyPortalConfigurationUpdate(
     configuration.name = form.get("name") ?? configuration.name;
     configuration.default_return_url =
         form.get("default_return_url") ?? configuration.default_return_url;
+    configuration.business_profile = parsePortalBusinessProfile(
+        form,
+        configuration.business_profile,
+    );
     configuration.features = parsePortalConfigurationFeatures(
         form,
         configuration.features,
     );
+}
+
+function parsePortalBusinessProfile(
+    form: URLSearchParams,
+    previous?: StripePortalConfiguration["business_profile"],
+): StripePortalConfiguration["business_profile"] {
+    return {
+        headline:
+            form.get("business_profile[headline]") ??
+            previous?.headline ??
+            null,
+    };
 }
 
 function parsePortalConfigurationFeatures(

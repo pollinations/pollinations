@@ -5,7 +5,7 @@ on:
     branches:
       - production
     paths:
-      - 'text.pollinations.ai/scripts/deploy-portkey.sh'
+      - 'gen.pollinations.ai/scripts/deploy-portkey.sh'
       - '.github/workflows/deploy-portkey-gateway.yml'
   workflow_dispatch:
     inputs:
@@ -40,5 +40,5 @@ jobs:
           PORTKEY_COMMIT: ${{ github.event.inputs.commit }}
           PORTKEY_ENV: ${{ github.event.inputs.environment || 'production' }}
         run: |
-          chmod +x ./text.pollinations.ai/scripts/deploy-portkey.sh
-          ./text.pollinations.ai/scripts/deploy-portkey.sh
+          chmod +x ./gen.pollinations.ai/scripts/deploy-portkey.sh
+          ./gen.pollinations.ai/scripts/deploy-portkey.sh

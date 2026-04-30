@@ -48,6 +48,10 @@ const baseConfig = defineConfig({
                 replacement: `${genSrc}${path}`,
             })),
             {
+                find: /^@\/text\/(.*)$/,
+                replacement: `${genSrc}text/$1`,
+            },
+            {
                 find: /^@shared\/(.*)$/,
                 replacement: `${sharedSrc}$1`,
             },

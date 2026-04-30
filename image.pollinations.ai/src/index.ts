@@ -72,7 +72,6 @@ type ImageGenParams = {
     timingInfo: TimingStep[];
     originalPrompt: string;
     safeParams: ImageParams;
-    referrer: string | null;
     progress: ProgressManager;
     requestId: string;
     authResult: AuthResult;
@@ -89,7 +88,6 @@ const imageGen = async ({
     timingInfo,
     originalPrompt,
     safeParams,
-    referrer,
     progress,
     requestId,
     authResult,
@@ -99,23 +97,13 @@ const imageGen = async ({
 
         // Prompt processing
         progress.updateBar(requestId, 20, "Prompt", "Normalizing...");
-        const { prompt, wasTransformedForBadDomain } =
-            await normalizeAndTranslatePrompt(
-                originalPrompt,
-                req,
-                timingInfo,
-                safeParams,
-                referrer,
-            );
+        const { prompt } = await normalizeAndTranslatePrompt(
+            originalPrompt,
+            req,
+            timingInfo,
+            safeParams,
+        );
         progress.updateBar(requestId, 30, "Prompt", "Normalized");
-
-        // For bad domains, log that we're using the transformed prompt
-        if (wasTransformedForBadDomain) {
-            logApi(
-                "prompt transformed for bad domain, using alternative:",
-                prompt,
-            );
-        }
 
         // Use the processed prompt for generation
         const generationPrompt = prompt;
@@ -146,7 +134,6 @@ const imageGen = async ({
             originalPrompt,
             progress,
             requestId,
-            wasTransformedForBadDomain,
             userInfo,
         );
 
@@ -187,7 +174,6 @@ const imageGen = async ({
             requestId,
             prompt: originalPrompt,
             params: safeParams,
-            referrer,
         });
 
         throw error;
@@ -354,7 +340,6 @@ const checkCacheAndGenerate = async (
             timingInfo,
             originalPrompt,
             safeParams,
-            referrer,
             progress,
             requestId,
             authResult,

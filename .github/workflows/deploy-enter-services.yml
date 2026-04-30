@@ -32,11 +32,6 @@ jobs:
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
-          if [ -f "text.pollinations.ai/secrets/env.json" ]; then
-            sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > text.pollinations.ai/.env
-            echo "✅ Decrypted text.pollinations.ai/.env"
-          fi
-          
           if [ -f "image.pollinations.ai/secrets/env.json" ]; then
             sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > image.pollinations.ai/.env
             echo "✅ Decrypted image.pollinations.ai/.env"
@@ -48,7 +43,7 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
           username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
           key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
-          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          source: "image.pollinations.ai/.env"
           target: "/home/ubuntu/pollinations/"
           strip_components: 0
 
@@ -63,23 +58,18 @@ jobs:
             echo "🚀 Deploying to STAGING..."
             
             # Secure .env file permissions (prevent world-readable secrets)
-            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env 2>/dev/null || true
             chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env 2>/dev/null || true
             echo "🔒 Secured .env file permissions"
             
             cd /home/ubuntu/pollinations
             git pull origin staging
             
-            cd text.pollinations.ai
+            cd image.pollinations.ai
             pnpm install --frozen-lockfile || pnpm install
             
-            cd ../image.pollinations.ai
-            pnpm install --frozen-lockfile || pnpm install
-            
-            sudo systemctl restart text-pollinations.service image-pollinations.service
+            sudo systemctl restart image-pollinations.service
             sleep 10
             
-            sudo systemctl is-active text-pollinations.service || exit 1
             sudo systemctl is-active image-pollinations.service || exit 1
             
             echo "🎉 Staging deployment complete!"
@@ -100,11 +90,6 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
           # Decrypt .encrypted.env files to .env
-          if [ -f "text.pollinations.ai/secrets/env.json" ]; then
-            sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > text.pollinations.ai/.env
-            echo "✅ Decrypted text.pollinations.ai/.env"
-          fi
-          
           if [ -f "image.pollinations.ai/secrets/env.json" ]; then
             sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > image.pollinations.ai/.env
             echo "✅ Decrypted image.pollinations.ai/.env"
@@ -116,7 +101,7 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          source: "image.pollinations.ai/.env"
           target: "/home/ubuntu/pollinations/"
           strip_components: 0
 
@@ -132,7 +117,6 @@ jobs:
             echo "🚀 Starting deployment to enter-services..."
             
             # Secure .env file permissions (prevent world-readable secrets)
-            chmod 600 /home/ubuntu/pollinations/text.pollinations.ai/.env 2>/dev/null || true
             chmod 600 /home/ubuntu/pollinations/image.pollinations.ai/.env 2>/dev/null || true
             echo "🔒 Secured .env file permissions"
             
@@ -143,21 +127,15 @@ jobs:
             echo "📥 Pulling latest changes..."
             git pull origin production
             
-            # Update text service
-            echo "📝 Updating text.pollinations.ai..."
-            cd text.pollinations.ai
-            pnpm install --frozen-lockfile || pnpm install
-            echo "✅ Text service dependencies installed"
-            
             # Update image service
             echo "🖼️  Updating image.pollinations.ai..."
-            cd ../image.pollinations.ai
+            cd image.pollinations.ai
             pnpm install --frozen-lockfile || pnpm install
             echo "✅ Image service dependencies installed"
             
             # Restart systemd services
             echo "🔄 Restarting systemd services..."
-            sudo systemctl restart text-pollinations.service image-pollinations.service
+            sudo systemctl restart image-pollinations.service
             
             # Wait for services to be ready
             echo "⏳ Waiting for services to start..."
@@ -165,20 +143,11 @@ jobs:
             
             # Verify services are running
             echo "✅ Verifying service status..."
-            sudo systemctl is-active text-pollinations.service || exit 1
             sudo systemctl is-active image-pollinations.service || exit 1
             
             # Health check endpoints (no token needed - just verify services respond)
             echo "🏥 Running health checks..."
             sleep 2  # Give services a moment to fully initialize
-            
-            # Check text service health - any HTTP response means service is up
-            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16385/ || echo "000")
-            if [ "$TEXT_HEALTH" = "000" ]; then
-              echo "❌ Text service not responding"
-              exit 1
-            fi
-            echo "✅ Text service responding (HTTP $TEXT_HEALTH)"
             
             # Check image service health - any HTTP response means service is up
             IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16384/ || echo "000")
@@ -190,4 +159,4 @@ jobs:
             
             echo "🎉 Deployment complete!"
             echo "📊 Service Status:"
-            sudo systemctl status text-pollinations.service image-pollinations.service --no-pager | grep -E "Active:|running"
+            sudo systemctl status image-pollinations.service --no-pager | grep -E "Active:|running"

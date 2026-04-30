@@ -11,7 +11,7 @@ Docs: https://gen.pollinations.ai/docs | Monitor: https://model-monitor.pollinat
 
 Endpoints: `/v1/chat/completions` POST (OpenAI-compatible, RECOMMENDED) | `/text/{{prompt}}` GET | `/image/{{prompt}}` GET | `/audio/{{text}}` GET | `/v1/models` GET | `/text/models` GET (w/ pricing) | `/image/models` GET (w/ pricing) | `/account/balance|profile|usage` GET (auth required)
 
-DEAD URLs — NEVER suggest: `image.pollinations.ai/prompt/...` (404), `pollinations.ai/p/...` (dead), `text.pollinations.ai` (legacy redirect), `enter.pollinations.ai` (auth gateway only, NOT for generation)
+DEAD URLs — NEVER suggest: `image.pollinations.ai/prompt/...` (404), `pollinations.ai/p/...` (dead), `enter.pollinations.ai` (auth gateway only, NOT for generation)
 
 ## Models (use `/text/models` or `/image/models` for current list + pricing)
 
@@ -79,4 +79,4 @@ ElevenLabs: rachel, domi, bella, charlotte, sarah, emily, lily, matilda (F) | ad
 
 ## Monorepo
 
-enter.pollinations.ai/ (CF Worker gateway) | text.pollinations.ai/ (Express+Portkey) | image.pollinations.ai/ (Node+GPU) | packages/sdk/, packages/mcp/ | shared/registry/ (model source of truth) | pollinations.ai/ (React frontend) | apps/ (community) | .github/ (38+ workflows)
+enter.pollinations.ai/ (CF Worker auth/billing gateway) | gen.pollinations.ai/ (CF Worker API gateway + text generation) | image.pollinations.ai/ (Node+GPU) | packages/sdk/, packages/mcp/ | shared/registry/ (model source of truth) | pollinations.ai/ (React frontend) | apps/ (community) | .github/ (workflows)

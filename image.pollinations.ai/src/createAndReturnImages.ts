@@ -1100,25 +1100,12 @@ const extractMaturityFlags = (
     return { isMature, isChild };
 };
 
-/**
- * Prepares metadata object based on prompt information and bad domain status
- * @param {string} prompt - The processed prompt
- * @param {string} originalPrompt - The original prompt before transformations
- * @param {Object} safeParams - Parameters for image generation
- * @param {boolean} wasTransformedForBadDomain - Flag indicating if prompt was transformed
- * @returns {Object} - Metadata object
- */
 const prepareMetadata = (
     prompt: string,
     originalPrompt: string,
     safeParams: ImageParams,
-    wasTransformedForBadDomain: boolean,
 ): ImageParams & { prompt: string; originalPrompt: string } => {
-    // When a prompt was transformed due to bad domain, always use the original prompt in metadata
-    // This ensures clients never see the transformed prompt
-    return wasTransformedForBadDomain
-        ? { ...safeParams, prompt: originalPrompt, originalPrompt }
-        : { prompt, originalPrompt, ...safeParams };
+    return { prompt, originalPrompt, ...safeParams };
 };
 
 /**
@@ -1154,7 +1141,6 @@ const processImageBuffer = async (
  * @param {string} originalPrompt - The original prompt before any transformations.
  * @param {Object} progress - Progress tracking object.
  * @param {string} requestId - Request ID for progress tracking.
- * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
@@ -1165,7 +1151,6 @@ export async function createAndReturnImageCached(
     originalPrompt: string,
     progress: ProgressManager,
     requestId: string,
-    wasTransformedForBadDomain: boolean = false,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     try {
@@ -1199,12 +1184,7 @@ export async function createAndReturnImageCached(
 
         // Prepare metadata
         const { buffer: _buffer, ...maturity } = result;
-        const metadataObj = prepareMetadata(
-            prompt,
-            originalPrompt,
-            safeParams,
-            wasTransformedForBadDomain,
-        );
+        const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
         // Process the image buffer
         const processedBuffer = await processImageBuffer(

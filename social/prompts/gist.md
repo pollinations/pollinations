@@ -33,7 +33,7 @@ Use the changed files list to determine PR type, user impact, and what to highli
 **Core Platform** (`user_facing: true`):
 - `enter.pollinations.ai/` — auth gateway, billing, API routing. Focus on: new endpoints, rate limit changes, model additions, billing fixes
 - `image.pollinations.ai/` — image generation backend. Focus on: new models, faster generation, quality improvements, new parameters
-- `text.pollinations.ai/` — text/chat generation backend. Focus on: new models, streaming improvements, compatibility changes
+- `gen.pollinations.ai/` — API gateway and text/chat generation Worker. Focus on: new models, streaming improvements, compatibility changes
 - `pollinations.ai/` — main frontend. Focus on: UI redesigns, new pages, UX improvements users see directly
 - `packages/sdk/` — client SDK. Focus on: new hooks, API changes developers use
 - `packages/mcp/` — MCP server for AI agents. Focus on: new tools, model access

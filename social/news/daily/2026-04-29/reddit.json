@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-29",
+  "period_start": "2026-04-29",
+  "period_end": "2026-04-29",
+  "generated_at": "2026-04-30T06:49:48.842923+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-29/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped today: Dedicated gen gateway, BYOP auth updates, reproducible video",
+  "text": "Moved the generation gateway over to gen.pollinations.ai today. We were hitting some routing bottlenecks, so breaking this out onto dedicated infrastructure should keep latency stable as request volume scales.\n\nFor those using BYOP (Bring Your Own Provider), we merged a few necessary updates. You can now set unlimited budgets if you're footing your own API bills. We also tightened up the auth flow—you can now allowlist per-key redirect_uris and bind the client_id directly to them. Less surface area for weird redirect behavior.\n\nOn the API side, we cleaned up how we handle errors. If you pass a broken image URL, you'll now get a proper 400 instead of a generic 500. We are also surfacing Portkey provider errors directly so you don't have to guess why a model failed to respond. \n\nAlso, Nova Reel now supports seeds, so you can actually generate reproducible video.\n\nFinally, a few community additions: the pollinations_ai/ompc package got updated, and YSOAI and LAHgen are live in the image showcase.\n\nCode is in the repo. Let us know if the new gateway routing breaks anything specific for your apps."
+}

@@ -45,11 +45,8 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
 
     return (
         <div className="space-y-5">
-            <Field.Root className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                    <Field.Label className="text-sm font-semibold">
-                        Redirect URLs
-                    </Field.Label>
+            <div className="flex flex-col gap-2">
+                <div className="flex justify-end">
                     <Button
                         type="button"
                         color="blue"
@@ -61,16 +58,21 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                     </Button>
                 </div>
                 {rows.map((uri, index) => (
-                    <div
+                    <Field.Root
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
                         key={index}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-3"
                     >
+                        <Field.Label className="shrink-0 text-sm font-semibold">
+                            {rows.length > 1
+                                ? `Redirect URL ${index + 1}`
+                                : "Redirect URL"}
+                        </Field.Label>
                         <Field.Input
                             type="text"
                             value={uri}
                             onChange={(e) => update(index, e.target.value)}
-                            className="flex-1 rounded-lg border border-blue-300 bg-blue-100 px-3 py-2 text-blue-950 placeholder:text-blue-700/55 focus:outline-none focus-visible:border-blue-500 focus-visible:ring-1 focus-visible:ring-blue-500/60"
+                            className="flex-1 rounded-lg border border-blue-300 px-3 py-2 focus:outline-none focus-visible:border-blue-500 focus-visible:ring-1 focus-visible:ring-blue-500/60"
                             placeholder="https://myapp.com/auth/callback"
                             disabled={disabled}
                         />
@@ -85,12 +87,12 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                                 Remove
                             </Button>
                         )}
-                    </div>
+                    </Field.Root>
                 ))}
                 <p className="text-xs text-blue-800/70">
                     Loopback URLs match any port (RFC 8252).
                 </p>
-            </Field.Root>
+            </div>
             {onByopEnabledChange && (
                 <DeveloperEarningsSwitch
                     enabled={byopEnabled}
@@ -118,7 +120,9 @@ const DeveloperEarningsSwitch: FC<DeveloperEarningsSwitchProps> = ({
             <div className="flex min-w-0 items-center text-sm font-semibold text-blue-950">
                 Developer earnings
                 <InfoTip
-                    text="BYOP app requests include a 25% markup. App developers receive 20% of the total Pollen charged."
+                    text={
+                        "• Developer earnings add a 25% markup to the base model price.\n• That markup equals 20% of the final Pollen your users spend in your app, credited to you."
+                    }
                     label="Developer earnings information"
                     tone="blue"
                     placement="top"

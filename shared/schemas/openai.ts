@@ -322,8 +322,8 @@ export const CreateChatCompletionRequestSchema = z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
             .optional(),
         thinking_budget: z.number().int().min(0).optional(),
-        temperature: z.number().min(0).max(2).nullable().optional().default(1),
-        top_p: z.number().min(0).max(1).nullable().optional().default(1),
+        temperature: z.number().min(0).max(2).nullable().optional(),
+        top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
         parallel_tool_calls: z.boolean().optional().default(true),

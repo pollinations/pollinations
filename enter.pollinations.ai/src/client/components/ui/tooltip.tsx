@@ -8,6 +8,9 @@ import {
 } from "react";
 import { cn } from "@/util.ts";
 
+const TOOLTIP_MAX_WIDTH = 288;
+const TOOLTIP_VIEWPORT_MARGIN = 12;
+
 type TooltipProps = {
     children: ReactNode;
     content: ReactNode;
@@ -28,15 +31,31 @@ export const Tooltip: FC<TooltipProps> = ({
     triggerAs = "button",
 }) => {
     const [showTooltip, setShowTooltip] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const [tooltipPosition, setTooltipPosition] = useState({
+        top: 0,
+        left: 0,
+        maxWidth: TOOLTIP_MAX_WIDTH,
+    });
     const triggerRef = useRef<HTMLElement | null>(null);
 
     const updateTooltipPosition = () => {
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
+            const maxWidth = Math.min(
+                TOOLTIP_MAX_WIDTH,
+                window.innerWidth - TOOLTIP_VIEWPORT_MARGIN * 2,
+            );
+            const left = Math.min(
+                Math.max(rect.left, TOOLTIP_VIEWPORT_MARGIN),
+                Math.max(
+                    TOOLTIP_VIEWPORT_MARGIN,
+                    window.innerWidth - maxWidth - TOOLTIP_VIEWPORT_MARGIN,
+                ),
+            );
             setTooltipPosition({
                 top: rect.bottom + 4,
-                left: rect.left,
+                left,
+                maxWidth,
             });
         }
     };
@@ -53,10 +72,11 @@ export const Tooltip: FC<TooltipProps> = ({
                 style={{
                     top: tooltipPosition.top,
                     left: tooltipPosition.left,
+                    maxWidth: tooltipPosition.maxWidth,
                 }}
                 className={`${
                     showTooltip ? "visible opacity-100" : "invisible opacity-0"
-                } hidden md:block fixed px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200 z-50 pointer-events-none transition-opacity min-w-max`}
+                } hidden md:block fixed w-max px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200 z-50 pointer-events-none transition-opacity whitespace-pre-line break-words`}
             >
                 {content}
             </span>
@@ -64,7 +84,7 @@ export const Tooltip: FC<TooltipProps> = ({
                 style={{ top: tooltipPosition.top }}
                 className={`${
                     showTooltip ? "visible opacity-100" : "invisible opacity-0"
-                } md:hidden fixed left-1/2 -translate-x-1/2 px-4 py-3 bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 z-50 pointer-events-none transition-opacity max-w-[90vw]`}
+                } md:hidden fixed left-1/2 -translate-x-1/2 px-4 py-3 bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 z-50 pointer-events-none transition-opacity max-w-[90vw] whitespace-pre-line break-words`}
             >
                 {content}
             </span>

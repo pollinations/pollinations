@@ -8,6 +8,7 @@ type TabButtonProps = {
     onClick: () => void;
     children: ReactNode;
     ariaLabel?: string;
+    disabled?: boolean;
     className?: string;
 };
 
@@ -17,6 +18,7 @@ export const TabButton: FC<TabButtonProps> = ({
     onClick,
     children,
     ariaLabel,
+    disabled = false,
     className,
 }) => (
     <button
@@ -24,9 +26,11 @@ export const TabButton: FC<TabButtonProps> = ({
         onClick={onClick}
         aria-label={ariaLabel}
         aria-pressed={active}
+        disabled={disabled}
         className={cn(
             "inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
             active ? tabColors[theme].active : tabColors[theme].inactive,
+            disabled && "cursor-not-allowed opacity-50",
             className,
         )}
     >

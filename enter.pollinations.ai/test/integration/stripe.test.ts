@@ -132,9 +132,292 @@ test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
         (request) => request.path === "/v1/billing_portal/sessions",
     );
     expect(portalRequest?.body.customer).toBe("cus_mock_1");
+    expect(portalRequest?.body.configuration).toBe("bpc_mock_1");
     expect(portalRequest?.body["flow_data[type]"]).toBe(
         "payment_method_update",
     );
+
+    const portalConfiguration = mocks.stripe.state.portalConfigurations[0];
+    expect(portalConfiguration).toMatchObject({
+        id: "bpc_mock_1",
+        metadata: {
+            pollinations_portal: "billing_details_v1",
+        },
+        features: {
+            customer_update: {
+                enabled: true,
+                allowed_updates: ["name", "address", "tax_id"],
+            },
+            invoice_history: {
+                enabled: true,
+            },
+            payment_method_update: {
+                enabled: true,
+            },
+        },
+    });
+});
+
+test("GET /api/stripe/billing returns default card billing address", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "polar", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_billing_details");
+    customer.business_name = "Analytical Engines Ltd";
+    customer.name = null;
+    customer.email = null;
+    customer.address = null;
+    customer.invoice_settings.default_payment_method = "pm_billing_details";
+
+    const paymentMethod = mockCardPaymentMethod(
+        "pm_billing_details",
+        customer.id,
+    );
+    paymentMethod.billing_details = {
+        name: "Ada Lovelace",
+        email: "ada@example.com",
+        address: {
+            line1: "123 Engine Way",
+            line2: "Suite 4",
+            city: "London",
+            state: null,
+            postal_code: "EC1A 1BB",
+            country: "GB",
+        },
+    };
+
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(paymentMethod);
+
+    await db
+        .update(userTable)
+        .set({ stripeCustomerId: customer.id })
+        .where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/billing`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        paymentMethod: { hasDefault: boolean };
+        billingDetails: {
+            name: string | null;
+            email: string | null;
+            line1: string | null;
+            line2: string | null;
+            city: string | null;
+            state: string | null;
+            postalCode: string | null;
+            country: string | null;
+        } | null;
+    };
+    expect(data.paymentMethod.hasDefault).toBe(true);
+    expect(data.billingDetails).toEqual({
+        name: "Analytical Engines Ltd",
+        email: "ada@example.com",
+        line1: "123 Engine Way",
+        line2: "Suite 4",
+        city: "London",
+        state: null,
+        postalCode: "EC1A 1BB",
+        country: "GB",
+    });
+});
+
+test("GET /api/stripe/billing disables auto top-up when default card is removed", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "polar", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_missing_default_card");
+    mocks.stripe.state.customers.push(customer);
+
+    await db
+        .update(userTable)
+        .set({
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpThresholdPollen: 5,
+            autoTopUpAmountUsd: 10,
+            autoTopUpLastFailure: "Previous failure",
+        })
+        .where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/billing`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        autoTopUp: { enabled: boolean; lastFailure: string | null };
+        paymentMethod: { hasDefault: boolean };
+        billingDetailsComplete: boolean;
+    };
+    expect(data.autoTopUp.enabled).toBe(false);
+    expect(data.autoTopUp.lastFailure).toBeNull();
+    expect(data.paymentMethod.hasDefault).toBe(false);
+    expect(data.billingDetailsComplete).toBe(true);
+
+    const [updatedUser] = await db
+        .select({ autoTopUpEnabled: userTable.autoTopUpEnabled })
+        .from(userTable)
+        .where(eq(userTable.id, user.id))
+        .limit(1);
+    expect(updatedUser?.autoTopUpEnabled).toBe(false);
+});
+
+test("GET /api/stripe/billing disables auto top-up when billing address is missing", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "polar", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_missing_billing_address");
+    customer.address = null;
+    customer.invoice_settings.default_payment_method = "pm_missing_address";
+
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_missing_address", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpThresholdPollen: 5,
+            autoTopUpAmountUsd: 10,
+            autoTopUpLastFailure: "Previous failure",
+        })
+        .where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/billing`, {
+        method: "GET",
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        autoTopUp: { enabled: boolean; lastFailure: string | null };
+        paymentMethod: { hasDefault: boolean };
+        billingDetailsComplete: boolean;
+    };
+    expect(data.autoTopUp.enabled).toBe(false);
+    expect(data.autoTopUp.lastFailure).toBeNull();
+    expect(data.paymentMethod.hasDefault).toBe(true);
+    expect(data.billingDetailsComplete).toBe(false);
+
+    const [updatedUser] = await db
+        .select({ autoTopUpEnabled: userTable.autoTopUpEnabled })
+        .from(userTable)
+        .where(eq(userTable.id, user.id))
+        .limit(1);
+    expect(updatedUser?.autoTopUpEnabled).toBe(false);
+});
+
+test("PATCH /api/stripe/auto-top-up accepts integer threshold and rejects invalid values", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "polar", "tinybird");
+
+    const customThresholdResponse = await SELF.fetch(`${base}/auto-top-up`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            enabled: false,
+            thresholdPollen: 37,
+            packAmountUsd: 10,
+        }),
+    });
+
+    expect(customThresholdResponse.status).toBe(200);
+    const customThresholdData = (await customThresholdResponse.json()) as {
+        autoTopUp: { thresholdPollen: number; packAmountUsd: number };
+    };
+    expect(customThresholdData.autoTopUp.thresholdPollen).toBe(37);
+    expect(customThresholdData.autoTopUp.packAmountUsd).toBe(10);
+
+    const unsupportedPackResponse = await SELF.fetch(`${base}/auto-top-up`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            enabled: false,
+            thresholdPollen: 37,
+            packAmountUsd: 2,
+        }),
+    });
+
+    expect(unsupportedPackResponse.status).toBe(400);
+    const unsupportedPackData = (await unsupportedPackResponse.json()) as {
+        error: string;
+    };
+    expect(unsupportedPackData.error).toBe("Invalid auto top-up pack amount.");
+
+    const decimalThresholdResponse = await SELF.fetch(`${base}/auto-top-up`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            enabled: false,
+            thresholdPollen: 37.5,
+            packAmountUsd: 10,
+        }),
+    });
+
+    expect(decimalThresholdResponse.status).toBe(400);
+    const decimalThresholdData = (await decimalThresholdResponse.json()) as {
+        error: string;
+    };
+    expect(decimalThresholdData.error).toBe("Invalid auto top-up threshold.");
 });
 
 test("PATCH /api/stripe/auto-top-up requires a default card before enabling", async ({
@@ -226,6 +509,63 @@ test("POST /api/stripe/auto-top-up/trigger charges default card and credits poll
     expect(invoiceRequest?.body["metadata[pollinations_purpose]"]).toBe(
         "auto_top_up",
     );
+});
+
+test("POST /api/stripe/auto-top-up/trigger disables auto top-up when setup is incomplete", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "polar", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_auto_top_up_missing_card");
+    mocks.stripe.state.customers.push(customer);
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpThresholdPollen: 5,
+            autoTopUpAmountUsd: 10,
+        })
+        .where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({ userId: user.id }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        status: string;
+        reason?: string;
+    };
+    expect(data).toMatchObject({
+        status: "skipped",
+        reason: "missing default payment method",
+    });
+
+    const [updatedUser] = await db
+        .select({ autoTopUpEnabled: userTable.autoTopUpEnabled })
+        .from(userTable)
+        .where(eq(userTable.id, user.id))
+        .limit(1);
+    expect(updatedUser?.autoTopUpEnabled).toBe(false);
 });
 
 test("POST /api/webhooks/stripe rejects missing stripe-signature header", async () => {

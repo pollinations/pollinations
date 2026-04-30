@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { getPollenPack, isPollenPackAmount } from "@/pollen-packs.ts";
+import { getPollenPack } from "@/pollen-packs.ts";
 import { createStripeClient } from "./stripe.ts";
 
 const CUSTOMER_CREATE_IDEMPOTENCY_VERSION = "v1";
@@ -7,8 +7,18 @@ const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_PURPOSE = "pollinations_purpose";
 const AUTO_TOP_UP_PURPOSE = "auto_top_up";
 const AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
+const BILLING_PORTAL_CONFIGURATION_METADATA_KEY = "pollinations_portal";
+const BILLING_PORTAL_CONFIGURATION_METADATA_VALUE = "billing_details_v1";
+const BILLING_PORTAL_CONFIGURATION_NAME = "Pollinations Billing Portal";
+const BILLING_PORTAL_CUSTOMER_UPDATES = [
+    "name",
+    "address",
+    "tax_id",
+] satisfies Stripe.BillingPortal.ConfigurationCreateParams.Features.CustomerUpdate.AllowedUpdate[];
 
-export const AUTO_TOP_UP_THRESHOLDS = [1, 2, 5, 10, 20, 50] as const;
+export const AUTO_TOP_UP_THRESHOLD_MIN = 1;
+export const AUTO_TOP_UP_THRESHOLD_MAX = 100;
+export const AUTO_TOP_UP_PACK_AMOUNTS = [5, 10, 20, 50, 100] as const;
 export const DEFAULT_AUTO_TOP_UP_THRESHOLD = 5;
 export const DEFAULT_AUTO_TOP_UP_AMOUNT_USD = 10;
 
@@ -70,6 +80,16 @@ export type BillingOverview = {
         brand: string | null;
         last4: string | null;
     };
+    billingDetails: {
+        name: string | null;
+        email: string | null;
+        line1: string | null;
+        line2: string | null;
+        city: string | null;
+        state: string | null;
+        postalCode: string | null;
+        country: string | null;
+    } | null;
     billingDetailsComplete: boolean;
 };
 
@@ -123,18 +143,27 @@ export async function getBillingOverview(
     const paymentMethod = customer
         ? await getDefaultCardPaymentMethod(stripe, customer)
         : null;
+    const billingDetailsComplete = customer
+        ? isBillingDetailsComplete(customer)
+        : false;
+    let autoTopUpEnabled = user.autoTopUpEnabled;
+    if (autoTopUpEnabled && (!paymentMethod || !billingDetailsComplete)) {
+        await disableAutoTopUp(env.DB, userId);
+        autoTopUpEnabled = false;
+    }
 
     return {
         autoTopUp: {
-            enabled: user.autoTopUpEnabled,
+            enabled: autoTopUpEnabled,
             thresholdPollen:
                 user.autoTopUpThresholdPollen ?? DEFAULT_AUTO_TOP_UP_THRESHOLD,
             packAmountUsd:
                 user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
-            lastFailure: user.autoTopUpLastFailure,
-            lastFailureAt: user.autoTopUpLastFailureAt
-                ? new Date(user.autoTopUpLastFailureAt).toISOString()
-                : null,
+            lastFailure: autoTopUpEnabled ? user.autoTopUpLastFailure : null,
+            lastFailureAt:
+                autoTopUpEnabled && user.autoTopUpLastFailureAt
+                    ? new Date(user.autoTopUpLastFailureAt).toISOString()
+                    : null,
         },
         paymentMethod: paymentMethod
             ? {
@@ -143,9 +172,10 @@ export async function getBillingOverview(
                   last4: paymentMethod.card?.last4 ?? null,
               }
             : { hasDefault: false, brand: null, last4: null },
-        billingDetailsComplete: customer
-            ? isBillingDetailsComplete(customer)
-            : false,
+        billingDetails: customer
+            ? getBillingDetailsSummary(customer, paymentMethod)
+            : null,
+        billingDetailsComplete,
     };
 }
 
@@ -157,9 +187,14 @@ export async function createBillingPortalSession(
     const stripe = createStripeClient(env);
     const customer = await getOrCreateStripeCustomerId(env, userId);
     const returnUrl = getBillingReturnUrl(env);
+    const configuration = await ensureBillingPortalConfiguration(
+        stripe,
+        returnUrl,
+    );
 
     return stripe.billingPortal.sessions.create({
         customer,
+        configuration,
         return_url: returnUrl,
         ...(flow === "payment_method_update" && {
             flow_data: {
@@ -171,6 +206,79 @@ export async function createBillingPortalSession(
             },
         }),
     });
+}
+
+async function ensureBillingPortalConfiguration(
+    stripe: Stripe,
+    returnUrl: string,
+): Promise<string> {
+    const configurations = await stripe.billingPortal.configurations.list({
+        active: true,
+        limit: 100,
+    });
+    const existing = configurations.data.find(
+        (configuration) =>
+            configuration.metadata?.[
+                BILLING_PORTAL_CONFIGURATION_METADATA_KEY
+            ] === BILLING_PORTAL_CONFIGURATION_METADATA_VALUE,
+    );
+
+    if (existing) {
+        if (isBillingPortalConfigurationCurrent(existing)) {
+            return existing.id;
+        }
+
+        const updated = await stripe.billingPortal.configurations.update(
+            existing.id,
+            createBillingPortalConfigurationParams(returnUrl),
+        );
+        return updated.id;
+    }
+
+    const created = await stripe.billingPortal.configurations.create(
+        createBillingPortalConfigurationParams(returnUrl),
+        {
+            idempotencyKey: `pollinations:stripe-billing-portal:${BILLING_PORTAL_CONFIGURATION_METADATA_VALUE}`,
+        },
+    );
+    return created.id;
+}
+
+function createBillingPortalConfigurationParams(
+    returnUrl: string,
+): Stripe.BillingPortal.ConfigurationCreateParams {
+    return {
+        name: BILLING_PORTAL_CONFIGURATION_NAME,
+        default_return_url: returnUrl,
+        metadata: {
+            [BILLING_PORTAL_CONFIGURATION_METADATA_KEY]:
+                BILLING_PORTAL_CONFIGURATION_METADATA_VALUE,
+        },
+        features: {
+            customer_update: {
+                enabled: true,
+                allowed_updates: BILLING_PORTAL_CUSTOMER_UPDATES,
+            },
+            invoice_history: {
+                enabled: true,
+            },
+            payment_method_update: {
+                enabled: true,
+            },
+        },
+    };
+}
+
+function isBillingPortalConfigurationCurrent(
+    configuration: Stripe.BillingPortal.Configuration,
+): boolean {
+    const customerUpdate = configuration.features.customer_update;
+    if (!customerUpdate.enabled) return false;
+
+    const allowedUpdates = new Set(customerUpdate.allowed_updates);
+    return BILLING_PORTAL_CUSTOMER_UPDATES.every((update) =>
+        allowedUpdates.has(update),
+    );
 }
 
 export async function updateAutoTopUpSettings(
@@ -278,24 +386,16 @@ export async function processAutoTopUpForUser(
         );
 
         if (!paymentMethod) {
-            await recordAutoTopUpFailure(
-                env.DB,
-                userId,
-                "No default payment method is available.",
-            );
+            await disableAutoTopUp(env.DB, userId);
             return {
-                status: "failed",
+                status: "skipped",
                 reason: "missing default payment method",
             };
         }
 
         if (!isBillingDetailsComplete(customer)) {
-            await recordAutoTopUpFailure(
-                env.DB,
-                userId,
-                "Billing details are incomplete.",
-            );
-            return { status: "failed", reason: "missing billing details" };
+            await disableAutoTopUp(env.DB, userId);
+            return { status: "skipped", reason: "missing billing details" };
         }
 
         const idempotencyKey = createAutoTopUpIdempotencyKey(userId, amountUsd);
@@ -554,18 +654,61 @@ async function getDefaultCardPaymentMethod(
 }
 
 function isBillingDetailsComplete(customer: Stripe.Customer): boolean {
-    return !!customer.name && !!customer.address?.country;
+    return (
+        !!(customer.business_name || customer.name) &&
+        !!customer.address?.country
+    );
+}
+
+function getBillingDetailsSummary(
+    customer: Stripe.Customer,
+    paymentMethod: Stripe.PaymentMethod | null,
+): BillingOverview["billingDetails"] {
+    const paymentAddress = paymentMethod?.billing_details?.address;
+    const customerAddress = customer.address;
+
+    return {
+        name: firstString(
+            customer.business_name,
+            customer.name,
+            paymentMethod?.billing_details?.name,
+        ),
+        email: firstString(
+            customer.email,
+            paymentMethod?.billing_details?.email,
+        ),
+        line1: firstString(customerAddress?.line1, paymentAddress?.line1),
+        line2: firstString(customerAddress?.line2, paymentAddress?.line2),
+        city: firstString(customerAddress?.city, paymentAddress?.city),
+        state: firstString(customerAddress?.state, paymentAddress?.state),
+        postalCode: firstString(
+            customerAddress?.postal_code,
+            paymentAddress?.postal_code,
+        ),
+        country: firstString(customerAddress?.country, paymentAddress?.country),
+    };
+}
+
+function firstString(
+    ...values: Array<string | null | undefined>
+): string | null {
+    return values.find((value) => typeof value === "string" && value) ?? null;
 }
 
 function validateAutoTopUpInput(input: AutoTopUpInput): string | null {
     if (
-        !(AUTO_TOP_UP_THRESHOLDS as readonly number[]).includes(
-            input.thresholdPollen,
-        )
+        !Number.isFinite(input.thresholdPollen) ||
+        !Number.isInteger(input.thresholdPollen) ||
+        input.thresholdPollen < AUTO_TOP_UP_THRESHOLD_MIN ||
+        input.thresholdPollen > AUTO_TOP_UP_THRESHOLD_MAX
     ) {
         return "Invalid auto top-up threshold.";
     }
-    if (!isPollenPackAmount(String(input.packAmountUsd))) {
+    if (
+        !(AUTO_TOP_UP_PACK_AMOUNTS as readonly number[]).includes(
+            input.packAmountUsd,
+        )
+    ) {
         return "Invalid auto top-up pack amount.";
     }
     return null;
@@ -639,6 +782,20 @@ async function recordAutoTopUpFailure(
                 WHERE id = ?`,
         )
         .bind(message, Date.now(), userId)
+        .run();
+}
+
+async function disableAutoTopUp(db: D1Database, userId: string): Promise<void> {
+    await db
+        .prepare(
+            `UPDATE user
+                SET auto_top_up_enabled = 0,
+                    auto_top_up_last_failure = NULL,
+                    auto_top_up_last_failure_at = NULL
+                WHERE id = ?
+                    AND auto_top_up_enabled = 1`,
+        )
+        .bind(userId)
         .run();
 }
 

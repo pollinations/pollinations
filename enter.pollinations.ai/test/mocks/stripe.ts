@@ -9,8 +9,14 @@ type StripeCustomer = {
     object: "customer";
     email: string | null;
     name: string | null;
+    business_name?: string | null;
     metadata: Record<string, string>;
     address: {
+        line1?: string | null;
+        line2?: string | null;
+        city?: string | null;
+        state?: string | null;
+        postal_code?: string | null;
         country?: string | null;
     } | null;
     invoice_settings: {
@@ -30,6 +36,18 @@ type StripePaymentMethod = {
         exp_month: number;
         exp_year: number;
     };
+    billing_details?: {
+        name?: string | null;
+        email?: string | null;
+        address?: {
+            line1?: string | null;
+            line2?: string | null;
+            city?: string | null;
+            state?: string | null;
+            postal_code?: string | null;
+            country?: string | null;
+        } | null;
+    };
 };
 
 type StripeCheckoutSession = {
@@ -44,7 +62,30 @@ type StripePortalSession = {
     id: string;
     object: "billing_portal.session";
     customer: string | null;
+    configuration: string | null;
     url: string;
+};
+
+type StripePortalConfiguration = {
+    id: string;
+    object: "billing_portal.configuration";
+    active: boolean;
+    is_default: boolean;
+    metadata: Record<string, string>;
+    name: string | null;
+    default_return_url: string | null;
+    features: {
+        customer_update: {
+            enabled: boolean;
+            allowed_updates: string[];
+        };
+        invoice_history: {
+            enabled: boolean;
+        };
+        payment_method_update: {
+            enabled: boolean;
+        };
+    };
 };
 
 type StripeInvoice = {
@@ -70,6 +111,7 @@ export type MockStripeState = {
     paymentMethods: StripePaymentMethod[];
     checkoutSessions: StripeCheckoutSession[];
     portalSessions: StripePortalSession[];
+    portalConfigurations: StripePortalConfiguration[];
     invoices: StripeInvoice[];
     requests: StripeRequest[];
     customerCreateByIdempotencyKey: Record<string, string>;
@@ -162,10 +204,59 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 id: `bps_mock_${state.portalSessions.length + 1}`,
                 object: "billing_portal.session",
                 customer: form.get("customer"),
+                configuration: form.get("configuration"),
                 url: `https://billing.stripe.test/${state.portalSessions.length + 1}`,
             };
             state.portalSessions.push(session);
             return c.json(session);
+        })
+        .get("/v1/billing_portal/configurations", (c) => {
+            recordRequest(c, state);
+            const active = c.req.query("active");
+            const isDefault = c.req.query("is_default");
+            const configurations = state.portalConfigurations.filter(
+                (configuration) => {
+                    if (active != null) {
+                        return configuration.active === (active === "true");
+                    }
+                    if (isDefault != null) {
+                        return (
+                            configuration.is_default === (isDefault === "true")
+                        );
+                    }
+                    return true;
+                },
+            );
+
+            return c.json({
+                object: "list",
+                url: "/v1/billing_portal/configurations",
+                has_more: false,
+                data: configurations,
+            });
+        })
+        .post("/v1/billing_portal/configurations", async (c) => {
+            const form = await parseForm(c.req.raw);
+            recordRequest(c, state, form);
+
+            const configuration = createPortalConfiguration(
+                `bpc_mock_${state.portalConfigurations.length + 1}`,
+                form,
+            );
+            state.portalConfigurations.push(configuration);
+            return c.json(configuration);
+        })
+        .post("/v1/billing_portal/configurations/:id", async (c) => {
+            const form = await parseForm(c.req.raw);
+            recordRequest(c, state, form);
+
+            const configuration = state.portalConfigurations.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!configuration) return stripeNotFound(c);
+
+            applyPortalConfigurationUpdate(configuration, form);
+            return c.json(configuration);
         })
         .get("/v1/payment_methods/:id", (c) => {
             recordRequest(c, state);
@@ -240,6 +331,7 @@ export function mockCustomer(
         object: "customer",
         email,
         name: "Test User",
+        business_name: null,
         metadata: {},
         address: { country: "US" },
         invoice_settings: { default_payment_method: null },
@@ -262,6 +354,11 @@ export function mockCardPaymentMethod(
             exp_month: 12,
             exp_year: 2030,
         },
+        billing_details: {
+            name: "Test User",
+            email: "test@example.com",
+            address: null,
+        },
     };
 }
 
@@ -271,6 +368,7 @@ function createInitialState(): MockStripeState {
         paymentMethods: [],
         checkoutSessions: [],
         portalSessions: [],
+        portalConfigurations: [],
         invoices: [],
         requests: [],
         customerCreateByIdempotencyKey: {},
@@ -301,6 +399,93 @@ function parseMetadata(form: URLSearchParams): Record<string, string> {
         if (match?.[1]) metadata[match[1]] = value;
     }
     return metadata;
+}
+
+function createPortalConfiguration(
+    id: string,
+    form: URLSearchParams,
+): StripePortalConfiguration {
+    return {
+        id,
+        object: "billing_portal.configuration",
+        active: true,
+        is_default: false,
+        metadata: parseMetadata(form),
+        name: form.get("name"),
+        default_return_url: form.get("default_return_url"),
+        features: parsePortalConfigurationFeatures(form),
+    };
+}
+
+function applyPortalConfigurationUpdate(
+    configuration: StripePortalConfiguration,
+    form: URLSearchParams,
+): void {
+    configuration.metadata = {
+        ...configuration.metadata,
+        ...parseMetadata(form),
+    };
+    configuration.name = form.get("name") ?? configuration.name;
+    configuration.default_return_url =
+        form.get("default_return_url") ?? configuration.default_return_url;
+    configuration.features = parsePortalConfigurationFeatures(
+        form,
+        configuration.features,
+    );
+}
+
+function parsePortalConfigurationFeatures(
+    form: URLSearchParams,
+    previous?: StripePortalConfiguration["features"],
+): StripePortalConfiguration["features"] {
+    return {
+        customer_update: {
+            enabled:
+                parseBoolean(form.get("features[customer_update][enabled]")) ??
+                previous?.customer_update.enabled ??
+                false,
+            allowed_updates:
+                parseArray(
+                    form,
+                    "features[customer_update][allowed_updates]",
+                ) ??
+                previous?.customer_update.allowed_updates ??
+                [],
+        },
+        invoice_history: {
+            enabled:
+                parseBoolean(form.get("features[invoice_history][enabled]")) ??
+                previous?.invoice_history.enabled ??
+                false,
+        },
+        payment_method_update: {
+            enabled:
+                parseBoolean(
+                    form.get("features[payment_method_update][enabled]"),
+                ) ??
+                previous?.payment_method_update.enabled ??
+                false,
+        },
+    };
+}
+
+function parseArray(
+    form: URLSearchParams,
+    prefix: string,
+): string[] | undefined {
+    const values: string[] = [];
+    for (const [key, value] of form.entries()) {
+        if (key === `${prefix}[]` || key.startsWith(`${prefix}[`)) {
+            values.push(value);
+        }
+    }
+    return values.length ? values : undefined;
+}
+
+function parseBoolean(value: string | null): boolean | undefined {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    return undefined;
 }
 
 function findCustomer(

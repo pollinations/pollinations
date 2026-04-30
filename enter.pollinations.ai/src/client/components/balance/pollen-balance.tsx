@@ -5,17 +5,12 @@ import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
 import { pillColors } from "../layout/dashboard-theme.ts";
 import { Tooltip } from "../ui/tooltip.tsx";
-import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
     tier?: string;
-};
-
-type BuyPollenPanelProps = {
-    billingState?: BillingState | null;
 };
 
 type GaugeSegmentProps = {
@@ -148,9 +143,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     );
 };
 
-export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
-    billingState = null,
-}) => {
+export const BuyPollenPanel: FC = () => {
     const [emailCopied, setEmailCopied] = useState(false);
 
     const copyEmail = () => {
@@ -193,7 +186,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
 
                 <PaymentTrustBadge className="mt-0 pt-2" />
             </div>
-            <AutoTopUpPanel initialBillingState={billingState} />
             <div className="mt-5 space-y-3 border-t border-amber-300/70 pt-4 text-sm text-amber-900">
                 <p className="font-medium">
                     💳 Want to pay with a different method?{" "}

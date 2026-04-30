@@ -176,28 +176,33 @@ export const BuyPollenPanel: FC = () => {
                             value={selectedPack.amountUsd}
                             onChange={setSelectedPackAmount}
                         />
-                        <Button
-                            as="a"
-                            href={`/api/stripe/checkout/${selectedPack.amountUsd}`}
-                            color="amber"
-                            weight="light"
-                            title={`Buy $${selectedPack.amountUsd} pollen pack`}
-                            className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-4 text-center text-sm shadow-none sm:w-fit"
-                        >
-                            <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
-                                <span className="font-semibold">Buy</span>
-                                <PollenPackReadout
-                                    pack={selectedPack}
-                                    tone="button"
-                                />
-                            </span>
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                                as="a"
+                                href={`/api/stripe/checkout/${selectedPack.amountUsd}`}
+                                color="amber"
+                                weight="light"
+                                title={`Buy $${selectedPack.amountUsd} pollen pack`}
+                                className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-4 text-center text-sm shadow-none sm:w-fit"
+                            >
+                                <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                                    <span className="text-base font-bold text-amber-950">
+                                        Buy
+                                    </span>
+                                    <PollenPackReadout
+                                        pack={selectedPack}
+                                        showBonus={false}
+                                        tone="button"
+                                    />
+                                </span>
+                            </Button>
+                            <PollenPackBonusPill pack={selectedPack} />
+                        </div>
                     </div>
                 )}
-
-                <PaymentTrustBadge className="mt-0 pt-2" />
             </div>
             <div className="mt-5 space-y-3 border-t border-amber-300/70 pt-4 text-sm text-amber-900">
+                <PaymentTrustBadge className="mt-0 pt-0" />
                 <p className="font-medium">
                     💳 Want to pay with a different method?{" "}
                     <a
@@ -302,11 +307,13 @@ const PollenPackSlider: FC<PollenPackSliderProps> = ({ value, onChange }) => {
 
 type PollenPackReadoutProps = {
     pack: PollenPack;
+    showBonus?: boolean;
     tone?: "panel" | "button";
 };
 
 const PollenPackReadout: FC<PollenPackReadoutProps> = ({
     pack,
+    showBonus = true,
     tone = "panel",
 }) => {
     const bonusPercent = getPackBonusPercent(pack);
@@ -335,20 +342,38 @@ const PollenPackReadout: FC<PollenPackReadoutProps> = ({
                     {formatPollenPackValue(pack.pollenGrant)} pollen
                 </span>
             </span>
-            {hasBonus && (
-                <span
-                    className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                        isButtonTone
-                            ? "bg-amber-500 text-white shadow-sm"
-                            : bonusPercent >= 60
-                              ? "bg-amber-500 text-white shadow-sm"
-                              : "bg-amber-200 text-amber-900",
-                    )}
-                >
-                    +{bonusPercent}% bonus
-                </span>
+            {showBonus && hasBonus && (
+                <PollenPackBonusPill
+                    pack={pack}
+                    strong={isButtonTone || bonusPercent >= 60}
+                />
             )}
+        </span>
+    );
+};
+
+type PollenPackBonusPillProps = {
+    pack: PollenPack;
+    strong?: boolean;
+};
+
+const PollenPackBonusPill: FC<PollenPackBonusPillProps> = ({
+    pack,
+    strong = true,
+}) => {
+    const bonusPercent = getPackBonusPercent(pack);
+    if (bonusPercent <= 0) return null;
+
+    return (
+        <span
+            className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                strong
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "bg-amber-200 text-amber-900",
+            )}
+        >
+            +{bonusPercent}% bonus
         </span>
     );
 };

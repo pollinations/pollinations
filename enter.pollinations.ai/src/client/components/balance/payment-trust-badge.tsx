@@ -4,7 +4,6 @@ import { cn } from "../../../util.ts";
 const paymentMethods = [
     { name: "Visa", src: "/payment-icons/visa.svg" },
     { name: "Mastercard", src: "/payment-icons/mastercard.svg" },
-    { name: "American Express", src: "/payment-icons/american-express.svg" },
     { name: "PayPal", src: "/payment-icons/paypal.svg" },
     { name: "Apple Pay", src: "/payment-icons/apple-pay.svg" },
     { name: "Google Pay", src: "/payment-icons/google-pay.svg" },
@@ -36,7 +35,7 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
     return (
         <div
             className={cn(
-                "mt-2 flex w-full flex-col items-start gap-3 pt-6",
+                "mt-2 flex w-full flex-wrap items-center gap-x-3 gap-y-2 pt-6",
                 className,
             )}
         >
@@ -46,7 +45,7 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
                         key={method.name}
                         src={method.src}
                         alt={method.name}
-                        className="h-7 w-auto opacity-70 hover:opacity-100 transition-opacity"
+                        className="h-6 w-auto opacity-70 transition-opacity hover:opacity-100"
                         loading="lazy"
                     />
                 ))}

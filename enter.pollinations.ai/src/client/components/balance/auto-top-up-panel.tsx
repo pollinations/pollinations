@@ -189,6 +189,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         billingDetailsReady={billingDetailsComplete}
                         hasSelectedPack={Boolean(selectedPack)}
                         isSaving={isSaving}
+                        selectedPack={selectedPack}
                         onSave={() => saveAutoTopUp(true)}
                     />
                 </div>
@@ -324,11 +325,6 @@ const PackSlider: FC<PackSliderProps> = ({
     );
     const selectedPack =
         AUTO_TOP_UP_PACKS[selectedIndex] ?? AUTO_TOP_UP_PACKS[0];
-    const displayValue = selectedPack ? (
-        <PackValueReadout pack={selectedPack} />
-    ) : (
-        "Unavailable"
-    );
     const ariaValue = selectedPack
         ? formatPackValue(selectedPack)
         : "Unavailable";
@@ -339,11 +335,7 @@ const PackSlider: FC<PackSliderProps> = ({
 
     return (
         <div className="space-y-3">
-            <SliderHeader
-                label={label}
-                info={info}
-                displayValue={displayValue}
-            />
+            <SliderHeader label={label} info={info} />
             <div className="flex h-8 items-center">
                 <input
                     type="range"
@@ -398,9 +390,13 @@ const PackSlider: FC<PackSliderProps> = ({
 
 type PackValueReadoutProps = {
     pack: PollenPack;
+    showBonus?: boolean;
 };
 
-const PackValueReadout: FC<PackValueReadoutProps> = ({ pack }) => {
+const PackValueReadout: FC<PackValueReadoutProps> = ({
+    pack,
+    showBonus = true,
+}) => {
     const bonusPercent = getPackBonusPercent(pack);
     const hasBonus = bonusPercent > 0;
 
@@ -415,18 +411,32 @@ const PackValueReadout: FC<PackValueReadoutProps> = ({ pack }) => {
                     {formatPollenPackValue(pack.pollenGrant)} pollen
                 </span>
             </span>
-            {hasBonus && (
-                <span
-                    className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                        bonusPercent >= 60
-                            ? "bg-amber-500 text-white shadow-sm"
-                            : "bg-amber-200 text-amber-900",
-                    )}
-                >
-                    +{bonusPercent}% bonus
-                </span>
+            {showBonus && hasBonus && (
+                <PackBonusPill pack={pack} strong={bonusPercent >= 60} />
             )}
+        </span>
+    );
+};
+
+type PackBonusPillProps = {
+    pack: PollenPack;
+    strong?: boolean;
+};
+
+const PackBonusPill: FC<PackBonusPillProps> = ({ pack, strong = true }) => {
+    const bonusPercent = getPackBonusPercent(pack);
+    if (bonusPercent <= 0) return null;
+
+    return (
+        <span
+            className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                strong
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "bg-amber-200 text-amber-900",
+            )}
+        >
+            +{bonusPercent}% bonus
         </span>
     );
 };
@@ -519,6 +529,7 @@ type AutoTopUpSaveChangesProps = {
     billingDetailsReady: boolean;
     hasSelectedPack: boolean;
     isSaving: boolean;
+    selectedPack?: PollenPack;
     onSave: () => void;
 };
 
@@ -529,6 +540,7 @@ const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
     billingDetailsReady,
     hasSelectedPack,
     isSaving,
+    selectedPack,
     onSave,
 }) => {
     const saveDisabled =
@@ -548,7 +560,7 @@ const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
     });
 
     return (
-        <div className="flex justify-start">
+        <div className="flex flex-wrap items-center gap-2">
             <DisabledControlTooltip
                 content={saveDisabled ? saveDisabledReason : null}
                 className="w-full sm:w-auto"
@@ -558,15 +570,26 @@ const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
                         as="button"
                         type="button"
                         color="amber"
-                        weight="strong"
+                        weight="light"
                         onClick={onSave}
                         disabled={saveDisabled}
-                        className="w-full sm:w-auto"
+                        className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-4 text-center text-sm shadow-none sm:w-fit"
                     >
-                        Save changes
+                        <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                            <span className="text-base font-bold text-amber-950">
+                                Save
+                            </span>
+                            {selectedPack && (
+                                <PackValueReadout
+                                    pack={selectedPack}
+                                    showBonus={false}
+                                />
+                            )}
+                        </span>
                     </Button>
                 </span>
             </DisabledControlTooltip>
+            {selectedPack && <PackBonusPill pack={selectedPack} />}
         </div>
     );
 };

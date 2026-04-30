@@ -48,6 +48,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-04-29** – **🎬 Seed support for Nova Reel** You can now pass a `seed` parameter to our video generation model. Iterative prompting is finally possible without the output hallucinating a completely new timeline on every request. Check the [API Docs](https://gen.pollinations.ai/docs).
+- **2026-04-29** – **🌸 YSOAI Image Generator** A new community-built image generation interface joins the showcase. [Try it](https://huggingface.co/spaces/yassinovich/YSOAI) <!-- app -->
+- **2026-04-29** – **✨ LAHgen** Another text-to-image creation tool takes root in the community directory. [Try it](https://image.khminds.com/) <!-- app -->
 - **2026-04-28** – **🤖 OpenClaw Integration** Added an `openclaw` model alias backed by Qwen3-Coder-30B. You can now wire up the OpenClaw CLI to use Pollinations for automated coding workflows. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).
 - **2026-04-28** – **⚡ Unbottlenecking gpt-image-2** Ripped out the old Azure routing for `gpt-image-2` and wired it directly to OpenAI. Expect significantly higher capacity and fewer rate limits when generating pixels.
 - **2026-04-27** – **📖 StoryForge** A new community app that generates illustrated, chapter-based short stories using the [Unified API](https://gen.pollinations.ai). [Try it](http://pollen-story-forge.vercel.app/) <!-- app -->
@@ -55,9 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-04-24** – **🎨 Thinking in three speeds** Image generation reasoning is no longer just on or off. You can now pass `fast`, `balanced`, or `pro` modes to the [Image API](https://gen.pollinations.ai/image/{prompt}) to dial in exactly how hard you want the models to think.
 - **2026-04-24** – **🧠 DeepSeek V4 arrives** DeepSeek V4 Flash and Pro are now live on the [Text API](https://gen.pollinations.ai/v1/chat/completions). Point your requests at the new models for heavy-duty reasoning and coding tasks.
 - **2026-04-24** – **🎵 Planting audio seeds** The [Audio API](https://gen.pollinations.ai/audio/{text}) now accepts a `seed` parameter. Lock in that perfect voice inflection or music track instead of rolling the dice on every request.
-- **2026-04-24** – **📊 Precise usage tracking** The [Dashboard](https://enter.pollinations.ai) now features a proper calendar picker. Filter your API usage and export CSVs by exact days, weeks, or months instead of vague rolling windows.
-- **2026-04-24** – **🌟 Time travel in the Greenhouse** TimeMachine Chat just landed in the community showcase, bringing a unified and secure chat interface for your tech essentials. [Try it](https://timemachinechat.com/) <!-- app -->
-- **2026-04-23** – **🤖 MCP Server v2.1.0** Your agents just got an upgrade. The [MCP package](https://www.npmjs.com/package/@pollinations_ai/mcp) now supports dynamic registries, unlocking 9 video models, 35+ voices, and direct Pollen balance checks.
 ---
 
 ## 🌱 Introduction

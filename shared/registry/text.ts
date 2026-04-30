@@ -773,7 +773,7 @@ export const TEXT_SERVICES = {
         category: "text",
         cost: [
             {
-                date: new Date("2026-05-01").getTime(),
+                date: new Date("2026-04-30").getTime(),
                 promptTextTokens: perMillion(0.9),
                 promptCachedTokens: perMillion(0.45),
                 completionTextTokens: perMillion(0.9),

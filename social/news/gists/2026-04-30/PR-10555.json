@@ -1,0 +1,34 @@
+{
+  "pr_number": 10555,
+  "title": "feat: move text generation into gen worker",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10555",
+  "merged_at": "2026-04-30T11:45:02Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Skipping the middleman",
+    "blurb": "We deleted an entire microservice today. Text generation now lives directly in our edge worker, meaning your chat requests skip the scenic route and get straight to the point.",
+    "summary": "Text generation routes and logic have been migrated from a standalone service directly into the core edge worker, eliminating the need for a separate text backend.",
+    "impact": "Chat and text generation requests now have one less network hop, resulting in faster responses and better reliability.",
+    "keywords": [
+      "architecture",
+      "edge-worker",
+      "text-generation",
+      "performance",
+      "refactor"
+    ],
+    "visual_concept": "Polly the bee acting as an engineer, bypassing an old machine and plugging a glowing cable directly into a shiny new edge server, while the monitor robot watches happily.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a glowing cable directly into a chunky retro server rack. A cute chunky pixel robot with a monitor head watches happily. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-30/PR-10555.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a glowing cable directly into a chunky retro server rack. A cute chunky pixel robot with a monitor head watches happily. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-30T11:46:08.415709+00:00"
+}

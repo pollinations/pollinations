@@ -4,7 +4,6 @@ import {
 } from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
-import { Button } from "../button.tsx";
 import { Badge } from "../ui/badge.tsx";
 
 import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
@@ -27,11 +26,14 @@ import {
 import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
+export type SectionType = "image" | "video" | "audio" | "text";
+
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
+    activeTab: SectionType;
     tierBalance?: number;
     packBalance?: number;
 };
@@ -118,7 +120,7 @@ const unitLabels: Record<string, string> = {
     audio: "responses",
 };
 
-const sectionLabels: Record<string, string> = {
+export const sectionLabels: Record<SectionType, string> = {
     image: "Image",
     video: "Video",
     audio: "Audio",
@@ -548,13 +550,12 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
 
 // --- Main export ---
 
-type SectionType = "image" | "video" | "audio" | "text";
-
 export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     imageModels,
     videoModels,
     textModels,
     audioModels,
+    activeTab,
     tierBalance,
     packBalance,
 }) => {
@@ -567,7 +568,6 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "text", models: textModels },
     ];
 
-    const [activeTab, setActiveTab] = useState<SectionType>("image");
     const [sortKey, setSortKey] = useState<SortKey>("perPollen");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
@@ -584,30 +584,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const sortArrow = (key: SortKey) =>
         sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
-    const tabButtons = sections.map((section) => (
-        <Button
-            key={section.type}
-            color="teal"
-            weight="light"
-            size="small"
-            className={cn(
-                "px-3",
-                activeTab === section.type
-                    ? "!bg-gray-900 !text-white hover:!bg-gray-800"
-                    : "!bg-white/80 text-gray-500",
-            )}
-            onClick={() => setActiveTab(section.type)}
-        >
-            <span className="font-bold">{sectionLabels[section.type]}</span>
-        </Button>
-    ));
-
     return (
         <div>
-            {/* Row 1: tab selectors on their own line */}
-            <div className="flex flex-wrap gap-1.5 pt-2 pb-5">{tabButtons}</div>
-
-            {/* Row 2: column headers (sortable) */}
+            {/* Column headers (sortable) */}
             <div className="flex items-center pb-2 pr-4 md:pr-8">
                 <button
                     type="button"

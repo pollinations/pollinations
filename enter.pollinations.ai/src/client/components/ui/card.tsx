@@ -1,19 +1,6 @@
 import type { FC, PropsWithChildren } from "react";
 import { cn } from "../../../util.ts";
-
-const cardColors = {
-    amber: "border-amber-300",
-    blue: "border-blue-300",
-    green: "border-green-300",
-    orange: "border-orange-300",
-    violet: "border-violet-200",
-    purple: "border-purple-300",
-    teal: "border-teal-200",
-    red: "border-red-300",
-    yellow: "border-yellow-200",
-    gray: "border-gray-200",
-    pink: "border-pink-300",
-} as const;
+import { cardColors } from "../layout/dashboard-theme.ts";
 
 type CardProps = PropsWithChildren<{
     color?: keyof typeof cardColors;
@@ -29,7 +16,7 @@ export const Card: FC<CardProps> = ({
 }) => (
     <div
         className={cn(
-            "rounded-xl border p-4",
+            "min-w-0 rounded-xl border p-4",
             cardColors[color],
             bg,
             className,

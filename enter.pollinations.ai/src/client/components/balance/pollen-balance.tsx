@@ -3,8 +3,7 @@ import { type FC, useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
-import { Card } from "../ui/card.tsx";
-import { Panel } from "../ui/panel.tsx";
+import { pillColors } from "../layout/dashboard-theme.ts";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
@@ -18,21 +17,11 @@ type GaugeSegmentProps = {
     percentage: number;
     value: number;
     label: string;
-    color: "amber" | "orange" | "blue" | "green" | "pink" | "gray" | "violet";
+    color: keyof typeof pillColors;
     tooltipText: string;
     position: "left" | "right";
     offset?: number;
 };
-
-const GAUGE_COLOR_CLASSES = {
-    amber: { bg: "bg-amber-200", text: "text-amber-900" },
-    orange: { bg: "bg-orange-300", text: "text-orange-950" },
-    blue: { bg: "bg-blue-200", text: "text-blue-900" },
-    green: { bg: "bg-green-200", text: "text-green-900" },
-    pink: { bg: "bg-pink-200", text: "text-pink-900" },
-    violet: { bg: "bg-violet-200", text: "text-violet-950" },
-    gray: { bg: "bg-gray-300", text: "text-gray-900" },
-} as const;
 
 const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     percentage,
@@ -43,7 +32,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     position,
     offset = 0,
 }) => {
-    const { bg: bgColor, text: textColor } = GAUGE_COLOR_CLASSES[color];
+    const { bg: bgColor, text: textColor } = pillColors[color];
 
     const style =
         position === "left"
@@ -77,15 +66,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     packBalance,
     tier = "spore",
 }) => {
-    const [emailCopied, setEmailCopied] = useState(false);
     const tierEmoji = getTierEmoji(tier);
     const tierColor = getTierColor(tier) as GaugeSegmentProps["color"];
 
-    const copyEmail = () => {
-        navigator.clipboard.writeText("billing@pollinations.ai");
-        setEmailCopied(true);
-        setTimeout(() => setEmailCopied(false), 2000);
-    };
     // Clamp at 0 for display — individual buckets can go slightly negative from overage
     const displayTier = Math.max(0, tierBalance);
     const displayPaid = Math.max(0, packBalance);
@@ -118,97 +101,93 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     }
 
     return (
-        <Panel color="amber">
-            <div className="flex flex-row justify-center text-center pb-1">
-                {/* Combined Pollen Gauge */}
-                <div className="flex flex-col items-center gap-4 w-full">
-                    {/* Pollen amount above gauge */}
-                    <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-amber-950 tabular-nums">
-                        {formatPollen(totalPollen)} pollen
-                    </span>
-                    {/* Gauge */}
-                    <div className="w-full max-w-[540px]">
-                        <div
-                            className={`relative ${gaugeHeightClass} bg-gray-200 rounded-full overflow-hidden border-2 border-amber-300`}
-                        >
-                            {/* Paid Pollen - Soft purple for paid (pack) */}
-                            {paidPercentage > 0 && (
-                                <PollenGaugeSegment
-                                    percentage={paidPercentage}
-                                    value={displayPaid}
-                                    label="🪷"
-                                    color="amber"
-                                    tooltipText={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants for others`}
-                                    position="left"
-                                />
-                            )}
-                            {/* Free Pollen - Soft teal for free */}
-                            {!hideTierGaugeSegment && freePercentage > 0 && (
-                                <PollenGaugeSegment
-                                    percentage={freePercentage}
-                                    value={displayTier}
-                                    label={tierEmoji}
-                                    color={tierColor}
-                                    tooltipText={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
-                                    position="right"
-                                    offset={paidPercentage}
-                                />
-                            )}
-                        </div>
+        <div className="flex flex-row justify-center text-center pb-1">
+            {/* Combined Pollen Gauge */}
+            <div className="flex flex-col items-center gap-4 w-full">
+                {/* Pollen amount above gauge */}
+                <span className="block text-4xl sm:text-5xl md:text-6xl font-bold text-amber-950 tabular-nums">
+                    {formatPollen(totalPollen)} pollen
+                </span>
+                {/* Gauge */}
+                <div className="w-full max-w-[540px]">
+                    <div
+                        className={`relative ${gaugeHeightClass} bg-gray-200 rounded-full overflow-hidden border-2 border-amber-300`}
+                    >
+                        {/* Paid Pollen - Soft purple for paid (pack) */}
+                        {paidPercentage > 0 && (
+                            <PollenGaugeSegment
+                                percentage={paidPercentage}
+                                value={displayPaid}
+                                label="🪷"
+                                color="amber"
+                                tooltipText={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants for others`}
+                                position="left"
+                            />
+                        )}
+                        {/* Free Pollen - Soft teal for free */}
+                        {!hideTierGaugeSegment && freePercentage > 0 && (
+                            <PollenGaugeSegment
+                                percentage={freePercentage}
+                                value={displayTier}
+                                label={tierEmoji}
+                                color={tierColor}
+                                tooltipText={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
+                                position="right"
+                                offset={paidPercentage}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
-            {/* Purchase info */}
-            <div id="buy-pollen" className="scroll-mt-6">
-                <Card
-                    color="amber"
-                    bg="bg-gradient-to-br from-white via-amber-50/90 to-orange-50/80"
-                    className="mt-4 !border-transparent shadow-[0_18px_50px_-32px_rgba(180,83,9,0.28)]"
-                >
-                    <div className="space-y-4">
-                        <div className="space-y-1 text-center">
-                            <h3 className="text-lg font-semibold text-amber-950 sm:text-xl">
-                                Buy Pollen
-                            </h3>
-                            <p className="text-sm text-amber-800">
-                                Choose a pack below. 🧪 Beta bonus is already
-                                included, with larger packs getting more.
-                            </p>
-                        </div>
+        </div>
+    );
+};
 
-                        <div className="mx-auto grid w-full grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:w-fit sm:[grid-template-columns:repeat(3,max-content)]">
-                            {POLLEN_PACKS.map((pack) => (
-                                <Button
-                                    key={pack.amountUsd}
-                                    as="a"
-                                    href={`/api/stripe/checkout/${pack.amountUsd}`}
-                                    color="amber"
-                                    weight="light"
-                                    className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:w-[132px] sm:justify-self-center sm:text-sm"
-                                >
-                                    <span className="font-semibold text-amber-900">
-                                        ${pack.amountUsd}
-                                    </span>
-                                    <span className="mx-2 text-amber-400">
-                                        /
-                                    </span>
-                                    <span className="font-medium text-amber-900">
-                                        🪷{" "}
-                                        {formatPollenPackValue(
-                                            pack.pollenGrant,
-                                        )}
-                                    </span>
-                                </Button>
-                            ))}
-                        </div>
+export const BuyPollenPanel: FC = () => {
+    const [emailCopied, setEmailCopied] = useState(false);
 
-                        <div className="pt-2">
-                            <PaymentTrustBadge className="mt-0 pt-0" />
-                        </div>
-                    </div>
-                </Card>
+    const copyEmail = () => {
+        navigator.clipboard.writeText("billing@pollinations.ai");
+        setEmailCopied(true);
+        setTimeout(() => setEmailCopied(false), 2000);
+    };
+
+    return (
+        <>
+            <div className="space-y-4">
+                <div className="space-y-1 text-center">
+                    <p className="text-sm text-amber-800">
+                        Choose a pack below. 🧪 Beta bonus is already included,
+                        with larger packs getting more.
+                    </p>
+                </div>
+
+                <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:grid-cols-3">
+                    {POLLEN_PACKS.map((pack) => (
+                        <Button
+                            key={pack.amountUsd}
+                            as="a"
+                            href={`/api/stripe/checkout/${pack.amountUsd}`}
+                            color="amber"
+                            weight="light"
+                            title={`Buy $${pack.amountUsd} pollen pack`}
+                            className="btn-shimmer w-full min-w-0 justify-self-stretch whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:text-sm"
+                        >
+                            <span className="font-semibold text-amber-900">
+                                ${pack.amountUsd}
+                            </span>
+                            <span className="mx-2 text-amber-400">/</span>
+                            <span className="font-medium text-amber-900">
+                                🪷 {formatPollenPackValue(pack.pollenGrant)}
+                            </span>
+                        </Button>
+                    ))}
+                </div>
+
+                <PaymentTrustBadge className="mt-0 pt-2" />
             </div>
-            <div className="mt-4 space-y-3 text-sm text-amber-900">
+
+            <div className="mt-5 space-y-3 border-t border-amber-300/70 pt-4 text-sm text-amber-900">
                 <p className="font-medium">
                     💳 Want to pay with a different method?{" "}
                     <a
@@ -235,6 +214,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     — we reply same day.
                 </p>
             </div>
-        </Panel>
+        </>
     );
 };

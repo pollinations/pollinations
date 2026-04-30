@@ -102,7 +102,7 @@ describe("docs routes", () => {
         const byopTag = schema.tags.find(
             (tag) => tag.name === "🌸 Bring Your Own Pollen",
         );
-        expect(byopTag.description).toContain("Bring Your Own Pollen");
+        expect(byopTag?.description).toContain("Bring Your Own Pollen");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "📦 Media Storage",
         );

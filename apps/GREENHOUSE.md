@@ -605,7 +605,7 @@
 | [📚 ManhwaGen](https://manhwagen.vercel.app/) | ManhwaGen provides a way to work with Manhwa content. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 G-Pai](https://g-pai.vercel.app/) | G-Pai is an app for students with some glitches. The developer is working to fix issues. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 Flashlearn](http://flashlearn.asquareportal.com/) | Create true/false flashcards from documents in Flashlearn and generate an AI audio lesson for desktop study. | [@desktop](https://github.com/desktop) |  | 🫧 |
-| [🗺 Interactive GeoMap ️](https://interactive-geomap.vercel.app) | AI-powered geography insights using text.pollinations.ai API. Click anywhere on ... | [@web](https://github.com/web) |  |  |
+| [🗺 Interactive GeoMap ️](https://interactive-geomap.vercel.app) | AI-powered geography insights using gen.pollinations.ai API. Click anywhere on ... | [@web](https://github.com/web) |  |  |
 | [🤟 DominiSigns](34243893) | AI avatar translating text/audio into Dominican Sign Language (LSRD) | [@api](https://github.com/api) |  |  |
 | [🧩 Connect Pollinations with Open Web UI tutorial](128580843) | Step-by-step guide to integrate Pollinations APIs into Open Web UI | [@api](https://github.com/api) |  |  |
 

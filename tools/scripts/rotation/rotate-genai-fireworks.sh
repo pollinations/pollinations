@@ -28,7 +28,7 @@ source "$SCRIPT_DIR/_pr-deploy.sh"
 source "$SCRIPT_DIR/_load-admin-secrets.sh"
 
 REPO="pollinations/pollinations"
-TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
+TEXT_SOPS="$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 API_BASE="https://api.fireworks.ai/v1"
 DEPLOY_WORKFLOW="deploy-enter-services.yml"
 GEN_BASE="https://gen.pollinations.ai"
@@ -102,7 +102,7 @@ if $DRY_RUN; then
     echo
     log "Plan:"
     echo "  1. Create new Fireworks key (old stays valid)"
-    echo "  2. Update SOPS: text.pollinations.ai/env.json"
+    echo "  2. Update SOPS: gen.pollinations.ai/env.json"
     echo "  3. Verify new key can list apiKeys"
     echo "  4. Open PR: rotate/fireworks-<date> → main, auto-merge"
     echo "  5. Push main → production (admin)"
@@ -164,7 +164,7 @@ log "New key: ${NEW_KEY:0:4}..."
 section "Updating SOPS"
 
 sops --set "[\"FIREWORKS_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$TEXT_SOPS"
-log "  text.pollinations.ai/env.json updated"
+log "  gen.pollinations.ai/env.json updated"
 
 #######################################
 # 4. Verify new key
@@ -256,4 +256,4 @@ echo ""
 log "Old key: ${OLD_KEY:0:4}... (deleted)"
 log "New key: ${NEW_KEY:0:4}..."
 echo ""
-log "SOPS + production + EC2 text service now using the new key."
+log "SOPS + production gen worker now using the new key."

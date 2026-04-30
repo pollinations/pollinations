@@ -94,7 +94,7 @@ All notable changes to `@pollinations_ai/sdk` will be documented in this file.
 ### Removed
 
 -   `lodash.memoize` dependency (uses React built-in memoization)
--   Legacy `text.pollinations.ai` and `image.pollinations.ai` endpoints
+-   Legacy `gen.pollinations.ai` and `image.pollinations.ai` endpoints
 
 ## Migration from v2.x
 

@@ -71,6 +71,7 @@ function generateLLMDoc(): string {
         "## Generation",
         "",
         "- POST /v1/chat/completions: OpenAI-compatible text generation.",
+        "- POST /text: text generation with direct content response.",
         "- GET /text/{prompt}: simple text generation.",
         "- GET /image/{prompt}: image generation.",
         "- GET /video/{prompt}: video generation.",

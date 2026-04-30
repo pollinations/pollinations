@@ -60,12 +60,6 @@ echo "TURNSTILE_SECRET=$SECRET"
 echo ""
 echo "💾 Saving to .env files..."
 
-# Save to text API
-if [ -d "../text.pollinations.ai" ]; then
-  echo "TURNSTILE_SECRET=$SECRET" >> ../text.pollinations.ai/.env
-  echo "✅ Added to text.pollinations.ai/.env"
-fi
-
 # Save to image API (needs wrangler secret)
 if [ -d "../image.pollinations.ai" ]; then
   echo "$SECRET" | wrangler secret put TURNSTILE_SECRET --cwd ../image.pollinations.ai

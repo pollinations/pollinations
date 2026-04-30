@@ -5,26 +5,50 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REQUIRED_SECRET_KEYS = [
+    "AWS_ACCESS_KEY_ID",
+    "AWS_REGION",
+    "AWS_SECRET_ACCESS_KEY",
+    "AZURE_MYCELI_PROD_API_KEY",
+    "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "BETTER_AUTH_SECRET",
     "DASHSCOPE_API_KEY",
+    "DEEPINFRA_API_KEY",
     "ELEVENLABS_API_KEY",
+    "FIREWORKS_API_KEY",
+    "GOOGLE_CLIENT_EMAIL",
+    "GOOGLE_PRIVATE_KEY",
+    "GOOGLE_PRIVATE_KEY_ID",
+    "GOOGLE_PROJECT_ID",
     "MUSIC_SERVICE_URL",
     "OVHCLOUD_API_KEY",
+    "PERPLEXITY_API_KEY",
     "PLN_ENTER_TOKEN",
     "PLN_GPU_TOKEN",
+    "PORTKEY_GATEWAY_URL",
     "TINYBIRD_INGEST_TOKEN",
 ];
 
-const [sourcePath, environment] = process.argv.slice(2);
+const [sourcePath, environment, ...extraSourcePaths] = process.argv.slice(2);
 
 if (!sourcePath || !environment) {
     console.error(
-        "Usage: node scripts/push-generation-secrets.mjs <decrypted-json-path> <environment>",
+        "Usage: node scripts/push-generation-secrets.mjs <decrypted-json-path> <environment> [extra-sops-json-path...]",
     );
     process.exit(1);
 }
 
-const source = JSON.parse(readFileSync(sourcePath, "utf8"));
+function readJson(path) {
+    return JSON.parse(readFileSync(path, "utf8"));
+}
+
+function readSopsJson(path) {
+    return JSON.parse(execFileSync("sops", ["-d", path], { encoding: "utf8" }));
+}
+
+const source = {
+    ...Object.assign({}, ...extraSourcePaths.map(readSopsJson)),
+    ...readJson(sourcePath),
+};
 const filtered = {};
 const missing = [];
 

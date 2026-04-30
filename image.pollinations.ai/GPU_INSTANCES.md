@@ -104,7 +104,6 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 - **Host**: `54.147.14.220`
 - **SSH**: `ssh -i ~/.ssh/enter-services-shared ubuntu@54.147.14.220`
 - **Image service**: port 16384
-- **Text service**: port 16385
 
 ### Staging
 

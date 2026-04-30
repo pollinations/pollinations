@@ -424,6 +424,7 @@ export async function processAutoTopUpForUser(
         const invoice = await stripe.invoices.create(
             {
                 customer: customerId,
+                currency: "usd",
                 collection_method: "charge_automatically",
                 auto_advance: false,
                 automatic_tax: { enabled: true },

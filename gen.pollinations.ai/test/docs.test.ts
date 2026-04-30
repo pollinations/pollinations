@@ -96,10 +96,13 @@ describe("docs routes", () => {
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.paths["/{hash}"]).toBeDefined();
         expect(schema.info.description).toContain("Quick Start");
-        expect(schema.info.description).toContain("Bring Your Own Pollen");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "🌸 Bring Your Own Pollen",
         );
+        const byopTag = schema.tags.find(
+            (tag) => tag.name === "🌸 Bring Your Own Pollen",
+        );
+        expect(byopTag.description).toContain("Bring Your Own Pollen");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "📦 Media Storage",
         );

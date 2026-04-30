@@ -188,6 +188,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/minimax-m2p7",
         }),
 
+    // -- Fireworks AI (Meta Llama) --------------------------------------------
+    "accounts/fireworks/models/llama-v3p3-70b-instruct": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/llama-v3p3-70b-instruct",
+        }),
+
     // -- Alibaba DashScope (Qwen) ---------------------------------------------
     "qwen3-coder-next": () =>
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),

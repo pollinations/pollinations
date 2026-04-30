@@ -1,0 +1,34 @@
+{
+  "pr_number": 10576,
+  "title": "fix(enter): 308-redirect /api/generate/* to gen",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10576",
+  "merged_at": "2026-04-30T14:58:39Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Redirecting the swarm",
+    "blurb": "Turns out some of you were still knocking on the old API's door. We added a permanent redirect so your legacy requests automatically find their way to the new gateway without dropping their payloads.",
+    "summary": "Implemented a 308 redirect from legacy enter.pollinations.ai endpoints to the new gen.pollinations.ai gateway.",
+    "impact": "Older integrations and SDK clients will automatically route to the correct endpoint without throwing 404 errors or losing POST data.",
+    "keywords": [
+      "api",
+      "routing",
+      "gateway",
+      "redirect",
+      "bugfix"
+    ],
+    "visual_concept": "The bee mascot acting as a helpful guide or traffic director, holding a directional sign pointing towards a glowing new gateway or portal. The nomnom creature is happily following the sign.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny crossing guard hat, holding a wooden directional sign pointing towards a glowing lime green (#ecf874) portal. The round tan nomnom creature happily waddles toward the portal. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-30/PR-10576.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny crossing guard hat, holding a wooden directional sign pointing towards a glowing lime green (#ecf874) portal. The round tan nomnom creature happily waddles toward the portal. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-30T14:59:37.945648+00:00"
+}

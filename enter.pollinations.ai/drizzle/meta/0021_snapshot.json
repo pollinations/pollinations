@@ -673,13 +673,6 @@
           "autoincrement": false,
           "default": false
         },
-        "auto_top_up_threshold_pollen": {
-          "name": "auto_top_up_threshold_pollen",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "auto_top_up_amount_usd": {
           "name": "auto_top_up_amount_usd",
           "type": "integer",

@@ -2,8 +2,6 @@ ALTER TABLE user ADD stripe_customer_id text;
 --> statement-breakpoint
 ALTER TABLE user ADD auto_top_up_enabled integer DEFAULT false NOT NULL;
 --> statement-breakpoint
-ALTER TABLE user ADD auto_top_up_threshold_pollen real;
---> statement-breakpoint
 ALTER TABLE user ADD auto_top_up_amount_usd integer;
 --> statement-breakpoint
 ALTER TABLE user ADD auto_top_up_last_failure text;

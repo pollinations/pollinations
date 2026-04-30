@@ -1,0 +1,34 @@
+{
+  "pr_number": 10581,
+  "title": "fix: flatten nova-fast to single-target Bedrock config",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10581",
+  "merged_at": "2026-04-30T18:44:46Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Untangling nova-fast",
+    "blurb": "The nova-fast model got a little too clever with its routing and started tripping over itself. We simplified the wiring, and now it actually generates text instead of errors.",
+    "summary": "Simplified the nova-fast model configuration to use a direct Bedrock target, resolving a bug that caused widespread 500 errors.",
+    "impact": "The nova-fast model is fully operational again and will reliably return text generations.",
+    "keywords": [
+      "bugfix",
+      "nova-fast",
+      "models",
+      "api",
+      "bedrock"
+    ],
+    "visual_concept": "Polly the bee fixing a complex, tangled mess of wires by replacing it with a single, straight connection. The Nomnom creature is eating the old, overly-complex routing configuration.",
+    "image_prompt": "Cozy pixel art scene of a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing a tiny tool belt and untangling a messy knot of wires into a single clean connection. The round Nomnom creature happily eats the discarded tangled wires. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-30/PR-10581.jpg",
+    "prompt": "Cozy pixel art scene of a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is wearing a tiny tool belt and untangling a messy knot of wires into a single clean connection. The round Nomnom creature happily eats the discarded tangled wires. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-04-30T18:46:52.955976+00:00"
+}

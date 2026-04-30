@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from "react";
+import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import type { DashboardTheme } from "../layout/dashboard-theme.ts";
 
@@ -25,8 +26,22 @@ export const LinkButton: FC<LinkButtonProps> = ({
         color={theme}
         weight="light"
         size={size}
-        className={className}
+        className={cn("gap-2", className)}
     >
-        {children}
+        <span>{children}</span>
+        <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4 shrink-0 opacity-60"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+        >
+            <path
+                d="M7 17 17 7M9 7h8v8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
     </Button>
 );

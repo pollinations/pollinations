@@ -2,6 +2,8 @@ import {
     type FC,
     type PropsWithChildren,
     type ReactNode,
+    type RefObject,
+    useCallback,
     useEffect,
     useRef,
     useState,
@@ -38,21 +40,35 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const drawerRef = useRef<HTMLDivElement>(null);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLElement>(null);
 
     useDashboardBodyClass();
     useScrollLock(isDrawerOpen);
 
+    const closeDrawer = useCallback(() => {
+        const activeElement = document.activeElement;
+        if (
+            activeElement instanceof HTMLElement &&
+            drawerRef.current?.contains(activeElement)
+        ) {
+            menuButtonRef.current?.focus({ preventScroll: true });
+        }
+
+        setIsDrawerOpen(false);
+    }, []);
+
     useEffect(() => {
         if (!isDrawerOpen) return;
 
         function handleKeyDown(event: KeyboardEvent): void {
-            if (event.key === "Escape") setIsDrawerOpen(false);
+            if (event.key === "Escape") closeDrawer();
         }
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isDrawerOpen]);
+    }, [closeDrawer, isDrawerOpen]);
 
     useEffect(() => {
         const scrollElement = mainScrollRef.current;
@@ -79,7 +95,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     function handlePageChange(page: DashboardPage): void {
         onPageChange(page);
-        setIsDrawerOpen(false);
+        closeDrawer();
     }
 
     const rail = (
@@ -98,6 +114,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         <div className="flex h-dvh overflow-hidden bg-emerald-100 text-green-950">
             <div className="hidden md:block">{rail}</div>
             <div
+                ref={drawerRef}
                 className={cn(
                     "fixed inset-0 z-40 transition-[visibility] md:hidden",
                     isDrawerOpen
@@ -114,7 +131,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                         "duration-[420ms]",
                         isDrawerOpen ? "opacity-100" : "opacity-0",
                     )}
-                    onClick={() => setIsDrawerOpen(false)}
+                    onClick={closeDrawer}
                     aria-label="Close navigation"
                 />
                 <div
@@ -126,11 +143,11 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 >
                     <div className="flex shrink-0 flex-col gap-2 border-b border-green-950/10 px-4 py-3">
                         <div className="flex items-center justify-between gap-2">
-                            <Brand />
+                            <Brand imageClassName="h-6 min-[390px]:h-7 sm:h-8" />
                             <button
                                 type="button"
                                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
-                                onClick={() => setIsDrawerOpen(false)}
+                                onClick={closeDrawer}
                                 aria-label="Close navigation"
                             >
                                 <svg
@@ -157,7 +174,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 </div>
             </div>
             <div className="flex min-w-0 flex-1 flex-col md:ml-60">
-                <MobileHeader onOpen={() => setIsDrawerOpen(true)} />
+                <MobileHeader
+                    buttonRef={menuButtonRef}
+                    onOpen={() => setIsDrawerOpen(true)}
+                />
                 <main
                     ref={mainScrollRef}
                     className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-6 md:px-6 md:pt-10"
@@ -294,10 +314,14 @@ const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
     );
 };
 
-const MobileHeader: FC<{ onOpen: () => void }> = ({ onOpen }) => {
+const MobileHeader: FC<{
+    buttonRef: RefObject<HTMLButtonElement | null>;
+    onOpen: () => void;
+}> = ({ buttonRef, onOpen }) => {
     return (
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-green-950/10 bg-emerald-100 px-4 py-3 md:hidden">
             <button
+                ref={buttonRef}
                 type="button"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-green-950 hover:bg-white"
                 onClick={onOpen}
@@ -318,13 +342,13 @@ const MobileHeader: FC<{ onOpen: () => void }> = ({ onOpen }) => {
                     />
                 </svg>
             </button>
-            <Brand />
+            <Brand imageClassName="h-6 min-[390px]:h-7 sm:h-8" />
             <span className="h-9 w-9" aria-hidden="true" />
         </header>
     );
 };
 
-const Brand: FC = () => (
+const Brand: FC<{ imageClassName?: string }> = ({ imageClassName }) => (
     <a
         href="https://pollinations.ai"
         target="_blank"
@@ -334,7 +358,7 @@ const Brand: FC = () => (
         <img
             src="/logo_text_black.svg"
             alt="pollinations.ai"
-            className="h-10 w-auto"
+            className={cn("h-10 w-auto", imageClassName)}
         />
     </a>
 );

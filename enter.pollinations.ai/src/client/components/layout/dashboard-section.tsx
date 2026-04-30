@@ -12,6 +12,7 @@ type DashboardSectionProps = {
     id?: string;
     framed?: boolean;
     action?: ReactNode;
+    actionClassName?: string;
     children: ReactNode;
     className?: string;
 };
@@ -22,6 +23,7 @@ export const DashboardSection: FC<DashboardSectionProps> = ({
     id,
     framed = false,
     action,
+    actionClassName,
     children,
     className,
 }) => (
@@ -35,7 +37,9 @@ export const DashboardSection: FC<DashboardSectionProps> = ({
             >
                 {title}
             </h2>
-            {action && <div className="shrink-0">{action}</div>}
+            {action && (
+                <div className={cn("shrink-0", actionClassName)}>{action}</div>
+            )}
         </div>
         {framed ? <Panel color={theme}>{children}</Panel> : children}
     </section>

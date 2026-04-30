@@ -19,6 +19,7 @@ type ApiKeyDialogProps = {
     onComplete: () => void;
     triggerLabel?: string;
     triggerColor?: "blue" | "green" | "purple" | "amber";
+    triggerClassName?: string;
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only name + URL. */
     simplified?: boolean;
 };
@@ -28,6 +29,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onComplete,
     triggerLabel = "Create new key",
     triggerColor = "blue",
+    triggerClassName,
     simplified = false,
 }) => {
     function generateFunName(): string {
@@ -180,8 +182,18 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 setIsOpen(open);
             }}
         >
-            <Dialog.Trigger>
-                <Button as="div" color={triggerColor} weight="light">
+            <Dialog.Trigger
+                className={cn(
+                    "inline-flex shrink-0 self-start whitespace-nowrap",
+                    triggerClassName,
+                )}
+            >
+                <Button
+                    as="div"
+                    color={triggerColor}
+                    weight="light"
+                    className="shrink-0 whitespace-nowrap"
+                >
                     {triggerLabel}
                 </Button>
             </Dialog.Trigger>

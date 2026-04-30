@@ -179,15 +179,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             <div className="flex flex-col gap-6">
                 <DashboardSection title="API" theme="blue" framed>
                     <div className="flex flex-col gap-3">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-sm text-gray-600">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <p className="min-w-0 flex-1 text-sm text-gray-600">
                                 For your own backend, scripts, and CLIs — billed
                                 to your account.
                             </p>
                             <ApiKeyDialog
                                 onSubmit={onCreate}
                                 onComplete={() => {}}
-                                triggerLabel="🔑 + Add"
+                                triggerLabel="🔑 + API Key"
                                 triggerColor="blue"
                             />
                         </div>
@@ -211,8 +211,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </DashboardSection>
                 <DashboardSection title="App" theme="blue" framed>
                     <div className="flex flex-col gap-3">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-sm text-gray-600">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <p className="min-w-0 flex-1 text-sm text-gray-600">
                                 For apps where users sign in with their own
                                 Pollinations account — billed to them.{" "}
                                 <a
@@ -227,7 +227,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <ApiKeyDialog
                                 onSubmit={onCreate}
                                 onComplete={() => {}}
-                                triggerLabel="🖥️ + Add"
+                                triggerLabel="🖥️ + Add App"
                                 triggerColor="blue"
                                 simplified
                             />

@@ -1,16 +1,16 @@
 import { getTierColor, getTierEmoji } from "@shared/tier-config.ts";
 import { type FC, useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
-import {
-    formatPollenPackValue,
-    POLLEN_PACKS,
-    type PollenPack,
-} from "@/pollen-packs.ts";
-import { cn } from "@/util.ts";
+import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
 import { pillColors } from "../layout/dashboard-theme.ts";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
+import {
+    PollenPackBonusPill,
+    PollenPackReadout,
+    PollenPackSlider,
+} from "./pollen-pack-controls.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -235,148 +235,3 @@ export const BuyPollenPanel: FC = () => {
         </>
     );
 };
-
-type PollenPackSliderProps = {
-    value: number;
-    onChange: (value: number) => void;
-};
-
-const PollenPackSlider: FC<PollenPackSliderProps> = ({ value, onChange }) => {
-    const selectedIndex = Math.max(
-        0,
-        POLLEN_PACKS.findIndex((pack) => pack.amountUsd === value),
-    );
-    const selectedPack = POLLEN_PACKS[selectedIndex] ?? POLLEN_PACKS[0];
-    const progressPercent =
-        POLLEN_PACKS.length > 1
-            ? (selectedIndex / (POLLEN_PACKS.length - 1)) * 100
-            : 100;
-
-    return (
-        <div className="space-y-2">
-            <div className="text-[15px] font-bold text-amber-950">
-                Select amount
-            </div>
-            <div className="flex h-8 items-center">
-                <input
-                    type="range"
-                    min={0}
-                    max={Math.max(0, POLLEN_PACKS.length - 1)}
-                    step={1}
-                    value={selectedIndex}
-                    onChange={(event) => {
-                        const pack =
-                            POLLEN_PACKS[Number(event.currentTarget.value)];
-                        if (pack) onChange(pack.amountUsd);
-                    }}
-                    aria-label="Choose pollen pack"
-                    aria-valuetext={
-                        selectedPack ? formatPackValue(selectedPack) : undefined
-                    }
-                    style={{
-                        background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${progressPercent}%, #fde68a ${progressPercent}%, #fde68a 100%)`,
-                    }}
-                    className="h-2 w-full cursor-grab appearance-none rounded-full outline-none transition active:cursor-grabbing [&::-moz-range-thumb]:h-[22px] [&::-moz-range-thumb]:w-[22px] [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-[3px] [&::-moz-range-thumb]:border-amber-600 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-moz-range-thumb]:transition-transform [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-7px] [&::-webkit-slider-thumb]:h-[22px] [&::-webkit-slider-thumb]:w-[22px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-amber-600 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(180,83,9,0.35)] [&::-webkit-slider-thumb]:transition-transform hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-105"
-                />
-            </div>
-            <div className="relative -mt-1 h-4 px-[11px] text-[10px] font-semibold text-amber-700/80 tabular-nums">
-                <div className="relative h-full">
-                    {POLLEN_PACKS.map((pack, index) => {
-                        const labelPercent =
-                            POLLEN_PACKS.length > 1
-                                ? (index / (POLLEN_PACKS.length - 1)) * 100
-                                : 0;
-
-                        return (
-                            <span
-                                key={pack.amountUsd}
-                                style={{ left: `${labelPercent}%` }}
-                                className={cn(
-                                    "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
-                                    pack.amountUsd === selectedPack.amountUsd &&
-                                        "font-bold text-amber-900",
-                                )}
-                            >
-                                ${pack.amountUsd}
-                            </span>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-type PollenPackReadoutProps = {
-    pack: PollenPack;
-    showBonus?: boolean;
-    tone?: "panel" | "button";
-};
-
-const PollenPackReadout: FC<PollenPackReadoutProps> = ({
-    pack,
-    showBonus = true,
-    tone = "panel",
-}) => {
-    const bonusPercent = getPackBonusPercent(pack);
-    const hasBonus = bonusPercent > 0;
-    const isButtonTone = tone === "button";
-
-    return (
-        <span
-            className={cn(
-                "flex flex-wrap items-center gap-2",
-                isButtonTone ? "justify-center" : "justify-end",
-            )}
-        >
-            <span className="inline-flex items-baseline gap-1.5">
-                <span className="text-base font-bold text-amber-950">
-                    ${pack.amountUsd}
-                </span>
-                <span
-                    className={
-                        isButtonTone ? "text-amber-600" : "text-amber-400"
-                    }
-                >
-                    -&gt;
-                </span>
-                <span className="text-base font-bold text-amber-950">
-                    {formatPollenPackValue(pack.pollenGrant)} pollen
-                </span>
-            </span>
-            {showBonus && hasBonus && <PollenPackBonusPill pack={pack} />}
-        </span>
-    );
-};
-
-type PollenPackBonusPillProps = {
-    pack: PollenPack;
-    className?: string;
-};
-
-const PollenPackBonusPill: FC<PollenPackBonusPillProps> = ({
-    pack,
-    className,
-}) => {
-    const bonusPercent = getPackBonusPercent(pack);
-    if (bonusPercent <= 0) return null;
-
-    return (
-        <span className={cn("text-sm font-medium text-amber-700", className)}>
-            +{bonusPercent}% bonus
-        </span>
-    );
-};
-
-function getPackBonusPercent(pack: PollenPack): number {
-    if (!pack.amountUsd) return 0;
-
-    return Math.round((pack.bonusPollen / pack.amountUsd) * 100);
-}
-
-function formatPackValue(pack: PollenPack): string {
-    const bonusPercent = getPackBonusPercent(pack);
-    const bonusLabel = bonusPercent > 0 ? `, +${bonusPercent}% bonus` : "";
-
-    return `$${pack.amountUsd} to ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusLabel}`;
-}

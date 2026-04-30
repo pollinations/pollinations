@@ -18,11 +18,16 @@ type GaugeSegmentProps = {
     percentage: number;
     value: number;
     label: string;
-    color: keyof typeof pillColors;
+    color: keyof typeof gaugeSegmentColors;
     tooltipText: string;
     position: "left" | "right";
     offset?: number;
 };
+
+const gaugeSegmentColors = {
+    ...pillColors,
+    dev: { bg: "bg-orange-200", text: "text-orange-950" },
+} as const;
 
 const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     percentage,
@@ -33,7 +38,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     position,
     offset = 0,
 }) => {
-    const { bg: bgColor, text: textColor } = pillColors[color];
+    const { bg: bgColor, text: textColor } = gaugeSegmentColors[color];
 
     const style =
         position === "left"
@@ -131,7 +136,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayPaid}
                                 label="🪷"
                                 color="amber"
-                                tooltipText={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants and developer earnings for regular models`}
+                                tooltipText={
+                                    "• From packs you've bought\n• Required for 🪷 Paid Only models\n• Used after tier grants and developer earnings for regular models"
+                                }
                                 position="left"
                             />
                         )}
@@ -140,8 +147,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 percentage={devPercentage}
                                 value={displayDev}
                                 label="🌻"
-                                color="green"
-                                tooltipText={`🌻 Developer earnings: ${formatPollen(displayDev)} pollen\nEarned when users spend Pollen in your BYOP apps\nUsed after tier grants for regular models`}
+                                color="dev"
+                                tooltipText={
+                                    "• Earned when users spend Pollen in your BYOP apps\n• Used after tier grants for regular models"
+                                }
                                 position="right"
                                 offset={paidPercentage}
                             />
@@ -153,7 +162,9 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayTier}
                                 label={tierEmoji}
                                 color={tierColor}
-                                tooltipText={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
+                                tooltipText={
+                                    "• Free pollen from your tier, refills periodically\n• Used first, except for 🪷 Paid Only models"
+                                }
                                 position="right"
                                 offset={paidPercentage + devPercentage}
                             />

@@ -144,15 +144,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </Dialog.Title>
 
                         <div className="flex items-center gap-3">
-                            <Badge
-                                color={
-                                    isAppKey
-                                        ? "amber"
-                                        : isPublishable
-                                          ? "blue"
-                                          : "purple"
-                                }
-                            >
+                            <Badge color="blue">
                                 {isAppKey
                                     ? "🖥️ App"
                                     : isPublishable

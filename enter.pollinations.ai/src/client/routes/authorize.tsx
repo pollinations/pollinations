@@ -675,7 +675,9 @@ function AuthorizeComponent() {
 
             <div className="flex items-center justify-between p-6 pt-4">
                 <a
-                    href="/terms"
+                    href="https://pollinations.ai/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-xs text-amber-800 hover:text-gray-900 hover:underline"
                 >
                     Terms & Conditions

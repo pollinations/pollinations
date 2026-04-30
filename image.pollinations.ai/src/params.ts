@@ -25,7 +25,7 @@ const sanitizedSeed = z.preprocess((v) => {
     const parsed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
     // seed=-1 means "random" - generate a random seed
     return parsed === -1 ? Math.floor(Math.random() * MAX_RANDOM_SEED) : parsed;
-}, z.int().catch(42));
+}, z.int().min(0).max(MAX_RANDOM_SEED).catch(42));
 
 const sanitizedSideLength = z.preprocess((v) => {
     return Number.isInteger(parseInt(v as string))

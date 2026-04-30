@@ -1,0 +1,35 @@
+{
+  "pr_number": 10577,
+  "title": "fix(docs): restore CLI/auth/errors sections, dedupe BYOP",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10577",
+  "merged_at": "2026-04-30T15:08:03Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A cleaner map to the hive",
+    "blurb": "We've tidied up the API documentation! The CLI, Authentication, and Errors sections are back where they belong, and we've cleared out some duplicated Bring Your Own Pollen content.",
+    "summary": "Restored missing CLI, Authentication, and Errors sections to the OpenAPI documentation and removed duplicated Bring Your Own Pollen (BYOP) content.",
+    "impact": "Developers will find a cleaner, more organized API reference with all the necessary authentication and error handling details restored.",
+    "keywords": [
+      "docs",
+      "openapi",
+      "api",
+      "authentication",
+      "cli",
+      "errors"
+    ],
+    "visual_concept": "The PR is about cleaning up documentation, organizing, and removing duplicates. Visual metaphor: Polly the bee organizing a bookshelf or reading a clean, glowing map/scroll. The Nomnom creature could be eating the 'duplicate' pages.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, organizing glowing scrolls and books on a wooden shelf in a warm library. The round tan nomnom creature happily eats a stack of duplicate papers nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-30/PR-10577.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, organizing glowing scrolls and books on a wooden shelf in a warm library. The round tan nomnom creature happily eats a stack of duplicate papers nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-04-30T15:08:57.322957+00:00"
+}

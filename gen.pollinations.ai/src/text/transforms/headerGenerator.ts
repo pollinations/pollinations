@@ -24,7 +24,7 @@ export async function generateHeaders(
         options,
     );
 
-    log("Generated headers:", JSON.stringify(additionalHeaders, null, 2));
+    log("Generated header keys:", Object.keys(additionalHeaders));
 
     return {
         messages,

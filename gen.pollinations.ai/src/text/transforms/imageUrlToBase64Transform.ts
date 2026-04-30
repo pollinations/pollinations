@@ -26,6 +26,64 @@ class ImageFetchError extends Error {
 
 /** Max image size: 20MB */
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
+const MAX_TOTAL_IMAGE_BYTES = MAX_IMAGE_SIZE;
+const MAX_IMAGES_PER_REQUEST = 8;
+const IMAGE_FETCH_TIMEOUT_MS = 30_000;
+
+const BLOCKED_HOSTNAMES = /^localhost$/i;
+
+function isBlockedImageHost(hostname: string): boolean {
+    const host = hostname.replace(/^\[|\]$/g, "");
+    const normalized = host.toLowerCase();
+    if (
+        BLOCKED_HOSTNAMES.test(normalized) ||
+        normalized.endsWith(".localhost")
+    ) {
+        return true;
+    }
+
+    if (normalized.includes(":")) {
+        return true;
+    }
+
+    const parts = normalized.split(".").map(Number);
+    if (
+        parts.length !== 4 ||
+        parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+    ) {
+        return false;
+    }
+
+    return true;
+}
+
+function assertAllowedImageUrl(value: string): URL {
+    let url: URL;
+    try {
+        url = new URL(value);
+    } catch {
+        throw new ImageFetchError(
+            `Invalid image URL ${value}: expected a valid HTTP(S) URL.`,
+            400,
+        );
+    }
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+        throw new ImageFetchError(
+            `Invalid image URL ${value}: only HTTP(S) image URLs can be fetched.`,
+            400,
+        );
+    }
+
+    if (url.username || url.password || isBlockedImageHost(url.hostname)) {
+        throw new ImageFetchError(
+            `Invalid image URL ${value}: private or credentialed image URLs are not allowed.`,
+            400,
+        );
+    }
+
+    return url;
+}
 
 function detectMimeType(url: string, contentType: string | null): string {
     if (contentType?.startsWith("image/")) {
@@ -45,13 +103,76 @@ function detectMimeType(url: string, contentType: string | null): string {
     return "image/jpeg";
 }
 
-async function fetchImageAsBase64(url: string): Promise<string> {
+async function readImageBytes(
+    response: Response,
+    maxBytes: number,
+): Promise<ArrayBuffer> {
+    if (maxBytes <= 0) {
+        throw new ImageFetchError(
+            `Too many image bytes in request (max ${MAX_TOTAL_IMAGE_BYTES} bytes).`,
+            400,
+        );
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+        const arrayBuffer = await response.arrayBuffer();
+        if (arrayBuffer.byteLength > maxBytes) {
+            throw new ImageFetchError(
+                `Image too large: ${arrayBuffer.byteLength} bytes (max ${maxBytes} bytes remaining). Please use a smaller image.`,
+                400,
+            );
+        }
+        return arrayBuffer;
+    }
+
+    const chunks: Uint8Array[] = [];
+    let total = 0;
     try {
-        log(`Fetching image: ${url}`);
-        const response = await fetch(url, {
-            signal: AbortSignal.timeout(30000),
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            total += value.byteLength;
+            if (total > maxBytes) {
+                throw new ImageFetchError(
+                    `Image too large: ${total} bytes (max ${maxBytes} bytes remaining). Please use a smaller image.`,
+                    400,
+                );
+            }
+            chunks.push(value);
+        }
+    } finally {
+        reader.releaseLock();
+    }
+
+    const bytes = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    return bytes.buffer;
+}
+
+async function fetchImageAsBase64(
+    url: string,
+    maxBytes: number,
+): Promise<{ dataUrl: string; byteLength: number }> {
+    try {
+        const validatedUrl = assertAllowedImageUrl(url);
+        log(`Fetching image: ${validatedUrl.origin}${validatedUrl.pathname}`);
+        const response = await fetch(validatedUrl, {
+            redirect: "manual",
+            signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS),
             headers: { "User-Agent": "Pollinations/1.0" },
         });
+
+        if (response.status >= 300 && response.status < 400) {
+            throw new ImageFetchError(
+                `Image URL ${url} redirects. Please provide a direct public image URL.`,
+                400,
+            );
+        }
 
         if (!response.ok) {
             const base = `Failed to fetch image from ${url}: HTTP ${response.status} ${response.statusText || "Unknown error"}`;
@@ -84,15 +205,16 @@ async function fetchImageAsBase64(url: string): Promise<string> {
         }
 
         const contentLength = response.headers.get("content-length");
-        if (contentLength && parseInt(contentLength, 10) > MAX_IMAGE_SIZE) {
+        const maxAllowedBytes = Math.min(MAX_IMAGE_SIZE, maxBytes);
+        if (contentLength && parseInt(contentLength, 10) > maxAllowedBytes) {
             throw new ImageFetchError(
-                `Image too large: ${contentLength} bytes (max ${MAX_IMAGE_SIZE} bytes). Please use a smaller image.`,
+                `Image too large: ${contentLength} bytes (max ${maxAllowedBytes} bytes remaining). Please use a smaller image.`,
                 400,
             );
         }
 
         const mimeType = detectMimeType(url, contentType);
-        const arrayBuffer = await response.arrayBuffer();
+        const arrayBuffer = await readImageBytes(response, maxAllowedBytes);
 
         if (arrayBuffer.byteLength > MAX_IMAGE_SIZE) {
             throw new ImageFetchError(
@@ -103,7 +225,10 @@ async function fetchImageAsBase64(url: string): Promise<string> {
 
         const base64 = arrayBufferToBase64(arrayBuffer);
         log(`Converted image to base64: ${mimeType}, ${base64.length} chars`);
-        return `data:${mimeType};base64,${base64}`;
+        return {
+            dataUrl: `data:${mimeType};base64,${base64}`,
+            byteLength: arrayBuffer.byteLength,
+        };
     } catch (thrown: unknown) {
         if (thrown instanceof ImageFetchError) {
             errorLog(`Image fetch error for ${url}: ${thrown.message}`);
@@ -161,7 +286,12 @@ interface ContentPart {
     [key: string]: unknown;
 }
 
-async function processContentPart(part: ContentPart): Promise<ContentPart> {
+type ImageConversionContext = { imageCount: number; totalBytes: number };
+
+async function processContentPart(
+    part: ContentPart,
+    context: ImageConversionContext,
+): Promise<ContentPart> {
     if (part.type !== "image_url" || !part.image_url?.url) {
         return part;
     }
@@ -170,7 +300,20 @@ async function processContentPart(part: ContentPart): Promise<ContentPart> {
         return part;
     }
 
-    const dataUrl = await fetchImageAsBase64(part.image_url.url);
+    context.imageCount += 1;
+    if (context.imageCount > MAX_IMAGES_PER_REQUEST) {
+        throw new ImageFetchError(
+            `Too many image URLs in request (max ${MAX_IMAGES_PER_REQUEST}).`,
+            400,
+        );
+    }
+
+    const remainingBytes = MAX_TOTAL_IMAGE_BYTES - context.totalBytes;
+    const { dataUrl, byteLength } = await fetchImageAsBase64(
+        part.image_url.url,
+        remainingBytes,
+    );
+    context.totalBytes += byteLength;
     return {
         ...part,
         image_url: { ...part.image_url, url: dataUrl },
@@ -179,8 +322,13 @@ async function processContentPart(part: ContentPart): Promise<ContentPart> {
 
 async function processMessageContent(
     content: ContentPart[],
+    context: ImageConversionContext,
 ): Promise<ContentPart[]> {
-    return Promise.all(content.map(processContentPart));
+    const processed: ContentPart[] = [];
+    for (const part of content) {
+        processed.push(await processContentPart(part, context));
+    }
+    return processed;
 }
 
 /**
@@ -214,18 +362,23 @@ export function createImageUrlToBase64Transform(): TransformFn {
             : `fallback[${targets.map((t) => t.provider).join(", ")}]`;
         log(`Processing messages for ${providerInfo} image URL conversion`);
 
-        const processedMessages = await Promise.all(
-            messages.map(async (message) => {
-                if (!message.content || typeof message.content === "string") {
-                    return message;
-                }
+        const context: ImageConversionContext = {
+            imageCount: 0,
+            totalBytes: 0,
+        };
+        const processedMessages = [];
+        for (const message of messages) {
+            if (!message.content || typeof message.content === "string") {
+                processedMessages.push(message);
+                continue;
+            }
 
-                const processedContent = await processMessageContent(
-                    message.content as ContentPart[],
-                );
-                return { ...message, content: processedContent };
-            }),
-        );
+            const processedContent = await processMessageContent(
+                message.content as ContentPart[],
+                context,
+            );
+            processedMessages.push({ ...message, content: processedContent });
+        }
 
         log("Image URL conversion complete");
         return { messages: processedMessages, options };

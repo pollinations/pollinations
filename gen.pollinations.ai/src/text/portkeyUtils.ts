@@ -59,10 +59,10 @@ export async function generatePortkeyHeaders(
             strategy: config.strategy,
             targets: resolvedTargets,
         };
-        log(
-            "Resolved fallback config:",
-            JSON.stringify(configPayload, null, 2),
-        );
+        log("Resolved fallback config targets:", {
+            targetCount: resolvedTargets.length,
+            providers: resolvedTargets.map((target) => target.provider),
+        });
         return { "x-portkey-config": JSON.stringify(configPayload) };
     }
 

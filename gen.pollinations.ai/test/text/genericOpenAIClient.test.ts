@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { genericOpenAIClient } from "./genericOpenAIClient.js";
+import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -8,11 +8,13 @@ afterEach(() => {
 describe("genericOpenAIClient", () => {
     it("does not send internal gateway options in the upstream JSON body", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
+        let upstreamSignal: AbortSignal | undefined;
 
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
             async (input, init) => {
                 expect(String(input)).toBe("https://portkey.test/chat");
                 upstreamBody = JSON.parse(String(init?.body));
+                upstreamSignal = init?.signal as AbortSignal;
                 return Response.json({
                     id: "chatcmpl_test",
                     object: "chat.completion",
@@ -71,6 +73,24 @@ describe("genericOpenAIClient", () => {
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
         expect(upstreamBody).not.toHaveProperty("userInfo");
+        expect(upstreamSignal).toBeInstanceOf(AbortSignal);
+    });
+
+    it("preserves upstream 429 status for callers to back off", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                { error: { message: "rate limited" } },
+                { status: 429, statusText: "Too Many Requests" },
+            ),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 429 });
     });
 
     it("appends a DONE event when an upstream SSE stream omits it", async () => {

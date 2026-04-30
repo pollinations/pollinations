@@ -4,12 +4,12 @@
     "type": "module",
     "description": "Simplified API gateway for pollinations.ai",
     "scripts": {
-        "decrypt-vars": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/dev.vars.json 'node scripts/push-generation-secrets.mjs {} local ../text.pollinations.ai/secrets/env.json'",
+        "decrypt-vars": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/dev.vars.json 'node scripts/push-generation-secrets.mjs {} local secrets/env.json'",
         "dev": "npm run decrypt-vars && wrangler dev --port 8788 --local --persist-to .wrangler/state --show-interactive-dev-session false",
         "deploy:staging": "wrangler deploy --env staging",
         "deploy:production": "wrangler deploy --env production",
-        "push-secrets:staging": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/staging.vars.json 'node scripts/push-generation-secrets.mjs {} staging ../text.pollinations.ai/secrets/env.json'",
-        "push-secrets:production": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/prod.vars.json 'node scripts/push-generation-secrets.mjs {} production ../text.pollinations.ai/secrets/env.json'",
+        "push-secrets:staging": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/staging.vars.json 'node scripts/push-generation-secrets.mjs {} staging secrets/env.json'",
+        "push-secrets:production": "sops exec-file --no-fifo ../enter.pollinations.ai/secrets/prod.vars.json 'node scripts/push-generation-secrets.mjs {} production secrets/env.json'",
         "test": "vitest run",
         "typecheck": "tsc --noEmit",
         "docs:generate": "tsx scripts/generate-apidocs.ts"

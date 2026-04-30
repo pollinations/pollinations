@@ -78,6 +78,9 @@ function createTextCacheApp() {
                     {
                         headers: {
                             "Content-Type": "application/json; charset=utf-8",
+                            "x-model-used": "openai-fast",
+                            "x-usage-prompt-text-tokens": "12",
+                            "x-moderation-hate-severity": "safe",
                         },
                     },
                 );
@@ -139,6 +142,78 @@ function chatInit(body: unknown): RequestInit {
 }
 
 describe("text cache", () => {
+    it("serves cached responses before auth while misses still require auth", async () => {
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .post(
+                "/v1/chat/completions",
+                validator("json", CreateChatCompletionRequestSchema),
+                textCache,
+                async (c, next) => {
+                    if (c.req.header("authorization") !== "Bearer test-key") {
+                        return Response.json(
+                            { error: "Authentication required" },
+                            { status: 401 },
+                        );
+                    }
+                    await next();
+                },
+                async () => {
+                    originHits += 1;
+                    return Response.json({ originHits });
+                },
+            );
+        const env = createTextCacheEnv();
+        const cachedBody = {
+            model: "openai-fast",
+            messages: [{ role: "user", content: "cached public hit" }],
+        };
+
+        const warm = await dispatch(
+            app,
+            "/v1/chat/completions",
+            {
+                ...chatInit(cachedBody),
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer test-key",
+                },
+            },
+            env,
+        );
+        await consumeAndWait(warm);
+        expect(warm.response.headers.get("X-Cache")).toBe("MISS");
+
+        const cachedNoAuth = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit(cachedBody),
+            env,
+        );
+        await consumeAndWait(cachedNoAuth);
+        expect(cachedNoAuth.response.status).toBe(200);
+        expect(cachedNoAuth.response.headers.get("X-Cache")).toBe("HIT");
+        expect(originHits).toBe(1);
+
+        const missNoAuth = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit({
+                model: "openai-fast",
+                messages: [{ role: "user", content: "uncached miss" }],
+            }),
+            env,
+        );
+        await consumeAndWait(missNoAuth);
+        expect(missNoAuth.response.status).toBe(401);
+        expect(originHits).toBe(1);
+    });
+
     it("caches chat completions after JSON validation consumed the body", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
@@ -180,6 +255,9 @@ describe("text cache", () => {
         expect(second.headers.get("Content-Type")).toBe(
             "application/json; charset=utf-8",
         );
+        expect(second.headers.get("x-model-used")).toBe("openai-fast");
+        expect(second.headers.get("x-usage-prompt-text-tokens")).toBe("12");
+        expect(second.headers.get("x-moderation-hate-severity")).toBe("safe");
         expect(await second.json()).toMatchObject({ originHits: 1 });
         expect(cache.originHits).toBe(1);
     });

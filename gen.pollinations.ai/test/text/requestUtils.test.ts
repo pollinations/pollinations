@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getRequestData } from "./requestUtils.js";
+import { getRequestData } from "../../src/text/requestUtils.js";
 
 describe("getRequestData", () => {
     it("coerces token limits from query strings", () => {

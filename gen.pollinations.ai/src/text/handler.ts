@@ -221,15 +221,28 @@ function asyncIterableToStream(
                 return;
             }
 
-            for await (const chunk of iterable) {
-                if (typeof chunk === "string") {
-                    controller.enqueue(encoder.encode(chunk));
-                } else if (chunk instanceof Uint8Array) {
-                    controller.enqueue(chunk);
-                } else {
-                    controller.enqueue(encoder.encode(String(chunk)));
+            try {
+                for await (const chunk of iterable) {
+                    if (typeof chunk === "string") {
+                        controller.enqueue(encoder.encode(chunk));
+                    } else if (chunk instanceof Uint8Array) {
+                        controller.enqueue(chunk);
+                    } else {
+                        controller.enqueue(encoder.encode(String(chunk)));
+                    }
                 }
+            } catch (thrown) {
+                const message =
+                    thrown instanceof Error
+                        ? thrown.message
+                        : "Streaming response failed";
+                controller.enqueue(
+                    encoder.encode(
+                        `data: ${JSON.stringify({ error: { message } })}\n\n`,
+                    ),
+                );
             }
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
         },
     });
@@ -256,19 +269,18 @@ function throwTextError(error: ServiceError, c: TextContext): never {
             : typeof error.code === "number"
               ? error.code
               : 500;
+    const mappedStatus =
+        error.name === "ModelResolutionError" || status === 429
+            ? status
+            : remapUpstreamStatus(status);
 
-    throw new UpstreamError(
-        remapUpstreamStatus(status) as ContentfulStatusCode,
-        {
-            message: error.message || "Text generation failed",
-            requestUrl: new URL(c.req.url),
-            upstreamStatus: status,
-            responseBody: serializeDetails(
-                error.details || error.response?.data,
-            ),
-            cause: error,
-        },
-    );
+    throw new UpstreamError(mappedStatus as ContentfulStatusCode, {
+        message: error.message || "Text generation failed",
+        requestUrl: new URL(c.req.url),
+        upstreamStatus: status,
+        responseBody: serializeDetails(error.details || error.response?.data),
+        cause: error,
+    });
 }
 
 async function generateTextResponse(

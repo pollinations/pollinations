@@ -11,8 +11,8 @@ interface ServiceAccountKey {
     client_email: string;
 }
 
-/** Tokens last 60 minutes; refresh at 50 minutes. */
-const TOKEN_LIFETIME_MS = 50 * 60 * 1000;
+const TOKEN_REFRESH_SKEW_MS = 60_000;
+const GOOGLE_TOKEN_TIMEOUT_MS = 10_000;
 
 let cachedToken: string | null = null;
 let tokenExpiration = 0;
@@ -65,7 +65,9 @@ async function generateJwtToken(
     }
 }
 
-async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
+async function exchangeJwtForAccessToken(
+    jwt: string,
+): Promise<{ token: string; expiresInMs: number } | null> {
     try {
         const response = await fetch("https://oauth2.googleapis.com/token", {
             method: "POST",
@@ -76,6 +78,7 @@ async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
                 grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
                 assertion: jwt,
             }),
+            signal: AbortSignal.timeout(GOOGLE_TOKEN_TIMEOUT_MS),
         });
 
         if (!response.ok) {
@@ -96,14 +99,24 @@ async function exchangeJwtForAccessToken(jwt: string): Promise<string | null> {
             return null;
         }
 
-        return data.access_token;
+        return {
+            token: data.access_token,
+            expiresInMs:
+                Math.max(
+                    (data.expires_in ?? 3600) * 1000,
+                    TOKEN_REFRESH_SKEW_MS,
+                ) - TOKEN_REFRESH_SKEW_MS,
+        };
     } catch (error) {
         errorLog("Error exchanging JWT for access token:", error);
         return null;
     }
 }
 
-async function refreshToken(): Promise<string | null> {
+async function refreshToken(): Promise<{
+    token: string;
+    expiresInMs: number;
+} | null> {
     const keyData = getKeyData();
     if (!keyData) return null;
 
@@ -123,8 +136,14 @@ async function getAccessToken(): Promise<string | null> {
     }
 
     log("Token missing or expired, refreshing...");
-    cachedToken = await refreshToken();
-    tokenExpiration = Date.now() + TOKEN_LIFETIME_MS;
+    const refreshed = await refreshToken();
+    if (!refreshed) {
+        cachedToken = null;
+        tokenExpiration = 0;
+        return null;
+    }
+    cachedToken = refreshed.token;
+    tokenExpiration = Date.now() + refreshed.expiresInMs;
     log(
         "Token refreshed, expires at:",
         new Date(tokenExpiration).toISOString(),

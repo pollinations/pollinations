@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { processParameters } from "./parameterProcessor.js";
+import { processParameters } from "../../../src/text/transforms/parameterProcessor.js";
 
 const messages = [{ role: "user" as const, content: "hello" }];
 const modelDef = { name: "test-model" };

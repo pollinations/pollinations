@@ -1,4 +1,5 @@
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
@@ -70,13 +71,16 @@ const videoModelNames = Object.entries(IMAGE_SERVICES)
     .join(", ");
 
 const factory = createFactory<Env>();
+const textBodyLimit = bodyLimit({
+    maxSize: 20 * 1024 * 1024,
+});
 
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
     track("generate.image"),
-    generationAccess,
     imageCache,
+    generationAccess,
     async (c) => {
         const log = c.get("log").getChild("generate");
 
@@ -107,11 +111,12 @@ const imageVideoHandlers = factory.createHandlers(
 
 // Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
+    textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
     resolveModel("generate.text"),
     track("generate.text"),
-    generationAccess,
     textCache,
+    generationAccess,
     async (c) => {
         // Use resolved model from middleware for the backend request
         const requestBody: CreateChatCompletionRequest = {
@@ -466,11 +471,12 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
+        textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
         track("generate.text"),
-        generationAccess,
         textCache,
+        generationAccess,
         async (c) => {
             const requestBody: CreateChatCompletionRequest = {
                 ...(c.req.valid(
@@ -528,8 +534,8 @@ export const proxyRoutes = new Hono<Env>()
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
         track("generate.text"),
-        generationAccess,
         textCache,
+        generationAccess,
         async (c) => {
             // Use resolved model from middleware
             const model = c.var.model.resolved;
@@ -733,8 +739,8 @@ export const proxyRoutes = new Hono<Env>()
         ),
         resolveModel("generate.audio"),
         track("generate.audio"),
-        generationAccess,
         audioCache,
+        generationAccess,
         async (c) => {
             const log = c.get("log").getChild("generate");
 

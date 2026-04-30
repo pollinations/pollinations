@@ -3,7 +3,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import worker from "./index.ts";
+import worker from "../src/index.ts";
 
 function envWithEnter(
     fetch: Fetcher["fetch"] = async () => new Response("enter"),

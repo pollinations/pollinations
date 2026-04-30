@@ -17,6 +17,8 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
+const DEFAULT_UPSTREAM_TIMEOUT_MS = 90_000;
+const STREAM_UPSTREAM_TIMEOUT_MS = 300_000;
 
 function ensureOpenAISseDone(
     source: ReadableStream<Uint8Array> | null,
@@ -84,6 +86,25 @@ function createApiError(
     return error;
 }
 
+function isAbortLikeError(error: unknown): boolean {
+    return (
+        error instanceof DOMException &&
+        (error.name === "AbortError" || error.name === "TimeoutError")
+    );
+}
+
+function createTimeoutError(
+    modelName: string,
+    timeoutMs: number,
+): ServiceError {
+    const error = new Error(
+        `Upstream provider timed out after ${timeoutMs}ms`,
+    ) as ServiceError;
+    error.status = 504;
+    error.model = modelName;
+    return error;
+}
+
 function parseJsonSafe(text: string): unknown {
     try {
         return JSON.parse(text);
@@ -110,7 +131,10 @@ export async function genericOpenAIClient(
 
     log(`[${requestId}] Starting request`, {
         messageCount: messages?.length || 0,
-        options,
+        model: options.model,
+        requestedModel: options.requestedModel,
+        stream: options.stream === true,
+        optionKeys: Object.keys(options),
     });
 
     let normalizedOptions: TransformOptions;
@@ -143,10 +167,12 @@ export async function genericOpenAIClient(
             ...cleanedOptions,
         });
 
-        log(
-            `[${requestId}] Request body:`,
-            JSON.stringify(requestBody, null, 2),
-        );
+        log(`[${requestId}] Request body prepared`, {
+            model: modelName,
+            messageCount: validatedMessages.length,
+            optionKeys: Object.keys(cleanedOptions),
+            stream: normalizedOptions.stream === true,
+        });
 
         const endpointUrl =
             typeof endpoint === "function"
@@ -162,13 +188,25 @@ export async function genericOpenAIClient(
             ...additionalHeaders,
         };
 
-        log(`[${requestId}] Headers:`, headers);
+        log(`[${requestId}] Header keys:`, Object.keys(headers));
 
-        const response = await fetch(endpointUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(requestBody),
-        });
+        const timeoutMs = normalizedOptions.stream
+            ? STREAM_UPSTREAM_TIMEOUT_MS
+            : DEFAULT_UPSTREAM_TIMEOUT_MS;
+        let response: Response;
+        try {
+            response = await fetch(endpointUrl, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(requestBody),
+                signal: AbortSignal.timeout(timeoutMs),
+            });
+        } catch (thrown: unknown) {
+            if (isAbortLikeError(thrown)) {
+                throw createTimeoutError(modelName, timeoutMs);
+            }
+            throw thrown;
+        }
 
         if (!response.ok) {
             const errorText = await response.text();

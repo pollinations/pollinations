@@ -11,7 +11,7 @@ import {
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createMockVcr } from "@shared/test/mocks/vcr.ts";
 import { afterEach, expect, inject } from "vitest";
-import worker from "./index.ts";
+import worker from "../src/index.ts";
 
 const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1 = Uint8Array.from(
@@ -36,6 +36,7 @@ const test = baseTest.extend<{
 });
 
 function createGenerationMocks() {
+    env.PORTKEY_GATEWAY_URL = "https://portkey.test";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
     return createFetchMock({
         tinybird: createMockTinybird(),

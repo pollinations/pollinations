@@ -2,11 +2,19 @@ import debug from "debug";
 import { findModelByName } from "../availableModels.js";
 import type {
     ChatMessage,
+    ServiceError,
     TransformOptions,
     TransformResult,
 } from "../types.js";
 
 const log = debug("pollinations:model-resolver");
+
+function modelResolutionError(message: string): ServiceError {
+    const error = new Error(message) as ServiceError;
+    error.name = "ModelResolutionError";
+    error.status = 404;
+    return error;
+}
 
 /**
  * Resolves model configuration and sets up internal properties.
@@ -18,12 +26,14 @@ export function resolveModelConfig(
 ): TransformResult {
     const requestedModel = options.model;
     if (!requestedModel) {
-        throw new Error("Model is required");
+        throw modelResolutionError("Model is required");
     }
     const modelDef = findModelByName(requestedModel);
 
     if (!modelDef?.config) {
-        throw new Error(`Model configuration not found for: ${requestedModel}`);
+        throw modelResolutionError(
+            `Model configuration not found for: ${requestedModel}`,
+        );
     }
 
     const config = (

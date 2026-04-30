@@ -26,7 +26,7 @@ function createTestApp() {
         throw new UpstreamError(502, {
             message:
                 "Stream requested for model openai but upstream returned content-type: application/json",
-            requestUrl: new URL("https://text.pollinations.ai/openai"),
+            requestUrl: new URL("https://portkey.test/v1/chat/completions"),
             upstreamStatus: 200,
             responseBody: "application/json",
         });
@@ -77,7 +77,7 @@ describe("error observability", () => {
                 details: {
                     name: "UpstreamError",
                     upstreamStatus: 200,
-                    upstreamHost: "text.pollinations.ai",
+                    upstreamHost: "portkey.test",
                     upstreamBody: "application/json",
                 },
             },
@@ -99,7 +99,7 @@ describe("error observability", () => {
             status: 502,
             error_code: "BAD_GATEWAY",
             error_class: "UpstreamError",
-            upstream_host: "text.pollinations.ai",
+            upstream_host: "portkey.test",
             upstream_status: 200,
             upstream_body: "application/json",
             model_requested: "openai",

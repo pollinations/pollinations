@@ -146,25 +146,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- AWS Bedrock (Nova) ---------------------------------------------------
-    "nova-micro-fallback": () => ({
-        strategy: { mode: "fallback" },
-        targets: [
-            {
-                provider: "bedrock",
-                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
-                aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: { model: "amazon.nova-micro-v1:0" },
-            },
-            {
-                provider: "bedrock",
-                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
-                aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: { model: "amazon.nova-lite-v1:0" },
-            },
-        ],
-    }),
+    "nova-micro": () =>
+        createBedrockNativeConfig({ model: "amazon.nova-micro-v1:0" }),
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 

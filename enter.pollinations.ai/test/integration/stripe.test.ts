@@ -490,6 +490,77 @@ test("PATCH /api/stripe/auto-top-up requires a default card before enabling", as
     expect(data.error).toContain("default payment method");
 });
 
+test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is below threshold", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "polar", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_auto_top_up_enable_only");
+    customer.invoice_settings.default_payment_method = "pm_card";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_card", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: false,
+            autoTopUpThresholdPollen: 5,
+            autoTopUpAmountUsd: 100,
+        })
+        .where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/auto-top-up`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            enabled: true,
+            packAmountUsd: 100,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        autoTopUp: { enabled: boolean; packAmountUsd: number };
+    };
+    expect(data.autoTopUp.enabled).toBe(true);
+    expect(data.autoTopUp.packAmountUsd).toBe(100);
+
+    expect(mocks.stripe.state.invoices).toHaveLength(0);
+    expect(
+        mocks.stripe.state.requests.some(
+            (request) => request.path === "/v1/invoices",
+        ),
+    ).toBe(false);
+
+    const [updatedUser] = await db
+        .select({
+            packBalance: userTable.packBalance,
+            autoTopUpEnabled: userTable.autoTopUpEnabled,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, user.id))
+        .limit(1);
+    expect(updatedUser?.packBalance).toBe(1);
+    expect(updatedUser?.autoTopUpEnabled).toBe(true);
+});
+
 test("POST /api/stripe/auto-top-up/trigger charges default card and credits pollen", async ({
     sessionToken,
     mocks,

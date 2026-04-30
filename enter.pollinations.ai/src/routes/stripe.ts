@@ -206,7 +206,8 @@ export const stripeRoutes = new Hono<Env>()
 
     /**
      * PATCH /api/stripe/auto-top-up
-     * Save current user's auto top-up preferences.
+     * Save current user's auto top-up preferences. Charging is triggered by
+     * the internal usage flow after future billing deductions, not on enable.
      */
     .patch("/auto-top-up", async (c) => {
         const user = await requireSessionUser(c);
@@ -222,10 +223,6 @@ export const stripeRoutes = new Hono<Env>()
 
         if (!result.ok) {
             return c.json({ error: result.error }, result.status);
-        }
-
-        if (result.overview.autoTopUp.enabled) {
-            c.executionCtx.waitUntil(processAutoTopUpForUser(c.env, user.id));
         }
 
         return c.json(result.overview);

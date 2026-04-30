@@ -34,6 +34,12 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBeUndefined();
     });
 
+    it("resolves fallback-strategy configs to the first target's model", () => {
+        const result = resolveModelConfig(messages, { model: "nova-fast" });
+
+        expect(result.options.model).toBe("amazon.nova-micro-v1:0");
+    });
+
     it("marks missing model configs as 404 errors", () => {
         expect(() =>
             resolveModelConfig(messages, { model: "not-a-real-model" }),

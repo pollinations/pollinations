@@ -16,6 +16,15 @@ function modelResolutionError(message: string): ServiceError {
     return error;
 }
 
+function extractFallbackModel(
+    config: Record<string, unknown>,
+): string | undefined {
+    const targets = config.targets as
+        | Array<{ override_params?: { model?: string } }>
+        | undefined;
+    return targets?.[0]?.override_params?.model;
+}
+
 /**
  * Resolves model configuration and sets up internal properties.
  * User-provided options take precedence over model defaults.
@@ -45,7 +54,8 @@ export function resolveModelConfig(
     const usedModel = (config.model ||
         config["azure-model-name"] ||
         config["azure-deployment-id"] ||
-        config["vertex-model-id"]) as string;
+        config["vertex-model-id"] ||
+        extractFallbackModel(config)) as string;
 
     log(
         "Processing request for model:",

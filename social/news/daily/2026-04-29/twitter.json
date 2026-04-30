@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-29",
+  "period_start": "2026-04-29",
+  "period_end": "2026-04-29",
+  "generated_at": "2026-04-30T06:49:48.842923+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-29/images/twitter.jpg"
+    }
+  ],
+  "text": "10 PRs merged today. moved generation to a dedicated gateway (gen.pollinations.ai). byop gets unlimited budgets and stricter redirect auth. also fixed the api so bad image urls return 400 instead of 500. if you send a fake url, it's a you error, not a server error."
+}

@@ -154,8 +154,8 @@ jobs:
           TARGETS: ${{ steps.targets.outputs.targets }}
         run: |
           npm install -g wrangler
-          cd enter.pollinations.ai
           npm install
+          cd enter.pollinations.ai
           
           RESULTS="[]"
           

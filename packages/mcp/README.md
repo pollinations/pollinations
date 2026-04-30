@@ -186,7 +186,7 @@ All requests go through `https://gen.pollinations.ai`
 | GET `/image/models`         | List image models    |
 | GET `/text/models`          | List text models     |
 
-Full API docs: [enter.pollinations.ai/api/docs](https://enter.pollinations.ai/api/docs)
+Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs)
 
 ## Migration from v1.x
 
@@ -210,5 +210,5 @@ MIT
 ## Links
 
 - [pollinations.ai](https://pollinations.ai)
-- [API Documentation](https://enter.pollinations.ai/api/docs)
+- [API Documentation](https://gen.pollinations.ai/docs)
 - [GitHub Issues](https://github.com/pollinations/pollinations/issues)

@@ -51,8 +51,8 @@ To point enter at local backends, edit `enter.pollinations.ai/wrangler.toml` `IM
 
 Local API test:
 ```bash
-curl "http://localhost:3000/api/generate/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
-curl "http://localhost:3000/api/generate/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
+curl "http://localhost:8788/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
+curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
 ```
 
 ## API Quick Reference

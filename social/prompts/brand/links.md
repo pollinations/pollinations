@@ -15,7 +15,7 @@
 - **Available Text Models:** https://gen.pollinations.ai/v1/models
 
 ## Official Documentation
-- **API Docs (Swagger):** https://enter.pollinations.ai/api/docs
+- **API Docs (Swagger):** https://gen.pollinations.ai/docs
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
 - **React Hooks Docs:** https://react-hooks.pollinations.ai
 - **MCP Protocol:** https://mcp.sequa.ai/v1/pollinations/contribute

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10575,
+  "title": "feat(gen): build with Vite so .md raw imports work",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10575",
+  "merged_at": "2026-04-30T14:37:47Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Teaching the generator to read",
+    "blurb": "We've upgraded the build system for our text generation worker to use Vite. This lets it natively import markdown files, keeping our docs and code perfectly in sync.",
+    "summary": "Migrated the gen worker build process to Vite to support raw markdown imports.",
+    "impact": "Developers can now import markdown files directly into the gen worker code, fixing production build errors.",
+    "keywords": [
+      "vite",
+      "build",
+      "infrastructure",
+      "gen",
+      "markdown"
+    ],
+    "visual_concept": "The bee mascot and the robot companion working together on a construction site or factory line (representing the build system). The robot is reading a markdown document (representing the .md import fix).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, hovering next to a chunky monitor-headed robot. The robot is happily reading a pixelated markdown document. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-04-30/PR-10575.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny yellow hard hat, hovering next to a chunky monitor-headed robot. The robot is happily reading a pixelated markdown document. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-04-30T14:38:43.120608+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-30",
+  "period_start": "2026-04-30",
+  "period_end": "2026-04-30",
+  "generated_at": "2026-05-01T06:52:11.495172+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-30/images/twitter.jpg"
+    }
+  ],
+  "text": "text generation is now running in the edge worker, which means it's noticeably faster. also wired up llama 3.3 70b via fireworks and fixed a bedrock config so nova-fast actually goes fast again. legacy routes redirect cleanly."
+}

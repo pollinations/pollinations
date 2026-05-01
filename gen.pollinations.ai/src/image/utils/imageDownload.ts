@@ -17,13 +17,13 @@ export function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
 export function base64ToBuffer(base64: string): Buffer {
     const normalized = base64.replace(/^data:[^,]+,/, "").replace(/\s/g, "");
     const binary = atob(normalized);
-    const bytes = new Uint8Array(binary.length);
+    const buffer = Buffer.alloc(binary.length);
 
     for (let i = 0; i < binary.length; i += 1) {
-        bytes[i] = binary.charCodeAt(i);
+        buffer[i] = binary.charCodeAt(i);
     }
 
-    return Buffer.from(bytes);
+    return buffer;
 }
 
 export function detectMimeType(buffer: Uint8Array): string {

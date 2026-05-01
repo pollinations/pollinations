@@ -82,38 +82,37 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const displayPaid = Math.max(0, packBalance);
     const totalPollen = displayTier + displayDev + displayPaid;
 
-    function calculatePercentage(value: number, total: number): number {
-        return total > 0 ? (value / total) * 100 : 0;
-    }
-
-    const rawPaidPercentage = calculatePercentage(displayPaid, totalPollen);
-    const rawDevPercentage = calculatePercentage(displayDev, totalPollen);
     const gaugeHeightClass = "h-[30px] sm:h-[34px]";
     const hideTierGaugeSegment = tier === "microbe" && displayTier === 0;
 
-    // Ensure both segments are always visible (min width to fit labels)
+    // Each visible segment gets at least MIN_SEGMENT% so labels stay readable;
+    // the remaining width is split proportionally to the raw values.
     const MIN_SEGMENT = 20;
-    let paidPercentage: number;
+    const showPaid = displayPaid > 0;
+    const showDev = displayDev > 0;
+    const showTier = !hideTierGaugeSegment && displayTier > 0;
+    const visibleCount =
+        (showPaid ? 1 : 0) + (showDev ? 1 : 0) + (showTier ? 1 : 0);
+
+    let paidPercentage = 0;
     let devPercentage = 0;
-    let freePercentage: number;
-    if (hideTierGaugeSegment) {
-        paidPercentage =
-            totalPollen > 0 ? calculatePercentage(displayPaid, totalPollen) : 0;
-        devPercentage = rawDevPercentage;
-        freePercentage = 0;
-    } else if (displayDev > 0 && totalPollen > 0) {
-        paidPercentage = rawPaidPercentage;
-        devPercentage = rawDevPercentage;
-        freePercentage = calculatePercentage(displayTier, totalPollen);
-    } else if (totalPollen > 0) {
-        paidPercentage = Math.max(
-            MIN_SEGMENT,
-            Math.min(100 - MIN_SEGMENT, rawPaidPercentage),
-        );
-        freePercentage = 100 - paidPercentage;
-    } else {
+    let freePercentage = 0;
+    if (visibleCount === 0 || totalPollen <= 0) {
         paidPercentage = 50;
         freePercentage = 50;
+    } else {
+        const surplus = 100 - MIN_SEGMENT * visibleCount;
+        if (showPaid) {
+            paidPercentage =
+                MIN_SEGMENT + (displayPaid / totalPollen) * surplus;
+        }
+        if (showDev) {
+            devPercentage = MIN_SEGMENT + (displayDev / totalPollen) * surplus;
+        }
+        if (showTier) {
+            freePercentage =
+                MIN_SEGMENT + (displayTier / totalPollen) * surplus;
+        }
     }
 
     return (

@@ -129,18 +129,11 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
                 // ElevenLabs Scribe: $0.40/hour = $0.0001111/sec
                 promptAudioSeconds: 0.0001111,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-02-13").getTime(),
-                promptAudioSeconds: 0.00016665, // $0.60 per hour
             },
         ],
         description:

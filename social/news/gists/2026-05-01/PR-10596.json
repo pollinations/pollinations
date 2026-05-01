@@ -1,0 +1,34 @@
+{
+  "pr_number": 10596,
+  "title": "fix: handle Nova Reel input errors",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10596",
+  "merged_at": "2026-05-01T09:37:04Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Reeling in the errors",
+    "blurb": "We've polished up how Nova Reel handles video generation requests. Expect clearer error messages, automatic image resizing, and support for videos up to 120 seconds long!",
+    "summary": "Improved error handling and input validation for the Nova Reel video model, including automatic reference image normalization and support for 120-second durations.",
+    "impact": "Users will now receive helpful 400 errors instead of generic 500s for invalid inputs, and can generate longer videos up to 120 seconds.",
+    "keywords": [
+      "nova reel",
+      "video generation",
+      "error handling",
+      "api",
+      "bedrock"
+    ],
+    "visual_concept": "Nova Reel is a video generation model, so film reels and projectors are the perfect metaphor. Polly the bee and the Monitor Robot working together to smoothly thread a film reel represents the improved error handling and smoother input pipeline.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, helping a chunky monitor robot thread a glowing film reel into a retro projector. The robot's screen shows a happy face. Soft lime green (#ecf874) and lavender gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-01/PR-10596.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, helping a chunky monitor robot thread a glowing film reel into a retro projector. The robot's screen shows a happy face. Soft lime green (#ecf874) and lavender gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-01T09:37:54.643171+00:00"
+}

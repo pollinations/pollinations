@@ -53,6 +53,7 @@ import {
     generateMusic,
     generateQwenTts,
     generateSpeech,
+    isQwenTtsModel,
 } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -690,7 +691,8 @@ export const proxyRoutes = new Hono<Env>()
                     .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
                     .default("mp3")
                     .meta({
-                        description: "Audio output format (TTS only)",
+                        description:
+                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
@@ -805,16 +807,9 @@ export const proxyRoutes = new Hono<Env>()
                 instruct?: string;
             };
 
-            if (
-                c.var.model.resolved === "qwen-tts" ||
-                c.var.model.resolved === "qwen-tts-instruct"
-            ) {
-                const modelId =
-                    c.var.model.resolved === "qwen-tts-instruct"
-                        ? "qwen3-tts-instruct-flash"
-                        : "qwen3-tts-flash";
+            if (isQwenTtsModel(c.var.model.resolved)) {
                 return generateQwenTts({
-                    model: modelId,
+                    modelName: c.var.model.resolved,
                     text,
                     voice: voice || "alloy",
                     instruct,

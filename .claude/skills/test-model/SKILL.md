@@ -1,6 +1,6 @@
 ---
 name: test-model
-description: Test any model (text, image, video, audio) locally and via gen integration tests
+description: Test any model (text, image, video, audio) locally and via enter integration tests
 ---
 
 # Testing Any Model Locally
@@ -10,8 +10,8 @@ description: Test any model (text, image, video, audio) locally and via gen inte
 | Service | Port | Models |
 |---------|------|--------|
 | `image.pollinations.ai` | 16384 | Image + Video models |
-| `gen.pollinations.ai` | 8788 | Public gateway: Text, Audio, Image/Video proxy |
-| `enter.pollinations.ai` | 3000 | Auth/billing control plane |
+| `text.pollinations.ai` | 16385 | Text/LLM models |
+| `enter.pollinations.ai` | 3000 | Gateway (routes to above + handles audio) |
 
 ## 1. Start services
 
@@ -19,22 +19,21 @@ description: Test any model (text, image, video, audio) locally and via gen inte
 # Image/Video models — start image service
 cd image.pollinations.ai && npm run dev &
 
-# Public generation gateway (text/audio + image/video proxy)
-cd gen.pollinations.ai && npm run dev &
+# Text models — start text service
+cd text.pollinations.ai && npm run dev &
 
-# Enter app (needed when testing auth/account flows directly)
+# Enter gateway (needed for audio, or to test full flow)
 cd enter.pollinations.ai && npm run decrypt-vars && npm run dev &
 ```
 
 ## 2. Get tokens
 
 ```bash
-# For direct image service calls
-TOKEN=$(grep '^PLN_ENTER_TOKEN=' image.pollinations.ai/.env | cut -d= -f2-)
+# For direct image/text service calls
+TOKEN=$(grep PLN_ENTER_TOKEN image.pollinations.ai/.env | cut -d= -f2)
 
-# For gen gateway calls (use local token if present, otherwise remote test token)
-API_KEY=$(grep '^ENTER_API_TOKEN_LOCAL=' enter.pollinations.ai/.testingtokens | cut -d= -f2-)
-[ -n "$API_KEY" ] || API_KEY=$(grep '^ENTER_API_TOKEN_REMOTE=' enter.pollinations.ai/.testingtokens | cut -d= -f2-)
+# For enter gateway calls (use test API key)
+API_KEY=$(grep ENTER_API_TOKEN_LOCAL enter.pollinations.ai/.testingtokens | cut -d= -f2)
 ```
 
 ---
@@ -68,9 +67,16 @@ file /tmp/test-video.mp4
 ## Test a Text Model
 
 ```bash
-# Via gen gateway
+# Via text service directly
 curl -s -w "\nHTTP %{http_code}\n" \
-  "http://localhost:8788/v1/chat/completions" \
+  "http://localhost:16385/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "x-enter-token: $TOKEN" \
+  -d '{"model":"MODEL_NAME","messages":[{"role":"user","content":"Say hello"}],"max_tokens":50}'
+
+# Via enter gateway
+curl -s -w "\nHTTP %{http_code}\n" \
+  "http://localhost:3000/api/generate/v1/chat/completions" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"MODEL_NAME","messages":[{"role":"user","content":"Say hello"}],"max_tokens":50}'
@@ -78,61 +84,65 @@ curl -s -w "\nHTTP %{http_code}\n" \
 
 ## Test an Audio Model
 
-Audio routes through gen gateway only (no standalone service).
+Audio routes through enter gateway only (no standalone service).
 
 ```bash
 # Text-to-speech
-curl -s -o /tmp/test-audio.audio -w "HTTP %{http_code}, %{size_download} bytes\n" \
-  "http://localhost:8788/audio/Hello%20world?voice=alloy&model=MODEL_NAME" \
+curl -s -o /tmp/test-audio.mp3 -w "HTTP %{http_code}, %{size_download} bytes\n" \
+  "http://localhost:3000/api/generate/audio/Hello%20world?voice=alloy&model=MODEL_NAME" \
   -H "Authorization: Bearer $API_KEY"
 
 # OpenAI-compatible TTS
-curl -s -o /tmp/test-tts.audio -w "HTTP %{http_code}, %{size_download} bytes\n" \
-  "http://localhost:8788/v1/audio/speech" \
+curl -s -o /tmp/test-tts.mp3 -w "HTTP %{http_code}, %{size_download} bytes\n" \
+  "http://localhost:3000/api/generate/v1/audio/speech" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"MODEL_NAME","input":"Hello world","voice":"alloy"}'
 
 # Speech-to-text (whisper/scribe)
 curl -s -w "\nHTTP %{http_code}\n" \
-  "http://localhost:8788/v1/audio/transcriptions" \
+  "http://localhost:3000/api/generate/v1/audio/transcriptions" \
   -H "Authorization: Bearer $API_KEY" \
-  -F "file=@/tmp/test-audio.audio" \
+  -F "file=@/tmp/test-audio.mp3" \
   -F "model=MODEL_NAME"
 
-file /tmp/test-audio.audio /tmp/test-tts.audio
+file /tmp/test-audio.mp3
 ```
 
 ---
 
-# Gen Integration Tests
+# Enter Integration Tests
 
-Tests in `gen.pollinations.ai/test/`:
+Tests in `enter.pollinations.ai/test/integration/`:
 
 | File | Models |
 |------|--------|
-| `index.test.ts` | Routing and model endpoint smoke tests |
-| `generation-vcr.test.ts` | VCR-backed text/image/audio generation paths |
-| `audio-*.test.ts` | Focused audio regressions when present |
+| `image.test.ts` | Image models |
+| `video.test.ts` | Video models |
+| `text.test.ts` | Text/LLM models |
+| `audio.test.ts` | TTS, music, transcription |
 
 ## Run tests for a specific model
 
 ```bash
-cd gen.pollinations.ai
+cd enter.pollinations.ai
+npm run decrypt-vars
 npx vitest run --testNamePattern="MODEL_NAME"
 ```
 
 ## Run all tests by type
 
 ```bash
-npx vitest run test/index.test.ts
-npx vitest run test/generation-vcr.test.ts
+npx vitest run test/integration/image.test.ts
+npx vitest run test/integration/video.test.ts
+npx vitest run test/integration/text.test.ts
+npx vitest run test/integration/audio.test.ts
 ```
 
 ## Alias resolution tests (fast, no network)
 
 ```bash
-cd gen.pollinations.ai && npx vitest run test/model-permissions.test.ts
+cd enter.pollinations.ai && npx vitest run test/aliases.test.ts
 ```
 
 ---
@@ -151,15 +161,14 @@ cd gen.pollinations.ai && npx vitest run test/model-permissions.test.ts
 ## Text
 | File | Purpose |
 |------|---------|
-| `gen.pollinations.ai/src/text/configs/modelConfigs.ts` | Model routing config |
-| `gen.pollinations.ai/src/text/availableModels.ts` | Service name to config mapping |
+| `text.pollinations.ai/configs/modelConfigs.ts` | Model routing config |
+| `text.pollinations.ai/availableModels.ts` | Service name to config mapping |
 | `shared/registry/text.ts` | Registry: pricing, provider, aliases |
 
 ## Audio
 | File | Purpose |
 |------|---------|
-| `gen.pollinations.ai/src/routes/audio.ts` | OpenAI-compatible audio route handlers |
-| `gen.pollinations.ai/src/routes/proxy.ts` | Simple `/audio/{text}` route |
+| `enter.pollinations.ai/src/routes/audio.ts` | Audio route handlers |
 | `shared/registry/audio.ts` | Registry: pricing, voices, aliases |
 
 ## Shared
@@ -167,4 +176,4 @@ cd gen.pollinations.ai && npx vitest run test/model-permissions.test.ts
 |------|---------|
 | `<service>/.env` | API keys |
 | `<service>/secrets/env.json` | Encrypted keys (sops) |
-| `gen.pollinations.ai/test/` | Gen gateway tests |
+| `enter.pollinations.ai/test/integration/` | All integration tests |

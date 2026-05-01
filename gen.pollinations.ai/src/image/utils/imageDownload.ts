@@ -6,12 +6,33 @@ export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
 }
 
 export function base64ToBuffer(base64: string): Buffer {
-    const normalized = base64.replace(/^data:[^,]+,/, "").replace(/\s/g, "");
-    const binary = atob(normalized);
-    const buffer = Buffer.alloc(binary.length);
+    const input = base64
+        .replace(/^data:[^,]+,/, "")
+        .replace(/\s/g, "")
+        .replace(/-/g, "+")
+        .replace(/_/g, "/")
+        .replace(/=+$/, "");
+    const buffer = Buffer.alloc(Math.floor((input.length * 6) / 8));
+    let bits = 0;
+    let value = 0;
+    let index = 0;
 
-    for (let i = 0; i < binary.length; i += 1) {
-        buffer[i] = binary.charCodeAt(i);
+    for (const char of input) {
+        const digit =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".indexOf(
+                char,
+            );
+        if (digit < 0) {
+            throw new HttpError("Invalid base64 image response", 502);
+        }
+        value = (value << 6) | digit;
+        bits += 6;
+
+        if (bits >= 8) {
+            bits -= 8;
+            buffer[index] = (value >> bits) & 0xff;
+            index += 1;
+        }
     }
 
     return buffer;

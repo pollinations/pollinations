@@ -65,52 +65,38 @@ type MediaCacheEnv = {
     };
 };
 
-export function createMediaCaptureStream<TEnv extends MediaCacheEnv>(
+export async function cacheAndReplayMediaResponse<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
     response: Response,
-): TransformStream<Uint8Array, Uint8Array> {
-    let chunks: Uint8Array[] = [];
-    let totalSize = 0;
+): Promise<Response> {
+    const body = await response.arrayBuffer();
+    const cacheBody = body.slice(0);
 
-    return new TransformStream({
-        transform(chunk, controller) {
-            chunks.push(chunk.slice());
-            totalSize += chunk.byteLength;
-            controller.enqueue(chunk);
-        },
-        flush() {
-            c.executionCtx.waitUntil(
-                (async () => {
-                    try {
-                        const body = new Uint8Array(totalSize);
-                        let offset = 0;
+    c.executionCtx.waitUntil(
+        bucket
+            .put(cacheKey, cacheBody, {
+                httpMetadata: removeUnset({
+                    contentType:
+                        response.headers.get("content-type") ||
+                        defaultContentType,
+                } as R2HTTPMetadata),
+                customMetadata: {
+                    cachedAt: new Date().toISOString(),
+                },
+            })
+            .catch((error) => {
+                c.get("log").error("Error caching response: {error}", {
+                    error,
+                });
+            }),
+    );
 
-                        for (const chunk of chunks) {
-                            body.set(chunk, offset);
-                            offset += chunk.byteLength;
-                        }
-
-                        await bucket.put(cacheKey, body, {
-                            httpMetadata: removeUnset({
-                                contentType:
-                                    response.headers.get("content-type") ||
-                                    defaultContentType,
-                            } as R2HTTPMetadata),
-                            customMetadata: {
-                                cachedAt: new Date().toISOString(),
-                            },
-                        });
-                        chunks = [];
-                    } catch (error) {
-                        c.get("log").error("Error caching response: {error}", {
-                            error,
-                        });
-                    }
-                })(),
-            );
-        },
+    return new Response(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
     });
 }

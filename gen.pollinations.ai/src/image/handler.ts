@@ -182,6 +182,12 @@ function throwImageError(error: unknown, c: ImageContext): never {
     });
 }
 
+function assertNonEmptyMedia(buffer: Buffer, label: string): void {
+    if (buffer.length === 0) {
+        throw new HttpError(`${label} returned an empty response`, 502);
+    }
+}
+
 async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
@@ -258,6 +264,7 @@ export async function generateImageOrVideoResponse(
                 originalPrompt,
                 safeParams,
             );
+            assertNonEmptyMedia(result.buffer, "Video provider");
             return new Response(bufferToUint8Array(result.buffer), {
                 headers: mediaHeaders(
                     originalPrompt,
@@ -269,6 +276,7 @@ export async function generateImageOrVideoResponse(
         }
 
         const result = await generateImageResult(c, originalPrompt, safeParams);
+        assertNonEmptyMedia(result.buffer, "Image provider");
         return new Response(bufferToUint8Array(result.buffer), {
             headers: mediaHeaders(
                 originalPrompt,

@@ -14,12 +14,8 @@ import { afterEach, expect, inject } from "vitest";
 import worker from "../src/index.ts";
 
 const snapshotServerUrl = inject("snapshotServerUrl");
-const png1x1 = Uint8Array.from(
-    Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==",
-        "base64",
-    ),
-);
+const png1x1Base64 =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
 
 afterEach(async () => {
@@ -78,7 +74,7 @@ async function fakeUpstreamFetch(input: RequestInfo | URL) {
 async function fakeImageBackendResponse() {
     return Response.json([
         {
-            image: Buffer.from(png1x1).toString("base64"),
+            image: png1x1Base64,
             isMature: false,
             isChild: false,
         },

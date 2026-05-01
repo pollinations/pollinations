@@ -1,0 +1,33 @@
+{
+  "pr_number": 10599,
+  "title": "fix: clean up enter dashboard sidebar",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10599",
+  "merged_at": "2026-05-01T10:38:52Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A tidier dashboard",
+    "blurb": "We gave the dashboard sidebar a quick polish! Enjoy a sleeker logo, handy new footer links, and a slightly lighter app payload.",
+    "summary": "Polished the dashboard sidebar by optimizing the logo size, adding essential footer links, and removing development tools from the production bundle.",
+    "impact": "Users get a cleaner dashboard interface with quick access to policy links, while the app runs slightly leaner without devtools.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "enter",
+      "cleanup"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny toolbelt, adjusting a glowing UI panel (sidebar) on a retro monitor. The monitor robot is helping her organize.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny toolbelt, adjusting a glowing UI panel on a retro computer monitor. The chunky monitor robot stands nearby holding a small broom. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-01/PR-10599.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny toolbelt, adjusting a glowing UI panel on a retro computer monitor. The chunky monitor robot stands nearby holding a small broom. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-01T10:39:50.080200+00:00"
+}

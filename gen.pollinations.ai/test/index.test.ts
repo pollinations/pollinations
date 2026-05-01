@@ -334,8 +334,8 @@ fixtureTest(
         expect(calls).toContain(
             "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
         );
-        expect(calls.some((url) => url.includes("api.elevenlabs.io"))).toBe(
-            false,
-        );
+        expect(
+            calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
+        ).toBe(false);
     },
 );

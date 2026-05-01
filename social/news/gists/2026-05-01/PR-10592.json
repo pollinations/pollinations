@@ -1,0 +1,33 @@
+{
+  "pr_number": 10592,
+  "title": "docs: update README — 2026-05-01",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10592",
+  "merged_at": "2026-05-01T07:49:02Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Fresh Ink",
+    "blurb": "Our trusty bot updated the README with the latest news and community apps.",
+    "summary": "Automated daily update to the README file to refresh the latest news and recent apps sections.",
+    "impact": "Keeps the repository's landing page current with the latest community creations and announcements.",
+    "keywords": [
+      "readme",
+      "bot",
+      "news",
+      "documentation"
+    ],
+    "visual_concept": "The bee mascot acting as a newsie or updating a community bulletin board with fresh papers.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot pinning a fresh news clipping to a wooden bulletin board. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-01/PR-10592.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot pinning a fresh news clipping to a wooden bulletin board. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-01T07:49:51.734306+00:00"
+}

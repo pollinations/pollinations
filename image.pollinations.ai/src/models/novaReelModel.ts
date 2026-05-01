@@ -3,11 +3,96 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const logOps = debug("pollinations:nova-reel:ops");
 const logError = debug("pollinations:nova-reel:error");
+
+const SINGLE_SHOT_PROMPT_LIMIT = 512;
+const MULTI_SHOT_PROMPT_LIMIT = 4000;
+const NOVA_REEL_WIDTH = 1280;
+const NOVA_REEL_HEIGHT = 720;
+
+function getNovaReelDurationSeconds(duration?: number): number {
+    const requestedDuration = duration || 6;
+    return Math.min(120, Math.max(6, Math.round(requestedDuration / 6) * 6));
+}
+
+function getNovaReelInputErrorStatus(message: string): number {
+    const normalized = message.toLowerCase();
+    if (
+        normalized.includes("content filter") ||
+        normalized.includes("maxlength") ||
+        normalized.includes("provided image") ||
+        normalized.includes("detected file mime type") ||
+        normalized.includes("validation") ||
+        normalized.includes("must have dimensions")
+    ) {
+        return 400;
+    }
+    if (
+        normalized.includes("rate limit") ||
+        normalized.includes("capacity limit")
+    ) {
+        return 429;
+    }
+    return 500;
+}
+
+function validateNovaReelRequest({
+    prompt,
+    duration,
+    image,
+}: {
+    prompt: string;
+    duration?: number;
+    image?: string | string[];
+}): void {
+    const durationSeconds = getNovaReelDurationSeconds(duration);
+    const hasImage = Boolean(image && image.length > 0);
+    const isMultiShot = durationSeconds > 6;
+
+    if (hasImage && isMultiShot) {
+        throw new HttpError(
+            "Nova Reel reference images are only supported for 6 second videos.",
+            400,
+        );
+    }
+
+    const promptLimit = isMultiShot
+        ? MULTI_SHOT_PROMPT_LIMIT
+        : SINGLE_SHOT_PROMPT_LIMIT;
+    if (prompt.length > promptLimit) {
+        throw new HttpError(
+            `Nova Reel prompt too long: ${prompt.length} characters. Maximum is ${promptLimit}.`,
+            400,
+        );
+    }
+}
+
+async function normalizeReferenceImage(imageUrl: string): Promise<Buffer> {
+    const [{ default: sharp }, { downloadUserImage }] = await Promise.all([
+        import("sharp"),
+        import("../utils/imageDownload.ts"),
+    ]);
+    const { buffer, mimeType } = await downloadUserImage(imageUrl);
+    logOps("Normalizing reference image for Nova Reel:", { mimeType });
+
+    try {
+        return await sharp(buffer)
+            .resize(NOVA_REEL_WIDTH, NOVA_REEL_HEIGHT, { fit: "cover" })
+            .flatten({ background: { r: 255, g: 255, b: 255 } })
+            .toColorspace("srgb")
+            .png()
+            .toBuffer();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HttpError(
+            `Failed to process reference image: ${message}`,
+            400,
+        );
+    }
+}
 
 /**
  * Generate a video using Amazon Nova Reel via Bedrock async invocation
@@ -20,6 +105,18 @@ export async function callNovaReelAPI(
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
+    // Duration must be a multiple of 6. TEXT_VIDEO = 6s only. MULTI_SHOT_AUTOMATED = 12-120s.
+    const durationSeconds = getNovaReelDurationSeconds(safeParams.duration);
+    const imageParam = safeParams.image as string | string[] | undefined;
+    const hasImage = Boolean(imageParam && imageParam.length > 0);
+    const isMultiShot = durationSeconds > 6;
+
+    validateNovaReelRequest({
+        prompt,
+        duration: safeParams.duration,
+        image: imageParam,
+    });
+
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
     const region = process.env.AWS_REGION || "us-east-1";
@@ -34,15 +131,6 @@ export async function callNovaReelAPI(
             500,
         );
     }
-
-    // Duration must be a multiple of 6. TEXT_VIDEO = 6s only. MULTI_SHOT_AUTOMATED = 12-60s.
-    const requestedDuration = safeParams.duration || 6;
-    const durationSeconds = Math.min(
-        60,
-        Math.max(6, Math.round(requestedDuration / 6) * 6),
-    );
-    const imageParam = safeParams.image as string | string[] | undefined;
-    const hasImage = imageParam && imageParam.length > 0;
 
     logOps("Calling Nova Reel API:", {
         prompt: prompt.substring(0, 100),
@@ -86,7 +174,7 @@ export async function callNovaReelAPI(
             "Processing",
             "Processing reference image...",
         );
-        const { buffer } = await downloadUserImage(imageUrl);
+        const buffer = await normalizeReferenceImage(imageUrl);
         textToVideoParams.images = [
             {
                 format: "png",
@@ -96,7 +184,6 @@ export async function callNovaReelAPI(
     }
 
     // TEXT_VIDEO for 6s single-shot, MULTI_SHOT_AUTOMATED for 12-120s multi-shot
-    const isMultiShot = durationSeconds > 6;
     const requestBody = isMultiShot
         ? {
               taskType: "MULTI_SHOT_AUTOMATED" as const,
@@ -144,7 +231,7 @@ export async function callNovaReelAPI(
         logError("Nova Reel StartAsyncInvoke failed:", message);
         throw new HttpError(
             `Nova Reel video generation failed to start: ${message}`,
-            500,
+            getNovaReelInputErrorStatus(message),
         );
     }
 
@@ -228,7 +315,7 @@ export async function callNovaReelAPI(
                 logError("Nova Reel generation failed:", failureMessage);
                 throw new HttpError(
                     `Nova Reel video generation failed: ${failureMessage}`,
-                    500,
+                    getNovaReelInputErrorStatus(failureMessage),
                 );
             }
 

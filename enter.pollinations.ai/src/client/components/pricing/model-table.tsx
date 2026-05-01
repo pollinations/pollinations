@@ -4,7 +4,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
-import { Badge } from "../ui/badge.tsx";
+import { Tag } from "../ui/tag.tsx";
 
 import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
 import {
@@ -323,19 +323,19 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 </span>
                                 <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 content-center">
                                     {showNew && (
-                                        <Badge color="green" size="sm">
+                                        <Tag color="green" size="sm">
                                             NEW
-                                        </Badge>
+                                        </Tag>
                                     )}
                                     {showAlpha && (
-                                        <Badge color="orange" size="sm">
+                                        <Tag color="orange" size="sm">
                                             ALPHA
-                                        </Badge>
+                                        </Tag>
                                     )}
                                     {showPaidOnly && (
-                                        <Badge color="purple" size="sm">
+                                        <Tag color="purple" size="sm">
                                             PAID
-                                        </Badge>
+                                        </Tag>
                                     )}
                                 </div>
                             </div>
@@ -352,7 +352,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             >
                                 <span>{model.name}</span>
                                 {copied && (
-                                    <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+                                    <span className="rounded-md bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
                                         copied
                                     </span>
                                 )}
@@ -369,13 +369,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 )}
                         </div>
                     </div>
-                    <span
-                        className={cn(
-                            "text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full shrink-0",
-                        )}
-                    >
-                        {perPollen}
-                    </span>
+                    <Tag color="teal">{perPollen}</Tag>
                 </div>
             </div>
 
@@ -523,7 +517,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     return (
         <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
             {modalityIcons.length > 0 && (
-                <Badge
+                <Tag
                     color="gray"
                     size="sm"
                     className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
@@ -531,10 +525,10 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     {modalityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}
-                </Badge>
+                </Tag>
             )}
             {capabilityIcons.length > 0 && (
-                <Badge
+                <Tag
                     color="gray"
                     size="sm"
                     className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
@@ -542,7 +536,7 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     {capabilityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}
-                </Badge>
+                </Tag>
             )}
         </div>
     );

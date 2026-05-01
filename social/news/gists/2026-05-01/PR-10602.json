@@ -1,0 +1,33 @@
+{
+  "pr_number": 10602,
+  "title": "rectangular tags for non-button labels in dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10602",
+  "merged_at": "2026-05-01T13:45:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Round means click",
+    "blurb": "We finally decided that making everything a pill shape was confusing. Now, round things are buttons you can click, and rectangular things are tags you can read. Groundbreaking UI science.",
+    "summary": "Replaced round informational badges with rectangular tags across the dashboard to establish a clearer visual hierarchy.",
+    "impact": "Users can now instantly distinguish between interactive buttons and static informational labels without having to hover over them.",
+    "keywords": [
+      "ui",
+      "dashboard",
+      "ux",
+      "design"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot sorting UI shapes. The bee holds a round button, while the robot stacks crisp rectangular tags. Represents the visual distinction between buttons and labels.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot sorting glowing UI elements. The bee wears a tiny painter's beret and holds a round button, while the robot stacks crisp rectangular tags. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-01/PR-10602.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot sorting glowing UI elements. The bee wears a tiny painter's beret and holds a round button, while the robot stacks crisp rectangular tags. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-01T13:46:04.327436+00:00"
+}

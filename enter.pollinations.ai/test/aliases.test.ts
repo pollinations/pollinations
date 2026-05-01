@@ -87,19 +87,35 @@ test("video model with marked-up price bills users above provider cost", () => {
 
 test("ElevenLabs audio models are paid-only and billed with 1.5x markup", () => {
     const cases = [
-        { model: "elevenlabs", usage: { completionAudioTokens: 1000 } },
-        { model: "elevenmusic", usage: { completionAudioSeconds: 60 } },
-        { model: "scribe", usage: { promptAudioSeconds: 3600 } },
+        {
+            model: "elevenlabs",
+            usage: { completionAudioTokens: 1000 },
+            expectedCost: 0.18,
+            expectedPrice: 0.27,
+        },
+        {
+            model: "elevenmusic",
+            usage: { completionAudioSeconds: 60 },
+            expectedCost: 0.3,
+            expectedPrice: 0.45,
+        },
+        {
+            model: "scribe",
+            usage: { promptAudioSeconds: 3600 },
+            expectedCost: 0.39996,
+            expectedPrice: 0.59994,
+        },
     ] as const;
 
-    for (const { model, usage } of cases) {
+    for (const { model, usage, expectedCost, expectedPrice } of cases) {
         const definition = getModelDefinition(model);
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);
 
         expect(definition.provider).toBe("elevenlabs");
         expect(definition.paidOnly).toBe(true);
-        expect(price.totalPrice).toBeCloseTo(cost.totalCost * 1.5, 8);
+        expect(cost.totalCost).toBeCloseTo(expectedCost, 8);
+        expect(price.totalPrice).toBeCloseTo(expectedPrice, 8);
         expect(price.totalPrice).toBeGreaterThan(cost.totalCost);
     }
 });
@@ -118,7 +134,7 @@ test("GPT Image 2 is paid-only and billed with 1.5x markup", () => {
     expect(definition.provider).toBe("openai");
     expect(definition.paidOnly).toBe(true);
     expect(cost.totalCost).toBeCloseTo(44.25, 8);
-    expect(price.totalPrice).toBeCloseTo(cost.totalCost * 1.5, 8);
+    expect(price.totalPrice).toBeCloseTo(66.375, 8);
     expect(price.totalPrice).toBeGreaterThan(cost.totalCost);
 });
 

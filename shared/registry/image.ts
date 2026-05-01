@@ -205,6 +205,7 @@ export const IMAGE_SERVICES = {
         provider: "openai",
         brand: "OpenAI",
         category: "image",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -212,6 +213,15 @@ export const IMAGE_SERVICES = {
                 promptCachedTokens: perMillion(1.25), // per 1M tokens
                 promptImageTokens: perMillion(8), // per 1M tokens
                 completionImageTokens: perMillion(30), // per 1M tokens
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(7.5), // per 1M tokens
+                promptCachedTokens: perMillion(1.875), // per 1M tokens
+                promptImageTokens: perMillion(12), // per 1M tokens
+                completionImageTokens: perMillion(45), // per 1M tokens
             },
         ],
         description: "GPT Image 2 - OpenAI's next-gen image generation model",

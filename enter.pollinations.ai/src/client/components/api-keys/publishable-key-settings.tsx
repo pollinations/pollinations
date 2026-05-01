@@ -117,7 +117,7 @@ const DeveloperEarningsSwitch: FC<DeveloperEarningsSwitchProps> = ({
 }) => (
     <div className="flex w-fit min-w-0 items-center gap-3">
         <div className="min-w-0">
-            <div className="flex min-w-0 items-center text-sm font-semibold text-blue-950">
+            <div className="flex min-w-0 items-center text-sm font-semibold">
                 Developer earnings
                 <InfoTip
                     text="Each request through this app charges users 20% extra — credited to you."

@@ -92,7 +92,7 @@ BYOP lets your users connect their Pollinations account to your app and spend th
 **Why use it:**
 
 - **No shared balance drain:** user usage does not spend your Pollen.
-- **🌻 Dev earnings:** When enabled, requests through your App Key cost 25% above the base model price. That extra Pollen is credited to you, which equals 20% of what your users spend in your app.
+- **🌻 Dev earnings:** Each request through your app charges users 20% extra — credited to you.
 - **Scoped access:** users approve a key for your app with model limits, budget, and expiry.
 
 📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**

@@ -120,9 +120,7 @@ const DeveloperEarningsSwitch: FC<DeveloperEarningsSwitchProps> = ({
             <div className="flex min-w-0 items-center text-sm font-semibold text-blue-950">
                 Developer earnings
                 <InfoTip
-                    text={
-                        "• Developer earnings add a 25% markup to the base model price.\n• That markup equals 20% of the final Pollen your users spend in your app, credited to you."
-                    }
+                    text="Each request through this app charges users 20% extra — credited to you."
                     label="Developer earnings information"
                     tone="blue"
                     placement="top"

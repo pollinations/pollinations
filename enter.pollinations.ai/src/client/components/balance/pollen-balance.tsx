@@ -136,9 +136,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayPaid}
                                 label="🪷"
                                 color="amber"
-                                tooltipText={
-                                    "• From packs you've bought\n• Required for 🪷 Paid Only models\n• Used after tier grants and developer earnings for regular models"
-                                }
+                                tooltipText="🪷 Top-up — Pollen you bought. Never expires."
                                 position="left"
                             />
                         )}
@@ -148,9 +146,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayDev}
                                 label="🌻"
                                 color="dev"
-                                tooltipText={
-                                    "• Earned when users spend Pollen in your BYOP apps\n• Used after tier grants for regular models"
-                                }
+                                tooltipText="🌻 Dev earnings — your 20% share from users spending in your apps."
                                 position="right"
                                 offset={paidPercentage}
                             />
@@ -162,9 +158,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={displayTier}
                                 label={tierEmoji}
                                 color={tierColor}
-                                tooltipText={
-                                    "• Free pollen from your tier, refills periodically\n• Used first, except for 🪷 Paid Only models"
-                                }
+                                tooltipText={`${tierEmoji} Tier — your free hourly Pollen.`}
                                 position="right"
                                 offset={paidPercentage + devPercentage}
                             />

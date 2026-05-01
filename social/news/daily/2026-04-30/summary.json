@@ -1,0 +1,31 @@
+{
+  "date": "2026-04-30",
+  "period_start": "2026-04-30",
+  "period_end": "2026-04-30",
+  "title": "Faster text generation at the edge and Llama 3.3",
+  "summary": "Text generation gets a major speed boost at the edge, Llama 3.3 joins the roster, and nova-fast stops throwing 500 errors.\n\nWe migrated text generation logic directly into the core edge worker, eliminating a network hop for faster, more reliable chat responses. While we were in the neighborhood, we wired up Meta's Llama 3.3 70B Instruct to the API.\n\nA configuration bug was causing widespread 500 errors for the nova-fast model. We flattened the config to point directly at a single Bedrock target, and it is now fully operational and returning text instead of stack traces.\n\nAdded 308 redirects from the old enter.pollinations.ai endpoints to the new gateway so legacy SDK clients don't drop POST data or throw 404s. We also cleaned up the OpenAPI docs, restoring the missing CLI, Auth, and Errors sections while deleting duplicated BYOP content.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 10555,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10576,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10577,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10581,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10582,
+      "date": "2026-04-30"
+    }
+  ],
+  "generated_at": "2026-05-01T06:52:11.495172+00:00"
+}

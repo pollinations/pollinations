@@ -71,7 +71,6 @@
         "@hono/node-server": "^1.19.6",
         "@tailwindcss/typography": "^0.5.19",
         "@tailwindcss/vite": "^4.1.17",
-        "@tanstack/react-router-devtools": "^1.139.3",
         "@tanstack/router-plugin": "^1.139.3",
         "@types/node": "^24.10.1",
         "@types/react": "^19.2.7",

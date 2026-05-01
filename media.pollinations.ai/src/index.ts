@@ -4,7 +4,7 @@ import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
 
 const DOMAIN = "media.pollinations.ai";
-const ENTER_VERIFY_URL = "https://gen.pollinations.ai/api/account/key";
+const ENTER_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 10485760; // 10 MB

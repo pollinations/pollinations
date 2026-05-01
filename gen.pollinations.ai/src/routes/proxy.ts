@@ -51,7 +51,9 @@ import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
 import {
     generateAceStepMusic,
     generateMusic,
+    generateQwenTts,
     generateSpeech,
+    isQwenTtsModel,
 } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -689,7 +691,8 @@ export const proxyRoutes = new Hono<Env>()
                     .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
                     .default("mp3")
                     .meta({
-                        description: "Audio output format (TTS only)",
+                        description:
+                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
@@ -719,6 +722,11 @@ export const proxyRoutes = new Hono<Env>()
                     description:
                         "Style/genre tags for music generation (acestep only)",
                     example: "brazilian berimbau instrumental",
+                }),
+                instruct: z.string().optional().meta({
+                    description:
+                        "Emotion/style instruction (qwen-tts-instruct only)",
+                    example: "speak softly and warmly",
                 }),
                 seed: z.coerce
                     .number()
@@ -790,13 +798,25 @@ export const proxyRoutes = new Hono<Env>()
                 });
             }
 
-            const { voice, response_format, seed } = c.req.valid(
+            const { voice, response_format, seed, instruct } = c.req.valid(
                 "query" as never,
             ) as {
                 voice: string;
                 response_format: string;
                 seed?: number;
+                instruct?: string;
             };
+
+            if (isQwenTtsModel(c.var.model.resolved)) {
+                return generateQwenTts({
+                    modelName: c.var.model.resolved,
+                    text,
+                    voice: voice || "alloy",
+                    instruct,
+                    apiKey: c.env.DASHSCOPE_API_KEY,
+                    log,
+                });
+            }
 
             return generateSpeech({
                 text,

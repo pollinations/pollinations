@@ -61,7 +61,8 @@ const IMAGE_ENV_KEYS = [
 export function syncImageEnvironment(env: CloudflareBindings): void {
     syncImageEnv(env, IMAGE_ENV_KEYS);
     setServerRegistryBinding(env.KV, env.ENVIRONMENT);
-    setImagesBinding(env.IMAGES);
+    // The Workers test Images binding can return empty bodies; route tests cover provider flow, not CF transforms.
+    setImagesBinding(env.ENVIRONMENT === "test" ? undefined : env.IMAGES);
 }
 
 function createAuthResult(c: ImageContext): AuthResult {

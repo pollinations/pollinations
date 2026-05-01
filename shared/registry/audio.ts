@@ -56,11 +56,18 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
                 // ElevenLabs pricing: 1 credit = 1 character, ~$0.18 per 1000 chars
                 completionAudioTokens: 0.18 / 1000,
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionAudioTokens: 0.00027, // $0.27 per 1000 chars
             },
         ],
         description:
@@ -83,6 +90,12 @@ export const AUDIO_SERVICES = {
                 // ElevenLabs Music: billed by output audio duration
                 // ~$0.30 per minute ≈ $0.005 per second (Scale plan pricing)
                 completionAudioSeconds: 0.005,
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionAudioSeconds: 0.0075, // $0.45 per minute
             },
         ],
         description:
@@ -116,11 +129,18 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
                 // ElevenLabs Scribe: $0.40/hour = $0.0001111/sec
                 promptAudioSeconds: 0.0001111,
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-02-13").getTime(),
+                promptAudioSeconds: 0.00016665, // $0.60 per hour
             },
         ],
         description:
@@ -162,8 +182,7 @@ export const AUDIO_SERVICES = {
         price: [
             {
                 date: new Date("2026-04-19").getTime(),
-                // 1.5x markup on free tier
-                completionAudioTokens: (0.013 * 1.5) / 1000,
+                completionAudioTokens: 0.0000195, // $0.0195 per 1000 chars
             },
         ],
         description:

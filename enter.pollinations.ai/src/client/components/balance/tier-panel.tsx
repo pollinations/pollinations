@@ -4,9 +4,9 @@ import {
     type TierStatus,
 } from "@shared/tier-config.ts";
 import type { FC } from "react";
-import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { TierExplanation } from "./tier-explanation";
 
 const APPEAL_URL =
@@ -86,13 +86,13 @@ const TierScreen: FC<{
                 <span className="text-3xl font-bold text-gray-900">
                     {tierEmoji} {active_tier_name}
                 </span>
-                <Badge
+                <Tag
                     color={getBadgeColor(tier)}
                     size="lg"
                     className="font-semibold"
                 >
                     {pollen} pollen/hour
-                </Badge>
+                </Tag>
             </div>
 
             <p className="text-sm text-gray-500">

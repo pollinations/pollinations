@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { cn } from "@/util.ts";
-import { Badge } from "../ui/badge.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { MODEL_CATEGORIES } from "./model-categories.ts";
 
 type ModelPermissionsProps = {
@@ -97,7 +97,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     <span className="text-sm font-medium">
                         Allow all models
                     </span>
-                    <Badge
+                    <Tag
                         color={
                             isUnrestricted
                                 ? "green"
@@ -108,7 +108,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                         className="ml-auto"
                     >
                         {`${selectedCount} selected`}
-                    </Badge>
+                    </Tag>
                 </label>
 
                 {/* Show model chips when restricting to specific models */}

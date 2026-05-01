@@ -263,6 +263,7 @@ async function requireSessionUser(c: Context<Env>) {
 }
 
 function isInternalRequest(request: Request, env: CloudflareBindings): boolean {
+    if (!env.PLN_ENTER_TOKEN) return false;
     const header = request.headers.get("Authorization") ?? "";
     return header === `Bearer ${env.PLN_ENTER_TOKEN}`;
 }

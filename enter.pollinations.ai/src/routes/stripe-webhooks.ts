@@ -6,6 +6,7 @@ import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
+    markAutoTopUpInvoiceRequiresAction,
 } from "../utils/stripe-billing.ts";
 
 interface StripeEventData {
@@ -372,6 +373,12 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     invoice,
                     "Stripe could not charge the default payment method.",
                 );
+                break;
+            }
+
+            case "invoice.payment_action_required": {
+                const invoice = event.data.object as Stripe.Invoice;
+                await markAutoTopUpInvoiceRequiresAction(c.env, invoice);
                 break;
             }
 

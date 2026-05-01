@@ -8,6 +8,7 @@ import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
+const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
 const checkoutAmounts = [
     "/checkout/2",
     "/checkout/5",
@@ -16,6 +17,65 @@ const checkoutAmounts = [
     "/checkout/50",
     "/checkout/100",
 ];
+
+function signStripeWebhookPayload(payload: string): string {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signature = createHmac("sha256", env.STRIPE_WEBHOOK_SECRET)
+        .update(`${timestamp}.${payload}`, "utf8")
+        .digest("hex");
+    return `t=${timestamp},v1=${signature}`;
+}
+
+function createAutoTopUpInvoiceEvent(
+    type:
+        | "invoice.paid"
+        | "invoice.payment_failed"
+        | "invoice.payment_action_required",
+    invoiceId: string,
+    userId: string,
+    invoiceOverrides: Record<string, unknown> = {},
+) {
+    return {
+        id: `evt_${type.replaceAll(".", "_")}_${invoiceId}`,
+        type,
+        livemode: false,
+        data: {
+            object: {
+                id: invoiceId,
+                object: "invoice",
+                customer: "cus_webhook",
+                status: type === "invoice.paid" ? "paid" : "open",
+                amount_due: 1000,
+                amount_paid: type === "invoice.paid" ? 1000 : 0,
+                currency: "usd",
+                metadata: {
+                    pollinations_user_id: userId,
+                    pollinations_purpose: "auto_top_up",
+                    packAmount: "10",
+                },
+                ...invoiceOverrides,
+            },
+        },
+    };
+}
+
+async function postSignedStripeWebhook(
+    payloadObject: Record<string, unknown>,
+    sessionToken?: string,
+): Promise<Response> {
+    const payload = JSON.stringify(payloadObject);
+    return SELF.fetch(stripeWebhookUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "stripe-signature": signStripeWebhookPayload(payload),
+            ...(sessionToken
+                ? { cookie: `better-auth.session_token=${sessionToken}` }
+                : {}),
+        },
+        body: payload,
+    });
+}
 
 test.for(
     checkoutAmounts,
@@ -680,6 +740,315 @@ test("POST /api/stripe/auto-top-up/trigger disables auto top-up when setup is in
     expect(updatedUser?.autoTopUpEnabled).toBe(false);
 });
 
+test("POST /api/stripe/auto-top-up/trigger skips during failure cooldown", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "polar", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_auto_top_up_cooldown");
+    customer.invoice_settings.default_payment_method = "pm_card";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_card", customer.id),
+    );
+
+    await env.DB.prepare(
+        `UPDATE user
+            SET pack_balance = 1,
+                stripe_customer_id = ?,
+                auto_top_up_enabled = 1,
+                auto_top_up_amount_usd = 10,
+                auto_top_up_last_failure = ?,
+                auto_top_up_last_failure_at = ?
+            WHERE id = ?`,
+    )
+        .bind(customer.id, "Previous payment failure", Date.now(), user.id)
+        .run();
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({ userId: user.id }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        status: string;
+        reason?: string;
+    };
+    expect(data.status).toBe("skipped");
+    expect(data.reason).toContain("failure cooldown");
+    expect(
+        mocks.stripe.state.requests.some(
+            (request) => request.path === "/v1/invoices",
+        ),
+    ).toBe(false);
+});
+
+test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto top-up invoice", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const invoiceId = "in_paid_then_failed";
+    const now = Date.now();
+    await env.DB.prepare(
+        `UPDATE user
+            SET pack_balance = 16,
+                auto_top_up_enabled = 1,
+                auto_top_up_amount_usd = 10
+            WHERE id = ?`,
+    )
+        .bind(user.id)
+        .run();
+    await env.DB.prepare(
+        `INSERT INTO stripe_auto_top_up_attempt (
+            id,
+            user_id,
+            stripe_invoice_id,
+            amount_usd,
+            pollen_grant,
+            status,
+            created_at,
+            updated_at,
+            completed_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+        .bind(
+            "attempt_paid_then_failed",
+            user.id,
+            invoiceId,
+            10,
+            15,
+            "paid",
+            now,
+            now,
+            now,
+        )
+        .run();
+
+    const paymentFailedResponse = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent(
+            "invoice.payment_failed",
+            invoiceId,
+            user.id,
+        ),
+        sessionToken,
+    );
+    expect(paymentFailedResponse.status).toBe(200);
+
+    const paidRedeliveryResponse = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent("invoice.paid", invoiceId, user.id),
+        sessionToken,
+    );
+    expect(paidRedeliveryResponse.status).toBe(200);
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance,
+            auto_top_up_last_failure AS autoTopUpLastFailure
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{
+            packBalance: number | null;
+            autoTopUpLastFailure: string | null;
+        }>();
+    const attempt = await env.DB.prepare(
+        `SELECT status, failure_reason AS failureReason
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind(invoiceId)
+        .first<{ status: string; failureReason: string | null }>();
+
+    expect(updatedUser?.packBalance).toBe(16);
+    expect(updatedUser?.autoTopUpLastFailure).toBeNull();
+    expect(attempt?.status).toBe("paid");
+    expect(attempt?.failureReason).toBeNull();
+});
+
+test("POST /api/webhooks/stripe records payment-action-required invoice links", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db
+        .update(userTable)
+        .set({ autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
+        .where(eq(userTable.id, user.id));
+
+    const hostedInvoiceUrl = "https://invoice.stripe.test/in_action_required";
+    const response = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent(
+            "invoice.payment_action_required",
+            "in_action_required",
+            user.id,
+            { hosted_invoice_url: hostedInvoiceUrl },
+        ),
+        sessionToken,
+    );
+
+    expect(response.status).toBe(200);
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT auto_top_up_last_failure AS autoTopUpLastFailure
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ autoTopUpLastFailure: string | null }>();
+    const attempt = await env.DB.prepare(
+        `SELECT status, failure_reason AS failureReason
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind("in_action_required")
+        .first<{ status: string; failureReason: string | null }>();
+
+    expect(updatedUser?.autoTopUpLastFailure).toContain(hostedInvoiceUrl);
+    expect(attempt?.status).toBe("requires_action");
+    expect(attempt?.failureReason).toContain(hostedInvoiceUrl);
+});
+
+test("POST /api/webhooks/stripe does not disable auto top-up after repeated SCA prompts", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db
+        .update(userTable)
+        .set({ autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
+        .where(eq(userTable.id, user.id));
+
+    for (const invoiceId of [
+        "in_sca_repeat_1",
+        "in_sca_repeat_2",
+        "in_sca_repeat_3",
+    ]) {
+        const response = await postSignedStripeWebhook(
+            createAutoTopUpInvoiceEvent(
+                "invoice.payment_action_required",
+                invoiceId,
+                user.id,
+                {
+                    hosted_invoice_url: `https://invoice.stripe.test/${invoiceId}`,
+                },
+            ),
+            sessionToken,
+        );
+        expect(response.status).toBe(200);
+    }
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ autoTopUpEnabled: number | boolean | null }>();
+
+    expect(updatedUser?.autoTopUpEnabled).toBe(1);
+});
+
+test("POST /api/webhooks/stripe disables auto top-up after repeated failed invoices", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db
+        .update(userTable)
+        .set({ autoTopUpEnabled: true, autoTopUpAmountUsd: 10 })
+        .where(eq(userTable.id, user.id));
+
+    for (const invoiceId of [
+        "in_failed_repeat_1",
+        "in_failed_repeat_2",
+        "in_failed_repeat_3",
+    ]) {
+        const response = await postSignedStripeWebhook(
+            createAutoTopUpInvoiceEvent(
+                "invoice.payment_failed",
+                invoiceId,
+                user.id,
+            ),
+            sessionToken,
+        );
+        expect(response.status).toBe(200);
+    }
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled,
+            auto_top_up_last_failure AS autoTopUpLastFailure
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{
+            autoTopUpEnabled: number | boolean | null;
+            autoTopUpLastFailure: string | null;
+        }>();
+
+    expect(updatedUser?.autoTopUpEnabled).toBe(0);
+    expect(updatedUser?.autoTopUpLastFailure).toContain(
+        "disabled after 3 consecutive failed charge attempts",
+    );
+});
+
 test("POST /api/webhooks/stripe rejects missing stripe-signature header", async () => {
     const response = await SELF.fetch(
         "http://localhost:3000/api/webhooks/stripe",
@@ -756,23 +1125,15 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
         },
     });
 
-    const timestamp = Math.floor(Date.now() / 1000);
-    const signature = createHmac("sha256", env.STRIPE_WEBHOOK_SECRET)
-        .update(`${timestamp}.${payload}`, "utf8")
-        .digest("hex");
-
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/webhooks/stripe",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "stripe-signature": `t=${timestamp},v1=${signature}`,
-                cookie: `better-auth.session_token=${sessionToken}`,
-            },
-            body: payload,
+    const response = await SELF.fetch(stripeWebhookUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "stripe-signature": signStripeWebhookPayload(payload),
+            cookie: `better-auth.session_token=${sessionToken}`,
         },
-    );
+        body: payload,
+    });
 
     expect(response.status).toBe(200);
 

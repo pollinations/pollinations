@@ -8,6 +8,11 @@ const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_PURPOSE = "pollinations_purpose";
 const AUTO_TOP_UP_PURPOSE = "auto_top_up";
 const AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
+const AUTO_TOP_UP_BASE_FAILURE_COOLDOWN_MS = 60 * 60 * 1000;
+const AUTO_TOP_UP_MAX_FAILURE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES = 3;
+const AUTO_TOP_UP_ATTEMPT_STATUS_FAILED = "failed";
+const AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION = "requires_action";
 const BILLING_PORTAL_CONFIGURATION_METADATA_KEY = "pollinations_portal";
 const BILLING_PORTAL_CONFIGURATION_METADATA_VALUE = "billing_details_v1";
 const BILLING_PORTAL_CONFIGURATION_NAME = "Pollinations Billing Portal";
@@ -55,6 +60,11 @@ type AutoTopUpAttemptCreditRow = {
     id: string;
     userId: string;
     pollenGrant: number;
+};
+
+type AutoTopUpAttemptStatusRow = {
+    id: string;
+    status: string;
 };
 
 export type BillingPortalFlow = "default" | "payment_method_update";
@@ -366,12 +376,26 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "paid balance above threshold" };
     }
 
+    const cooldownState = await getAutoTopUpCooldownState(env.DB, user);
+    if (cooldownState.msRemaining > 0) {
+        return {
+            status: "skipped",
+            reason: `auto top-up in failure cooldown (${Math.ceil(cooldownState.msRemaining / 60_000)}m remaining)`,
+        };
+    }
+
+    // Reuse the count from the cooldown gate; +1 represents the failure we
+    // are about to record on this code path. Past the gate the user is still
+    // enabled, so priorConsecutiveFailures < AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES.
+    const projectedConsecutiveFailures = cooldownState.consecutiveFailures + 1;
+
     const pack = getPollenPack(String(amountUsd));
     if (!pack) {
-        await recordAutoTopUpFailure(
+        await recordAutoTopUpFailureAndMaybeDisable(
             env.DB,
             userId,
             "Configured auto top-up pack is unavailable.",
+            projectedConsecutiveFailures,
         );
         return { status: "failed", reason: "invalid pack amount" };
     }
@@ -484,7 +508,12 @@ export async function processAutoTopUpForUser(
         const message =
             error instanceof Error ? error.message : "Auto top-up failed.";
         await failPendingAutoTopUpAttempts(env.DB, userId, message);
-        await recordAutoTopUpFailure(env.DB, userId, message);
+        await recordAutoTopUpFailureAndMaybeDisable(
+            env.DB,
+            userId,
+            message,
+            projectedConsecutiveFailures,
+        );
         return { status: "failed", reason: message };
     }
 }
@@ -592,17 +621,79 @@ export async function markAutoTopUpInvoiceFailed(
     });
 
     const now = Date.now();
-    await env.DB.prepare(
+    const attempt = await env.DB.prepare(
         `UPDATE stripe_auto_top_up_attempt
-            SET status = 'failed',
+            SET status = ?,
                 failure_reason = ?,
                 updated_at = ?,
                 completed_at = ?
-            WHERE stripe_invoice_id = ?`,
+            WHERE stripe_invoice_id = ? AND status <> 'paid'
+            RETURNING id, status`,
     )
-        .bind(reason, now, now, invoice.id)
-        .run();
+        .bind(AUTO_TOP_UP_ATTEMPT_STATUS_FAILED, reason, now, now, invoice.id)
+        .first<AutoTopUpAttemptStatusRow>();
 
+    if (!attempt) return;
+
+    await recordAutoTopUpFailureAndMaybeDisable(env.DB, userId, reason);
+}
+
+export async function markAutoTopUpInvoiceRequiresAction(
+    env: CloudflareBindings,
+    invoice: Stripe.Invoice,
+): Promise<void> {
+    const metadata = invoice.metadata ?? {};
+    if (metadata[METADATA_PURPOSE] !== AUTO_TOP_UP_PURPOSE) return;
+
+    const userId = metadata[METADATA_USER_ID];
+    const pack = metadata.packAmount
+        ? getPollenPack(metadata.packAmount)
+        : null;
+    if (!invoice.id || !userId || !pack) return;
+
+    const hostedInvoiceUrl =
+        typeof invoice.hosted_invoice_url === "string"
+            ? invoice.hosted_invoice_url
+            : null;
+    const reason = hostedInvoiceUrl
+        ? `Stripe requires additional payment authentication before auto top-up can complete. Complete payment in Stripe: ${hostedInvoiceUrl}`
+        : "Stripe requires additional payment authentication before auto top-up can complete.";
+
+    await ensureAutoTopUpAttempt(env.DB, {
+        invoiceId: invoice.id,
+        userId,
+        amountUsd: pack.amountUsd,
+        pollenGrant: pack.pollenGrant,
+        status: "pending",
+    });
+
+    const now = Date.now();
+    const attempt = await env.DB.prepare(
+        `UPDATE stripe_auto_top_up_attempt
+            SET status = ?,
+                failure_reason = ?,
+                updated_at = ?,
+                completed_at = ?
+            WHERE stripe_invoice_id = ?
+                AND status NOT IN ('paid', ?)
+            RETURNING id, status`,
+    )
+        .bind(
+            AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION,
+            reason,
+            now,
+            now,
+            invoice.id,
+            AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION,
+        )
+        .first<AutoTopUpAttemptStatusRow>();
+
+    if (!attempt) return;
+
+    // requires_action surfaces the SCA URL to the user and triggers the
+    // failure cooldown via auto_top_up_last_failure_at, but does NOT count
+    // toward the consecutive-failure disable threshold — the card may be
+    // perfectly valid and only need a one-time 3DS confirmation.
     await recordAutoTopUpFailure(env.DB, userId, reason);
 }
 
@@ -806,6 +897,26 @@ async function recordAutoTopUpFailure(
         .run();
 }
 
+async function recordAutoTopUpFailureAndMaybeDisable(
+    db: D1Database,
+    userId: string,
+    message: string,
+    knownConsecutiveFailures?: number,
+): Promise<void> {
+    await recordAutoTopUpFailure(db, userId, message);
+
+    const consecutiveFailures =
+        knownConsecutiveFailures ??
+        (await countConsecutiveAutoTopUpFailures(db, userId));
+    if (consecutiveFailures < AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES) return;
+
+    await disableAutoTopUp(
+        db,
+        userId,
+        `Auto top-up was disabled after ${AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES} consecutive failed charge attempts. Last error: ${message}`,
+    );
+}
+
 async function disableAutoTopUp(
     db: D1Database,
     userId: string,
@@ -822,6 +933,34 @@ async function disableAutoTopUp(
         )
         .bind(reason, Date.now(), userId)
         .run();
+}
+
+async function countConsecutiveAutoTopUpFailures(
+    db: D1Database,
+    userId: string,
+): Promise<number> {
+    // Pending attempts have completed_at = NULL. SQLite sorts NULLs first
+    // ascending and last descending, so with `completed_at DESC` they fall to
+    // the bottom of the window and never preempt a real terminal status. The
+    // streak breaks on any non-'failed' row ('paid', 'requires_action',
+    // 'pending'), so SCA prompts and successes both reset the counter.
+    const { results } = await db
+        .prepare(
+            `SELECT id, status
+                FROM stripe_auto_top_up_attempt
+                WHERE user_id = ?
+                ORDER BY completed_at DESC, created_at DESC
+                LIMIT ?`,
+        )
+        .bind(userId, AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES)
+        .all<AutoTopUpAttemptStatusRow>();
+
+    let consecutiveFailures = 0;
+    for (const attempt of results ?? []) {
+        if (attempt.status !== AUTO_TOP_UP_ATTEMPT_STATUS_FAILED) break;
+        consecutiveFailures += 1;
+    }
+    return consecutiveFailures;
 }
 
 async function failPendingAutoTopUpAttempts(
@@ -848,6 +987,29 @@ function coerceTimestampMs(value: number | string | null): number | null {
 
     const timestamp = Number(value);
     return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+async function getAutoTopUpCooldownState(
+    db: D1Database,
+    user: UserStripeBillingRow,
+): Promise<{ msRemaining: number; consecutiveFailures: number }> {
+    if (!user.autoTopUpLastFailureAt) {
+        return { msRemaining: 0, consecutiveFailures: 0 };
+    }
+    const consecutiveFailures = await countConsecutiveAutoTopUpFailures(
+        db,
+        user.id,
+    );
+    const cooldownMs = Math.min(
+        AUTO_TOP_UP_MAX_FAILURE_COOLDOWN_MS,
+        AUTO_TOP_UP_BASE_FAILURE_COOLDOWN_MS *
+            2 ** Math.max(0, consecutiveFailures - 1),
+    );
+    const cooldownExpiresAt = user.autoTopUpLastFailureAt + cooldownMs;
+    return {
+        msRemaining: Math.max(0, cooldownExpiresAt - Date.now()),
+        consecutiveFailures,
+    };
 }
 
 function createAutoTopUpIdempotencyKey(

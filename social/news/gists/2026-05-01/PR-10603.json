@@ -1,0 +1,34 @@
+{
+  "pr_number": 10603,
+  "title": "[codex] fix: keep Scribe free",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10603",
+  "merged_at": "2026-05-01T15:29:40Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The Scribe is free",
+    "blurb": "We've removed the paid requirement for the Scribe audio model. Keep generating those sweet audio files on the house.",
+    "summary": "Removed the paid-only restriction and price overrides for the Scribe audio model, returning it to the free tier.",
+    "impact": "Users can once again access the Scribe audio model without needing Pollen credits.",
+    "keywords": [
+      "audio",
+      "scribe",
+      "billing",
+      "free-tier",
+      "models"
+    ],
+    "visual_concept": "A vintage microphone (representing Scribe/audio) with a 'FREE' tag. The bee mascot and Nomnom creature celebrating the removal of the price barrier.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, happily placing a 'FREE' tag on a vintage silver microphone. The round tan nomnom creature is happily eating a discarded price tag. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-01/PR-10603.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny newsboy cap, happily placing a 'FREE' tag on a vintage silver microphone. The round tan nomnom creature is happily eating a discarded price tag. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-01T15:30:36.308965+00:00"
+}

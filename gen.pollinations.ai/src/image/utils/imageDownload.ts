@@ -2,7 +2,11 @@ import { HttpError } from "../httpError.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
     const bytes = new Uint8Array(buffer.length);
-    bytes.set(buffer);
+
+    for (let i = 0; i < buffer.length; i += 1) {
+        bytes[i] = buffer[i];
+    }
+
     return bytes;
 }
 

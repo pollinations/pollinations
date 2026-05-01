@@ -65,27 +65,36 @@ type MediaCacheEnv = {
     };
 };
 
-export async function cacheAndReplayMediaResponse<TEnv extends MediaCacheEnv>(
+export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
     response: Response,
-): Promise<Response> {
-    const body = await response.arrayBuffer();
-    const cacheBody = body.slice(0);
-
+): void {
     c.executionCtx.waitUntil(
-        bucket
-            .put(cacheKey, cacheBody, {
-                httpMetadata: removeUnset({
-                    contentType:
-                        response.headers.get("content-type") ||
-                        defaultContentType,
-                } as R2HTTPMetadata),
-                customMetadata: {
-                    cachedAt: new Date().toISOString(),
-                },
+        response
+            .clone()
+            .arrayBuffer()
+            .then((body) => {
+                if (body.byteLength === 0) {
+                    c.get("log").warn(
+                        "Skipping empty media cache write for {cacheKey}",
+                        { cacheKey },
+                    );
+                    return null;
+                }
+
+                return bucket.put(cacheKey, body, {
+                    httpMetadata: removeUnset({
+                        contentType:
+                            response.headers.get("content-type") ||
+                            defaultContentType,
+                    } as R2HTTPMetadata),
+                    customMetadata: {
+                        cachedAt: new Date().toISOString(),
+                    },
+                });
             })
             .catch((error) => {
                 c.get("log").error("Error caching response: {error}", {
@@ -93,10 +102,4 @@ export async function cacheAndReplayMediaResponse<TEnv extends MediaCacheEnv>(
                 });
             }),
     );
-
-    return new Response(body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-    });
 }

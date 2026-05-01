@@ -12,7 +12,7 @@ import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
-    cacheAndReplayMediaResponse,
+    cacheMediaResponse,
     generateCacheKey,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
@@ -78,7 +78,7 @@ export function createMediaCache(config: MediaCacheConfig) {
         );
         if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
             log.debug("Caching response");
-            c.res = await cacheAndReplayMediaResponse(
+            cacheMediaResponse(
                 c.env.IMAGE_BUCKET,
                 cacheKey,
                 c,

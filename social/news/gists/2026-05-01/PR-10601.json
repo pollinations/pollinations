@@ -1,0 +1,34 @@
+{
+  "pr_number": 10601,
+  "title": "[codex] fix: make ElevenLabs and GPT Image 2 paid",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10601",
+  "merged_at": "2026-05-01T13:23:52Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Premium Pollen Perks",
+    "blurb": "We've updated our model tiers! ElevenLabs audio and GPT Image 2 are now officially part of the Pollen premium lineup, ensuring reliable, high-quality generations for our power users.",
+    "summary": "ElevenLabs audio models and GPT Image 2 have been integrated into the paid Pollen tier with updated pricing structures to ensure sustainable, reliable access.",
+    "impact": "Power users can now utilize these premium models through their Pollen credits, ensuring consistent performance for high-end audio and image generation.",
+    "keywords": [
+      "billing",
+      "models",
+      "elevenlabs",
+      "gpt-image",
+      "pollen"
+    ],
+    "visual_concept": "The bee mascot organizing premium items (a glowing audio cassette for ElevenLabs, a shiny framed picture for GPT Image 2) into a special VIP or premium garden section. Nomnom creature happily eating a golden coin (Pollen credit).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny VIP top hat, placing a glowing audio cassette and a shiny framed picture into a special golden flower bed. The round tan nomnom creature happily munches on a shiny golden coin nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-01/PR-10601.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny VIP top hat, placing a glowing audio cassette and a shiny framed picture into a special golden flower bed. The round tan nomnom creature happily munches on a shiny golden coin nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-01T13:24:48.311959+00:00"
+}

@@ -5,6 +5,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { base64ToBuffer, bufferToUint8Array } from "../utils/imageDownload.ts";
 
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
@@ -130,9 +131,9 @@ async function uploadImageToPruna(imageData: string): Promise<string> {
         base64 = dataUriMatch[2];
     }
 
-    const buffer = Buffer.from(base64, "base64");
+    const buffer = base64ToBuffer(base64);
     const ext = mimeType.split("/")[1] || "png";
-    const blob = new Blob([buffer], { type: mimeType });
+    const blob = new Blob([bufferToUint8Array(buffer)], { type: mimeType });
     const formData = new FormData();
     formData.append("content", blob, `image.${ext}`);
 

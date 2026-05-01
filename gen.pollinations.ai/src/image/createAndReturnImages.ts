@@ -30,6 +30,7 @@ import {
 } from "./utils/azureContentSafety.ts";
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
 import {
+    base64ToBuffer,
     bufferToUint8Array,
     detectMimeType,
     downloadUserImage,
@@ -301,7 +302,7 @@ export const callSelfHostedServer = async (
 
         logOps("decoding base64 image");
 
-        const buffer = Buffer.from(image, "base64");
+        const buffer = base64ToBuffer(image);
 
         return {
             buffer,
@@ -581,7 +582,7 @@ const callGPTImageWithEndpoint = async (
     }
 
     // Convert base64 to buffer
-    const imageBuffer = Buffer.from(data.data[0].b64_json, "base64");
+    const imageBuffer = base64ToBuffer(data.data[0].b64_json);
 
     const usage = mapAzureGPTImageUsage(
         data.usage,

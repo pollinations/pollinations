@@ -16,6 +16,7 @@ import {
     logGptImagePrompt,
 } from "../utils/gptImageLogger.ts";
 import {
+    base64ToBuffer,
     bufferToUint8Array,
     downloadUserImage,
 } from "../utils/imageDownload.ts";
@@ -222,7 +223,7 @@ export async function callAzureFluxKontext(
     }
 
     // Convert base64 to buffer
-    const imageBuffer = Buffer.from(data.data[0].b64_json, "base64");
+    const imageBuffer = base64ToBuffer(data.data[0].b64_json);
 
     // Return result with content safety flags from Azure response
     return {

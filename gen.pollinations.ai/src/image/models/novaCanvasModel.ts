@@ -3,7 +3,7 @@ import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:nova-canvas:ops");
 const logError = debug("pollinations:nova-canvas:error");
@@ -168,7 +168,7 @@ export async function callNovaCanvasAPI(
             throw new HttpError("Nova Canvas returned no images", 500);
         }
 
-        const imageBuffer = Buffer.from(responseBody.images[0], "base64");
+        const imageBuffer = base64ToBuffer(responseBody.images[0]);
         logOps(
             "Nova Canvas image received, size:",
             (imageBuffer.length / 1024).toFixed(1),

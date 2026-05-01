@@ -10,7 +10,7 @@ import type {
 } from "./createAndReturnImages.js";
 import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.js";
-import { downloadUserImage } from "./utils/imageDownload.ts";
+import { base64ToBuffer, downloadUserImage } from "./utils/imageDownload.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
@@ -299,7 +299,7 @@ export async function callVertexAIGemini(
         }
 
         // Convert base64 to buffer
-        const imageBuffer = Buffer.from(result.imageData, "base64");
+        const imageBuffer = base64ToBuffer(result.imageData);
 
         log("Converted to buffer, size:", imageBuffer.length);
 

@@ -4,7 +4,7 @@ import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
 const logError = debug("pollinations:flux-klein:error");
@@ -110,7 +110,7 @@ export const callFluxKleinAPI = async (
             throw new Error("Klein API returned no image");
         }
 
-        const imageBuffer = Buffer.from(item.image, "base64");
+        const imageBuffer = base64ToBuffer(item.image);
         logOps(
             "Klein generation complete, buffer size:",
             imageBuffer.length,

@@ -10,10 +10,6 @@ export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
     return bytes;
 }
 
-export function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
-    return bufferToUint8Array(buffer).buffer;
-}
-
 export function base64ToBuffer(base64: string): Buffer {
     const normalized = base64.replace(/^data:[^,]+,/, "").replace(/\s/g, "");
     const binary = atob(normalized);

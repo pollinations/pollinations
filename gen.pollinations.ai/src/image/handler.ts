@@ -29,7 +29,7 @@ import {
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { createProgressTracker } from "./progressBar.ts";
 import { sleep } from "./util.ts";
-import { bufferToArrayBuffer, detectMimeType } from "./utils/imageDownload.ts";
+import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
@@ -145,7 +145,6 @@ function mediaHeaders(
 ): Headers {
     const headers = new Headers({
         "Content-Type": contentType,
-        "Content-Length": String(result.buffer.length),
         "Cache-Control": "public, max-age=31536000, immutable",
     });
     const extension = contentType.includes("video")
@@ -259,7 +258,7 @@ export async function generateImageOrVideoResponse(
                 originalPrompt,
                 safeParams,
             );
-            return new Response(bufferToArrayBuffer(result.buffer), {
+            return new Response(bufferToUint8Array(result.buffer), {
                 headers: mediaHeaders(
                     originalPrompt,
                     safeParams,
@@ -270,7 +269,7 @@ export async function generateImageOrVideoResponse(
         }
 
         const result = await generateImageResult(c, originalPrompt, safeParams);
-        return new Response(bufferToArrayBuffer(result.buffer), {
+        return new Response(bufferToUint8Array(result.buffer), {
             headers: mediaHeaders(
                 originalPrompt,
                 safeParams,

@@ -65,26 +65,52 @@ type MediaCacheEnv = {
     };
 };
 
-export async function cacheResponse<TEnv extends MediaCacheEnv>(
+export function createMediaCaptureStream<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
-): Promise<boolean> {
-    try {
-        const buffer = await c.res.clone().arrayBuffer();
-        await bucket.put(cacheKey, buffer, {
-            httpMetadata: removeUnset({
-                contentType:
-                    c.res.headers.get("content-type") || defaultContentType,
-            } as R2HTTPMetadata),
-            customMetadata: {
-                cachedAt: new Date().toISOString(),
-            },
-        });
-        return true;
-    } catch (error) {
-        c.get("log").error("Error caching response: {error}", { error });
-        return false;
-    }
+    response: Response,
+): TransformStream<Uint8Array, Uint8Array> {
+    let chunks: Uint8Array[] = [];
+    let totalSize = 0;
+
+    return new TransformStream({
+        transform(chunk, controller) {
+            chunks.push(chunk.slice());
+            totalSize += chunk.byteLength;
+            controller.enqueue(chunk);
+        },
+        flush() {
+            c.executionCtx.waitUntil(
+                (async () => {
+                    try {
+                        const body = new Uint8Array(totalSize);
+                        let offset = 0;
+
+                        for (const chunk of chunks) {
+                            body.set(chunk, offset);
+                            offset += chunk.byteLength;
+                        }
+
+                        await bucket.put(cacheKey, body, {
+                            httpMetadata: removeUnset({
+                                contentType:
+                                    response.headers.get("content-type") ||
+                                    defaultContentType,
+                            } as R2HTTPMetadata),
+                            customMetadata: {
+                                cachedAt: new Date().toISOString(),
+                            },
+                        });
+                        chunks = [];
+                    } catch (error) {
+                        c.get("log").error("Error caching response: {error}", {
+                            error,
+                        });
+                    }
+                })(),
+            );
+        },
+    });
 }

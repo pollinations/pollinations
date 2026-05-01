@@ -12,7 +12,7 @@ import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
-    cacheResponse,
+    createMediaCaptureStream,
     generateCacheKey,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
@@ -77,15 +77,25 @@ export function createMediaCache(config: MediaCacheConfig) {
             contentType?.includes(type),
         );
         if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
+            const originalBody = c.res.body;
+            if (!originalBody) {
+                log.debug("No response body to cache");
+                return;
+            }
+
             log.debug("Caching response");
-            c.executionCtx.waitUntil(
-                cacheResponse(
-                    c.env.IMAGE_BUCKET,
-                    cacheKey,
-                    c,
-                    config.defaultContentType,
-                ),
+            const captureStream = createMediaCaptureStream(
+                c.env.IMAGE_BUCKET,
+                cacheKey,
+                c,
+                config.defaultContentType,
+                c.res,
             );
+            c.res = new Response(originalBody.pipeThrough(captureStream), {
+                status: c.res.status,
+                statusText: c.res.statusText,
+                headers: c.res.headers,
+            });
         }
     });
 }

@@ -205,6 +205,7 @@ export const IMAGE_SERVICES = {
         provider: "openai",
         brand: "OpenAI",
         category: "image",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { pillColors } from "../layout/dashboard-theme.ts";
 import { TabButton } from "../ui/tab-button.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
 import { MultiSelect } from "./multi-select";
@@ -194,16 +195,21 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     value={formatPollen(stats.totalPollen)}
                                     detail={
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <span
-                                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${tierPill.bg} ${tierPill.text}`}
+                                            <Tag
+                                                size="lg"
+                                                className={`font-semibold ${tierPill.bg} ${tierPill.text}`}
                                             >
                                                 {tierEmoji}{" "}
                                                 {formatPollen(stats.tierPollen)}
-                                            </span>
-                                            <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                                            </Tag>
+                                            <Tag
+                                                color="amber"
+                                                size="lg"
+                                                className="font-semibold text-amber-900"
+                                            >
                                                 🪷{" "}
                                                 {formatPollen(stats.paidPollen)}
-                                            </span>
+                                            </Tag>
                                         </div>
                                     }
                                 />
@@ -219,9 +225,11 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     detail={
                                         stats.topModel ? (
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <span
+                                                <Tag
+                                                    color="pink"
+                                                    size="lg"
+                                                    className="font-semibold text-pink-900"
                                                     title={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
-                                                    className="inline-flex items-center gap-1 rounded-full bg-pink-200 px-2.5 py-1 text-xs font-semibold text-pink-900"
                                                 >
                                                     <span aria-hidden="true">
                                                         🔁
@@ -229,10 +237,12 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                                     <span className="tabular-nums">
                                                         {stats.topModel.requests.toLocaleString()}
                                                     </span>
-                                                </span>
-                                                <span
+                                                </Tag>
+                                                <Tag
+                                                    color="amber"
+                                                    size="lg"
+                                                    className="font-semibold text-amber-900"
                                                     title={`${formatPollen(stats.topModel.pollen)} pollen`}
-                                                    className="inline-flex items-center gap-1 rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900"
                                                 >
                                                     <span aria-hidden="true">
                                                         🪷
@@ -243,7 +253,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                                                 .pollen,
                                                         )}
                                                     </span>
-                                                </span>
+                                                </Tag>
                                             </div>
                                         ) : (
                                             "No model usage yet"
@@ -300,16 +310,18 @@ const ModalityPills: FC<{ breakdown: Record<ModelModality, number> }> = ({
             {entries.map(({ modality, count }) => {
                 const { emoji, label } = MODALITY_META[modality];
                 return (
-                    <span
+                    <Tag
                         key={modality}
+                        color="pink"
+                        size="lg"
+                        className="font-semibold text-pink-900"
                         title={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
-                        className="inline-flex items-center gap-1 rounded-full bg-pink-200 px-2.5 py-1 text-xs font-semibold text-pink-900"
                     >
                         <span aria-hidden="true">{emoji}</span>
                         <span className="tabular-nums">
                             {count.toLocaleString()}
                         </span>
-                    </span>
+                    </Tag>
                 );
             })}
         </div>

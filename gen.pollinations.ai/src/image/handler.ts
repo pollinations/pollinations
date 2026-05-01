@@ -6,8 +6,8 @@ import {
     countFluxJobs,
     getRegisteredServers,
     registerServer,
-    setServerRegistryBinding,
     type ServerType,
+    setServerRegistryBinding,
 } from "./availableServers.ts";
 import {
     type AuthResult,
@@ -29,10 +29,7 @@ import {
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { createProgressTracker } from "./progressBar.ts";
 import { sleep } from "./util.ts";
-import {
-    bufferToUint8Array,
-    detectMimeType,
-} from "./utils/imageDownload.ts";
+import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
@@ -304,7 +301,8 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         const type = (params.get("type") || "flux") as ServerType;
         const scheme = port === "443" ? "https" : "http";
         const url =
-            directUrl || (ip ? `${scheme}://${ip}${port ? `:${port}` : ""}` : "");
+            directUrl ||
+            (ip ? `${scheme}://${ip}${port ? `:${port}` : ""}` : "");
 
         if (!url) return handleListRegisteredServers(c);
 

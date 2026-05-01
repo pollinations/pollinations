@@ -68,6 +68,7 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        alpha: true,
     },
     elevenmusic: {
         aliases: ["music"],
@@ -88,6 +89,7 @@ export const AUDIO_SERVICES = {
             "ElevenLabs Music - Generate studio-grade music from text prompts",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        alpha: true,
     },
     whisper: {
         aliases: ["whisper-1", "whisper-large-v3"],

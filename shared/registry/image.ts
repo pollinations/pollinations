@@ -650,7 +650,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.08, // per sec
             },
         ],
-        description: "Nova Reel - Bedrock Video Generation (6-60s, 720p)",
+        description: "Nova Reel - Bedrock Video Generation (6-120s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

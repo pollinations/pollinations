@@ -52,10 +52,6 @@ const logCloudflare = debug("pollinations:cloudflare");
 // Constants
 const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
 
-// Performance tracking variables
-const totalStartTime = Date.now();
-let accumulatedFetchDurations = 0;
-
 type ScaledDimensions = {
     scaledWidth: number;
     scaledHeight: number;
@@ -275,14 +271,6 @@ export const callSelfHostedServer = async (
         // Calculate the time spent in fetch
         const fetchDuration = fetchEndTime - fetchStartTime;
         logPerf(`Fetch duration: ${fetchDuration}ms`);
-        accumulatedFetchDurations += fetchDuration;
-
-        // Calculate the total time the app has been running
-        const totalTime = Date.now() - totalStartTime;
-
-        // Calculate and print the percentage of time spent in fetch
-        const fetchPercentage = (accumulatedFetchDurations / totalTime) * 100;
-        logPerf(`Fetch time percentage: ${fetchPercentage}%`);
 
         if (!response.ok) {
             logError("Error from server. input was", body);

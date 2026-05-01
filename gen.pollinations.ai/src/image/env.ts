@@ -8,7 +8,6 @@ export function syncImageEnv(
         const value = env[key];
         if (typeof value !== "string") continue;
         imageEnv.set(key, value);
-        process.env[key] = value;
     }
 }
 

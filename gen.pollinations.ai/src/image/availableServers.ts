@@ -14,9 +14,14 @@ const REGISTRY_TTL_SECONDS = 60;
 const VALID_TYPES = new Set<ServerType>(["flux", "translate", "zimage"]);
 
 let serverRegistry: KVNamespace | null = null;
+let registryEnvironment = "development";
 
-export function setServerRegistryBinding(binding: KVNamespace): void {
+export function setServerRegistryBinding(
+    binding: KVNamespace,
+    environment = "development",
+): void {
     serverRegistry = binding;
+    registryEnvironment = environment;
 }
 
 function getServerRegistry(): KVNamespace {
@@ -33,7 +38,7 @@ function normalizeType(type: string): ServerType {
 }
 
 function kvKey(type: ServerType): string {
-    return `image:servers:${type}`;
+    return `image:servers:${registryEnvironment}:${type}`;
 }
 
 export const registerServer = async (

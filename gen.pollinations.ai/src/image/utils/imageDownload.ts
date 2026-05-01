@@ -7,7 +7,14 @@ export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
 
 export function base64ToBuffer(base64: string): Buffer {
     const normalized = base64.replace(/^data:[^,]+,/, "").replace(/\s/g, "");
-    return Buffer.from(normalized, "base64");
+    const binary = atob(normalized);
+    const buffer = Buffer.alloc(binary.length);
+
+    for (let i = 0; i < binary.length; i += 1) {
+        buffer[i] = binary.charCodeAt(i);
+    }
+
+    return buffer;
 }
 
 export function detectMimeType(buffer: Uint8Array): string {

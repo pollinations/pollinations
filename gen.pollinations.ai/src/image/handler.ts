@@ -60,7 +60,7 @@ const IMAGE_ENV_KEYS = [
 
 export function syncImageEnvironment(env: CloudflareBindings): void {
     syncImageEnv(env, IMAGE_ENV_KEYS);
-    setServerRegistryBinding(env.KV);
+    setServerRegistryBinding(env.KV, env.ENVIRONMENT);
     setImagesBinding(env.IMAGES);
 }
 

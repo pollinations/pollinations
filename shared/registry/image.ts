@@ -218,10 +218,10 @@ export const IMAGE_SERVICES = {
         price: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: 0.0000075, // $7.50 per 1M tokens
-                promptCachedTokens: 0.000001875, // $1.875 per 1M tokens
-                promptImageTokens: 0.000012, // $12 per 1M tokens
-                completionImageTokens: 0.000045, // $45 per 1M tokens
+                promptTextTokens: perMillion(7.5), // per 1M tokens
+                promptCachedTokens: perMillion(1.875), // per 1M tokens
+                promptImageTokens: perMillion(12), // per 1M tokens
+                completionImageTokens: perMillion(45), // per 1M tokens
             },
         ],
         description: "GPT Image 2 - OpenAI's next-gen image generation model",

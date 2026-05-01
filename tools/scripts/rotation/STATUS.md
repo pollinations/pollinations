@@ -28,7 +28,7 @@ not been run end-to-end yet:
 - Phase 1 PR (add new recipient) + auto-merge — reuses the same mechanics as
   the provider scripts, should work
 - `gh secret set SOPS_AGE_KEY` — proven manually already
-- `gh workflow run deploy-enter-services.yml -f environment=staging` + `gh run
+- `gh workflow run deploy-gen-cloudflare.yml -f environment=staging` + `gh run
   watch` — the decrypt-step-green gate is new; behaviour on failure is unverified
 - Phase 3 PR (remove old recipient) — same mechanics as Phase 1
 
@@ -52,7 +52,7 @@ Each of these has a structural unknown the perplexity run can't answer:
 - **`rotate-genai-aws.sh`** — IAM key propagation delay. Sleep 10s may not be enough for sts to recognize the new key under load.
 - **`rotate-genai-xai.sh`** — new `POST /auth/api-keys` path with cloned ACLs. Has the response shape we expect? Does the new key actually inherit the ACLs?
 - **`rotate-genai-elevenlabs.sh`** — first run will leave the personal `ELEVENLABS_API_KEY` orphaned (admin SA can't delete a key it doesn't own). Operator must revoke it manually in the UI. Confirm the warning fires.
-- **`rotate-infra-enter-token.sh`** — EC2→worker rejection window. Between `deploy-enter-services.yml` finishing and `wrangler secret put`, any in-flight backend request from the old EC2 build will be rejected by the worker. Window should be seconds; needs measurement.
+- **`rotate-infra-enter-token.sh`** — EC2→worker rejection window. Between `deploy-gen-cloudflare.yml` finishing and `wrangler secret put`, any in-flight backend request from the old EC2 build will be rejected by the worker. Window should be seconds; needs measurement.
 - **`rotate-infra-gpu-token.sh`** — SSH fan-out across 3 GPU hosts during a live rotation. Worker restart sequencing is documented but never exercised. Highest blast radius — image generation breaks if any host misses the new token.
 - **`rotate-genai-azure.sh`** — key1/key2 alternation depends on Azure correctly accepting both slots during the deploy window. Documented as zero-downtime by design; not verified.
 - **`rotate-ops-tinybird.sh`** — `wrangler secret put` happens before the PR merges. If the PR is rejected, SOPS and Wrangler diverge. Recovery path needs documenting.

@@ -6,10 +6,10 @@
 #
 # Default: dry-run. Pass --execute for the full end-to-end cycle.
 #
-# Trust boundary: Cloudflare Worker (enter) → EC2 image service
+# Trust boundary: Cloudflare Worker (enter) → gen image routes
 #
 # Order matters: update SOPS first (so EC2 picks up the new token via
-# deploy-enter-services.yml), then update Wrangler secrets (so enter worker
+# deploy-gen-cloudflare.yml), then update Wrangler secrets (so enter worker
 # starts sending the new token) — minimizes the rejection window between
 # EC2-has-new and worker-still-old.
 
@@ -60,7 +60,7 @@ SOPS_FILES=(
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
     "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 )
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 # Token rotation impacts BOTH text and image services — verify both end-to-end
@@ -180,7 +180,7 @@ git commit -m "rotate: PLN_ENTER_TOKEN"
 
 open_pr_and_merge "$BRANCH" \
     "rotate: PLN_ENTER_TOKEN" \
-    "Rotates \`PLN_ENTER_TOKEN\` (CF Worker → EC2 trust boundary). Updates 5 SOPS files and GitHub secrets. After merge, main→production triggers EC2 deploy; the script then updates the Wrangler secret so the worker switches to the new token. Automated by \`rotate-infra-enter-token.sh\`." \
+    "Rotates \`PLN_ENTER_TOKEN\` (CF Worker → EC2 trust boundary). Updates 5 SOPS files and GitHub secrets. After merge, main→production triggers gen deploy; the script then updates the Wrangler secret so the worker switches to the new token. Automated by \`rotate-infra-enter-token.sh\`." \
     || exit 1
 
 push_prod_and_watch "$DEPLOY_WORKFLOW" || {
@@ -250,4 +250,4 @@ section "PLN_ENTER_TOKEN Rotation Complete"
 echo ""
 log "New token: ${NEW_TOKEN:0:4}...${NEW_TOKEN: -4}"
 echo ""
-log "SOPS + GitHub + production + EC2 + Wrangler now aligned on the new token."
+log "SOPS + GitHub + production + Wrangler now aligned on the new token."

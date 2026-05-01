@@ -7,7 +7,7 @@
 # Roles:
 #   - core:   Shared key used by Elliot and Thomas locally
 #   - itachi: Itachi (@dr-misterio) personal key
-#   - ci:     GitHub Actions SOPS_AGE_KEY secret (consumed by deploy-enter-services.yml)
+#   - ci:     GitHub Actions SOPS_AGE_KEY secret (consumed by deploy-gen-cloudflare.yml)
 recipients:
   core: age1k85e3hjd2tv3wtjv7npjtmp9pwr5cfda22hyz9ajg06uqel3cc5s6c34rd
   itachi: age1e8fctjh7tttmrkukrshp9dvl50lqhx22p9wt907avc96pj9pfdzs92shdc

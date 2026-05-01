@@ -6,6 +6,8 @@ on:
       - production
     paths:
       - 'gen.pollinations.ai/**'
+      - 'image.pollinations.ai/secrets/env.json'
+      - 'enter.pollinations.ai/secrets/**'
       - 'shared/**'
       - 'package.json'
       - 'package-lock.json'

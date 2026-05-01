@@ -52,6 +52,10 @@ const baseConfig = defineConfig({
                 replacement: `${genSrc}text/$1`,
             },
             {
+                find: /^@\/image\/(.*)$/,
+                replacement: `${genSrc}image/$1`,
+            },
+            {
                 find: /^@shared\/(.*)$/,
                 replacement: `${sharedSrc}$1`,
             },
@@ -85,6 +89,8 @@ export default defineWorkersConfig(async ({ mode }) => {
                             TEST_MIGRATIONS: migrations,
                             TEST_VCR_MODE:
                                 env.TEST_VCR_MODE || "replay-or-record",
+                            BYTEDANCE_API_KEY:
+                                env.BYTEDANCE_API_KEY || "test-key",
                         },
                         serviceBindings: {
                             ENTER: async (request: Request) => {

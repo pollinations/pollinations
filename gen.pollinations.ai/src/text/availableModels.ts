@@ -182,6 +182,12 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
     },
     {
+        name: "llama",
+        config: portkeyConfig[
+            "accounts/fireworks/models/llama-v3p3-70b-instruct"
+        ],
+    },
+    {
         name: "mistral-large",
         config: portkeyConfig["Mistral-Large-3"],
     },

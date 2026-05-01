@@ -765,6 +765,27 @@ export const TEXT_SERVICES = {
         contextLength: 198000,
         isSpecialized: false,
     },
+    "llama": {
+        aliases: ["llama-3.3", "llama-3.3-70b", "llama-v3p3-70b-instruct"],
+        modelId: "accounts/fireworks/models/llama-v3p3-70b-instruct",
+        provider: "fireworks",
+        brand: "Meta",
+        category: "text",
+        cost: [
+            {
+                date: new Date("2026-04-30").getTime(),
+                promptTextTokens: perMillion(0.9),
+                promptCachedTokens: perMillion(0.45),
+                completionTextTokens: perMillion(0.9),
+            },
+        ],
+        description: "Meta Llama 3.3 70B Instruct - Fast & Capable",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
     "minimax": {
         aliases: [
             "minimax-m2.7",

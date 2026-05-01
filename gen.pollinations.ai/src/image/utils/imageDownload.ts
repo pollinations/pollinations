@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { HttpError } from "../httpError.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {

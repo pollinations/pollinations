@@ -1,0 +1,35 @@
+{
+  "pr_number": 10600,
+  "title": "fix: route qwen tts simple audio requests",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10600",
+  "merged_at": "2026-05-01T13:07:45Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Qwen finds its voice",
+    "blurb": "Fixed a routing hiccup where simple audio requests for Qwen TTS were getting lost on their way to ElevenLabs. Now, your Qwen text-to-speech requests will hit the right endpoint every time.",
+    "summary": "Fixed an API routing bug to ensure simple `/audio/{text}` requests for Qwen TTS models are correctly handled by the Qwen provider instead of falling back to ElevenLabs.",
+    "impact": "Users requesting Qwen TTS models via the simple audio endpoint will now reliably receive the correct model's output.",
+    "keywords": [
+      "audio",
+      "tts",
+      "qwen",
+      "api",
+      "bug-fix",
+      "routing"
+    ],
+    "visual_concept": "The PR is about routing audio requests correctly. Visual metaphor: Polly the bee acting as a switchboard operator, routing sound waves or musical notes to the correct chunky retro speaker.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny vintage headset, operating a retro switchboard that routes glowing musical notes into a chunky wooden speaker. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-01/PR-10600.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny vintage headset, operating a retro switchboard that routes glowing musical notes into a chunky wooden speaker. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-01T13:08:33.489011+00:00"
+}

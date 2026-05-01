@@ -2,13 +2,7 @@ import { Buffer } from "node:buffer";
 import { HttpError } from "../httpError.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
-    const bytes = new Uint8Array(buffer.length);
-
-    for (let i = 0; i < buffer.length; i += 1) {
-        bytes[i] = buffer[i];
-    }
-
-    return bytes;
+    return new Uint8Array(buffer);
 }
 
 export function base64ToBuffer(base64: string): Buffer {

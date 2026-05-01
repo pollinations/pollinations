@@ -51,6 +51,7 @@ import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
 import {
     generateAceStepMusic,
     generateMusic,
+    generateQwenTts,
     generateSpeech,
 } from "./audio.ts";
 
@@ -720,6 +721,11 @@ export const proxyRoutes = new Hono<Env>()
                         "Style/genre tags for music generation (acestep only)",
                     example: "brazilian berimbau instrumental",
                 }),
+                instruct: z.string().optional().meta({
+                    description:
+                        "Emotion/style instruction (qwen-tts-instruct only)",
+                    example: "speak softly and warmly",
+                }),
                 seed: z.coerce
                     .number()
                     .int()
@@ -790,13 +796,32 @@ export const proxyRoutes = new Hono<Env>()
                 });
             }
 
-            const { voice, response_format, seed } = c.req.valid(
+            const { voice, response_format, seed, instruct } = c.req.valid(
                 "query" as never,
             ) as {
                 voice: string;
                 response_format: string;
                 seed?: number;
+                instruct?: string;
             };
+
+            if (
+                c.var.model.resolved === "qwen-tts" ||
+                c.var.model.resolved === "qwen-tts-instruct"
+            ) {
+                const modelId =
+                    c.var.model.resolved === "qwen-tts-instruct"
+                        ? "qwen3-tts-instruct-flash"
+                        : "qwen3-tts-flash";
+                return generateQwenTts({
+                    model: modelId,
+                    text,
+                    voice: voice || "alloy",
+                    instruct,
+                    apiKey: c.env.DASHSCOPE_API_KEY,
+                    log,
+                });
+            }
 
             return generateSpeech({
                 text,

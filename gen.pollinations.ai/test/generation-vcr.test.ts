@@ -497,6 +497,8 @@ test("image generation uses a registered image backend from gen", async ({
     paidApiKey,
     mocks,
 }) => {
+    await env.KV.delete("image:servers:flux");
+
     const { response: registerResponse } = await fetchWorker("/register", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -515,7 +517,9 @@ test("image generation uses a registered image backend from gen", async ({
         },
     );
 
-    expect(response.status).toBe(200);
+    const failureBody =
+        response.status === 200 ? "" : await response.clone().text();
+    expect(response.status, failureBody).toBe(200);
     expect(response.headers.get("content-type")).toMatch(/^image\//);
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     await wait();

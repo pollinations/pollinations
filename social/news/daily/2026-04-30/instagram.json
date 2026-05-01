@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-30",
+  "period_start": "2026-04-30",
+  "period_end": "2026-04-30",
+  "generated_at": "2026-05-01T06:52:11.495172+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-30/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-30/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-30/images/instagram-3.jpg"
+    }
+  ],
+  "text": "5 PRs merged this week. mostly under the hood, but you'll feel it. we moved text generation to the edge worker, so things should feel noticeably snappier. hooked up Llama 3.3 70b via fireworks, and flattened the bedrock config so nova-fast actually goes fast again. also restored the docs and fixed some legacy redirects. building infrastructure is 50% adding cool models and 50% sweeping the floor. \n\nall open source. hit the API at pollinations.ai or check the repo.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #llama3 #webdev #llm #codinglife",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

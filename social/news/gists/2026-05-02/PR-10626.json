@@ -1,0 +1,32 @@
+{
+  "pr_number": 10626,
+  "title": "fix(polli-cli): accept piped auth token",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10626",
+  "merged_at": "2026-05-02T20:13:33Z",
+  "labels": [],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pipe it up!",
+    "blurb": "The Polli CLI now accepts piped auth tokens directly from stdin. Automating your hive just got a whole lot smoother.",
+    "summary": "Added support for passing authentication tokens via stdin to the Polli CLI using the new `--with-token` flag.",
+    "impact": "Developers can now easily automate CLI authentication in CI/CD pipelines or scripts by piping their API keys directly.",
+    "keywords": [
+      "cli",
+      "auth",
+      "automation",
+      "developer-tools",
+      "terminal"
+    ],
+    "visual_concept": "Piping data into a terminal. Polly the bee acting as a tiny engineer connecting a glowing data pipe to a retro computer, representing stdin piping.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny yellow hardhat, connecting a glowing lime green (#ecf874) pipe into a retro terminal. The chunky monitor robot watches happily as glowing pixel data flows through the pipe. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10626.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny yellow hardhat, connecting a glowing lime green (#ecf874) pipe into a retro terminal. The chunky monitor robot watches happily as glowing pixel data flows through the pipe. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T20:14:20.979887+00:00"
+}

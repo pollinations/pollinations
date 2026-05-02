@@ -1,0 +1,33 @@
+{
+  "pr_number": 10614,
+  "title": "chore: own generation secrets under gen.pollinations.ai",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10614",
+  "merged_at": "2026-05-02T13:52:40Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Keys to the Hive",
+    "blurb": "We've reorganized how API keys and secrets are stored under the hood, making our deployment pipeline cleaner and more secure.",
+    "summary": "Consolidated generation secrets into environment-specific files under gen.pollinations.ai, removing complex merge logic and updating rotation scripts.",
+    "impact": "This internal cleanup simplifies our deployment process and makes secret rotation more reliable.",
+    "keywords": [
+      "secrets",
+      "infrastructure",
+      "deployment",
+      "refactor"
+    ],
+    "visual_concept": "The bee organizing glowing keys or locked boxes in a cozy garden shed, representing the reorganization of secrets and environment variables.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, organizing glowing golden keys into neat wooden boxes inside a cozy garden shed. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10614.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, organizing glowing golden keys into neat wooden boxes inside a cozy garden shed. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T13:53:25.549198+00:00"
+}

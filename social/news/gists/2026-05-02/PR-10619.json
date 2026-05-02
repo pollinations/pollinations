@@ -1,0 +1,34 @@
+{
+  "pr_number": 10619,
+  "title": "[codex] add AssemblyAI logo",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10619",
+  "merged_at": "2026-05-02T15:44:58Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A fresh face for AssemblyAI",
+    "blurb": "We've added the official AssemblyAI logo to the dashboard. Now their transcription models look as good as they listen.",
+    "summary": "Added the AssemblyAI brand logo to the dashboard's model list.",
+    "impact": "Users will now see the official AssemblyAI logo next to their transcription models in the dashboard.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "assemblyai",
+      "models",
+      "assets"
+    ],
+    "visual_concept": "Polly the bee hanging up a new logo sign on a dashboard wall, representing the addition of the AssemblyAI brand asset to the UI.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, proudly hanging a new glowing brand logo sign on a wooden dashboard wall. A chunky retro monitor robot stands nearby holding a clipboard, looking excited. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10619.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, proudly hanging a new glowing brand logo sign on a wooden dashboard wall. A chunky retro monitor robot stands nearby holding a clipboard, looking excited. Soft lime green (#ecf874) and warm cream gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-02T15:45:58.517460+00:00"
+}

@@ -1,0 +1,37 @@
+{
+  "pr_number": 10597,
+  "title": "Fix media upload key check",
+  "author": "guus4324343",
+  "url": "https://github.com/pollinations/pollinations/pull/10597",
+  "merged_at": "2026-05-02T16:08:24Z",
+  "labels": [
+    "API",
+    "WEB",
+    "ACCOUNT",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The right key for the right door",
+    "blurb": "We fixed a bug where valid API keys were getting rejected when trying to upload media. The play page is back to accepting your images with open arms!",
+    "summary": "Updated the media worker to use the correct API key validation route, resolving an issue where valid keys were incorrectly rejected.",
+    "impact": "Users can once again successfully upload images and media on the play page without encountering false authentication errors.",
+    "keywords": [
+      "bug fix",
+      "media",
+      "api key",
+      "upload",
+      "authentication"
+    ],
+    "visual_concept": "The bee (Polly) holding a shiny golden key, unlocking a glowing media folder or picture frame. The Nomnom creature happily eating the old, broken lock.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden key to unlock a glowing picture frame. The round tan nomnom creature happily eats a broken rusty padlock nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10597.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden key to unlock a glowing picture frame. The round tan nomnom creature happily eats a broken rusty padlock nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T16:09:14.737037+00:00"
+}

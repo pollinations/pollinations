@@ -1,0 +1,35 @@
+{
+  "date": "2026-05-01",
+  "period_start": "2026-05-01",
+  "period_end": "2026-05-01",
+  "title": "Longer videos, smarter routing, and free Scribe",
+  "summary": "A solid day of model routing fixes, dashboard UI polish, and expanding the Pollen ecosystem with premium audio and image models.\n\nNova Reel now supports 120-second video generations and actually tells you what went wrong (helpful 400s instead of generic 500s) if you feed it bad inputs. On the audio side, we fixed a routing bug where Qwen TTS requests were getting lost and falling back to ElevenLabs, and we've officially moved the Scribe audio model back to the free tier.\n\nPower users can now tap into ElevenLabs audio and GPT Image 2 directly through their Pollen credits. We've wired them up to ensure consistent, high-performance access for heavy workloads.\n\nA quick pass over the dashboard UI to make things slightly less confusing. Static informational labels are now rectangular so you stop trying to click them, the sidebar got a visual cleanup, and we stripped development tools out of the production bundle so it runs a bit leaner.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 10596,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10599,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10600,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10601,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10602,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10603,
+      "date": "2026-05-01"
+    }
+  ],
+  "generated_at": "2026-05-02T06:36:47.323637+00:00"
+}

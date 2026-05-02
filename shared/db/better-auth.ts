@@ -176,3 +176,18 @@ export const deviceCode = sqliteTable("device_code", {
   index("idx_device_code_device_code").on(table.deviceCode),
   index("idx_device_code_user_code").on(table.userCode),
 ]);
+
+export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
+  sessionId: text("session_id").primaryKey(),
+  eventId: text("event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  pollenCredited: real("pollen_credited").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_checkout_credits_user_id").on(table.userId),
+]);

@@ -48,6 +48,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-01** – **🎥 120-Second Nova Reel Videos** The Nova Reel video model now supports generations up to two minutes long. Pass the updated duration parameters to the [Unified API](https://gen.pollinations.ai).
 - **2026-04-30** – **⚡ Edge Text Generation** Text generation now runs directly on the edge worker. One less network hop means faster responses when hitting the [text API](https://gen.pollinations.ai/v1/chat/completions).
 - **2026-04-30** – **🚀 Llama 3.3 70B** Meta's Llama 3.3 70B Instruct is now live. Just pass `llama` to the [text endpoint](https://gen.pollinations.ai/v1/models) and see what it has to say.
 - **2026-04-29** – **🎬 Seed support for Nova Reel** You can now pass a `seed` parameter to our video generation model. Iterative prompting is finally possible without the output hallucinating a completely new timeline on every request. Check the [API Docs](https://gen.pollinations.ai/docs).
@@ -57,7 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-04-28** – **⚡ Unbottlenecking gpt-image-2** Ripped out the old Azure routing for `gpt-image-2` and wired it directly to OpenAI. Expect significantly higher capacity and fewer rate limits when generating pixels.
 - **2026-04-27** – **📖 StoryForge** A new community app that generates illustrated, chapter-based short stories using the [Unified API](https://gen.pollinations.ai). [Try it](http://pollen-story-forge.vercel.app/) <!-- app -->
 - **2026-04-27** – **🖥️ Frieze** Because your terminal needs art too. A community-built shell tool for generating AI banners and slogans right in your CLI. [View repo](https://github.com/peterjaric/frieze) <!-- app -->
-- **2026-04-24** – **🎨 Thinking in three speeds** Image generation reasoning is no longer just on or off. You can now pass `fast`, `balanced`, or `pro` modes to the [Image API](https://gen.pollinations.ai/image/{prompt}) to dial in exactly how hard you want the models to think.
 ---
 
 ## 🌱 Introduction

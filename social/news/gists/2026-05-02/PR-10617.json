@@ -1,0 +1,34 @@
+{
+  "pr_number": 10617,
+  "title": "feat: enable image-to-image (reference images) for Grok Imagine and Grok Imagine Pro",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10617",
+  "merged_at": "2026-05-02T18:33:44Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok learns to look",
+    "blurb": "Grok Imagine and Grok Imagine Pro now accept reference images. Hand it up to five pictures and it'll use them to guide your generation, no extra wiring required.",
+    "summary": "Added image-to-image support for Grok Imagine and Grok Imagine Pro by integrating xAI's image editing endpoint.",
+    "impact": "You can now pass up to 5 reference images to Grok models via the API or the Play UI to guide your generations.",
+    "keywords": [
+      "grok",
+      "image-to-image",
+      "reference-images",
+      "xai",
+      "models"
+    ],
+    "visual_concept": "Polly the bee showing a reference photo to the Monitor Robot, who is painting a new image based on it. Represents the image-to-image capability being added to the Grok models.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding up a small framed photograph as a reference for a chunky robot with a CRT monitor head. The robot has square pixel eyes and is painting on a digital canvas, using the bee's picture as inspiration. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10617.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding up a small framed photograph as a reference for a chunky robot with a CRT monitor head. The robot has square pixel eyes and is painting on a digital canvas, using the bee's picture as inspiration. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-02T18:34:40.283669+00:00"
+}

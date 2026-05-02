@@ -103,7 +103,7 @@ describe("Device Authorization Flow", () => {
         sessionToken,
         mocks,
     }) => {
-        await mocks.enable("polar", "tinybird", "github");
+        await mocks.enable("tinybird", "github");
         const device = await insertDeviceCode();
 
         const denyRes = await SELF.fetch(`${BASE}/api/device/deny`, {
@@ -192,7 +192,7 @@ describe("Device Authorization Flow", () => {
         sessionToken,
         mocks,
     }) => {
-        await mocks.enable("polar", "tinybird", "github");
+        await mocks.enable("tinybird", "github");
         const device = await insertDeviceCode();
 
         // Get the user ID from session
@@ -252,7 +252,7 @@ describe("Device Authorization Flow", () => {
         sessionToken,
         mocks,
     }) => {
-        await mocks.enable("polar", "tinybird", "github");
+        await mocks.enable("tinybird", "github");
         const res = await SELF.fetch(`${BASE}/api/device/userinfo`, {
             headers: {
                 Cookie: `better-auth.session_token=${sessionToken}`,

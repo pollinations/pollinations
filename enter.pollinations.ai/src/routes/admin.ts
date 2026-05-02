@@ -259,7 +259,6 @@ export const adminRoutes = new Hono<Env>()
         throw new HTTPException(401, { message: "Unauthorized" });
     })
     .post("/update-tier", async (c) => {
-        // D1-only tier update - no Polar sync
         const body = await c.req.json<{ userId: string; tier: string }>();
 
         if (!body.userId) {

@@ -21,6 +21,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Intent | Command |
 |---|---|
 | Log in once | `polli auth login` |
+| Store an existing key | `printf '%s' "$POLLINATIONS_API_KEY" \| polli auth login --with-token` |
 | Generate image | `polli gen image "<prompt>" --output out.png` |
 | Generate text | `polli gen text "<prompt>"` |
 | Text with stdin as context | `echo "<ctx>" \| polli gen text "<question>"` |
@@ -38,7 +39,9 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 
 ## Setup
 
-One-time: `polli auth login` (device-flow). Verify with `polli auth status`.
+One-time: `polli auth login` (device-flow). To store an existing key, run
+`printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
+with `polli auth status`.
 Override the stored key for a single command with `--key <key>`.
 
 ## Recipes

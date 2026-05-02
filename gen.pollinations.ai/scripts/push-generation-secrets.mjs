@@ -36,6 +36,8 @@ const REQUIRED_SECRET_KEYS = [
     "XAI_API_KEY",
 ];
 
+const OPTIONAL_SECRET_KEYS = ["ASSEMBLYAI_API_KEY"];
+
 const [sourcePath, environment, ...extraSourcePaths] = process.argv.slice(2);
 
 if (!sourcePath || !environment) {
@@ -67,6 +69,11 @@ for (const key of REQUIRED_SECRET_KEYS) {
         filtered[key] = source[key];
     }
 }
+for (const key of OPTIONAL_SECRET_KEYS) {
+    if (source[key] !== undefined) {
+        filtered[key] = source[key];
+    }
+}
 
 if (missing.length > 0) {
     console.error(`Missing required generation secrets: ${missing.join(", ")}`);
@@ -74,7 +81,11 @@ if (missing.length > 0) {
 }
 
 const omitted = Object.keys(source)
-    .filter((key) => !REQUIRED_SECRET_KEYS.includes(key))
+    .filter(
+        (key) =>
+            !REQUIRED_SECRET_KEYS.includes(key) &&
+            !OPTIONAL_SECRET_KEYS.includes(key),
+    )
     .sort();
 if (omitted.length > 0) {
     console.log(`Skipping non-generation secrets: ${omitted.join(", ")}`);

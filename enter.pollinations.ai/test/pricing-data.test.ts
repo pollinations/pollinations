@@ -46,6 +46,35 @@ test("grok pricing uses its non-zero registry fallback", () => {
     });
 });
 
+test("AssemblyAI STT pricing is exposed per input audio second", () => {
+    const universal2 = getModelPrices().find(
+        (price) => price.name === "universal-2",
+    );
+    const universal3Pro = getModelPrices().find(
+        (price) => price.name === "universal-3-pro",
+    );
+
+    expect(universal2).toMatchObject({
+        name: "universal-2",
+        type: "audio",
+        perSecondPrice: "0.00004",
+    });
+    expect(universal3Pro).toMatchObject({
+        name: "universal-3-pro",
+        type: "audio",
+        perSecondPrice: "0.00006",
+    });
+
+    expect(
+        calculateCost("universal-2", { promptAudioSeconds: 3600 }).totalCost,
+    ).toBeCloseTo(0.15, 8);
+    expect(
+        calculateCost("universal-3-pro", {
+            promptAudioSeconds: 3600,
+        }).totalCost,
+    ).toBeCloseTo(0.21, 8);
+});
+
 test("Grok 4.20 registry metadata covers verified modalities and costs", () => {
     const inputUsage = {
         promptTextTokens: 1_000_000,

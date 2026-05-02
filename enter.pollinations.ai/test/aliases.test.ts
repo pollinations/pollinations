@@ -101,6 +101,12 @@ test("model without explicit price falls back to cost for both values", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
 });
 
+test("GPT-5.5 requires paid balance", () => {
+    const definition = getModelDefinition("gpt-5.5");
+
+    expect(definition.paidOnly).toBe(true);
+});
+
 test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,

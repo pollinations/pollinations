@@ -116,6 +116,7 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 1000000,
         isSpecialized: false,
+        paidOnly: true,
     },
     "qwen-coder": {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],

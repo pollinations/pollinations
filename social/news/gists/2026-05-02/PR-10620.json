@@ -1,0 +1,34 @@
+{
+  "pr_number": 10620,
+  "title": "fix: improve mobile model rows",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10620",
+  "merged_at": "2026-05-02T16:15:02Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pocket-sized model lists",
+    "blurb": "We've polished up the model list for mobile screens. Cleaner rows, better badges, and a shiny new Meta logo for Llama models.",
+    "summary": "Improved the mobile layout for the model table by pinning score chips, truncating long names, and adding Meta brand logos.",
+    "impact": "Users browsing models on their phones will see a much cleaner, easier-to-read list with better badge organization.",
+    "keywords": [
+      "mobile",
+      "ui",
+      "models",
+      "frontend",
+      "meta"
+    ],
+    "visual_concept": "The bee mascot organizing a tiny, neat list on a smartphone screen. A Meta logo (infinity symbol) nearby. The robot companion looking at a mobile phone.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, organizing a neat list on a glowing smartphone screen held by the chunky monitor robot. A small pixelated Meta infinity logo sits on a desk nearby. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10620.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, organizing a neat list on a glowing smartphone screen held by the chunky monitor robot. A small pixelated Meta infinity logo sits on a desk nearby. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-05-02T16:16:02.813140+00:00"
+}

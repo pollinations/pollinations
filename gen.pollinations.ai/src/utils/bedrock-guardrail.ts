@@ -93,12 +93,14 @@ export async function applyGuardrail(
     const { ApplyGuardrailCommand, BedrockRuntimeClient } = await import(
         "@aws-sdk/client-bedrock-runtime"
     );
+    const { FetchHttpHandler } = await import("@smithy/fetch-http-handler");
     const client = new BedrockRuntimeClient({
         region: env.region,
         credentials: {
             accessKeyId: env.accessKeyId,
             secretAccessKey: env.secretAccessKey,
         },
+        requestHandler: new FetchHttpHandler(),
     });
 
     return client.send(

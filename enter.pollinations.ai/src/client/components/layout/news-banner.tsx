@@ -24,9 +24,9 @@ const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-04-28",
         emoji: "💸",
-        title: "ElevenLabs audio models and GPT Image 2 are now paid",
+        title: "ElevenLabs TTS, Music, and GPT Image 2 are now paid",
         description:
-            "As of May 1, 2026, ElevenLabs TTS, Music, Scribe, and GPT Image 2 require paid pollen.",
+            "As of May 1, 2026, ElevenLabs TTS, Music, and GPT Image 2 require paid pollen.",
     },
 ];
 

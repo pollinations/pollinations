@@ -1,3 +1,4 @@
+import { AUDIO_SERVICES } from "@shared/registry/audio";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
@@ -28,6 +29,13 @@ test.for(
 test.for(
     serviceAliasTestCases(IMAGE_SERVICES),
 )("Image service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
+    serviceAliasTestCases(AUDIO_SERVICES),
+)("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
     expect(resolved).toBe(shouldResolveTo);
 });

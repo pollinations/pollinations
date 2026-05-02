@@ -14,12 +14,9 @@ import { afterEach, expect, inject } from "vitest";
 import worker from "../src/index.ts";
 
 const snapshotServerUrl = inject("snapshotServerUrl");
-const png1x1 = Uint8Array.from(
-    Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==",
-        "base64",
-    ),
-);
+const png1x1Base64 =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
+const imageBackendHost = "image-backend.test";
 
 afterEach(async () => {
     await teardownFetchMock();
@@ -47,12 +44,16 @@ function createGenerationMocks() {
             },
             reset: () => {},
         },
+        imageBackend: {
+            state: {},
+            handlerMap: {
+                [imageBackendHost]: fakeImageBackendResponse,
+            },
+            reset: () => {},
+        },
         vcr: createMockVcr({
             originalFetch: fakeUpstreamFetch,
-            hosts: [
-                { name: "portkey", host: portkeyHost },
-                { name: "image", host: new URL(env.IMAGE_SERVICE_URL).host },
-            ],
+            hosts: [{ name: "portkey", host: portkeyHost }],
             snapshotServerUrl,
             mode: env.TEST_VCR_MODE,
         }),
@@ -67,17 +68,17 @@ async function fakeUpstreamFetch(input: RequestInfo | URL) {
         return fakePortkeyResponse(request);
     }
 
-    if (url.host === new URL(env.IMAGE_SERVICE_URL).host) {
-        return new Response(png1x1, {
-            headers: usageHeaders({
-                "content-type": "image/png",
-                "x-model-used": url.searchParams.get("model") || "flux",
-                "x-usage-completion-image-tokens": "1",
-            }),
-        });
-    }
-
     throw new Error(`Unexpected upstream request: ${request.url}`);
+}
+
+async function fakeImageBackendResponse() {
+    return Response.json([
+        {
+            image: png1x1Base64,
+            isMature: false,
+            isChild: false,
+        },
+    ]);
 }
 
 async function fakePortkeyResponse(request: Request) {
@@ -492,11 +493,32 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
-test("image generation uses the VCR-backed image service", async ({
+test("image generation uses a registered image backend from gen", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "vcr");
+    const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
+    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
+
+    const { response: registerResponse } = await fetchWorker("/register", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
+        },
+        body: JSON.stringify({
+            url: `https://${imageBackendHost}`,
+            type: "flux",
+        }),
+    });
+    expect(registerResponse.status).toBe(200);
+    const registered = await env.KV.list({
+        prefix: "image:server:test:flux:",
+    });
+    expect(registered.keys.length).toBeGreaterThan(0);
+    const entry = await env.KV.get(registered.keys[0].name);
+    expect(entry).toContain(imageBackendHost);
+    await mocks.enable("tinybird", "imageBackend");
 
     const { response, wait } = await fetchWorker(
         "/image/vcr%20red%20square?model=flux&width=256&height=256&seed=42",
@@ -505,8 +527,10 @@ test("image generation uses the VCR-backed image service", async ({
         },
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toContain("image/png");
+    const failureBody =
+        response.status === 200 ? "" : await response.clone().text();
+    expect(response.status, failureBody).toBe(200);
+    expect(response.headers.get("content-type")).toMatch(/^image\//);
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     await wait();
 

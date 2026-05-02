@@ -1,0 +1,34 @@
+{
+  "pr_number": 10623,
+  "title": "chore(secrets): sync MUSIC_SERVICE_URL to https tunnel endpoint",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10623",
+  "merged_at": "2026-05-02T18:30:38Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tunnel Vision",
+    "blurb": "Synced up our internal secrets for the music service to point to the shiny new secure tunnel. Keeping the tunes flowing without interruption!",
+    "summary": "Synchronized the local encrypted secrets for the music service URL with the production environment to prevent accidental regressions.",
+    "impact": "Ensures the ACE-Step music generation service remains stable and accessible by properly routing through the new dedicated tunnel.",
+    "keywords": [
+      "infrastructure",
+      "secrets",
+      "music",
+      "tunnel",
+      "cloudflare"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot working together in a cozy digital tunnel, handling glowing musical notes and secret keys to represent the secure music service routing.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny miner's hardhat, flying through a glowing lime green (#ecf874) digital tunnel. She is carrying a glowing musical note towards a chunky retro server. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10623.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny miner's hardhat, flying through a glowing lime green (#ecf874) digital tunnel. She is carrying a glowing musical note towards a chunky retro server. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T18:31:35.474751+00:00"
+}

@@ -73,6 +73,13 @@ describe("safety schema", () => {
         expect(SafeSchema.parse(true)).toBe("true");
         expect(SafeSchema.parse(false)).toBeUndefined();
     });
+
+    it("accepts string no-op values for compatibility", () => {
+        expect(SafeSchema.parse("false")).toBe("false");
+        expect(SafeSchema.parse("0")).toBe("0");
+        expect(parseSafeFeatures("false")).toEqual(new Set());
+        expect(parseSafeFeatures("0")).toEqual(new Set());
+    });
 });
 
 describe("applySafety", () => {

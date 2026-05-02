@@ -16,15 +16,18 @@ const SAFETY_ALIASES: Record<string, SafetyFeature[]> = {
     nsfw: ["sexual", "violence"],
 };
 
+const DISABLED_SAFE_TOKENS = new Set(["false", "0"]);
+
 export const VALID_SAFE_TOKENS = new Set([
     ...SAFETY_FEATURES,
     ...Object.keys(SAFETY_ALIASES),
+    ...DISABLED_SAFE_TOKENS,
 ]);
 
 const SAFE_DESCRIPTION =
     "Safety features: comma-separated list of " +
-    [...VALID_SAFE_TOKENS].join(", ") +
-    ". Defaults to off.";
+    [...SAFETY_FEATURES, ...Object.keys(SAFETY_ALIASES)].join(", ") +
+    ". Defaults to off; false and 0 are accepted as off.";
 
 export function normalizeSafeValue(value: SafeValue): string | undefined {
     if (typeof value === "boolean") return value ? "true" : undefined;
@@ -49,6 +52,7 @@ export function parseSafeFeatures(value: SafeValue): Set<SafetyFeature> {
     for (const part of normalized.split(",")) {
         const token = part.trim().toLowerCase();
         if (!VALID_SAFE_TOKENS.has(token)) continue;
+        if (DISABLED_SAFE_TOKENS.has(token)) continue;
         for (const feature of SAFETY_ALIASES[token] ?? [
             token as SafetyFeature,
         ]) {

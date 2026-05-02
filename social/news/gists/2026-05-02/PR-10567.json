@@ -1,0 +1,36 @@
+{
+  "pr_number": 10567,
+  "title": "Normalize text cache query params",
+  "author": "guus4324343",
+  "url": "https://github.com/pollinations/pollinations/pull/10567",
+  "merged_at": "2026-05-02T19:30:52Z",
+  "labels": [
+    "TEXT",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Alphabet soup sorted",
+    "blurb": "We tweaked how the text API handles query parameters so that the order no longer matters. Enjoy faster responses and better cache hit rates, no matter how you stack your URL parameters!",
+    "summary": "The text API now sorts query parameters alphabetically before generating cache keys, ensuring that identical requests with different parameter orders correctly hit the cache.",
+    "impact": "Developers will experience faster response times and higher cache hit rates for text generation requests, regardless of how their tools order URL parameters.",
+    "keywords": [
+      "cache",
+      "api",
+      "performance",
+      "text",
+      "optimization"
+    ],
+    "visual_concept": "The pollinations bee organizing scattered blocks (representing URL parameters) into a neat, alphabetical stack. A retro computer monitor in the background shows a glowing 'CACHE HIT' message.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, neatly stacking colorful blocks into an organized tower. A retro computer monitor in the background displays 'CACHE HIT' in glowing green text. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10567.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, neatly stacking colorful blocks into an organized tower. A retro computer monitor in the background displays 'CACHE HIT' in glowing green text. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T19:31:46.580383+00:00"
+}

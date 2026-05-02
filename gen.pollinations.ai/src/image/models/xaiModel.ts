@@ -11,10 +11,6 @@ const logError = debug("pollinations:xai:error");
 const XAI_GENERATE_URL = "https://api.x.ai/v1/images/generations";
 const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
 
-// xAI's images.edits endpoint accepts at most 5 reference images in a
-// single request (per docs as of 2026-04). Trim silently rather than 4xx.
-const XAI_MAX_REFERENCE_IMAGES = 5;
-
 const ASPECT_RATIOS: Array<{ ratio: number; label: string }> = [
     { ratio: 1 / 1, label: "1:1" },
     { ratio: 16 / 9, label: "16:9" },
@@ -42,13 +38,14 @@ function closestAspectRatio(
  * Calls the xAI official image API.
  * modelId should be "grok-imagine-image" (basic) or "grok-imagine-image-pro" (pro).
  *
- * When `safeParams.image` contains reference image URLs, the request is
+ * When `safeParams.image` contains a reference image URL, the request is
  * routed to /v1/images/edits for image-to-image generation. xAI's edits
  * endpoint requires application/json (NOT multipart/form-data — explicitly
- * called out in xAI's docs as a divergence from the OpenAI SDK), with
- * `image: [{url, type: "image_url"}, ...]` for each reference. URLs are
- * forwarded verbatim; xAI also accepts base64 data URIs but we trust the
- * caller-supplied URLs and let xAI fetch them directly.
+ * called out in xAI's docs as a divergence from the OpenAI SDK). The
+ * `image` field is a single ImageUrl object: `{url, detail}`, not an array
+ * — verified empirically against the live endpoint (array form returns
+ * 422). Only the first reference image is forwarded; additional entries
+ * in `safeParams.image` are ignored.
  */
 export async function callXaiImageAPI(
     prompt: string,
@@ -65,11 +62,8 @@ export async function callXaiImageAPI(
         );
     }
 
-    const referenceImages = safeParams.image?.slice(
-        0,
-        XAI_MAX_REFERENCE_IMAGES,
-    );
-    const isEditMode = !!referenceImages?.length;
+    const referenceImage = safeParams.image?.[0];
+    const isEditMode = !!referenceImage;
     const endpoint = isEditMode ? XAI_EDITS_URL : XAI_GENERATE_URL;
 
     logOps(
@@ -92,11 +86,8 @@ export async function callXaiImageAPI(
         response_format: "url",
     };
 
-    if (isEditMode && referenceImages) {
-        requestBody.image = referenceImages.map((url) => ({
-            url,
-            type: "image_url",
-        }));
+    if (isEditMode && referenceImage) {
+        requestBody.image = { url: referenceImage, detail: "auto" };
     }
 
     const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);

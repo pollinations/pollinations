@@ -1,8 +1,8 @@
-import { type Context, Hono } from "hono";
+import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { proxy } from "hono/proxy";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
+import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
@@ -37,7 +37,7 @@ import {
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
+import { UpstreamError } from "@/error.ts";
 import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
@@ -51,7 +51,9 @@ import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
 import {
     generateAceStepMusic,
     generateMusic,
+    generateQwenTts,
     generateSpeech,
+    isQwenTtsModel,
 } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
@@ -82,30 +84,7 @@ const imageVideoHandlers = factory.createHandlers(
     imageCache,
     generationAccess,
     async (c) => {
-        const log = c.get("log").getChild("generate");
-
-        // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
-        const promptParam = c.req.param("prompt") || "";
-
-        log.debug("Extracted prompt param: {prompt}", {
-            prompt: promptParam,
-            length: promptParam.length,
-        });
-
-        const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
-        targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
-
-        log.debug("Proxying to: {url}", {
-            url: targetUrl.toString(),
-        });
-
-        const response = await proxy(targetUrl.toString(), {
-            method: c.req.method,
-            headers: proxyHeaders(c),
-            body: c.req.raw.body,
-        });
-
-        return ensureUpstreamOk(response, targetUrl);
+        return handleImagePrompt(c);
     },
 );
 
@@ -423,6 +402,8 @@ export const proxyRoutes = new Hono<Env>()
             return c.json(models);
         },
     )
+    .post("/register", handleRegisterServer)
+    .get("/register", handleRegisterServer)
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth())
     .use(frontendKeyRateLimit)
@@ -689,7 +670,8 @@ export const proxyRoutes = new Hono<Env>()
                     .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
                     .default("mp3")
                     .meta({
-                        description: "Audio output format (TTS only)",
+                        description:
+                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
@@ -719,6 +701,11 @@ export const proxyRoutes = new Hono<Env>()
                     description:
                         "Style/genre tags for music generation (acestep only)",
                     example: "brazilian berimbau instrumental",
+                }),
+                instruct: z.string().optional().meta({
+                    description:
+                        "Emotion/style instruction (qwen-tts-instruct only)",
+                    example: "speak softly and warmly",
                 }),
                 seed: z.coerce
                     .number()
@@ -790,13 +777,25 @@ export const proxyRoutes = new Hono<Env>()
                 });
             }
 
-            const { voice, response_format, seed } = c.req.valid(
+            const { voice, response_format, seed, instruct } = c.req.valid(
                 "query" as never,
             ) as {
                 voice: string;
                 response_format: string;
                 seed?: number;
+                instruct?: string;
             };
+
+            if (isQwenTtsModel(c.var.model.resolved)) {
+                return generateQwenTts({
+                    modelName: c.var.model.resolved,
+                    text,
+                    voice: voice || "alloy",
+                    instruct,
+                    apiKey: c.env.DASHSCOPE_API_KEY,
+                    log,
+                });
+            }
 
             return generateSpeech({
                 text,
@@ -835,7 +834,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
-        handleImageGeneration(checkBalance, proxyHeaders),
+        handleImageGeneration(checkBalance),
     )
     .post(
         "/v1/images/edits",
@@ -864,54 +863,8 @@ export const proxyRoutes = new Hono<Env>()
         }),
         resolveModel("generate.image"),
         track("generate.image"),
-        handleImageEdit(checkBalance, proxyHeaders),
+        handleImageEdit(checkBalance),
     );
-
-function proxyHeaders(c: Context): Record<string, string> {
-    const clientIP = c.req.header("cf-connecting-ip") || "";
-    const clientHost = c.req.header("host") || "";
-    const userApiKey = c.var.auth?.apiKey?.rawKey || "";
-
-    // Copy headers excluding Authorization
-    const headers = { ...c.req.header() };
-    delete headers.authorization;
-    delete headers.Authorization;
-
-    return {
-        ...headers,
-        "x-request-id": c.get("requestId"),
-        "x-forwarded-host": clientHost,
-        "x-forwarded-for": clientIP,
-        "x-real-ip": clientIP,
-        "x-enter-token": c.env.PLN_ENTER_TOKEN,
-        "x-user-api-key": userApiKey, // For community model billing passthrough
-    };
-}
-
-function proxyUrl(c: Context, targetBaseUrl: string, targetPort = ""): URL {
-    const incomingUrl = new URL(c.req.url);
-    const targetUrl = new URL(targetBaseUrl);
-
-    if (targetPort) {
-        targetUrl.port = targetPort;
-    }
-
-    // Copy query parameters excluding 'key' (auth only)
-    const searchParams = new URLSearchParams(incomingUrl.search);
-    searchParams.delete("key");
-
-    // Replace model with resolved model (handles aliases)
-    if (c.var.model?.resolved && searchParams.has("model")) {
-        searchParams.set("model", c.var.model.resolved);
-    }
-
-    targetUrl.search = searchParams.toString();
-    return targetUrl;
-}
-
-function joinPaths(...paths: string[]): string {
-    return paths.join("/").replace(/\/+/g, "/").replace(/\/$/, "") || "/";
-}
 
 export function contentFilterResultsToHeaders(
     response: CreateChatCompletionResponse,

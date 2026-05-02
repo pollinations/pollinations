@@ -29,7 +29,7 @@ ALIBABA_CLOUD_ACCESS_KEY_SECRET=...
 ALIBABA_CLOUD_REGION=ap-southeast-1
 ```
 
-The **DashScope `sk-...` API key** (in `text.pollinations.ai/secrets/env.json` as `DASHSCOPE_API_KEY`) is a different credential — it authenticates model inference calls, not billing. BSS queries require the RAM AccessKey above.
+The **DashScope `sk-...` API key** (in `gen.pollinations.ai/secrets/prod.vars.json` as `DASHSCOPE_API_KEY`) is a different credential — it authenticates model inference calls, not billing. BSS queries require the RAM AccessKey above.
 
 ## Secret handling
 
@@ -288,10 +288,10 @@ This endpoint returns the available resource packages (savings plans) we could p
 
 ## DashScope model-list endpoint (separate auth path)
 
-For "what models can we call", use the DashScope OpenAI-compatible endpoint with the `sk-...` key from `text.pollinations.ai/secrets/env.json`:
+For "what models can we call", use the DashScope OpenAI-compatible endpoint with the `sk-...` key from `gen.pollinations.ai/secrets/prod.vars.json`:
 
 ```bash
-DASHSCOPE_API_KEY=$(sops -d text.pollinations.ai/secrets/env.json | python3 -c "import sys, json; print(json.load(sys.stdin)['DASHSCOPE_API_KEY'])")
+DASHSCOPE_API_KEY=$(sops -d gen.pollinations.ai/secrets/prod.vars.json | python3 -c "import sys, json; print(json.load(sys.stdin)['DASHSCOPE_API_KEY'])")
 
 curl -sS "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models" \
   -H "Authorization: Bearer $DASHSCOPE_API_KEY"

@@ -25,10 +25,9 @@ else
 fi
 
 log "----------------------------------------"
-log "Fetching registered servers from EC2 image service..."
+log "Fetching registered servers from gen worker registry..."
 
-# Use direct EC2 endpoint (requires SSH tunnel or internal access)
-REGISTER_URL="${REGISTER_URL:-http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register}"
+REGISTER_URL="${REGISTER_URL:-https://gen.pollinations.ai/register}"
 registered_response=$(curl -s "$REGISTER_URL")
 if [ $? -ne 0 ]; then
     log "ERROR: Failed to fetch data from $REGISTER_URL"
@@ -37,7 +36,7 @@ fi
 
 registered_ips=$(echo "$registered_response" | jq -r '.[] | select(.type=="flux") | .url' | cut -d/ -f3 | cut -d: -f1 | sort -u)
 if [ -z "$registered_ips" ]; then
-    log "WARNING: No registered flux IPs found from EC2 image service!"
+    log "WARNING: No registered flux IPs found from gen worker registry!"
 else
     log "Found the following registered flux IPs:"
     echo "$registered_ips" | while read -r ip; do

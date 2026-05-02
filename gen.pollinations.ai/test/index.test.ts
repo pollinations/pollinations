@@ -1,9 +1,15 @@
 import {
     createExecutionContext,
+    env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
+
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 function envWithEnter(
     fetch: Fetcher["fetch"] = async () => new Response("enter"),
@@ -249,3 +255,87 @@ describe("gen worker routing", () => {
         }
     });
 });
+
+fixtureTest(
+    "routes simple qwen audio requests through DashScope",
+    async ({ apiKey }) => {
+        const calls: string[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (
+                    request.url ===
+                    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+                ) {
+                    await expect(request.json()).resolves.toMatchObject({
+                        model: "qwen3-tts-flash",
+                        input: {
+                            text: "Hello Qwen",
+                            voice: "Serena",
+                        },
+                        parameters: {},
+                    });
+
+                    return Response.json({
+                        output: {
+                            audio: { url: "https://dashscope.test/audio.wav" },
+                        },
+                        usage: { characters: 10 },
+                    });
+                }
+
+                if (request.url === "https://dashscope.test/audio.wav") {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/audio/Hello%20Qwen?model=qwen-tts&voice=nova",
+                {
+                    headers: { Authorization: `Bearer ${apiKey}` },
+                },
+            ),
+            {
+                ...env,
+                DASHSCOPE_API_KEY: "test-dashscope-key",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("audio/wav");
+        expect(response.headers.get("x-model-used")).toBe("qwen-tts");
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "10",
+        );
+        expect(response.headers.get("x-tts-voice")).toBe("Serena");
+
+        await waitOnExecutionContext(ctx);
+
+        expect(calls).toContain(
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        );
+        expect(
+            calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
+        ).toBe(false);
+    },
+);

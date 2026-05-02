@@ -24,7 +24,7 @@ By default, sops will look for your key file in `$HOME/.config/sops/age/keys.txt
 To decrypt service env files, run the command that matches the service:
 ```bash
 sops --output-type dotenv decrypt secrets/dev.vars.json > .dev.vars   # enter.pollinations.ai
-sops --output-type dotenv decrypt secrets/env.json > .env             # image and gen service secrets
+sops --output-type dotenv decrypt secrets/env.json > .env             # generation service secrets
 ``` 
 
 The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets; `tools/scripts/rotation/secrets.vars.json` is only for local operator admin credentials used by rotation scripts. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
@@ -46,13 +46,12 @@ To run multiple services simultaneously during development:
 # Install dependencies for all services
 npm run install:all
 
-# Run all services (enter, gen, image) with auto-restart
+# Run all services (enter, gen) with auto-restart
 npm run dev
 
 # Run individual services
 npm run dev:enter
 npm run dev:gen
-npm run dev:image
 ```
 
 The `npm run dev` command uses `concurrently` to run all services with colored output and automatic restart on failure.
@@ -99,8 +98,8 @@ graph LR
         PORTKEY["🔀 Portkey Gateway\nCF Worker · 25+ models\n10+ providers"]
     end
 
-    subgraph IMG_SVC["🎨 Image · EC2 :16384 · systemd"]
-        LB["⚖️ Queue Router\nLeast-busy · 2/server\nHeartbeat /register (30s)"]
+    subgraph IMG_SVC["🎨 Image/Video · gen Worker"]
+        LB["⚖️ Queue Router\nKV heartbeats · provider dispatch\nSelf-hosted GPU registry"]
     end
 
     subgraph AUD["🔊 Audio APIs"]
@@ -184,12 +183,13 @@ graph TD
 
     CDN --> GEN
 
-    GEN["⚡ gen.pollinations.ai\nEdge Router"]:::cfWorker
+    GEN["⚡ gen.pollinations.ai\nEdge Router\nText · Image · Video · Audio"]:::cfWorker
 
     GEN -->|"service binding\n(zero latency)"| ENTER
 
     subgraph CF["☁️ Cloudflare Workers"]
         ENTER["🔐 enter.pollinations.ai · API Gateway\n─────────────────\n🔑 OAuth + API Keys (pk_ / sk_)\n🏷️ 6 Tiers: microbe → router\n💰 Pollen balance (tier + packs + crypto)\n⏱️ Rate Limiting (Durable Objects)\n📊 Usage → TinyBird\n🔄 Response dedup"]:::cfWorker
+        IMG_ROUTER["🎨 Image/video router\nHono routes · KV heartbeats\nProvider + GPU dispatch"]:::cfWorkerLight
         PORTKEY_W["🔀 portkey.pollinations.ai\nText routing worker"]:::cfWorkerLight
         MEDIA["📁 media.pollinations.ai\nSHA-256 uploads · 10MB"]:::cfWorkerLight
         FRONT["🌐 pollinations.ai\nReact + Vite SPA"]:::cfWorkerLight
@@ -207,11 +207,7 @@ graph TD
     ENTER --> R2
     ENTER --> DO
 
-    subgraph COMPUTE["🖥️ AWS EC2 · us-east-1 · g6e"]
-        IMAGE["🎨 image :16384\nNode.js · Hono · systemd\nQueue router + heartbeat\nSharp · ImageMagick"]:::ec2
-    end
-
-    ENTER -->|"image / video"| IMAGE
+    GEN -->|"image / video"| IMG_ROUTER
     ENTER -->|"audio"| AUD_API
 
     GEN -->|"text / chat"| PORTKEY_W
@@ -223,7 +219,7 @@ graph TD
     end
 
     PORTKEY_W --> PROV_TEXT
-    IMAGE --> IMG_API
+    IMG_ROUTER --> IMG_API
 
     subgraph GPU["⚡ Self-Hosted GPUs"]
         VAST["🟢 Vast.ai · ~11 RTX 5090\n4 inst · QC/NC/TW/CZ\nFlux · Z-Image · Sana"]:::gpu
@@ -231,9 +227,9 @@ graph TD
         MODAL["🟣 Modal · H200\nKlein · LTX-2 Video"]:::gpu
     end
 
-    IMAGE -->|"heartbeat /register"| VAST
-    IMAGE --> IONET
-    IMAGE --> MODAL
+    IMG_ROUTER -->|"heartbeat /register"| VAST
+    IMG_ROUTER --> IONET
+    IMG_ROUTER --> MODAL
 
     subgraph OBS["📊 TinyBird · ClickHouse"]
         TB_S["📈 Analytics\n10 tables · 18 API pipes\nusage · payments · health\nKPIs · retention · revenue"]:::tinybird
@@ -263,14 +259,12 @@ graph TD
     end
 
     GH -.->|"wrangler deploy"| CF
-    GH -.->|"SSH + systemd"| COMPUTE
-    SOPS_S -.->|"decrypt .env"| COMPUTE
+    SOPS_S -.->|"wrangler secrets"| CF
 
     ENTER -.->|"cron: refills\nabuse · D1 sync"| D1
 
     style CF fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
     style STORAGE fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
-    style COMPUTE fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
     style PROVIDERS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
     style GPU fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
     style OBS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
@@ -284,7 +278,6 @@ graph TD
     classDef cfWorker fill:#E65100,color:#fff,stroke:#FFB300,stroke-width:2px,font-weight:bold
     classDef cfWorkerLight fill:#BF360C,color:#fff,stroke:#FFB300,stroke-width:1px
     classDef cfStorage fill:#4E342E,color:#fff,stroke:#FFB300,stroke-width:1px
-    classDef ec2 fill:#1F2937,color:#fff,stroke:#F59E0B,stroke-width:2px
     classDef gpu fill:#064E3B,color:#ECFDF5,stroke:#34D399,stroke-width:2px
     classDef provider fill:#1E3A8A,color:#EFF6FF,stroke:#60A5FA,stroke-width:1px
     classDef tinybird fill:#164E63,color:#CFFAFE,stroke:#22D3EE,stroke-width:1px

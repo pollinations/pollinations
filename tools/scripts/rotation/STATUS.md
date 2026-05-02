@@ -75,6 +75,7 @@ Out of scope for this branch — listed here so they don't get forgotten during 
 | Provider | Env var(s) | Used by | SOPS file(s) | Dashboard |
 |---|---|---|---|---|
 | **Alibaba (DashScope)** | `DASHSCOPE_API_KEY` | image + text (Wan image, Qwen text) | `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) |
+| **AssemblyAI** | `ASSEMBLYAI_API_KEY` | gen worker (speech-to-text) | `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [assemblyai.com](https://www.assemblyai.com/dashboard) |
 | **ByteDance** | `BYTEDANCE_API_KEY` | image (SeedEdit, Seedream) | `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [volcengine.com](https://www.volcengine.com) |
 | **Pruna** | `PRUNA_API_KEY` | image (Pruna-optimised models) | `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [pruna.ai dashboard](https://pruna.ai) |
 | **OVHCloud** | `OVHCLOUD_API_KEY` | text (OVH AI) + enter worker (audio fallback) | `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`, `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | [ovh.com manager](https://www.ovh.com/manager/) |

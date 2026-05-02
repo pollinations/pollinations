@@ -73,20 +73,13 @@ find_resource_group() {
 # update SOPS. Echoes a line per action taken.
 rotate_resource() {
     local label=$1
-    local endpoint_key=$2
+    local resource_name=$2
     local api_key_name=$3
     local sops_source=$4
     shift 4
     local sops_targets=("$@")
 
     section "Resource: $label"
-
-    local endpoint
-    endpoint=$(sops -d "$sops_source" | jq -r ".$endpoint_key")
-    if [ -z "$endpoint" ] || [ "$endpoint" = "null" ]; then
-        error "Could not read $endpoint_key from SOPS."
-        return 1
-    fi
 
     local current_key
     current_key=$(sops -d "$sops_source" | jq -r ".$api_key_name")
@@ -95,15 +88,13 @@ rotate_resource() {
         return 1
     fi
 
-    local resource_name resource_group
-    resource_name=$(extract_resource_name "$endpoint")
+    local resource_group
     resource_group=$(find_resource_group "$resource_name") || return 1
     if [ -z "$resource_group" ]; then
         error "Resource $resource_name not visible in current az subscription ($(az account show --query id -o tsv 2>/dev/null || echo unknown))."
         error "If it lives elsewhere, run: az account set --subscription <id>"
         return 1
     fi
-    log "  endpoint: $endpoint"
     log "  resource: $resource_name (rg: $resource_group)"
 
     local keys_json
@@ -223,10 +214,13 @@ fi
 # Process resources
 #######################################
 
+# Resource names are hardcoded in gen worker source (createAndReturnImages.ts,
+# azureFluxKontextModel.ts, text/configs/modelConfigs.ts) — not in SOPS, so
+# the rotation script reads them from here.
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "east" ]; then
     rotate_resource \
         "Azure OpenAI East US (AZURE_MYCELI_PROD)" \
-        "AZURE_MYCELI_PROD_ENDPOINT" \
+        "myceli-prod-eastus2" \
         "AZURE_MYCELI_PROD_API_KEY" \
         "$GEN_SOPS_READ" \
         "${GEN_SOPS_FILES[@]}"
@@ -235,16 +229,18 @@ fi
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "sweden" ]; then
     rotate_resource \
         "Azure OpenAI Sweden (AZURE_MYCELI_PROD_SWEDEN)" \
-        "AZURE_MYCELI_PROD_SWEDEN_ENDPOINT" \
+        "myceli-prod-swedencentral" \
         "AZURE_MYCELI_PROD_SWEDEN_API_KEY" \
         "$GEN_SOPS_READ" \
         "${GEN_SOPS_FILES[@]}"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "safety" ]; then
+    SAFETY_ENDPOINT=$(sops -d "$GEN_SOPS_READ" | jq -r '.AZURE_CONTENT_SAFETY_ENDPOINT')
+    SAFETY_RESOURCE=$(extract_resource_name "$SAFETY_ENDPOINT")
     rotate_resource \
         "Azure Content Safety" \
-        "AZURE_CONTENT_SAFETY_ENDPOINT" \
+        "$SAFETY_RESOURCE" \
         "AZURE_CONTENT_SAFETY_API_KEY" \
         "$GEN_SOPS_READ" \
         "${GEN_SOPS_FILES[@]}"

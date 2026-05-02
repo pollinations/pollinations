@@ -58,7 +58,7 @@ SOPS_FILES=(
     "$ENTER_DIR/secrets/staging.vars.json"
     "$ENTER_DIR/secrets/prod.vars.json"
 )
-DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
+DEPLOY_WORKFLOW="deploy-enter-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 # Token rotation impacts BOTH text and image services — verify both end-to-end

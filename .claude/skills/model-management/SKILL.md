@@ -20,10 +20,9 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 
 | File | Purpose |
 |------|---------|
-| `text.pollinations.ai/.env` | API keys, endpoints |
-| `text.pollinations.ai/secrets/env.json` | Encrypted secrets (use sops) |
-| `text.pollinations.ai/configs/modelConfigs.ts` | Model routing config |
-| `text.pollinations.ai/availableModels.ts` | Service name → config mapping |
+| `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | Encrypted text+image provider keys (use sops) |
+| `gen.pollinations.ai/src/text/configs/modelConfigs.ts` | Model routing config |
+| `gen.pollinations.ai/src/text/availableModels.ts` | Service name → config mapping |
 | `shared/registry/text.ts` | **Pricing**, provider, aliases, description |
 
 ## Image/Video Models

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-01",
+  "period_start": "2026-05-01",
+  "period_end": "2026-05-01",
+  "generated_at": "2026-05-02T06:36:47.323637+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-01/images/reddit.jpg"
+    }
+  ],
+  "title": "Routing fixes for Qwen TTS, dashboard cleanup, and tier adjustments.",
+  "text": "Merged 6 PRs today focusing on audio routing, video generation stability, and some necessary model tier adjustments.\n\nFirst, we pushed a fix for Nova Reel input errors (#10596). If your longer video generations were failing silently or throwing strange input exceptions, this should resolve it. We also fixed the routing for Qwen TTS simple audio requests (#10600) so those endpoints are actually hitting the right targets now.\n\nOn the model access side, we have moved ElevenLabs and GPT Image 2 to the paid tier (requiring Pollen credits). These are heavy on compute and API costs, so we had to gate them to manage infrastructure load. However, we explicitly kept Scribe free (#10603). The free tier remains generous, we just need to balance the highly expensive models.\n\nFinally, we shipped some dashboard cleanup. We fixed the sidebar navigation (#10599) and changed non-button labels to rectangular tags (#10602). It is a small visual hierarchy change, but it stops users from trying to click on static status indicators.\n\nCode and full commit history are open as always at github.com/pollinations/pollinations. Let us know if the Nova Reel fix handles your edge cases or if you are still seeing drops."
+}

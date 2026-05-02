@@ -1,0 +1,34 @@
+{
+  "pr_number": 10598,
+  "title": "feat: add gpt-5.5 on azure swedencentral",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10598",
+  "merged_at": "2026-05-02T15:31:20Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "GPT-5.5 joins the hive",
+    "blurb": "We just wired up GPT-5.5 to the text endpoint. Get ready for next-level reasoning, massive context windows, and flawless tool calling.",
+    "summary": "Added OpenAI's new GPT-5.5 model to the text generation API, deployed via Azure with full support for reasoning and tool-calling.",
+    "impact": "Developers can now access the `gpt-5.5` model through the standard text endpoint for advanced reasoning and vision tasks.",
+    "keywords": [
+      "gpt-5.5",
+      "models",
+      "text-generation",
+      "api",
+      "reasoning"
+    ],
+    "visual_concept": "The addition of a highly advanced reasoning model (GPT-5.5). Visualized as a glowing, powerful new server or 'brain' core being installed. The bee and monitor robot are excited about the new upgrade.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny wizard glasses and the chunky monitor robot marveling at a glowing, futuristic server rack emitting soft lime green (#ecf874) light. The robot's screen shows a glowing brain icon. Soft pastel gradient background with lavender and mint. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'GPT-5.5'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10598.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny wizard glasses and the chunky monitor robot marveling at a glowing, futuristic server rack emitting soft lime green (#ecf874) light. The robot's screen shows a glowing brain icon. Soft pastel gradient background with lavender and mint. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'GPT-5.5'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T15:32:12.851009+00:00"
+}

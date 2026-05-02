@@ -497,20 +497,27 @@ test("image generation uses a registered image backend from gen", async ({
     paidApiKey,
     mocks,
 }) => {
-    await env.KV.delete("image:servers:test:flux");
+    const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
+    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
 
     const { response: registerResponse } = await fetchWorker("/register", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
+        },
         body: JSON.stringify({
             url: `https://${imageBackendHost}`,
             type: "flux",
         }),
     });
     expect(registerResponse.status).toBe(200);
-    await expect(env.KV.get("image:servers:test:flux")).resolves.toContain(
-        imageBackendHost,
-    );
+    const registered = await env.KV.list({
+        prefix: "image:server:test:flux:",
+    });
+    expect(registered.keys.length).toBeGreaterThan(0);
+    const entry = await env.KV.get(registered.keys[0].name);
+    expect(entry).toContain(imageBackendHost);
     await mocks.enable("tinybird", "imageBackend");
 
     const { response, wait } = await fetchWorker(

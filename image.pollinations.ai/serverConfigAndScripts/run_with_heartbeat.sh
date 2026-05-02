@@ -16,6 +16,7 @@ send_heartbeat() {
         url="http://${public_ip}:${PORT}"
         response=$(curl -s -X POST "$POLLINATIONS_URL" \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${PLN_GPU_TOKEN}" \
             -d "{\"url\": \"$url\", \"type\": \"$TYPE\"}")
         if [ $? -eq 0 ]; then
             echo "[$(date)] Heartbeat sent successfully. URL: $url Type: $TYPE"

@@ -2,7 +2,14 @@ import debug from "debug";
 
 const logServer = debug("pollinations:server");
 
-export type ServerType = "flux" | "translate" | "zimage";
+export const VALID_TYPES = [
+    "flux",
+    "translate",
+    "zimage",
+    "sana",
+    "ltx2",
+] as const;
+export type ServerType = (typeof VALID_TYPES)[number];
 
 type ServerEntry = {
     url: string;
@@ -11,7 +18,6 @@ type ServerEntry = {
 
 const SERVER_TIMEOUT = 45000;
 const REGISTRY_TTL_SECONDS = 60;
-const VALID_TYPES = new Set<ServerType>(["flux", "translate", "zimage"]);
 
 let serverRegistry: KVNamespace | null = null;
 let registryEnvironment = "development";
@@ -31,54 +37,52 @@ function getServerRegistry(): KVNamespace {
     return serverRegistry;
 }
 
-function normalizeType(type: string): ServerType {
-    if (VALID_TYPES.has(type as ServerType)) return type as ServerType;
-    logServer(`Unknown server type "${type}", defaulting to "flux"`);
-    return "flux";
+export function isValidType(type: string): type is ServerType {
+    return (VALID_TYPES as readonly string[]).includes(type);
 }
 
-function kvKey(type: ServerType): string {
-    return `image:servers:${registryEnvironment}:${type}`;
+function prefix(type: ServerType): string {
+    return `image:server:${registryEnvironment}:${type}:`;
+}
+
+async function urlHash(url: string): Promise<string> {
+    const data = new TextEncoder().encode(url);
+    const digest = await crypto.subtle.digest("SHA-1", data);
+    const bytes = new Uint8Array(digest);
+    let hex = "";
+    for (let i = 0; i < bytes.length; i++) {
+        hex += bytes[i].toString(16).padStart(2, "0");
+    }
+    return hex;
 }
 
 export const registerServer = async (
     url: string,
-    type: ServerType = "flux",
+    type: ServerType,
 ): Promise<void> => {
-    type = normalizeType(type);
     const kv = getServerRegistry();
-    const now = Date.now();
-    const raw = await kv.get(kvKey(type));
-    const servers: ServerEntry[] = raw ? JSON.parse(raw) : [];
-    const activeServers = servers.filter(
-        (server) => now - server.lastHeartbeat < SERVER_TIMEOUT,
-    );
-    const existingServer = activeServers.find((server) => server.url === url);
-
-    if (existingServer) {
-        existingServer.lastHeartbeat = now;
-        logServer(`Updated heartbeat for ${type} server ${url}`);
-    } else {
-        activeServers.push({ url, lastHeartbeat: now });
-        logServer(`Registered new ${type} server ${url}`);
-    }
-
-    await kv.put(kvKey(type), JSON.stringify(activeServers), {
+    const key = prefix(type) + (await urlHash(url));
+    const entry: ServerEntry = { url, lastHeartbeat: Date.now() };
+    await kv.put(key, JSON.stringify(entry), {
         expirationTtl: REGISTRY_TTL_SECONDS,
     });
+    logServer(`Registered ${type} server ${url}`);
 };
 
 export async function getRegisteredServers(
-    type: ServerType = "flux",
+    type: ServerType,
 ): Promise<ServerEntry[]> {
-    type = normalizeType(type);
-    const raw = await getServerRegistry().get(kvKey(type));
-    if (!raw) return [];
+    const kv = getServerRegistry();
+    const { keys } = await kv.list({ prefix: prefix(type) });
+    if (keys.length === 0) return [];
 
     const now = Date.now();
-    const servers = JSON.parse(raw) as ServerEntry[];
-    return servers.filter(
-        (server) => now - server.lastHeartbeat < SERVER_TIMEOUT,
+    const entries = await Promise.all(
+        keys.map((k) => kv.get<ServerEntry>(k.name, "json")),
+    );
+    return entries.filter(
+        (e): e is ServerEntry =>
+            e !== null && now - e.lastHeartbeat < SERVER_TIMEOUT,
     );
 }
 

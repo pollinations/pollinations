@@ -9,6 +9,11 @@ export default defineConfig({
     assetsInclude: ["**/*.md"],
     resolve: {
         dedupe: ["zod"],
+        alias: [
+            // piexif-ts package.json points "module"/"browser" at non-existent files;
+            // pin resolution to the published UMD bundle that actually ships.
+            { find: /^piexif-ts$/, replacement: "piexif-ts/dist/piexif.js" },
+        ],
     },
     plugins: [tsconfigPaths(), cloudflare()],
 });

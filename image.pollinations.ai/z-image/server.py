@@ -54,10 +54,13 @@ async def send_heartbeat():
             url = f"https://{public_ip}"
             service_type = os.getenv("SERVICE_TYPE", "zimage")
             register_url = os.getenv("REGISTER_URL", "https://gen.pollinations.ai/register")
+            token = os.getenv("PLN_GPU_TOKEN", "")
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     register_url,
-                    json={'url': url, 'type': service_type}
+                    json={'url': url, 'type': service_type},
+                    headers=headers,
                 ) as response:
                     if response.status == 200:
                         logger.info(f"Heartbeat sent successfully. URL: {url}, type: {service_type}")

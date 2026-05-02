@@ -5,9 +5,11 @@ import { UpstreamError } from "@/error.ts";
 import {
     countFluxJobs,
     getRegisteredServers,
+    isValidType,
     registerServer,
     type ServerType,
     setServerRegistryBinding,
+    VALID_TYPES,
 } from "./availableServers.ts";
 import {
     type AuthResult,
@@ -19,7 +21,7 @@ import {
     isVideoModel,
     type VideoGenerationResult,
 } from "./createAndReturnVideos.ts";
-import { syncImageEnv } from "./env.ts";
+import { getImageEnv, syncImageEnv } from "./env.ts";
 import { HttpError } from "./httpError.ts";
 import {
     type MinimalRequest,
@@ -299,6 +301,32 @@ export async function handleImagePrompt(c: ImageContext): Promise<Response> {
     );
 }
 
+function extractRegisterToken(
+    c: ImageContext,
+    body: Record<string, unknown>,
+): string | null {
+    const header = c.req.header("x-backend-token");
+    if (header) return header;
+    const authz = c.req.header("authorization");
+    if (authz) {
+        const match = authz.match(/^Bearer\s+(.+)$/i);
+        if (match) return match[1];
+    }
+    const query = new URL(c.req.url).searchParams.get("token");
+    if (query) return query;
+    if (typeof body.token === "string") return body.token;
+    return null;
+}
+
+function isAuthorizedRegisterWrite(
+    c: ImageContext,
+    body: Record<string, unknown>,
+): boolean {
+    const expected = getImageEnv("PLN_GPU_TOKEN");
+    if (!expected) return false;
+    return extractRegisterToken(c, body) === expected;
+}
+
 export async function handleRegisterServer(c: ImageContext): Promise<Response> {
     syncImageEnvironment(c.env);
 
@@ -307,7 +335,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         const directUrl = params.get("url");
         const ip = params.get("ip");
         const port = params.get("port");
-        const type = (params.get("type") || "flux") as ServerType;
+        const typeParam = params.get("type") || "flux";
         const scheme = port === "443" ? "https" : "http";
         const url =
             directUrl ||
@@ -315,20 +343,36 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        await registerServer(url, type);
+        if (!isAuthorizedRegisterWrite(c, {})) {
+            return c.json({ success: false, message: "Unauthorized" }, 401);
+        }
+        if (!isValidType(typeParam)) {
+            return c.json(
+                { success: false, message: `Invalid type "${typeParam}"` },
+                400,
+            );
+        }
+
+        await registerServer(url, typeParam);
         return c.json({
             success: true,
             message: "Server registered successfully",
         });
     }
 
-    let body: { url?: string; type?: ServerType };
+    let body: Record<string, unknown>;
     try {
-        body = (await c.req.json()) as { url?: string; type?: ServerType };
+        body = (await c.req.json()) as Record<string, unknown>;
     } catch {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
-    if (!body.url) {
+
+    if (!isAuthorizedRegisterWrite(c, body)) {
+        return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+
+    const url = typeof body.url === "string" ? body.url : "";
+    if (!url) {
         return c.json(
             {
                 success: false,
@@ -338,7 +382,15 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         );
     }
 
-    await registerServer(body.url, body.type || "flux");
+    const typeParam = typeof body.type === "string" ? body.type : "flux";
+    if (!isValidType(typeParam)) {
+        return c.json(
+            { success: false, message: `Invalid type "${typeParam}"` },
+            400,
+        );
+    }
+
+    await registerServer(url, typeParam);
     return c.json({
         success: true,
         message: "Server registered successfully",
@@ -349,9 +401,8 @@ export async function handleListRegisteredServers(
     c: ImageContext,
 ): Promise<Response> {
     syncImageEnvironment(c.env);
-    const types: ServerType[] = ["flux", "translate", "zimage"];
     const entries = await Promise.all(
-        types.map(async (type) =>
+        VALID_TYPES.map(async (type: ServerType) =>
             (await getRegisteredServers(type)).map((server) => ({
                 type,
                 ...server,

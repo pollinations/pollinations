@@ -59,6 +59,9 @@ const baseConfig = defineConfig({
                 find: /^@shared\/(.*)$/,
                 replacement: `${sharedSrc}$1`,
             },
+            // piexif-ts package.json points "module"/"browser" at non-existent files;
+            // pin resolution to the published UMD bundle that actually ships.
+            { find: /^piexif-ts$/, replacement: "piexif-ts/dist/piexif.js" },
         ],
     },
 });

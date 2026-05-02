@@ -47,6 +47,7 @@
         "hono-openapi": "1.2.0",
         "jose": "^6.2.3",
         "nanoid": "5.1.6",
+        "piexif-ts": "^2.1.0",
         "tailwind-merge": "3.4.0",
         "zod": "4.3.5"
     }

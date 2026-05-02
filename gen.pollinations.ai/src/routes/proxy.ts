@@ -54,13 +54,7 @@ import {
 } from "@/text/handler.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
-import {
-    generateAceStepMusic,
-    generateMusic,
-    generateQwenTts,
-    generateSpeech,
-    isQwenTtsModel,
-} from "./audio.ts";
+import { handleSimpleAudio } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -764,100 +758,7 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.audio"),
         audioCache,
         generationAccess,
-        async (c) => {
-            const log = c.get("log").getChild("generate");
-
-            const rawText = c.req.param("text");
-            let text: string;
-            try {
-                text = decodeURIComponent(rawText);
-            } catch {
-                throw new UpstreamError(400, {
-                    message:
-                        "Invalid percent-encoding in URL path. Make sure the text is properly URL-encoded (e.g. with encodeURIComponent), and that any literal '%' characters are written as '%25'.",
-                });
-            }
-            const query = c.req.valid("query" as never) as {
-                safe?: SafeValue;
-            };
-            text = await applySafety(c, text, query.safe);
-            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                .ELEVENLABS_API_KEY;
-
-            if (c.var.model.resolved === "acestep") {
-                const { duration, style } = c.req.valid("query" as never) as {
-                    duration?: number;
-                    style?: string;
-                };
-                return withSafetyHeaders(
-                    c,
-                    await generateAceStepMusic({
-                        prompt: text,
-                        style,
-                        durationSeconds: duration,
-                        serviceUrl: c.env.MUSIC_SERVICE_URL,
-                        serviceToken: c.env.PLN_GPU_TOKEN,
-                        log,
-                    }),
-                );
-            }
-
-            if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental, seed } = c.req.valid(
-                    "query" as never,
-                ) as {
-                    duration?: number;
-                    instrumental?: boolean;
-                    seed?: number;
-                };
-                return withSafetyHeaders(
-                    c,
-                    await generateMusic({
-                        prompt: text,
-                        durationSeconds: duration,
-                        forceInstrumental: instrumental,
-                        seed: seed === -1 ? undefined : seed,
-                        apiKey,
-                        log,
-                    }),
-                );
-            }
-
-            const { voice, response_format, seed, instruct } = c.req.valid(
-                "query" as never,
-            ) as {
-                voice: string;
-                response_format: string;
-                seed?: number;
-                instruct?: string;
-            };
-
-            if (isQwenTtsModel(c.var.model.resolved)) {
-                return withSafetyHeaders(
-                    c,
-                    await generateQwenTts({
-                        modelName: c.var.model.resolved,
-                        text,
-                        voice: voice || "alloy",
-                        instruct,
-                        apiKey: c.env.DASHSCOPE_API_KEY,
-                        log,
-                    }),
-                );
-            }
-
-            return withSafetyHeaders(
-                c,
-                await generateSpeech({
-                    text,
-                    voice: voice || "alloy",
-                    responseFormat: response_format || "mp3",
-                    seed: seed === -1 ? undefined : seed,
-                    apiKey,
-                    log,
-                }),
-            );
-        },
+        handleSimpleAudio,
     )
     .post(
         "/v1/images/generations",

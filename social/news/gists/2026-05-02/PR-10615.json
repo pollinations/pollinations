@@ -1,0 +1,34 @@
+{
+  "pr_number": 10615,
+  "title": "fix: bump image server registry TTL and timeout",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10615",
+  "merged_at": "2026-05-02T14:21:14Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Banishing ghost servers",
+    "blurb": "We taught our image routing system to be a little more patient with global state syncs. Say goodbye to those random 'no active servers' errors during heavy bursts.",
+    "summary": "Increased the image server registry TTL and timeout to account for Cloudflare KV's eventual consistency lag.",
+    "impact": "Users will experience significantly fewer dropped requests and 500 errors when generating multiple images in quick succession.",
+    "keywords": [
+      "infrastructure",
+      "reliability",
+      "bug-fix",
+      "image-generation",
+      "routing"
+    ],
+    "visual_concept": "The bee and the monitor-head robot working together in a cozy server room. The robot holds a stopwatch (representing the increased timeout/TTL) while the bee organizes glowing image files, symbolizing the stabilized registry.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot working together in a warm server room. The robot holds a glowing stopwatch while the bee organizes glowing image files into a lime green (#ecf874) filing cabinet. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10615.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot working together in a warm server room. The robot holds a glowing stopwatch while the bee organizes glowing image files into a lime green (#ecf874) filing cabinet. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T14:22:07.262811+00:00"
+}

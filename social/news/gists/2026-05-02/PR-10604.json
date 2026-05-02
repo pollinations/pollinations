@@ -1,0 +1,33 @@
+{
+  "pr_number": 10604,
+  "title": "feat: move image generation into gen",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10604",
+  "merged_at": "2026-05-02T12:58:10Z",
+  "labels": [],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Under one roof",
+    "blurb": "We've moved our image and video generation directly into our main API gateway. Everything is now faster, leaner, and living happily in one place.",
+    "summary": "Image and video generation handlers have been migrated into the main gen worker, consolidating our API architecture and leveraging Cloudflare Images for faster transforms.",
+    "impact": "Developers will experience more streamlined routing for image and video endpoints, with transformations now powered directly by Cloudflare.",
+    "keywords": [
+      "api",
+      "architecture",
+      "images",
+      "video",
+      "cloudflare",
+      "workers"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot moving boxes of images and videos into a new, unified server home labeled 'GEN'. Represents consolidation and architectural migration.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, happily organizing glowing image and video files into a large, warm server rack labeled 'GEN'. A chunky monitor-head robot helps carry a box of pixelated pictures. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10604.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, happily organizing glowing image and video files into a large, warm server rack labeled 'GEN'. A chunky monitor-head robot helps carry a box of pixelated pictures. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-02T12:59:11.621357+00:00"
+}

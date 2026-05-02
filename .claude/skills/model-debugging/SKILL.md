@@ -167,16 +167,16 @@ ssh enter-services "cat /home/ubuntu/pollinations/text.pollinations.ai/.env | gr
 # Updating Secrets
 
 Secrets are stored encrypted with SOPS:
-- `image.pollinations.ai/secrets/env.json`
-- `text.pollinations.ai/secrets/env.json`
+- `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`
+- `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`
 
 To update:
 ```bash
 # Decrypt, edit, re-encrypt
-sops image.pollinations.ai/secrets/env.json
+sops gen.pollinations.ai/secrets/prod.vars.json
 
 # Deploy to server
-sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > /tmp/image.env
+sops --output-type dotenv -d gen.pollinations.ai/secrets/prod.vars.json > /tmp/image.env
 scp /tmp/image.env enter-services:/home/ubuntu/pollinations/image.pollinations.ai/.env
 rm /tmp/image.env
 

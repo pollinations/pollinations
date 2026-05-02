@@ -11,7 +11,8 @@ import {
 } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
+import { UpstreamError } from "@/error.ts";
+import { generateImageOrVideoResponse } from "@/image/handler.ts";
 
 // biome-ignore lint/suspicious/noExplicitAny: internal callback bridging typed proxy.ts and untyped Context.var
 type CheckBalanceFn = (vars: any, env: any) => Promise<void>;
@@ -53,40 +54,6 @@ async function requireAuthAndBalance(c: Context, checkBalance: CheckBalanceFn) {
     c.var.auth.requireModelAccess();
     c.var.auth.requireKeyBudget();
     await checkBalance(c.var, c.env);
-}
-
-/** Build image service URL with core params (kept in URL for caching/logging). */
-function buildImageServiceUrl(
-    baseUrl: string,
-    params: {
-        model: string;
-        width: number;
-        height: number;
-        quality: string;
-        seed: number;
-    },
-): URL {
-    const targetUrl = new URL(`${baseUrl}/prompt/`);
-    for (const [key, value] of Object.entries({ ...params, nofeed: "true" }))
-        targetUrl.searchParams.set(key, String(value));
-    return targetUrl;
-}
-
-/** POST to image service, throw on error. */
-async function postToImageService(
-    targetUrl: URL,
-    c: Context,
-    body: Record<string, unknown>,
-    proxyHeaders: (c: Context) => Record<string, string>,
-): Promise<Response> {
-    return ensureUpstreamOk(
-        await fetch(targetUrl.toString(), {
-            method: "POST",
-            headers: { ...proxyHeaders(c), "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        }),
-        targetUrl,
-    );
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
@@ -200,10 +167,7 @@ async function parseEditInput(c: Context): Promise<{
 
 // --- Exported handlers ---
 
-export function handleImageGeneration(
-    checkBalance: CheckBalanceFn,
-    proxyHeaders: (c: Context) => Record<string, string>,
-) {
+export function handleImageGeneration(checkBalance: CheckBalanceFn) {
     return async (c: Context) => {
         await requireAuthAndBalance(c, checkBalance);
 
@@ -212,21 +176,13 @@ export function handleImageGeneration(
         const model = c.var.model.resolved;
         const resolved = resolveParams(body);
 
-        const targetUrl = buildImageServiceUrl(c.env.IMAGE_SERVICE_URL, {
-            model,
-            ...resolved,
-        });
-        const postBody = {
-            prompt: body.prompt,
+        const response = await generateImageOrVideoResponse(c, body.prompt, {
+            ...body,
             ...collectPassthrough(body, "image"),
-        };
-
-        const response = await postToImageService(
-            targetUrl,
-            c,
-            postBody,
-            proxyHeaders,
-        );
+            ...resolved,
+            model,
+            nofeed: true,
+        });
         c.var.track.overrideResponseTracking(response.clone());
 
         if (body.response_format === "url") {
@@ -250,10 +206,7 @@ export function handleImageGeneration(
     };
 }
 
-export function handleImageEdit(
-    checkBalance: CheckBalanceFn,
-    proxyHeaders: (c: Context) => Record<string, string>,
-) {
+export function handleImageEdit(checkBalance: CheckBalanceFn) {
     return async (c: Context) => {
         await requireAuthAndBalance(c, checkBalance);
 
@@ -261,17 +214,14 @@ export function handleImageEdit(
             await parseEditInput(c);
         const resolved = resolveParams({ size, quality, seed });
 
-        const targetUrl = buildImageServiceUrl(c.env.IMAGE_SERVICE_URL, {
-            model: c.var.model.resolved,
+        const response = await generateImageOrVideoResponse(c, prompt, {
+            prompt,
+            image: imageUrls,
+            ...extra,
             ...resolved,
+            model: c.var.model.resolved,
+            nofeed: true,
         });
-
-        const response = await postToImageService(
-            targetUrl,
-            c,
-            { prompt, image: imageUrls, ...extra },
-            proxyHeaders,
-        );
         c.var.track.overrideResponseTracking(response.clone());
 
         const base64 = arrayBufferToBase64(await response.arrayBuffer());

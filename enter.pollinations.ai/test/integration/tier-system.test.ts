@@ -152,84 +152,6 @@ describe("Tier System End-to-End", () => {
         });
     });
 
-    describe("Pack Purchase via Webhook", () => {
-        test("Polar webhook correctly updates pack balance", async ({
-            sessionToken,
-            mocks,
-        }) => {
-            await mocks.enable("polar", "tinybird");
-            const db = drizzle(env.DB);
-
-            // Get the authenticated user ID from session
-            const sessionResponse = await SELF.fetch(
-                "http://localhost:3000/api/auth/get-session",
-                {
-                    headers: {
-                        cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
-            );
-            const session = await sessionResponse.json();
-            const userId = session.user.id;
-
-            // Check initial balance
-            const initialBalance = await db
-                .select({ packBalance: userTable.packBalance })
-                .from(userTable)
-                .where(sql`${userTable.id} = ${userId}`)
-                .limit(1);
-
-            const startBalance = initialBalance[0]?.packBalance ?? 0;
-
-            // Simulate Polar webhook for pack purchase
-            const webhookPayload = {
-                type: "benefit_grant.created",
-                data: {
-                    id: "grant_123",
-                    orderId: "order_456", // Important: orderId indicates pack purchase
-                    customer: {
-                        id: "polar_customer_123",
-                        externalId: userId,
-                        email: "test@example.com",
-                    },
-                    benefit: {
-                        type: "meter_credit",
-                        properties: {
-                            units: 100, // 100 pollen pack
-                        },
-                    },
-                },
-            };
-
-            // Use test mode for webhook (bypasses complex signature validation)
-            const payload = JSON.stringify(webhookPayload);
-
-            // Send webhook with test header
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/webhooks/polar",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-test-webhook": "true", // Bypass signature validation in test
-                    },
-                    body: payload,
-                },
-            );
-
-            expect(response.status).toBe(200);
-
-            // Verify pack balance was updated
-            const updatedBalance = await db
-                .select({ packBalance: userTable.packBalance })
-                .from(userTable)
-                .where(sql`${userTable.id} = ${userId}`)
-                .limit(1);
-
-            expect(updatedBalance[0]?.packBalance).toBe(startBalance + 100);
-        });
-    });
-
     describe("Race Condition Protection", () => {
         test("concurrent API calls don't corrupt balance", async () => {
             const db = drizzle(env.DB);
@@ -332,7 +254,7 @@ describe("Tier System End-to-End", () => {
     });
 
     describe("Tier Migration Integrity", () => {
-        test("users migrated from Polar maintain their tier and get hourly refills", async () => {
+        test("users migrated from legacy tier state maintain their tier and get hourly refills", async () => {
             const db = drizzle(env.DB);
             const _executionContext = createExecutionContext();
 

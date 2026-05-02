@@ -1,8 +1,10 @@
 import type { Logger } from "@logtape/logtape";
 import {
+    type AudioModelName,
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -24,6 +26,7 @@ import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
+import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 
 const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
 
@@ -46,7 +49,8 @@ const CreateSpeechRequestSchema = z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
             .default("mp3")
             .meta({
-                description: "The audio format for the output.",
+                description:
+                    "The audio format for the output. Qwen TTS currently returns WAV regardless of this setting.",
                 example: "mp3",
             }),
         speed: z.number().min(0.25).max(4.0).default(1.0).meta({
@@ -393,6 +397,13 @@ export async function generateMusic(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
+const QWEN_TTS_MODELS = [
+    "qwen-tts",
+    "qwen-tts-instruct",
+] as const satisfies readonly AudioModelName[];
+
+type QwenTtsModelName = (typeof QWEN_TTS_MODELS)[number];
+
 const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
     alloy: "Chelsie",
     echo: "Ethan",
@@ -411,15 +422,19 @@ function resolveQwenVoice(voice: string): string {
     return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
 }
 
+export function isQwenTtsModel(model: string): model is QwenTtsModelName {
+    return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
+}
+
 export async function generateQwenTts(opts: {
-    model: string;
+    modelName: QwenTtsModelName;
     text: string;
     voice: string;
     instruct?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { model, text, voice, instruct, apiKey, log } = opts;
+    const { modelName, text, voice, instruct, apiKey, log } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -427,6 +442,14 @@ export async function generateQwenTts(opts: {
         });
     }
 
+    if (instruct && modelName !== "qwen-tts-instruct") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "The instruct parameter is only supported by qwen-tts-instruct",
+        });
+    }
+
+    const model = getModelDefinition(modelName).modelId;
     const qwenVoice = resolveQwenVoice(voice);
 
     log.info("Qwen TTS request: model={model}, voice={voice}, chars={chars}", {
@@ -438,7 +461,8 @@ export async function generateQwenTts(opts: {
     const body: Record<string, unknown> = {
         model,
         input: { text, voice: qwenVoice },
-        parameters: instruct ? { instruct } : {},
+        parameters:
+            modelName === "qwen-tts-instruct" && instruct ? { instruct } : {},
     };
 
     const rawResponse = await fetch(QWEN_TTS_ENDPOINT, {
@@ -468,12 +492,9 @@ export async function generateQwenTts(opts: {
     );
     const audioBuffer = await audioResponse.arrayBuffer();
 
-    const serviceId = model.includes("instruct")
-        ? "qwen-tts-instruct"
-        : "qwen-tts";
     const usageHeaders = {
         ...buildUsageHeaders(
-            serviceId,
+            modelName,
             createAudioTokenUsage(data.usage?.characters ?? text.length),
         ),
         "x-tts-voice": qwenVoice,
@@ -712,19 +733,12 @@ export const audioRoutes = new Hono<Env>()
             const { seed } = c.req.valid(
                 "json" as never,
             ) as CreateSpeechRequest;
-            if (
-                c.var.model.resolved === "qwen-tts" ||
-                c.var.model.resolved === "qwen-tts-instruct"
-            ) {
+            if (isQwenTtsModel(c.var.model.resolved)) {
                 const { instruct } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
-                const modelId =
-                    c.var.model.resolved === "qwen-tts-instruct"
-                        ? "qwen3-tts-instruct-flash"
-                        : "qwen3-tts-flash";
                 return generateQwenTts({
-                    model: modelId,
+                    modelName: c.var.model.resolved,
                     text: input,
                     voice,
                     instruct,
@@ -757,6 +771,8 @@ export const audioRoutes = new Hono<Env>()
                 "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
                 "- `whisper-1` — Alias for whisper-large-v3",
                 "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
+                "- `universal-2` — AssemblyAI Universal-2 (99 languages)",
+                "- `universal-3-pro` — AssemblyAI Universal-3 Pro (highest accuracy, prompting)",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -776,7 +792,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `universal-2`, `universal-3-pro`.",
                                 },
                                 language: {
                                     type: "string",
@@ -841,9 +857,15 @@ export const audioRoutes = new Hono<Env>()
 
             const file = formData.get("file") as File;
             const language = formData.get("language") as string | null;
+            const prompt = formData.get("prompt") as string | null;
             const responseFormat = formData.get("response_format") as
                 | string
                 | null;
+            const temperatureRaw = formData.get("temperature") as string | null;
+            const temperature =
+                temperatureRaw !== null && temperatureRaw !== ""
+                    ? Number(temperatureRaw)
+                    : undefined;
 
             if (!file) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -865,6 +887,28 @@ export const audioRoutes = new Hono<Env>()
                 });
 
                 // Override tracking with final response
+                c.var.track.overrideResponseTracking(response.clone());
+                return response;
+            }
+
+            if (
+                c.var.model.resolved === "universal-2" ||
+                c.var.model.resolved === "universal-3-pro"
+            ) {
+                const assemblyAiApiKey = (
+                    c.env as unknown as { ASSEMBLYAI_API_KEY: string }
+                ).ASSEMBLYAI_API_KEY;
+                const response = await transcribeWithAssemblyAi({
+                    file,
+                    language: language || undefined,
+                    prompt: prompt || undefined,
+                    responseFormat: responseFormat || undefined,
+                    temperature,
+                    model: c.var.model.resolved,
+                    apiKey: assemblyAiApiKey,
+                    log,
+                });
+
                 c.var.track.overrideResponseTracking(response.clone());
                 return response;
             }

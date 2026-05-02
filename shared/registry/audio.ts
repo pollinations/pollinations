@@ -56,6 +56,7 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-07").getTime(),
@@ -63,11 +64,18 @@ export const AUDIO_SERVICES = {
                 completionAudioTokens: 0.18 / 1000,
             },
         ],
+        price: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionAudioTokens: 0.00027, // $0.27 per 1000 chars
+            },
+        ],
         description:
             "ElevenLabs v3 TTS - Expressive voices with emotions & audio tags",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
+        alpha: true,
     },
     elevenmusic: {
         aliases: ["music"],
@@ -84,10 +92,17 @@ export const AUDIO_SERVICES = {
                 completionAudioSeconds: 0.005,
             },
         ],
+        price: [
+            {
+                date: new Date("2026-02-07").getTime(),
+                completionAudioSeconds: 0.0075, // $0.45 per minute
+            },
+        ],
         description:
             "ElevenLabs Music - Generate studio-grade music from text prompts",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        alpha: true,
     },
     whisper: {
         aliases: ["whisper-1", "whisper-large-v3"],
@@ -126,6 +141,47 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
+    "universal-2": {
+        aliases: ["assemblyai-universal-2", "assemblyai-u2"],
+        modelId: "universal-2",
+        provider: "assemblyai",
+        brand: "AssemblyAI",
+        category: "audio",
+        cost: [
+            {
+                date: new Date("2026-05-02").getTime(),
+                // AssemblyAI Universal-2: $0.15/hour
+                promptAudioSeconds: 0.15 / 3600,
+            },
+        ],
+        description:
+            "AssemblyAI Universal-2 - Fast speech to text with 99-language support",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+    },
+    "universal-3-pro": {
+        aliases: [
+            "assemblyai-universal-3-pro",
+            "assemblyai-u3-pro",
+            "assemblyai-pro",
+        ],
+        modelId: "universal-3-pro",
+        provider: "assemblyai",
+        brand: "AssemblyAI",
+        category: "audio",
+        paidOnly: true,
+        cost: [
+            {
+                date: new Date("2026-05-02").getTime(),
+                // AssemblyAI Universal-3 Pro: $0.21/hour
+                promptAudioSeconds: 0.21 / 3600,
+            },
+        ],
+        description:
+            "AssemblyAI Universal-3 Pro - High-accuracy speech to text with prompting",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+    },
     acestep: {
         aliases: ["ace-step", "acestep-music"],
         modelId: "acestep_v15_turbo",
@@ -160,8 +216,7 @@ export const AUDIO_SERVICES = {
         price: [
             {
                 date: new Date("2026-04-19").getTime(),
-                // 1.5x markup on free tier
-                completionAudioTokens: (0.013 * 1.5) / 1000,
+                completionAudioTokens: 0.0000195, // $0.0195 per 1000 chars
             },
         ],
         description:

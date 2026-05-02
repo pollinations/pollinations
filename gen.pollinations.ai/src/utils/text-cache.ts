@@ -1,6 +1,6 @@
 /**
  * Text caching utilities for gen.pollinations.ai
- * Adapted from text.pollinations.ai/cloudflare-cache
+ * Adapted from gen.pollinations.ai/cloudflare-cache
  * Following the "thin proxy" design principle - keeping logic simple and minimal
  */
 
@@ -10,6 +10,8 @@ import type { Context } from "hono";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
+const CACHED_HEADER_NAMES = new Set(["x-model-used"]);
+const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-"];
 
 /**
  * Generate a cache key for the request using SHA-256 hash
@@ -79,12 +81,24 @@ export async function generateCacheKey(
  * Minimal metadata - only what's needed to serve the cached response
  */
 export function prepareMetadata(response: Response): Record<string, string> {
-    return {
+    const metadata: Record<string, string> = {
         response_content_type: response.headers.get("content-type") || "",
         status: response.status.toString(),
         statusText: response.statusText,
         cachedAt: new Date().toISOString(),
     };
+    for (const [name, value] of response.headers.entries()) {
+        const lowerName = name.toLowerCase();
+        if (
+            CACHED_HEADER_NAMES.has(lowerName) ||
+            CACHED_HEADER_PREFIXES.some((prefix) =>
+                lowerName.startsWith(prefix),
+            )
+        ) {
+            metadata[`header_${lowerName}`] = value;
+        }
+    }
+    return metadata;
 }
 
 type TextCacheEnv = {
@@ -115,6 +129,11 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
         const headers = new Headers();
         if (metadata.response_content_type) {
             headers.set("content-type", metadata.response_content_type);
+        }
+        for (const [key, value] of Object.entries(metadata)) {
+            if (key.startsWith("header_")) {
+                headers.set(key.slice("header_".length), value);
+            }
         }
 
         // Add cache headers

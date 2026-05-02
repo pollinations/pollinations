@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { Card } from "../ui/card.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { AccountBadge } from "./account-badge.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { DeleteConfirmation } from "./delete-confirmation.tsx";
@@ -68,13 +69,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 className="!border-transparent transition-colors hover:bg-white/90"
             >
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium shrink-0 bg-blue-100 text-blue-700">
+                    <Tag color="blue" size="sm">
                         {isPublishable
                             ? primaryRedirectUri
                                 ? "🖥️ App"
                                 : "🌐 Publishable"
                             : "🔒 Secret"}
-                    </span>
+                    </Tag>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}
                     </span>

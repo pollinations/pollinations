@@ -5,15 +5,38 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REQUIRED_SECRET_KEYS = [
+    "AWS_ACCESS_KEY_ID",
+    "AWS_REGION",
+    "AWS_SECRET_ACCESS_KEY",
+    "AZURE_CONTENT_SAFETY_API_KEY",
+    "AZURE_CONTENT_SAFETY_ENDPOINT",
+    "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
+    "AZURE_MYCELI_PROD_API_KEY",
+    "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "BETTER_AUTH_SECRET",
+    "BYTEDANCE_API_KEY",
     "DASHSCOPE_API_KEY",
+    "DEEPINFRA_API_KEY",
     "ELEVENLABS_API_KEY",
+    "FIREWORKS_API_KEY",
+    "GOOGLE_CLIENT_EMAIL",
+    "GOOGLE_PRIVATE_KEY",
+    "GOOGLE_PRIVATE_KEY_ID",
+    "GOOGLE_PROJECT_ID",
+    "KLEIN_URL",
     "MUSIC_SERVICE_URL",
+    "NOVA_REEL_S3_BUCKET",
+    "OPENAI_API_KEY",
     "OVHCLOUD_API_KEY",
-    "PLN_ENTER_TOKEN",
+    "PERPLEXITY_API_KEY",
     "PLN_GPU_TOKEN",
+    "PORTKEY_GATEWAY_URL",
+    "PRUNA_API_KEY",
     "TINYBIRD_INGEST_TOKEN",
+    "XAI_API_KEY",
 ];
+
+const OPTIONAL_SECRET_KEYS = ["ASSEMBLYAI_API_KEY"];
 
 const [sourcePath, environment] = process.argv.slice(2);
 
@@ -35,6 +58,11 @@ for (const key of REQUIRED_SECRET_KEYS) {
         filtered[key] = source[key];
     }
 }
+for (const key of OPTIONAL_SECRET_KEYS) {
+    if (source[key] !== undefined) {
+        filtered[key] = source[key];
+    }
+}
 
 if (missing.length > 0) {
     console.error(`Missing required generation secrets: ${missing.join(", ")}`);
@@ -42,7 +70,11 @@ if (missing.length > 0) {
 }
 
 const omitted = Object.keys(source)
-    .filter((key) => !REQUIRED_SECRET_KEYS.includes(key))
+    .filter(
+        (key) =>
+            !REQUIRED_SECRET_KEYS.includes(key) &&
+            !OPTIONAL_SECRET_KEYS.includes(key),
+    )
     .sort();
 if (omitted.length > 0) {
     console.log(`Skipping non-generation secrets: ${omitted.join(", ")}`);

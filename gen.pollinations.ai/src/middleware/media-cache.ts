@@ -1,6 +1,6 @@
 /**
  * Generic media cache middleware for gen.pollinations.ai
- * Checks cache after auth/balance checks.
+ * Checks cache before auth/balance checks so cache hits can remain public.
  * Used for image, video, and audio GET endpoints.
  *
  * Currently uses IMAGE_BUCKET (R2) for all media types.
@@ -12,7 +12,7 @@ import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
-    cacheResponse,
+    cacheMediaResponse,
     generateCacheKey,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
@@ -78,13 +78,12 @@ export function createMediaCache(config: MediaCacheConfig) {
         );
         if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
             log.debug("Caching response");
-            c.executionCtx.waitUntil(
-                cacheResponse(
-                    c.env.IMAGE_BUCKET,
-                    cacheKey,
-                    c,
-                    config.defaultContentType,
-                ),
+            cacheMediaResponse(
+                c.env.IMAGE_BUCKET,
+                cacheKey,
+                c,
+                config.defaultContentType,
+                c.res,
             );
         }
     });

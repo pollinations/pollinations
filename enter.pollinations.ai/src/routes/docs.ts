@@ -1099,7 +1099,11 @@ function transformOpenAPISchema(
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c) => {
-            return c.redirect("https://gen.pollinations.ai/docs", 301);
+            const url = new URL(c.req.url);
+            url.protocol = "https:";
+            url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+            url.pathname = "/docs";
+            return c.redirect(url.toString(), 301);
         })
         .get("/llm.txt", (c) => {
             c.header("Cache-Control", "public, max-age=3600");

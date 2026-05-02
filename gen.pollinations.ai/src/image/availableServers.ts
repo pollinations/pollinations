@@ -10,8 +10,8 @@ type ServerEntry = {
     lastHeartbeat: number;
 };
 
-const SERVER_TIMEOUT = 45000;
-const REGISTRY_TTL_SECONDS = 60;
+const SERVER_TIMEOUT = 180000;
+const REGISTRY_TTL_SECONDS = 240;
 
 let serverRegistry: KVNamespace | null = null;
 let registryEnvironment = "development";

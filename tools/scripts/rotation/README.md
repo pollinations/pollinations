@@ -378,7 +378,7 @@ If rotation breaks production, revert to the previous token value:
 
 ```bash
 # 1. Get the old token from git history
-git log -p -- image.pollinations.ai/secrets/env.json | head -50
+git log -p -- enter.pollinations.ai/secrets/prod.vars.json gen.pollinations.ai/secrets/prod.vars.json | head -50
 
 # 2. Re-run the script with the old token
 ./rotate-infra-enter-token.sh OLD_TOKEN_VALUE --execute
@@ -405,7 +405,7 @@ Hosts reached by SSH during `rotate-infra-gpu-token.sh`. SSH keys are stored in 
 | Klein 4B | RunPod `lqh6weiexk4sth` | RunPod relay | `<pod-id>-<key-id>@ssh.runpod.io` (interactive only) | `/workspace/restart.sh` reads `PLN_GPU_TOKEN` from process env | `/workspace/restart.sh` |
 | LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | `ubuntu@192.222.51.105` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
 
-Klein's pod ID changes if recreated. Verify current ID with `runpodctl pod list` and the `KLEIN_URL` env in `image.pollinations.ai/secrets/env.json`. The relay does not support non-interactive command execution — rotations against Klein currently require a manual edit of `/workspace/restart.sh` (which has the token baked in via `export`) followed by re-running it inside an interactive SSH session.
+Klein's pod ID changes if recreated. Verify current ID with `runpodctl pod list` and the `KLEIN_URL` env in `gen.pollinations.ai/secrets/prod.vars.json`. The relay does not support non-interactive command execution — rotations against Klein currently require a manual edit of `/workspace/restart.sh` (which has the token baked in via `export`) followed by re-running it inside an interactive SSH session.
 
 `MUSIC_SERVICE_URL` in enter's SOPS points at the ACE-Step endpoint on the Lambda GH200 host. It is configuration (not an auth token) and is not rotated — but if the Lambda host changes, this URL has to move with it.
 

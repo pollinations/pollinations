@@ -38,27 +38,16 @@ const REQUIRED_SECRET_KEYS = [
 
 const OPTIONAL_SECRET_KEYS = ["ASSEMBLYAI_API_KEY"];
 
-const [sourcePath, environment, ...extraSourcePaths] = process.argv.slice(2);
+const [sourcePath, environment] = process.argv.slice(2);
 
 if (!sourcePath || !environment) {
     console.error(
-        "Usage: node scripts/push-generation-secrets.mjs <decrypted-json-path> <environment> [extra-sops-json-path...]",
+        "Usage: node scripts/push-generation-secrets.mjs <decrypted-json-path> <environment>",
     );
     process.exit(1);
 }
 
-function readJson(path) {
-    return JSON.parse(readFileSync(path, "utf8"));
-}
-
-function readSopsJson(path) {
-    return JSON.parse(execFileSync("sops", ["-d", path], { encoding: "utf8" }));
-}
-
-const source = {
-    ...Object.assign({}, ...extraSourcePaths.map(readSopsJson)),
-    ...readJson(sourcePath),
-};
+const source = JSON.parse(readFileSync(sourcePath, "utf8"));
 const filtered = {};
 const missing = [];
 

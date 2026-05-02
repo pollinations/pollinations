@@ -1,0 +1,34 @@
+{
+  "pr_number": 10624,
+  "title": "fix: dedupe Stripe checkout webhook credits",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10624",
+  "merged_at": "2026-05-02T18:46:14Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Balancing the books",
+    "blurb": "Our billing system just got a little smarter! We've taught our database to perfectly organize Stripe receipts, making sure your Pollen credit top-ups are always perfectly balanced.",
+    "summary": "Implemented idempotency for Stripe checkout webhooks using D1 batching to ensure accurate credit allocation.",
+    "impact": "Credit top-ups are now more robust and reliable, preventing any accounting hiccups from duplicate network events.",
+    "keywords": [
+      "billing",
+      "stripe",
+      "credits",
+      "database",
+      "bug_fix"
+    ],
+    "visual_concept": "The bee mascot acting as an accountant, organizing coins or receipts with the monitor robot, representing reliable billing and deduplication.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, carefully organizing glowing golden coins into a neat stack on a wooden desk. A chunky robot with a CRT monitor head holds a long paper receipt, looking helpful. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10624.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny accountant visor, carefully organizing glowing golden coins into a neat stack on a wooden desk. A chunky robot with a CRT monitor head holds a long paper receipt, looking helpful. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T18:47:10.203387+00:00"
+}

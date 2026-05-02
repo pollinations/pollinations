@@ -141,6 +141,46 @@ export const AUDIO_SERVICES = {
         inputModalities: ["audio"],
         outputModalities: ["text"],
     },
+    "universal-2": {
+        aliases: ["assemblyai-universal-2", "assemblyai-u2"],
+        modelId: "universal-2",
+        provider: "assemblyai",
+        brand: "AssemblyAI",
+        category: "audio",
+        cost: [
+            {
+                date: new Date("2026-05-02").getTime(),
+                // AssemblyAI Universal-2: $0.15/hour
+                promptAudioSeconds: 0.15 / 3600,
+            },
+        ],
+        description:
+            "AssemblyAI Universal-2 - Fast speech to text with 99-language support",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+    },
+    "universal-3-pro": {
+        aliases: [
+            "assemblyai-universal-3-pro",
+            "assemblyai-u3-pro",
+            "assemblyai-pro",
+        ],
+        modelId: "universal-3-pro",
+        provider: "assemblyai",
+        brand: "AssemblyAI",
+        category: "audio",
+        cost: [
+            {
+                date: new Date("2026-05-02").getTime(),
+                // AssemblyAI Universal-3 Pro: $0.21/hour
+                promptAudioSeconds: 0.21 / 3600,
+            },
+        ],
+        description:
+            "AssemblyAI Universal-3 Pro - High-accuracy speech to text with prompting",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+    },
     acestep: {
         aliases: ["ace-step", "acestep-music"],
         modelId: "acestep_v15_turbo",

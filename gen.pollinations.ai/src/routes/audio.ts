@@ -26,6 +26,7 @@ import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
+import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 
 const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
 
@@ -770,6 +771,8 @@ export const audioRoutes = new Hono<Env>()
                 "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
                 "- `whisper-1` — Alias for whisper-large-v3",
                 "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
+                "- `universal-2` — AssemblyAI Universal-2 (99 languages)",
+                "- `universal-3-pro` — AssemblyAI Universal-3 Pro (highest accuracy, prompting)",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -789,7 +792,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `universal-2`, `universal-3-pro`.",
                                 },
                                 language: {
                                     type: "string",
@@ -854,9 +857,15 @@ export const audioRoutes = new Hono<Env>()
 
             const file = formData.get("file") as File;
             const language = formData.get("language") as string | null;
+            const prompt = formData.get("prompt") as string | null;
             const responseFormat = formData.get("response_format") as
                 | string
                 | null;
+            const temperatureRaw = formData.get("temperature") as string | null;
+            const temperature =
+                temperatureRaw !== null && temperatureRaw !== ""
+                    ? Number(temperatureRaw)
+                    : undefined;
 
             if (!file) {
                 throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -878,6 +887,28 @@ export const audioRoutes = new Hono<Env>()
                 });
 
                 // Override tracking with final response
+                c.var.track.overrideResponseTracking(response.clone());
+                return response;
+            }
+
+            if (
+                c.var.model.resolved === "universal-2" ||
+                c.var.model.resolved === "universal-3-pro"
+            ) {
+                const assemblyAiApiKey = (
+                    c.env as unknown as { ASSEMBLYAI_API_KEY: string }
+                ).ASSEMBLYAI_API_KEY;
+                const response = await transcribeWithAssemblyAi({
+                    file,
+                    language: language || undefined,
+                    prompt: prompt || undefined,
+                    responseFormat: responseFormat || undefined,
+                    temperature,
+                    model: c.var.model.resolved,
+                    apiKey: assemblyAiApiKey,
+                    log,
+                });
+
                 c.var.track.overrideResponseTracking(response.clone());
                 return response;
             }

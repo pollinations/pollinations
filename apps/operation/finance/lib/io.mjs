@@ -24,7 +24,7 @@ const SHARED_MODEL_SECRETS_PATH = join(
     "..",
     "gen.pollinations.ai",
     "secrets",
-    "env.json",
+    "prod.vars.json",
 );
 
 export function appDir() {

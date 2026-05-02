@@ -36,27 +36,16 @@ const REQUIRED_SECRET_KEYS = [
     "XAI_API_KEY",
 ];
 
-const [sourcePath, environment, ...extraSourcePaths] = process.argv.slice(2);
+const [sourcePath, environment] = process.argv.slice(2);
 
 if (!sourcePath || !environment) {
     console.error(
-        "Usage: node scripts/push-generation-secrets.mjs <decrypted-json-path> <environment> [extra-sops-json-path...]",
+        "Usage: node scripts/push-generation-secrets.mjs <decrypted-json-path> <environment>",
     );
     process.exit(1);
 }
 
-function readJson(path) {
-    return JSON.parse(readFileSync(path, "utf8"));
-}
-
-function readSopsJson(path) {
-    return JSON.parse(execFileSync("sops", ["-d", path], { encoding: "utf8" }));
-}
-
-const source = {
-    ...Object.assign({}, ...extraSourcePaths.map(readSopsJson)),
-    ...readJson(sourcePath),
-};
+const source = JSON.parse(readFileSync(sourcePath, "utf8"));
 const filtered = {};
 const missing = [];
 
@@ -71,13 +60,6 @@ for (const key of REQUIRED_SECRET_KEYS) {
 if (missing.length > 0) {
     console.error(`Missing required generation secrets: ${missing.join(", ")}`);
     process.exit(1);
-}
-
-const omitted = Object.keys(source)
-    .filter((key) => !REQUIRED_SECRET_KEYS.includes(key))
-    .sort();
-if (omitted.length > 0) {
-    console.log(`Skipping non-generation secrets: ${omitted.join(", ")}`);
 }
 
 if (environment === "local") {

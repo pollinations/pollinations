@@ -116,11 +116,9 @@ bash enter.pollinations.ai/scripts/setup-services.sh /home/ubuntu/pollinations
 
 # 5. From your LOCAL machine - decrypt and copy env files
 cd /path/to/pollinations
-sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > /tmp/text.env
-sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > /tmp/image.env
-scp /tmp/text.env enter-services-staging:/home/ubuntu/pollinations/text.pollinations.ai/.env
+sops --output-type dotenv -d gen.pollinations.ai/secrets/prod.vars.json > /tmp/image.env
 scp /tmp/image.env enter-services-staging:/home/ubuntu/pollinations/image.pollinations.ai/.env
-rm /tmp/text.env /tmp/image.env
+rm /tmp/image.env
 
 # 6. Restart services
 ssh enter-services-staging "sudo systemctl restart text-pollinations.service image-pollinations.service"

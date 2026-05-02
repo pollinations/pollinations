@@ -40,8 +40,9 @@ ROTATION_SECRETS="$SCRIPT_DIR/secrets.vars.json"
 ROTATOR_SA_EMAIL="key-rotator@stellar-verve-465920-b7.iam.gserviceaccount.com"
 
 SOPS_FILES=(
-    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/prod.vars.json"
 )
 DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
@@ -78,15 +79,17 @@ if ! command -v gcloud >/dev/null; then
     exit 1
 fi
 
-IMAGE_SOPS="${SOPS_FILES[0]}"
-if [ ! -f "$IMAGE_SOPS" ]; then
-    error "SOPS file not found: $IMAGE_SOPS"
-    exit 1
-fi
+SOPS_READ="${SOPS_FILES[0]}"
+for f in "${SOPS_FILES[@]}"; do
+    if [ ! -f "$f" ]; then
+        error "SOPS file not found: $f"
+        exit 1
+    fi
+done
 
-SA_EMAIL=$(sops -d "$IMAGE_SOPS" | jq -r '.GOOGLE_CLIENT_EMAIL')
-PROJECT_ID=$(sops -d "$IMAGE_SOPS" | jq -r '.GOOGLE_PROJECT_ID')
-OLD_KEY_ID=$(sops -d "$IMAGE_SOPS" | jq -r '.GOOGLE_PRIVATE_KEY_ID')
+SA_EMAIL=$(sops -d "$SOPS_READ" | jq -r '.GOOGLE_CLIENT_EMAIL')
+PROJECT_ID=$(sops -d "$SOPS_READ" | jq -r '.GOOGLE_PROJECT_ID')
+OLD_KEY_ID=$(sops -d "$SOPS_READ" | jq -r '.GOOGLE_PRIVATE_KEY_ID')
 
 if [ -z "$SA_EMAIL" ] || [ "$SA_EMAIL" = "null" ]; then
     error "Could not read GOOGLE_CLIENT_EMAIL from SOPS."

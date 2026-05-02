@@ -5,14 +5,17 @@
  */
 
 import type { Logger } from "@logtape/logtape";
-import { parseSafeFeatures } from "@shared/schemas/safety.ts";
+import {
+    parseSafeFeatures,
+    SAFETY_HEADER_NAME,
+} from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
 const CACHED_HEADER_NAMES = new Set(["x-model-used"]);
-const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-"];
+const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 
 function hasActiveSafety(value: unknown): boolean {
@@ -53,6 +56,8 @@ export async function generateCacheKey(
         url.pathname,
         filteredParams.toString(), // Only include non-auth query params
     ];
+    const hasQuerySafe = url.searchParams.has("safe");
+    let hasBodySafe = false;
     let usesSafety = hasActiveSafety(url.searchParams.get("safe"));
 
     // Add filtered body for POST/PUT requests
@@ -60,6 +65,7 @@ export async function generateCacheKey(
         try {
             // Try to parse as JSON and filter auth fields
             const bodyObj = JSON.parse(bodyText);
+            hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
@@ -72,6 +78,11 @@ export async function generateCacheKey(
             // If not JSON, use body as-is
             parts.push(bodyText);
         }
+    }
+    const safeHeader = request.headers.get(SAFETY_HEADER_NAME);
+    if (safeHeader !== null && !hasQuerySafe && !hasBodySafe) {
+        parts.push(`${SAFETY_HEADER_NAME}:${safeHeader}`);
+        usesSafety ||= hasActiveSafety(safeHeader);
     }
     if (usesSafety) {
         parts.push(SAFETY_CACHE_VERSION);

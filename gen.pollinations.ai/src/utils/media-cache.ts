@@ -11,14 +11,17 @@ import { removeUnset } from "@/util.ts";
 
 const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+const CACHED_HEADER_PREFIXES = ["x-safety-"];
 
-function hasActiveSafety(value: string | null): boolean {
+function hasActiveSafety(value: string | null | undefined): boolean {
     return parseSafeFeatures(value).size > 0;
 }
 
-export function generateCacheKey(url: URL): string {
+export function generateCacheKey(url: URL, safeHeader?: string | null): string {
     const normalizedUrl = new URL(url);
+    const hasQuerySafe = normalizedUrl.searchParams.has("safe");
     const usesSafety = hasActiveSafety(normalizedUrl.searchParams.get("safe"));
+    const usesHeaderSafety = !hasQuerySafe && hasActiveSafety(safeHeader);
     const params = Array.from(normalizedUrl.searchParams.entries()).sort(
         ([keyA], [keyB]) => keyA.localeCompare(keyB),
     );
@@ -29,7 +32,10 @@ export function generateCacheKey(url: URL): string {
             normalizedUrl.searchParams.append(key, value);
         }
     }
-    if (usesSafety) {
+    if (safeHeader !== undefined && safeHeader !== null && !hasQuerySafe) {
+        normalizedUrl.searchParams.append("__safe_header", safeHeader);
+    }
+    if (usesSafety || usesHeaderSafety) {
         normalizedUrl.searchParams.append("__safety", SAFETY_CACHE_VERSION);
     }
 
@@ -55,6 +61,7 @@ export function setHttpMetadataHeaders(
     c: Context,
     httpMetadata: R2HTTPMetadata | undefined,
     defaultContentType: string,
+    customMetadata?: Record<string, string>,
 ) {
     if (httpMetadata) {
         for (const [key, value] of Object.entries(httpMetadata)) {
@@ -65,6 +72,29 @@ export function setHttpMetadataHeaders(
     } else {
         c.header("Content-Type", defaultContentType);
     }
+
+    for (const [key, value] of Object.entries(customMetadata ?? {})) {
+        if (key.startsWith("header_")) {
+            c.header(key.slice("header_".length), value);
+        }
+    }
+}
+
+function prepareCustomMetadata(response: Response): Record<string, string> {
+    const metadata: Record<string, string> = {
+        cachedAt: new Date().toISOString(),
+    };
+    for (const [name, value] of response.headers.entries()) {
+        const lowerName = name.toLowerCase();
+        if (
+            CACHED_HEADER_PREFIXES.some((prefix) =>
+                lowerName.startsWith(prefix),
+            )
+        ) {
+            metadata[`header_${lowerName}`] = value;
+        }
+    }
+    return metadata;
 }
 
 type MediaCacheEnv = {
@@ -101,9 +131,7 @@ export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
                             response.headers.get("content-type") ||
                             defaultContentType,
                     } as R2HTTPMetadata),
-                    customMetadata: {
-                        cachedAt: new Date().toISOString(),
-                    },
+                    customMetadata: prepareCustomMetadata(response),
                 });
             })
             .catch((error) => {

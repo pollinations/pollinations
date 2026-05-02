@@ -6,6 +6,8 @@ import type { SafeValue } from "@shared/schemas/safety.ts";
 import {
     invalidSafeTokens,
     normalizeSafeValue,
+    SAFETY_HEADER_NAME,
+    VALID_SAFE_TOKENS,
 } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -25,12 +27,16 @@ type ChatBody = CreateChatCompletionRequest & Record<string, unknown>;
 type ChatMessage = ChatBody["messages"][number];
 const SAFETY_HEADERS_KEY = "safetyHeaders";
 
+export type SafetyVariables = {
+    safetyHeaders?: Record<string, string>;
+};
+
 export async function applySafety(
     c: SafetyContext,
     text: string,
     bodySafe?: SafeValue,
 ): Promise<string> {
-    const safeValue = bodySafe !== undefined ? bodySafe : c.req.query("safe");
+    const safeValue = resolveSafeValue(c, bodySafe);
     const features = getRequestFeatures(safeValue);
     if (features.size === 0 || !text.trim()) return text;
 
@@ -84,13 +90,21 @@ export async function applySafety(
     return text;
 }
 
+function resolveSafeValue(
+    c: SafetyContext,
+    bodyOrQuerySafe?: SafeValue,
+): SafeValue {
+    if (bodyOrQuerySafe !== undefined && bodyOrQuerySafe !== null) {
+        return bodyOrQuerySafe;
+    }
+    return c.req.query("safe") ?? c.req.header(SAFETY_HEADER_NAME);
+}
+
 export function withSafetyHeaders(
     c: SafetyContext,
     response: Response,
 ): Response {
-    const safetyHeaders = (c.var as Record<string, unknown>)[
-        SAFETY_HEADERS_KEY
-    ] as Record<string, string> | undefined;
+    const safetyHeaders = c.get(SAFETY_HEADERS_KEY);
     if (!safetyHeaders) return response;
 
     const headers = new Headers(response.headers);
@@ -107,11 +121,9 @@ export function withSafetyHeaders(
 
 function setSafetyHeader(c: SafetyContext, name: string, value: string): void {
     c.header(name, value);
-    const vars = c.var as Record<string, unknown>;
-    const current =
-        (vars[SAFETY_HEADERS_KEY] as Record<string, string> | undefined) ?? {};
+    const current = c.get(SAFETY_HEADERS_KEY) ?? {};
     current[name] = value;
-    c.set(SAFETY_HEADERS_KEY as never, current as never);
+    c.set(SAFETY_HEADERS_KEY, current);
 }
 
 export async function applySafetyToChatRequest(
@@ -192,7 +204,7 @@ function getRequestFeatures(safeValue: SafeValue) {
         throw safetyError(400, "invalid_safe", {
             message: `Unknown safe feature: ${invalid.join(", ")}`,
             safety: {
-                valid: "privacy,secrets,sexual,violence,shield,nsfw,true",
+                valid: [...VALID_SAFE_TOKENS].join(","),
             },
         });
     }

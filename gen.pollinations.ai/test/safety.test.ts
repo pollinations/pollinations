@@ -1,4 +1,8 @@
-import { parseSafeFeatures, SafeSchema } from "@shared/schemas/safety.ts";
+import {
+    parseSafeFeatures,
+    SAFETY_HEADER_NAME,
+    SafeSchema,
+} from "@shared/schemas/safety.ts";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
@@ -6,7 +10,10 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 import { generateCacheKey as generateMediaCacheKey } from "@/utils/media-cache.ts";
-import { generateCacheKey as generateTextCacheKey } from "@/utils/text-cache.ts";
+import {
+    generateCacheKey as generateTextCacheKey,
+    prepareMetadata as prepareTextCacheMetadata,
+} from "@/utils/text-cache.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -71,7 +78,7 @@ describe("safety schema", () => {
 
     it("coerces boolean values", () => {
         expect(SafeSchema.parse(true)).toBe("true");
-        expect(SafeSchema.parse(false)).toBeUndefined();
+        expect(SafeSchema.parse(false)).toBe("false");
     });
 
     it("accepts string no-op values for compatibility", () => {
@@ -97,6 +104,17 @@ describe("applySafety", () => {
         const response = await safetyApp().request(
             "/scan/hello",
             undefined,
+            configuredEnv,
+        );
+
+        expect(await response.text()).toBe("hello");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("does not call Bedrock when safe=false overrides the safety header", async () => {
+        const response = await safetyApp().request(
+            "/scan/hello?safe=false",
+            { headers: { [SAFETY_HEADER_NAME]: "privacy" } },
             configuredEnv,
         );
 
@@ -130,6 +148,33 @@ describe("applySafety", () => {
         expect(await response.text()).toBe("email {EMAIL}");
         expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
         expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+    });
+
+    it("accepts safety from the request header", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "email {EMAIL}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/scan/email%20a%40example.com",
+            { headers: { [SAFETY_HEADER_NAME]: "privacy" } },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe("email {EMAIL}");
+        expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
     });
 
     it("blocks requested content categories", async () => {
@@ -189,6 +234,38 @@ describe("safety cache keys", () => {
         expect(withSafety).not.toBe(noSafety);
     });
 
+    it("keeps safety headers in text cache metadata", () => {
+        const metadata = prepareTextCacheMetadata(
+            new Response("ok", {
+                headers: { "X-Safety-Applied": "privacy" },
+            }),
+        );
+
+        expect(metadata["header_x-safety-applied"]).toBe("privacy");
+    });
+
+    it("separates text cache keys when safe is provided by header", async () => {
+        const noSafety = await generateTextCacheKey(
+            new Request("https://gen.pollinations.ai/text/hello?model=openai"),
+        );
+        const withHeaderSafety = await generateTextCacheKey(
+            new Request("https://gen.pollinations.ai/text/hello?model=openai", {
+                headers: { [SAFETY_HEADER_NAME]: "privacy" },
+            }),
+        );
+        const withQueryOverride = await generateTextCacheKey(
+            new Request(
+                "https://gen.pollinations.ai/text/hello?model=openai&safe=false",
+                {
+                    headers: { [SAFETY_HEADER_NAME]: "privacy" },
+                },
+            ),
+        );
+
+        expect(withHeaderSafety).not.toBe(noSafety);
+        expect(withQueryOverride).not.toBe(withHeaderSafety);
+    });
+
     it("adds a visible safety namespace to media cache keys when safe is active", () => {
         const withSafety = generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=true"),
@@ -199,5 +276,21 @@ describe("safety cache keys", () => {
 
         expect(withSafety).toContain("safety_bedrock-input-v1");
         expect(withoutSafety).not.toContain("safety_bedrock-input-v1");
+    });
+
+    it("adds header safety to media cache keys", () => {
+        const withHeaderSafety = generateMediaCacheKey(
+            new URL("https://gen.pollinations.ai/image/hello"),
+            "privacy",
+        );
+        const withQueryOverride = generateMediaCacheKey(
+            new URL("https://gen.pollinations.ai/image/hello?safe=false"),
+            "privacy",
+        );
+
+        expect(withHeaderSafety).toContain("safe_header_privacy");
+        expect(withHeaderSafety).toContain("safety_bedrock-input-v1");
+        expect(withQueryOverride).not.toContain("safe_header");
+        expect(withQueryOverride).not.toContain("safety_bedrock-input-v1");
     });
 });

@@ -10,6 +10,7 @@ export const SAFETY_FEATURES = [
 
 export type SafetyFeature = (typeof SAFETY_FEATURES)[number];
 export type SafeValue = string | boolean | undefined | null;
+export const SAFETY_HEADER_NAME = "Pollinations-Safe";
 
 const SAFETY_ALIASES: Record<string, SafetyFeature[]> = {
     true: ["privacy", "secrets"],
@@ -27,10 +28,10 @@ export const VALID_SAFE_TOKENS = new Set([
 const SAFE_DESCRIPTION =
     "Safety features: comma-separated list of " +
     [...SAFETY_FEATURES, ...Object.keys(SAFETY_ALIASES)].join(", ") +
-    ". Defaults to off; false and 0 are accepted as off.";
+    `. Also accepted in the ${SAFETY_HEADER_NAME} header. Defaults to off; false and 0 are accepted as off.`;
 
 export function normalizeSafeValue(value: SafeValue): string | undefined {
-    if (typeof value === "boolean") return value ? "true" : undefined;
+    if (typeof value === "boolean") return value ? "true" : "false";
     if (value === null || value === undefined) return undefined;
     return value;
 }

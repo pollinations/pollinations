@@ -6,6 +6,7 @@ import type { SafeValue } from "@shared/schemas/safety.ts";
 import {
     invalidSafeTokens,
     normalizeSafeValue,
+    parseSafeFeatures,
     SAFETY_HEADER_NAME,
     VALID_SAFE_TOKENS,
 } from "@shared/schemas/safety.ts";
@@ -17,10 +18,7 @@ import {
     type BedrockResponse,
     resolveBedrockGuardrailEnv,
 } from "@/utils/bedrock-guardrail.ts";
-import {
-    classifyTriggers,
-    resolveRequestSafety,
-} from "@/utils/safety-features.ts";
+import { classifyTriggers } from "@/utils/safety-features.ts";
 
 type SafetyContext = Context<Env>;
 type ChatBody = CreateChatCompletionRequest & Record<string, unknown>;
@@ -38,10 +36,11 @@ export async function applySafety(
     text: string,
     bodySafe?: SafeValue,
 ): Promise<string> {
-    return (await applySafetyToTextValues(c, [text], bodySafe))[0] ?? text;
+    const [safeText] = await applySafetyToTexts(c, [text], bodySafe);
+    return safeText;
 }
 
-async function applySafetyToTextValues(
+export async function applySafetyToTexts(
     c: SafetyContext,
     texts: string[],
     bodySafe?: SafeValue,
@@ -150,10 +149,10 @@ function selectGuardrailInputs(texts: string[]) {
 
 function resolveSafeValue(
     c: SafetyContext,
-    bodyOrQuerySafe?: SafeValue,
+    providedSafe?: SafeValue,
 ): SafeValue {
-    if (bodyOrQuerySafe !== undefined && bodyOrQuerySafe !== null) {
-        return bodyOrQuerySafe;
+    if (providedSafe !== undefined && providedSafe !== null) {
+        return providedSafe;
     }
     return c.req.query("safe") ?? c.req.header(SAFETY_HEADER_NAME);
 }
@@ -190,7 +189,7 @@ export async function applySafetyToChatRequest(
 ): Promise<ChatBody> {
     const safeValue = body.safe as SafeValue;
     const targets = collectChatTextTargets(body);
-    const safeTexts = await applySafetyToTextValues(
+    const safeTexts = await applySafetyToTexts(
         c,
         targets.map((target) => target.text),
         safeValue,
@@ -295,7 +294,7 @@ function getRequestFeatures(safeValue: SafeValue) {
         });
     }
 
-    return resolveRequestSafety(normalized);
+    return parseSafeFeatures(normalized);
 }
 
 function safetyError(

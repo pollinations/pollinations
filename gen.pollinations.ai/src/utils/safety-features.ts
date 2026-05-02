@@ -1,5 +1,4 @@
-import type { SafetyFeature, SafeValue } from "@shared/schemas/safety.ts";
-import { parseSafeFeatures } from "@shared/schemas/safety.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 
 // The POLLINATIONS_* identifiers must match regex names configured on the
@@ -35,16 +34,11 @@ const FEATURE_TRIGGERS: Record<SafetyFeature, Set<string>> = {
 
 const REDACT_FEATURES = new Set<SafetyFeature>(["privacy"]);
 
-export function resolveRequestSafety(value: SafeValue): Set<SafetyFeature> {
-    return parseSafeFeatures(value);
-}
-
 export function classifyTriggers(
     response: BedrockResponse,
     features: Set<SafetyFeature>,
 ): {
     blockedFeatures: Set<SafetyFeature>;
-    redactedFeatures: Set<SafetyFeature>;
     redactedIds: string[];
 } {
     const detected: { id: string; action: "ANONYMIZED" | "BLOCKED" }[] = [];
@@ -70,13 +64,11 @@ export function classifyTriggers(
     }
 
     const blockedFeatures = new Set<SafetyFeature>();
-    const redactedFeatures = new Set<SafetyFeature>();
     const redactedIds = new Set<string>();
     for (const { id, action } of detected) {
         for (const feature of features) {
             if (!FEATURE_TRIGGERS[feature].has(id)) continue;
             if (action === "ANONYMIZED" && REDACT_FEATURES.has(feature)) {
-                redactedFeatures.add(feature);
                 redactedIds.add(id);
             } else {
                 blockedFeatures.add(feature);
@@ -86,7 +78,6 @@ export function classifyTriggers(
 
     return {
         blockedFeatures,
-        redactedFeatures,
         redactedIds: [...redactedIds],
     };
 }

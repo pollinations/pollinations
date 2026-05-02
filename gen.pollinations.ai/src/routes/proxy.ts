@@ -42,6 +42,7 @@ import { UpstreamError } from "@/error.ts";
 import {
     applySafety,
     applySafetyToChatRequest,
+    applySafetyToTexts,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
 import { validator } from "@/middleware/validator.ts";
@@ -534,15 +535,15 @@ export const proxyRoutes = new Hono<Env>()
                 safe?: SafeValue;
                 system?: string;
             };
-            const prompt = await applySafety(
+            const textInputs =
+                typeof query.system === "string"
+                    ? [c.req.param("prompt"), query.system]
+                    : [c.req.param("prompt")];
+            const [prompt, system] = await applySafetyToTexts(
                 c,
-                c.req.param("prompt"),
+                textInputs,
                 query.safe,
             );
-            const system =
-                typeof query.system === "string"
-                    ? await applySafety(c, query.system, query.safe)
-                    : undefined;
 
             return withSafetyHeaders(
                 c,

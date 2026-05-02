@@ -4,7 +4,12 @@ import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
 
 const DOMAIN = "media.pollinations.ai";
-const ENTER_VERIFY_URL = "https://gen.pollinations.ai/api/account/key";
+// Talk to enter directly. Going through gen.pollinations.ai works (it
+// proxies /api/account/* to enter) but adds a network hop, an extra
+// dependency on the gen worker being healthy, and breaks the moment the
+// proxy config changes. enter is the authoritative host for key
+// verification.
+const ENTER_VERIFY_URL = "https://enter.pollinations.ai/api/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 10485760; // 10 MB

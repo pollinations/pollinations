@@ -15,7 +15,9 @@ export const requireKey = (): string => {
     const key = resolveApiKey();
     if (!key) {
         printError("Not logged in. Run: polli auth login");
-        printError("Or use: polli auth login --token <your-key>");
+        printError(
+            "Or pipe a key: printf '%s' '<your-key>' | polli auth login --with-token",
+        );
         process.exit(1);
     }
     return key;

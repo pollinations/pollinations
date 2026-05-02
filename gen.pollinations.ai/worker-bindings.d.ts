@@ -3,6 +3,7 @@ interface CloudflareBindings {
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
     ELEVENLABS_API_KEY: string;
+    ASSEMBLYAI_API_KEY?: string;
     OVHCLOUD_API_KEY: string;
     PLN_GPU_TOKEN: string;
     MUSIC_SERVICE_URL: string;

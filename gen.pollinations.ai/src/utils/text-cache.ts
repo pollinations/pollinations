@@ -26,12 +26,14 @@ export async function generateCacheKey(
 ): Promise<string> {
     const url = new URL(request.url);
 
-    // Filter query parameters, excluding auth params
+    // Filter query parameters, excluding auth params, and sort by key so
+    // equivalent URLs reuse the same cache entry regardless of parameter order.
     const filteredParams = new URLSearchParams();
-    for (const [key, value] of url.searchParams) {
-        if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
-            filteredParams.append(key, value);
-        }
+    const queryParams = Array.from(url.searchParams.entries())
+        .filter(([key]) => !EXCLUDED_PARAMS.includes(key.toLowerCase()))
+        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
+    for (const [key, value] of queryParams) {
+        filteredParams.append(key, value);
     }
 
     // Normalize HEAD requests to GET for cache key generation

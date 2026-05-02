@@ -26,9 +26,14 @@ source "$SCRIPT_DIR/_log.sh"
 source "$SCRIPT_DIR/_pr-deploy.sh"
 
 REPO="pollinations/pollinations"
-TEXT_SOPS="$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
+GEN_SOPS_FILES=(
+    "$REPO_ROOT/gen.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/prod.vars.json"
+)
+GEN_SOPS_READ="${GEN_SOPS_FILES[0]}"
 API_BASE="https://api.deepinfra.com"
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 HEALTH_MODEL="deepseek"
@@ -54,10 +59,12 @@ if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
     exit 1
 fi
 
-if [ ! -f "$TEXT_SOPS" ]; then
-    error "SOPS file not found: $TEXT_SOPS"
-    exit 1
-fi
+for f in "${GEN_SOPS_FILES[@]}"; do
+    if [ ! -f "$f" ]; then
+        error "SOPS file not found: $f"
+        exit 1
+    fi
+done
 
 if [ ! -f "$TESTING_TOKENS_FILE" ]; then
     error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
@@ -70,7 +77,7 @@ if [ -z "$TEST_TOKEN" ]; then
     exit 1
 fi
 
-OLD_KEY=$(sops -d "$TEXT_SOPS" | jq -r '.DEEPINFRA_API_KEY')
+OLD_KEY=$(sops -d "$GEN_SOPS_READ" | jq -r '.DEEPINFRA_API_KEY')
 if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "null" ]; then
     error "Could not read DEEPINFRA_API_KEY from SOPS."
     exit 1
@@ -95,7 +102,7 @@ if $DRY_RUN; then
     echo
     log "Plan:"
     echo "  1. Create new DeepInfra key via /v1/api-tokens (old stays valid)"
-    echo "  2. Update SOPS: gen.pollinations.ai/env.json"
+    echo "  2. Update SOPS: gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json"
     echo "  3. Verify new key via /v1/openai/chat/completions"
     echo "  4. Open PR: rotate/deepinfra-<date> → main, auto-merge"
     echo "  5. Push main → production (admin)"
@@ -157,8 +164,10 @@ log "New key: ${NEW_KEY:0:4}..."
 #######################################
 section "Updating SOPS"
 
-sops --set "[\"DEEPINFRA_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$TEXT_SOPS"
-log "  gen.pollinations.ai/env.json updated"
+for f in "${GEN_SOPS_FILES[@]}"; do
+    sops --set "[\"DEEPINFRA_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$f"
+    log "  $(basename "$f") updated"
+done
 
 #######################################
 # 4. Verify new key
@@ -183,7 +192,7 @@ section "Opening PR and deploying"
 
 BRANCH="rotate/deepinfra-$(date +%Y%m%d-%H%M%S)"
 git checkout -b "$BRANCH"
-git add "$TEXT_SOPS"
+git add "${GEN_SOPS_FILES[@]}"
 git commit -m "rotate: DeepInfra API key"
 
 open_pr_and_merge "$BRANCH" \

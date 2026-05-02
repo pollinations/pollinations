@@ -4,7 +4,7 @@ Validated: 2026-04-24. Re-validate if an endpoint returns unexpected results.
 
 ## Requirements
 
-- Auth: `DEEPINFRA_API_KEY` from `text.pollinations.ai/secrets/env.json`.
+- Auth: `DEEPINFRA_API_KEY` from `gen.pollinations.ai/secrets/prod.vars.json`.
 - Tools: `curl`, `jq`, `sops`.
 - Runtime base URL: `https://api.deepinfra.com/v1/openai`.
 - Native API base URL: `https://api.deepinfra.com`.
@@ -12,14 +12,14 @@ Validated: 2026-04-24. Re-validate if an endpoint returns unexpected results.
 Load the runtime key without printing it:
 
 ```bash
-export DEEPINFRA_API_KEY=$(sops -d text.pollinations.ai/secrets/env.json | jq -r '.DEEPINFRA_API_KEY')
+export DEEPINFRA_API_KEY=$(sops -d gen.pollinations.ai/secrets/prod.vars.json | jq -r '.DEEPINFRA_API_KEY')
 ```
 
 ## Known identifiers
 
 | Field | Value |
 |---|---|
-| Runtime secret | `text.pollinations.ai/secrets/env.json` → `DEEPINFRA_API_KEY` |
+| Runtime secret | `gen.pollinations.ai/secrets/prod.vars.json` → `DEEPINFRA_API_KEY` |
 | Primary Pollinations model | `deepseek` → `deepseek-ai/DeepSeek-V4-Flash` |
 | Pro Pollinations model | `deepseek-pro` → `deepseek-ai/DeepSeek-V4-Pro` |
 

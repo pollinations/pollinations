@@ -169,6 +169,7 @@ export const AUDIO_SERVICES = {
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-05-02").getTime(),

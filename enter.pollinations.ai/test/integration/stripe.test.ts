@@ -30,7 +30,7 @@ test.for(
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const anonymousResponse = await SELF.fetch(`${base}${route}`, {
         method: "GET",
     });
@@ -70,7 +70,7 @@ test("GET /api/stripe/checkout/invalid returns 400 for invalid amount", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const response = await SELF.fetch(`${base}/checkout/invalid`, {
         method: "GET",
         headers: {

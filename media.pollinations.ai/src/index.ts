@@ -4,7 +4,9 @@ import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
 
 const DOMAIN = "media.pollinations.ai";
-const ENTER_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+// gen.pollinations.ai proxies /account/* to enter — using the public path
+// keeps internal services consistent with the documented SDK/external usage.
+const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASH_PATTERN = /^[a-f0-9]{16}$/i;
 const DEFAULT_MAX_SIZE = 10485760; // 10 MB
@@ -22,7 +24,7 @@ interface AuthResult {
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
     try {
-        const res = await fetch(ENTER_VERIFY_URL, {
+        const res = await fetch(KEY_VERIFY_URL, {
             headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!res.ok) return null;

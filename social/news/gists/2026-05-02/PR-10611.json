@@ -1,0 +1,35 @@
+{
+  "pr_number": 10611,
+  "title": "chore: update app metrics 2026-05-02",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10611",
+  "merged_at": "2026-05-02T05:11:03Z",
+  "labels": [
+    "API",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the Greenhouse",
+    "blurb": "Our automated bot just did its daily rounds, updating metrics and health checks for all the amazing community apps in our greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse rankings.",
+    "impact": "Ensures the community app showcase reflects the most current usage statistics and active projects.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "bot",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee as a gardener watering code-plants, representing the daily automated maintenance of the app greenhouse. The monitor robot assists by checking off a list.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, watering a digital garden where code-plants sprout from lime green (#ecf874) flower pots. A cute chunky robot with a CRT monitor head stands nearby holding a tiny clipboard. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10611.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, watering a digital garden where code-plants sprout from lime green (#ecf874) flower pots. A cute chunky robot with a CRT monitor head stands nearby holding a tiny clipboard. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-02T05:11:57.146784+00:00"
+}

@@ -37,8 +37,12 @@ source "$SCRIPT_DIR/_log.sh"
 source "$SCRIPT_DIR/_pr-deploy.sh"
 
 REPO="pollinations/pollinations"
-IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-TEXT_SOPS="$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
+GEN_SOPS_FILES=(
+    "$REPO_ROOT/gen.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/prod.vars.json"
+)
+GEN_SOPS_READ="${GEN_SOPS_FILES[0]}"
 DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
@@ -224,8 +228,8 @@ if [ "$TARGET" = "all" ] || [ "$TARGET" = "east" ]; then
         "Azure OpenAI East US (AZURE_MYCELI_PROD)" \
         "AZURE_MYCELI_PROD_ENDPOINT" \
         "AZURE_MYCELI_PROD_API_KEY" \
-        "$TEXT_SOPS" \
-        "$TEXT_SOPS"
+        "$GEN_SOPS_READ" \
+        "${GEN_SOPS_FILES[@]}"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "sweden" ]; then
@@ -233,8 +237,8 @@ if [ "$TARGET" = "all" ] || [ "$TARGET" = "sweden" ]; then
         "Azure OpenAI Sweden (AZURE_MYCELI_PROD_SWEDEN)" \
         "AZURE_MYCELI_PROD_SWEDEN_ENDPOINT" \
         "AZURE_MYCELI_PROD_SWEDEN_API_KEY" \
-        "$TEXT_SOPS" \
-        "$TEXT_SOPS" "$IMAGE_SOPS"
+        "$GEN_SOPS_READ" \
+        "${GEN_SOPS_FILES[@]}"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "safety" ]; then
@@ -242,8 +246,8 @@ if [ "$TARGET" = "all" ] || [ "$TARGET" = "safety" ]; then
         "Azure Content Safety" \
         "AZURE_CONTENT_SAFETY_ENDPOINT" \
         "AZURE_CONTENT_SAFETY_API_KEY" \
-        "$IMAGE_SOPS" \
-        "$IMAGE_SOPS"
+        "$GEN_SOPS_READ" \
+        "${GEN_SOPS_FILES[@]}"
 fi
 
 if $DRY_RUN; then
@@ -261,7 +265,7 @@ section "Opening PR and deploying"
 
 BRANCH="rotate/azure-$(date +%Y%m%d-%H%M%S)"
 git checkout -b "$BRANCH"
-git add "$TEXT_SOPS" "$IMAGE_SOPS"
+git add "${GEN_SOPS_FILES[@]}"
 git commit -m "rotate: Azure Cognitive Services keys ($TARGET)"
 
 open_pr_and_merge "$BRANCH" \

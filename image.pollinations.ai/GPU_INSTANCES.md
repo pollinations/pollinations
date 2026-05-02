@@ -24,7 +24,7 @@ runpodctl pod get <id>         # pod details
 
 ### Pod lqh6weiexk4sth — Klein 4B
 
-> Pod ID changes if recreated. Check `runpodctl pod list` and the `KLEIN_URL` env var (sops: `image.pollinations.ai/secrets/env.json`).
+> Pod ID changes if recreated. Check `runpodctl pod list` and the `KLEIN_URL` env var (sops: `gen.pollinations.ai/secrets/prod.vars.json`).
 
 - **GPU**: 1x RTX 3090 (24GB) | **Cost**: $0.22/hr (community cloud)
 - **SSH**: RunPod relay — interactive only: `ssh <pod-id>-<key-id>@ssh.runpod.io -i ~/.ssh/id_ed25519` (full command from dashboard "Connect" tab)

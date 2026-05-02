@@ -61,16 +61,18 @@ wrangler_cmd() {
 }
 
 SOPS_FILES=(
-    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
     "$ENTER_DIR/secrets/dev.vars.json"
     "$ENTER_DIR/secrets/staging.vars.json"
     "$ENTER_DIR/secrets/prod.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/prod.vars.json"
 )
 SOPS_SECRETS_SSH_SOURCE="$ENTER_DIR/secrets/prod.vars.json"
 DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
-# GPU token gates image.pollinations.ai → GPU worker calls; verify image gen E2E
+# GPU token gates gen worker → GPU worker calls; verify image gen E2E
 HEALTH_IMAGE_MODEL="zimage"
 
 SSH_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes"
@@ -210,7 +212,7 @@ for f in "${SOPS_FILES[@]}"; do
         exit 1
     fi
 done
-log "SOPS: PLN_GPU_TOKEN present in all 4 target files"
+log "SOPS: PLN_GPU_TOKEN present in all 6 target files"
 
 if [ ! -f "$TESTING_TOKENS_FILE" ]; then
     error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
@@ -238,7 +240,7 @@ if $DRY_RUN; then
     echo
     log "Plan:"
     echo "  1. Generate new PLN_GPU_TOKEN (openssl rand -hex 32)"
-    echo "  2. Update SOPS (4 files: image + enter dev/staging/prod)"
+    echo "  2. Update SOPS (6 files: enter + gen, dev/staging/prod each)"
     echo "  3. Open PR: rotate/gpu-token-<date> → main, auto-merge"
     echo "  4. Push main → production (admin) → deploy-gen-cloudflare deploys gen"
     echo "  5. SSH fan-out: update .env + restart workers on 3 GPU hosts"
@@ -284,7 +286,7 @@ git commit -m "rotate: PLN_GPU_TOKEN"
 
 open_pr_and_merge "$BRANCH" \
     "rotate: PLN_GPU_TOKEN" \
-    "Rotates \`PLN_GPU_TOKEN\` (gen image + enter worker → GPU workers). Updates 4 SOPS files. After merge, main→production triggers gen image deploy; the script then SSH-fans-out to GPU hosts, then updates the Wrangler secret so the worker switches too. Automated by \`rotate-infra-gpu-token.sh\`." \
+    "Rotates \`PLN_GPU_TOKEN\` (gen image + enter worker → GPU workers). Updates 6 SOPS files. After merge, main→production triggers gen image deploy; the script then SSH-fans-out to GPU hosts, then updates the Wrangler secret so the worker switches too. Automated by \`rotate-infra-gpu-token.sh\`." \
     || exit 1
 
 push_prod_and_watch "$DEPLOY_WORKFLOW" || {

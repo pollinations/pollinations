@@ -57,8 +57,6 @@ SOPS_FILES=(
     "$ENTER_DIR/secrets/dev.vars.json"
     "$ENTER_DIR/secrets/staging.vars.json"
     "$ENTER_DIR/secrets/prod.vars.json"
-    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 )
 DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
@@ -104,7 +102,7 @@ for f in "${SOPS_FILES[@]}"; do
         exit 1
     fi
 done
-log "SOPS: 5 files contain PLN_ENTER_TOKEN"
+log "SOPS: 3 files contain PLN_ENTER_TOKEN"
 
 if [ ! -f "$TESTING_TOKENS_FILE" ]; then
     error "Required for provider-specific health check: $TESTING_TOKENS_FILE"
@@ -123,7 +121,7 @@ if $DRY_RUN; then
     echo
     log "Plan:"
     echo "  1. Generate new PLN_ENTER_TOKEN (openssl rand -hex 32)"
-    echo "  2. Update SOPS (5 files)"
+    echo "  2. Update SOPS (3 files)"
     echo "  3. Update GitHub secrets (PLN_ENTER_TOKEN, ENTER_TOKEN)"
     echo "  4. Open PR: rotate/enter-token-<date> → main, auto-merge"
     echo "  5. Push main → production (admin)"
@@ -180,7 +178,7 @@ git commit -m "rotate: PLN_ENTER_TOKEN"
 
 open_pr_and_merge "$BRANCH" \
     "rotate: PLN_ENTER_TOKEN" \
-    "Rotates \`PLN_ENTER_TOKEN\` (CF Worker → EC2 trust boundary). Updates 5 SOPS files and GitHub secrets. After merge, main→production triggers gen deploy; the script then updates the Wrangler secret so the worker switches to the new token. Automated by \`rotate-infra-enter-token.sh\`." \
+    "Rotates \`PLN_ENTER_TOKEN\` (CF Worker → EC2 trust boundary). Updates 3 SOPS files and GitHub secrets. After merge, main→production triggers gen deploy; the script then updates the Wrangler secret so the worker switches to the new token. Automated by \`rotate-infra-enter-token.sh\`." \
     || exit 1
 
 push_prod_and_watch "$DEPLOY_WORKFLOW" || {

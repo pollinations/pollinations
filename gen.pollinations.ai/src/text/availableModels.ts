@@ -31,6 +31,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.4"],
     },
     {
+        name: "gpt-5.5",
+        config: portkeyConfig["gpt-5.5"],
+    },
+    {
         name: "qwen-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),

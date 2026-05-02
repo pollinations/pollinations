@@ -25,7 +25,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 - `enter.pollinations.ai/` — Auth gateway + billing (Cloudflare Worker)
 - `gen.pollinations.ai/` — Edge router + text generation Worker
-- `image.pollinations.ai/` — Image backend (EC2 + Vast.ai)
+- `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations_ai/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations_ai/model-context-protocol` (MCP server; see `packages/mcp/AGENTS.md`)
@@ -39,14 +39,14 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
-- Services: Text (Portkey, multi-provider), Image (Flux/Turbo on EC2/Vast.ai/io.net), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
+- Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Tiers: microbe → spore → seed → flower → router (nectar is legacy — still supported, no longer granted; see `enter.pollinations.ai/src/tier-config.ts`)
 
 ### Local Development
 
-Ports: enter `3000` (API at `/api/*`), gen `8788`, image `16384`. Run `npm run dev` per service.
+Ports: enter `3000` (API at `/api/*`), gen `8788`. Run `npm run dev` per service.
 
-To point enter at a local image backend, edit `enter.pollinations.ai/wrangler.toml` `IMAGE_SERVICE_URL` to `http://localhost:16384`. EC2 hostnames in wrangler.toml may change — check actual values.
+Image generation now runs inside `gen.pollinations.ai`; local image API tests should target the gen worker on port `8788`.
 
 Local API test:
 ```bash
@@ -130,9 +130,9 @@ npx vitest run test/file.test.ts
 
 ## Architecture & Common Tasks
 
-- Frontend → `pollinations.ai/`; image → `image.pollinations.ai/`; text/gen gateway → `gen.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
+- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `image.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
 - Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
-- Image models: handler in `image.pollinations.ai/src/`, register in `shared/registry/image.ts`.
+- Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
 - Update API docs + model registry for new models.
 - API changes: maintain backward compatibility; document; handle errors.
 - API docs: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.

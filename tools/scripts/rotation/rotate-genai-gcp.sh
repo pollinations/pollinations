@@ -1,5 +1,5 @@
 #!/bin/bash
-# Rotate GCP service account key used by image and text EC2 services.
+# Rotate GCP service account key used by gen image and text providers.
 #
 # Usage: ./rotate-genai-gcp.sh [--execute]
 #
@@ -43,7 +43,7 @@ SOPS_FILES=(
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
     "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 )
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 HEALTH_MODEL="gemini-large"
@@ -296,4 +296,4 @@ log "Old key: $OLD_KEY_ID (deleted)"
 log "New key: $NEW_KEY_ID"
 log "SA: $SA_EMAIL"
 echo ""
-log "SOPS + production + EC2 services now using the new key."
+log "SOPS + production + gen worker now using the new key."

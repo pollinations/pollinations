@@ -1,5 +1,5 @@
 #!/bin/bash
-# Rotate AWS IAM access keys used by the image and text EC2 services.
+# Rotate AWS IAM access keys used by the gen image and text providers.
 #
 # Usage: ./rotate-genai-aws.sh [--execute]
 #
@@ -13,7 +13,7 @@
 #   5. Open PR to main, enable auto-merge
 #   6. Poll until PR merged
 #   7. git push origin main:production (admin push, no PR)
-#   8. Watch deploy-enter-services.yml complete
+#   8. Watch deploy-gen-cloudflare.yml complete
 #   9. Health check production endpoint
 #  10. Delete old IAM access key
 #
@@ -47,7 +47,7 @@ SOPS_FILES=(
     "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
     "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
 )
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 HEALTH_MODEL="claude-fast"
@@ -236,4 +236,4 @@ echo ""
 log "Old key: $OLD_KEY_ID (deleted)"
 log "New key: $NEW_KEY_ID"
 echo ""
-log "SOPS + production + EC2 services now using the new key."
+log "SOPS + production + gen worker now using the new key."

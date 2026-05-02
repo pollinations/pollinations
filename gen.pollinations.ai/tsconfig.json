@@ -10,6 +10,7 @@
             "node"
         ],
         "strict": true,
+        "useUnknownInCatchVariables": false,
         "noEmit": true,
         "skipLibCheck": true,
         "esModuleInterop": true,

@@ -13,6 +13,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Alibaba: "alibaba",
     Amazon: "amazon",
     Anthropic: "anthropic",
+    AssemblyAI: "assemblyai",
     "Black Forest Labs": "black-forest-labs",
     ByteDance: "bytedance",
     DeepSeek: "deepseek",

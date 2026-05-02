@@ -73,6 +73,9 @@ export async function generateCacheKey(
                     filteredBody[key] = value;
                 }
             }
+            // Cache is keyed by the user's original input plus safe mode. On a
+            // MISS, safety may redact before generation, but keeping the
+            // original input in the key prevents unrelated prompts from sharing.
             parts.push(stableStringify(filteredBody));
         } catch {
             // If not JSON, use body as-is

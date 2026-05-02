@@ -26,6 +26,8 @@ type SafetyContext = Context<Env>;
 type ChatBody = CreateChatCompletionRequest & Record<string, unknown>;
 type ChatMessage = ChatBody["messages"][number];
 const SAFETY_HEADERS_KEY = "safetyHeaders";
+const SAFETY_MAX_TEXT_CHARS = 20_000;
+const SAFETY_MAX_TEXT_PARTS = 25;
 
 export type SafetyVariables = {
     safetyHeaders?: Record<string, string>;
@@ -36,9 +38,20 @@ export async function applySafety(
     text: string,
     bodySafe?: SafeValue,
 ): Promise<string> {
+    return (await applySafetyToTextValues(c, [text], bodySafe))[0] ?? text;
+}
+
+async function applySafetyToTextValues(
+    c: SafetyContext,
+    texts: string[],
+    bodySafe?: SafeValue,
+): Promise<string[]> {
     const safeValue = resolveSafeValue(c, bodySafe);
     const features = getRequestFeatures(safeValue);
-    if (features.size === 0 || !text.trim()) return text;
+    if (features.size === 0) return texts;
+
+    const guardrailInputs = selectGuardrailInputs(texts);
+    if (guardrailInputs.length === 0) return texts;
 
     setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
 
@@ -51,7 +64,11 @@ export async function applySafety(
                 message: "Safety service not configured",
             });
         }
-        response = await applyGuardrail(text, "INPUT", guardrailEnv);
+        response = await applyGuardrail(
+            guardrailInputs.map((input) => input.text),
+            "INPUT",
+            guardrailEnv,
+        );
     } catch (error) {
         if (error instanceof HTTPException) throw error;
         c.get("log").error("Bedrock guardrail failed: {error}", {
@@ -63,7 +80,7 @@ export async function applySafety(
         });
     }
 
-    if (response.action !== "GUARDRAIL_INTERVENED") return text;
+    if (response.action !== "GUARDRAIL_INTERVENED") return texts;
 
     const { blockedFeatures, redactedIds } = classifyTriggers(
         response,
@@ -79,15 +96,56 @@ export async function applySafety(
         });
     }
 
-    const redacted = response.outputs?.[0]?.text;
-    if (features.has("privacy") && redacted && redacted !== text) {
+    if (!features.has("privacy")) return texts;
+
+    const safeTexts = [...texts];
+    let changed = false;
+    for (const [outputIndex, input] of guardrailInputs.entries()) {
+        const redacted = response.outputs?.[outputIndex]?.text;
+        if (!redacted || redacted === input.text) continue;
+        safeTexts[input.originalIndex] =
+            texts[input.originalIndex].slice(0, input.offset) + redacted;
+        changed = true;
+    }
+
+    if (changed) {
         if (redactedIds.length > 0) {
             setSafetyHeader(c, "X-Safety-Redacted", redactedIds.join(","));
         }
-        return redacted;
+        return safeTexts;
     }
 
-    return text;
+    return texts;
+}
+
+function selectGuardrailInputs(texts: string[]) {
+    const inputs: { originalIndex: number; text: string; offset: number }[] =
+        [];
+    let remainingChars = SAFETY_MAX_TEXT_CHARS;
+    let remainingParts = SAFETY_MAX_TEXT_PARTS;
+
+    // Keep safety to one Bedrock call per logical input. If context is large,
+    // scan the tail instead of fanning out into more guardrail requests.
+    for (
+        let index = texts.length - 1;
+        index >= 0 && remainingChars > 0 && remainingParts > 0;
+        index--
+    ) {
+        const text = texts[index];
+        if (!text.trim()) continue;
+
+        const scannedText =
+            text.length > remainingChars ? text.slice(-remainingChars) : text;
+        inputs.push({
+            originalIndex: index,
+            text: scannedText,
+            offset: text.length - scannedText.length,
+        });
+        remainingChars -= scannedText.length;
+        remainingParts--;
+    }
+
+    return inputs.reverse();
 }
 
 function resolveSafeValue(
@@ -131,63 +189,91 @@ export async function applySafetyToChatRequest(
     body: ChatBody,
 ): Promise<ChatBody> {
     const safeValue = body.safe as SafeValue;
-    const messages = await applySafetyToMessages(c, body.messages, safeValue);
-    const system =
-        typeof body.system === "string"
-            ? await applySafety(c, body.system, safeValue)
-            : body.system;
+    const targets = collectChatTextTargets(body);
+    const safeTexts = await applySafetyToTextValues(
+        c,
+        targets.map((target) => target.text),
+        safeValue,
+    );
 
-    if (messages === body.messages && system === body.system) return body;
-    return { ...body, messages, ...(system !== undefined ? { system } : {}) };
-}
-
-async function applySafetyToMessages(
-    c: SafetyContext,
-    messages: ChatBody["messages"],
-    safeValue: SafeValue,
-): Promise<ChatBody["messages"]> {
+    let nextMessages = body.messages;
+    let nextSystem = body.system;
     let changed = false;
-    const safeMessages: ChatBody["messages"] = [];
-    for (const message of messages) {
-        const safeMessage = await applySafetyToMessage(c, message, safeValue);
-        changed ||= safeMessage !== message;
-        safeMessages.push(safeMessage);
-    }
-    return changed ? safeMessages : messages;
-}
+    for (const [targetIndex, target] of targets.entries()) {
+        const safeText = safeTexts[targetIndex];
+        if (safeText === target.text) continue;
+        changed = true;
 
-async function applySafetyToMessage(
-    c: SafetyContext,
-    message: ChatMessage,
-    safeValue: SafeValue,
-): Promise<ChatMessage> {
-    const content = message.content;
-    if (typeof content === "string") {
-        const safeContent = await applySafety(c, content, safeValue);
-        return safeContent === content
-            ? message
-            : { ...message, content: safeContent };
-    }
-
-    if (!Array.isArray(content)) return message;
-
-    let changed = false;
-    const safeContent: MessageContentPart[] = [];
-    for (const part of content) {
-        if (isTextPart(part)) {
-            const text = await applySafety(c, part.text, safeValue);
-            if (text !== part.text) {
-                changed = true;
-                safeContent.push({ ...part, text });
-                continue;
-            }
+        if (target.kind === "system") {
+            nextSystem = safeText;
+            continue;
         }
-        safeContent.push(part);
+
+        if (nextMessages === body.messages) nextMessages = [...body.messages];
+        const message = {
+            ...nextMessages[target.messageIndex],
+        } as ChatMessage;
+
+        if (target.partIndex === undefined) {
+            message.content = safeText;
+        } else if (Array.isArray(message.content)) {
+            const content = [...message.content] as MessageContentPart[];
+            content[target.partIndex] = {
+                ...content[target.partIndex],
+                text: safeText,
+            } as MessageContentPart;
+            message.content = content;
+        }
+
+        nextMessages[target.messageIndex] = message;
     }
 
-    return (
-        changed ? { ...message, content: safeContent } : message
-    ) as ChatMessage;
+    if (!changed) return body;
+    return {
+        ...body,
+        messages: nextMessages,
+        ...(nextSystem !== undefined ? { system: nextSystem } : {}),
+    };
+}
+
+type ChatTextTarget =
+    | { kind: "system"; text: string }
+    | {
+          kind: "message";
+          messageIndex: number;
+          partIndex?: number;
+          text: string;
+      };
+
+function collectChatTextTargets(body: ChatBody): ChatTextTarget[] {
+    const targets: ChatTextTarget[] = [];
+    if (typeof body.system === "string") {
+        targets.push({ kind: "system", text: body.system });
+    }
+
+    for (const [messageIndex, message] of body.messages.entries()) {
+        const content = message.content;
+        if (typeof content === "string") {
+            targets.push({ kind: "message", messageIndex, text: content });
+            continue;
+        }
+        if (!Array.isArray(content)) continue;
+
+        for (const [partIndex, part] of content.entries()) {
+            if (isTextPart(part)) {
+                targets.push({
+                    kind: "message",
+                    messageIndex,
+                    partIndex,
+                    text: part.text,
+                });
+            }
+            // Non-text parts, like image_url/video_url, are not sent to
+            // text-only Bedrock guardrails and remain unchanged.
+        }
+    }
+
+    return targets;
 }
 
 function isTextPart(part: MessageContentPart): part is MessageContentPart & {

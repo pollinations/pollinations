@@ -7,7 +7,11 @@ import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
-import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
+import {
+    applySafety,
+    applySafetyToChatRequest,
+    withSafetyHeaders,
+} from "@/middleware/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 import { generateCacheKey as generateMediaCacheKey } from "@/utils/media-cache.ts";
 import {
@@ -44,6 +48,14 @@ function safetyApp() {
         .get("/scan/:text", async (c) => {
             const text = await applySafety(c, c.req.param("text"));
             return withSafetyHeaders(c, new Response(text));
+        })
+        .post("/chat", async (c) => {
+            const body = await c.req.json();
+            const safeBody = await applySafetyToChatRequest(
+                c,
+                body as Parameters<typeof applySafetyToChatRequest>[1],
+            );
+            return withSafetyHeaders(c, Response.json(safeBody));
         });
 }
 
@@ -177,6 +189,19 @@ describe("applySafety", () => {
         expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
     });
 
+    it("emits applied header when safety runs without redaction", async () => {
+        const response = await safetyApp().request(
+            "/scan/hello?safe=privacy",
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe("hello");
+        expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
     it("blocks requested content categories", async () => {
         guardrailResponse = intervened({
             contentPolicy: {
@@ -217,6 +242,149 @@ describe("applySafety", () => {
         expect(response.status).toBe(503);
         expect(response.headers.get("X-Safety-Status")).toBe("misconfigured");
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("fails closed when the guardrail call fails", async () => {
+        fetchMock.mockRejectedValueOnce(new Error("network down"));
+
+        const response = await safetyApp().request(
+            "/scan/hello?safe=privacy",
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(503);
+        expect(response.headers.get("X-Safety-Status")).toBe("unavailable");
+    });
+});
+
+describe("applySafetyToChatRequest", () => {
+    beforeEach(() => {
+        guardrailResponse = { action: "NONE", assessments: [] };
+        fetchMock = vi.fn(async () => Response.json(guardrailResponse));
+        vi.stubGlobal("fetch", fetchMock);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("checks chat text parts in one guardrail request", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                        {
+                            action: "ANONYMIZED",
+                            match: "555-123-4567",
+                            type: "PHONE",
+                        },
+                    ],
+                },
+            },
+            [{ text: "email {EMAIL}" }, { text: "phone {PHONE}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/chat",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "privacy",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "email a@example.com",
+                                },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: "https://example.com/image.png",
+                                    },
+                                },
+                                {
+                                    type: "text",
+                                    text: "phone 555-123-4567",
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(await response.json()).toMatchObject({
+            messages: [
+                {
+                    content: [
+                        { type: "text", text: "email {EMAIL}" },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: "https://example.com/image.png",
+                            },
+                        },
+                        { type: "text", text: "phone {PHONE}" },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("checks only the latest chat parts when input is too long", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            Array.from({ length: 25 }, (_, index) => ({
+                text: `redacted ${index + 1}`,
+            })),
+        );
+
+        const response = await safetyApp().request(
+            "/chat",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "privacy",
+                    messages: Array.from({ length: 26 }, (_, index) => ({
+                        role: "user",
+                        content: `part ${index}`,
+                    })),
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        const body = (await response.json()) as {
+            messages: { content: string }[];
+        };
+        expect(body.messages[0].content).toBe("part 0");
+        expect(body.messages[1].content).toBe("redacted 1");
+        expect(body.messages[25].content).toBe("redacted 25");
     });
 });
 

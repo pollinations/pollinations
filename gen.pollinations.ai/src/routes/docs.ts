@@ -41,7 +41,7 @@ const SAFETY_DOCS = [
         SAFETY_HEADER_NAME +
         "` header.",
     "",
-    "Values: `privacy` redacts personal information like email, phone, and address. `secrets` redacts keys and passwords. `sexual`, `violence`, and `shield` block matching requests. Aliases: `true` = `privacy,secrets`, `nsfw` = `sexual,violence`.",
+    "Values: `privacy` redacts personal information like names, email, phone, address, IP, URLs, and usernames. `secrets` redacts keys and passwords. `sexual`, `violence`, and `shield` block matching requests. Aliases: `true` = `privacy,secrets`, `nsfw` = `sexual,violence`.",
     "",
     "```bash",
     'curl "https://gen.pollinations.ai/text/email%20me%20at%20a%40example.com?safe=privacy" \\',
@@ -54,7 +54,7 @@ const SAFETY_DOCS = [
     '  -d \'{"model":"openai","messages":[{"role":"user","content":"email me at a@example.com"}]}\'',
     "```",
     "",
-    'Blocked requests return `400` with `error.type: "safety_error"`. Safety outages fail closed with `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.',
+    'Blocked requests return `400` with `error.type: "safety_error"`. Safety service failures return `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.',
 ].join("\n");
 const CLI_DOCS = [
     "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",

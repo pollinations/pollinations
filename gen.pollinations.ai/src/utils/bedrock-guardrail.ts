@@ -86,7 +86,7 @@ export function resolveBedrockGuardrailEnv(
 }
 
 export async function applyGuardrail(
-    text: string,
+    text: string | string[],
     source: "INPUT" | "OUTPUT",
     env: BedrockGuardrailEnv,
 ): Promise<BedrockResponse> {
@@ -108,7 +108,9 @@ export async function applyGuardrail(
             guardrailIdentifier: env.guardrailIdentifier,
             guardrailVersion: env.guardrailVersion,
             source,
-            content: [{ text: { text } }],
+            content: (Array.isArray(text) ? text : [text]).map((entry) => ({
+                text: { text: entry },
+            })),
         }),
     ) as Promise<BedrockResponse>;
 }

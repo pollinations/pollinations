@@ -2,6 +2,8 @@ import type { SafetyFeature, SafeValue } from "@shared/schemas/safety.ts";
 import { parseSafeFeatures } from "@shared/schemas/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 
+// The POLLINATIONS_* identifiers must match regex names configured on the
+// deployed Bedrock guardrail, or those secret detections will not trigger.
 const FEATURE_TRIGGERS: Record<SafetyFeature, Set<string>> = {
     privacy: new Set([
         "EMAIL",
@@ -45,25 +47,27 @@ export function classifyTriggers(
     redactedFeatures: Set<SafetyFeature>;
     redactedIds: string[];
 } {
-    const policy = response.assessments?.[0]?.sensitiveInformationPolicy;
-    const filters = response.assessments?.[0]?.contentPolicy?.filters;
-
-    const detected: { id: string; action: "ANONYMIZED" | "BLOCKED" }[] = [
-        ...(policy?.piiEntities ?? []).map((entity) => ({
-            id: entity.type,
-            action: entity.action,
-        })),
-        ...(policy?.regexes ?? []).map((regex) => ({
-            id: regex.name,
-            action: "BLOCKED" as const,
-        })),
-        ...(filters ?? [])
-            .filter((filter) => filter.action === "BLOCKED")
-            .map((filter) => ({
-                id: filter.type,
+    const detected: { id: string; action: "ANONYMIZED" | "BLOCKED" }[] = [];
+    for (const assessment of response.assessments ?? []) {
+        const policy = assessment.sensitiveInformationPolicy;
+        const filters = assessment.contentPolicy?.filters;
+        detected.push(
+            ...(policy?.piiEntities ?? []).map((entity) => ({
+                id: entity.type,
+                action: entity.action,
+            })),
+            ...(policy?.regexes ?? []).map((regex) => ({
+                id: regex.name,
                 action: "BLOCKED" as const,
             })),
-    ];
+            ...(filters ?? [])
+                .filter((filter) => filter.action === "BLOCKED")
+                .map((filter) => ({
+                    id: filter.type,
+                    action: "BLOCKED" as const,
+                })),
+        );
+    }
 
     const blockedFeatures = new Set<SafetyFeature>();
     const redactedFeatures = new Set<SafetyFeature>();

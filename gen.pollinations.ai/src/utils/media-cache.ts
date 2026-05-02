@@ -5,13 +5,20 @@
  */
 
 import type { Logger } from "@logtape/logtape";
+import { parseSafeFeatures } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { removeUnset } from "@/util.ts";
 
 const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
+const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+
+function hasActiveSafety(value: string | null): boolean {
+    return parseSafeFeatures(value).size > 0;
+}
 
 export function generateCacheKey(url: URL): string {
     const normalizedUrl = new URL(url);
+    const usesSafety = hasActiveSafety(normalizedUrl.searchParams.get("safe"));
     const params = Array.from(normalizedUrl.searchParams.entries()).sort(
         ([keyA], [keyB]) => keyA.localeCompare(keyB),
     );
@@ -21,6 +28,9 @@ export function generateCacheKey(url: URL): string {
         if (!EXCLUDED_PARAMS.includes(key)) {
             normalizedUrl.searchParams.append(key, value);
         }
+    }
+    if (usesSafety) {
+        normalizedUrl.searchParams.append("__safety", SAFETY_CACHE_VERSION);
     }
 
     const fullPath = normalizedUrl.pathname + normalizedUrl.search;

@@ -34,10 +34,16 @@ import {
     CreateImageResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
+import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { UpstreamError } from "@/error.ts";
+import {
+    applySafety,
+    applySafetyToChatRequest,
+    withSafetyHeaders,
+} from "@/middleware/safety.ts";
 import { validator } from "@/middleware/validator.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
@@ -84,7 +90,13 @@ const imageVideoHandlers = factory.createHandlers(
     imageCache,
     generationAccess,
     async (c) => {
-        return handleImagePrompt(c);
+        const query = c.req.valid("query" as never) as { safe?: SafeValue };
+        const prompt = await applySafety(
+            c,
+            c.req.param("prompt") || "",
+            query.safe,
+        );
+        return withSafetyHeaders(c, await handleImagePrompt(c, prompt));
     },
 );
 
@@ -98,10 +110,10 @@ const chatCompletionHandlers = factory.createHandlers(
     generationAccess,
     async (c) => {
         // Use resolved model from middleware for the backend request
-        const requestBody: CreateChatCompletionRequest = {
+        const requestBody = await applySafetyToChatRequest(c, {
             ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
             model: c.var.model.resolved,
-        };
+        });
 
         const response = await handleChatCompletionLocal(c, requestBody);
 
@@ -131,12 +143,15 @@ const chatCompletionHandlers = factory.createHandlers(
                 contentFilterResultsToHeaders(parsedResponse);
         }
 
-        return new Response(response.body, {
-            headers: {
-                ...Object.fromEntries(response.headers),
-                ...contentFilterHeaders,
-            },
-        });
+        return withSafetyHeaders(
+            c,
+            new Response(response.body, {
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...contentFilterHeaders,
+                },
+            }),
+        );
     },
 );
 
@@ -459,12 +474,12 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         async (c) => {
-            const requestBody: CreateChatCompletionRequest = {
+            const requestBody = await applySafetyToChatRequest(c, {
                 ...(c.req.valid(
                     "json" as never,
                 ) as CreateChatCompletionRequest),
                 model: c.var.model.resolved,
-            };
+            });
 
             const response = await handleTextContentLocal(c, requestBody);
             if (c.var.track.streamRequested) {
@@ -478,7 +493,7 @@ export const proxyRoutes = new Hono<Env>()
                     });
                 }
             }
-            return response;
+            return withSafetyHeaders(c, response);
         },
     )
     .get(
@@ -521,9 +536,29 @@ export const proxyRoutes = new Hono<Env>()
             // Use resolved model from middleware
             const model = c.var.model.resolved;
 
-            const prompt = c.req.param("prompt");
+            const query = c.req.valid("query" as never) as {
+                safe?: SafeValue;
+                system?: string;
+            };
+            const prompt = await applySafety(
+                c,
+                c.req.param("prompt"),
+                query.safe,
+            );
+            const system =
+                typeof query.system === "string"
+                    ? await applySafety(c, query.system, query.safe)
+                    : undefined;
 
-            return handleSimpleTextLocal(c, prompt, model);
+            return withSafetyHeaders(
+                c,
+                await handleSimpleTextLocal(
+                    c,
+                    prompt,
+                    model,
+                    system ? { system } : undefined,
+                ),
+            );
         },
     )
     .get(
@@ -722,6 +757,7 @@ export const proxyRoutes = new Hono<Env>()
                     description:
                         "API key (alternative to Authorization header)",
                 }),
+                safe: SafeSchema,
             }),
         ),
         resolveModel("generate.audio"),
@@ -741,6 +777,10 @@ export const proxyRoutes = new Hono<Env>()
                         "Invalid percent-encoding in URL path. Make sure the text is properly URL-encoded (e.g. with encodeURIComponent), and that any literal '%' characters are written as '%25'.",
                 });
             }
+            const query = c.req.valid("query" as never) as {
+                safe?: SafeValue;
+            };
+            text = await applySafety(c, text, query.safe);
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
@@ -749,14 +789,17 @@ export const proxyRoutes = new Hono<Env>()
                     duration?: number;
                     style?: string;
                 };
-                return generateAceStepMusic({
-                    prompt: text,
-                    style,
-                    durationSeconds: duration,
-                    serviceUrl: c.env.MUSIC_SERVICE_URL,
-                    serviceToken: c.env.PLN_GPU_TOKEN,
-                    log,
-                });
+                return withSafetyHeaders(
+                    c,
+                    await generateAceStepMusic({
+                        prompt: text,
+                        style,
+                        durationSeconds: duration,
+                        serviceUrl: c.env.MUSIC_SERVICE_URL,
+                        serviceToken: c.env.PLN_GPU_TOKEN,
+                        log,
+                    }),
+                );
             }
 
             if (c.var.model.resolved === "elevenmusic") {
@@ -767,14 +810,17 @@ export const proxyRoutes = new Hono<Env>()
                     instrumental?: boolean;
                     seed?: number;
                 };
-                return generateMusic({
-                    prompt: text,
-                    durationSeconds: duration,
-                    forceInstrumental: instrumental,
-                    seed: seed === -1 ? undefined : seed,
-                    apiKey,
-                    log,
-                });
+                return withSafetyHeaders(
+                    c,
+                    await generateMusic({
+                        prompt: text,
+                        durationSeconds: duration,
+                        forceInstrumental: instrumental,
+                        seed: seed === -1 ? undefined : seed,
+                        apiKey,
+                        log,
+                    }),
+                );
             }
 
             const { voice, response_format, seed, instruct } = c.req.valid(
@@ -787,24 +833,30 @@ export const proxyRoutes = new Hono<Env>()
             };
 
             if (isQwenTtsModel(c.var.model.resolved)) {
-                return generateQwenTts({
-                    modelName: c.var.model.resolved,
-                    text,
-                    voice: voice || "alloy",
-                    instruct,
-                    apiKey: c.env.DASHSCOPE_API_KEY,
-                    log,
-                });
+                return withSafetyHeaders(
+                    c,
+                    await generateQwenTts({
+                        modelName: c.var.model.resolved,
+                        text,
+                        voice: voice || "alloy",
+                        instruct,
+                        apiKey: c.env.DASHSCOPE_API_KEY,
+                        log,
+                    }),
+                );
             }
 
-            return generateSpeech({
-                text,
-                voice: voice || "alloy",
-                responseFormat: response_format || "mp3",
-                seed: seed === -1 ? undefined : seed,
-                apiKey,
-                log,
-            });
+            return withSafetyHeaders(
+                c,
+                await generateSpeech({
+                    text,
+                    voice: voice || "alloy",
+                    responseFormat: response_format || "mp3",
+                    seed: seed === -1 ? undefined : seed,
+                    apiKey,
+                    log,
+                }),
+            );
         },
     )
     .post(

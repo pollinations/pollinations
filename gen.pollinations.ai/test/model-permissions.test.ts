@@ -38,3 +38,29 @@ test("filters image model list by API key permissions", async ({
     expect(modelNames).toContain("flux");
     expect(modelNames).not.toContain("turbo");
 });
+
+test("filters paid-only audio models by paid balance", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const freeResponse = await fetchWorker("/audio/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const paidResponse = await fetchWorker("/audio/models", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+
+    expect(freeResponse.status).toBe(200);
+    expect(paidResponse.status).toBe(200);
+
+    const freeModelNames = (
+        (await freeResponse.json()) as { name: string }[]
+    ).map((model) => model.name);
+    const paidModelNames = (
+        (await paidResponse.json()) as { name: string }[]
+    ).map((model) => model.name);
+
+    expect(freeModelNames).toContain("universal-2");
+    expect(freeModelNames).not.toContain("universal-3-pro");
+    expect(paidModelNames).toContain("universal-3-pro");
+});

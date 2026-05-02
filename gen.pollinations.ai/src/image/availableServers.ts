@@ -2,13 +2,7 @@ import debug from "debug";
 
 const logServer = debug("pollinations:server");
 
-export const VALID_TYPES = [
-    "flux",
-    "translate",
-    "zimage",
-    "sana",
-    "ltx2",
-] as const;
+export const VALID_TYPES = ["flux", "zimage", "sana", "ltx2"] as const;
 export type ServerType = (typeof VALID_TYPES)[number];
 
 type ServerEntry = {
@@ -101,8 +95,6 @@ export const getNextServerUrl = async (
     }
     return activeServers[Math.floor(Math.random() * activeServers.length)].url;
 };
-
-export const getNextTranslationServerUrl = () => getNextServerUrl("translate");
 
 export const fetchFromLeastBusyServer = async (
     type: ServerType = "flux",

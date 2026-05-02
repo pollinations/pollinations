@@ -1,11 +1,9 @@
 import debug from "debug";
 import type { ImageParams } from "./params.ts";
 import { pimpPrompt } from "./promptEnhancer.ts";
-import { detectLanguage, sanitizeString } from "./translateIfNecessary.ts";
+import { sanitizeString } from "./translateIfNecessary.ts";
 
 const logPrompt = debug("pollinations:prompt");
-const logPerf = debug("pollinations:perf");
-const logError = debug("pollinations:error");
 const memoizedPrompts = new Map();
 
 export type TimingStep = { step: string; timestamp: number };
@@ -43,25 +41,13 @@ export const normalizeAndTranslatePrompt = async (
     // Sanitize prompt
     prompt = sanitizeString(prompt);
 
-    // check from the request headers if the user most likely speaks english (value starts with en)
+    // If the user's accept-language isn't English, assume the prompt may need
+    // translation/enhancement. The prompt enhancer (LLM) handles this — there
+    // is no separate translation service.
     const acceptLanguage = req.headers["accept-language"];
     const englishLikely =
         typeof acceptLanguage === "string" && acceptLanguage.startsWith("en");
-
-    if (!englishLikely) {
-        const startTime = Date.now();
-        try {
-            const detectedLanguage = await detectLanguage(prompt);
-            if (detectedLanguage !== "en") {
-                enhance = true;
-            }
-        } catch (error) {
-            logError(error);
-            enhance = true;
-        }
-        const endTime = Date.now();
-        logPerf(`Translation time: ${endTime - startTime}ms`);
-    }
+    if (!englishLikely) enhance = true;
 
     if (enhance) {
         logPrompt("pimping prompt", prompt, seed);

@@ -466,7 +466,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Grok Imagine - xAI official image generation",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-imagine-pro": {
@@ -490,7 +490,7 @@ export const IMAGE_SERVICES = {
         ],
         description:
             "Grok Imagine Pro - xAI official pro image generation (Aurora)",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-video-pro": {

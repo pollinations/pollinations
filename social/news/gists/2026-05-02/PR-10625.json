@@ -1,0 +1,34 @@
+{
+  "pr_number": 10625,
+  "title": "fix: remove Polar integration",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10625",
+  "merged_at": "2026-05-02T19:00:47Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "We've swept out the old Polar integration code to keep our billing systems lean and mean. Stripe is still handling things smoothly!",
+    "summary": "Removed the deprecated Polar integration, including webhooks, SDK dependencies, and test mocks, to streamline the billing architecture.",
+    "impact": "This internal cleanup reduces codebase bloat and simplifies our payment infrastructure, with no changes to the user experience.",
+    "keywords": [
+      "billing",
+      "cleanup",
+      "polar",
+      "infrastructure",
+      "chore"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny janitor hat, sweeping away icy blue floppy disks (representing Polar) from a cozy server room, leaving it clean and organized.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping away icy blue floppy disks from a warm, glowing server room. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-02/PR-10625.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny janitor's hat, sweeping away icy blue floppy disks from a warm, glowing server room. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-02T19:01:42.186502+00:00"
+}

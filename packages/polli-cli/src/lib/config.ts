@@ -11,6 +11,14 @@ import { join } from "node:path";
 const CONFIG_DIR = join(homedir(), ".pollinations");
 const CREDENTIALS_FILE = join(CONFIG_DIR, "credentials.json");
 
+/** Where credentials live, with a `~/` prefix when applicable for display. */
+export const credentialsDisplayPath = (): string => {
+    const home = homedir();
+    return CREDENTIALS_FILE.startsWith(home)
+        ? `~${CREDENTIALS_FILE.slice(home.length)}`
+        : CREDENTIALS_FILE;
+};
+
 export interface PolliCredentials {
     apiKey?: string;
     keyType?: "pk" | "sk";

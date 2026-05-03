@@ -12,10 +12,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "==> 1. Running pure-function tests"
-node --experimental-strip-types --test \
-  core/prompt.test.ts \
-  core/image.test.ts \
-  surfaces/openai-compat/handler.test.ts
+# Auto-discover *.test.ts under core/ and surfaces/ (excludes live.test.ts).
+mapfile -t TEST_FILES < <(
+  find core surfaces -name '*.test.ts' ! -name 'live.test.ts' | sort
+)
+node --experimental-strip-types --test "${TEST_FILES[@]}"
 
 echo
 echo "==> 2. Live tests (skipped unless POLLINATIONS_LIVE=1 + token)"

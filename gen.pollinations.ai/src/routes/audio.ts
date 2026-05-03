@@ -11,7 +11,8 @@ import {
     createAudioTokenUsage,
     createCompletionAudioSecondsUsage,
 } from "@shared/registry/usage-headers.ts";
-import { Hono } from "hono";
+import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
+import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
@@ -22,6 +23,7 @@ import { balance } from "@/middleware/balance.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
+import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
 import { validator } from "@/middleware/validator.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
@@ -38,6 +40,7 @@ const CreateSpeechRequestSchema = z
                 "The text to generate audio for. Maximum 4096 characters.",
             example: "Hello, welcome to Pollinations!",
         }),
+        safe: SafeSchema,
         voice: z
             .string()
             .default("alloy")
@@ -87,6 +90,17 @@ const CreateSpeechRequestSchema = z
     .meta({ $id: "CreateSpeechRequest" });
 
 type CreateSpeechRequest = z.infer<typeof CreateSpeechRequestSchema>;
+type AudioContext = Context<Env>;
+type SimpleAudioQuery = {
+    safe?: SafeValue;
+    duration?: number;
+    style?: string;
+    instrumental?: boolean;
+    seed?: number;
+    voice: string;
+    response_format: string;
+    instruct?: string;
+};
 
 function mapOutputFormat(format: string): string {
     const formatMap: Record<string, string> = {
@@ -648,6 +662,81 @@ export async function generateAceStepMusic(opts: {
     });
 }
 
+export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
+    const log = c.get("log").getChild("generate");
+
+    const rawText = c.req.param("text");
+    let text: string;
+    try {
+        text = decodeURIComponent(rawText);
+    } catch {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "Invalid percent-encoding in URL path. Make sure the text is properly URL-encoded (e.g. with encodeURIComponent), and that any literal '%' characters are written as '%25'.",
+        });
+    }
+
+    const query = c.req.valid("query" as never) as SimpleAudioQuery;
+    text = await applySafety(c, text, query.safe);
+
+    const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
+        .ELEVENLABS_API_KEY;
+
+    if (c.var.model.resolved === "acestep") {
+        return withSafetyHeaders(
+            c,
+            await generateAceStepMusic({
+                prompt: text,
+                style: query.style,
+                durationSeconds: query.duration,
+                serviceUrl: c.env.MUSIC_SERVICE_URL,
+                serviceToken: c.env.PLN_GPU_TOKEN,
+                log,
+            }),
+        );
+    }
+
+    if (c.var.model.resolved === "elevenmusic") {
+        return withSafetyHeaders(
+            c,
+            await generateMusic({
+                prompt: text,
+                durationSeconds: query.duration,
+                forceInstrumental: query.instrumental,
+                seed: query.seed === -1 ? undefined : query.seed,
+                apiKey,
+                log,
+            }),
+        );
+    }
+
+    if (isQwenTtsModel(c.var.model.resolved)) {
+        return withSafetyHeaders(
+            c,
+            await generateQwenTts({
+                modelName: c.var.model.resolved,
+                text,
+                voice: query.voice || "alloy",
+                instruct: query.instruct,
+                apiKey: c.env.DASHSCOPE_API_KEY,
+                log,
+            }),
+        );
+    }
+
+    return withSafetyHeaders(
+        c,
+        await generateSpeech({
+            text,
+            voice: query.voice || "alloy",
+            responseFormat: query.response_format || "mp3",
+            seed: query.seed === -1 ? undefined : query.seed,
+            apiKey,
+            log,
+        }),
+    );
+}
+
 export const audioRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     .use("*", auth(), frontendKeyRateLimit, balance)
@@ -696,9 +785,10 @@ export const audioRoutes = new Hono<Env>()
             const log = c.get("log").getChild("tts");
             await requireGenerationAccess(c.var, c.env);
 
-            const { input, voice, response_format } = c.req.valid(
+            const { input, safe, voice, response_format } = c.req.valid(
                 "json" as never,
             ) as CreateSpeechRequest;
+            const safeInput = await applySafety(c, input, safe);
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 
@@ -706,28 +796,34 @@ export const audioRoutes = new Hono<Env>()
                 const { duration, style } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
-                return generateAceStepMusic({
-                    prompt: input,
-                    style,
-                    durationSeconds: duration,
-                    serviceUrl: c.env.MUSIC_SERVICE_URL,
-                    serviceToken: c.env.PLN_GPU_TOKEN,
-                    log,
-                });
+                return withSafetyHeaders(
+                    c,
+                    await generateAceStepMusic({
+                        prompt: safeInput,
+                        style,
+                        durationSeconds: duration,
+                        serviceUrl: c.env.MUSIC_SERVICE_URL,
+                        serviceToken: c.env.PLN_GPU_TOKEN,
+                        log,
+                    }),
+                );
             }
 
             if (c.var.model.resolved === "elevenmusic") {
                 const { duration, instrumental, seed } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
-                return generateMusic({
-                    prompt: input,
-                    durationSeconds: duration,
-                    forceInstrumental: instrumental,
-                    seed,
-                    apiKey,
-                    log,
-                });
+                return withSafetyHeaders(
+                    c,
+                    await generateMusic({
+                        prompt: safeInput,
+                        durationSeconds: duration,
+                        forceInstrumental: instrumental,
+                        seed,
+                        apiKey,
+                        log,
+                    }),
+                );
             }
 
             const { seed } = c.req.valid(
@@ -737,24 +833,30 @@ export const audioRoutes = new Hono<Env>()
                 const { instruct } = c.req.valid(
                     "json" as never,
                 ) as CreateSpeechRequest;
-                return generateQwenTts({
-                    modelName: c.var.model.resolved,
-                    text: input,
-                    voice,
-                    instruct,
-                    apiKey: c.env.DASHSCOPE_API_KEY,
-                    log,
-                });
+                return withSafetyHeaders(
+                    c,
+                    await generateQwenTts({
+                        modelName: c.var.model.resolved,
+                        text: safeInput,
+                        voice,
+                        instruct,
+                        apiKey: c.env.DASHSCOPE_API_KEY,
+                        log,
+                    }),
+                );
             }
 
-            return generateSpeech({
-                text: input,
-                voice,
-                responseFormat: response_format,
-                seed,
-                apiKey,
-                log,
-            });
+            return withSafetyHeaders(
+                c,
+                await generateSpeech({
+                    text: safeInput,
+                    voice,
+                    responseFormat: response_format,
+                    seed,
+                    apiKey,
+                    log,
+                }),
+            );
         },
     )
     .post(

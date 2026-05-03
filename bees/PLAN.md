@@ -60,6 +60,25 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase N — cross-surface invariant test [DONE]
+
+Codex's "Phase M consensus note" (issue #10628 ~13:42Z) confirmed the `core/errors.ts` taxonomy as the right product shape but explicitly said they won't extract a shared module on their side ("the examples are intentionally standalone/minimal"). Both PRs are mergeable. The natural next move per codex is "a separate platform PR putting this taxonomy in the hosted bee invocation layer," not more on either branch.
+
+Given we're done lifting and codex is done lifting, the remaining concrete unit on our side is **mechanical drift protection**: pin the cross-surface invariant from Phase M with a single test file that imports all three surface handlers, fires the same upstream error against each, and asserts the resulting `code` strings match. The Phase M commit message claimed the invariant; this turns the claim into CI.
+
+- [x] **N1.** New `bees/catgpt/cross-surface-invariant.test.ts` — 5 assertions:
+  - upstream 401 → all three surfaces emit `code: upstream_auth_failed`
+  - upstream 402 → all three emit `insufficient_pollen`
+  - upstream 429 → all three emit `upstream_rate_limited`
+  - upstream 500 → all three emit `upstream_error`
+  - upstream 429 with `Retry-After: 60` → openai-compat + web-chat surface it as response header; a2a surfaces it as `error.data.retryAfter` (cross-envelope check)
+
+- [x] **N2.** Test imports `handleChatCompletions`, `handleChatRequest`, `handleA2ARequest` together with one shared `globalThis.fetch` stub. Existing per-surface test files keep their own stubs; this is orthogonal coverage.
+
+**What this prevents.** A future edit changing one surface's code string from `upstream_rate_limited` to `rate_limited` (or similar drift) breaks the assertion loudly. The vocabulary is no longer asserted only by inspection.
+
+**Verification:** `bash bees/catgpt/scripts/smoke.sh` — 82/82 (was 77, +5). Other smokes unchanged: code-bee 20/20, deploy-api 71/71. Total 173 unit tests install-free.
+
 ## Phase M — cross-surface upstream errors + Retry-After [DONE]
 
 Two compounding moves: codex took Phase L wholesale on `minimal-openai-wrapper` (their commit `4d3c9dec`) AND added `Retry-After` preservation that we hadn't done. Lifted that back, hoisted the translation logic into `core/`, and applied to web-chat + a2a (same gap was in both — they called `generateCatReplyWithUsage` with no try/catch).

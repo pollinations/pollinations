@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-05-03",
+  "period_start": "2026-04-26",
+  "period_end": "2026-05-02",
+  "generated_at": "2026-05-03T06:49:51.643514+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-03/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, 41 PRs merged this week. A lot of infrastructure shifting and a fresh batch of models.\n\n## Weekly Update - 2026-05-03\n\n🏗️ **The Great Migration**\nText and image generation have officially moved to `gen.pollinations.ai`. The old `/api/generate/*` endpoints now 308-redirect to the new gen workers. It's the same API, just better plumbing under the hood.\n\n🧠 **Models & Media**\n- **Text:** Added GPT-5.5 and Llama 3.3 70B.\n- **Audio:** AssemblyAI is now live for speech-to-text. Scribe stays free.\n- **Video & Image:** Nova Reel finally supports seeds for video generation. Grok Imagine and Imagine Pro now support image-to-image (reference images). `gpt-image-2` also moved directly to OpenAI for better stability.\n\n🔑 **BYOP & Auth**\n- Added per-key `redirect_uri` allowlists for BYOP.\n- You can now set unlimited BYOP budgets (use responsibly).\n- `polli-cli` now accepts piped auth tokens.\n\n🌸 **Ecosystem**\nPollinations is now an official provider in OpenClaw. Plus, four new community apps hit the showcase: StoryForge, Frieze, YSOAI, and LAHgen.\n\nKeep building."
+}

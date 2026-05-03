@@ -9,6 +9,29 @@ export type BeeRuntimeKind = "worker" | "container";
 export type BeeStateBackend = "memory" | "kv" | "durable-object" | "sqlite";
 export type BeeSurface = "openai" | "web" | "discord" | "a2a";
 
+export type BeeRuntimeRequest = {
+    kind?: BeeRuntimeKind;
+    provider?: BeeRuntimeProvider;
+    region?: string;
+};
+
+export type BeeResolvedRuntime = {
+    kind: BeeRuntimeKind;
+    provider: Exclude<BeeRuntimeProvider, "auto">;
+    requestedProvider: BeeRuntimeProvider;
+    region?: string;
+};
+
+export type BeeStateRequest = {
+    backend?: BeeStateBackend;
+    retentionDays?: number;
+};
+
+export type BeeResolvedState = {
+    backend: BeeStateBackend;
+    retentionDays?: number;
+};
+
 export type BeeDeploymentSource =
     | {
           type: "git";
@@ -28,15 +51,8 @@ export type BeeDeploymentSource =
 export type BeeDeploymentRequest = {
     name: string;
     source: BeeDeploymentSource;
-    runtime: {
-        kind: BeeRuntimeKind;
-        provider?: BeeRuntimeProvider;
-        region?: string;
-    };
-    state: {
-        backend: BeeStateBackend;
-        retentionDays?: number;
-    };
+    runtime?: BeeRuntimeRequest;
+    state?: BeeStateRequest;
     surfaces: BeeSurface[];
     billing: {
         mode: "user-pays" | "author-pays";
@@ -50,11 +66,8 @@ export type BeeDeployment = {
     id: string;
     name: string;
     status: "queued" | "building" | "ready" | "failed";
-    runtime: BeeDeploymentRequest["runtime"] & {
-        provider: Exclude<BeeRuntimeProvider, "auto">;
-        requestedProvider: BeeRuntimeProvider;
-    };
-    state: BeeDeploymentRequest["state"];
+    runtime: BeeResolvedRuntime;
+    state: BeeResolvedState;
     requiredScopes: {
         developer: string[];
         invocation: string[];
@@ -117,20 +130,55 @@ export function projectDeploymentRoutes(
 }
 
 export function resolveProvider(
-    runtime: BeeDeploymentRequest["runtime"],
+    runtime: BeeDeploymentRequest["runtime"] = {},
 ): Exclude<BeeRuntimeProvider, "auto"> {
-    const provider = runtime.provider ?? "auto";
+    const normalized = normalizeRuntime(runtime);
+    const provider = normalized.provider;
     if (provider !== "auto") return provider;
-    return runtime.kind === "container" ? "daytona" : "cloudflare-agents";
+    return normalized.kind === "container" ? "daytona" : "cloudflare-agents";
 }
 
 export function resolveRuntime(
-    runtime: BeeDeploymentRequest["runtime"],
-): BeeDeployment["runtime"] {
+    runtime: BeeDeploymentRequest["runtime"] = {},
+): BeeResolvedRuntime {
+    const normalized = normalizeRuntime(runtime);
+    return {
+        ...normalized,
+        provider: resolveProvider(normalized),
+        requestedProvider: normalized.provider,
+    };
+}
+
+export function normalizeRuntime(
+    runtime: BeeDeploymentRequest["runtime"] = {},
+): Required<Pick<BeeRuntimeRequest, "kind" | "provider">> &
+    Pick<BeeRuntimeRequest, "region"> {
     return {
         ...runtime,
-        provider: resolveProvider(runtime),
-        requestedProvider: runtime.provider ?? "auto",
+        kind: runtime.kind ?? "worker",
+        provider: runtime.provider ?? "auto",
+    };
+}
+
+export function normalizeState(
+    state: BeeDeploymentRequest["state"] = {},
+): BeeResolvedState {
+    return {
+        ...state,
+        backend: state.backend ?? "sqlite",
+    };
+}
+
+export function normalizeDeploymentRequest(
+    request: BeeDeploymentRequest,
+): BeeDeploymentRequest & {
+    runtime: ReturnType<typeof normalizeRuntime>;
+    state: BeeResolvedState;
+} {
+    return {
+        ...request,
+        runtime: normalizeRuntime(request.runtime),
+        state: normalizeState(request.state),
     };
 }
 
@@ -197,16 +245,17 @@ export function createQueuedDeployment(
     now = new Date(),
 ): BeeDeployment {
     const timestamp = now.toISOString();
-    const runtime = resolveRuntime(request.runtime);
+    const normalized = normalizeDeploymentRequest(request);
+    const runtime = resolveRuntime(normalized.runtime);
     return {
-        id: createDeploymentId(request.name),
-        name: request.name,
+        id: createDeploymentId(normalized.name),
+        name: normalized.name,
         status: "queued",
         runtime,
-        state: request.state,
-        requiredScopes: requiredScopes(request),
-        billingEstimate: estimateBilling(request, runtime),
-        surfaces: projectDeploymentRoutes(request, baseUrl),
+        state: normalized.state,
+        requiredScopes: requiredScopes(normalized),
+        billingEstimate: estimateBilling(normalized, runtime),
+        surfaces: projectDeploymentRoutes(normalized, baseUrl),
         createdAt: timestamp,
         updatedAt: timestamp,
     };

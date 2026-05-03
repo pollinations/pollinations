@@ -6,10 +6,6 @@
     "ref": "main",
     "packagePath": "bees/minimal-cloudflare-agents"
   },
-  "runtime": {
-    "kind": "worker",
-    "provider": "auto"
-  },
   "surfaces": [
     "web",
     "a2a"
@@ -18,9 +14,5 @@
     "mode": "user-pays",
     "clientId": "pk_replace_me",
     "dailyPollenLimit": 5
-  },
-  "state": {
-    "backend": "sqlite",
-    "retentionDays": 7
   }
 }

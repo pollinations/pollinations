@@ -11,6 +11,7 @@ const stateBackends = new Set(["memory", "kv", "durable-object", "sqlite"]);
 const sourceTypes = new Set(["git", "template", "bundle"]);
 const surfaces = new Set(["openai", "web", "discord", "a2a"]);
 const billingModes = new Set(["user-pays", "author-pays"]);
+const containerProviders = new Set(["daytona", "aws-agentcore", "container"]);
 
 function isObject(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -56,50 +57,39 @@ export function validateBeeManifest(manifest) {
         }
     }
 
-    if (!isObject(manifest.runtime)) {
-        errors.push("runtime must be an object");
+    if (manifest.runtime !== undefined && !isObject(manifest.runtime)) {
+        errors.push("runtime must be an object when provided");
     } else {
+        const runtime = normalizeRuntime(manifest.runtime);
+        requireEnum(errors, runtime.kind, runtimeKinds, "runtime.kind");
         requireEnum(
             errors,
-            manifest.runtime.kind,
-            runtimeKinds,
-            "runtime.kind",
-        );
-        requireEnum(
-            errors,
-            manifest.runtime.provider ?? "auto",
+            runtime.provider,
             runtimeProviders,
             "runtime.provider",
         );
         if (
-            manifest.runtime.kind === "worker" &&
-            ["daytona", "aws-agentcore", "container"].includes(
-                manifest.runtime.provider,
-            )
+            runtime.kind === "worker" &&
+            containerProviders.has(runtime.provider)
         ) {
             errors.push("runtime.provider requires runtime.kind container");
         }
         if (
-            manifest.runtime.kind === "container" &&
-            manifest.runtime.provider === "cloudflare-agents"
+            runtime.kind === "container" &&
+            runtime.provider === "cloudflare-agents"
         ) {
             errors.push("cloudflare-agents requires runtime.kind worker");
         }
     }
 
-    if (!isObject(manifest.state)) {
-        errors.push("state must be an object");
+    if (manifest.state !== undefined && !isObject(manifest.state)) {
+        errors.push("state must be an object when provided");
     } else {
-        requireEnum(
-            errors,
-            manifest.state.backend,
-            stateBackends,
-            "state.backend",
-        );
+        const state = normalizeState(manifest.state);
+        requireEnum(errors, state.backend, stateBackends, "state.backend");
         if (
-            manifest.state.retentionDays !== undefined &&
-            (!Number.isInteger(manifest.state.retentionDays) ||
-                manifest.state.retentionDays < 0)
+            state.retentionDays !== undefined &&
+            (!Number.isInteger(state.retentionDays) || state.retentionDays < 0)
         ) {
             errors.push("state.retentionDays must be a non-negative integer");
         }
@@ -147,7 +137,30 @@ export function assertBeeManifest(manifest) {
         error.errors = result.errors;
         throw error;
     }
-    return manifest;
+    return normalizeBeeManifest(manifest);
+}
+
+export function normalizeRuntime(runtime = {}) {
+    return {
+        ...runtime,
+        kind: runtime.kind ?? "worker",
+        provider: runtime.provider ?? "auto",
+    };
+}
+
+export function normalizeState(state = {}) {
+    return {
+        ...state,
+        backend: state.backend ?? "sqlite",
+    };
+}
+
+export function normalizeBeeManifest(manifest) {
+    return {
+        ...manifest,
+        runtime: normalizeRuntime(manifest.runtime),
+        state: normalizeState(manifest.state),
+    };
 }
 
 export function createStarterManifest(name = "my-bee") {
@@ -157,14 +170,6 @@ export function createStarterManifest(name = "my-bee") {
             type: "git",
             repository: "https://github.com/your-org/your-bee.git",
             ref: "main",
-        },
-        runtime: {
-            kind: "worker",
-            provider: "auto",
-        },
-        state: {
-            backend: "sqlite",
-            retentionDays: 7,
         },
         surfaces: ["openai", "web", "a2a"],
         billing: {

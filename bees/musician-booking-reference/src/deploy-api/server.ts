@@ -5,6 +5,7 @@ import {
     createDeploymentId,
     createQueuedDeployment,
     estimateBilling,
+    normalizeState,
     projectDeploymentRoutes,
     requiredScopes,
     resolveRuntime,
@@ -79,7 +80,7 @@ export class MemoryBeeDeployApiStore implements BeeDeployApiStore {
             provider: deployment.runtime.requestedProvider,
             region: deployment.runtime.region,
         };
-        const state = patch.state ?? deployment.state;
+        const state = normalizeState(patch.state ?? deployment.state);
         const surfaces =
             patch.surfaces ??
             deployment.surfaces.map((surface) => surface.kind);

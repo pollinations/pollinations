@@ -6,10 +6,6 @@
     "ref": "main",
     "packagePath": "bees/booking"
   },
-  "runtime": {
-    "kind": "worker",
-    "provider": "auto"
-  },
   "surfaces": [
     "openai",
     "web",
@@ -22,9 +18,5 @@
   },
   "env": {
     "PUBLIC_BEE_NAME": "Booking Assistant"
-  },
-  "state": {
-    "backend": "sqlite",
-    "retentionDays": 7
   }
 }

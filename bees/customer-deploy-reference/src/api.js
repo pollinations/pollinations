@@ -1,4 +1,4 @@
-import { assertBeeManifest } from "./schema.js";
+import { assertBeeManifest, normalizeRuntime } from "./schema.js";
 
 export function createDeploymentId(name) {
     return `bee_${name
@@ -9,17 +9,19 @@ export function createDeploymentId(name) {
 }
 
 export function resolveProvider(runtime = {}) {
-    const provider = runtime.provider ?? "auto";
+    const normalized = normalizeRuntime(runtime);
+    const provider = normalized.provider;
     if (provider !== "auto") return provider;
-    if (runtime.kind === "container") return "daytona";
+    if (normalized.kind === "container") return "daytona";
     return "cloudflare-agents";
 }
 
 export function resolveRuntime(runtime = {}) {
-    const requestedProvider = runtime.provider ?? "auto";
+    const normalized = normalizeRuntime(runtime);
+    const requestedProvider = normalized.provider;
     return {
-        kind: runtime.kind,
-        provider: resolveProvider(runtime),
+        ...normalized,
+        provider: resolveProvider(normalized),
         requestedProvider,
     };
 }
@@ -82,19 +84,19 @@ export class DeployStore {
     #events = new Map();
 
     create(manifest, baseUrl = "https://gen.pollinations.ai") {
-        assertBeeManifest(manifest);
+        const normalizedManifest = assertBeeManifest(manifest);
         const now = new Date().toISOString();
-        const id = createDeploymentId(manifest.name);
-        const runtime = resolveRuntime(manifest.runtime);
+        const id = createDeploymentId(normalizedManifest.name);
+        const runtime = resolveRuntime(normalizedManifest.runtime);
         const deployment = {
             id,
-            name: manifest.name,
+            name: normalizedManifest.name,
             status: "queued",
             runtime,
-            state: manifest.state,
-            requiredScopes: requiredScopes(manifest),
-            billingEstimate: estimateBilling(manifest, runtime),
-            surfaces: manifest.surfaces.map((surface) => ({
+            state: normalizedManifest.state,
+            requiredScopes: requiredScopes(normalizedManifest),
+            billingEstimate: estimateBilling(normalizedManifest, runtime),
+            surfaces: normalizedManifest.surfaces.map((surface) => ({
                 kind: surface,
                 url: routeForSurface(baseUrl, id, surface),
             })),

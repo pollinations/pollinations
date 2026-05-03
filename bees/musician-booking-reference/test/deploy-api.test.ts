@@ -18,14 +18,6 @@ const request: BeeDeploymentRequest = {
         ref: "main",
         packagePath: "bees/booking",
     },
-    runtime: {
-        kind: "worker",
-        provider: "auto",
-    },
-    state: {
-        backend: "sqlite",
-        retentionDays: 7,
-    },
     surfaces: ["openai", "web", "discord", "a2a"],
     billing: {
         mode: "user-pays",
@@ -77,6 +69,26 @@ test("queued deployments preserve runtime and timestamps", () => {
         ),
     );
     assert.equal(deployment.createdAt, "2026-05-03T00:00:00.000Z");
+});
+
+test("queued deployments apply manifest defaults", () => {
+    const deployment = createQueuedDeployment(
+        {
+            name: "Minimal Bee",
+            source: {
+                type: "template",
+                template: "musician-booking-reference",
+            },
+            surfaces: ["web"],
+            billing: { mode: "author-pays" },
+        },
+        "https://gen.pollinations.ai",
+    );
+
+    assert.equal(deployment.runtime.kind, "worker");
+    assert.equal(deployment.runtime.provider, "cloudflare-agents");
+    assert.equal(deployment.runtime.requestedProvider, "auto");
+    assert.equal(deployment.state.backend, "sqlite");
 });
 
 test("deployment API reference router creates, reads, patches, events, and deletes", async () => {
@@ -149,12 +161,12 @@ test("patching runtime updates billing meters and state backend", async () => {
     const created = await store.create(request, "https://gen.pollinations.ai");
     const patched = await store.patch(created.id, {
         runtime: { kind: "container", provider: "aws-agentcore" },
-        state: { backend: "memory", retentionDays: 14 },
+        state: { retentionDays: 14 },
     });
 
     assert.equal(patched?.runtime.kind, "container");
     assert.equal(patched?.runtime.provider, "aws-agentcore");
-    assert.equal(patched?.state.backend, "memory");
+    assert.equal(patched?.state.backend, "sqlite");
     assert.ok(
         patched?.billingEstimate.meters.some(
             (meter) => meter.name === "runtime_compute",

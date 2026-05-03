@@ -38,17 +38,20 @@ Production would point the same commands at `gen.pollinations.ai` or
 
 ## Runtime selection
 
-Developers should not need to learn provider details for the common path:
+Developers should not need to learn provider details for the common path. The
+common manifest omits both `runtime` and `state`:
 
 ```json
 {
-  "runtime": { "kind": "worker", "provider": "auto" },
-  "state": { "backend": "sqlite", "retentionDays": 7 }
+  "name": "booking-assistant",
+  "source": { "type": "git", "repository": "https://github.com/me/bee.git" },
+  "surfaces": ["web", "a2a"],
+  "billing": { "mode": "user-pays", "clientId": "pk_app_key" }
 }
 ```
 
-Reference behavior maps `worker` + `auto` to `cloudflare-agents`. Heavier
-runtimes stay explicit:
+Missing runtime resolves to `worker + auto`, and missing `state.backend`
+resolves to `sqlite`. Heavier runtimes stay explicit:
 
 - `daytona` for shell/filesystem/coding-agent workspaces.
 - `aws-agentcore` for AWS-credit/AgentCore experiments.

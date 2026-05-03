@@ -16,10 +16,10 @@ deployment shapes before choosing a production path.
 
 ## Current bias
 
-Start production with `runtime.kind = "worker"` and `runtime.provider = "auto"`.
-That maps to Cloudflare Agents first. Keep `runtime.kind = "container"` as the
-explicit advanced path for Daytona, AgentCore, or generic containers when a bee
-needs a full runtime.
+Start production with no runtime field in `bee.json`. Missing runtime resolves
+to `worker + auto`, which maps to Cloudflare Agents first. Keep
+`runtime.kind = "container"` as the explicit advanced path for Daytona,
+AgentCore, or generic containers when a bee needs a full runtime.
 
 ## API direction
 
@@ -47,23 +47,26 @@ polli bees events bee_id
 polli bees delete bee_id
 ```
 
-The manifest should stay provider-neutral but allow an explicit runtime:
+The common manifest should stay provider-neutral and omit runtime details:
 
 ```json
 {
   "name": "booking-assistant",
   "source": { "type": "git", "repository": "https://github.com/me/bee.git" },
-  "runtime": { "kind": "worker", "provider": "auto" },
-  "state": { "backend": "sqlite", "retentionDays": 7 },
   "surfaces": ["openai", "web", "a2a"],
   "billing": { "mode": "user-pays", "clientId": "pk_app_key" }
 }
 ```
 
+Use `runtime.kind = "container"` only when the bee needs a shell, filesystem,
+package installs, or long-running jobs.
+
 Each reference implementation now has a `bee.json` so the same contract can be
 tested across integrated and minimal examples.
 
 See `api-scopes-billing.md` for the current API/scope/billing proposal. The
-short version: ship one default (`worker`) and one advanced override
-(`container`). Hide provider choice behind `runtime.provider = "auto"` until a
-developer needs to pin Daytona, AgentCore, or a generic container target.
+short version: ship one implicit default (`worker + auto`) and one advanced
+override (`container`). Hide provider choice until a developer needs to pin
+Daytona, AgentCore, or a generic container target.
+
+See `storage-backends.md` for hot state vs. cold/archive memory.

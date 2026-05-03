@@ -6,10 +6,6 @@
     "ref": "main",
     "packagePath": "bees/musician-booking-reference"
   },
-  "runtime": {
-    "kind": "worker",
-    "provider": "auto"
-  },
   "surfaces": [
     "openai",
     "web",
@@ -20,9 +16,5 @@
     "mode": "user-pays",
     "clientId": "pk_replace_me",
     "dailyPollenLimit": 5
-  },
-  "state": {
-    "backend": "sqlite",
-    "retentionDays": 7
   }
 }

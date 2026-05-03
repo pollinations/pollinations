@@ -3,6 +3,7 @@ import { DeployStore } from "./api.js";
 import {
     assertBeeManifest,
     createStarterManifest,
+    normalizeBeeManifest,
     validateBeeManifest,
 } from "./schema.js";
 
@@ -31,7 +32,10 @@ async function main(argv) {
 
     if (command === "validate") {
         const manifest = JSON.parse(await readFile(arg, "utf8"));
-        return validateBeeManifest(manifest);
+        const result = validateBeeManifest(manifest);
+        return result.valid
+            ? { ...result, resolved: normalizeBeeManifest(manifest) }
+            : result;
     }
 
     if (command === "deploy") {

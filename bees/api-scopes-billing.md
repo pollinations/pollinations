@@ -19,14 +19,13 @@ Manifest:
 {
   "name": "booking-assistant",
   "source": { "type": "git", "repository": "https://github.com/me/bee.git" },
-  "runtime": { "kind": "worker", "provider": "auto" },
-  "state": { "backend": "sqlite", "retentionDays": 7 },
   "surfaces": ["openai", "web", "a2a"],
   "billing": { "mode": "user-pays", "clientId": "pk_app_key" }
 }
 ```
 
-`runtime.provider = auto` resolves from `runtime.kind`:
+Missing `runtime` resolves to `worker + auto`; missing `state.backend` resolves
+to `sqlite`. Explicit `runtime.provider = auto` resolves from `runtime.kind`:
 
 - `worker` → `cloudflare-agents`
 - `container` → `daytona` initially; can later route to `aws-agentcore` or another container provider
@@ -146,9 +145,9 @@ Practical v1:
 
 Ship:
 
-1. `runtime.kind: "worker"` first, backed by Cloudflare Agents.
-2. `runtime.kind: "container"` second, backed by Daytona/container; AgentCore
-   remains an alternate provider behind the same runtime kind.
+1. Omitted `runtime` first, resolving to `worker + auto` on Cloudflare Agents.
+2. Explicit `runtime.kind: "container"` second, backed by Daytona/container;
+   AgentCore remains an alternate provider behind the same runtime kind.
 
 This keeps the developer promise simple:
 

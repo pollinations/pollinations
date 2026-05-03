@@ -17,14 +17,6 @@ on one shape.
     "ref": "main",
     "packagePath": "bees/booking"
   },
-  "runtime": {
-    "kind": "worker",
-    "provider": "auto"
-  },
-  "state": {
-    "backend": "sqlite",
-    "retentionDays": 7
-  },
   "surfaces": ["openai", "web", "discord", "a2a"],
   "billing": {
     "mode": "user-pays",
@@ -36,6 +28,9 @@ on one shape.
   }
 }
 ```
+
+Missing `runtime` resolves to `worker + auto`; missing `state.backend` resolves
+to `sqlite`.
 
 `202 Accepted`
 

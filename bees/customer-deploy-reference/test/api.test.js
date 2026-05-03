@@ -27,18 +27,20 @@ test("store creates deployment and events from manifest", () => {
     const deployment = store.create({
         name: "Booking Assistant",
         source: { type: "template", template: "musician-booking-reference" },
-        runtime: { kind: "worker", provider: "cloudflare-agents" },
-        state: { backend: "sqlite" },
         surfaces: ["openai", "web"],
         billing: { mode: "author-pays" },
     });
 
     assert.equal(deployment.status, "queued");
+    assert.equal(deployment.runtime.provider, "cloudflare-agents");
+    assert.equal(deployment.state.backend, "sqlite");
     assert.equal(deployment.surfaces.length, 2);
     assert.equal(store.events(deployment.id).length, 1);
 });
 
 test("auto runtime resolves to Cloudflare Agents", () => {
+    assert.equal(resolveProvider({}), "cloudflare-agents");
+    assert.equal(resolveRuntime({}).kind, "worker");
     assert.equal(
         resolveProvider({ kind: "worker", provider: "auto" }),
         "cloudflare-agents",
@@ -55,6 +57,10 @@ test("auto runtime resolves to Cloudflare Agents", () => {
 
 test("validates worker and container bee manifests", () => {
     const worker = createStarterManifest("Worker Bee");
+    const workerWithPartialState = {
+        ...createStarterManifest("Worker State Bee"),
+        state: { retentionDays: 7 },
+    };
     const container = {
         ...createStarterManifest("Container Bee"),
         runtime: { kind: "container", provider: "auto" },
@@ -62,6 +68,7 @@ test("validates worker and container bee manifests", () => {
     };
 
     assert.equal(validateBeeManifest(worker).valid, true);
+    assert.equal(validateBeeManifest(workerWithPartialState).valid, true);
     assert.equal(validateBeeManifest(container).valid, true);
 });
 
@@ -108,9 +115,8 @@ test("cli init creates a starter manifest", async () => {
 
     assert.equal(result.ok, true);
     assert.equal(manifest.name, "Demo Bee");
-    assert.equal(manifest.runtime.kind, "worker");
-    assert.equal(manifest.runtime.provider, "auto");
-    assert.equal(manifest.state.backend, "sqlite");
+    assert.equal(manifest.runtime, undefined);
+    assert.equal(manifest.state, undefined);
 });
 
 test("cli validate reports manifest validity", async () => {
@@ -120,6 +126,9 @@ test("cli validate reports manifest validity", async () => {
     ]);
 
     assert.equal(result.valid, true);
+    assert.equal(result.resolved.runtime.kind, "worker");
+    assert.equal(result.resolved.runtime.provider, "auto");
+    assert.equal(result.resolved.state.backend, "sqlite");
 });
 
 test("cli deploy reads a manifest file", async () => {
@@ -131,6 +140,7 @@ test("cli deploy reads a manifest file", async () => {
     assert.equal(deployment.id, "bee_booking-assistant");
     assert.equal(deployment.runtime.provider, "cloudflare-agents");
     assert.equal(deployment.runtime.requestedProvider, "auto");
+    assert.equal(deployment.runtime.kind, "worker");
     assert.equal(deployment.state.backend, "sqlite");
     assert.deepEqual(deployment.requiredScopes.invocation, ["generate"]);
 });

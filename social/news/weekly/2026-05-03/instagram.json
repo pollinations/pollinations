@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-05-03",
+  "period_start": "2026-04-26",
+  "period_end": "2026-05-02",
+  "generated_at": "2026-05-03T06:49:51.643514+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-03/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-03/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-03/images/instagram-3.jpg"
+    }
+  ],
+  "text": "41 PRs merged this week. We packed up the generation gateway and moved it to gen.pollinations.ai — update your bookmarks. Also wired up GPT-5.5, Llama 3.3, and AssemblyAI for speech-to-text. Nova Reel video generation now supports seeds, so your outputs can finally be deterministic. BYOP got some strict redirect_uri allowlists because security is nice. Plus, four new community apps in the showcase. The infrastructure grows. \n\nDocs and endpoints are updated. Link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #gamedev #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

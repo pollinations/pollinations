@@ -79,6 +79,27 @@ polli usage --history        # recent requests
 polli usage --daily          # daily spend
 ```
 
+## Bees
+
+Deploy agent backends with a `bee.json` manifest:
+
+```bash
+polli bees init bee.json --name booking-assistant
+polli bees validate bee.json
+polli bees deploy bee.json --dry-run       # preview runtime, URLs, scopes, meters
+polli bees deploy bee.json                 # calls POST /v1/bees
+polli bees deploy bee.json --runtime daytona
+polli bees list
+polli bees status bee_booking-assistant
+polli bees events bee_booking-assistant
+polli bees delete bee_booking-assistant --yes
+```
+
+The default manifest omits runtime details. Missing `runtime` resolves to
+`worker + auto`; missing `state.backend` resolves to `sqlite`. Use
+`--runtime daytona` or `runtime.kind = "container"` only when the bee needs a
+full filesystem/shell runtime.
+
 ## Links
 
 - [gen.pollinations.ai](https://gen.pollinations.ai) — API

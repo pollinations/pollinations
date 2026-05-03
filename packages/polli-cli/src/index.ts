@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 
 import { authCommand } from "./commands/auth.js";
+import { beesCommand } from "./commands/bees.js";
 import { docsCommand } from "./commands/docs.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { keysCommand } from "./commands/keys.js";
@@ -60,6 +61,7 @@ program
 program.addCommand(authCommand);
 program.addCommand(keysCommand);
 program.addCommand(usageCommand);
+program.addCommand(beesCommand);
 
 // Generation
 program.addCommand(createGenCommand());

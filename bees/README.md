@@ -34,18 +34,22 @@ PATCH  /v1/bees/{id}
 DELETE /v1/bees/{id}
 ```
 
-CLI equivalent:
+CLI:
 
 ```bash
 polli bees init
 polli bees validate bee.json
+polli bees deploy bee.json --dry-run
 polli bees deploy bee.json
 polli bees deploy bee.json --runtime daytona
 polli bees list
 polli bees status bee_id
 polli bees events bee_id
-polli bees delete bee_id
+polli bees delete bee_id --yes
 ```
+
+`polli bees deploy --dry-run` is the local preview path. `polli bees deploy`
+uses the `/v1/bees` API and returns the deployment id plus projected surfaces.
 
 The common manifest should stay provider-neutral and omit runtime details:
 

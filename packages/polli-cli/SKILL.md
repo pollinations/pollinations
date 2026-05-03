@@ -35,6 +35,10 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
+| Create bee manifest | `polli bees init bee.json --name <name>` |
+| Validate bee manifest | `polli bees validate bee.json --json` |
+| Preview bee deploy | `polli bees deploy bee.json --dry-run --json` |
+| Deploy bee | `polli bees deploy bee.json` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -139,6 +143,24 @@ polli keys create --name "my-bot" --type secret --budget 1000 --permissions prof
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+
+### Deploy a bee agent
+```bash
+polli bees init bee.json --name booking-assistant
+polli bees validate bee.json --json
+polli bees deploy bee.json --dry-run --json
+polli bees deploy bee.json
+polli bees deploy bee.json --runtime daytona
+polli bees status bee_booking-assistant
+polli bees events bee_booking-assistant
+polli bees delete bee_booking-assistant --yes
+```
+`bee.json` is the developer-facing deploy contract. The simple path omits
+runtime and state: missing `runtime` resolves to `worker + auto`, and missing
+`state.backend` resolves to `sqlite`. Use `--runtime daytona` only when the bee
+needs a full container/workspace. `--dry-run` resolves runtime/provider, URLs,
+required scopes, and Pollen meters locally; non-dry-run deploy calls
+`POST /v1/bees`.
 
 ### Read API docs
 ```bash

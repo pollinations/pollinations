@@ -70,11 +70,13 @@ CLI:
 ```bash
 polli bees init
 polli bees validate bee.json
+polli bees deploy bee.json --dry-run
 polli bees deploy bee.json
 polli bees deploy bee.json --runtime daytona
+polli bees list
 polli bees status bee_id
 polli bees events bee_id
-polli bees delete bee_id
+polli bees delete bee_id --yes
 ```
 
 ## Scopes

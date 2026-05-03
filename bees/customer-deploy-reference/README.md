@@ -21,20 +21,23 @@ This is separate from the runtime examples. It answers:
 ## CLI
 
 ```bash
-node src/cli.js init bee.json --name booking-assistant
-node src/cli.js validate bee.json
-node src/cli.js deploy manifests/minimal-cloudflare.json
-node src/cli.js deploy bee.json --dry-run
-node src/cli.js deploy manifests/minimal-daytona.json --runtime daytona
-node src/cli.js list
-node src/cli.js status bee_booking-assistant
-node src/cli.js events bee_booking-assistant
-node src/cli.js delete bee_booking-assistant
+polli bees init bee.json --name booking-assistant
+polli bees validate bee.json
+polli bees deploy bee.json --dry-run
+polli bees deploy bee.json
+polli bees deploy bee.json --runtime daytona
+polli bees list
+polli bees status bee_booking-assistant
+polli bees events bee_booking-assistant
+polli bees delete bee_booking-assistant --yes
 ```
 
-The CLI currently uses the in-memory API store so it can run without services.
-Production would point the same commands at `gen.pollinations.ai` or
-`enter.pollinations.ai`.
+`polli bees deploy --dry-run` resolves locally so developers can inspect
+runtime, provider, URLs, scopes, and Pollen meters without calling the network.
+Non-dry-run deploy and management commands call the `/v1/bees` API.
+
+The local `node src/cli.js ...` script remains a standalone control-plane sketch
+for tests and experiments. The developer-facing path is `polli bees ...`.
 
 ## Runtime selection
 

@@ -18,9 +18,21 @@ export class HttpError extends Error {
         this.name = "HttpError";
         this.status = status;
         this.details = details;
-        this.upstreamUrl = upstreamUrl;
+        // Strip query strings from upstream URLs — they often carry job IDs or
+        // auth tokens, and the error envelope only surfaces hostname anyway.
+        this.upstreamUrl = stripQuery(upstreamUrl);
 
         // Maintains proper stack trace for where our error was thrown (only available on V8)
         Error.captureStackTrace(this, HttpError);
+    }
+}
+
+function stripQuery(url: string | undefined): string | undefined {
+    if (!url) return undefined;
+    try {
+        const parsed = new URL(url);
+        return `${parsed.origin}${parsed.pathname}`;
+    } catch {
+        return undefined;
     }
 }

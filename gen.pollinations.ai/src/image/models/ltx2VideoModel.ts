@@ -11,11 +11,16 @@ const logOps = debug("pollinations:ltx2:ops");
 const logError = debug("pollinations:ltx2:error");
 
 // LTX-2 GH200 endpoint (Lambda Labs, patched ComfyUI with two-stage upscaler).
-// Public hostname is fronted by the music-backend cloudflared tunnel
-// (port 8765 on 192.222.51.105). Cloudflare Workers can't reach the raw
-// IP+port over plain HTTP, so the HTTPS hostname is required.
-const getLtx2BaseUrl = () =>
-    getImageEnv("LTX2_BASE_URL") || "https://ltx2-backend.pollinations.ai";
+// Public hostname is fronted by a cloudflared tunnel; the raw IP+port path
+// can't be reached from CF Workers over plain HTTP, so an HTTPS URL is
+// required and we fail fast rather than silently fall back to a stale default.
+const getLtx2BaseUrl = (): string => {
+    const url = getImageEnv("LTX2_BASE_URL");
+    if (!url) {
+        throw new HttpError("LTX2_BASE_URL is not configured", 500);
+    }
+    return url;
+};
 
 // Polling constants
 const POLL_INTERVAL_MS = 2000;
@@ -206,18 +211,41 @@ async function pollLtx2Status(
     );
 }
 
+// /status=done can race the file-flush handoff, so /result returns 202 briefly
+// even after status reports done. Retry with a small bounded budget rather than
+// failing a successful GPU job.
+const RESULT_MAX_ATTEMPTS = 15;
+const RESULT_RETRY_INTERVAL_MS = 2000;
+
 async function fetchLtx2Result(promptId: string): Promise<Buffer> {
     const resultUrl = `${getLtx2BaseUrl()}/result?prompt_id=${promptId}`;
 
     logOps("Fetching result from:", resultUrl);
 
-    const response = await fetch(resultUrl, { headers: backendHeaders() });
+    let response: Response | undefined;
+    for (let attempt = 1; attempt <= RESULT_MAX_ATTEMPTS; attempt++) {
+        response = await fetch(resultUrl, { headers: backendHeaders() });
+        if (response.status !== 202) break;
+        logOps(
+            `Result not ready (202), retrying ${attempt}/${RESULT_MAX_ATTEMPTS}`,
+        );
+        await sleep(RESULT_RETRY_INTERVAL_MS);
+    }
+
+    if (!response) {
+        throw new HttpError(
+            "Failed to fetch video result: no response",
+            502,
+            undefined,
+            resultUrl,
+        );
+    }
 
     if (!response.ok) {
         if (response.status === 202) {
             throw new HttpError(
-                "Video not ready yet",
-                202,
+                "Video result still not ready after retries",
+                504,
                 undefined,
                 resultUrl,
             );

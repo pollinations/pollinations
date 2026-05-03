@@ -2,7 +2,7 @@ import {
   generateCatReply,
   buildComicImageUrl,
   type CatTurn,
-} from "../../../core";
+} from "../../../core/index.ts";
 
 export type AgentInput = {
   question: string;

@@ -1,5 +1,5 @@
-import { CAT_SYSTEM } from "./prompt";
-import type { CatReplyOptions } from "./types";
+import { CAT_SYSTEM } from "./prompt.ts";
+import type { CatReplyOptions } from "./types.ts";
 
 const DEFAULT_ENDPOINT = "https://gen.pollinations.ai/v1/chat/completions";
 const DEFAULT_MODEL = "claude-fast";

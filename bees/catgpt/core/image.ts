@@ -1,5 +1,5 @@
-import { createImagePrompt } from "./prompt";
-import type { ComicImageOptions } from "./types";
+import { createImagePrompt } from "./prompt.ts";
+import type { ComicImageOptions } from "./types.ts";
 
 const DEFAULT_ENDPOINT = "https://gen.pollinations.ai/image";
 const ORIGINAL_CATGPT =

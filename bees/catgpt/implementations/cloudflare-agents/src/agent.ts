@@ -3,7 +3,7 @@ import {
   CAT_SYSTEM,
   generateCatReply,
   buildComicImageUrl,
-} from "../../../core";
+} from "../../../core/index.ts";
 
 export type Env = {
   CatGPT: DurableObjectNamespace;

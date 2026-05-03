@@ -1,6 +1,6 @@
 import { Agent } from "@mariozechner/pi-agent-core";
 import { getModel } from "@mariozechner/pi-ai";
-import { CAT_SYSTEM, buildComicImageUrl } from "../../../core";
+import { CAT_SYSTEM, buildComicImageUrl } from "../../../core/index.ts";
 
 export type ConversationId = string;
 export type Turn = { reply: string; comicUrl: string };

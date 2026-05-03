@@ -5,7 +5,7 @@ import {
   CAT_SYSTEM,
   generateCatReply,
   buildComicImageUrl,
-} from "../../../core";
+} from "../../../core/index.ts";
 
 const POLLINATIONS_BASE = "https://gen.pollinations.ai/v1";
 

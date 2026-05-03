@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
-import { CAT_SYSTEM, buildComicImageUrl } from "../../../core";
+import { CAT_SYSTEM, buildComicImageUrl } from "../../../core/index.ts";
 
 // Edge-style streaming chat handler.
 // Pairs with `useChat()` on the client; we stream the cat reply token-by-token

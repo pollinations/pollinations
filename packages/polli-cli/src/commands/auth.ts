@@ -54,6 +54,16 @@ interface BalanceResponse {
     balance?: number;
 }
 
+interface KeyInfoResponse {
+    valid?: boolean;
+    type?: "publishable" | "secret";
+    pollenBudget?: number | null;
+    permissions?: {
+        models?: string[] | null;
+        account?: string[] | null;
+    };
+}
+
 interface DeviceCodeResponse {
     device_code: string;
     user_code: string;
@@ -269,7 +279,23 @@ const login = new Command("login")
 const logout = new Command("logout")
     .description("Clear stored credentials")
     .action(() => {
+        // Capture the masked key before clearing so the user sees which
+        // identity they actually logged out of — handy when juggling
+        // multiple accounts via env-var key overrides or shared machines.
+        const previous = resolveApiKey();
         clearCredentials();
+
+        if (getOutputMode() === "human" && process.stderr.isTTY) {
+            const arrow = chalk.hex("#a78bfa")("✓");
+            const path = chalk.dim(credentialsDisplayPath());
+            const tail = previous
+                ? ` (was ${chalk.dim(`${previous.slice(0, 5)}…${previous.slice(-4)}`)})`
+                : "";
+            process.stderr.write(`\n  ${arrow} Logged out${tail}\n`);
+            process.stderr.write(`    Cleared ${path}\n\n`);
+            process.stderr.write(`  ${chalk.dim(flavor.logout)}\n\n`);
+            return;
+        }
         printSuccess("Logged out. Credentials cleared.");
         printInfo(flavor.logout);
     });
@@ -286,11 +312,14 @@ export async function showAuthStatus(): Promise<void> {
 
     const masked = `${key.slice(0, 5)}...${key.slice(-6)}`;
 
-    const [profile, balance] = await Promise.all([
+    const [profile, balance, keyInfo] = await Promise.all([
         gen<ProfileResponse>("/account/profile", { apiKey: key }).catch(
             () => null,
         ),
         gen<BalanceResponse>("/account/balance", { apiKey: key }).catch(
+            () => null,
+        ),
+        gen<KeyInfoResponse>("/account/key", { apiKey: key }).catch(
             () => null,
         ),
     ]);
@@ -304,11 +333,25 @@ export async function showAuthStatus(): Promise<void> {
         return;
     }
 
+    // /account/balance is overloaded server-side: it returns the *key's*
+    // remaining budget when the key has one set (the device-flow CLI key
+    // gets a default budget on mint), and only falls through to the user's
+    // full account total when the key has no budget AND has the
+    // `account:usage` scope. Surfacing that as "pollen" without context
+    // misleads users — a fresh device-flow login shows e.g. 5 (the budget)
+    // instead of their actual tier balance. Inspect /account/key to know
+    // which value we're actually showing and label it honestly.
+    const hasBudget = keyInfo?.pollenBudget != null;
+    const pollenLabel = hasBudget ? "budget" : "pollen";
+
     printResult({
         authenticated: true,
         key: masked,
         name: profile.githubUsername ?? "unknown",
-        pollen: balance?.balance ?? "unknown",
+        [pollenLabel]: balance?.balance ?? "unknown",
+        ...(hasBudget && {
+            note: "shown is this key's remaining budget — not your account-wide pollen total",
+        }),
     });
 }
 

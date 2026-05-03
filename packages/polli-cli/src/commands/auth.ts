@@ -140,6 +140,7 @@ async function authenticateWithKey(key: string): Promise<void> {
         printInfo("Key stored but could not verify. It may still be valid.");
     }
     printInfo(flavor.login);
+    printNextStepsHint();
 }
 
 async function fetchProfileLabel(key: string): Promise<string | null> {
@@ -200,11 +201,22 @@ const login = new Command("login")
         }
 
         const deviceResp = (await res.json()) as DeviceCodeResponse;
-
-        printInfo(`\nYour code: ${deviceResp.user_code}\n`);
-
         const url = deviceResp.verification_uri_complete;
-        printInfo(`Open this URL in your browser:\n  ${url}`);
+
+        // Two-block layout: URL first (the action the user needs to take),
+        // then the code framed as a verification check (the security
+        // purpose of device-flow codes — confirm the consent screen shows
+        // the same code you see here, mitigating phishing). Polling line
+        // gets its own block so it doesn't visually compete.
+        if (getOutputMode() === "human") {
+            const arrow = chalk.hex("#a78bfa")("➜");
+            process.stderr.write(
+                `  ${arrow} Open this URL to approve:\n    ${link(url)}\n\n`,
+            );
+            process.stderr.write(
+                `  ${arrow} Confirm the code matches:  ${chalk.bold(deviceResp.user_code)}\n\n`,
+            );
+        }
 
         if (opts.browser !== false) {
             const open = (await import("open")).default;
@@ -250,6 +262,7 @@ const login = new Command("login")
             );
         }
         printInfo(flavor.login);
+        printNextStepsHint();
     });
 
 const logout = new Command("logout")

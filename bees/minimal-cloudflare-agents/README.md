@@ -17,6 +17,24 @@ Use this when the bee should be:
 - SQLite state is represented by the SDK agent instance; production code
   would add domain tables through `this.sql`.
 
+## Wrangler smoke
+
+```bash
+npm install --package-lock=false
+npx wrangler dev --local --port 18789 --ip 127.0.0.1
+curl http://127.0.0.1:18789/.well-known/agent-card.json
+curl -X POST http://127.0.0.1:18789/message \
+  -H 'content-type: application/json' \
+  --data '{"text":"hello"}'
+```
+
+Staging-style deploy without routes:
+
+```bash
+npx wrangler deploy --dry-run --name minimal-cloudflare-agents-bee-staging-codex
+npx wrangler deploy --name minimal-cloudflare-agents-bee-staging-codex
+```
+
 ## Why this is promising
 
 This is the lowest-latency stateful option. It should be the first production

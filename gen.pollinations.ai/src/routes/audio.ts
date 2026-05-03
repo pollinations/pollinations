@@ -440,6 +440,18 @@ export function isQwenTtsModel(model: string): model is QwenTtsModelName {
     return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
 }
 
+function requireTextToAudioModel(model: string): void {
+    const definition = getModelDefinition(model);
+    const acceptsText = definition.inputModalities?.includes("text");
+    const returnsAudio = definition.outputModalities?.includes("audio");
+
+    if (acceptsText && returnsAudio) return;
+
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `Model '${model}' is not supported on text-to-audio endpoints. Use /v1/audio/transcriptions for speech-to-text models.`,
+    });
+}
+
 export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
     text: string;
@@ -679,6 +691,8 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
     text = await applySafety(c, text, query.safe);
 
+    requireTextToAudioModel(c.var.model.resolved);
+
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
         .ELEVENLABS_API_KEY;
 
@@ -789,6 +803,8 @@ export const audioRoutes = new Hono<Env>()
                 "json" as never,
             ) as CreateSpeechRequest;
             const safeInput = await applySafety(c, input, safe);
+            requireTextToAudioModel(c.var.model.resolved);
+
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;
 

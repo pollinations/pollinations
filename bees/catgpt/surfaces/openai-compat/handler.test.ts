@@ -37,16 +37,80 @@ function makeReq(body: unknown, init: { stream?: boolean } = {}) {
     });
 }
 
-test("rejects non-POST", async () => {
+test("GET / returns discovery JSON with copyable curl", async () => {
+    const res = await handleChatCompletions(
+        new Request("http://localhost/", { method: "GET" }),
+    );
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as any;
+    assert.equal(body.name, "CatGPT");
+    assert.equal(typeof body.endpoints.chat, "string");
+    assert.match(body.endpoints.chat, /\/v1\/chat\/completions$/);
+    assert.equal(typeof body.endpoints.agent_card, "string");
+    assert.equal(typeof body.try, "string");
+    assert.match(body.try, /^curl /);
+});
+
+test("GET /v1/chat/completions also returns discovery (probe-friendly)", async () => {
     const res = await handleChatCompletions(
         new Request("http://localhost/v1/chat/completions", { method: "GET" }),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as any;
+    assert.equal(body.name, "CatGPT");
 });
 
-test("rejects missing messages", async () => {
+test("rejects DELETE with structured 405 + hint", async () => {
+    const res = await handleChatCompletions(
+        new Request("http://localhost/v1/chat/completions", {
+            method: "DELETE",
+        }),
+    );
+    assert.equal(res.status, 405);
+    const body = (await res.json()) as any;
+    assert.equal(body.error.code, "method_not_allowed");
+    assert.match(body.error.message, /DELETE/);
+    assert.match(body.error.hint, /POST|GET/);
+});
+
+test("rejects malformed JSON with code: invalid_json", async () => {
+    const res = await handleChatCompletions(
+        new Request("http://localhost/v1/chat/completions", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: "not json {",
+        }),
+    );
+    assert.equal(res.status, 400);
+    const body = (await res.json()) as any;
+    assert.equal(body.error.code, "invalid_json");
+    assert.match(body.error.hint, /messages/);
+});
+
+test("rejects missing messages with code: missing_messages", async () => {
     const res = await handleChatCompletions(makeReq({}));
     assert.equal(res.status, 400);
+    const body = (await res.json()) as any;
+    assert.equal(body.error.code, "missing_messages");
+    assert.match(body.error.message, /required/);
+});
+
+test("rejects empty messages array with code: empty_messages", async () => {
+    const res = await handleChatCompletions(makeReq({ messages: [] }));
+    assert.equal(res.status, 400);
+    const body = (await res.json()) as any;
+    assert.equal(body.error.code, "empty_messages");
+});
+
+test("rejects messages with no user turn (system-only) with code: no_user_message", async () => {
+    const res = await handleChatCompletions(
+        makeReq({
+            messages: [{ role: "system", content: "be helpful" }],
+        }),
+    );
+    assert.equal(res.status, 400);
+    const body = (await res.json()) as any;
+    assert.equal(body.error.code, "no_user_message");
 });
 
 test("non-streaming response is OpenAI-shaped", async () => {

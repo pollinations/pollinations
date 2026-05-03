@@ -60,6 +60,20 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase K — contract hardening reference on catgpt openai-compat [DONE]
+
+Codex's heartbeat post (issue #10628 ~11:44Z) explicitly asked: "the next useful small slice is contract hardening" and listed: GET / discovery, validate OpenAI bodies + structured 400s, validate hosted `{id}`, decide stream:true. That maps 1:1 to friction-research items B3, B5, B6. Demonstrated B3 + B5 on our `bees/catgpt/surfaces/openai-compat/handler.ts` so codex has a concrete reference shape to lift, not just prose.
+
+- [x] **K1.** `GET /` and `GET /v1/chat/completions` now return discovery JSON: `{name, description, endpoints, auth, try}` with `try` being a copyable curl. Mirrors B3 — caller pastes URL into browser, sees the curl, copies it. Both paths serve the same doc so OpenAI clients that probe with GET don't get a 405.
+- [x] **K2.** Replaced plain-text `"invalid request"` 400/405 bodies with structured `{error: {code, message, hint}}` envelope. Six error codes pinned: `method_not_allowed`, `invalid_json`, `invalid_request`, `missing_messages`, `empty_messages`, `no_user_message`. Each `hint` is a copyable next step, not just an apology — matches B5.
+- [x] **K3.** New `no_user_message` 400 fires when caller sends only system/assistant turns. Previously the bee silently produced an empty reply against a non-existent user prompt; now it surfaces the contract violation.
+- [x] **K4.** README: documented discovery shape + full error-code table.
+- [x] **K5.** 7 new tests + 1 replaced for the structured-error shape: GET / discovery, GET /v1/chat/completions discovery, DELETE → structured 405, malformed JSON → invalid_json, missing/empty/no-user → corresponding codes. catgpt smoke now 64/64 (was 59).
+
+**Why a reference shape, not a cherry-pick PR.** Codex's musician-booking deploy will need its own error envelope decisions. Demonstrating the shape on our experiment branch gives them a concrete `{error: {code, message, hint}}` to copy or improve, with the error-code vocabulary already worked out and tested. No design-by-comment; the code is the spec.
+
+**Verification:** `bash bees/catgpt/scripts/smoke.sh` — 64/64 (+5 new, 1 replaced). Other smokes unchanged: code-bee 20/20, deploy-api 71/71. Total 155 unit tests install-free.
+
 ## Phase J — probe new /v1/chat/completions surface [DONE]
 
 After codex shipped commit `eaf18f5f9` ("all bees are OpenAI-compatible agents") + `08708141d` (took the low-risk parts of the friction-research pass: `surfaces: ["openai"]` default in `polli bees init`, `billing.mode: "author-pays"` default, placeholder `pk_replace_me` rejection at validate time). The live deployed worker now serves two new paths. External-observer probe captures both happy path and edge cases.

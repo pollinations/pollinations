@@ -168,22 +168,115 @@ function* streamingChunks(
     yield "data: [DONE]\n\n";
 }
 
+// Structured error envelope. Three fields by design:
+//   code:    machine-readable identifier (snake_case, stable across versions)
+//   message: human description, OK to log
+//   hint:    actionable next step the caller can take right now
+// The caller can switch on `code`; tooling can show `hint` verbatim.
+function errorResponse(
+    status: number,
+    code: string,
+    message: string,
+    hint: string,
+): Response {
+    return Response.json({ error: { code, message, hint } }, { status });
+}
+
+// GET / — discovery. Returns enough JSON for a caller to paste this URL
+// into a browser, see what the bee serves, and copy a working curl.
+//
+// Shape matches the friction-research B3 recommendation: `endpoints` map +
+// `auth` state + a copyable `try` curl. Cheap to serve, single biggest
+// discoverability win for any deployed bee.
+function discoveryResponse(baseUrl: string) {
+    return Response.json({
+        name: "CatGPT",
+        description:
+            "Aloof sarcastic cat that answers in 2-8 words and renders the exchange as a webcomic.",
+        endpoints: {
+            chat: `${baseUrl}/v1/chat/completions`,
+            web: `${baseUrl}/web/messages`,
+            a2a: `${baseUrl}/a2a`,
+            agent_card: `${baseUrl}/.well-known/agent-card.json`,
+        },
+        auth: "optional_pk",
+        try: `curl -X POST ${baseUrl}/v1/chat/completions -H 'content-type: application/json' -d '{"messages":[{"role":"user","content":"why?"}]}'`,
+    });
+}
+
 export async function handleChatCompletions(req: Request): Promise<Response> {
-    if (req.method !== "POST") {
-        return new Response("method not allowed", { status: 405 });
+    const url = new URL(req.url);
+
+    // Discovery: GET / or GET /v1/chat/completions both serve the discovery
+    // doc. The latter exists so OpenAI clients that probe with GET don't get
+    // a 405 and can see what they should be POSTing.
+    if (req.method === "GET") {
+        return discoveryResponse(`${url.protocol}//${url.host}`);
     }
 
-    const body = (await req
-        .json()
-        .catch(() => null)) as ChatCompletionRequest | null;
-    if (!body || !Array.isArray(body.messages)) {
-        return new Response("invalid request", { status: 400 });
+    if (req.method !== "POST") {
+        return errorResponse(
+            405,
+            "method_not_allowed",
+            `${req.method} is not supported on ${url.pathname}`,
+            "use POST for chat completions or GET / for discovery",
+        );
+    }
+
+    let body: ChatCompletionRequest | null;
+    try {
+        body = (await req.json()) as ChatCompletionRequest;
+    } catch {
+        return errorResponse(
+            400,
+            "invalid_json",
+            "request body is not valid JSON",
+            'send a JSON body like {"messages":[{"role":"user","content":"hi"}]}',
+        );
+    }
+
+    if (!body || typeof body !== "object") {
+        return errorResponse(
+            400,
+            "invalid_request",
+            "request body must be a JSON object",
+            'send {"messages":[{"role":"user","content":"hi"}]}',
+        );
+    }
+
+    if (!Array.isArray(body.messages)) {
+        return errorResponse(
+            400,
+            "missing_messages",
+            "`messages` is required and must be an array",
+            'send {"messages":[{"role":"user","content":"hi"}]}',
+        );
+    }
+
+    if (body.messages.length === 0) {
+        return errorResponse(
+            400,
+            "empty_messages",
+            "`messages` must contain at least one entry",
+            'send {"messages":[{"role":"user","content":"hi"}]}',
+        );
     }
 
     const auth = req.headers.get("authorization");
     const apiKey = auth?.startsWith("Bearer ") ? auth.slice(7) : undefined;
 
     const { question, imageUrl } = pickQuestionAndImage(body.messages);
+    if (!question && !imageUrl) {
+        // No user turn (e.g. caller sent only a system or assistant message).
+        // The OpenAI shape allows it; the bee can't act on it. Surface this
+        // as a structured 400 rather than silently producing an empty reply.
+        return errorResponse(
+            400,
+            "no_user_message",
+            "messages must contain at least one user turn with text or image content",
+            'add {"role":"user","content":"<your prompt>"} to messages',
+        );
+    }
     const { text: reply, usage } = await generateCatReplyWithUsage(
         question,
         imageUrl,

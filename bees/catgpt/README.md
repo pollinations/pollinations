@@ -100,7 +100,7 @@ cd bees/catgpt
 node --experimental-strip-types --test core/*.test.ts surfaces/openai-compat/*.test.ts
 ```
 
-Currently: 14 core + 5 openai-compat + 7 a2a + 4 web-chat + 10 manifest = **40/40 passing** (no install).
+Currently: 14 core + 8 usage + 7 openai-compat + 8 a2a + 5 web-chat + 10 manifest = **52/52 passing** (no install).
 
 Live tests (`core/live.test.ts`) hit real `gen.pollinations.ai` and are gated on `POLLINATIONS_LIVE=1` plus a token, so a missing token doesn't fail CI:
 
@@ -132,6 +132,7 @@ POLLINATIONS_LIVE=1 \
 - **Three variants without an SDK** (`hono`, `bun`, `deno`) end up smaller than the SDK-based ones. The agent layer collapses to ~15-25 LOC of routing once the surfaces do the heavy lifting.
 - **Surfaces are runtime-portable.** Same `surfaces/` code mounts cleanly on Node (via Hono), Bun, and Deno — proves that `Request → Response` handlers are the right abstraction for cross-runtime portability.
 - **Two runtime kinds is enough.** The manifest collapsed to `runtime.kind: "worker" | "container"`. CatGPT is a `worker` bee; the sibling `bees/code-bee/` is the canonical `container` bee (Claude Agent SDK with per-session `cwd`). Distinctions like "raw Worker vs CF Agents" are *deployment targets*, not runtimes.
+- **Cost attribution at the bee level works.** `core/usage.ts` returns `{prompt_tokens, completion_tokens, cost_dollars, cost_pollen, estimated}` per turn. All three surfaces (openai-compat, web-chat, a2a) thread it through. Live test against `gen.pollinations.ai` shows real numbers: a typical CatGPT turn costs ~0.0004 pollen (273 prompt + 19 completion tokens at claude-fast pricing).
 
 ## Status
 

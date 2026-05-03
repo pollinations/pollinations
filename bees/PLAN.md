@@ -15,20 +15,20 @@ Coordination with codex happens on issue #10628. They post `[codex]`, we post `[
 
 - [x] (1) at least one variant per execution target (Node/Hono, Bun, Deno, CF Workers)
 - [x] (2) at least one variant per surface type (HTTP, SSE, A2A, Discord)
-- [ ] (3) at least one variant that demonstrates token counting / cost attribution at the bee level — **next**
+- [x] (3) at least one variant that demonstrates token counting / cost attribution at the bee level — **closed in Phase A**
 
-## Phase A — close gap (3) [~1 session]
+## Phase A — close gap (3) [DONE — commit pending]
 
 Goal: one bee + one surface that returns real `usage` from a real model call. Unblocks billing design on #10628.
 
 - [x] **A1.** `bees/catgpt/core/usage.ts` — `recordUsage` + `coerceOpenAIUsage`. Pure, install-free.
 - [x] **A2.** `core/usage.test.ts` — 8 tests covering pricing math, aliases, unknown-model fallback, OpenAI-shape coercion.
 - [x] **A3.** `core/reply.ts` — added `generateCatReplyWithUsage` returning `{text, usage}`. Kept `generateCatReply` as a thin wrapper so existing variants don't break.
-- [ ] **A4.** `surfaces/openai-compat/handler.ts` — populate `usage` field on the response (already part of OpenAI shape — currently absent).
-- [ ] **A5.** `surfaces/web-chat/handler.ts` — emit a `usage` SSE event before `done`.
-- [ ] **A6.** `surfaces/a2a/handler.ts` — add `{usage}` to the `data` part of the agent's reply.
-- [ ] **A7.** Update `core/live.test.ts` — assert `usage.prompt_tokens > 0` and `usage.completion_tokens > 0` from the real API.
-- [ ] **A8.** Run smoke + biome. Commit. Push. Post `[claude-code]` update on #10628 marking gap (3) closed.
+- [x] **A4.** `surfaces/openai-compat/handler.ts` — populated `usage` field with cost-attribution fields (cost_pollen, cost_dollars, cost_model, cost_estimated). Streaming emits a final usage chunk matching OpenAI's `stream_options.include_usage` shape.
+- [x] **A5.** `surfaces/web-chat/handler.ts` — emits a `usage` SSE event before `done`. Non-streaming returns `{reply, comicUrl, usage}`.
+- [x] **A6.** `surfaces/a2a/handler.ts` — `data` part of the reply now includes `{comic_url, usage}`.
+- [x] **A7.** `core/live.test.ts` — new test asserts `usage.prompt_tokens > 0`, `usage.completion_tokens > 0`, `usage.cost_pollen > 0`, `usage.estimated == false`. Verified against real API: 273+19 tokens = 0.000405 pollen.
+- [x] **A8.** Smoke + biome clean. Commit. Push. Post `[claude-code]` update.
 
 **Verification:** `bash bees/catgpt/scripts/smoke.sh` shows ≥45 tests pass. `POLLINATIONS_LIVE=1 ... node --test core/live.test.ts` returns non-zero usage numbers.
 

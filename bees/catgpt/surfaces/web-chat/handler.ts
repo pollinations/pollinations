@@ -2,9 +2,12 @@
 //
 // Two endpoints:
 //   POST /chat               → non-streaming, single turn → JSON
+//                               { reply, comicUrl, usage? }
 //   POST /chat?stream=1      → SSE; events:
 //     event: reply  data: {"text":"..."}        (one per word)
 //     event: comic  data: {"url":"https://..."}
+//     event: usage  data: {"prompt_tokens":..,"completion_tokens":..,
+//                          "cost_pollen":..}    (one before done)
 //     event: done   data: {}
 //
 // This is the simplest streaming surface: no Vercel useChat wire format, no
@@ -13,7 +16,10 @@
 // On top of `core/`. State: none (this surface is stateless; per-user state
 // lives in the runtime above, see manifest state.scope).
 
-import { buildComicImageUrl, generateCatReply } from "../../core/index.ts";
+import {
+    buildComicImageUrl,
+    generateCatReplyWithUsage,
+} from "../../core/index.ts";
 
 type ChatRequest = {
     question?: string;
@@ -40,9 +46,11 @@ export async function handleChatRequest(req: Request): Promise<Response> {
     const auth = req.headers.get("authorization");
     const apiKey = auth?.startsWith("Bearer ") ? auth.slice(7) : undefined;
 
-    const reply = await generateCatReply(body.question, body.imageUrl ?? null, {
-        apiKey,
-    });
+    const { text: reply, usage } = await generateCatReplyWithUsage(
+        body.question,
+        body.imageUrl ?? null,
+        { apiKey },
+    );
     const comicUrl = buildComicImageUrl(
         body.question,
         reply,
@@ -51,7 +59,7 @@ export async function handleChatRequest(req: Request): Promise<Response> {
     );
 
     if (!stream) {
-        return Response.json({ reply, comicUrl });
+        return Response.json({ reply, comicUrl, usage });
     }
 
     const encoder = new TextEncoder();
@@ -67,6 +75,9 @@ export async function handleChatRequest(req: Request): Promise<Response> {
             controller.enqueue(
                 encoder.encode(sseEvent("comic", { url: comicUrl })),
             );
+            if (usage) {
+                controller.enqueue(encoder.encode(sseEvent("usage", usage)));
+            }
             controller.enqueue(encoder.encode(sseEvent("done", {})));
             controller.close();
         },

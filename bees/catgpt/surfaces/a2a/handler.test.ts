@@ -2,13 +2,17 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 const FAKE_REPLY = "Naps. Next question.";
+const FAKE_USAGE = { prompt_tokens: 22, completion_tokens: 6 };
 
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (input: any) => {
     const url = typeof input === "string" ? input : (input?.url ?? "");
     if (url.includes("/v1/chat/completions")) {
         return new Response(
-            JSON.stringify({ choices: [{ message: { content: FAKE_REPLY } }] }),
+            JSON.stringify({
+                choices: [{ message: { content: FAKE_REPLY } }],
+                usage: FAKE_USAGE,
+            }),
             { status: 200, headers: { "content-type": "application/json" } },
         );
     }
@@ -84,6 +88,27 @@ test("message/send returns a completed Task with a cat reply and comic_url", asy
     const data = last.parts.find((p: any) => p.kind === "data");
     assert.equal(text.text, FAKE_REPLY);
     assert.match(data.data.comic_url, /gen\.pollinations\.ai\/image\//);
+});
+
+test("message/send includes usage with cost in the data part", async () => {
+    const res = await handleA2ARequest(
+        jsonRpcReq("message/send", {
+            message: {
+                role: "user",
+                parts: [{ kind: "text", text: "why?" }],
+            },
+        }),
+    );
+    const body = (await res.json()) as any;
+    const last = body.result.history[body.result.history.length - 1];
+    const data = last.parts.find((p: any) => p.kind === "data");
+    assert.equal(data.data.usage.prompt_tokens, FAKE_USAGE.prompt_tokens);
+    assert.equal(
+        data.data.usage.completion_tokens,
+        FAKE_USAGE.completion_tokens,
+    );
+    assert.ok(data.data.usage.cost_pollen > 0);
+    assert.equal(data.data.usage.estimated, false);
 });
 
 test("message/send rejects empty parts array with -32602", async () => {

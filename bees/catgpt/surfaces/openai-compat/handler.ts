@@ -15,7 +15,8 @@
 import {
     buildComicImageUrl,
     CAT_SYSTEM,
-    generateCatReply,
+    generateCatReplyWithUsage,
+    type ModelUsageWithCost,
 } from "../../core/index.ts";
 
 type ChatMessage = {
@@ -58,7 +59,11 @@ function completionId(): string {
     return `chatcmpl-${Math.random().toString(36).slice(2, 12)}`;
 }
 
-function nonStreamingResponse(reply: string, comicUrl: string) {
+function nonStreamingResponse(
+    reply: string,
+    comicUrl: string,
+    usage: ModelUsageWithCost | null,
+) {
     return {
         id: completionId(),
         object: "chat.completion",
@@ -79,11 +84,27 @@ function nonStreamingResponse(reply: string, comicUrl: string) {
                 finish_reason: "stop",
             },
         ],
-        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        usage: usage
+            ? {
+                  prompt_tokens: usage.prompt_tokens,
+                  completion_tokens: usage.completion_tokens,
+                  total_tokens: usage.prompt_tokens + usage.completion_tokens,
+                  // Non-standard cost-attribution fields. The platform reads
+                  // these to bill in pollen; OpenAI clients ignore them.
+                  cost_pollen: usage.cost_pollen,
+                  cost_dollars: usage.cost_dollars,
+                  cost_model: usage.model,
+                  cost_estimated: usage.estimated,
+              }
+            : { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     };
 }
 
-function* streamingChunks(reply: string, comicUrl: string): Generator<string> {
+function* streamingChunks(
+    reply: string,
+    comicUrl: string,
+    usage: ModelUsageWithCost | null,
+): Generator<string> {
     const id = completionId();
     const created = Math.floor(Date.now() / 1000);
     const base = {
@@ -126,6 +147,24 @@ function* streamingChunks(reply: string, comicUrl: string): Generator<string> {
         ],
     })}\n\n`;
 
+    // Usage chunk — matches OpenAI's `stream_options: { include_usage: true }`
+    // shape. Always emitted; clients that don't care can ignore.
+    if (usage) {
+        yield `data: ${JSON.stringify({
+            ...base,
+            choices: [],
+            usage: {
+                prompt_tokens: usage.prompt_tokens,
+                completion_tokens: usage.completion_tokens,
+                total_tokens: usage.prompt_tokens + usage.completion_tokens,
+                cost_pollen: usage.cost_pollen,
+                cost_dollars: usage.cost_dollars,
+                cost_model: usage.model,
+                cost_estimated: usage.estimated,
+            },
+        })}\n\n`;
+    }
+
     yield "data: [DONE]\n\n";
 }
 
@@ -145,14 +184,18 @@ export async function handleChatCompletions(req: Request): Promise<Response> {
     const apiKey = auth?.startsWith("Bearer ") ? auth.slice(7) : undefined;
 
     const { question, imageUrl } = pickQuestionAndImage(body.messages);
-    const reply = await generateCatReply(question, imageUrl, { apiKey });
+    const { text: reply, usage } = await generateCatReplyWithUsage(
+        question,
+        imageUrl,
+        { apiKey },
+    );
     const comicUrl = buildComicImageUrl(question, reply, imageUrl, { apiKey });
 
     if (body.stream) {
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
             start(controller) {
-                for (const chunk of streamingChunks(reply, comicUrl)) {
+                for (const chunk of streamingChunks(reply, comicUrl, usage)) {
                     controller.enqueue(encoder.encode(chunk));
                 }
                 controller.close();
@@ -162,12 +205,12 @@ export async function handleChatCompletions(req: Request): Promise<Response> {
             headers: {
                 "content-type": "text/event-stream",
                 "cache-control": "no-cache",
-                "connection": "keep-alive",
+                connection: "keep-alive",
             },
         });
     }
 
-    return Response.json(nonStreamingResponse(reply, comicUrl));
+    return Response.json(nonStreamingResponse(reply, comicUrl, usage));
 }
 
 export default { fetch: handleChatCompletions };

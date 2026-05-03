@@ -6,12 +6,17 @@ import { test } from "node:test";
 
 const FAKE_REPLY = "Naps. Next question.";
 
+const FAKE_USAGE = { prompt_tokens: 42, completion_tokens: 8 };
+
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (input: any) => {
     const url = typeof input === "string" ? input : (input?.url ?? "");
     if (url.includes("/v1/chat/completions")) {
         return new Response(
-            JSON.stringify({ choices: [{ message: { content: FAKE_REPLY } }] }),
+            JSON.stringify({
+                choices: [{ message: { content: FAKE_REPLY } }],
+                usage: FAKE_USAGE,
+            }),
             { status: 200, headers: { "content-type": "application/json" } },
         );
     }
@@ -77,6 +82,39 @@ test("streaming response is SSE with chat.completion.chunk objects", async () =>
     assert.match(text, /"delta":\{"content":"/);
     assert.match(text, /"comic_url":/);
     assert.match(text, /\[DONE\]/);
+});
+
+test("non-streaming response includes populated usage with cost fields", async () => {
+    const res = await handleChatCompletions(
+        makeReq({ messages: [{ role: "user", content: "why?" }] }),
+    );
+    const body = (await res.json()) as any;
+    assert.equal(body.usage.prompt_tokens, FAKE_USAGE.prompt_tokens);
+    assert.equal(body.usage.completion_tokens, FAKE_USAGE.completion_tokens);
+    assert.equal(
+        body.usage.total_tokens,
+        FAKE_USAGE.prompt_tokens + FAKE_USAGE.completion_tokens,
+    );
+    // Cost-attribution fields. claude-fast pricing is non-zero, so cost
+    // should be > 0 and not flagged as estimated.
+    assert.ok(body.usage.cost_pollen > 0);
+    assert.ok(body.usage.cost_dollars > 0);
+    assert.equal(body.usage.cost_estimated, false);
+    assert.equal(body.usage.cost_model, "claude-fast");
+});
+
+test("streaming response emits a final usage chunk", async () => {
+    const res = await handleChatCompletions(
+        makeReq(
+            { messages: [{ role: "user", content: "why?" }] },
+            { stream: true },
+        ),
+    );
+    const text = await res.text();
+    // Find the usage chunk: it has "usage":{...} and choices: [].
+    assert.match(text, /"choices":\[\],"usage":\{/);
+    assert.match(text, /"prompt_tokens":42/);
+    assert.match(text, /"cost_pollen":/);
 });
 
 test("handles multipart user content with image_url", async () => {

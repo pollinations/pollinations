@@ -14,7 +14,10 @@
 //
 // This is the "non-streaming, single-task" subset — sufficient for CatGPT.
 
-import { buildComicImageUrl, generateCatReply } from "../../core/index.ts";
+import {
+    buildComicImageUrl,
+    generateCatReplyWithUsage,
+} from "../../core/index.ts";
 
 type A2APart =
     | { kind: "text"; text: string }
@@ -112,10 +115,16 @@ async function handleMessageSend(
         return jsonRpcError(id, -32602, "invalid params: empty question");
     }
 
-    const reply = await generateCatReply(question, imageUrl, { apiKey });
+    const { text: reply, usage } = await generateCatReplyWithUsage(
+        question,
+        imageUrl,
+        { apiKey },
+    );
     const comicUrl = buildComicImageUrl(question, reply, imageUrl, { apiKey });
 
     // Spec shape: a `Task` with a single completed message in its history.
+    // We attach `comic_url` and `usage` (with cost) as a `data` part — A2A
+    // clients that don't care can ignore it.
     const taskId = `task-${Math.random().toString(36).slice(2, 12)}`;
     return jsonRpcResult(id, {
         kind: "task",
@@ -129,7 +138,10 @@ async function handleMessageSend(
                 messageId: `msg-${Math.random().toString(36).slice(2, 12)}`,
                 parts: [
                     { kind: "text", text: reply },
-                    { kind: "data", data: { comic_url: comicUrl } },
+                    {
+                        kind: "data",
+                        data: { comic_url: comicUrl, usage },
+                    },
                 ],
             },
         ],

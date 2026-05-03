@@ -14,7 +14,11 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildComicImageUrl, generateCatReply } from "./index.ts";
+import {
+    buildComicImageUrl,
+    generateCatReply,
+    generateCatReplyWithUsage,
+} from "./index.ts";
 
 const apiKey =
     process.env.POLLINATIONS_KEY ?? process.env.TEXT_POLLINATIONS_TOKEN;
@@ -46,6 +50,37 @@ test(
             `reply too long: "${reply}" (${words.length} words)`,
         );
         console.log(`  cat said: "${reply}"`);
+    },
+);
+
+test(
+    "live: generateCatReplyWithUsage returns non-zero token counts and cost",
+    { skip: skip ? `skipped (${reason})` : false, timeout: 30_000 },
+    async () => {
+        const { text, usage } = await generateCatReplyWithUsage(
+            "what's the meaning of life?",
+            null,
+            { apiKey },
+        );
+        assert.ok(text.length > 0, "reply is non-empty");
+        assert.ok(usage, "usage block must be present");
+        assert.ok(
+            usage!.prompt_tokens > 0,
+            `prompt_tokens should be > 0, got ${usage!.prompt_tokens}`,
+        );
+        assert.ok(
+            usage!.completion_tokens > 0,
+            `completion_tokens should be > 0, got ${usage!.completion_tokens}`,
+        );
+        assert.ok(
+            usage!.cost_pollen > 0,
+            `cost_pollen should be > 0, got ${usage!.cost_pollen}`,
+        );
+        assert.equal(usage!.estimated, false);
+        assert.equal(usage!.model, "claude-fast");
+        console.log(
+            `  cost: ${usage!.prompt_tokens}+${usage!.completion_tokens} tokens = ${usage!.cost_pollen.toFixed(6)} pollen`,
+        );
     },
 );
 

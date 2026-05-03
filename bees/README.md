@@ -67,7 +67,9 @@ Use `runtime.kind = "container"` only when the bee needs a shell, filesystem,
 package installs, or long-running jobs.
 
 Each reference implementation now has a `bee.json` so the same contract can be
-tested across integrated and minimal examples.
+tested across integrated and minimal examples. Every checked-in bee declares an
+`openai` surface and can be invoked as an OpenAI-compatible chat-completions
+agent at `/bees/{id}/v1/chat/completions`.
 
 See `api-scopes-billing.md` for the current API/scope/billing proposal. The
 short version: ship one implicit default (`worker + auto`) and one advanced

@@ -64,6 +64,9 @@ Projected surfaces are generated from the same deployment:
 /bees/{id}/a2a
 ```
 
+All deployed bees should support the OpenAI-compatible chat-completions surface.
+Other surfaces are optional adapters around the same bee core.
+
 A2A discovery is exposed separately at
 `/bees/{id}/.well-known/agent-card.json`.
 

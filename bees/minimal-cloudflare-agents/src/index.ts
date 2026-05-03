@@ -45,6 +45,49 @@ async function readText(request: Request): Promise<string> {
     );
 }
 
+function contentToText(content: unknown): string {
+    if (typeof content === "string") return content;
+    if (!Array.isArray(content)) return "";
+    return content
+        .map((part) => {
+            const value = part as { text?: unknown };
+            return typeof value.text === "string" ? value.text : "";
+        })
+        .filter(Boolean)
+        .join("\n");
+}
+
+function lastUserText(messages: unknown): string {
+    if (!Array.isArray(messages)) return "";
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+        const message = messages[index] as
+            | { role?: unknown; content?: unknown }
+            | undefined;
+        if (message?.role === "user") return contentToText(message.content);
+    }
+    return "";
+}
+
+function chatCompletion(
+    reply: { text: string; state: BeeState },
+    model = "minimal-cloudflare-agents-bee",
+) {
+    return {
+        id: `chatcmpl_minimal_cf_${reply.state.turns}`,
+        object: "chat.completion",
+        created: Math.floor(Date.now() / 1000),
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: reply.text },
+                finish_reason: "stop",
+            },
+        ],
+        metadata: { state: reply.state },
+    };
+}
+
 export class MinimalCloudflareBee extends Agent<Env, BeeState> {
     initialState = { turns: 0 };
 
@@ -72,6 +115,23 @@ export class MinimalCloudflareBee extends Agent<Env, BeeState> {
             (url.pathname === "/message" || url.pathname === "/web/messages")
         ) {
             return json(this.reply(await readText(request)));
+        }
+
+        if (
+            request.method === "POST" &&
+            (url.pathname === "/v1/chat/completions" ||
+                /^\/bees\/[^/]+\/v1\/chat\/completions$/.test(url.pathname))
+        ) {
+            const body = (await request.json()) as {
+                model?: string;
+                messages?: unknown;
+            };
+            return json(
+                chatCompletion(
+                    this.reply(lastUserText(body.messages)),
+                    body.model,
+                ),
+            );
         }
 
         if (request.method === "POST" && url.pathname === "/a2a") {

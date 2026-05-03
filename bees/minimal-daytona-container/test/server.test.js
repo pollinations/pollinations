@@ -13,7 +13,7 @@ function listen() {
     });
 }
 
-test("minimal Daytona/container bee exposes health, card, and message route", async () => {
+test("minimal Daytona/container bee exposes health, card, message, and OpenAI routes", async () => {
     const { server, port } = await listen();
     try {
         const health = await fetch(`http://127.0.0.1:${port}/health`);
@@ -26,11 +26,37 @@ test("minimal Daytona/container bee exposes health, card, and message route", as
             body: JSON.stringify({ text: "hello" }),
         });
         const messageBody = await message.json();
+        const chat = await fetch(
+            `http://127.0.0.1:${port}/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "minimal-daytona-container-bee",
+                    messages: [{ role: "user", content: "from openai" }],
+                }),
+            },
+        );
+        const chatBody = await chat.json();
+        const hostedChat = await fetch(
+            `http://127.0.0.1:${port}/bees/bee_minimal-daytona-container-bee/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    messages: [{ role: "user", content: "hosted" }],
+                }),
+            },
+        );
 
         assert.equal(health.status, 200);
         assert.equal(card.status, 200);
         assert.equal(message.status, 200);
+        assert.equal(chat.status, 200);
+        assert.equal(hostedChat.status, 200);
         assert.match(messageBody.text, /hello/);
+        assert.equal(chatBody.object, "chat.completion");
+        assert.match(chatBody.choices[0].message.content, /from openai/);
     } finally {
         server.close();
     }

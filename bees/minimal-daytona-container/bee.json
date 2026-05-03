@@ -11,6 +11,7 @@
     "provider": "daytona"
   },
   "surfaces": [
+    "openai",
     "web",
     "a2a"
   ],

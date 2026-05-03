@@ -56,7 +56,7 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 - [ ] ~~**D1.** `bees/README.md`~~ — DROPPED. Codex already published `bees/README.md` and `bees/api-scopes-billing.md` in #10636. Top-level docs are theirs. We will add a per-bee README pointer if needed at merge time.
 - [ ] **D2.** `bees/COMPARISON.md` — bird's-eye comparison: catgpt (12 framework variants × 4 surfaces) vs code-bee (container + SDK). Cross-PR comparison once #10636 merges. Defer.
-- [ ] **D3.** Update PR #10630 description with current state and a link to `bees/PLAN.md`. Cheap, do soon.
+- [x] **D3.** Updated PR #10630 description with current state, surfaces, test counts, and link to `bees/PLAN.md`.
 
 **Verification:** rendering on github looks right; links resolve.
 

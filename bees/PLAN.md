@@ -21,9 +21,9 @@ Coordination with codex happens on issue #10628. They post `[codex]`, we post `[
 
 Goal: one bee + one surface that returns real `usage` from a real model call. Unblocks billing design on #10628.
 
-- [ ] **A1.** `bees/catgpt/core/usage.ts` — pure helper. `recordUsage({prompt_tokens, completion_tokens, model})` → `{...input, cost_pollen}`. Lookup table for `claude-fast`/`claude-sonnet-4-6` against shared/registry pricing. No I/O.
-- [ ] **A2.** `core/usage.test.ts` — pricing math, cost rounding, unknown-model fallback. ~5 tests.
-- [ ] **A3.** `core/reply.ts` — return `{text, usage}` instead of just `text`. Update existing callers (only `vanilla` and the surfaces that touch reply directly).
+- [x] **A1.** `bees/catgpt/core/usage.ts` — `recordUsage` + `coerceOpenAIUsage`. Pure, install-free.
+- [x] **A2.** `core/usage.test.ts` — 8 tests covering pricing math, aliases, unknown-model fallback, OpenAI-shape coercion.
+- [x] **A3.** `core/reply.ts` — added `generateCatReplyWithUsage` returning `{text, usage}`. Kept `generateCatReply` as a thin wrapper so existing variants don't break.
 - [ ] **A4.** `surfaces/openai-compat/handler.ts` — populate `usage` field on the response (already part of OpenAI shape — currently absent).
 - [ ] **A5.** `surfaces/web-chat/handler.ts` — emit a `usage` SSE event before `done`.
 - [ ] **A6.** `surfaces/a2a/handler.ts` — add `{usage}` to the `data` part of the agent's reply.

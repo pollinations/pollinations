@@ -1,14 +1,27 @@
 import { CAT_SYSTEM } from "./prompt.ts";
 import type { CatReplyOptions } from "./types.ts";
+import {
+    coerceOpenAIUsage,
+    type ModelUsageWithCost,
+    recordUsage,
+} from "./usage.ts";
 
 const DEFAULT_ENDPOINT = "https://gen.pollinations.ai/v1/chat/completions";
 const DEFAULT_MODEL = "claude-fast";
 
-export async function generateCatReply(
+function cleanReply(content: string): string {
+    return content.trim().replace(/^["']|["']$/g, "");
+}
+
+/**
+ * Like `generateCatReply` but also returns `usage` (with cost). Surfaces that
+ * care about billing use this; existing variants keep using the string form.
+ */
+export async function generateCatReplyWithUsage(
     question: string,
     imageUrl: string | null = null,
     opts: CatReplyOptions = {},
-): Promise<string> {
+): Promise<{ text: string; usage: ModelUsageWithCost | null }> {
     const userContent = imageUrl
         ? [
               { type: "text", text: question },
@@ -16,6 +29,7 @@ export async function generateCatReply(
           ]
         : question;
 
+    const model = opts.model ?? DEFAULT_MODEL;
     const res = await fetch(opts.endpoint ?? DEFAULT_ENDPOINT, {
         method: "POST",
         headers: {
@@ -23,7 +37,7 @@ export async function generateCatReply(
             ...(opts.apiKey ? { Authorization: `Bearer ${opts.apiKey}` } : {}),
         },
         body: JSON.stringify({
-            model: opts.model ?? DEFAULT_MODEL,
+            model,
             messages: [
                 { role: "system", content: CAT_SYSTEM },
                 { role: "user", content: userContent },
@@ -33,6 +47,19 @@ export async function generateCatReply(
     if (!res.ok) throw new Error(`Cat reply failed: ${res.status}`);
     const data = (await res.json()) as {
         choices: Array<{ message: { content: string } }>;
+        usage?: unknown;
     };
-    return data.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
+    const text = cleanReply(data.choices[0].message.content);
+    const raw = coerceOpenAIUsage(data.usage, model);
+    const usage = raw ? recordUsage(raw) : null;
+    return { text, usage };
+}
+
+export async function generateCatReply(
+    question: string,
+    imageUrl: string | null = null,
+    opts: CatReplyOptions = {},
+): Promise<string> {
+    const { text } = await generateCatReplyWithUsage(question, imageUrl, opts);
+    return text;
 }

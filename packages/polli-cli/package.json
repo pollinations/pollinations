@@ -63,7 +63,7 @@
     "terminal-link": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.13.0",
+    "@types/node": "^22.19.17",
     "tsup": "^8.4.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"

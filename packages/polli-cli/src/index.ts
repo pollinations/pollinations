@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 
-import { authCommand } from "./commands/auth.js";
+import { authCommand, whoamiCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { keysCommand } from "./commands/keys.js";
@@ -58,6 +58,7 @@ program
 
 // Auth & account
 program.addCommand(authCommand);
+program.addCommand(whoamiCommand);
 program.addCommand(keysCommand);
 program.addCommand(usageCommand);
 

@@ -31,6 +31,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.4"],
     },
     {
+        name: "gpt-5.5",
+        config: portkeyConfig["gpt-5.5"],
+    },
+    {
         name: "qwen-coder",
         config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
@@ -167,7 +171,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nova-fast",
-        config: portkeyConfig["nova-micro-fallback"],
+        config: portkeyConfig["nova-micro"],
     },
     {
         name: "nova",
@@ -180,6 +184,12 @@ const models: ModelDefinition[] = [
     {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
+    },
+    {
+        name: "llama",
+        config: portkeyConfig[
+            "accounts/fireworks/models/llama-v3p3-70b-instruct"
+        ],
     },
     {
         name: "mistral-large",

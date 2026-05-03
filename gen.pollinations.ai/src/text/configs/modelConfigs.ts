@@ -58,6 +58,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "gpt-5.4",
         ),
 
+    // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
+    "gpt-5.5": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.5/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.5",
+        ),
+
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
@@ -146,25 +154,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- AWS Bedrock (Nova) ---------------------------------------------------
-    "nova-micro-fallback": () => ({
-        strategy: { mode: "fallback" },
-        targets: [
-            {
-                provider: "bedrock",
-                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
-                aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: { model: "amazon.nova-micro-v1:0" },
-            },
-            {
-                provider: "bedrock",
-                aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
-                aws_region: process.env.AWS_REGION || "us-east-1",
-                override_params: { model: "amazon.nova-lite-v1:0" },
-            },
-        ],
-    }),
+    "nova-micro": () =>
+        createBedrockNativeConfig({ model: "amazon.nova-micro-v1:0" }),
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
@@ -203,6 +194,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",
+        }),
+
+    // -- Fireworks AI (Meta Llama) --------------------------------------------
+    "accounts/fireworks/models/llama-v3p3-70b-instruct": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/llama-v3p3-70b-instruct",
         }),
 
     // -- Alibaba DashScope (Qwen) ---------------------------------------------

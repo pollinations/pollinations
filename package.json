@@ -7,15 +7,14 @@
     "gen.pollinations.ai"
   ],
   "scripts": {
-    "install:all": "npm install && npm install --prefix image.pollinations.ai && npm install --prefix packages/sdk && npm install --prefix packages/mcp",
-    "install:services": "npm install && npm install --prefix image.pollinations.ai",
+    "install:all": "npm install && npm install --prefix packages/sdk && npm install --prefix packages/mcp",
+    "install:services": "npm install",
     "install:packages": "npm install --prefix packages/sdk && npm install --prefix packages/mcp",
     "build:sdk": "npm run build --prefix packages/sdk",
-    "dev": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,gen,image' -c 'auto' 'npm run dev --workspace pollinations-enter' 'npm run dev --workspace pollinations-gen' 'npm run dev --prefix image.pollinations.ai'",
+    "dev": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,gen' -c 'auto' 'npm run dev --workspace pollinations-enter' 'npm run dev --workspace pollinations-gen'",
     "dev:enter": "npm run dev --workspace pollinations-enter",
     "dev:gen": "npm run dev --workspace pollinations-gen",
     "dev:gen-stack": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter-worker,gen' -c 'auto' 'npm run dev:worker --workspace pollinations-enter' 'sleep 12 && npm run dev --workspace pollinations-gen'",
-    "dev:image": "npm run dev --prefix image.pollinations.ai",
     "format:changed": "git diff --diff-filter=d --name-only origin/main | grep -E '\\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|reddit|dist|build|\\.next|\\.cache|out)/' | xargs npx biome check --write"
   },
   "devDependencies": {

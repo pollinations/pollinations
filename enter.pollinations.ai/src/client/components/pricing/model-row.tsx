@@ -1,6 +1,6 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
-import { Badge } from "../ui/badge.tsx";
+import { Tag } from "../ui/tag.tsx";
 import {
     calculateForBalance,
     calculatePerPollen,
@@ -182,7 +182,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                     >
                         <span>{model.name}</span>
                         {copied && (
-                            <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+                            <span className="rounded-md bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
                                 copied
                             </span>
                         )}
@@ -195,7 +195,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             {modalityIcons.length > 0 && (
                                 <Tooltip content={modalityLabel}>
-                                    <Badge
+                                    <Tag
                                         color="gray"
                                         size="sm"
                                         className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
@@ -203,12 +203,12 @@ export const ModelRow: FC<ModelRowProps> = ({
                                         {modalityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
-                                    </Badge>
+                                    </Tag>
                                 </Tooltip>
                             )}
                             {capabilityIcons.length > 0 && (
                                 <Tooltip content={capabilityLabel}>
-                                    <Badge
+                                    <Tag
                                         color="gray"
                                         size="sm"
                                         className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
@@ -216,19 +216,19 @@ export const ModelRow: FC<ModelRowProps> = ({
                                         {capabilityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
-                                    </Badge>
+                                    </Tag>
                                 </Tooltip>
                             )}
                             {showNew && (
-                                <Badge color="green" size="sm">
+                                <Tag color="green" size="sm">
                                     NEW
-                                </Badge>
+                                </Tag>
                             )}
                             {showAlpha && (
                                 <Tooltip content="Alpha model — experimental, may be unstable">
-                                    <Badge color="orange" size="sm">
+                                    <Tag color="orange" size="sm">
                                         ALPHA
-                                    </Badge>
+                                    </Tag>
                                 </Tooltip>
                             )}
                             {showPaidOnly && (
@@ -239,9 +239,9 @@ export const ModelRow: FC<ModelRowProps> = ({
                                             : "This model uses Top-up Pollen only."
                                     }
                                 >
-                                    <Badge color="purple" size="sm">
+                                    <Tag color="purple" size="sm">
                                         PAID
-                                    </Badge>
+                                    </Tag>
                                 </Tooltip>
                             )}
                         </div>
@@ -261,18 +261,12 @@ export const ModelRow: FC<ModelRowProps> = ({
                             </span>
                         }
                     >
-                        <span
-                            className={cn(
-                                "inline-block cursor-default text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full",
-                            )}
-                        >
+                        <Tag color="teal" className="cursor-default">
                             {genPerPollen}
-                        </span>
+                        </Tag>
                     </Tooltip>
                 ) : (
-                    <span className="inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full">
-                        {genPerPollen}
-                    </span>
+                    <Tag color="teal">{genPerPollen}</Tag>
                 )}
             </div>
 

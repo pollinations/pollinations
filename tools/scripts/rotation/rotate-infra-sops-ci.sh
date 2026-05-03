@@ -1,6 +1,6 @@
 #!/bin/bash
 # Rotate the SOPS CI age key (the one stored as GH Actions SOPS_AGE_KEY secret,
-# consumed by deploy-enter-services.yml).
+# consumed by deploy-gen-cloudflare.yml).
 #
 # Two-phase rotation with an overlap window:
 #   Phase 1: add new CI recipient → PR → auto-merge. Old + new both decrypt.
@@ -41,7 +41,7 @@ source "$SCRIPT_DIR/_pr-deploy.sh"
 SOPS_YAML="$REPO_ROOT/.sops.yaml"
 RECIPIENTS_FILE="$SCRIPT_DIR/sops-recipients.yaml"
 REPO="pollinations/pollinations"
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 SECRET_NAME="SOPS_AGE_KEY"
 
 #######################################

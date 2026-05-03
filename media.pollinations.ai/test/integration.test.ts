@@ -26,7 +26,7 @@ function mockAuth() {
     fetchMock.disableNetConnect();
     fetchMock
         .get("https://gen.pollinations.ai")
-        .intercept({ path: "/api/account/key" })
+        .intercept({ path: "/account/key" })
         .reply(
             200,
             JSON.stringify({

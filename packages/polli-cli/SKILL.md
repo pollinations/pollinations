@@ -21,6 +21,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Intent | Command |
 |---|---|
 | Log in once | `polli auth login` |
+| Store an existing key | `printf '%s' "$POLLINATIONS_API_KEY" \| polli auth login --with-token` |
 | Generate image | `polli gen image "<prompt>" --output out.png` |
 | Generate text | `polli gen text "<prompt>"` |
 | Text with stdin as context | `echo "<ctx>" \| polli gen text "<question>"` |
@@ -38,7 +39,9 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 
 ## Setup
 
-One-time: `polli auth login` (device-flow). Verify with `polli auth status`.
+One-time: `polli auth login` (device-flow). To store an existing key, run
+`printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
+with `polli auth status`.
 Override the stored key for a single command with `--key <key>`.
 
 ## Recipes
@@ -107,7 +110,7 @@ Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any 
 ```bash
 polli gen transcribe recording.mp3 --language en
 ```
-Models: `whisper` (default), `scribe`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** returns word-level timestamps, segments, and duration; **scribe** returns only `{text: "..."}` — use whisper if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech — **whisper honors it and echoes the value in the JSON response; scribe silently ignores it** (no error, no effect).
+Models: `whisper` (default), `scribe`, `universal-2`, `universal-3-pro`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** and **AssemblyAI** return timing data when requested through the API; **scribe** returns only `{text: "..."}` — use whisper or AssemblyAI if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
 
 ### Discover models
 ```bash

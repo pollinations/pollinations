@@ -498,6 +498,8 @@ export type TranscriptionModel =
     | "whisper-large-v3"
     | "whisper-1"
     | "scribe"
+    | "universal-2"
+    | "universal-3-pro"
     | string;
 
 /** Response format for transcription */

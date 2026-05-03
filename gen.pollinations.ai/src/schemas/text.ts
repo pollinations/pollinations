@@ -1,4 +1,5 @@
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 
 const VALID_TEXT_MODELS = [
@@ -34,6 +35,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text.",
     }),
+    safe: SafeSchema,
 });
 
 export type GenerateTextRequestQueryParams = z.infer<

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Rotate AWS IAM access keys used by the image and text EC2 services.
+# Rotate AWS IAM access keys used by the gen image and text providers.
 #
 # Usage: ./rotate-genai-aws.sh [--execute]
 #
@@ -13,7 +13,7 @@
 #   5. Open PR to main, enable auto-merge
 #   6. Poll until PR merged
 #   7. git push origin main:production (admin push, no PR)
-#   8. Watch deploy-enter-services.yml complete
+#   8. Watch deploy-gen-cloudflare.yml complete
 #   9. Health check production endpoint
 #  10. Delete old IAM access key
 #
@@ -44,10 +44,11 @@ source "$SCRIPT_DIR/_pr-deploy.sh"
 
 REPO="pollinations/pollinations"
 SOPS_FILES=(
-    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/gen.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/prod.vars.json"
 )
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 HEALTH_MODEL="claude-fast"
@@ -73,14 +74,16 @@ if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
     exit 1
 fi
 
-IMAGE_SOPS="${SOPS_FILES[0]}"
-if [ ! -f "$IMAGE_SOPS" ]; then
-    error "SOPS file not found: $IMAGE_SOPS"
-    exit 1
-fi
+SOPS_READ="${SOPS_FILES[0]}"
+for f in "${SOPS_FILES[@]}"; do
+    if [ ! -f "$f" ]; then
+        error "SOPS file not found: $f"
+        exit 1
+    fi
+done
 
-OLD_KEY_ID=$(sops -d "$IMAGE_SOPS" | jq -r '.AWS_ACCESS_KEY_ID')
-OLD_SECRET=$(sops -d "$IMAGE_SOPS" | jq -r '.AWS_SECRET_ACCESS_KEY')
+OLD_KEY_ID=$(sops -d "$SOPS_READ" | jq -r '.AWS_ACCESS_KEY_ID')
+OLD_SECRET=$(sops -d "$SOPS_READ" | jq -r '.AWS_SECRET_ACCESS_KEY')
 if [ -z "$OLD_KEY_ID" ] || [ "$OLD_KEY_ID" = "null" ]; then
     error "Could not read AWS_ACCESS_KEY_ID from SOPS."
     exit 1
@@ -113,7 +116,7 @@ if $DRY_RUN; then
     echo
     log "Plan:"
     echo "  1. Create new IAM access key for $IAM_USER (old $OLD_KEY_ID stays valid)"
-    echo "  2. Update SOPS: image.pollinations.ai/env.json, gen.pollinations.ai/env.json"
+    echo "  2. Update SOPS: gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json"
     echo "  3. Verify new key via sts"
     echo "  4. Open PR: rotate/aws-<date> → main, auto-merge"
     echo "  5. Push main → production (admin)"
@@ -236,4 +239,4 @@ echo ""
 log "Old key: $OLD_KEY_ID (deleted)"
 log "New key: $NEW_KEY_ID"
 echo ""
-log "SOPS + production + EC2 services now using the new key."
+log "SOPS + production + gen worker now using the new key."

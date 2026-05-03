@@ -8,7 +8,6 @@ Overview of which external services each environment connects to.
 |---------|-----------|---------|------------|
 | **D1 Database** | `development-pollinations-enter-db` | `staging-pollinations-enter-db` | `pollinations-enter-db` |
 | **Stripe** | Sandbox | Sandbox | **Live** |
-| **Polar** | Sandbox | **Production** ⚠️ | Production |
 | **TinyBird** | Production* | Production* | Production |
 
 > *TinyBird uses a single production workspace for all environments. Events include an `environment` column to distinguish source.
@@ -23,7 +22,6 @@ Overview of which external services each environment connects to.
 
 ## Notes
 
-- **Polar on Staging**: Currently uses production Polar. Since Polar is being phased out, this avoids additional setup complexity.
 - **TinyBird**: All environments log to the same TinyBird workspace (`pollinations_enter`). Use `livemode` column (for Stripe) or `environment` column to filter.
 - **Stripe Test Cards**: Use `4242 4242 4242 4242` for sandbox testing.
 

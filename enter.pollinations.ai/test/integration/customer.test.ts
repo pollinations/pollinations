@@ -14,7 +14,7 @@ test.for(
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const anonymousResponse = await SELF.fetch(`${base}${route}`, {
         method: "GET",
     });
@@ -35,7 +35,7 @@ test("/balance should return all balance types and lastTierGrant", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const db = drizzle(env.DB);
 
     // Get the authenticated user ID from session
@@ -136,7 +136,7 @@ test("/balance should return zero balances for new users", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const db = drizzle(env.DB);
 
     // Get the authenticated user ID from session
@@ -181,7 +181,7 @@ test("/balance should return zero balances for new users", async ({
 });
 
 test("/balance should reject API key authentication", async ({ mocks }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
 
     // Try to access with API key instead of session
     const response = await SELF.fetch(`${base}/balance`, {

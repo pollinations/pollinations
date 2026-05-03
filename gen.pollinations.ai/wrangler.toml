@@ -8,6 +8,9 @@ services = [
     { binding = "ENTER", service = "pollinations-enter" }
 ]
 
+[images]
+binding = "IMAGES"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -41,13 +44,18 @@ LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
-IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
 
 [dev]
 port = 8788
 
 # Production routes
 [env.production]
+
+[env.production.images]
+binding = "IMAGES"
 
 [[env.production.routes]]
 pattern = "gen.pollinations.ai"
@@ -97,11 +105,16 @@ LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
-IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
 POLLEN_REFILL_PER_HOUR = 1
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
 
 # Staging routes
 [env.staging]
+
+[env.staging.images]
+binding = "IMAGES"
 
 [[env.staging.routes]]
 pattern = "staging.gen.pollinations.ai"
@@ -150,9 +163,14 @@ LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
-IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
 
 [env.test]
+
+[env.test.images]
+binding = "IMAGES"
 
 [[env.test.services]]
 binding = "ENTER"
@@ -195,22 +213,34 @@ LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
-PLN_ENTER_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
-IMAGE_SERVICE_URL = "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"
 AZURE_MYCELI_PROD_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_EASTUS2_API_KEY = "not-a-secret-workers-test-only"
 AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
+AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
+AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
+BYTEDANCE_API_KEY = "not-a-secret-workers-test-only"
 DEEPINFRA_API_KEY = "not-a-secret-workers-test-only"
 FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
 GOOGLE_CLIENT_EMAIL = "test@example.com"
 GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"
 GOOGLE_PRIVATE_KEY_ID = "not-a-secret-workers-test-only"
 GOOGLE_PROJECT_ID = "test-project"
+KLEIN_URL = "https://klein.test"
+LTX2_BASE_URL = "https://ltx2.test"
+NOVA_REEL_S3_BUCKET = "test-bucket"
+OPENAI_API_KEY = "not-a-secret-workers-test-only"
 PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"
+PLN_GPU_TOKEN = "not-a-secret-workers-test-only"
 POLLEN_REFILL_PER_HOUR = 1
+PRUNA_API_KEY = "not-a-secret-workers-test-only"
+XAI_API_KEY = "not-a-secret-workers-test-only"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "test-guardrail"
+BEDROCK_GUARDRAIL_VERSION = "1"

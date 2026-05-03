@@ -71,6 +71,7 @@ export const Pricing: FC<PricingProps> = ({
                             theme="teal"
                             active={activeTab === section}
                             onClick={() => setActiveTab(section)}
+                            className="px-4 pt-1.5 pb-2 text-base"
                         >
                             <span className="font-bold">
                                 {sectionLabels[section]}

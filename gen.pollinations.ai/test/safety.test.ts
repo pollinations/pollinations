@@ -232,26 +232,36 @@ describe("applySafety", () => {
         });
     });
 
-    it("fails closed when a safe prompt exceeds the text budget", async () => {
-        const input = `a@example.com ${"safe tail ".repeat(2_500)}`;
+    it("checks the latest text window when a safe prompt exceeds the text budget", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "tail@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "safe tail {EMAIL}" }],
+        );
+
+        const prefix = `a@example.com ${"safe prefix ".repeat(100)}`;
+        const tail = `${"safe tail ".repeat(5_100)}tail@example.com`;
+        const input = `${prefix}${tail}`;
         const response = await safetyApp().request(
             `/scan/${encodeURIComponent(input)}?safe=privacy`,
             undefined,
             configuredEnv,
         );
 
-        expect(response.status).toBe(400);
-        expect(fetchMock).not.toHaveBeenCalled();
-        expect(await response.json()).toMatchObject({
-            error: {
-                type: "safety_error",
-                code: "input_too_large",
-                safety: {
-                    maxTextChars: 20_000,
-                    maxTextParts: 25,
-                },
-            },
-        });
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(await response.text()).toBe(
+            `${input.slice(0, input.length - 50_000)}safe tail {EMAIL}`,
+        );
     });
 
     it("fails closed when safe is requested but guardrails are not configured", async () => {
@@ -365,7 +375,24 @@ describe("applySafetyToChatRequest", () => {
         });
     });
 
-    it("fails closed when a safe chat request has too many text parts", async () => {
+    it("checks only the latest chat parts when a safe chat request has too many text parts", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            Array.from({ length: 25 }, (_, index) => ({
+                text: `redacted ${index + 1}`,
+            })),
+        );
+
         const response = await safetyApp().request(
             "/chat",
             {
@@ -385,14 +412,56 @@ describe("applySafetyToChatRequest", () => {
             configuredEnv,
         );
 
-        expect(response.status).toBe(400);
-        expect(fetchMock).not.toHaveBeenCalled();
-        expect(await response.json()).toMatchObject({
-            error: {
-                type: "safety_error",
-                code: "input_too_large",
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        const body = (await response.json()) as {
+            messages: { content: string }[];
+        };
+        expect(body.messages[0].content).toBe("a@example.com");
+        expect(body.messages[1].content).toBe("redacted 1");
+        expect(body.messages[25].content).toBe("redacted 25");
+    });
+
+    it("checks only the latest characters from an oversized chat part", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "tail@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
             },
-        });
+            [{ text: "safe tail {EMAIL}" }],
+        );
+
+        const prefix = `a@example.com ${"safe prefix ".repeat(100)}`;
+        const tail = `${"safe tail ".repeat(5_100)}tail@example.com`;
+        const input = `${prefix}${tail}`;
+        const response = await safetyApp().request(
+            "/chat",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "privacy",
+                    messages: [{ role: "user", content: input }],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        const body = (await response.json()) as {
+            messages: { content: string }[];
+        };
+        expect(body.messages[0].content).toBe(
+            `${input.slice(0, input.length - 50_000)}safe tail {EMAIL}`,
+        );
     });
 });
 

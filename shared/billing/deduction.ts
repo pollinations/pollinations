@@ -19,6 +19,8 @@ const BUCKET_COLUMNS = {
  * non-tier buckets.
  *
  * If the user has a positive non-tier balance, uses priority: tier → dev → pack.
+ * Dev and pack must be checked independently so a negative dev balance cannot
+ * cancel out a positive pack balance and skip paid balance.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
@@ -31,17 +33,17 @@ export async function atomicDeductUserBalance(
 			UPDATE ${userTable}
 			SET
 				tier_balance = CASE
-					WHEN (COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
+					WHEN COALESCE(pack_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
 					WHEN COALESCE(tier_balance, 0) > 0 THEN COALESCE(tier_balance, 0) - ${amount}
 					ELSE tier_balance
 				END,
 				dev_balance = CASE
-					WHEN (COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN dev_balance
+					WHEN COALESCE(pack_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN dev_balance
 					WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) > 0 THEN COALESCE(dev_balance, 0) - ${amount}
 					ELSE dev_balance
 				END,
 				pack_balance = CASE
-					WHEN (COALESCE(pack_balance, 0) + COALESCE(dev_balance, 0)) <= 0 THEN pack_balance
+					WHEN COALESCE(pack_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN pack_balance
 					WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
 					ELSE pack_balance
 				END
@@ -167,7 +169,8 @@ export function identifyDeductionSource(
         fromPack: 0,
     };
     const { tierBalance, devBalance, packBalance } = balances;
-    if (devBalance + packBalance <= 0) return { ...zero, fromTier: amount };
+    if (devBalance <= 0 && packBalance <= 0)
+        return { ...zero, fromTier: amount };
     if (tierBalance > 0) return { ...zero, fromTier: amount };
     if (devBalance > 0) return { ...zero, fromDev: amount };
     return { ...zero, fromPack: amount };

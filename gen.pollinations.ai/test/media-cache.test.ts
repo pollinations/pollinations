@@ -57,7 +57,10 @@ function createMediaBucket(): R2Bucket {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables & {
+            model?: { requested: string; resolved: string };
+        };
 };
 
 type MediaCache = typeof imageCache;
@@ -72,6 +75,15 @@ function createMediaCacheApp(cache: MediaCache, contentType: string) {
         })
         .get(
             "/media/:prompt",
+            async (c, next) => {
+                const requested = c.req.query("model") || "gptimage";
+                c.set("model", {
+                    requested,
+                    resolved:
+                        requested === "gpt-image" ? "gptimage" : requested,
+                });
+                await next();
+            },
             cache,
             async (c, next) => {
                 if (c.req.header("authorization") !== "Bearer test-key") {
@@ -170,6 +182,31 @@ describe("media cache", () => {
             "Authentication required",
         );
         expect(missNoAuth.response.status).toBe(401);
+        expect(media.originHits).toBe(1);
+    });
+
+    it("normalizes model aliases for cache keys", async () => {
+        const media = createMediaCacheApp(imageCache, "image/png");
+        const env = createMediaCacheEnv();
+
+        const first = await dispatch(
+            media.app,
+            "/media/alias-hit?model=gptimage",
+            {
+                headers: { Authorization: "Bearer test-key" },
+            },
+            env,
+        );
+        expect(await consumeAndWait(first)).toBe("origin:1");
+
+        const second = await dispatch(
+            media.app,
+            "/media/alias-hit?model=gpt-image",
+            undefined,
+            env,
+        );
+        expect(await consumeAndWait(second)).toBe("origin:1");
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
         expect(media.originHits).toBe(1);
     });
 });

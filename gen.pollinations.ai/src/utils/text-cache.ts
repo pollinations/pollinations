@@ -34,6 +34,7 @@ function hasActiveSafety(value: unknown): boolean {
 export async function generateCacheKey(
     request: Request,
     bodyText?: string,
+    resolvedModel?: string,
 ): Promise<string> {
     const url = new URL(request.url);
 
@@ -44,7 +45,12 @@ export async function generateCacheKey(
         .filter(([key]) => !EXCLUDED_PARAMS.includes(key.toLowerCase()))
         .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
     for (const [key, value] of queryParams) {
-        filteredParams.append(key, value);
+        filteredParams.append(
+            key,
+            key.toLowerCase() === "model" && resolvedModel
+                ? resolvedModel
+                : value,
+        );
     }
 
     // Normalize HEAD requests to GET for cache key generation
@@ -70,7 +76,10 @@ export async function generateCacheKey(
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
                 if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
-                    filteredBody[key] = value;
+                    filteredBody[key] =
+                        key.toLowerCase() === "model" && resolvedModel
+                            ? resolvedModel
+                            : value;
                 }
             }
             // Cache is keyed by the user's original input plus safe mode. On a

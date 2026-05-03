@@ -20,7 +20,10 @@ import {
 
 type MediaCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables & {
+            model?: { resolved?: string };
+        };
 };
 
 type MediaCacheConfig = {
@@ -45,6 +48,7 @@ export function createMediaCache(config: MediaCacheConfig) {
         const cacheKey = generateCacheKey(
             new URL(c.req.url),
             c.req.header(SAFETY_HEADER_NAME),
+            c.var.model?.resolved,
         );
         log.debug("Cache key: {key}", { key: cacheKey });
 

@@ -15,7 +15,10 @@ import {
 
 type TextCacheEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables & {
+            model?: { resolved?: string };
+        };
 };
 
 /**
@@ -78,7 +81,11 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     }
 
     // Generate cache key
-    const cacheKey = await generateCacheKey(c.req.raw, bodyText);
+    const cacheKey = await generateCacheKey(
+        c.req.raw,
+        bodyText,
+        c.var.model?.resolved,
+    );
     log.debug("[TEXT-CACHE] Cache key: {key}", {
         key: `${cacheKey.substring(0, 16)}...`,
     });

@@ -53,8 +53,15 @@ function createTextBucket(): R2Bucket {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables & {
+            model?: { requested: string; resolved: string };
+        };
 };
+
+function resolveTestModel(model: string | undefined) {
+    return model === "gpt-5-nano" ? "openai-fast" : model || "openai-fast";
+}
 
 function createTextCacheApp() {
     let originHits = 0;
@@ -67,6 +74,16 @@ function createTextCacheApp() {
         .post(
             "/v1/chat/completions",
             validator("json", CreateChatCompletionRequestSchema),
+            async (c, next) => {
+                const body = c.req.valid("json" as never) as {
+                    model?: string;
+                };
+                c.set("model", {
+                    requested: body.model || "openai-fast",
+                    resolved: resolveTestModel(body.model),
+                });
+                await next();
+            },
             textCache,
             async (c) => {
                 originHits += 1;
@@ -86,12 +103,27 @@ function createTextCacheApp() {
                 );
             },
         )
-        .get("/text/:prompt", textCache, async (c) => {
-            originHits += 1;
-            return new Response(`hit:${originHits}:${c.req.param("prompt")}`, {
-                headers: { "Content-Type": "text/plain" },
-            });
-        })
+        .get(
+            "/text/:prompt",
+            async (c, next) => {
+                const requested = c.req.query("model") || "openai-fast";
+                c.set("model", {
+                    requested,
+                    resolved: resolveTestModel(requested),
+                });
+                await next();
+            },
+            textCache,
+            async (c) => {
+                originHits += 1;
+                return new Response(
+                    `hit:${originHits}:${c.req.param("prompt")}`,
+                    {
+                        headers: { "Content-Type": "text/plain" },
+                    },
+                );
+            },
+        )
         .get("/v1/models", async () => Response.json({ data: [] }));
 
     return {
@@ -345,6 +377,60 @@ describe("text cache", () => {
 
         expect(second.response.headers.get("X-Cache")).toBe("HIT");
         expect(body).toBe("hit:1:cache-test-prompt");
+        expect(cache.originHits).toBe(1);
+    });
+
+    it("normalizes GET model aliases for cache keys", async () => {
+        const cache = createTextCacheApp();
+        const { app } = cache;
+        const env = createTextCacheEnv();
+
+        const first = await dispatch(
+            app,
+            "/text/cache-test-prompt?model=openai-fast",
+            undefined,
+            env,
+        );
+        await consumeAndWait(first);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+
+        const second = await dispatch(
+            app,
+            "/text/cache-test-prompt?model=gpt-5-nano",
+            undefined,
+            env,
+        );
+        const body = await consumeAndWait(second);
+
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
+        expect(body).toBe("hit:1:cache-test-prompt");
+        expect(cache.originHits).toBe(1);
+    });
+
+    it("normalizes POST model aliases for cache keys", async () => {
+        const cache = createTextCacheApp();
+        const { app } = cache;
+        const env = createTextCacheEnv();
+        const messages = [{ role: "user", content: "alias split" }];
+
+        const first = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit({ model: "openai-fast", messages }),
+            env,
+        );
+        await consumeAndWait(first);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+
+        const second = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit({ model: "gpt-5-nano", messages }),
+            env,
+        );
+        await consumeAndWait(second);
+
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
         expect(cache.originHits).toBe(1);
     });
 

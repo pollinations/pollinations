@@ -1,0 +1,12 @@
+{
+    "name": "@pollinations/code-bee",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "test": "node --experimental-strip-types --test src/*.test.ts surfaces/**/*.test.ts manifest.test.ts"
+    },
+    "dependencies": {
+        "@anthropic-ai/claude-agent-sdk": "^0.2.126"
+    }
+}

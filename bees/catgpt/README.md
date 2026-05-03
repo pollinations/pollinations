@@ -100,7 +100,7 @@ cd bees/catgpt
 node --experimental-strip-types --test core/*.test.ts surfaces/openai-compat/*.test.ts
 ```
 
-Currently: 14 core + 5 openai-compat + 7 a2a + 4 web-chat + 7 manifest = **37/37 passing** (no install).
+Currently: 14 core + 5 openai-compat + 7 a2a + 4 web-chat + 10 manifest = **40/40 passing** (no install).
 
 Live tests (`core/live.test.ts`) hit real `gen.pollinations.ai` and are gated on `POLLINATIONS_LIVE=1` plus a token, so a missing token doesn't fail CI:
 
@@ -131,6 +131,7 @@ POLLINATIONS_LIVE=1 \
 - **The surface adapters are the same code regardless of the variant underneath.** Strong signal that surface adapters belong in the platform, not in each bee. The `hono`, `bun`, and `deno` variants all mount the same three handlers from `surfaces/` — their `agent.ts` is just a router, and their Discord adapter talks to the bee over HTTP like any other client.
 - **Three variants without an SDK** (`hono`, `bun`, `deno`) end up smaller than the SDK-based ones. The agent layer collapses to ~15-25 LOC of routing once the surfaces do the heavy lifting.
 - **Surfaces are runtime-portable.** Same `surfaces/` code mounts cleanly on Node (via Hono), Bun, and Deno — proves that `Request → Response` handlers are the right abstraction for cross-runtime portability.
+- **Two runtime kinds is enough.** The manifest collapsed to `runtime.kind: "worker" | "container"`. CatGPT is a `worker` bee; the sibling `bees/code-bee/` is the canonical `container` bee (Claude Agent SDK with per-session `cwd`). Distinctions like "raw Worker vs CF Agents" are *deployment targets*, not runtimes.
 
 ## Status
 

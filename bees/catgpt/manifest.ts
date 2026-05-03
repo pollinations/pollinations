@@ -13,12 +13,26 @@ export type Surface =
     | "rest" // ad-hoc HTTP, e.g. /ask
     | "cli";
 
-export type RuntimeKind =
-    | "worker" // Cloudflare Worker / Vercel Edge / Deno Deploy / etc.
-    | "cloudflare-agent" // CF Agents framework — DO + SQLite
-    | "node" // plain Node HTTP server (long-running container, Daytona-friendly)
-    | "sandbox" // E2B/Daytona/Modal-style sandboxed exec (none today)
-    | "external"; // hosted elsewhere; we just route to it
+// Two runtimes only. Anything finer-grained (CF Agents vs raw Worker, Daytona
+// vs plain Docker) is a *deployment* choice, not a runtime choice — it does
+// not change what the bee author can assume about the host.
+//
+//   worker    — V8 isolate. Stateless or DO-backed. Fast cold starts. No
+//               shell, no filesystem, no native deps. Default for chat-shaped
+//               bees (model + prompt + small state).
+//   container — long-running Node process. Has shell, filesystem, sandboxed
+//               code execution, native deps. Required for agentic bees that
+//               touch a real machine (e.g. a Claude-Code-as-a-bee).
+export type RuntimeKind = "worker" | "container";
+
+// Where a bee's per-user / per-agent state lives. Independent of runtime —
+// a worker bee can use durable-object or kv; a container bee can use sqlite
+// on a mounted volume or kv via HTTP.
+export type StateBackend =
+    | "memory" // ephemeral; fine for stateless bees
+    | "kv" // Cloudflare KV / Workers KV
+    | "durable-object" // CF Durable Object (one isolate per key, SQLite on disk)
+    | "sqlite"; // local file (container only)
 
 export type BillingRoute = "author-pays" | "user-pays";
 
@@ -39,6 +53,7 @@ export type AgentManifest = {
     // State scope — same shape we sketched in #10628.
     state: {
         scope: "none" | "per-agent" | "per-user";
+        backend?: StateBackend; // platform may default per runtime if absent
         discord_scope?: "user" | "channel";
         retention_days?: number; // client-decidable per #10628 retention discussion
     };
@@ -61,12 +76,12 @@ const SURFACE_VALUES: readonly Surface[] = [
     "rest",
     "cli",
 ];
-const RUNTIME_VALUES: readonly RuntimeKind[] = [
-    "worker",
-    "cloudflare-agent",
-    "node",
-    "sandbox",
-    "external",
+const RUNTIME_VALUES: readonly RuntimeKind[] = ["worker", "container"];
+const STATE_BACKENDS: readonly StateBackend[] = [
+    "memory",
+    "kv",
+    "durable-object",
+    "sqlite",
 ];
 const BILLING_VALUES: readonly BillingRoute[] = ["author-pays", "user-pays"];
 const STATE_SCOPES = ["none", "per-agent", "per-user"] as const;
@@ -103,13 +118,19 @@ export function validateManifest(m: unknown): string[] {
         errs.push(`unknown runtime kind: ${String(runtime.kind)}`);
     }
 
-    const state = x.state as { scope?: unknown } | undefined;
+    const state = x.state as { scope?: unknown; backend?: unknown } | undefined;
     if (!state || typeof state !== "object") {
         errs.push("state must be an object");
-    } else if (
-        !STATE_SCOPES.includes(state.scope as (typeof STATE_SCOPES)[number])
-    ) {
-        errs.push(`unknown state.scope: ${String(state.scope)}`);
+    } else {
+        if (
+            !STATE_SCOPES.includes(state.scope as (typeof STATE_SCOPES)[number])
+        )
+            errs.push(`unknown state.scope: ${String(state.scope)}`);
+        if (
+            state.backend !== undefined &&
+            !STATE_BACKENDS.includes(state.backend as StateBackend)
+        )
+            errs.push(`unknown state.backend: ${String(state.backend)}`);
     }
 
     const billing = x.billing as
@@ -151,6 +172,7 @@ export const catgpt: AgentManifest = {
     runtime: { kind: "worker" },
     state: {
         scope: "per-user",
+        backend: "kv",
         discord_scope: "user",
         retention_days: 30,
     },

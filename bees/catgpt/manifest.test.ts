@@ -37,6 +37,38 @@ test("validateManifest rejects unknown runtime kinds", () => {
     assert.ok(errors.some((e) => e.includes("carrier-pigeon")));
 });
 
+test("validateManifest only accepts worker and container as runtime kinds", () => {
+    // Old runtime kinds like "cloudflare-agent" are no longer allowed.
+    const errors = validateManifest({
+        ...catgpt,
+        runtime: { kind: "cloudflare-agent" } as any,
+    });
+    assert.ok(errors.some((e) => e.includes("cloudflare-agent")));
+});
+
+test("validateManifest accepts known state.backend values", () => {
+    for (const backend of [
+        "memory",
+        "kv",
+        "durable-object",
+        "sqlite",
+    ] as const) {
+        const errors = validateManifest({
+            ...catgpt,
+            state: { ...catgpt.state, backend },
+        });
+        assert.deepEqual(errors, [], `backend ${backend} should be accepted`);
+    }
+});
+
+test("validateManifest rejects unknown state.backend", () => {
+    const errors = validateManifest({
+        ...catgpt,
+        state: { ...catgpt.state, backend: "carrier-pigeon" } as any,
+    });
+    assert.ok(errors.some((e) => e.includes("carrier-pigeon")));
+});
+
 test("validateManifest rejects unknown billing routes", () => {
     const errors = validateManifest({
         ...catgpt,

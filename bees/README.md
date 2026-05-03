@@ -44,7 +44,6 @@ CLI:
 ```bash
 polli bees init
 polli bees validate bee.json
-polli bees deploy bee.json --dry-run
 polli bees deploy bee.json
 polli bees deploy bee.json --upgrade
 polli bees deploy bee.json --runtime daytona
@@ -54,8 +53,9 @@ polli bees events bee_id
 polli bees delete bee_id --yes
 ```
 
-`polli bees deploy --dry-run` is the local preview path. `polli bees deploy`
-uses the `/api/bees` API and returns the deployment id plus projected surfaces.
+`polli bees deploy --dry-run` is optional for CI/debugging. The happy path is
+`polli bees deploy`, which uses the `/api/bees` API and returns the deployment
+id plus projected surfaces.
 Duplicate bee ids fail by default; pass `--upgrade` to redeploy the same id.
 
 The common manifest should stay provider-neutral and omit runtime details:
@@ -64,7 +64,7 @@ The common manifest should stay provider-neutral and omit runtime details:
 {
   "name": "booking-assistant",
   "source": { "type": "git", "repository": "https://github.com/me/bee.git" },
-  "surfaces": ["openai", "web", "a2a"],
+  "surfaces": ["openai", "web"],
   "billing": { "mode": "author-pays" }
 }
 ```
@@ -75,7 +75,8 @@ package installs, or long-running jobs.
 Each reference implementation now has a `bee.json` so the same contract can be
 tested across integrated and minimal examples. Every checked-in bee declares an
 `openai` surface and can be invoked as an OpenAI-compatible chat-completions
-agent at `/bees/{id}/v1/chat/completions`.
+agent through the regular `/v1/chat/completions` API once the platform projects
+the bee into the model list.
 
 See `api-scopes-billing.md` for the current API/scope/billing proposal. The
 short version: ship one implicit default (`worker + auto`) and one advanced

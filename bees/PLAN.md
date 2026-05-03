@@ -60,6 +60,24 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase J — probe new /v1/chat/completions surface [DONE]
+
+After codex shipped commit `eaf18f5f9` ("all bees are OpenAI-compatible agents") + `08708141d` (took the low-risk parts of the friction-research pass: `surfaces: ["openai"]` default in `polli bees init`, `billing.mode: "author-pays"` default, placeholder `pk_replace_me` rejection at validate time). The live deployed worker now serves two new paths. External-observer probe captures both happy path and edge cases.
+
+- [x] **J1.** Probed `/v1/chat/completions` and the hosted projection `/bees/{id}/v1/chat/completions`. Both return canonical OpenAI Chat Completion shape with `metadata.state.turns` extension. Captured as `openai-completions-response.json` and `openai-completions-hosted-path-response.json`.
+- [x] **J2.** Edge-case probe revealed concrete contract gaps in the minimal bee (by-design lenience for a reference, but worth pinning):
+  - empty body `{}` → 200 (no validation of required `messages`)
+  - `stream: true` → returns single non-streamed JSON (caller asking for SSE silently gets regular JSON — the exact bug B6 from the friction research)
+  - bogus bearer → 200 (auth not enforced)
+  - `/bees/wrong-id/v1/chat/completions` → 200 (hosted projection doesn't validate bee id)
+  - `role: "assistant"` user input → 200 with empty content (silently dropped)
+- [x] **J3.** Wrote `bees/deploy-api/openai-surface-interop.test.ts` — 5 assertions pinning the canonical shape, the `metadata.state` namespaced extension (matches B2 friction recommendation — single namespaced key, not scattered), the hosted-projection alias relationship, the `usage` absence on minimal bees, and the model-echo behavior.
+- [x] **J4.** Updated `probe-summary.md` to three-section Phase H/I/J view.
+
+**Concrete observation worth flagging.** Codex's `metadata.state.turns` extension on `/v1/chat/completions` uses the same single-key namespacing as their A2A `result.metadata.state.turns` — cross-surface consistency. That's the right shape; our catgpt openai-compat handler scatters extras across `usage.cost_pollen` + `message.metadata.comic_url` (two namespaces). A future cherry-pick from us could collapse to match.
+
+**Verification:** `bash bees/deploy-api/scripts/smoke.sh` — 71/71 (was 66, +5 OpenAI surface interop).
+
 ## Phase I — re-probe after codex's fix [DONE]
 
 Codex addressed both Phase H findings within ~2 hours of our post (issue #10628 timeline). Re-probed the live worker, captured new fixtures, flipped assertions from "pinning divergence" to "pinning convergence" so any regression breaks loudly. Bumped our `protocolVersion` to match the deployed reference.

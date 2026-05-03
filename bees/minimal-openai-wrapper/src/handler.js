@@ -9,6 +9,10 @@ function json(data, init = {}) {
     return new Response(JSON.stringify(data), { ...init, headers });
 }
 
+function errorResponse(status, code, message, hint, headers = {}) {
+    return json({ error: { code, message, hint } }, { status, headers });
+}
+
 function isOpenAIChatPath(pathname) {
     return (
         pathname === "/v1/chat/completions" ||
@@ -29,6 +33,51 @@ export function buildUpstreamChatBody(body, options = {}) {
             ...messages.filter((message) => message?.role !== "system"),
         ],
     };
+}
+
+function upstreamErrorResponse(upstream) {
+    if (upstream.status === 401 || upstream.status === 403) {
+        return errorResponse(
+            upstream.status,
+            "upstream_auth_failed",
+            "The base Pollinations model rejected the forwarded key.",
+            "Check that the caller key can use the wrapped base model.",
+        );
+    }
+    if (upstream.status === 402) {
+        return errorResponse(
+            402,
+            "insufficient_pollen",
+            "The forwarded key does not have enough Pollen for the base model.",
+            "Top up Pollen or switch this bee to author-pays billing.",
+        );
+    }
+    if (upstream.status === 429) {
+        const headers = {};
+        const retryAfter = upstream.headers.get("retry-after");
+        if (retryAfter) headers["retry-after"] = retryAfter;
+        return errorResponse(
+            429,
+            "upstream_rate_limited",
+            "The base Pollinations model is rate limited.",
+            "Honor Retry-After if present, then retry.",
+            headers,
+        );
+    }
+    if (upstream.status >= 500) {
+        return errorResponse(
+            502,
+            "upstream_error",
+            "The base Pollinations model returned an upstream error.",
+            "Retry later or choose a different base model.",
+        );
+    }
+    return errorResponse(
+        upstream.status,
+        "upstream_request_failed",
+        "The base Pollinations model rejected the request.",
+        "Check the request body and base model access.",
+    );
 }
 
 export async function handleOpenAIWrapperRequest(request, options = {}) {
@@ -71,17 +120,31 @@ export async function handleOpenAIWrapperRequest(request, options = {}) {
         baseModel: options.baseModel,
         systemPrompt: options.systemPrompt,
     });
-    const upstream = await (options.fetch ?? fetch)(
-        `${(options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "")}/v1/chat/completions`,
-        {
-            method: "POST",
-            headers: {
-                authorization,
-                "content-type": "application/json",
+    let upstream;
+    try {
+        upstream = await (options.fetch ?? fetch)(
+            `${(options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "")}/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    authorization,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(upstreamBody),
             },
-            body: JSON.stringify(upstreamBody),
-        },
-    );
+        );
+    } catch {
+        return errorResponse(
+            502,
+            "upstream_unavailable",
+            "The base Pollinations model could not be reached.",
+            "Retry later or choose a different base model.",
+        );
+    }
+
+    if (!upstream.ok) {
+        return upstreamErrorResponse(upstream);
+    }
 
     if (
         body.stream ||

@@ -131,3 +131,124 @@ test("missing auth returns 401 before upstream call", async () => {
     assert.equal(response.status, 401);
     assert.equal(calls, 0);
 });
+
+test("upstream auth failures become structured errors", async () => {
+    const response = await handleOpenAIWrapperRequest(
+        new Request("https://bee.test/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                authorization: "Bearer pk_test",
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        }),
+        {
+            fetch: async () =>
+                new Response("nope", {
+                    status: 403,
+                    headers: { "content-type": "text/plain" },
+                }),
+        },
+    );
+
+    const body = await response.json();
+    assert.equal(response.status, 403);
+    assert.equal(body.error.code, "upstream_auth_failed");
+});
+
+test("upstream pollen failures preserve 402 with a billing hint", async () => {
+    const response = await handleOpenAIWrapperRequest(
+        new Request("https://bee.test/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                authorization: "Bearer pk_test",
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        }),
+        {
+            fetch: async () => new Response("payment", { status: 402 }),
+        },
+    );
+
+    const body = await response.json();
+    assert.equal(response.status, 402);
+    assert.equal(body.error.code, "insufficient_pollen");
+});
+
+test("upstream rate limits preserve retry-after", async () => {
+    const response = await handleOpenAIWrapperRequest(
+        new Request("https://bee.test/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                authorization: "Bearer pk_test",
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        }),
+        {
+            fetch: async () =>
+                new Response("slow down", {
+                    status: 429,
+                    headers: { "retry-after": "10" },
+                }),
+        },
+    );
+
+    const body = await response.json();
+    assert.equal(response.status, 429);
+    assert.equal(response.headers.get("retry-after"), "10");
+    assert.equal(body.error.code, "upstream_rate_limited");
+});
+
+test("upstream server errors become gateway errors", async () => {
+    const response = await handleOpenAIWrapperRequest(
+        new Request("https://bee.test/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                authorization: "Bearer pk_test",
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        }),
+        {
+            fetch: async () => new Response("boom", { status: 500 }),
+        },
+    );
+
+    const body = await response.json();
+    assert.equal(response.status, 502);
+    assert.equal(body.error.code, "upstream_error");
+});
+
+test("network failures become upstream unavailable", async () => {
+    const response = await handleOpenAIWrapperRequest(
+        new Request("https://bee.test/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                authorization: "Bearer pk_test",
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        }),
+        {
+            fetch: async () => {
+                throw new Error("network down");
+            },
+        },
+    );
+
+    const body = await response.json();
+    assert.equal(response.status, 502);
+    assert.equal(body.error.code, "upstream_unavailable");
+});

@@ -53,16 +53,21 @@ All error responses use the same envelope:
 { "error": { "code": "...", "message": "...", "hint": "..." } }
 ```
 
-| code                  | status | when                                                |
-|-----------------------|--------|-----------------------------------------------------|
-| `method_not_allowed`  | 405    | request method is not GET/POST                      |
-| `invalid_json`        | 400    | request body is not valid JSON                      |
-| `invalid_request`     | 400    | request body is not a JSON object                   |
-| `missing_messages`    | 400    | `messages` field is absent or not an array          |
-| `empty_messages`      | 400    | `messages` is an empty array                        |
-| `no_user_message`     | 400    | `messages` contains only system/assistant turns     |
+| code                    | status | when                                                |
+|-------------------------|--------|-----------------------------------------------------|
+| `method_not_allowed`    | 405    | request method is not GET/POST                      |
+| `invalid_json`          | 400    | request body is not valid JSON                      |
+| `invalid_request`       | 400    | request body is not a JSON object                   |
+| `missing_messages`      | 400    | `messages` field is absent or not an array          |
+| `empty_messages`        | 400    | `messages` is an empty array                        |
+| `no_user_message`       | 400    | `messages` contains only system/assistant turns     |
+| `upstream_auth_failed`  | 401/403| upstream model provider rejected the bearer key     |
+| `insufficient_pollen`   | 402    | upstream returned 402 — key out of pollen           |
+| `upstream_rate_limited` | 429    | upstream returned 429 — key is being throttled      |
+| `upstream_error`        | 502    | upstream returned 5xx — backend issue, not the bee  |
+| `upstream_unavailable`  | 502    | upstream call threw (network failure, malformed JSON) |
 
-`hint` is always actionable — a copyable next step, not just an apology. Mirrors the friction-research B5 recommendation (never leak stack traces; always give the caller something to do).
+`hint` is always actionable — a copyable next step, not just an apology. Mirrors the friction-research B5 recommendation (never leak stack traces; always give the caller something to do). Upstream-class errors preserve the upstream HTTP status verbatim (so a 401 upstream is a 401 to the caller) but rewrap any 5xx to 502 — we're a gateway, not the broken thing.
 
 ## Why it lives in surfaces/
 

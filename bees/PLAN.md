@@ -60,6 +60,26 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase L — propagate upstream auth/rate errors as structured responses [DONE]
+
+Catgpt previously did `if (!res.ok) throw new Error(...)` on upstream non-2xx — caller saw an unhandled 500 with the V8 stack trace, exactly the leak pattern the friction research B5 said never to do. Codex's `d24f7630` handles caller-side `Authorization` shape with `401 invalid_api_key`; this is the parallel slice on the upstream side: when *the upstream model provider* returns 401/402/429/5xx, surface it cleanly.
+
+- [x] **L1.** Added typed `UpstreamError` class to `bees/catgpt/core/reply.ts` carrying upstream status + body (capped at 500 chars to bound memory). Replaced the throw-string with throw-typed-error.
+- [x] **L2.** Re-exported `UpstreamError` from `core/index.ts`.
+- [x] **L3.** Surface adapter catches `UpstreamError` and translates to structured `{error: {code, message, hint}}`:
+  - `401/403` → `upstream_auth_failed` with hint pointing to enter.pollinations.ai
+  - `402`     → `insufficient_pollen` with hint pointing to top-up
+  - `429`     → `upstream_rate_limited` with hint to honor Retry-After
+  - `5xx`     → `upstream_error` rewrapped as **502** (we're a gateway, not the broken thing)
+  - other     → `upstream_error` with status verbatim
+  - non-`UpstreamError` exceptions → `upstream_unavailable` 502 (network failure, malformed upstream JSON)
+- [x] **L4.** README: error-code table grew from 6 to 11 entries with the upstream-class codes.
+- [x] **L5.** 5 new tests exercising mocked upstream 401/402/403/429/500 with a stub that flips `upstreamStatus` per test. catgpt smoke now 69/69 (was 64).
+
+**Why parallel to codex's slice rather than identical.** Codex's `d24f7630` validates the caller's `Authorization` shape (`pk_xxxxx` syntax). Catgpt is a passthrough — we don't validate the bearer; we forward it to upstream and let the registry decide. The right contract for catgpt is "trust the caller's token; surface what upstream says about it." Different bee class, different right answer.
+
+**Verification:** `bash bees/catgpt/scripts/smoke.sh` — 69/69 (+5). Other smokes unchanged: code-bee 20/20, deploy-api 71/71. Total 160 unit tests install-free.
+
 ## Phase K — contract hardening reference on catgpt openai-compat [DONE]
 
 Codex's heartbeat post (issue #10628 ~11:44Z) explicitly asked: "the next useful small slice is contract hardening" and listed: GET / discovery, validate OpenAI bodies + structured 400s, validate hosted `{id}`, decide stream:true. That maps 1:1 to friction-research items B3, B5, B6. Demonstrated B3 + B5 on our `bees/catgpt/surfaces/openai-compat/handler.ts` so codex has a concrete reference shape to lift, not just prose.

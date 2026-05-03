@@ -17,6 +17,7 @@ import {
     CAT_SYSTEM,
     generateCatReplyWithUsage,
     type ModelUsageWithCost,
+    UpstreamError,
 } from "../../core/index.ts";
 
 type ChatMessage = {
@@ -182,6 +183,52 @@ function errorResponse(
     return Response.json({ error: { code, message, hint } }, { status });
 }
 
+// Translate an UpstreamError to a structured response. Status codes are
+// preserved verbatim so the caller sees what the upstream model provider
+// said. Codes are stable identifiers the caller can switch on; hints are
+// copyable next steps.
+function upstreamErrorResponse(err: UpstreamError): Response {
+    if (err.status === 401 || err.status === 403) {
+        return errorResponse(
+            err.status,
+            "upstream_auth_failed",
+            "model provider rejected the request's credentials",
+            "set Authorization: Bearer <pk_*> with a valid key from https://enter.pollinations.ai",
+        );
+    }
+    if (err.status === 402) {
+        return errorResponse(
+            402,
+            "insufficient_pollen",
+            "the configured key is out of pollen for this model",
+            "top up at https://enter.pollinations.ai or use a key with a higher daily limit",
+        );
+    }
+    if (err.status === 429) {
+        return errorResponse(
+            429,
+            "upstream_rate_limited",
+            "model provider is rate-limiting this key",
+            "back off and retry; the response Retry-After header (if present) is the upstream guidance",
+        );
+    }
+    if (err.status >= 500) {
+        return errorResponse(
+            502,
+            "upstream_error",
+            `model provider returned ${err.status}`,
+            "retry in a few seconds; if it persists report at https://github.com/pollinations/pollinations/issues",
+        );
+    }
+    // Anything else upstream-side: surface verbatim with the body as the hint.
+    return errorResponse(
+        err.status,
+        "upstream_error",
+        `model provider returned ${err.status}`,
+        err.body || "see upstream response for details",
+    );
+}
+
 // GET / — discovery. Returns enough JSON for a caller to paste this URL
 // into a browser, see what the bee serves, and copy a working curl.
 //
@@ -277,11 +324,32 @@ export async function handleChatCompletions(req: Request): Promise<Response> {
             'add {"role":"user","content":"<your prompt>"} to messages',
         );
     }
-    const { text: reply, usage } = await generateCatReplyWithUsage(
-        question,
-        imageUrl,
-        { apiKey },
-    );
+
+    let reply: string;
+    let usage: ModelUsageWithCost | null;
+    try {
+        const result = await generateCatReplyWithUsage(question, imageUrl, {
+            apiKey,
+        });
+        reply = result.text;
+        usage = result.usage;
+    } catch (err) {
+        // Translate upstream HTTP errors to structured responses with the
+        // upstream status preserved verbatim. Caller sees 401 for an auth
+        // problem at the model provider, not a generic 500. Anything else
+        // (network failure, malformed JSON from upstream) becomes 502 with
+        // a hint to retry. Mirrors the friction-research B5 contract: never
+        // leak stack traces; always {error: {code, message, hint}}.
+        if (err instanceof UpstreamError) {
+            return upstreamErrorResponse(err);
+        }
+        return errorResponse(
+            502,
+            "upstream_unavailable",
+            "could not reach the upstream model provider",
+            "retry in a few seconds; if it persists check https://gen.pollinations.ai/docs",
+        );
+    }
     const comicUrl = buildComicImageUrl(question, reply, imageUrl, { apiKey });
 
     if (body.stream) {

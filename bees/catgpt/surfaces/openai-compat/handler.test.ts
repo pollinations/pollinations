@@ -8,20 +8,37 @@ const FAKE_REPLY = "Naps. Next question.";
 
 const FAKE_USAGE = { prompt_tokens: 42, completion_tokens: 8 };
 
+// Mutable upstream state — tests flip these to exercise non-2xx paths.
+let upstreamStatus = 200;
+let upstreamBody = JSON.stringify({
+    choices: [{ message: { content: FAKE_REPLY } }],
+    usage: FAKE_USAGE,
+});
+
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (input: any) => {
     const url = typeof input === "string" ? input : (input?.url ?? "");
     if (url.includes("/v1/chat/completions")) {
-        return new Response(
-            JSON.stringify({
-                choices: [{ message: { content: FAKE_REPLY } }],
-                usage: FAKE_USAGE,
-            }),
-            { status: 200, headers: { "content-type": "application/json" } },
-        );
+        return new Response(upstreamBody, {
+            status: upstreamStatus,
+            headers: { "content-type": "application/json" },
+        });
     }
     return realFetch(input);
 };
+
+function setUpstream(status: number, body: string = "") {
+    upstreamStatus = status;
+    upstreamBody = body;
+}
+
+function resetUpstream() {
+    upstreamStatus = 200;
+    upstreamBody = JSON.stringify({
+        choices: [{ message: { content: FAKE_REPLY } }],
+        usage: FAKE_USAGE,
+    });
+}
 
 const { handleChatCompletions } = await import("./handler.ts");
 
@@ -202,4 +219,80 @@ test("handles multipart user content with image_url", async () => {
     const body = (await res.json()) as any;
     // The comic URL should reflect the uploaded image (enhance=false).
     assert.match(body.choices[0].message.metadata.comic_url, /enhance=false/);
+});
+
+test("upstream 401 → structured 401 upstream_auth_failed (not 500)", async () => {
+    setUpstream(401, '{"error":"invalid token"}');
+    try {
+        const res = await handleChatCompletions(
+            makeReq({ messages: [{ role: "user", content: "why?" }] }),
+        );
+        assert.equal(res.status, 401);
+        const body = (await res.json()) as any;
+        assert.equal(body.error.code, "upstream_auth_failed");
+        assert.match(body.error.hint, /pk_/);
+    } finally {
+        resetUpstream();
+    }
+});
+
+test("upstream 402 → structured 402 insufficient_pollen", async () => {
+    setUpstream(402, '{"error":"out of pollen"}');
+    try {
+        const res = await handleChatCompletions(
+            makeReq({ messages: [{ role: "user", content: "why?" }] }),
+        );
+        assert.equal(res.status, 402);
+        const body = (await res.json()) as any;
+        assert.equal(body.error.code, "insufficient_pollen");
+        assert.match(body.error.hint, /enter\.pollinations\.ai/);
+    } finally {
+        resetUpstream();
+    }
+});
+
+test("upstream 429 → structured 429 upstream_rate_limited", async () => {
+    setUpstream(429, '{"error":"slow down"}');
+    try {
+        const res = await handleChatCompletions(
+            makeReq({ messages: [{ role: "user", content: "why?" }] }),
+        );
+        assert.equal(res.status, 429);
+        const body = (await res.json()) as any;
+        assert.equal(body.error.code, "upstream_rate_limited");
+        assert.match(body.error.hint, /Retry-After|retry/);
+    } finally {
+        resetUpstream();
+    }
+});
+
+test("upstream 500 → structured 502 upstream_error (we don't pretend to be the upstream)", async () => {
+    setUpstream(500, "internal server error");
+    try {
+        const res = await handleChatCompletions(
+            makeReq({ messages: [{ role: "user", content: "why?" }] }),
+        );
+        // We translate any 5xx upstream → 502 to the caller, since the
+        // upstream is acting as our backend; it isn't the bee that's broken.
+        assert.equal(res.status, 502);
+        const body = (await res.json()) as any;
+        assert.equal(body.error.code, "upstream_error");
+        assert.match(body.error.message, /500/);
+    } finally {
+        resetUpstream();
+    }
+});
+
+test("upstream 403 → structured 403 upstream_auth_failed (also auth-class)", async () => {
+    setUpstream(403, '{"error":"forbidden"}');
+    try {
+        const res = await handleChatCompletions(
+            makeReq({ messages: [{ role: "user", content: "why?" }] }),
+        );
+        assert.equal(res.status, 403);
+        const body = (await res.json()) as any;
+        assert.equal(body.error.code, "upstream_auth_failed");
+    } finally {
+        resetUpstream();
+    }
 });

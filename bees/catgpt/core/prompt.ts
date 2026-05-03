@@ -7,18 +7,18 @@ export const CAT_SYSTEM = `You are CatGPT — a supremely aloof, sarcastic cat w
 Respond with ONLY the cat's reply, nothing else. No quotes, no explanation, no preamble.`;
 
 export const EXAMPLE_PROMPTS = [
-  "Why do boxes call to me?",
-  "What's the meaning of life?",
-  "Why do keyboards attract fur?",
+    "Why do boxes call to me?",
+    "What's the meaning of life?",
+    "Why do keyboards attract fur?",
 ];
 
 export function createImagePrompt(
-  question: string,
-  catReply: string,
-  hasUploadedImage = false,
+    question: string,
+    catReply: string,
+    hasUploadedImage = false,
 ): string {
-  const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds: "${catReply}" Black and white comic style.`;
-  return hasUploadedImage
-    ? `${base} Replace the human on the left with a character based on the uploaded image. If it's a person, draw a caricature maintaining their appearance. If it's a logo, mascot, or other image, incorporate it as the human character's identity.`
-    : `${base} Human with bob hair.`;
+    const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds: "${catReply}" Black and white comic style.`;
+    return hasUploadedImage
+        ? `${base} Replace the human on the left with a character based on the uploaded image. If it's a person, draw a caricature maintaining their appearance. If it's a logo, mascot, or other image, incorporate it as the human character's identity.`
+        : `${base} Human with bob hair.`;
 }

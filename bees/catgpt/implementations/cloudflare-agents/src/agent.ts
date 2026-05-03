@@ -1,27 +1,27 @@
 import { AIChatAgent } from "agents/ai-chat-agent";
 import {
-  CAT_SYSTEM,
-  generateCatReply,
-  buildComicImageUrl,
+    buildComicImageUrl,
+    CAT_SYSTEM,
+    generateCatReply,
 } from "../../../core/index.ts";
 
 export type Env = {
-  CatGPT: DurableObjectNamespace;
-  POLLINATIONS_KEY?: string;
+    CatGPT: DurableObjectNamespace;
+    POLLINATIONS_KEY?: string;
 };
 
 // Class is required by the Cloudflare DO binding (runtime constraint).
 // All real logic lives in the pure functions imported from core/.
 export class CatGPT extends AIChatAgent<Env> {
-  async onChatMessage(messages: Array<{ role: string; content: string }>) {
-    const last = messages[messages.length - 1];
-    const question = typeof last?.content === "string" ? last.content : "";
-    const apiKey = this.env.POLLINATIONS_KEY;
+    async onChatMessage(messages: Array<{ role: string; content: string }>) {
+        const last = messages[messages.length - 1];
+        const question = typeof last?.content === "string" ? last.content : "";
+        const apiKey = this.env.POLLINATIONS_KEY;
 
-    const reply = await generateCatReply(question, null, { apiKey });
-    const comicUrl = buildComicImageUrl(question, reply, null, { apiKey });
+        const reply = await generateCatReply(question, null, { apiKey });
+        const comicUrl = buildComicImageUrl(question, reply, null, { apiKey });
 
-    this.sql`
+        this.sql`
       CREATE TABLE IF NOT EXISTS turns (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         question TEXT,
@@ -30,15 +30,15 @@ export class CatGPT extends AIChatAgent<Env> {
         created_at INTEGER
       )
     `;
-    this.sql`
+        this.sql`
       INSERT INTO turns (question, reply, comic_url, created_at)
       VALUES (${question}, ${reply}, ${comicUrl}, ${Date.now()})
     `;
 
-    return {
-      role: "assistant",
-      content: reply,
-      data: { comicUrl, system: CAT_SYSTEM.split("\n")[0] },
-    };
-  }
+        return {
+            role: "assistant",
+            content: reply,
+            data: { comicUrl, system: CAT_SYSTEM.split("\n")[0] },
+        };
+    }
 }

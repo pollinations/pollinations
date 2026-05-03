@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { CAT_SYSTEM, buildComicImageUrl } from "../../../core/index.ts";
+import { buildComicImageUrl, CAT_SYSTEM } from "../../../core/index.ts";
 
 export type Turn = { reply: string; comicUrl: string };
 
@@ -12,43 +12,48 @@ export type Turn = { reply: string; comicUrl: string };
 // through /v1/chat/completions instead. This variant exists to compare the
 // SDK ergonomics for bee authors who already use Anthropic.
 function client(apiKey?: string) {
-  return new Anthropic({
-    baseURL: "https://gen.pollinations.ai/anthropic",
-    apiKey: apiKey ?? "anonymous",
-  });
+    return new Anthropic({
+        baseURL: "https://gen.pollinations.ai/anthropic",
+        apiKey: apiKey ?? "anonymous",
+    });
 }
 
 export async function ask(
-  question: string,
-  imageUrl?: string,
-  apiKey?: string,
+    question: string,
+    imageUrl?: string,
+    apiKey?: string,
 ): Promise<Turn> {
-  const c = client(apiKey);
+    const c = client(apiKey);
 
-  const userContent = imageUrl
-    ? [
-        { type: "text" as const, text: question },
-        // Anthropic accepts an image as a URL block since SDK 0.30+.
-        { type: "image" as const, source: { type: "url" as const, url: imageUrl } },
-      ]
-    : question;
+    const userContent = imageUrl
+        ? [
+              { type: "text" as const, text: question },
+              // Anthropic accepts an image as a URL block since SDK 0.30+.
+              {
+                  type: "image" as const,
+                  source: { type: "url" as const, url: imageUrl },
+              },
+          ]
+        : question;
 
-  const msg = await c.messages.create({
-    model: "claude-fast",
-    max_tokens: 64,
-    system: CAT_SYSTEM,
-    messages: [{ role: "user", content: userContent }],
-  });
+    const msg = await c.messages.create({
+        model: "claude-fast",
+        max_tokens: 64,
+        system: CAT_SYSTEM,
+        messages: [{ role: "user", content: userContent }],
+    });
 
-  const text = msg.content
-    .filter((b): b is Anthropic.TextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("")
-    .trim()
-    .replace(/^["']|["']$/g, "");
+    const text = msg.content
+        .filter((b): b is Anthropic.TextBlock => b.type === "text")
+        .map((b) => b.text)
+        .join("")
+        .trim()
+        .replace(/^["']|["']$/g, "");
 
-  return {
-    reply: text,
-    comicUrl: buildComicImageUrl(question, text, imageUrl ?? null, { apiKey }),
-  };
+    return {
+        reply: text,
+        comicUrl: buildComicImageUrl(question, text, imageUrl ?? null, {
+            apiKey,
+        }),
+    };
 }

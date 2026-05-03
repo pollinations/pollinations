@@ -90,9 +90,18 @@ cd bees/catgpt
 node --experimental-strip-types --test core/*.test.ts surfaces/openai-compat/*.test.ts
 ```
 
-Currently: 14 core tests + 5 OpenAI-compat surface tests = **19/19 passing**.
+Currently: 14 core tests + 5 OpenAI-compat surface tests = **19/19 passing** (no install).
 
-Live integration tests (which actually hit `gen.pollinations.ai`) are gated on `TEXT_POLLINATIONS_TOKEN` and skipped otherwise.
+Live tests (`core/live.test.ts`) hit real `gen.pollinations.ai` and are gated on `POLLINATIONS_LIVE=1` plus a token, so a missing token doesn't fail CI:
+
+```bash
+POLLINATIONS_LIVE=1 \
+  POLLINATIONS_KEY=$(grep '^ENTER_API_TOKEN_REMOTE=' \
+    ../../enter.pollinations.ai/.testingtokens | cut -d= -f2-) \
+  node --experimental-strip-types --test core/live.test.ts
+```
+
+`scripts/smoke.sh` runs everything: unit tests, live tests (skipped without a token), parse-checks each variant's `*.ts`, and structural checks. **24/24 variant files parse, 19/19 tests pass, biome clean.**
 
 ## How to read this PR
 

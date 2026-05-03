@@ -4,15 +4,16 @@
 //   node --experimental-strip-types main.ts "why are boxes magic?"
 //   POLLINATIONS_KEY=... node --experimental-strip-types main.ts "..."
 
-import { generateCatReply, buildComicImageUrl } from "../../core/index.ts";
+import { buildComicImageUrl, generateCatReply } from "../../core/index.ts";
 
 const question = process.argv.slice(2).join(" ").trim();
 if (!question) {
-  console.error('usage: catgpt "<question>"');
-  process.exit(2);
+    console.error('usage: catgpt "<question>"');
+    process.exit(2);
 }
 
-const apiKey = process.env.POLLINATIONS_KEY ?? process.env.TEXT_POLLINATIONS_TOKEN;
+const apiKey =
+    process.env.POLLINATIONS_KEY ?? process.env.TEXT_POLLINATIONS_TOKEN;
 const reply = await generateCatReply(question, null, { apiKey });
 const comicUrl = buildComicImageUrl(question, reply, null, { apiKey });
 

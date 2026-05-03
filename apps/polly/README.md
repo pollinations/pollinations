@@ -28,10 +28,10 @@
 ## ✨ Features
 
 ### 🔄 Bidirectional Communication
-| Platform | Trigger | Response |
-|----------|---------|----------|
-| **Discord** | @mention Polly | Replies in thread |
-| **GitHub** | @mention in issues/PRs/comments | Replies on GitHub |
+| Platform    | Trigger                         | Response          |
+| ----------- | ------------------------------- | ----------------- |
+| **Discord** | @mention Polly                  | Replies in thread |
+| **GitHub**  | @mention in issues/PRs/comments | Replies on GitHub |
 
 ### 🎯 Full GitHub Integration
 
@@ -169,21 +169,39 @@ POLLINATIONS_TOKEN=your_pollinations_token
 python main.py
 ```
 
+### 4️⃣ Optional: Media Handlers (Tables, LaTeX, Code Rendering)
+
+For enhanced Discord message formatting with markdown tables, LaTeX equations, and smart code block rendering:
+
+```bash
+# Install optional dependencies
+pip install -r requirements-media.txt
+```
+
+Enables:
+- 📊 **Markdown Tables** → Rendered as PNG images
+- ∑ **LaTeX Expressions** → Rendered as PNG images (inline `$...$` and display `$$...$$`)
+- 💻 **Code Blocks** → Smart splitting without breaking lines
+
+See [MEDIA_HANDLERS.md](docs/MEDIA_HANDLERS.md) for details and [examples](examples/media_handlers_examples.py).
+
+> Note: Graceful degradation if dependencies not installed — tables/LaTeX will render as text, code still works.
+
 ---
 
 ## 🛠️ Tools
 
-| Tool | Description | Access |
-|------|-------------|--------|
-| `github_overview` | Quick repo summary (issues, labels, milestones, projects) | Everyone |
-| `github_issue` | All issue operations | Read: Everyone, Write: Admin |
-| `github_pr` | All PR operations | Read: Everyone, Write: Admin |
-| `github_project` | Project board operations | Read: Everyone, Write: Admin |
-| `github_code` | Code agent (branches, edits, PRs) | Admin only |
-| `code_search` | Semantic code search | Everyone |
-| `doc_search` | Semantic doc search (OpenAPI schema) | Everyone |
-| `web_search` | Real-time web search | Everyone |
-| `discord_search` | Search Discord messages, members, channels | Everyone |
+| Tool              | Description                                               | Access                       |
+| ----------------- | --------------------------------------------------------- | ---------------------------- |
+| `github_overview` | Quick repo summary (issues, labels, milestones, projects) | Everyone                     |
+| `github_issue`    | All issue operations                                      | Read: Everyone, Write: Admin |
+| `github_pr`       | All PR operations                                         | Read: Everyone, Write: Admin |
+| `github_project`  | Project board operations                                  | Read: Everyone, Write: Admin |
+| `github_code`     | Code agent (branches, edits, PRs)                         | Admin only                   |
+| `code_search`     | Semantic code search                                      | Everyone                     |
+| `doc_search`      | Semantic doc search (OpenAPI schema)                      | Everyone                     |
+| `web_search`      | Real-time web search                                      | Everyone                     |
+| `discord_search`  | Search Discord messages, members, channels                | Everyone                     |
 
 ---
 
@@ -248,22 +266,22 @@ Polly/
 
 ## ⚡ Performance
 
-| Optimization | Benefit |
-|--------------|---------|
-| GraphQL batching | 40-90% fewer API calls |
+| Optimization            | Benefit                     |
+| ----------------------- | --------------------------- |
+| GraphQL batching        | 40-90% fewer API calls      |
 | Parallel tool execution | Multiple ops simultaneously |
-| Connection pooling | Reused HTTP connections |
-| Local embeddings | Instant code search |
-| Stateless design | No database overhead |
+| Connection pooling      | Reused HTTP connections     |
+| Local embeddings        | Instant code search         |
+| Stateless design        | No database overhead        |
 
 ---
 
 ## 🔐 Permissions
 
-| Role | Capabilities |
-|------|--------------|
+| Role         | Capabilities                                     |
+| ------------ | ------------------------------------------------ |
 | **Everyone** | Search, read issues/PRs, code search, web search |
-| **Admin** | + Close, edit, label, assign, merge, code agent |
+| **Admin**    | + Close, edit, label, assign, merge, code agent  |
 
 Admin = Users with configured Discord role(s)
 

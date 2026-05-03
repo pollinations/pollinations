@@ -1,0 +1,175 @@
+{
+  "date": "2026-05-03",
+  "period_start": "2026-04-26",
+  "period_end": "2026-05-02",
+  "title": "The Great Migration to gen.pollinations.ai",
+  "summary": "We re-architected the entire generation gateway for speed, while quietly dropping GPT-5.5, Llama 3.3, and AssemblyAI into the mix.\n\nWe extracted text, image, and video generation from the main dashboard backend into a dedicated edge worker at gen.pollinations.ai. This removes a network hop, isolates heavy API traffic, and leverages Cloudflare for faster transforms. Legacy endpoints automatically 308-redirect, so existing integrations won't notice anything except faster response times.\n\nA massive week for the model roster. We added OpenAI's new GPT-5.5 (with reasoning and tool-calling), Meta's Llama 3.3 70B via Fireworks, and AssemblyAI's universal models for speech-to-text. We also enabled image-to-image support for Grok Imagine, allowing up to 5 reference images.\n\nNova Reel video generation now supports seeds for reproducibility and durations up to 120 seconds. On the image front, we switched gpt-image-2 to a direct OpenAI integration to bypass Azure rate limits, and bumped our image server registry TTLs to smooth out Cloudflare KV's eventual consistency lag.\n\nBring Your Own Pollen (BYOP) got some serious developer experience upgrades. You can now configure multiple redirect URIs per API key and set an explicit unlimited budget for trusted apps. The Polli CLI also learned how to accept piped auth tokens via stdin for easier CI/CD automation.",
+  "pr_count": 41,
+  "prs": [
+    {
+      "number": 10493,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10502,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10505,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10508,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 9942,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10517,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10520,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10525,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10527,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10531,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10445,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10466,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10518,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10524,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10533,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10544,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10546,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10547,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10548,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10554,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10555,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10576,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10577,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10581,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10582,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10596,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10599,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10600,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10601,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10602,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10603,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10567,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10597,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10598,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10604,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10615,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10616,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10617,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10619,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10620,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10626,
+      "date": "2026-05-02"
+    }
+  ],
+  "generated_at": "2026-05-03T06:49:51.643514+00:00"
+}

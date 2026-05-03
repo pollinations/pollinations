@@ -293,12 +293,11 @@ export async function generateImageOrVideoResponse(
     }
 }
 
-export async function handleImagePrompt(c: ImageContext): Promise<Response> {
-    return generateImageOrVideoResponse(
-        c,
-        c.req.param("prompt"),
-        await readJsonBody(c),
-    );
+export async function handleImagePrompt(
+    c: ImageContext,
+    prompt: string,
+): Promise<Response> {
+    return generateImageOrVideoResponse(c, prompt, await readJsonBody(c));
 }
 
 function extractRegisterToken(

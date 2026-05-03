@@ -1,5 +1,7 @@
+import chalk from "chalk";
 import { Command, Option } from "commander";
 import { gen } from "../lib/api.js";
+import { printBanner } from "../lib/branding.js";
 import {
     clearCredentials,
     ENTER_URL,
@@ -7,12 +9,34 @@ import {
     saveCredentials,
 } from "../lib/config.js";
 import {
+    getOutputMode,
+    link,
     printError,
     printInfo,
     printResult,
     printSuccess,
 } from "../lib/output.js";
 import { flavor } from "../lib/quotes.js";
+
+const NEXT_STEPS = [
+    'polli image "a sunset over kyoto" -o sunset.png',
+    'polli text "summarize node http"',
+    "polli whoami",
+];
+
+/**
+ * Print the post-login "Try:" hint with example commands. Human/TTY only —
+ * skipped for piped output and JSON callers so machine consumers stay clean.
+ */
+function printNextStepsHint(): void {
+    if (getOutputMode() !== "human") return;
+    if (!process.stderr.isTTY) return;
+    process.stderr.write(`\n${chalk.bold("Try:")}\n`);
+    for (const cmd of NEXT_STEPS) {
+        process.stderr.write(`  ${chalk.cyan(cmd)}\n`);
+    }
+    process.stderr.write("\n");
+}
 
 type LoginOptions = {
     browser?: boolean;
@@ -148,7 +172,7 @@ const login = new Command("login")
             return;
         }
 
-        printInfo("Requesting device code...");
+        printBanner("authenticate to start using the API");
 
         const res = await fetch(`${ENTER_URL}/api/device/code`, {
             method: "POST",

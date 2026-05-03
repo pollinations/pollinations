@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import terminalLink from "terminal-link";
 
 export type OutputMode = "human" | "json";
 
@@ -120,6 +121,19 @@ export const printSuccess = (msg: string) => {
 /** Error message — always shown, always stderr */
 export const printError = (msg: string) => {
     process.stderr.write(`${chalk.red.bold("error:")} ${chalk.red(msg)}\n`);
+};
+
+/**
+ * Render a URL as an OSC-8 hyperlink in human mode, falling back to the
+ * plain URL when piped, in JSON mode, or in terminals without OSC-8 support
+ * (terminal-link's built-in `supportsHyperlinks` check handles that). Use
+ * for instructions like "open this URL" — saves the user a copy-paste in
+ * modern terminals (iTerm, kitty, recent VS Code) without breaking older
+ * ones.
+ */
+export const link = (url: string, text = url): string => {
+    if (currentMode !== "human") return url;
+    return terminalLink(text, url, { fallback: () => url });
 };
 
 /** Warning message — always shown, always stderr */

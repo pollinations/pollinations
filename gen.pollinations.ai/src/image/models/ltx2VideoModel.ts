@@ -10,10 +10,12 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 const logOps = debug("pollinations:ltx2:ops");
 const logError = debug("pollinations:ltx2:error");
 
-// LTX-2 GH200 endpoint (Lambda Labs, patched ComfyUI with two-stage upscaler)
-// Fallback: Vast.ai RTX 5090 instance 33569731
+// LTX-2 GH200 endpoint (Lambda Labs, patched ComfyUI with two-stage upscaler).
+// Public hostname is fronted by the music-backend cloudflared tunnel
+// (port 8765 on 192.222.51.105). Cloudflare Workers can't reach the raw
+// IP+port over plain HTTP, so the HTTPS hostname is required.
 const getLtx2BaseUrl = () =>
-    getImageEnv("LTX2_BASE_URL") || "http://192.222.51.105:8765";
+    getImageEnv("LTX2_BASE_URL") || "https://ltx2-backend.pollinations.ai";
 
 // Polling constants
 const POLL_INTERVAL_MS = 2000;
@@ -101,7 +103,8 @@ async function enqueueLtx2Job(
 
     logOps("Enqueuing LTX-2 job:", requestBody);
 
-    const response = await fetch(`${getLtx2BaseUrl()}/enqueue`, {
+    const enqueueUrl = `${getLtx2BaseUrl()}/enqueue`;
+    const response = await fetch(enqueueUrl, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -116,12 +119,19 @@ async function enqueueLtx2Job(
         throw new HttpError(
             `Failed to enqueue video generation: ${errorText}`,
             response.status,
+            undefined,
+            enqueueUrl,
         );
     }
 
     const data = (await response.json()) as { prompt_id?: string };
     if (!data.prompt_id) {
-        throw new HttpError("No prompt_id returned from enqueue", 500);
+        throw new HttpError(
+            "No prompt_id returned from enqueue",
+            500,
+            undefined,
+            enqueueUrl,
+        );
     }
 
     logOps("Job enqueued with prompt_id:", data.prompt_id);
@@ -174,6 +184,8 @@ async function pollLtx2Status(
                 throw new HttpError(
                     `Video generation failed: ${data.error || "Unknown error"}`,
                     500,
+                    undefined,
+                    statusUrl,
                 );
             }
         } catch (error) {
@@ -189,6 +201,8 @@ async function pollLtx2Status(
     throw new HttpError(
         `Video generation timed out after ${DEFAULT_TIMEOUT_SECS} seconds`,
         504,
+        undefined,
+        statusUrl,
     );
 }
 
@@ -201,13 +215,20 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
 
     if (!response.ok) {
         if (response.status === 202) {
-            throw new HttpError("Video not ready yet", 202);
+            throw new HttpError(
+                "Video not ready yet",
+                202,
+                undefined,
+                resultUrl,
+            );
         }
         const errorText = await response.text();
         logError("Result fetch failed:", response.status, errorText);
         throw new HttpError(
             `Failed to fetch video result: ${errorText}`,
             response.status,
+            undefined,
+            resultUrl,
         );
     }
 

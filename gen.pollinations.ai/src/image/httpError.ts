@@ -6,12 +6,19 @@
 export class HttpError extends Error {
     status: number;
     details?: any;
+    upstreamUrl?: string;
 
-    constructor(message: string, status: number = 500, details?: any) {
+    constructor(
+        message: string,
+        status: number = 500,
+        details?: any,
+        upstreamUrl?: string,
+    ) {
         super(message);
         this.name = "HttpError";
         this.status = status;
         this.details = details;
+        this.upstreamUrl = upstreamUrl;
 
         // Maintains proper stack trace for where our error was thrown (only available on V8)
         Error.captureStackTrace(this, HttpError);

@@ -183,7 +183,7 @@ Enables:
 - ∑ **LaTeX Expressions** → Rendered as PNG images (inline `$...$` and display `$$...$$`)
 - 💻 **Code Blocks** → Smart splitting without breaking lines
 
-See [MEDIA_HANDLERS.md](docs/MEDIA_HANDLERS.md) for details and [examples](examples/media_handlers_examples.py).
+See [MEDIA_HANDLERS.md](docs/MEDIA_HANDLERS.md) for details.
 
 > Note: Graceful degradation if dependencies not installed — tables/LaTeX will render as text, code still works.
 

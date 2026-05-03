@@ -832,6 +832,7 @@ export const TEXT_SERVICES = {
         tools: true,
         contextLength: 1048576,
         isSpecialized: false,
+        paidOnly: true,
     },
     "llama-scout": {
         aliases: [

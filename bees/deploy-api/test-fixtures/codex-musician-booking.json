@@ -1,0 +1,20 @@
+{
+  "name": "musician-booking-reference",
+  "source": {
+    "type": "git",
+    "repository": "https://github.com/pollinations/pollinations.git",
+    "ref": "main",
+    "packagePath": "bees/musician-booking-reference"
+  },
+  "surfaces": [
+    "openai",
+    "web",
+    "discord",
+    "a2a"
+  ],
+  "billing": {
+    "mode": "user-pays",
+    "clientId": "pk_replace_me",
+    "dailyPollenLimit": 5
+  }
+}

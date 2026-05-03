@@ -60,6 +60,16 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase G — cross-validation against codex's bee.json fixtures [DONE]
+
+Vendored copies of the 4 `bee.json` files codex shipped on PR #10636 (minimal-cloudflare-agents, minimal-daytona-container, minimal-aws-agentcore, musician-booking-reference). Run them through our `validateDeployManifest` and assert the divergences as living test cases.
+
+- [x] **G1.** `bees/deploy-api/test-fixtures/codex-*.json` + `cross-validation.test.ts`. 7 tests document: codex uses `billing.mode` (we use `billing.default`); codex's `init` writes `clientId: "pk_replace_me"` (we reject placeholders); codex uses camelCase `retentionDays` (we use snake_case). Synthetic projection test shows that with a realistic `clientId` and our 5 required fields filled in, codex's `daytona-container` fixture validates cleanly. Refresh procedure documented in test header.
+
+**Why a test, not a comment in COMPARISON.md?** Tests fail loudly when either side moves. If codex renames `billing.mode` → `billing.default` (or we do the reverse), the assertions flip and convergence becomes visible in CI. Concrete merge-time evidence beats prose.
+
+**Verification:** `bash bees/deploy-api/scripts/smoke.sh` — 59/59 (was 52, +7 cross-validation).
+
 ## Phase F — independent deploy API reference [DONE]
 
 User asked for a parallel deploy API + CLI to triangulate the design against codex's `bees/customer-deploy-reference/` on PR #10636. F1+F2+F3 done this iteration.

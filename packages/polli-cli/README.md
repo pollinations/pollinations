@@ -14,7 +14,7 @@ npx @pollinations_ai/cli gen image "a cat in space" --output cat.png
 
 Point your coding agent (Claude Code, Cursor, Windsurf, Codex) at the skill file and it gets the full usage map — flags, stdin conventions, `--json` output shape, error codes, the lot:
 
-> Read https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md and follow the instructions to generate media with the `polli` CLI.
+> Read [SKILL.md](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md) and follow the instructions to generate media with the `polli` CLI.
 
 The skill also ships inside the package: `node_modules/@pollinations_ai/cli/SKILL.md`.
 

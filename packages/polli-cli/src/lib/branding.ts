@@ -5,25 +5,39 @@ import { getOutputMode } from "./output.js";
 // output.ts. One color across the CLI keeps the visual identity consistent.
 const BRAND_HEX = "#a78bfa";
 
-// Hand-crafted small ASCII rendition of the Pollinations mark — a stylized
-// flower / sun motif derived from assets/logo.svg. Kept short (6 lines × 30
-// cols) so it fits comfortably in 80-column terminals and tmux/Vim splits.
+// ASCII rendition of the Pollinations flower mark, generated offline by
+// rasterizing assets/logo.svg at 40x20 and threshold-converting black
+// pixels to '█'. Static so it ships without a build-time dependency on
+// ImageMagick or sharp. To regenerate (e.g. if the SVG changes):
+//
+//   magick assets/logo.svg -resize 40x20! -threshold 50% -monochrome PBM:- \
+//     | node -e "<...PBM-to-ASCII script — see PR description...>"
+//
+// 19 rows × ~40 cols fits comfortably in an 80-column terminal even with a
+// few columns of leading indent.
 const LOGO_LINES = [
-    "    .-=+*#%@%#*+=-.",
-    "  -*%@@@@@@@@@@@@@%*-",
-    " #@@@@@@   *@   @@@@@@#",
-    "%@@@@@@@@@@@@@@@@@@@@@@%",
-    " #@@@@@@@@@@@@@@@@@@@@#",
-    "  -*%@@@@@@@@@@@@@@%*-",
-    "    .-=+*#%@%#*+=-.",
+    "                  ████",
+    "                ███  ███",
+    "               ██      ██",
+    "     ███████████        ███████████",
+    "     ██      ████      ████      ██",
+    "     ██      ██ ███   ██ ██      ██",
+    "   ██████    ██   █  ██  ██     █████",
+    "███  ██  ██████   ████   ██████  ██  ███",
+    " ██   █      ████ ████  ███      ██  ██",
+    "  ███  ██      ██████████       ██  ██",
+    "    ███████      ██████       ██████",
+    "       ███████████████████████████",
+    "            ████████████████",
+    "            ██████ ██ ███████",
+    "         ███       ██       ███",
+    "        ███        ██         ██",
+    "       █████      ████      █████",
+    "       ██ ██     ███ ██     ██ ███",
+    "        ███        ███       ███",
 ];
 
-/**
- * Print the Pollinations banner to stderr, brand-purple, with an optional
- * subtitle dimmed underneath. No-op in JSON mode so structured callers stay
- * clean. No-op when stderr is not a TTY (piped output stays free of escape
- * sequences and ASCII filler).
- */
+
 export function printBanner(subtitle?: string): void {
     if (getOutputMode() !== "human") return;
     if (!process.stderr.isTTY) return;

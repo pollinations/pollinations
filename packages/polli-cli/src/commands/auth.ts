@@ -321,9 +321,7 @@ export const authCommand = new Command("auth")
     .addCommand(logout)
     .addCommand(status);
 
-// Top-level alias. `whoami` is the reflex command in most CLI ecosystems
-// (op, gcloud, aws sts, etc.) — surfacing it here saves new users from
-// digging through `polli auth --help` to find the same information.
+    
 export const whoamiCommand = new Command("whoami")
     .description(
         "Show current auth status and balance (alias for `auth status`)",

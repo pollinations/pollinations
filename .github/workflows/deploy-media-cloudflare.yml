@@ -9,12 +9,12 @@ on:
       - '.github/workflows/deploy-media-cloudflare.yml'
   workflow_dispatch:
 
-# Match the other Cloudflare deploys so concurrent pushes don't race the
-# wrangler API. Group is shared with gen/enter so a flurry of merges queues
-# rather than fights for the same Workers control plane.
 concurrency:
   group: pollinations-cloudflare-production
   cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:

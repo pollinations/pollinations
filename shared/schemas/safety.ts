@@ -28,7 +28,7 @@ export const VALID_SAFE_TOKENS = new Set([
 const SAFE_DESCRIPTION =
     "Safety features: comma-separated list of " +
     [...SAFETY_FEATURES, ...Object.keys(SAFETY_ALIASES)].join(", ") +
-    `. Also accepted in the ${SAFETY_HEADER_NAME} header. Defaults to off; false and 0 are accepted as off.`;
+    `. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the ${SAFETY_HEADER_NAME} header. Defaults to off; false and 0 are accepted as off.`;
 
 export function normalizeSafeValue(value: SafeValue): string | undefined {
     if (typeof value === "boolean") return value ? "true" : "false";

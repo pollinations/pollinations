@@ -9,7 +9,7 @@ import {
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@shared/schemas/openai.ts";
-import type { SafeValue } from "@shared/schemas/safety.ts";
+import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { UpstreamError } from "@/error.ts";
@@ -210,8 +210,9 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
                 nologo: "true",
             }))
                 imageUrl.searchParams.set(key, String(value));
-            if (body.safe !== undefined) {
-                imageUrl.searchParams.set("safe", String(body.safe));
+            const safeValue = normalizeSafeValue(body.safe as SafeValue);
+            if (safeValue) {
+                imageUrl.searchParams.set("safe", safeValue);
             }
             await response.arrayBuffer();
             return withSafetyHeaders(

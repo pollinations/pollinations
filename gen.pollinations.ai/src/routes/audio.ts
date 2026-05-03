@@ -4,7 +4,10 @@ import {
     ELEVENLABS_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
+import {
+    getModelDefinition,
+    type ModelName,
+} from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
@@ -440,7 +443,7 @@ export function isQwenTtsModel(model: string): model is QwenTtsModelName {
     return QWEN_TTS_MODELS.includes(model as QwenTtsModelName);
 }
 
-function requireTextToAudioModel(model: string): void {
+function requireTextToAudioModel(model: ModelName): void {
     const definition = getModelDefinition(model);
     const acceptsText = definition.inputModalities?.includes("text");
     const returnsAudio = definition.outputModalities?.includes("audio");

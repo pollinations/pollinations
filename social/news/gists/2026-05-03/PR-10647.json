@@ -1,0 +1,34 @@
+{
+  "pr_number": 10647,
+  "title": "Add Storyframe Studio to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10647",
+  "merged_at": "2026-05-03T18:22:55Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Storyframe Studio joins the garden",
+    "blurb": "Storyframe Studio just sprouted in our community greenhouse! It's a beautiful open-source creative workspace that uses our API to weave text and images together.",
+    "summary": "Added Storyframe Studio, an open-source AI creative workspace powered by the Pollinations API, to the community showcase.",
+    "impact": "Users can now discover and explore Storyframe Studio in the community apps directory for their text and image generation workflows.",
+    "keywords": [
+      "community",
+      "showcase",
+      "apps",
+      "storyframe",
+      "workspace"
+    ],
+    "visual_concept": "The PR is about adding 'Storyframe Studio', a creative workspace for writing and images. Visuals should include a cozy writer's desk or studio, storyboards, frames, and writing tools. Polly the bee acting as a writer or artist, perhaps looking at a storyboard with text and images.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, working at a wooden desk with a glowing retro monitor showing storyboards and text. Small pixelated canvases and written pages are pinned to a corkboard nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-03/PR-10647.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, working at a wooden desk with a glowing retro monitor showing storyboards and text. Small pixelated canvases and written pages are pinned to a corkboard nearby. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-03T18:23:42.914852+00:00",
+  "app_name": "Storyframe Studio",
+  "app_url": "https://storyframe-studio.web.app"
+}

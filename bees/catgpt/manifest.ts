@@ -48,12 +48,16 @@ export type AgentManifest = {
     surfaces: Surface[];
 
     // Runtime kind decides how/where the bee process lives.
-    runtime: { kind: RuntimeKind };
+    // Optional — converged with codex's PR #10636 (commit 98ceda347): missing
+    // runtime resolves to { kind: "worker" }. See resolveManifest().
+    runtime?: { kind: RuntimeKind };
 
     // State scope — same shape we sketched in #10628.
     state: {
         scope: "none" | "per-agent" | "per-user";
-        backend?: StateBackend; // platform may default per runtime if absent
+        // Optional — missing backend resolves to "sqlite" (same default as
+        // codex's manifest resolver).
+        backend?: StateBackend;
         discord_scope?: "user" | "channel";
         retention_days?: number; // client-decidable per #10628 retention discussion
     };
@@ -66,6 +70,14 @@ export type AgentManifest = {
 
     // Optional MCP tool servers the bee owns (Cassi-style — per the #10628 fit).
     tools_mcp?: string[];
+};
+
+// A manifest with all defaults applied — what the platform actually sees
+// after resolution. Authoring shape is AgentManifest (sparse); platform shape
+// is ResolvedAgentManifest (dense).
+export type ResolvedAgentManifest = AgentManifest & {
+    runtime: { kind: RuntimeKind };
+    state: AgentManifest["state"] & { backend: StateBackend };
 };
 
 const SURFACE_VALUES: readonly Surface[] = [
@@ -111,11 +123,15 @@ export function validateManifest(m: unknown): string[] {
         }
     }
 
-    const runtime = x.runtime as { kind?: unknown } | undefined;
-    if (!runtime || typeof runtime !== "object") {
-        errs.push("runtime must be an object with a kind");
-    } else if (!RUNTIME_VALUES.includes(runtime.kind as RuntimeKind)) {
-        errs.push(`unknown runtime kind: ${String(runtime.kind)}`);
+    // runtime is optional. If present, it must be an object with a known
+    // kind. Missing runtime resolves to { kind: "worker" } in resolveManifest.
+    if (x.runtime !== undefined) {
+        const runtime = x.runtime as { kind?: unknown } | null;
+        if (!runtime || typeof runtime !== "object") {
+            errs.push("runtime must be an object with a kind when present");
+        } else if (!RUNTIME_VALUES.includes(runtime.kind as RuntimeKind)) {
+            errs.push(`unknown runtime kind: ${String(runtime.kind)}`);
+        }
     }
 
     const state = x.state as { scope?: unknown; backend?: unknown } | undefined;
@@ -158,6 +174,29 @@ export function validateManifest(m: unknown): string[] {
     }
 
     return errs;
+}
+
+// Apply defaults to a sparse authoring manifest. Mirrors codex's `resolved`
+// view from PR #10636 (commit 98ceda347): missing runtime → worker; missing
+// state.backend → sqlite. Returns a dense manifest the platform can read
+// directly, plus the same `errors` list validateManifest produces.
+//
+// This is pure: it does not mutate the input. Authors keep their sparse
+// bee.json on disk; the platform sees the resolved shape.
+export function resolveManifest(m: AgentManifest): {
+    resolved: ResolvedAgentManifest;
+    errors: string[];
+} {
+    const errors = validateManifest(m);
+    const resolved: ResolvedAgentManifest = {
+        ...m,
+        runtime: m.runtime ?? { kind: "worker" },
+        state: {
+            ...m.state,
+            backend: m.state.backend ?? "sqlite",
+        },
+    };
+    return { resolved, errors };
 }
 
 // CatGPT's manifest. Each variant under implementations/ targets a subset of

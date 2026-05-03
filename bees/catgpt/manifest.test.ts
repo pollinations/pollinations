@@ -4,7 +4,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { catgpt, validateManifest } from "./manifest.ts";
+import { catgpt, resolveManifest, validateManifest } from "./manifest.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -86,6 +86,69 @@ test("validateManifest accepts per-surface billing overrides", () => {
         },
     });
     assert.deepEqual(errors, []);
+});
+
+// Schema convergence with codex's PR #10636 (commit 98ceda347): sparse
+// authoring manifests are valid; resolveManifest fills in defaults.
+
+test("validateManifest accepts manifests without runtime (defaults to worker)", () => {
+    const { runtime, ...withoutRuntime } = catgpt;
+    const errors = validateManifest(withoutRuntime as any);
+    assert.deepEqual(
+        errors,
+        [],
+        "missing runtime should be valid — codex defaults to worker",
+    );
+});
+
+test("validateManifest accepts manifests without state.backend", () => {
+    const errors = validateManifest({
+        ...catgpt,
+        state: { scope: "per-user" },
+    });
+    assert.deepEqual(
+        errors,
+        [],
+        "missing state.backend should be valid — codex defaults to sqlite",
+    );
+});
+
+test("resolveManifest fills in runtime: worker when absent", () => {
+    const { runtime, ...sparse } = catgpt;
+    const { resolved, errors } = resolveManifest(sparse as any);
+    assert.deepEqual(errors, []);
+    assert.equal(resolved.runtime.kind, "worker");
+});
+
+test("resolveManifest fills in state.backend: sqlite when absent", () => {
+    const { resolved } = resolveManifest({
+        ...catgpt,
+        state: { scope: "per-user" },
+    });
+    assert.equal(resolved.state.backend, "sqlite");
+});
+
+test("resolveManifest preserves explicit runtime and state.backend", () => {
+    const { resolved } = resolveManifest({
+        ...catgpt,
+        runtime: { kind: "container" },
+        state: { scope: "per-user", backend: "durable-object" },
+    });
+    assert.equal(resolved.runtime.kind, "container");
+    assert.equal(resolved.state.backend, "durable-object");
+});
+
+test("resolveManifest does not mutate its input", () => {
+    const { runtime, ...sparse } = catgpt;
+    const before = JSON.stringify(sparse);
+    resolveManifest(sparse as any);
+    assert.equal(JSON.stringify(sparse), before);
+});
+
+test("resolveManifest returns the same errors validateManifest produces", () => {
+    const broken = { ...catgpt, model: 0 } as any;
+    const { errors } = resolveManifest(broken);
+    assert.deepEqual(errors, validateManifest(broken));
 });
 
 test("declared surfaces correspond to implemented adapters", () => {

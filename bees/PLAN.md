@@ -60,6 +60,16 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase E — schema convergence with codex's PR #10636 [DONE]
+
+Goal: keep our manifest validator from drifting from codex's resolver. Codex's commit `98ceda347` made `runtime` optional (defaults to `worker`) and `state.backend` optional (defaults to `sqlite`), and added a `validate` that returns a `resolved` view. Mirror those semantics so a bee.json that validates on their side validates on ours, and vice versa.
+
+- [x] **E1.** `runtime` made optional in `AgentManifest` and `validateManifest`. Missing runtime is no longer an error.
+- [x] **E2.** `resolveManifest(m)` added — pure function returning `{resolved, errors}`. Fills `runtime: {kind: "worker"}` and `state.backend: "sqlite"` when absent. Does not mutate input. New `ResolvedAgentManifest` type for the post-resolution dense shape.
+- [x] **E3.** 7 new manifest tests: missing runtime accepted, missing state.backend accepted, defaults applied correctly, explicit values preserved, no input mutation, errors match `validateManifest`.
+
+**Verification:** catgpt smoke 59/59 (was 52). All other surfaces and variants unchanged.
+
 ## Explicitly NOT doing
 
 - More CatGPT variants (effect-ts, koa, fastify). Diminishing returns confirmed by hono/bun/deno collapsing to the same shape.

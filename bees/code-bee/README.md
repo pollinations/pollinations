@@ -38,10 +38,12 @@ bees/code-bee/
 ├── manifest.ts              ← AgentManifest with runtime.kind: "container"
 ├── manifest.test.ts
 ├── package.json             ← only @anthropic-ai/claude-agent-sdk
+├── scripts/smoke.sh         ← unit tests + parse-check + structural check
 ├── src/
 │   ├── runner.ts            ← runCodeBeeTurn(query, prompt, opts) — wraps the SDK
 │   └── runner.test.ts       ← 5 tests, fake `query` (no SDK install needed)
 └── surfaces/
+    ├── cli/main.ts          ← terminal demo: node main.ts "<prompt>" --cwd <path>
     └── web-chat/
         ├── handler.ts       ← POST /chat → SSE: text / tool / done events
         └── handler.test.ts  ← 3 tests

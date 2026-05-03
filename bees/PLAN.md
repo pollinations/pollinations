@@ -17,7 +17,7 @@ Coordination with codex happens on issue #10628. They post `[codex]`, we post `[
 - [x] (2) at least one variant per surface type (HTTP, SSE, A2A, Discord)
 - [x] (3) at least one variant that demonstrates token counting / cost attribution at the bee level — **closed in Phase A**
 
-## Phase A — close gap (3) [DONE — commit pending]
+## Phase A — close gap (3) [DONE — commits e19e007c0 + a88be67f4]
 
 Goal: one bee + one surface that returns real `usage` from a real model call. Unblocks billing design on #10628.
 
@@ -32,35 +32,31 @@ Goal: one bee + one surface that returns real `usage` from a real model call. Un
 
 **Verification:** `bash bees/catgpt/scripts/smoke.sh` shows ≥45 tests pass. `POLLINATIONS_LIVE=1 ... node --test core/live.test.ts` returns non-zero usage numbers.
 
-## Phase B — second worker bee that isn't catgpt-shaped [~½ session]
+## Phase B — DROPPED (codex overlap)
 
-Goal: validate the manifest + surface adapters work for a non-chat bee.
+Goal *was*: validate the manifest + surface adapters work for a non-chat bee via a minimal echo-bee.
 
-- [ ] **B1.** `bees/echo-bee/` — minimal worker bee. Manifest, `core/echo.ts` (pure: `(input) => input.toUpperCase()`), tests. Demonstrates the floor: what's the smallest bee the platform can host?
-- [ ] **B2.** Mount the existing `surfaces/openai-compat` adapter (from `bees/catgpt/surfaces/openai-compat/`) on echo-bee. Proves surfaces port across bees, not just across variants of one bee.
-- [ ] **B3.** `bees/echo-bee/manifest.test.ts`, runs through `validateManifest` from catgpt's manifest module.
-- [ ] **B4.** Lift the openai-compat surface to a shared location? Decide based on what the import path looks like — if echo-bee importing from `../catgpt/surfaces/...` feels wrong, move to `bees/_surfaces/`. Otherwise keep colocated.
+**Dropped 2026-05-03 after reviewing codex's PR #10636 file tree.** Codex already published `bees/minimal-cloudflare-agents/`, `bees/minimal-daytona-container/`, `bees/minimal-aws-agentcore/` — three minimal worker bees. Adding our own minimal bee on top would duplicate. The minimal-bee territory is theirs; we keep CatGPT (richest variant matrix) and code-bee (only container reference with the Claude Agent SDK).
 
-**Verification:** echo-bee tests pass standalone; catgpt tests still pass.
+## Phase C — code-bee finish line [in progress]
 
-## Phase C — code-bee finish line [~½ session]
+Goal: round out the container reference so it isn't just a runner skeleton. This is the unique-value phase — codex has no `code-bee` equivalent, so everything here lands cleanly.
 
-Goal: round out the container reference so it isn't just a runner skeleton.
-
-- [ ] **C1.** `bees/code-bee/surfaces/cli/main.ts` — `node main.ts "<prompt>" --cwd /tmp/sess1`. Mirrors catgpt's CLI.
-- [ ] **C2.** `bees/code-bee/surfaces/openai-compat/handler.ts` — adapts the SDK's async generator to a Chat Completions response. The translation is non-trivial (tool events → OpenAI doesn't have an equivalent); document the mapping decisions inline.
-- [ ] **C3.** `bees/code-bee/manifest.ts` — add `openai` and `cli` to surfaces.
+- [x] **C1.** `bees/code-bee/surfaces/cli/main.ts` — `node main.ts "<prompt>" --cwd <path>`. Dynamic-imports `@anthropic-ai/claude-agent-sdk` so the file parses install-free; runs end-to-end once the SDK is installed.
+- [ ] **C2.** `bees/code-bee/surfaces/openai-compat/handler.ts` — adapts the SDK's async generator to a Chat Completions response. The translation is non-trivial (tool events → OpenAI has no equivalent); document the mapping inline.
+- [x] **C3.** `bees/code-bee/manifest.ts` — added `cli` to surfaces (`openai` will land with C2).
 - [ ] **C4.** Defer live test for code-bee — needs the SDK installed in CI; violates the install-free constraint. Note in README and skip.
+- [x] **C5.** `bees/code-bee/scripts/smoke.sh` — same shape as catgpt's; auto-discovers tests + parse-checks all *.ts.
 
-**Verification:** code-bee tests reach ~16-18, all install-free.
+**Verification:** code-bee tests reach 12 (cli is run-only, not unit-tested — the unit testable bits live in runner.ts already). All install-free.
 
-## Phase D — landing-pad docs [~¼ session]
+## Phase D — landing-pad docs [scope reduced — codex overlap]
 
 Goal: make the PR readable for review, give #10628 a single artifact to point at.
 
-- [ ] **D1.** `bees/README.md` — top-level index. Explains the directory shape, lists each bee with one-line description, links to per-bee READMEs. Mention the `_surfaces/` split if Phase B chose to lift them.
-- [ ] **D2.** `bees/COMPARISON.md` — bird's-eye comparison: catgpt vs code-bee on runtime kind, surfaces, state backend, LOC, install footprint. One table. Not per-variant — that lives in catgpt's README.
-- [ ] **D3.** Update PR #10630 description with the current state and a link to `bees/PLAN.md` and `bees/COMPARISON.md`.
+- [ ] ~~**D1.** `bees/README.md`~~ — DROPPED. Codex already published `bees/README.md` and `bees/api-scopes-billing.md` in #10636. Top-level docs are theirs. We will add a per-bee README pointer if needed at merge time.
+- [ ] **D2.** `bees/COMPARISON.md` — bird's-eye comparison: catgpt (12 framework variants × 4 surfaces) vs code-bee (container + SDK). Cross-PR comparison once #10636 merges. Defer.
+- [ ] **D3.** Update PR #10630 description with current state and a link to `bees/PLAN.md`. Cheap, do soon.
 
 **Verification:** rendering on github looks right; links resolve.
 

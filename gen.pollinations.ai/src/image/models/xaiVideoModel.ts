@@ -5,6 +5,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:xai-video:ops");
 const logError = debug("pollinations:xai-video:error");
@@ -91,23 +92,15 @@ export async function callXaiVideoAPI(
 
     logOps("Request body:", JSON.stringify(requestBody));
 
-    const submitResponse = await fetch(XAI_VIDEO_API_URL, {
+    const submitResponse = await fetchUpstream(XAI_VIDEO_API_URL, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify(requestBody),
+        errorLabel: "xAI video generation request failed",
     });
-
-    if (!submitResponse.ok) {
-        const errorText = await submitResponse.text();
-        logError("xAI video submit failed:", submitResponse.status, errorText);
-        throw new HttpError(
-            `xAI video generation request failed: ${errorText}`,
-            submitResponse.status,
-        );
-    }
 
     const submitData = (await submitResponse.json()) as {
         id?: string;
@@ -116,7 +109,12 @@ export async function callXaiVideoAPI(
     const videoId = submitData.id ?? submitData.request_id;
 
     if (!videoId) {
-        throw new HttpError("xAI video API did not return a request ID", 500);
+        throw new HttpError(
+            "xAI video API did not return a request ID",
+            500,
+            undefined,
+            XAI_VIDEO_API_URL,
+        );
     }
 
     logOps("Video generation submitted, ID:", videoId);
@@ -173,7 +171,8 @@ async function pollXaiVideoStatus(
             `Generating video... (${attempt}/${maxAttempts})`,
         );
 
-        const pollResponse = await fetch(`${XAI_VIDEO_POLL_URL}/${videoId}`, {
+        const pollUrl = `${XAI_VIDEO_POLL_URL}/${videoId}`;
+        const pollResponse = await fetch(pollUrl, {
             headers: {
                 Authorization: `Bearer ${apiKey}`,
             },
@@ -186,6 +185,8 @@ async function pollXaiVideoStatus(
                 throw new HttpError(
                     `xAI video poll failed: ${errorText}`,
                     pollResponse.status,
+                    undefined,
+                    pollUrl,
                 );
             }
             await sleep(delayMs);
@@ -200,6 +201,8 @@ async function pollXaiVideoStatus(
             throw new HttpError(
                 `xAI video generation failed: ${pollData.error ?? "unknown error"}`,
                 500,
+                undefined,
+                pollUrl,
             );
         }
 
@@ -208,6 +211,8 @@ async function pollXaiVideoStatus(
                 throw new HttpError(
                     "xAI video succeeded but returned no URL",
                     500,
+                    undefined,
+                    pollUrl,
                 );
             }
 
@@ -219,14 +224,9 @@ async function pollXaiVideoStatus(
                 "Downloading video...",
             );
 
-            const downloadResponse = await fetch(pollData.video.url);
-            if (!downloadResponse.ok) {
-                throw new HttpError(
-                    `Failed to download xAI video: ${downloadResponse.status}`,
-                    500,
-                );
-            }
-
+            const downloadResponse = await fetchUpstream(pollData.video.url, {
+                errorLabel: "Failed to download xAI video",
+            });
             const buffer = Buffer.from(await downloadResponse.arrayBuffer());
             logOps(
                 `Video downloaded, size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`,
@@ -238,5 +238,10 @@ async function pollXaiVideoStatus(
         delayMs = Math.min(delayMs * 1.2, 15000);
     }
 
-    throw new HttpError("xAI video generation timed out after 3 minutes", 504);
+    throw new HttpError(
+        "xAI video generation timed out after 3 minutes",
+        504,
+        undefined,
+        `${XAI_VIDEO_POLL_URL}/${videoId}`,
+    );
 }

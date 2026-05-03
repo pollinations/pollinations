@@ -4,6 +4,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 // Logger
@@ -109,25 +110,15 @@ async function enqueueLtx2Job(
     logOps("Enqueuing LTX-2 job:", requestBody);
 
     const enqueueUrl = `${getLtx2BaseUrl()}/enqueue`;
-    const response = await fetch(enqueueUrl, {
+    const response = await fetchUpstream(enqueueUrl, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             ...backendHeaders(),
         },
         body: JSON.stringify(requestBody),
+        errorLabel: "Failed to enqueue video generation",
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError("Enqueue failed:", response.status, errorText);
-        throw new HttpError(
-            `Failed to enqueue video generation: ${errorText}`,
-            response.status,
-            undefined,
-            enqueueUrl,
-        );
-    }
 
     const data = (await response.json()) as { prompt_id?: string };
     if (!data.prompt_id) {

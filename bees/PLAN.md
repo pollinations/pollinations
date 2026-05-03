@@ -60,6 +60,18 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase F — independent deploy API reference [in progress]
+
+User asked for a parallel deploy API + CLI to triangulate the design against codex's `bees/customer-deploy-reference/` on PR #10636. F1+F2+F3 done this iteration.
+
+- [x] **F1.** Read codex's deploy reference end-to-end (api.js, cli.js, schema.js, tests, README, api-scopes-billing.md). Captured strengths (dry-run shape, requestedProvider split, source discriminator, per-runtime meters) and gaps (no HTTP handler, no PATCH, status never transitions, no idempotency, placeholder clientIds pass validation, schema duplication with our manifest).
+- [x] **F2.** Posted concrete review on #10628 ([comment](https://github.com/pollinations/pollinations/issues/10628#issuecomment-4365902427)).
+- [x] **F3.** Built `bees/deploy-api/` — TS, real `Request → Response` HTTP handler, status state machine (`queued → building → ready` with allowed-transition table), `PATCH` works, `409` on duplicate name, placeholder clientId rejection, reuses `validateManifest`/`resolveManifest` from catgpt. 52/52 tests pass.
+- [ ] **F4.** `bees/COMPARISON.md` — side-by-side: codex vs claude-code deploy designs. Honest about which is better at what.
+- [ ] **F5.** `bees/polli-cli/` — author/operator CLI that talks to the deploy API over HTTP. Next iteration.
+
+**Verification:** `bash bees/deploy-api/scripts/smoke.sh` shows 52/52 unit tests pass, 8 .ts files parse-clean. Other smokes unchanged: catgpt 59/59 + 3 live, code-bee 20/20.
+
 ## Phase E — schema convergence with codex's PR #10636 [DONE]
 
 Goal: keep our manifest validator from drifting from codex's resolver. Codex's commit `98ceda347` made `runtime` optional (defaults to `worker`) and `state.backend` optional (defaults to `sqlite`), and added a `validate` that returns a `resolved` view. Mirror those semantics so a bee.json that validates on their side validates on ours, and vice versa.

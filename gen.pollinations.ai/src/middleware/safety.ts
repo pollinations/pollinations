@@ -49,7 +49,7 @@ export async function applySafetyToTexts(
     const features = getRequestFeatures(safeValue);
     if (features.size === 0) return texts;
 
-    const guardrailInputs = selectGuardrailInputs(texts);
+    const guardrailInputs = getGuardrailInputs(texts);
     if (guardrailInputs.length === 0) return texts;
 
     setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
@@ -102,8 +102,7 @@ export async function applySafetyToTexts(
     for (const [outputIndex, input] of guardrailInputs.entries()) {
         const redacted = response.outputs?.[outputIndex]?.text;
         if (!redacted || redacted === input.text) continue;
-        safeTexts[input.originalIndex] =
-            texts[input.originalIndex].slice(0, input.offset) + redacted;
+        safeTexts[input.originalIndex] = redacted;
         changed = true;
     }
 
@@ -117,34 +116,34 @@ export async function applySafetyToTexts(
     return texts;
 }
 
-function selectGuardrailInputs(texts: string[]) {
-    const inputs: { originalIndex: number; text: string; offset: number }[] =
-        [];
-    let remainingChars = SAFETY_MAX_TEXT_CHARS;
-    let remainingParts = SAFETY_MAX_TEXT_PARTS;
+function getGuardrailInputs(texts: string[]) {
+    const inputs: { originalIndex: number; text: string }[] = [];
+    let totalChars = 0;
 
-    // Keep safety to one Bedrock call per logical input. If context is large,
-    // scan the tail instead of fanning out into more guardrail requests.
-    for (
-        let index = texts.length - 1;
-        index >= 0 && remainingChars > 0 && remainingParts > 0;
-        index--
-    ) {
-        const text = texts[index];
+    for (const [index, text] of texts.entries()) {
         if (!text.trim()) continue;
 
-        const scannedText =
-            text.length > remainingChars ? text.slice(-remainingChars) : text;
+        totalChars += text.length;
         inputs.push({
             originalIndex: index,
-            text: scannedText,
-            offset: text.length - scannedText.length,
+            text,
         });
-        remainingChars -= scannedText.length;
-        remainingParts--;
     }
 
-    return inputs.reverse();
+    if (
+        inputs.length > SAFETY_MAX_TEXT_PARTS ||
+        totalChars > SAFETY_MAX_TEXT_CHARS
+    ) {
+        throw safetyError(400, "input_too_large", {
+            message: "Request too large for safety checking",
+            safety: {
+                maxTextChars: SAFETY_MAX_TEXT_CHARS,
+                maxTextParts: SAFETY_MAX_TEXT_PARTS,
+            },
+        });
+    }
+
+    return inputs;
 }
 
 function resolveSafeValue(

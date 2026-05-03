@@ -54,6 +54,8 @@ const SAFETY_DOCS = [
     '  -d \'{"model":"openai","messages":[{"role":"user","content":"email me at a@example.com"}]}\'',
     "```",
     "",
+    "When safety is on, oversized input returns `400` instead of forwarding unscanned text.",
+    "",
     'Blocked requests return `400` with `error.type: "safety_error"`. Safety service failures return `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.',
 ].join("\n");
 const CLI_DOCS = [

@@ -232,6 +232,28 @@ describe("applySafety", () => {
         });
     });
 
+    it("fails closed when a safe prompt exceeds the text budget", async () => {
+        const input = `a@example.com ${"safe tail ".repeat(2_500)}`;
+        const response = await safetyApp().request(
+            `/scan/${encodeURIComponent(input)}?safe=privacy`,
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(await response.json()).toMatchObject({
+            error: {
+                type: "safety_error",
+                code: "input_too_large",
+                safety: {
+                    maxTextChars: 20_000,
+                    maxTextParts: 25,
+                },
+            },
+        });
+    });
+
     it("fails closed when safe is requested but guardrails are not configured", async () => {
         const response = await safetyApp().request(
             "/scan/hello?safe=privacy",
@@ -343,24 +365,7 @@ describe("applySafetyToChatRequest", () => {
         });
     });
 
-    it("checks only the latest chat parts when input is too long", async () => {
-        guardrailResponse = intervened(
-            {
-                sensitiveInformationPolicy: {
-                    piiEntities: [
-                        {
-                            action: "ANONYMIZED",
-                            match: "a@example.com",
-                            type: "EMAIL",
-                        },
-                    ],
-                },
-            },
-            Array.from({ length: 25 }, (_, index) => ({
-                text: `redacted ${index + 1}`,
-            })),
-        );
-
+    it("fails closed when a safe chat request has too many text parts", async () => {
         const response = await safetyApp().request(
             "/chat",
             {
@@ -370,21 +375,24 @@ describe("applySafetyToChatRequest", () => {
                     safe: "privacy",
                     messages: Array.from({ length: 26 }, (_, index) => ({
                         role: "user",
-                        content: `part ${index}`,
+                        content:
+                            index === 0
+                                ? "a@example.com"
+                                : `safe part ${index}`,
                     })),
                 }),
             },
             configuredEnv,
         );
 
-        expect(response.status).toBe(200);
-        expect(fetchMock).toHaveBeenCalledOnce();
-        const body = (await response.json()) as {
-            messages: { content: string }[];
-        };
-        expect(body.messages[0].content).toBe("part 0");
-        expect(body.messages[1].content).toBe("redacted 1");
-        expect(body.messages[25].content).toBe("redacted 25");
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(await response.json()).toMatchObject({
+            error: {
+                type: "safety_error",
+                code: "input_too_large",
+            },
+        });
     });
 });
 

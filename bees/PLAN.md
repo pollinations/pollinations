@@ -38,17 +38,17 @@ Goal *was*: validate the manifest + surface adapters work for a non-chat bee via
 
 **Dropped 2026-05-03 after reviewing codex's PR #10636 file tree.** Codex already published `bees/minimal-cloudflare-agents/`, `bees/minimal-daytona-container/`, `bees/minimal-aws-agentcore/` — three minimal worker bees. Adding our own minimal bee on top would duplicate. The minimal-bee territory is theirs; we keep CatGPT (richest variant matrix) and code-bee (only container reference with the Claude Agent SDK).
 
-## Phase C — code-bee finish line [in progress]
+## Phase C — code-bee finish line [DONE — commit pending]
 
 Goal: round out the container reference so it isn't just a runner skeleton. This is the unique-value phase — codex has no `code-bee` equivalent, so everything here lands cleanly.
 
 - [x] **C1.** `bees/code-bee/surfaces/cli/main.ts` — `node main.ts "<prompt>" --cwd <path>`. Dynamic-imports `@anthropic-ai/claude-agent-sdk` so the file parses install-free; runs end-to-end once the SDK is installed.
-- [ ] **C2.** `bees/code-bee/surfaces/openai-compat/handler.ts` — adapts the SDK's async generator to a Chat Completions response. The translation is non-trivial (tool events → OpenAI has no equivalent); document the mapping inline.
-- [x] **C3.** `bees/code-bee/manifest.ts` — added `cli` to surfaces (`openai` will land with C2).
-- [ ] **C4.** Defer live test for code-bee — needs the SDK installed in CI; violates the install-free constraint. Note in README and skip.
+- [x] **C2.** `bees/code-bee/surfaces/openai-compat/handler.ts` — adapts the SDK's async generator to a Chat Completions response. Mapping decisions documented in handler header + README. Streaming diffs deltas to avoid cumulative duplication; tool events project to a non-standard `code_bee` extension; `finish_reason: "length"` when `maxTurns` hits. Usage block is `cost_estimated: true` (agent-loop bees bill per container-second, not per token). 8 unit tests via DI.
+- [x] **C3.** `bees/code-bee/manifest.ts` — `surfaces: ["web", "cli", "rest", "openai"]`.
+- [x] **C4.** No live test for code-bee — running the real `query()` would require installing `@anthropic-ai/claude-agent-sdk` (4MB + transitive), which violates the install-free smoke constraint shared with catgpt. Documented in README; the runner is unit-tested via DI with a fake `query()` instead.
 - [x] **C5.** `bees/code-bee/scripts/smoke.sh` — same shape as catgpt's; auto-discovers tests + parse-checks all *.ts.
 
-**Verification:** code-bee tests reach 12 (cli is run-only, not unit-tested — the unit testable bits live in runner.ts already). All install-free.
+**Verification:** code-bee tests reach 20 (12 + 8 openai-compat). 9 .ts files parse-clean. All install-free.
 
 ## Phase D — landing-pad docs [scope reduced — codex overlap]
 

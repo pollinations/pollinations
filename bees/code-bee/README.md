@@ -44,10 +44,31 @@ bees/code-bee/
 │   └── runner.test.ts       ← 5 tests, fake `query` (no SDK install needed)
 └── surfaces/
     ├── cli/main.ts          ← terminal demo: node main.ts "<prompt>" --cwd <path>
+    ├── openai-compat/
+    │   ├── handler.ts       ← POST /v1/chat/completions, model: "code-bee"
+    │   └── handler.test.ts  ← 8 tests (streaming + non-streaming)
     └── web-chat/
         ├── handler.ts       ← POST /chat → SSE: text / tool / done events
         └── handler.test.ts  ← 3 tests
 ```
+
+## Why openai-compat is the interesting surface
+
+Chat Completions assumes one response message per request. The Claude Agent SDK emits a stream of events: assistant text deltas, tool-use starts/ends, and a final result. There is no standard OpenAI shape for "the agent ran Read+Edit+Write internally before answering" — function-calling is for the *caller's* tools, not the agent's internal loop.
+
+The handler projects the SDK's event stream into the standard OpenAI shape for content, plus a non-standard `code_bee` extension that real OpenAI clients ignore but the Pollinations platform reads:
+
+| SDK event | Streaming chunk | Non-streaming |
+|---|---|---|
+| `text {text}` | `delta.content` (incremental, diffed against last emitted) | `message.content` |
+| `tool {name, status}` | `code_bee.tool` field on a chunk with empty `delta` | `code_bee.tool_trace[]` entry |
+| `result {ok, turnsUsed}` | `finish_reason` + final usage chunk | `finish_reason`, `code_bee.{ok,turnsUsed}` |
+
+`finish_reason` is `"stop"` if `ok`, `"length"` if `maxTurns` was hit. No `tool_calls` finish_reason — the agent's tools aren't visible to the caller; they ran already.
+
+Usage block is a placeholder with `cost_estimated: true`. Token-level billing isn't honest for an agent-loop bee — `code-bee` bills per container-second (manifest declares `billing.default: "user-pays"`). The platform backfills real numbers from provider-side billing.
+
+Per-session `cwd` is required: requests without `code_bee.cwd` get a `400`. A V8 worker can't fake this — that's the whole point of the `container` runtime.
 
 ## Dependency injection so tests stay install-free
 

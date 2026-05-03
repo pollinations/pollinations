@@ -22,7 +22,7 @@ export const codeBee: AgentManifest = {
     description:
         "Claude-Code-style coding agent. Reads, edits, runs shell, scoped to a per-session working directory.",
     model: "claude-sonnet-4-6",
-    surfaces: ["web", "cli", "rest"],
+    surfaces: ["web", "cli", "rest", "openai"],
     runtime: { kind: "container" },
     state: {
         scope: "per-user",

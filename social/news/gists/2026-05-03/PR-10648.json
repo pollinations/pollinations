@@ -1,0 +1,34 @@
+{
+  "pr_number": 10648,
+  "title": "Add Pollinations AIGC Control Console to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10648",
+  "merged_at": "2026-05-03T18:27:30Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Command center online",
+    "blurb": "A new community app just dropped! The Pollinations AIGC Control Console gives you a slick web dashboard to manage all your generative AI workflows in one place.",
+    "summary": "Added the Pollinations AIGC Control Console to the community apps showcase.",
+    "impact": "Users can now discover and use a new web-based dashboard for managing their generative AI workflows.",
+    "keywords": [
+      "community",
+      "app",
+      "dashboard",
+      "aigc",
+      "showcase"
+    ],
+    "visual_concept": "A retro control console or dashboard. Polly the bee acting as an operator at a desk with glowing buttons, alongside the Monitor Robot displaying a dashboard.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny headset, sitting at a retro control console with glowing buttons and screens. The chunky Monitor Robot stands nearby, its screen displaying a colorful dashboard. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-03/PR-10648.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny headset, sitting at a retro control console with glowing buttons and screens. The chunky Monitor Robot stands nearby, its screen displaying a colorful dashboard. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-03T18:28:25.053603+00:00",
+  "app_name": "Pollinations AIGC Control Console",
+  "app_url": "https://jfliu3265.github.io/pollinations-aigc-public/"
+}

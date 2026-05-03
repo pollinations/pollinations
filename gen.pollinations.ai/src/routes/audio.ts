@@ -689,9 +689,8 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     }
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
-    text = await applySafety(c, text, query.safe);
-
     requireTextToAudioModel(c.var.model.resolved);
+    text = await applySafety(c, text, query.safe);
 
     const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
         .ELEVENLABS_API_KEY;
@@ -802,8 +801,8 @@ export const audioRoutes = new Hono<Env>()
             const { input, safe, voice, response_format } = c.req.valid(
                 "json" as never,
             ) as CreateSpeechRequest;
-            const safeInput = await applySafety(c, input, safe);
             requireTextToAudioModel(c.var.model.resolved);
+            const safeInput = await applySafety(c, input, safe);
 
             const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
                 .ELEVENLABS_API_KEY;

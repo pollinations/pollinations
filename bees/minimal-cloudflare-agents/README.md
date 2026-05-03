@@ -12,6 +12,9 @@ Use this when the bee should be:
 ## Shape
 
 - `src/index.ts` exports a single `Agent` subclass.
+- `GET /` and `GET /v1/chat/completions` return discovery JSON with a copyable curl.
+- `POST /v1/chat/completions` accepts OpenAI-compatible chat requests.
+- `POST /bees/bee_minimal-cloudflare-agents-bee/v1/chat/completions` is the hosted OpenAI projection.
 - `POST /web/messages` accepts `{ "text": "...", "userId": "..." }`.
 - `POST /a2a` accepts a minimal A2A JSON-RPC message request.
 - `GET /.well-known/agent-card.json` exposes A2A discovery metadata.
@@ -24,6 +27,10 @@ Use this when the bee should be:
 ```bash
 npm install --package-lock=false
 npx wrangler dev --local --port 18789 --ip 127.0.0.1
+curl http://127.0.0.1:18789/
+curl -X POST http://127.0.0.1:18789/v1/chat/completions \
+  -H 'content-type: application/json' \
+  --data '{"model":"bee:minimal-cloudflare","messages":[{"role":"user","content":"hello"}]}'
 curl http://127.0.0.1:18789/.well-known/agent-card.json
 curl -X POST http://127.0.0.1:18789/web/messages \
   -H 'content-type: application/json' \

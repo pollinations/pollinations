@@ -56,7 +56,7 @@ function jsonRpcError(
 
 export function buildAgentCard(baseUrl: string) {
     return {
-        protocolVersion: "0.2.5",
+        protocolVersion: "0.3.0",
         name: "CatGPT",
         description:
             "Aloof sarcastic cat that answers in 2-8 words and renders the exchange as a webcomic.",

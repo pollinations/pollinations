@@ -8,10 +8,14 @@
 // test-fixtures/codex-deployed-cf/ are snapshots so this test does not
 // depend on the worker still being up.
 //
-// What this surfaces: the deployed worker's surface adapter and its
-// advertised agent card don't agree, and the URL projection in their
-// `customer-deploy-reference` doesn't match the worker's actual paths.
-// Documenting via assertions so reviewers can see the gap concretely.
+// History:
+//   Phase H (commit fc91a46ea) — initial probe found two bugs: card-promised
+//     /a2a returned 404, and /web/messages was 404 despite codex's
+//     `routeForSurface` projecting it. Pinned both as assertions.
+//   Phase I (this file) — codex addressed both. /a2a now returns JSON-RPC
+//     2.0 envelopes; /web/messages now aliases /message. Assertions
+//     re-pinned to assert *convergence* rather than divergence, so any
+//     regression breaks loudly.
 
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -38,27 +42,44 @@ test("codex's deployed agent card is valid A2A v0.3.0", () => {
     assert.ok(card.skills.length > 0);
 });
 
-test("codex's card url points at /a2a, but the worker 404s that path", () => {
-    // The probe captured: GET /.well-known/agent-card.json → 200,
-    // POST /a2a → 404, POST /message → 200. So the agent card advertises
-    // an A2A JSON-RPC endpoint at .../a2a that doesn't exist. An A2A
-    // client that reads the card will follow `url` and fail.
-    //
-    // This isn't a fixture assertion — it's a concrete bug in the
-    // deployed worker. Pinning it here so the merge discussion can refer
-    // to a test, not a paragraph.
+test("codex's /a2a endpoint matches what the agent card advertises (Phase I — fixed)", () => {
+    // Phase H: card said `url: ".../a2a"` but POST /a2a returned 404.
+    // Phase I: codex added the /a2a handler. The card and the worker now
+    // agree. We pin the JSON-RPC 2.0 envelope shape so a future regression
+    // (e.g., reverting the handler, or breaking the JSON-RPC contract)
+    // breaks loudly.
     const card = loadJson("agent-card.json");
+    const a2a = loadJson("a2a-response.json");
     assert.match(card.url, /\/a2a$/, "card url ends in /a2a");
-    // (We can't assert on the live 404 here without a network call; the
-    // probe-summary.md fixture documents the live result.)
+    assert.equal(a2a.jsonrpc, "2.0", "/a2a returns JSON-RPC 2.0 envelope");
+    assert.ok(a2a.result, "/a2a returns a result, not an error");
+    assert.equal(a2a.result.message.role, "agent");
+    assert.ok(Array.isArray(a2a.result.message.parts));
+    assert.equal(a2a.result.message.parts[0].kind, "text");
 });
 
-test("codex's /message response shape: { text, state: { turns } }", () => {
-    const msg = loadJson("message-response.json");
-    assert.equal(typeof msg.text, "string");
-    assert.equal(typeof msg.state, "object");
-    assert.equal(typeof msg.state.turns, "number");
-    assert.ok(msg.state.turns > 0, "turns counter persists across requests");
+test("codex's /web/messages endpoint serves what routeForSurface projects (Phase I — fixed)", () => {
+    // Phase H: routeForSurface projected /web/messages but worker served
+    // only /message. Phase I: codex made /web/messages an alias of
+    // /message — same response shape. The deploy-API URL contract and
+    // the bee implementation agree.
+    const wm = loadJson("web-messages-response.json");
+    const m = loadJson("message-response.json");
+    assert.equal(typeof wm.text, "string");
+    assert.equal(typeof wm.state.turns, "number");
+    assert.equal(typeof m.text, "string");
+    assert.equal(typeof m.state.turns, "number");
+    // Both endpoints return the same shape, confirming alias behavior.
+    assert.deepEqual(Object.keys(wm).sort(), Object.keys(m).sort());
+});
+
+test("durable-object state persists across requests", () => {
+    // Pinned in Phase H, still true in Phase I — turn counter advances
+    // across all our probe calls. Across the two probes (~30 min apart)
+    // it climbed past 17, confirming state survives codex's redeploys
+    // because the DO is named per-instance not per-deployment.
+    const m = loadJson("message-response.json");
+    assert.ok(m.state.turns > 0, "turns counter persists across requests");
 });
 
 test("our agent card and codex's share the A2A skeleton fields", () => {
@@ -83,12 +104,13 @@ test("our agent card and codex's share the A2A skeleton fields", () => {
     }
 });
 
-test("protocolVersion divergence: ours 0.2.5 vs theirs 0.3.0", () => {
-    // Worth bumping ours to 0.3.0 to match. Pinning so it shows up in CI
-    // when whoever does the convergence touches handler.ts.
+test("protocolVersion convergence: ours bumped to 0.3.0 to match codex", () => {
+    // Phase H pinned the divergence (ours 0.2.5, theirs 0.3.0). Phase I
+    // bumps ours to 0.3.0 since they're the deployed reference and 0.3.0
+    // is the current A2A spec version. Now both sides match.
     const ours = buildAgentCard("https://x");
     const theirs = loadJson("agent-card.json");
-    assert.equal(ours.protocolVersion, "0.2.5");
+    assert.equal(ours.protocolVersion, "0.3.0");
     assert.equal(theirs.protocolVersion, "0.3.0");
 });
 
@@ -98,26 +120,4 @@ test("theirs declares streaming: false, ours also declares streaming: false", ()
     const theirs = loadJson("agent-card.json");
     assert.equal(ours.capabilities.streaming, false);
     assert.equal(theirs.capabilities.streaming, false);
-});
-
-test("URL projection from codex's customer-deploy-reference doesn't match the deployed worker", () => {
-    // Codex's `routeForSurface` produces:
-    //   web:    `${root}/web/messages`
-    //   a2a:    `${root}/.well-known/agent-card.json`
-    //
-    // Probe of the live worker:
-    //   POST /web/messages → 404
-    //   POST /message      → 200    (this is what the bee actually serves)
-    //   POST /a2a          → 404    (despite the card pointing here)
-    //
-    // The contract advertised by the deploy API and the contract
-    // implemented by the bee don't match. Either the URL scheme should
-    // change, or the bees should add aliases.
-    //
-    // Documented as a no-op assertion since we can't probe live in a
-    // pure unit test — see test-fixtures/codex-deployed-cf/probe-summary.md
-    // for the live evidence.
-    const expectedDeployRouteForWeb = "/web/messages";
-    const actualWorkerRouteForWeb = "/message";
-    assert.notEqual(expectedDeployRouteForWeb, actualWorkerRouteForWeb);
 });

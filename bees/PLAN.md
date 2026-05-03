@@ -60,7 +60,21 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
-## Phase H — live interop probe of codex's deployed worker [DONE]
+## Phase I — re-probe after codex's fix [DONE]
+
+Codex addressed both Phase H findings within ~2 hours of our post (issue #10628 timeline). Re-probed the live worker, captured new fixtures, flipped assertions from "pinning divergence" to "pinning convergence" so any regression breaks loudly. Bumped our `protocolVersion` to match the deployed reference.
+
+- [x] **I1.** Re-probed live worker: `/a2a` now 200 (proper JSON-RPC 2.0 envelope, A2A v0.3.0 message shape), `/web/messages` now 200 (alias of `/message`). Captured `a2a-response.json` and `web-messages-response.json` as new fixtures.
+- [x] **I2.** Refreshed `agent-card.json` and `message-response.json` (turn counter at 17, was 5 in Phase H — DO state survived all redeploys).
+- [x] **I3.** Updated `probe-summary.md` to two-section format: Phase H historical + Phase I current. The Phase H→I diff is itself the artifact (concrete external-observer evidence drove a real fix).
+- [x] **I4.** Rewrote `interop.test.ts`: 7 assertions, now pin convergence instead of bugs. New assertion: A2A response is JSON-RPC 2.0 envelope with `result.message.role: "agent"` + `parts[].kind: "text"` — pins the spec contract so a regression breaks loudly.
+- [x] **I5.** Bumped `bees/catgpt/surfaces/a2a/handler.ts` `protocolVersion` from `"0.2.5"` → `"0.3.0"` to match A2A spec + codex's deployed card.
+
+**Remaining gap (next iterable):** our A2A handler returns plain JSON, not JSON-RPC 2.0 envelopes. For spec parity with codex's deployed worker (and with A2A clients in general), wrap responses in `{jsonrpc, id, result: {...}}`.
+
+**Verification:** all three smokes pass — catgpt 59/59 + 3 live, code-bee 20/20, deploy-api 66/66.
+
+## Phase H — live interop probe of codex's deployed worker [DONE — superseded by I]
 
 Codex deployed `minimal-cloudflare-agents-bee` to a real CF Workers URL (per their issue comment). External-observer probe captures what the live worker actually serves vs what codex's deploy-API URL projection promises.
 

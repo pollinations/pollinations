@@ -25,6 +25,43 @@ const packageHints: Array<[string, string[]]> = [
     ["solo-acoustic", ["solo", "acoustic", "ceremony", "dinner", "guitar"]],
 ];
 
+function trimEmailToken(token: string): string {
+    let start = 0;
+    let end = token.length;
+    const trimChars = new Set([
+        "<",
+        ">",
+        "(",
+        ")",
+        "[",
+        "]",
+        '"',
+        "'",
+        ",",
+        ".",
+    ]);
+    while (start < end && trimChars.has(token[start])) start += 1;
+    while (end > start && trimChars.has(token[end - 1])) end -= 1;
+    return token.slice(start, end);
+}
+
+function extractEmail(text: string): string | undefined {
+    for (const part of text.split(/\s+/)) {
+        const token = trimEmailToken(part.replace(/^mailto:/i, ""));
+        const at = token.indexOf("@");
+        const dot = token.lastIndexOf(".");
+        if (
+            at > 0 &&
+            dot > at + 1 &&
+            dot < token.length - 1 &&
+            !token.includes("..")
+        ) {
+            return token;
+        }
+    }
+    return undefined;
+}
+
 export function collectEventDetails(text: string): ParsedBookingDetails {
     const lower = text.toLowerCase();
     const packageId = packageHints.find(([, hints]) =>
@@ -39,7 +76,7 @@ export function collectEventDetails(text: string): ParsedBookingDetails {
     const budget = text.match(
         /(?:budget|around|under|up to|€|\$)\s*([0-9][0-9,.]*)/i,
     );
-    const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
+    const email = extractEmail(text);
     const city = text.match(
         /\bin\s+([A-Z][A-Za-z -]{2,})(?:\s+on|\s+for|$)/,
     )?.[1];

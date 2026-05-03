@@ -13,7 +13,7 @@ import type {
 const nowIso = () => new Date().toISOString();
 
 function makeId(prefix: string): string {
-    return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+    return `${prefix}_${globalThis.crypto.randomUUID().slice(0, 8)}`;
 }
 
 const seedPackages: PerformancePackage[] = [

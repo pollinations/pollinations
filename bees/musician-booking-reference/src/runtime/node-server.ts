@@ -33,11 +33,21 @@ async function toRequest(
 }
 
 const server = createServer(async (incoming, outgoing) => {
-    const response = await handleBeeRequest(await toRequest(incoming), {
-        authorize,
-    });
-    outgoing.writeHead(response.status, Object.fromEntries(response.headers));
-    outgoing.end(Buffer.from(await response.arrayBuffer()));
+    try {
+        const response = await handleBeeRequest(await toRequest(incoming), {
+            authorize,
+        });
+        outgoing.writeHead(
+            response.status,
+            Object.fromEntries(response.headers),
+        );
+        outgoing.end(Buffer.from(await response.arrayBuffer()));
+    } catch {
+        outgoing.writeHead(500, {
+            "content-type": "application/json; charset=utf-8",
+        });
+        outgoing.end(JSON.stringify({ error: "Internal error" }));
+    }
 });
 
 server.listen(port, () => {

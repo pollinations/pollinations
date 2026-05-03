@@ -57,7 +57,9 @@ test("HTTP runtime handles A2A message/send", async () => {
             params: {
                 message: {
                     contextId: "ctx_runtime",
-                    parts: [{ kind: "text", text: "What packages are available?" }],
+                    parts: [
+                        { kind: "text", text: "What packages are available?" },
+                    ],
                 },
             },
         }),

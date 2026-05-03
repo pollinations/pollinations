@@ -104,7 +104,10 @@ export function projectDeploymentRoutes(
             return { kind: surface, url: `${root}/v1/chat/completions` };
         }
         if (surface === "a2a") {
-            return { kind: surface, url: `${root}/.well-known/agent-card.json` };
+            return {
+                kind: surface,
+                url: `${root}/.well-known/agent-card.json`,
+            };
         }
         if (surface === "discord") {
             return { kind: surface, url: `${root}/discord/messages` };

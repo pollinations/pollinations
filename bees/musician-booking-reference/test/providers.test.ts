@@ -17,8 +17,7 @@ test("AgentCore provider handles ping and invocations", async () => {
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
                 session_id: "session_1",
-                prompt:
-                    "Quote a jazz trio for 120 guests in Berlin on 2026-07-18. Contact alex@example.test",
+                prompt: "Quote a jazz trio for 120 guests in Berlin on 2026-07-18. Contact alex@example.test",
             }),
         }),
         { agent: createMusicianBookingAgent(), now },
@@ -39,10 +38,16 @@ test("AgentCore provider handles ping and invocations", async () => {
 
 test("Enter BYOP authorizer returns 402 without a key and resolves userinfo", async () => {
     const fetcher = async (url: string | URL | Request, init?: RequestInit) => {
-        assert.equal(String(url), "https://enter.example.test/api/device/userinfo");
+        assert.equal(
+            String(url),
+            "https://enter.example.test/api/device/userinfo",
+        );
         assert.equal(init?.headers instanceof Headers, false);
         return new Response(
-            JSON.stringify({ sub: "user_from_enter", preferred_username: "demo" }),
+            JSON.stringify({
+                sub: "user_from_enter",
+                preferred_username: "demo",
+            }),
             { status: 200, headers: { "content-type": "application/json" } },
         );
     };

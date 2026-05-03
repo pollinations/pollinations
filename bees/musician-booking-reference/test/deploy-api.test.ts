@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+    type BeeDeploymentRequest,
     createDeploymentId,
     createQueuedDeployment,
     deploymentPathForName,
     handleBeeDeployApiRequest,
     MemoryBeeDeployApiStore,
     projectDeploymentRoutes,
-    type BeeDeploymentRequest,
 } from "../src/deploy-api/index.js";
 
 const request: BeeDeploymentRequest = {
@@ -141,10 +141,7 @@ test("deployment API reference router creates, reads, patches, events, and delet
         "daytona",
     );
     assert.equal(((await list.json()) as unknown[]).length, 1);
-    assert.equal(
-        ((await events.json()) as unknown[]).length,
-        2,
-    );
+    assert.equal(((await events.json()) as unknown[]).length, 2);
 });
 
 test("patching runtime updates billing meters and state backend", async () => {

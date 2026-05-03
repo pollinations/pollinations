@@ -39,7 +39,10 @@ export type OpenAIChatCompletionResponse = {
 
 function contentToText(content: OpenAIChatMessage["content"]): string {
     if (typeof content === "string") return content;
-    return content.map((part) => part.text).join("\n").trim();
+    return content
+        .map((part) => part.text)
+        .join("\n")
+        .trim();
 }
 
 function lastUserText(messages: OpenAIChatMessage[]): string {

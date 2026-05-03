@@ -26,7 +26,9 @@ function agentCard(origin) {
         url: `${origin}/message`,
         preferredTransport: "HTTP",
         capabilities: { streaming: false },
-        skills: [{ id: "reply", name: "Reply", tags: ["daytona", "container"] }],
+        skills: [
+            { id: "reply", name: "Reply", tags: ["daytona", "container"] },
+        ],
     };
 }
 
@@ -36,7 +38,10 @@ export async function handle(req, res) {
     if (req.method === "GET" && url.pathname === "/health") {
         return send(res, 200, { status: "ok" });
     }
-    if (req.method === "GET" && url.pathname === "/.well-known/agent-card.json") {
+    if (
+        req.method === "GET" &&
+        url.pathname === "/.well-known/agent-card.json"
+    ) {
         return send(res, 200, agentCard(url.origin));
     }
     if (req.method === "POST" && url.pathname === "/message") {

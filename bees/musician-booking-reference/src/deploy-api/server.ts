@@ -1,17 +1,20 @@
 import {
+    type BeeDeployment,
+    type BeeDeploymentEvent,
+    type BeeDeploymentRequest,
     createDeploymentId,
     createQueuedDeployment,
     estimateBilling,
     projectDeploymentRoutes,
     requiredScopes,
     resolveRuntime,
-    type BeeDeployment,
-    type BeeDeploymentEvent,
-    type BeeDeploymentRequest,
 } from "./schema.js";
 
 export type BeeDeployApiStore = {
-    create(request: BeeDeploymentRequest, baseUrl: string): Promise<BeeDeployment>;
+    create(
+        request: BeeDeploymentRequest,
+        baseUrl: string,
+    ): Promise<BeeDeployment>;
     get(id: string): Promise<BeeDeployment | undefined>;
     list(): Promise<BeeDeployment[]>;
     listEvents(id: string): Promise<BeeDeploymentEvent[]>;
@@ -78,14 +81,18 @@ export class MemoryBeeDeployApiStore implements BeeDeployApiStore {
         };
         const state = patch.state ?? deployment.state;
         const surfaces =
-            patch.surfaces ?? deployment.surfaces.map((surface) => surface.kind);
+            patch.surfaces ??
+            deployment.surfaces.map((surface) => surface.kind);
         const billing = patch.billing ?? {
             mode: deployment.billingEstimate.mode,
             dailyPollenLimit: deployment.billingEstimate.dailyPollenLimit,
         };
         const requestForProjection: BeeDeploymentRequest = {
             name: deployment.name,
-            source: { type: "template", template: "musician-booking-reference" },
+            source: {
+                type: "template",
+                template: "musician-booking-reference",
+            },
             runtime: runtimeRequest,
             state,
             surfaces,

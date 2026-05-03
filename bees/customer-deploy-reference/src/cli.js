@@ -20,7 +20,10 @@ async function main(argv) {
     if (command === "init") {
         const output = arg ?? "bee.json";
         const nameIndex = rest.indexOf("--name");
-        const name = nameIndex >= 0 && rest[nameIndex + 1] ? rest[nameIndex + 1] : "my-bee";
+        const name =
+            nameIndex >= 0 && rest[nameIndex + 1]
+                ? rest[nameIndex + 1]
+                : "my-bee";
         const manifest = createStarterManifest(name);
         await writeFile(output, `${JSON.stringify(manifest, null, 2)}\n`);
         return { ok: true, path: output, manifest };

@@ -200,16 +200,6 @@ function conversationFromRow(row: Record<string, unknown>): Conversation {
     };
 }
 
-function messageFromRow(row: Record<string, unknown>): Message {
-    return {
-        id: String(row.id),
-        conversationId: String(row.conversation_id),
-        role: row.role as Message["role"],
-        content: String(row.content),
-        createdAt: String(row.created_at),
-    };
-}
-
 function bookingFromRow(row: Record<string, unknown>): BookingRequest {
     return {
         id: String(row.id),

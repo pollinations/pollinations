@@ -1,15 +1,15 @@
 import type { MusicianBookingAgent } from "../agent.js";
 import { createMusicianBookingAgent } from "../agent.js";
 import {
+    type A2AJsonRpcRequest,
     createA2AAgentCard,
+    type DiscordMessageInput,
     handleA2AMessageSend,
     handleDiscordMessage,
     handleOpenAIChatCompletion,
     handleWebMessage,
-    toServerSentEvents,
-    type A2AJsonRpcRequest,
-    type DiscordMessageInput,
     type OpenAIChatCompletionRequest,
+    toServerSentEvents,
     type WebMessageInput,
 } from "../surfaces/index.js";
 

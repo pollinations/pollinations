@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-    DeployStore,
     createDeploymentId,
+    DeployStore,
     estimateBilling,
     requiredScopes,
     resolveProvider,
@@ -10,10 +10,7 @@ import {
     routeForSurface,
 } from "../src/api.js";
 import { main } from "../src/cli.js";
-import {
-    createStarterManifest,
-    validateBeeManifest,
-} from "../src/schema.js";
+import { createStarterManifest, validateBeeManifest } from "../src/schema.js";
 
 test("deployment ids and routes are stable", () => {
     const id = createDeploymentId("Booking Assistant!");
@@ -103,7 +100,11 @@ test("manifest validation catches invalid runtime, state, surface, and user-pays
 test("cli init creates a starter manifest", async () => {
     const path = `/tmp/bee-${Date.now()}.json`;
     const result = await main(["init", path, "--name", "Demo Bee"]);
-    const manifest = JSON.parse(await import("node:fs/promises").then((fs) => fs.readFile(path, "utf8")));
+    const manifest = JSON.parse(
+        await import("node:fs/promises").then((fs) =>
+            fs.readFile(path, "utf8"),
+        ),
+    );
 
     assert.equal(result.ok, true);
     assert.equal(manifest.name, "Demo Bee");
@@ -113,7 +114,10 @@ test("cli init creates a starter manifest", async () => {
 });
 
 test("cli validate reports manifest validity", async () => {
-    const result = await main(["validate", "manifests/minimal-cloudflare.json"]);
+    const result = await main([
+        "validate",
+        "manifests/minimal-cloudflare.json",
+    ]);
 
     assert.equal(result.valid, true);
 });

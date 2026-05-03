@@ -1,7 +1,7 @@
 import { createMusicianBookingAgent } from "../../agent.js";
 import { handleBeeRequest } from "../../runtime/index.js";
-import { CloudflareSqlBookingStore } from "./sql-store.js";
 import type { SqlStorageLike } from "./sql-store.js";
+import { CloudflareSqlBookingStore } from "./sql-store.js";
 
 type DurableObjectStateLike = {
     storage: { sql: SqlStorageLike };

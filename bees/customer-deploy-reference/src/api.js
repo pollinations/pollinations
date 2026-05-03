@@ -24,7 +24,10 @@ export function resolveRuntime(runtime = {}) {
     };
 }
 
-export function estimateBilling(manifest, runtime = resolveRuntime(manifest.runtime)) {
+export function estimateBilling(
+    manifest,
+    runtime = resolveRuntime(manifest.runtime),
+) {
     const meters = [
         {
             name: "model_tool_calls",

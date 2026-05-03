@@ -64,7 +64,10 @@ test("A2A surface exposes card and handles message/send", async () => {
     assert.ok("result" in response);
     if ("result" in response) {
         assert.equal(response.result.status.state, "completed");
-        assert.match(response.result.artifacts[0]?.parts[0]?.text ?? "", /Jazz trio/);
+        assert.match(
+            response.result.artifacts[0]?.parts[0]?.text ?? "",
+            /Jazz trio/,
+        );
     }
 });
 

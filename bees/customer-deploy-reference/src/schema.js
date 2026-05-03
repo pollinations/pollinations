@@ -42,7 +42,11 @@ export function validateBeeManifest(manifest) {
     } else {
         requireEnum(errors, manifest.source.type, sourceTypes, "source.type");
         if (manifest.source.type === "git") {
-            requireString(errors, manifest.source.repository, "source.repository");
+            requireString(
+                errors,
+                manifest.source.repository,
+                "source.repository",
+            );
         }
         if (manifest.source.type === "template") {
             requireString(errors, manifest.source.template, "source.template");
@@ -86,7 +90,12 @@ export function validateBeeManifest(manifest) {
     if (!isObject(manifest.state)) {
         errors.push("state must be an object");
     } else {
-        requireEnum(errors, manifest.state.backend, stateBackends, "state.backend");
+        requireEnum(
+            errors,
+            manifest.state.backend,
+            stateBackends,
+            "state.backend",
+        );
         if (
             manifest.state.retentionDays !== undefined &&
             (!Number.isInteger(manifest.state.retentionDays) ||
@@ -107,7 +116,12 @@ export function validateBeeManifest(manifest) {
     if (!isObject(manifest.billing)) {
         errors.push("billing must be an object");
     } else {
-        requireEnum(errors, manifest.billing.mode, billingModes, "billing.mode");
+        requireEnum(
+            errors,
+            manifest.billing.mode,
+            billingModes,
+            "billing.mode",
+        );
         if (
             manifest.billing.mode === "user-pays" &&
             typeof manifest.billing.clientId !== "string"

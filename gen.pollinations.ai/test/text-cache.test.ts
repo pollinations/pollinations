@@ -75,9 +75,11 @@ function createTextCacheApp() {
             "/v1/chat/completions",
             validator("json", CreateChatCompletionRequestSchema),
             async (c, next) => {
-                const body = c.req.valid("json" as never) as {
-                    model?: string;
-                };
+                const body = (
+                    c.req as unknown as {
+                        valid(target: "json"): { model?: string };
+                    }
+                ).valid("json");
                 c.set("model", {
                     requested: body.model || "openai-fast",
                     resolved: resolveTestModel(body.model),

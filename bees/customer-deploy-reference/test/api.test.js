@@ -99,21 +99,26 @@ test("auto runtime resolves to Cloudflare Agents", () => {
     );
 });
 
-test("validates worker and container bee manifests", () => {
+test("validates worker and queen bee manifests", () => {
     const worker = createStarterManifest("Worker Bee");
     const workerWithPartialState = {
         ...createStarterManifest("Worker State Bee"),
         state: { retentionDays: 7 },
     };
-    const container = {
-        ...createStarterManifest("Container Bee"),
-        runtime: { kind: "container", provider: "auto" },
-        state: { backend: "memory", retentionDays: 30 },
-    };
+    const queen = createStarterManifest("Queen Bee", "queen");
 
     assert.equal(validateBeeManifest(worker).valid, true);
     assert.equal(validateBeeManifest(workerWithPartialState).valid, true);
-    assert.equal(validateBeeManifest(container).valid, true);
+    assert.equal(validateBeeManifest(queen).valid, true);
+    assert.deepEqual(worker.source, {
+        type: "template",
+        template: "minimal-cloudflare-agents",
+    });
+    assert.deepEqual(queen.source, {
+        type: "template",
+        template: "minimal-daytona-container",
+    });
+    assert.equal(queen.runtime.kind, "container");
 });
 
 test("manifest validation catches invalid runtime, state, surface, and user-pays client id", () => {
@@ -159,7 +164,7 @@ test("manifest validation catches invalid runtime, state, surface, and user-pays
     assert.equal(validateBeeManifest(badProvider).valid, false);
 });
 
-test("cli init creates a starter manifest", async () => {
+test("cli init creates a worker starter manifest", async () => {
     const path = `/tmp/bee-${Date.now()}.json`;
     const result = await main(["init", path, "--name", "Demo Bee"]);
     const manifest = JSON.parse(
@@ -169,9 +174,34 @@ test("cli init creates a starter manifest", async () => {
     );
 
     assert.equal(result.ok, true);
+    assert.equal(result.template, "worker");
     assert.equal(manifest.name, "Demo Bee");
     assert.equal(manifest.runtime, undefined);
     assert.equal(manifest.state, undefined);
+    assert.deepEqual(manifest.surfaces, ["openai", "web"]);
+});
+
+test("cli init can create a queen starter manifest", async () => {
+    const path = `/tmp/bee-queen-${Date.now()}.json`;
+    const result = await main([
+        "init",
+        path,
+        "--name",
+        "Queen Demo",
+        "--template",
+        "queen",
+    ]);
+    const manifest = JSON.parse(
+        await import("node:fs/promises").then((fs) =>
+            fs.readFile(path, "utf8"),
+        ),
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(result.template, "queen");
+    assert.equal(manifest.name, "Queen Demo");
+    assert.deepEqual(manifest.runtime, { kind: "container" });
+    assert.deepEqual(manifest.surfaces, ["openai", "web"]);
 });
 
 test("cli validate reports manifest validity", async () => {

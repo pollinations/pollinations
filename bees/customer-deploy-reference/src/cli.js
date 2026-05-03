@@ -21,13 +21,22 @@ async function main(argv) {
     if (command === "init") {
         const output = arg ?? "bee.json";
         const nameIndex = rest.indexOf("--name");
+        const templateIndex = rest.indexOf("--template");
+        const template = rest.includes("--queen")
+            ? "queen"
+            : templateIndex >= 0 && rest[templateIndex + 1]
+              ? rest[templateIndex + 1]
+              : "worker";
+        if (!["worker", "queen"].includes(template)) {
+            return { error: "template must be worker or queen" };
+        }
         const name =
             nameIndex >= 0 && rest[nameIndex + 1]
                 ? rest[nameIndex + 1]
                 : "my-bee";
-        const manifest = createStarterManifest(name);
+        const manifest = createStarterManifest(name, template);
         await writeFile(output, `${JSON.stringify(manifest, null, 2)}\n`);
-        return { ok: true, path: output, manifest };
+        return { ok: true, path: output, template, manifest };
     }
 
     if (command === "validate") {
@@ -76,7 +85,7 @@ async function main(argv) {
     }
 
     return {
-        error: "Usage: init [bee.json] [--name my-bee] | validate <bee.json> | deploy <bee.json> [--dry-run] [--upgrade] [--runtime auto|cloudflare-agents|daytona|aws-agentcore|container] | list | status <bee_id> | events <bee_id> | delete <bee_id>",
+        error: "Usage: init [bee.json] [--name my-bee] [--template worker|queen] [--queen] | validate <bee.json> | deploy <bee.json> [--dry-run] [--upgrade] [--runtime auto|cloudflare-agents|daytona|aws-agentcore|container] | list | status <bee_id> | events <bee_id> | delete <bee_id>",
     };
 }
 

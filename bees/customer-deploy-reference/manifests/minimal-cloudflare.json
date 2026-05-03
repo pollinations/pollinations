@@ -8,8 +8,7 @@
   },
   "surfaces": [
     "openai",
-    "web",
-    "a2a"
+    "web"
   ],
   "billing": {
     "mode": "user-pays",

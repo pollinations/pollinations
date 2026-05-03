@@ -171,15 +171,31 @@ export function normalizeBeeManifest(manifest) {
     };
 }
 
-export function createStarterManifest(name = "my-bee") {
+export function createStarterManifest(name = "my-bee", template = "worker") {
+    if (template === "queen") {
+        return {
+            name,
+            source: {
+                type: "template",
+                template: "minimal-daytona-container",
+            },
+            runtime: {
+                kind: "container",
+            },
+            surfaces: ["openai", "web"],
+            billing: {
+                mode: "author-pays",
+            },
+        };
+    }
+
     return {
         name,
         source: {
-            type: "git",
-            repository: "https://github.com/your-org/your-bee.git",
-            ref: "main",
+            type: "template",
+            template: "minimal-cloudflare-agents",
         },
-        surfaces: ["openai"],
+        surfaces: ["openai", "web"],
         billing: {
             mode: "author-pays",
         },

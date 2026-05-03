@@ -80,14 +80,34 @@ describe("bee manifest helpers", () => {
         );
     });
 
-    test("starter manifest is openai-only and author-pays", () => {
+    test("worker starter manifest is openai-web and author-pays", () => {
         const manifest = assertBeeManifest(
             createStarterManifest("Starter Bee"),
         );
 
-        expect(manifest.surfaces).toEqual(["openai"]);
+        expect(manifest.source).toEqual({
+            type: "template",
+            template: "minimal-cloudflare-agents",
+        });
+        expect(manifest.surfaces).toEqual(["openai", "web"]);
         expect(manifest.billing).toEqual({ mode: "author-pays" });
         expect("requiredScopes" in manifest).toBe(false);
+    });
+
+    test("queen starter manifest opts into the container runtime", () => {
+        const manifest = assertBeeManifest(
+            createStarterManifest("Queen Bee", "queen"),
+        );
+
+        expect(manifest.source).toEqual({
+            type: "template",
+            template: "minimal-daytona-container",
+        });
+        expect(manifest.runtime).toEqual({
+            kind: "container",
+            provider: "auto",
+        });
+        expect(manifest.surfaces).toEqual(["openai", "web"]);
     });
 
     test("runtime override maps daytona to container", () => {

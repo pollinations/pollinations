@@ -16,12 +16,14 @@ export const stateBackends = [
 export const sourceTypes = ["git", "template", "bundle"] as const;
 export const beeSurfaces = ["openai", "web", "discord", "a2a"] as const;
 export const billingModes = ["user-pays", "author-pays"] as const;
+export const starterTemplates = ["worker", "queen"] as const;
 
 export type RuntimeProvider = (typeof runtimeProviders)[number];
 export type RuntimeKind = (typeof runtimeKinds)[number];
 export type StateBackend = (typeof stateBackends)[number];
 export type BeeSurface = (typeof beeSurfaces)[number];
 export type BillingMode = (typeof billingModes)[number];
+export type StarterTemplate = (typeof starterTemplates)[number];
 
 export interface BeeManifest {
     name: string;
@@ -231,15 +233,34 @@ export function assertBeeManifest(manifest: unknown): NormalizedBeeManifest {
     return normalizeBeeManifest(manifest as BeeManifest);
 }
 
-export function createStarterManifest(name = "my-bee"): BeeManifest {
+export function createStarterManifest(
+    name = "my-bee",
+    template: StarterTemplate = "worker",
+): BeeManifest {
+    if (template === "queen") {
+        return {
+            name,
+            source: {
+                type: "template",
+                template: "minimal-daytona-container",
+            },
+            runtime: {
+                kind: "container",
+            },
+            surfaces: ["openai", "web"],
+            billing: {
+                mode: "author-pays",
+            },
+        };
+    }
+
     return {
         name,
         source: {
-            type: "git",
-            repository: "https://github.com/your-org/your-bee.git",
-            ref: "main",
+            type: "template",
+            template: "minimal-cloudflare-agents",
         },
-        surfaces: ["openai"],
+        surfaces: ["openai", "web"],
         billing: {
             mode: "author-pays",
         },

@@ -34,6 +34,15 @@ polli bees validate bee.json
 polli bees deploy bee.json
 ```
 
+This creates a **Worker Bee** by default: a serverless starter with a working
+OpenAI-compatible model surface and a thin web frontend surface.
+
+Create a **Queen Bee** only when the bee needs a full runtime:
+
+```bash
+polli bees init bee.json --name my-assistant --template queen
+```
+
 `--dry-run` can exist for CI/debugging, but it should not be needed in the
 happy-path quickstart.
 
@@ -43,11 +52,11 @@ Redeploy the same bee id explicitly:
 polli bees deploy bee.json --upgrade
 ```
 
-Use a container only when the bee needs shell, files, package installs, or a
+Create a Queen Bee only when the bee needs shell, files, package installs, or a
 long-running coding-agent workspace:
 
 ```bash
-polli bees deploy bee.json --runtime daytona
+polli bees init bee.json --name my-assistant --template queen
 ```
 
 ## API path
@@ -95,12 +104,13 @@ already filter model availability by key restrictions.
 
 ## Two deploy types
 
-- **Light bee:** serverless worker, SQLite state, no shell. This is the default.
-- **Full bee:** container/runtime, filesystem/shell, explicit spend and teardown
-  controls required before production.
+- **Worker Bee:** serverless worker, SQLite state, no shell. This is the
+  default.
+- **Queen Bee:** container/runtime, filesystem/shell, explicit spend and
+  teardown controls required before production.
 
 Do not ask beginners to choose Cloudflare, Daytona, AgentCore, KV, Durable
-Object, etc. The product choice is only light vs. full.
+Object, etc. The product choice is only Worker Bee vs. Queen Bee.
 
 ## Streaming
 

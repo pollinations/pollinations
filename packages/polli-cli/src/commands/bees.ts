@@ -9,6 +9,8 @@ import {
     createStarterManifest,
     type RuntimeProvider,
     runtimeProviders,
+    type StarterTemplate,
+    starterTemplates,
     validateBeeManifest,
     withRuntimeOverride,
 } from "../lib/bees.js";
@@ -28,6 +30,10 @@ async function readManifest(path: string): Promise<BeeManifest> {
 
 function isRuntimeProvider(value: string): value is RuntimeProvider {
     return (runtimeProviders as readonly string[]).includes(value);
+}
+
+function isStarterTemplate(value: string): value is StarterTemplate {
+    return (starterTemplates as readonly string[]).includes(value);
 }
 
 function applyRuntimeOverride(
@@ -52,7 +58,6 @@ function printDeployment(deployment: Record<string, unknown>) {
     const runtime = deployment.runtime as
         | { kind?: string; provider?: string; requestedProvider?: string }
         | undefined;
-    const state = deployment.state as { backend?: string } | undefined;
     const scopes = deployment.requiredScopes as
         | { developer?: string[]; invocation?: string[] }
         | undefined;
@@ -62,15 +67,16 @@ function printDeployment(deployment: Record<string, unknown>) {
     const surfaces = deployment.surfaces as
         | Array<{ kind: string; url: string }>
         | undefined;
+    const type =
+        runtime?.kind === "container"
+            ? "Queen Bee (full runtime)"
+            : "Worker Bee (serverless)";
 
     printResult({
         id: deployment.id,
         model: deployment.modelId,
         status: deployment.status,
-        runtime: runtime
-            ? `${runtime.kind}/${runtime.provider} (requested ${runtime.requestedProvider ?? runtime.provider})`
-            : undefined,
-        state: state?.backend,
+        type,
         billing: billing
             ? `${billing.mode} ${billing.currency}; meters: ${billing.meters?.map((m) => m.name).join(", ")}`
             : undefined,
@@ -88,15 +94,27 @@ const init = new Command("init")
     .description("Create a starter bee.json manifest")
     .argument("[path]", "Output path", "bee.json")
     .option("--name <name>", "Bee name", "my-bee")
+    .option(
+        "--template <template>",
+        "Starter template: worker or queen",
+        "worker",
+    )
+    .option("--queen", "Use the full-runtime Queen Bee template")
     .option("--force", "Overwrite an existing manifest")
     .action(async (path, opts) => {
         try {
-            const manifest = createStarterManifest(opts.name);
+            const template = opts.queen ? "queen" : opts.template;
+            if (!isStarterTemplate(template)) {
+                throw new Error(
+                    `--template must be one of ${starterTemplates.join(", ")}`,
+                );
+            }
+            const manifest = createStarterManifest(opts.name, template);
             await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`, {
                 flag: opts.force ? "w" : "wx",
             });
             printSuccess(`Created ${path}`);
-            printResult({ path, name: manifest.name });
+            printResult({ path, name: manifest.name, template });
         } catch (err) {
             printError(
                 `Failed to create manifest: ${err instanceof Error ? err.message : "unknown"}`,

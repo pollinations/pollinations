@@ -43,10 +43,10 @@ CLI:
 
 ```bash
 polli bees init
+polli bees init --template queen
 polli bees validate bee.json
 polli bees deploy bee.json
 polli bees deploy bee.json --upgrade
-polli bees deploy bee.json --runtime daytona
 polli bees list
 polli bees status bee_id
 polli bees events bee_id
@@ -71,6 +71,13 @@ The common manifest should stay provider-neutral and omit runtime details:
 
 Use `runtime.kind = "container"` only when the bee needs a shell, filesystem,
 package installs, or long-running jobs.
+
+Human-facing templates:
+
+- **Worker Bee**: default serverless starter, backed by the
+  `minimal-cloudflare-agents` template.
+- **Queen Bee**: full-runtime starter, backed by the
+  `minimal-daytona-container` template.
 
 Each reference implementation now has a `bee.json` so the same contract can be
 tested across integrated and minimal examples. Every checked-in bee declares an

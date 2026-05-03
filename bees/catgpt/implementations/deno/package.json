@@ -1,0 +1,14 @@
+{
+    "name": "@pollinations/catgpt-deno",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev:web": "deno run --allow-net --allow-env src/web.ts",
+        "dev:discord": "node --experimental-strip-types src/discord.ts"
+    },
+    "dependencies": {
+        "discord.js": "^14.16.3",
+        "dotenv": "^16.4.5"
+    }
+}

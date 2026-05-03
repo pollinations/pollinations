@@ -25,7 +25,7 @@ bees/catgpt/
 ├── surfaces/                              ← shared surface adapters that any variant can mount
 │   ├── cli/                               ← terminal demo (~15 LOC)
 │   └── openai-compat/                     ← /v1/chat/completions surface (model: "catgpt")
-└── implementations/                       ← same bee, eleven variants
+└── implementations/                       ← same bee, twelve variants
     ├── vanilla/                           ← hand-rolled, baseline
     ├── cloudflare-agents/                 ← cloudflare/agents (DO + SQLite + AIChatAgent)
     ├── openai-agents-sdk/                 ← @openai/agents (TS) hosted-clients pattern
@@ -36,7 +36,8 @@ bees/catgpt/
     ├── langchain/                         ← LangChain.js ChatOpenAI
     ├── llamaindex/                        ← LlamaIndex.TS LLM
     ├── hono/                              ← Hono web framework, mounts every surface
-    └── bun/                               ← Bun.serve native, no framework
+    ├── bun/                               ← Bun.serve native, no framework
+    └── deno/                              ← Deno.serve native, no framework
 ```
 
 ## Same bee, every variant
@@ -79,6 +80,7 @@ implementations/<name>/
 | `llamaindex` | 56 | 27 | 56 | optional | RAG-ready (vector stores, query engines) |
 | `hono` | 23 (router only) | 7 | 105 | none | mounts every surface in one app; runtime-agnostic |
 | `bun` | 14 (router only) | 13 | 84 | none | Bun-native; smallest web variant |
+| `deno` | 26 (router only) | 14 | 88 | none | Deno-native; same surfaces drop in unchanged |
 
 ## Surfaces
 
@@ -126,8 +128,9 @@ POLLINATIONS_LIVE=1 \
 - **`agent.ts` LOC is misleading on its own:** the SDKs (`openai-agents-sdk`, `pi-agent-core`) take more lines because they wire tools/state plumbing CatGPT doesn't actually use. Look at the *shape* of each `agent.ts`, not the size.
 - **Functional vs. class:** only `cloudflare-agents` requires a class (DO binding). All others are pure functions. Fits the project's style preference.
 - **For a 3-line bee like CatGPT, the heavyweight frameworks lose decisively.** `vanilla` at 24 LOC is the most honest. The frameworks justify their weight only when memory / tools / multi-step workflow / streaming are real requirements.
-- **The surface adapters are the same code regardless of the variant underneath.** Strong signal that surface adapters belong in the platform, not in each bee. The `hono` and `bun` variants both mount the same three handlers from `surfaces/` — their `agent.ts` is just a router, and their Discord adapter talks to the bee over HTTP like any other client.
-- **Two variants without an SDK** (`hono`, `bun`) end up smaller than the SDK-based ones. The agent layer collapses to ~15-25 LOC of routing once the surfaces do the heavy lifting.
+- **The surface adapters are the same code regardless of the variant underneath.** Strong signal that surface adapters belong in the platform, not in each bee. The `hono`, `bun`, and `deno` variants all mount the same three handlers from `surfaces/` — their `agent.ts` is just a router, and their Discord adapter talks to the bee over HTTP like any other client.
+- **Three variants without an SDK** (`hono`, `bun`, `deno`) end up smaller than the SDK-based ones. The agent layer collapses to ~15-25 LOC of routing once the surfaces do the heavy lifting.
+- **Surfaces are runtime-portable.** Same `surfaces/` code mounts cleanly on Node (via Hono), Bun, and Deno — proves that `Request → Response` handlers are the right abstraction for cross-runtime portability.
 
 ## Status
 

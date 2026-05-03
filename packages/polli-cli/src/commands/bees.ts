@@ -131,6 +131,7 @@ const deploy = new Command("deploy")
     .description("Deploy a bee from bee.json")
     .argument("<manifest>", "Path to bee.json")
     .option("--dry-run", "Resolve deployment without calling the API")
+    .option("--upgrade", "Redeploy an existing bee id")
     .option(
         "--runtime <provider>",
         "Override provider: auto, cloudflare-agents, daytona, aws-agentcore, container",
@@ -148,7 +149,8 @@ const deploy = new Command("deploy")
             }
 
             const key = requireKey();
-            const deployment = await gen<Record<string, unknown>>("/api/bees", {
+            const endpoint = opts.upgrade ? "/api/bees?upgrade=1" : "/api/bees";
+            const deployment = await gen<Record<string, unknown>>(endpoint, {
                 apiKey: key,
                 method: "POST",
                 body: manifest,

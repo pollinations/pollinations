@@ -156,6 +156,55 @@ test("deployment API reference router creates, reads, patches, events, and delet
     assert.equal(((await events.json()) as unknown[]).length, 2);
 });
 
+test("deployment API rejects duplicate ids unless upgrade is explicit", async () => {
+    const store = new MemoryBeeDeployApiStore();
+    const createRequest = () =>
+        new Request("https://gen.pollinations.ai/api/bees", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(request),
+        });
+
+    const created = await handleBeeDeployApiRequest(createRequest(), {
+        store,
+    });
+    const duplicate = await handleBeeDeployApiRequest(createRequest(), {
+        store,
+    });
+    const upgraded = await handleBeeDeployApiRequest(
+        new Request("https://gen.pollinations.ai/api/bees?upgrade=1", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+                ...request,
+                surfaces: ["openai"],
+                billing: { mode: "author-pays" },
+            }),
+        }),
+        { store },
+    );
+    const events = await store.listEvents(createDeploymentId(request.name));
+
+    assert.equal(created.status, 202);
+    assert.equal(duplicate.status, 409);
+    assert.deepEqual(await duplicate.json(), {
+        error: "Deployment already exists",
+        id: "bee_booking-assistant",
+        hint: "POST /api/bees?upgrade=1 to redeploy this bee",
+    });
+    assert.equal(upgraded.status, 202);
+    assert.deepEqual(
+        (
+            (await upgraded.json()) as { surfaces: Array<{ kind: string }> }
+        ).surfaces.map((surface) => surface.kind),
+        ["openai"],
+    );
+    assert.deepEqual(
+        events.map((event) => event.message),
+        ["Deployment queued", "Upgrade queued"],
+    );
+});
+
 test("patching runtime updates billing meters and state backend", async () => {
     const store = new MemoryBeeDeployApiStore();
     const created = await store.create(request, "https://gen.pollinations.ai");

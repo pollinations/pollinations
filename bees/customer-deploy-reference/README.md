@@ -12,6 +12,7 @@ This is separate from the runtime examples. It answers:
 ## API
 
 - `POST /api/bees`
+- `POST /api/bees?upgrade=1`
 - `GET /api/bees`
 - `GET /api/bees/{id}`
 - `GET /api/bees/{id}/events`
@@ -25,6 +26,7 @@ polli bees init bee.json --name booking-assistant
 polli bees validate bee.json
 polli bees deploy bee.json --dry-run
 polli bees deploy bee.json
+polli bees deploy bee.json --upgrade
 polli bees deploy bee.json --runtime daytona
 polli bees list
 polli bees status bee_booking-assistant
@@ -35,6 +37,8 @@ polli bees delete bee_booking-assistant --yes
 `polli bees deploy --dry-run` resolves locally so developers can inspect
 runtime, provider, URLs, scopes, and Pollen meters without calling the network.
 Non-dry-run deploy and management commands call the `/api/bees` API.
+Repeated deploys of the same bee id return a conflict unless `--upgrade`
+is passed, which maps to `POST /api/bees?upgrade=1`.
 
 The local `node src/cli.js ...` script remains a standalone control-plane sketch
 for tests and experiments. The developer-facing path is `polli bees ...`.

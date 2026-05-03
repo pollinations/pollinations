@@ -84,6 +84,8 @@ to `sqlite`.
 ## Deployment lifecycle
 
 - `POST /api/bees` creates a queued deployment.
+- `POST /api/bees?upgrade=1` redeploys an existing bee id; without
+  `upgrade=1`, duplicate ids return `409`.
 - `GET /api/bees` lists deployments owned by the developer key.
 - `GET /api/bees/{id}` returns status and surface URLs.
 - `GET /api/bees/{id}/events` streams build/provisioning events.

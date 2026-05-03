@@ -88,6 +88,7 @@ polli bees init bee.json --name booking-assistant
 polli bees validate bee.json
 polli bees deploy bee.json --dry-run       # preview runtime, URLs, scopes, meters
 polli bees deploy bee.json                 # calls POST /api/bees
+polli bees deploy bee.json --upgrade       # calls POST /api/bees?upgrade=1
 polli bees deploy bee.json --runtime daytona
 polli bees list
 polli bees status bee_booking-assistant
@@ -99,6 +100,7 @@ The default manifest omits runtime details. Missing `runtime` resolves to
 `worker + auto`; missing `state.backend` resolves to `sqlite`. Use
 `--runtime daytona` or `runtime.kind = "container"` only when the bee needs a
 full filesystem/shell runtime.
+Repeated deploys of the same generated bee id fail unless `--upgrade` is used.
 
 ## Links
 

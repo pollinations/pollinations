@@ -51,7 +51,11 @@ async function main(argv) {
         }
         assertBeeManifest(manifest);
         const dryRun = rest.includes("--dry-run");
-        const deployment = store.create(manifest);
+        const deployment = dryRun
+            ? storePreview(manifest)
+            : store.create(manifest, "https://gen.pollinations.ai", {
+                  upgrade: rest.includes("--upgrade"),
+              });
         return dryRun ? { dryRun: true, deployment } : deployment;
     }
 
@@ -72,7 +76,7 @@ async function main(argv) {
     }
 
     return {
-        error: "Usage: init [bee.json] [--name my-bee] | validate <bee.json> | deploy <bee.json> [--dry-run] [--runtime auto|cloudflare-agents|daytona|aws-agentcore|container] | list | status <bee_id> | events <bee_id> | delete <bee_id>",
+        error: "Usage: init [bee.json] [--name my-bee] | validate <bee.json> | deploy <bee.json> [--dry-run] [--upgrade] [--runtime auto|cloudflare-agents|daytona|aws-agentcore|container] | list | status <bee_id> | events <bee_id> | delete <bee_id>",
     };
 }
 
@@ -82,3 +86,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { main };
+
+function storePreview(manifest) {
+    const previewStore = new DeployStore();
+    return previewStore.create(manifest);
+}

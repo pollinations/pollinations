@@ -39,6 +39,7 @@ Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video;
 | Validate bee manifest | `polli bees validate bee.json --json` |
 | Preview bee deploy | `polli bees deploy bee.json --dry-run --json` |
 | Deploy bee | `polli bees deploy bee.json` |
+| Redeploy bee | `polli bees deploy bee.json --upgrade` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -150,6 +151,7 @@ polli bees init bee.json --name booking-assistant
 polli bees validate bee.json --json
 polli bees deploy bee.json --dry-run --json
 polli bees deploy bee.json
+polli bees deploy bee.json --upgrade
 polli bees deploy bee.json --runtime daytona
 polli bees status bee_booking-assistant
 polli bees events bee_booking-assistant
@@ -160,7 +162,8 @@ runtime and state: missing `runtime` resolves to `worker + auto`, and missing
 `state.backend` resolves to `sqlite`. Use `--runtime daytona` only when the bee
 needs a full container/workspace. `--dry-run` resolves runtime/provider, URLs,
 required scopes, and Pollen meters locally; non-dry-run deploy calls
-`POST /api/bees`.
+`POST /api/bees`. Repeat deploys fail unless `--upgrade` is passed, which maps
+to `POST /api/bees?upgrade=1`.
 
 ### Read API docs
 ```bash

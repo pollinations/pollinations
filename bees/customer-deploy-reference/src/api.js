@@ -83,10 +83,18 @@ export class DeployStore {
     #deployments = new Map();
     #events = new Map();
 
-    create(manifest, baseUrl = "https://gen.pollinations.ai") {
+    create(manifest, baseUrl = "https://gen.pollinations.ai", options = {}) {
         const normalizedManifest = assertBeeManifest(manifest);
         const now = new Date().toISOString();
         const id = createDeploymentId(normalizedManifest.name);
+        const existing = this.#deployments.get(id);
+        if (existing && !options.upgrade) {
+            const error = new Error("deployment already exists");
+            error.code = "deployment_exists";
+            error.id = id;
+            throw error;
+        }
+
         const runtime = resolveRuntime(normalizedManifest.runtime);
         const deployment = {
             id,
@@ -100,15 +108,18 @@ export class DeployStore {
                 kind: surface,
                 url: routeForSurface(baseUrl, id, surface),
             })),
-            createdAt: now,
+            createdAt: existing?.createdAt ?? now,
             updatedAt: now,
         };
         this.#deployments.set(id, deployment);
         this.#events.set(id, [
+            ...(existing ? (this.#events.get(id) ?? []) : []),
             {
                 deploymentId: id,
                 type: "build_started",
-                message: `Queued ${runtime.provider}`,
+                message: existing
+                    ? `Upgrade queued ${runtime.provider}`
+                    : `Queued ${runtime.provider}`,
                 createdAt: now,
             },
         ]);

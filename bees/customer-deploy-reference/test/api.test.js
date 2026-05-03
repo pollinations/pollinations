@@ -46,6 +46,41 @@ test("store creates deployment and events from manifest", () => {
     assert.equal(store.events(deployment.id).length, 1);
 });
 
+test("store rejects duplicate deployments unless upgrade is explicit", () => {
+    const store = new DeployStore();
+    const manifest = {
+        name: "Upgrade Bee",
+        source: { type: "template", template: "musician-booking-reference" },
+        surfaces: ["openai", "web"],
+        billing: { mode: "author-pays" },
+    };
+
+    const created = store.create(manifest);
+
+    assert.throws(() => store.create(manifest), {
+        message: "deployment already exists",
+        code: "deployment_exists",
+        id: created.id,
+    });
+
+    const upgraded = store.create(
+        { ...manifest, surfaces: ["openai"] },
+        "https://gen.pollinations.ai",
+        { upgrade: true },
+    );
+
+    assert.equal(upgraded.id, created.id);
+    assert.equal(upgraded.createdAt, created.createdAt);
+    assert.deepEqual(
+        upgraded.surfaces.map((surface) => surface.kind),
+        ["openai"],
+    );
+    assert.deepEqual(
+        store.events(created.id).map((event) => event.message),
+        ["Queued cloudflare-agents", "Upgrade queued cloudflare-agents"],
+    );
+});
+
 test("auto runtime resolves to Cloudflare Agents", () => {
     assert.equal(resolveProvider({}), "cloudflare-agents");
     assert.equal(resolveRuntime({}).kind, "worker");
@@ -181,10 +216,11 @@ test("cli dry-run wraps deployment without changing projected URLs", async () =>
     );
 });
 
-test("cli deploy can override runtime provider", async () => {
+test("cli deploy can upgrade while overriding runtime provider", async () => {
     const deployment = await main([
         "deploy",
         "manifests/minimal-cloudflare.json",
+        "--upgrade",
         "--runtime",
         "daytona",
     ]);

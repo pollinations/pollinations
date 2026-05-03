@@ -15,6 +15,7 @@ export type BeeDeployApiStore = {
     create(
         request: BeeDeploymentRequest,
         baseUrl: string,
+        options?: { upgrade?: boolean },
     ): Promise<BeeDeployment>;
     get(id: string): Promise<BeeDeployment | undefined>;
     list(): Promise<BeeDeployment[]>;
@@ -31,6 +32,13 @@ export type BeeDeployApiStore = {
     delete(id: string): Promise<boolean>;
 };
 
+export class BeeDeploymentConflictError extends Error {
+    constructor(public readonly id: string) {
+        super(`Deployment ${id} already exists`);
+        this.name = "BeeDeploymentConflictError";
+    }
+}
+
 export class MemoryBeeDeployApiStore implements BeeDeployApiStore {
     private deployments = new Map<string, BeeDeployment>();
     private events = new Map<string, BeeDeploymentEvent[]>();
@@ -38,18 +46,29 @@ export class MemoryBeeDeployApiStore implements BeeDeployApiStore {
     async create(
         request: BeeDeploymentRequest,
         baseUrl: string,
+        options: { upgrade?: boolean } = {},
     ): Promise<BeeDeployment> {
         const deployment = createQueuedDeployment(request, baseUrl);
-        this.deployments.set(deployment.id, deployment);
-        this.events.set(deployment.id, [
+        const existing = this.deployments.get(deployment.id);
+        if (existing && !options.upgrade) {
+            throw new BeeDeploymentConflictError(deployment.id);
+        }
+
+        const queued: BeeDeployment = existing
+            ? { ...deployment, createdAt: existing.createdAt }
+            : deployment;
+        this.deployments.set(queued.id, queued);
+        const priorEvents = existing ? (this.events.get(queued.id) ?? []) : [];
+        this.events.set(queued.id, [
+            ...priorEvents,
             {
-                deploymentId: deployment.id,
+                deploymentId: queued.id,
                 type: "build_started",
-                message: "Deployment queued",
-                createdAt: deployment.createdAt,
+                message: existing ? "Upgrade queued" : "Deployment queued",
+                createdAt: queued.updatedAt,
             },
         ]);
-        return deployment;
+        return queued;
     }
 
     async get(id: string): Promise<BeeDeployment | undefined> {
@@ -183,7 +202,12 @@ export async function handleBeeDeployApiRequest(
     try {
         if (request.method === "POST" && url.pathname === "/api/bees") {
             const body = await readJson<BeeDeploymentRequest>(request);
-            return json(await store.create(body, baseUrl), { status: 202 });
+            return json(
+                await store.create(body, baseUrl, {
+                    upgrade: url.searchParams.get("upgrade") === "1",
+                }),
+                { status: 202 },
+            );
         }
 
         if (request.method === "GET" && url.pathname === "/api/bees") {
@@ -225,6 +249,16 @@ export async function handleBeeDeployApiRequest(
         }
     } catch (error) {
         if (error instanceof Response) return error;
+        if (error instanceof BeeDeploymentConflictError) {
+            return json(
+                {
+                    error: "Deployment already exists",
+                    id: error.id,
+                    hint: "POST /api/bees?upgrade=1 to redeploy this bee",
+                },
+                { status: 409 },
+            );
+        }
         return json({ error: "Internal error" }, { status: 500 });
     }
 

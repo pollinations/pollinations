@@ -3,6 +3,9 @@
 Experimental references for Pollinations-hosted bees. The goal is to compare
 deployment shapes before choosing a production path.
 
+Start with [`QUICKSTART.md`](./QUICKSTART.md) for the smallest deploy path and
+the YAGNI questions to answer before adding more runtime/provider scope.
+
 ## Implementations
 
 | folder | purpose | when it wins |
@@ -28,6 +31,7 @@ The emerging customer-facing shape is:
 
 ```text
 POST   /api/bees
+POST   /api/bees?upgrade=1
 GET    /api/bees
 GET    /api/bees/{id}
 GET    /api/bees/{id}/events
@@ -42,6 +46,7 @@ polli bees init
 polli bees validate bee.json
 polli bees deploy bee.json --dry-run
 polli bees deploy bee.json
+polli bees deploy bee.json --upgrade
 polli bees deploy bee.json --runtime daytona
 polli bees list
 polli bees status bee_id
@@ -51,6 +56,7 @@ polli bees delete bee_id --yes
 
 `polli bees deploy --dry-run` is the local preview path. `polli bees deploy`
 uses the `/api/bees` API and returns the deployment id plus projected surfaces.
+Duplicate bee ids fail by default; pass `--upgrade` to redeploy the same id.
 
 The common manifest should stay provider-neutral and omit runtime details:
 

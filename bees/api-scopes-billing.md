@@ -77,6 +77,7 @@ polli bees init
 polli bees validate bee.json
 polli bees deploy bee.json --dry-run
 polli bees deploy bee.json
+polli bees deploy bee.json --upgrade
 polli bees deploy bee.json --runtime daytona
 polli bees list
 polli bees status bee_id
@@ -102,6 +103,9 @@ bees:logs
 `bees:write` can create deployments and update manifests. `bees:delete` is
 separate because deleting a public backend is destructive. `bees:logs` is
 separate because logs can contain user data.
+
+Repeated `polli bees deploy` calls for the same generated bee id should return
+`409` unless `--upgrade` is passed, which maps to `POST /api/bees?upgrade=1`.
 
 The existing `keys` scope should not imply bee deploy rights. Creating an App
 Key remains a keys/account operation; deploying a bee is a runtime operation.

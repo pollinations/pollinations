@@ -2,12 +2,30 @@ import debug from "debug";
 import type { ChatMessage, ServiceError, TransformOptions } from "./types.js";
 
 const log = debug("pollinations:utils");
-const INVALID_MESSAGE_NAME_PATTERN = /[\s<|\\/>]/;
+// OpenAI message.name/function name contract: ASCII alnum, underscore, hyphen, max 64 chars.
+const MESSAGE_NAME_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
+const SEMANTIC_NAME_ROLES = new Set(["tool", "function"]);
 
-function normalizeMessageName(name: unknown): string | undefined {
-    if (typeof name !== "string" || name.length === 0) return undefined;
-    if (INVALID_MESSAGE_NAME_PATTERN.test(name)) return undefined;
-    return name;
+function createInvalidMessageNameError(role: string): ServiceError {
+    const error = new Error(
+        `Invalid message name for role '${role}'. Names must match ^[a-zA-Z0-9_-]{1,64}$.`,
+    ) as ServiceError;
+    error.status = 400;
+    return error;
+}
+
+function normalizeMessageName(name: unknown, role: string): string | undefined {
+    if (name === undefined || name === null) return undefined;
+    if (typeof name === "string" && MESSAGE_NAME_PATTERN.test(name)) {
+        return name;
+    }
+
+    if (SEMANTIC_NAME_ROLES.has(role)) {
+        throw createInvalidMessageNameError(role);
+    }
+
+    log("Dropped invalid message name for role=%s: %s", role, String(name));
+    return undefined;
 }
 
 export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
@@ -35,7 +53,10 @@ export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
         };
 
         if (msg.tool_call_id) normalizedMsg.tool_call_id = msg.tool_call_id;
-        const normalizedName = normalizeMessageName(msg.name);
+        const normalizedName = normalizeMessageName(
+            msg.name,
+            normalizedMsg.role,
+        );
         if (normalizedName) normalizedMsg.name = normalizedName;
         if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
         if (msg.function_call) normalizedMsg.function_call = msg.function_call;

@@ -108,7 +108,20 @@ describe("genericOpenAIClient", () => {
         await genericOpenAIClient(
             [
                 { role: "user", name: "valid_name-1", content: "hello" },
-                { role: "user", name: "bad name", content: "again" },
+                { role: "user", name: "", content: "empty" },
+                {
+                    role: "user",
+                    name: 42 as unknown as string,
+                    content: "number",
+                },
+                {
+                    role: "user",
+                    name: { value: "tool" } as unknown as string,
+                    content: "object",
+                },
+                { role: "user", name: "foo.bar", content: "dot" },
+                { role: "assistant", name: "a@b", content: "at" },
+                { role: "system", name: "a".repeat(65), content: "long" },
             ],
             { model: "provider-model" },
             { endpoint: "https://portkey.test/chat" },
@@ -116,8 +129,81 @@ describe("genericOpenAIClient", () => {
 
         expect(upstreamBody?.messages).toEqual([
             { role: "user", name: "valid_name-1", content: "hello" },
-            { role: "user", content: "again" },
+            { role: "user", content: "empty" },
+            { role: "user", content: "number" },
+            { role: "user", content: "object" },
+            { role: "user", content: "dot" },
+            { role: "assistant", content: "at" },
+            { role: "system", content: "long" },
         ]);
+    });
+
+    it("preserves valid semantic tool and function message names", async () => {
+        let upstreamBody: Record<string, unknown> | undefined;
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (_input, init) => {
+                upstreamBody = JSON.parse(String(init?.body));
+                return Response.json({
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: {
+                                role: "assistant",
+                                content: "ok",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
+                });
+            },
+        );
+
+        await genericOpenAIClient(
+            [
+                {
+                    role: "tool",
+                    name: "lookup_weather",
+                    tool_call_id: "call_1",
+                    content: "{}",
+                },
+                { role: "function", name: "legacy_lookup", content: "{}" },
+            ],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(upstreamBody?.messages).toEqual([
+            {
+                role: "tool",
+                name: "lookup_weather",
+                tool_call_id: "call_1",
+                content: "{}",
+            },
+            { role: "function", name: "legacy_lookup", content: "{}" },
+        ]);
+    });
+
+    it("rejects invalid semantic tool and function message names", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "function", name: "legacy.lookup", content: "{}" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("preserves upstream 429 status for callers to back off", async () => {

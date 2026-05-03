@@ -74,7 +74,7 @@ export function estimateBilling(
 export function routeForSurface(baseUrl, deploymentId, surface) {
     const root = `${baseUrl.replace(/\/$/, "")}/bees/${deploymentId}`;
     if (surface === "openai") return `${root}/v1/chat/completions`;
-    if (surface === "a2a") return `${root}/.well-known/agent-card.json`;
+    if (surface === "a2a") return `${root}/a2a`;
     if (surface === "discord") return `${root}/discord/messages`;
     return `${root}/web/messages`;
 }

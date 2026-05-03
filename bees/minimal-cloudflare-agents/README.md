@@ -12,8 +12,10 @@ Use this when the bee should be:
 ## Shape
 
 - `src/index.ts` exports a single `Agent` subclass.
-- `POST /message` accepts `{ "text": "...", "userId": "..." }`.
+- `POST /web/messages` accepts `{ "text": "...", "userId": "..." }`.
+- `POST /a2a` accepts a minimal A2A JSON-RPC message request.
 - `GET /.well-known/agent-card.json` exposes A2A discovery metadata.
+- `POST /message` remains as a compatibility alias for the smoke test.
 - SQLite state is represented by the SDK agent instance; production code
   would add domain tables through `this.sql`.
 
@@ -23,9 +25,12 @@ Use this when the bee should be:
 npm install --package-lock=false
 npx wrangler dev --local --port 18789 --ip 127.0.0.1
 curl http://127.0.0.1:18789/.well-known/agent-card.json
-curl -X POST http://127.0.0.1:18789/message \
+curl -X POST http://127.0.0.1:18789/web/messages \
   -H 'content-type: application/json' \
   --data '{"text":"hello"}'
+curl -X POST http://127.0.0.1:18789/a2a \
+  -H 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":"1","method":"message/send","params":{"message":{"parts":[{"text":"hello"}]}}}'
 ```
 
 Staging-style deploy without routes:

@@ -31,8 +31,32 @@ function card(origin: string) {
     };
 }
 
+async function readText(request: Request): Promise<string> {
+    const body = (await request.json()) as {
+        text?: string;
+        message?: { parts?: Array<{ text?: string }> };
+        params?: { message?: { parts?: Array<{ text?: string }> } };
+    };
+    return (
+        body.text ??
+        body.message?.parts?.find((part) => part.text)?.text ??
+        body.params?.message?.parts?.find((part) => part.text)?.text ??
+        ""
+    );
+}
+
 export class MinimalCloudflareBee extends Agent<Env, BeeState> {
     initialState = { turns: 0 };
+
+    reply(text: string) {
+        const next = { turns: this.state.turns + 1 };
+        this.setState(next);
+
+        return {
+            text: `Cloudflare bee turn ${next.turns}: ${text}`,
+            state: next,
+        };
+    }
 
     async onRequest(request: Request): Promise<Response> {
         const url = new URL(request.url);
@@ -42,18 +66,37 @@ export class MinimalCloudflareBee extends Agent<Env, BeeState> {
         ) {
             return json(card(url.origin));
         }
-        if (request.method !== "POST" || url.pathname !== "/message") {
-            return json({ error: "Not found" }, { status: 404 });
+
+        if (
+            request.method === "POST" &&
+            (url.pathname === "/message" || url.pathname === "/web/messages")
+        ) {
+            return json(this.reply(await readText(request)));
         }
 
-        const body = (await request.json()) as { text?: string };
-        const next = { turns: this.state.turns + 1 };
-        this.setState(next);
+        if (request.method === "POST" && url.pathname === "/a2a") {
+            const body = (await request.json()) as {
+                id?: string | number | null;
+                params?: { message?: { parts?: Array<{ text?: string }> } };
+            };
+            const text =
+                body.params?.message?.parts?.find((part) => part.text)?.text ??
+                "";
+            const reply = this.reply(text);
+            return json({
+                jsonrpc: "2.0",
+                id: body.id ?? null,
+                result: {
+                    message: {
+                        role: "agent",
+                        parts: [{ kind: "text", text: reply.text }],
+                    },
+                    metadata: { state: reply.state },
+                },
+            });
+        }
 
-        return json({
-            text: `Cloudflare bee turn ${next.turns}: ${body.text ?? ""}`,
-            state: next,
-        });
+        return json({ error: "Not found" }, { status: 404 });
     }
 }
 

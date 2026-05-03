@@ -20,6 +20,14 @@ test("deployment ids and routes are stable", () => {
         routeForSurface("https://gen.pollinations.ai", id, "openai"),
         "https://gen.pollinations.ai/bees/bee_booking-assistant/v1/chat/completions",
     );
+    assert.equal(
+        routeForSurface("https://gen.pollinations.ai", id, "web"),
+        "https://gen.pollinations.ai/bees/bee_booking-assistant/web/messages",
+    );
+    assert.equal(
+        routeForSurface("https://gen.pollinations.ai", id, "a2a"),
+        "https://gen.pollinations.ai/bees/bee_booking-assistant/a2a",
+    );
 });
 
 test("store creates deployment and events from manifest", () => {

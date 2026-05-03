@@ -61,9 +61,11 @@ Projected surfaces are generated from the same deployment:
 /bees/{id}/v1/chat/completions
 /bees/{id}/web/messages
 /bees/{id}/discord/messages
-/bees/{id}/.well-known/agent-card.json
 /bees/{id}/a2a
 ```
+
+A2A discovery is exposed separately at
+`/bees/{id}/.well-known/agent-card.json`.
 
 CLI:
 

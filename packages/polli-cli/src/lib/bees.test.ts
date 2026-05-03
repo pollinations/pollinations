@@ -98,6 +98,14 @@ describe("bee manifest helpers", () => {
             "web",
             "a2a",
         ]);
+        expect(deployment.surfaces).toContainEqual({
+            kind: "web",
+            url: "https://gen.pollinations.ai/bees/bee_booking-assistant/web/messages",
+        });
+        expect(deployment.surfaces).toContainEqual({
+            kind: "a2a",
+            url: "https://gen.pollinations.ai/bees/bee_booking-assistant/a2a",
+        });
         expect(
             deployment.billingEstimate.meters.map((meter) => meter.name),
         ).toContain("state_retention");

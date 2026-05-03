@@ -1,0 +1,22 @@
+{
+  "name": "@pollinations/catgpt-cloudflare-agents",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "dev:discord": "tsx --watch src/discord.ts"
+  },
+  "dependencies": {
+    "agents": "^0.0.100",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.95.0"
+  }
+}

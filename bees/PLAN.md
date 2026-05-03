@@ -60,6 +60,20 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase H — live interop probe of codex's deployed worker [DONE]
+
+Codex deployed `minimal-cloudflare-agents-bee` to a real CF Workers URL (per their issue comment). External-observer probe captures what the live worker actually serves vs what codex's deploy-API URL projection promises.
+
+- [x] **H1.** Probed `https://minimal-cloudflare-agents-bee-staging-codex.thomash-efd.workers.dev/`. Captured agent card + /message response as fixtures under `bees/deploy-api/test-fixtures/codex-deployed-cf/`. Documented live results in `probe-summary.md`.
+- [x] **H2.** `interop.test.ts` — 7 assertions pinning the divergences: live worker serves `/message` and `/.well-known/agent-card.json` only; `/a2a` (advertised by the card!), `/web/messages` (codex's `routeForSurface` projection), `/v1/chat/completions`, `/`, `/docs` all 404. Our agent-card schema is `protocolVersion: "0.2.5"`; theirs is `"0.3.0"` — we should bump.
+
+**Concrete findings worth flagging at merge time:**
+1. **Codex's agent card lies about its A2A endpoint.** Card says `url: ".../a2a"` + `preferredTransport: "JSONRPC"` but `/a2a` returns 404. A2A clients reading the card will fail.
+2. **`routeForSurface` projects `/web/messages` and `/a2a`; the worker serves `/message`.** Deploy-API URL contract and bee implementation are out of sync.
+3. **DO state persistence works.** Turn counter advances across requests — we observed turns 3 → 4 → 5 across our probe calls.
+
+**Verification:** `bash bees/deploy-api/scripts/smoke.sh` — 66/66 (was 59, +7 interop).
+
 ## Phase G — cross-validation against codex's bee.json fixtures [DONE]
 
 Vendored copies of the 4 `bee.json` files codex shipped on PR #10636 (minimal-cloudflare-agents, minimal-daytona-container, minimal-aws-agentcore, musician-booking-reference). Run them through our `validateDeployManifest` and assert the divergences as living test cases.

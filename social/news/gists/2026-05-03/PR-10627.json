@@ -1,0 +1,34 @@
+{
+  "pr_number": 10627,
+  "title": "feat: add request safety checking to gen",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10627",
+  "merged_at": "2026-05-03T12:13:03Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Guardrails for the Garden",
+    "blurb": "We've added an optional safety layer to our generation endpoints. Just pass the `safe` flag to keep your prompts and outputs family-friendly and secure!",
+    "summary": "Introduced an optional request safety checking mechanism across generation endpoints using AWS Bedrock Guardrails.",
+    "impact": "Developers can now enforce content moderation on their API requests by passing a `safe` parameter or `Pollinations-Safe` header, ensuring inputs and outputs remain appropriate.",
+    "keywords": [
+      "safety",
+      "guardrails",
+      "api",
+      "moderation",
+      "bedrock"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny crossing guard vest and holding a stop sign, standing next to a glowing green gate or fence protecting a garden of code-plants. The Nomnom creature is safely behind the fence.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny crossing guard vest and holding a stop sign, standing next to a glowing lime green (#ecf874) picket fence protecting a garden of code-plants. The round Nomnom creature sits safely behind the fence eating a clean document. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-03/PR-10627.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny crossing guard vest and holding a stop sign, standing next to a glowing lime green (#ecf874) picket fence protecting a garden of code-plants. The round Nomnom creature sits safely behind the fence eating a clean document. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-03T12:13:57.909526+00:00"
+}

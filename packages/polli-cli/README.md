@@ -87,7 +87,7 @@ Deploy agent backends with a `bee.json` manifest:
 polli bees init bee.json --name booking-assistant
 polli bees validate bee.json
 polli bees deploy bee.json --dry-run       # preview runtime, URLs, scopes, meters
-polli bees deploy bee.json                 # calls POST /v1/bees
+polli bees deploy bee.json                 # calls POST /api/bees
 polli bees deploy bee.json --runtime daytona
 polli bees list
 polli bees status bee_booking-assistant

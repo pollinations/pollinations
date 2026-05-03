@@ -1,0 +1,9 @@
+name = "minimal-openai-wrapper-bee"
+main = "src/worker.js"
+compatibility_date = "2026-05-03"
+
+[vars]
+BEE_BASE_MODEL = "openai"
+BEE_SYSTEM_PROMPT = "You are a concise Pollinations bee. Answer helpfully, be direct, and keep responses short unless the user asks for detail."
+POLLINATIONS_BASE_URL = "https://gen.pollinations.ai"
+

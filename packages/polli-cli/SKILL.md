@@ -160,7 +160,7 @@ runtime and state: missing `runtime` resolves to `worker + auto`, and missing
 `state.backend` resolves to `sqlite`. Use `--runtime daytona` only when the bee
 needs a full container/workspace. `--dry-run` resolves runtime/provider, URLs,
 required scopes, and Pollen meters locally; non-dry-run deploy calls
-`POST /v1/bees`.
+`POST /api/bees`.
 
 ### Read API docs
 ```bash

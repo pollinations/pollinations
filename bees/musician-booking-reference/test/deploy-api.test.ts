@@ -94,7 +94,7 @@ test("queued deployments apply manifest defaults", () => {
 test("deployment API reference router creates, reads, patches, events, and deletes", async () => {
     const store = new MemoryBeeDeployApiStore();
     const created = await handleBeeDeployApiRequest(
-        new Request("https://gen.pollinations.ai/v1/bees", {
+        new Request("https://gen.pollinations.ai/api/bees", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify(request),
@@ -108,7 +108,7 @@ test("deployment API reference router creates, reads, patches, events, and delet
         { store },
     );
     const list = await handleBeeDeployApiRequest(
-        new Request("https://gen.pollinations.ai/v1/bees"),
+        new Request("https://gen.pollinations.ai/api/bees"),
         { store },
     );
     const patched = await handleBeeDeployApiRequest(

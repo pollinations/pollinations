@@ -6,7 +6,7 @@ on one shape.
 
 ## Create deployment
 
-`POST /v1/bees`
+`POST /api/bees`
 
 ```json
 {
@@ -83,12 +83,12 @@ to `sqlite`.
 
 ## Deployment lifecycle
 
-- `POST /v1/bees` creates a queued deployment.
-- `GET /v1/bees` lists deployments owned by the developer key.
-- `GET /v1/bees/{id}` returns status and surface URLs.
-- `GET /v1/bees/{id}/events` streams build/provisioning events.
-- `PATCH /v1/bees/{id}` updates env, surfaces, billing, retention, or runtime.
-- `DELETE /v1/bees/{id}` disables routes and schedules provider cleanup.
+- `POST /api/bees` creates a queued deployment.
+- `GET /api/bees` lists deployments owned by the developer key.
+- `GET /api/bees/{id}` returns status and surface URLs.
+- `GET /api/bees/{id}/events` streams build/provisioning events.
+- `PATCH /api/bees/{id}` updates env, surfaces, billing, retention, or runtime.
+- `DELETE /api/bees/{id}` disables routes and schedules provider cleanup.
 
 `src/deploy-api/server.ts` contains an in-memory reference router for these
 routes. Production would replace the store with Enter-backed ownership,

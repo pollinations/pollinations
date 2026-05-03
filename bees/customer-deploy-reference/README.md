@@ -11,12 +11,12 @@ This is separate from the runtime examples. It answers:
 
 ## API
 
-- `POST /v1/bees`
-- `GET /v1/bees`
-- `GET /v1/bees/{id}`
-- `GET /v1/bees/{id}/events`
-- `PATCH /v1/bees/{id}`
-- `DELETE /v1/bees/{id}`
+- `POST /api/bees`
+- `GET /api/bees`
+- `GET /api/bees/{id}`
+- `GET /api/bees/{id}/events`
+- `PATCH /api/bees/{id}`
+- `DELETE /api/bees/{id}`
 
 ## CLI
 
@@ -34,7 +34,7 @@ polli bees delete bee_booking-assistant --yes
 
 `polli bees deploy --dry-run` resolves locally so developers can inspect
 runtime, provider, URLs, scopes, and Pollen meters without calling the network.
-Non-dry-run deploy and management commands call the `/v1/bees` API.
+Non-dry-run deploy and management commands call the `/api/bees` API.
 
 The local `node src/cli.js ...` script remains a standalone control-plane sketch
 for tests and experiments. The developer-facing path is `polli bees ...`.

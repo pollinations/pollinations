@@ -163,8 +163,8 @@ function deploymentIdFromPath(pathname: string): {
     id?: string;
     events: boolean;
 } {
-    const [, v1, bees, id, tail] = pathname.split("/");
-    if (v1 !== "v1" || bees !== "bees") return { events: false };
+    const [, api, bees, id, tail] = pathname.split("/");
+    if (api !== "api" || bees !== "bees") return { events: false };
     return { id, events: tail === "events" };
 }
 
@@ -181,12 +181,12 @@ export async function handleBeeDeployApiRequest(
     const { id, events } = deploymentIdFromPath(url.pathname);
 
     try {
-        if (request.method === "POST" && url.pathname === "/v1/bees") {
+        if (request.method === "POST" && url.pathname === "/api/bees") {
             const body = await readJson<BeeDeploymentRequest>(request);
             return json(await store.create(body, baseUrl), { status: 202 });
         }
 
-        if (request.method === "GET" && url.pathname === "/v1/bees") {
+        if (request.method === "GET" && url.pathname === "/api/bees") {
             return json(await store.list());
         }
 
@@ -232,5 +232,5 @@ export async function handleBeeDeployApiRequest(
 }
 
 export function deploymentPathForName(name: string): string {
-    return `/v1/bees/${createDeploymentId(name)}`;
+    return `/api/bees/${createDeploymentId(name)}`;
 }

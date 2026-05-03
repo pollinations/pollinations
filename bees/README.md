@@ -8,6 +8,7 @@ deployment shapes before choosing a production path.
 | folder | purpose | when it wins |
 |---|---|---|
 | `musician-booking-reference` | large integrated reference | proves surfaces, billing seam, state, deploy API, and provider adapters can share one core |
+| `minimal-openai-wrapper` | smallest OpenAI-compatible bee | fixed system prompt over a base Pollinations model |
 | `minimal-cloudflare-agents` | smallest Cloudflare Agents SDK bee | stateful TypeScript bees that should live close to `gen.pollinations.ai` |
 | `minimal-daytona-container` | smallest workspace/container bee | bees that need shell, filesystem, package installs, or coding-agent style tools |
 | `minimal-aws-agentcore` | smallest AgentCore HTTP bee | AWS-credit experiments and AgentCore session/runtime evaluation |
@@ -26,12 +27,12 @@ AgentCore, or generic containers when a bee needs a full runtime.
 The emerging customer-facing shape is:
 
 ```text
-POST   /v1/bees
-GET    /v1/bees
-GET    /v1/bees/{id}
-GET    /v1/bees/{id}/events
-PATCH  /v1/bees/{id}
-DELETE /v1/bees/{id}
+POST   /api/bees
+GET    /api/bees
+GET    /api/bees/{id}
+GET    /api/bees/{id}/events
+PATCH  /api/bees/{id}
+DELETE /api/bees/{id}
 ```
 
 CLI:
@@ -49,7 +50,7 @@ polli bees delete bee_id --yes
 ```
 
 `polli bees deploy --dry-run` is the local preview path. `polli bees deploy`
-uses the `/v1/bees` API and returns the deployment id plus projected surfaces.
+uses the `/api/bees` API and returns the deployment id plus projected surfaces.
 
 The common manifest should stay provider-neutral and omit runtime details:
 

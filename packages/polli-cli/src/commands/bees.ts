@@ -148,7 +148,7 @@ const deploy = new Command("deploy")
             }
 
             const key = requireKey();
-            const deployment = await gen<Record<string, unknown>>("/v1/bees", {
+            const deployment = await gen<Record<string, unknown>>("/api/bees", {
                 apiKey: key,
                 method: "POST",
                 body: manifest,
@@ -168,7 +168,7 @@ const list = new Command("list")
         const key = requireKey();
         try {
             const deployments = await gen<Record<string, unknown>[]>(
-                "/v1/bees",
+                "/api/bees",
                 { apiKey: key },
             );
             printResult(deployments);
@@ -187,7 +187,7 @@ const status = new Command("status")
         const key = requireKey();
         try {
             const deployment = await gen<Record<string, unknown>>(
-                `/v1/bees/${id}`,
+                `/api/bees/${id}`,
                 { apiKey: key },
             );
             printDeployment(deployment);
@@ -206,7 +206,7 @@ const events = new Command("events")
         const key = requireKey();
         try {
             const rows = await gen<Record<string, unknown>[]>(
-                `/v1/bees/${id}/events`,
+                `/api/bees/${id}/events`,
                 { apiKey: key },
             );
             printResult(rows);
@@ -232,7 +232,7 @@ const remove = new Command("delete")
 
         const key = requireKey();
         try {
-            await gen(`/v1/bees/${id}`, {
+            await gen(`/api/bees/${id}`, {
                 apiKey: key,
                 method: "DELETE",
             });

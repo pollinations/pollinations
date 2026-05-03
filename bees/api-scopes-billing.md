@@ -41,18 +41,18 @@ Advanced users can override:
 Deploy/manage bees:
 
 ```text
-POST   /v1/bees
-GET    /v1/bees
-GET    /v1/bees/{id}
-PATCH  /v1/bees/{id}
-DELETE /v1/bees/{id}
-GET    /v1/bees/{id}/events
+POST   /api/bees
+GET    /api/bees
+GET    /api/bees/{id}
+PATCH  /api/bees/{id}
+DELETE /api/bees/{id}
+GET    /api/bees/{id}/events
 ```
 
 Run bees through a canonical API:
 
 ```text
-POST /v1/bees/{id}/runs
+POST /bees/{id}/runs
 ```
 
 Projected surfaces are generated from the same deployment:

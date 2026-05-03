@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🖼️ LAHgen](https://image.khminds.com/) | LAHgen generates AI images from text prompts on https://image.khminds.com/. It produces unlimited images using AI models across different artistic styles. | [@web](https://github.com/web) |
-| [🖼️ YSOAI IMAGE GENERATOR](https://huggingface.co/spaces/yassinovich/YSOAI) | Generate images with YSOAI using pollinations.ai, for free and quickly. | [@web](https://github.com/web) |
-| [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |
-| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@web](https://github.com/web) |
-| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |
-| [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |
-| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@web](https://github.com/web) |
-| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |
-| [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@web](https://github.com/web) |
-| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@web](https://github.com/web) |
+| [🖼️ LAHgen](https://image.khminds.com/) | LAHgen generates AI images from text prompts on https://image.khminds.com/. It produces unlimited images using AI models across different artistic styles. | [@LuqmanLAH](https://github.com/LuqmanLAH) |
+| [🖼️ YSOAI IMAGE GENERATOR](https://huggingface.co/spaces/yassinovich/YSOAI) | Generate images with YSOAI using pollinations.ai, for free and quickly. | [@gumbynews24](https://github.com/gumbynews24) |
+| 🖼️ Frieze | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |
+| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@Giyuu7777](https://github.com/Giyuu7777) |
+| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@timemachine-studio](https://github.com/timemachine-studio) |
+| 🖼️ Frieze | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |
+| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@Giyuu7777](https://github.com/Giyuu7777) |
+| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@timemachine-studio](https://github.com/timemachine-studio) |
+| [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@tatn](https://github.com/tatn) |
+| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@OSK0020](https://github.com/OSK0020) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.

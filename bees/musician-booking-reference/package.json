@@ -1,0 +1,22 @@
+{
+  "name": "musician-booking-reference",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/cli.ts",
+    "serve": "tsx src/runtime/node-server.ts",
+    "serve:agentcore": "tsx src/providers/aws/agentcore-server.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@daytona/sdk": "^0.171.0",
+    "agents": "^0.12.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3"
+  }
+}

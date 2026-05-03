@@ -1,0 +1,26 @@
+{
+  "name": "minimal-daytona-container-bee",
+  "source": {
+    "type": "git",
+    "repository": "https://github.com/pollinations/pollinations.git",
+    "ref": "main",
+    "packagePath": "bees/minimal-daytona-container"
+  },
+  "runtime": {
+    "kind": "container",
+    "provider": "daytona"
+  },
+  "surfaces": [
+    "web",
+    "a2a"
+  ],
+  "billing": {
+    "mode": "user-pays",
+    "clientId": "pk_replace_me",
+    "dailyPollenLimit": 20
+  },
+  "state": {
+    "backend": "memory",
+    "retentionDays": 30
+  }
+}

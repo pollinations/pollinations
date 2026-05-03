@@ -1,0 +1,26 @@
+{
+  "name": "minimal-aws-agentcore-bee",
+  "source": {
+    "type": "git",
+    "repository": "https://github.com/pollinations/pollinations.git",
+    "ref": "main",
+    "packagePath": "bees/minimal-aws-agentcore"
+  },
+  "runtime": {
+    "kind": "container",
+    "provider": "aws-agentcore"
+  },
+  "surfaces": [
+    "web",
+    "a2a"
+  ],
+  "billing": {
+    "mode": "user-pays",
+    "clientId": "pk_replace_me",
+    "dailyPollenLimit": 20
+  },
+  "state": {
+    "backend": "memory",
+    "retentionDays": 7
+  }
+}

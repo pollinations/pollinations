@@ -1,0 +1,19 @@
+{
+  "projectName": "MusicianBookingReferenceBee",
+  "agents": [
+    {
+      "name": "MusicianBookingReferenceBee",
+      "protocol": "HTTP",
+      "build": "Container",
+      "container": {
+        "dockerfile": "../Dockerfile.agentcore",
+        "port": 8080,
+        "platform": "linux/arm64"
+      },
+      "paths": {
+        "invocations": "/invocations",
+        "ping": "/ping"
+      }
+    }
+  ]
+}

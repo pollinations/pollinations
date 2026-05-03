@@ -1,4 +1,4 @@
-import { Agent, routeAgentRequest } from "agents";
+import { Agent, getAgentByName } from "agents";
 
 type BeeState = {
     turns: number;
@@ -58,10 +58,8 @@ export class MinimalCloudflareBee extends Agent<Env, BeeState> {
 }
 
 export default {
-    fetch(request: Request, env: Env, ctx: ExecutionContext) {
-        return (
-            routeAgentRequest(request, env, ctx) ??
-            json({ error: "Agent route not found" }, { status: 404 })
-        );
+    async fetch(request: Request, env: Env) {
+        const agent = await getAgentByName(env.MinimalCloudflareBee, "default");
+        return agent.fetch(request);
     },
 };

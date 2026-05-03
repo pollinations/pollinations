@@ -12,6 +12,7 @@ import {
     validateBeeManifest,
     withRuntimeOverride,
 } from "../lib/bees.js";
+import { BASE_URL } from "../lib/config.js";
 import {
     getOutputMode,
     printError,
@@ -142,7 +143,7 @@ const deploy = new Command("deploy")
             );
 
             if (opts.dryRun) {
-                printDeployment(createDryRunDeployment(manifest));
+                printDeployment(createDryRunDeployment(manifest, BASE_URL));
                 return;
             }
 

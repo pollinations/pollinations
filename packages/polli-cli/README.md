@@ -44,6 +44,7 @@ echo "context" | polli gen text "question"
 
 polli gen image "cyberpunk city at night" --model flux --output city.png
 polli gen image "enhance this" --image https://media.pollinations.ai/abc --model gptimage
+polli gen image "make it sunset" --image ./photo.jpg --model grok-imagine    # local files auto-uploaded
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)

@@ -4,6 +4,7 @@ import { gen } from "../lib/api.js";
 import { printBanner } from "../lib/branding.js";
 import {
     clearCredentials,
+    credentialsDisplayPath,
     ENTER_URL,
     resolveApiKey,
     saveCredentials,

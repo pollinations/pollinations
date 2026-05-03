@@ -37,7 +37,6 @@ const LOGO_LINES = [
     "        ███        ███       ███",
 ];
 
-
 export function printBanner(subtitle?: string): void {
     if (getOutputMode() !== "human") return;
     if (!process.stderr.isTTY) return;

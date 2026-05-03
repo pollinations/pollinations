@@ -319,9 +319,7 @@ export async function showAuthStatus(): Promise<void> {
         gen<BalanceResponse>("/account/balance", { apiKey: key }).catch(
             () => null,
         ),
-        gen<KeyInfoResponse>("/account/key", { apiKey: key }).catch(
-            () => null,
-        ),
+        gen<KeyInfoResponse>("/account/key", { apiKey: key }).catch(() => null),
     ]);
 
     if (!profile) {
@@ -365,7 +363,6 @@ export const authCommand = new Command("auth")
     .addCommand(logout)
     .addCommand(status);
 
-    
 export const whoamiCommand = new Command("whoami")
     .description(
         "Show current auth status and balance (alias for `auth status`)",

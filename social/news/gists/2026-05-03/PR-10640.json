@@ -1,0 +1,34 @@
+{
+  "pr_number": 10640,
+  "title": "[codex] add Meta Llama models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10640",
+  "merged_at": "2026-05-03T23:57:12Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "New Llamas in the pasture",
+    "blurb": "We've upgraded our default Llama route to Meta's 3.3-70B and added new Maverick and Scout variants. The Scout model even has eyes now, so you can send it images.",
+    "summary": "Upgraded the default Llama endpoint to Llama-3.3-70B-Instruct and introduced new vision-capable Maverick and Scout variants.",
+    "impact": "Developers get access to smarter, vision-capable Llama models directly through the standard text generation endpoint.",
+    "keywords": [
+      "llama",
+      "models",
+      "vision",
+      "api",
+      "text-generation"
+    ],
+    "visual_concept": "The PR adds Meta Llama models, specifically mentioning 'scout' and vision capabilities. A cute pixel art llama wearing a scout hat interacting with Polly the bee, who is showing the llama a picture (representing vision).",
+    "image_prompt": "Cozy pixel art scene of a fluffy, friendly llama wearing a tiny scout hat, looking curiously at a glowing picture frame held by the cute bee mascot. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-03/PR-10640.jpg",
+    "prompt": "Cozy pixel art scene of a fluffy, friendly llama wearing a tiny scout hat, looking curiously at a glowing picture frame held by the cute bee mascot. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-03T23:58:07.015991+00:00"
+}

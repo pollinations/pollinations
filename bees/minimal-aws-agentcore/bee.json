@@ -16,9 +16,7 @@
     "a2a"
   ],
   "billing": {
-    "mode": "user-pays",
-    "clientId": "pk_replace_me",
-    "dailyPollenLimit": 20
+    "mode": "author-pays"
   },
   "state": {
     "backend": "memory",

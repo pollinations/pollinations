@@ -10,9 +10,7 @@
     "openai"
   ],
   "billing": {
-    "mode": "user-pays",
-    "clientId": "pk_replace_me",
-    "dailyPollenLimit": 5
+    "mode": "author-pays"
   },
   "env": {
     "BEE_BASE_MODEL": "openai",

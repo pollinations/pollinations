@@ -3,6 +3,7 @@ import {
     assertBeeManifest,
     type BeeManifest,
     createDryRunDeployment,
+    createStarterManifest,
     validateBeeManifest,
     withRuntimeOverride,
 } from "./bees.js";
@@ -16,7 +17,7 @@ const minimalManifest: BeeManifest = {
     surfaces: ["openai", "web", "a2a"],
     billing: {
         mode: "user-pays",
-        clientId: "pk_app_key",
+        clientId: "pk_live_app_key",
     },
 };
 
@@ -65,6 +66,28 @@ describe("bee manifest helpers", () => {
         expect(result.errors).toContain(
             "billing.clientId is required for user-pays bees",
         );
+    });
+
+    test("rejects placeholder clientId values for user-pays bees", () => {
+        const result = validateBeeManifest({
+            ...minimalManifest,
+            billing: { mode: "user-pays", clientId: "pk_replace_me" },
+        });
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain(
+            "billing.clientId must be a real App Key",
+        );
+    });
+
+    test("starter manifest is openai-only and author-pays", () => {
+        const manifest = assertBeeManifest(
+            createStarterManifest("Starter Bee"),
+        );
+
+        expect(manifest.surfaces).toEqual(["openai"]);
+        expect(manifest.billing).toEqual({ mode: "author-pays" });
+        expect("requiredScopes" in manifest).toBe(false);
     });
 
     test("runtime override maps daytona to container", () => {

@@ -20,7 +20,7 @@ on one shape.
   "surfaces": ["openai", "web", "discord", "a2a"],
   "billing": {
     "mode": "user-pays",
-    "clientId": "pk_app_key",
+    "clientId": "pk_live_app_key",
     "dailyPollenLimit": 5
   },
   "env": {

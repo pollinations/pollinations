@@ -65,6 +65,7 @@ const containerProviders = new Set<RuntimeProvider>([
     "aws-agentcore",
     "container",
 ]);
+const placeholderClientIds = new Set(["pk_replace_me", "pk_app_key", "pk_xxx"]);
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
     value !== null && typeof value === "object" && !Array.isArray(value);
@@ -203,6 +204,13 @@ export function validateBeeManifest(manifest: unknown) {
             errors.push("billing.clientId is required for user-pays bees");
         }
         if (
+            manifest.billing.mode === "user-pays" &&
+            typeof manifest.billing.clientId === "string" &&
+            placeholderClientIds.has(manifest.billing.clientId)
+        ) {
+            errors.push("billing.clientId must be a real App Key");
+        }
+        if (
             manifest.billing.dailyPollenLimit !== undefined &&
             (typeof manifest.billing.dailyPollenLimit !== "number" ||
                 !Number.isFinite(manifest.billing.dailyPollenLimit) ||
@@ -231,14 +239,9 @@ export function createStarterManifest(name = "my-bee"): BeeManifest {
             repository: "https://github.com/your-org/your-bee.git",
             ref: "main",
         },
-        surfaces: ["openai", "web", "a2a"],
+        surfaces: ["openai"],
         billing: {
-            mode: "user-pays",
-            clientId: "pk_replace_me",
-            dailyPollenLimit: 5,
-        },
-        env: {
-            PUBLIC_BEE_NAME: name,
+            mode: "author-pays",
         },
     };
 }

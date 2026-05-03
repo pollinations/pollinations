@@ -12,6 +12,7 @@ const sourceTypes = new Set(["git", "template", "bundle"]);
 const surfaces = new Set(["openai", "web", "discord", "a2a"]);
 const billingModes = new Set(["user-pays", "author-pays"]);
 const containerProviders = new Set(["daytona", "aws-agentcore", "container"]);
+const placeholderClientIds = new Set(["pk_replace_me", "pk_app_key", "pk_xxx"]);
 
 function isObject(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -119,6 +120,13 @@ export function validateBeeManifest(manifest) {
             errors.push("billing.clientId is required for user-pays bees");
         }
         if (
+            manifest.billing.mode === "user-pays" &&
+            typeof manifest.billing.clientId === "string" &&
+            placeholderClientIds.has(manifest.billing.clientId)
+        ) {
+            errors.push("billing.clientId must be a real App Key");
+        }
+        if (
             manifest.billing.dailyPollenLimit !== undefined &&
             (!Number.isFinite(manifest.billing.dailyPollenLimit) ||
                 manifest.billing.dailyPollenLimit <= 0)
@@ -171,14 +179,9 @@ export function createStarterManifest(name = "my-bee") {
             repository: "https://github.com/your-org/your-bee.git",
             ref: "main",
         },
-        surfaces: ["openai", "web", "a2a"],
+        surfaces: ["openai"],
         billing: {
-            mode: "user-pays",
-            clientId: "pk_replace_me",
-            dailyPollenLimit: 5,
-        },
-        env: {
-            PUBLIC_BEE_NAME: name,
+            mode: "author-pays",
         },
     };
 }

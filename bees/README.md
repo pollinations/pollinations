@@ -59,7 +59,7 @@ The common manifest should stay provider-neutral and omit runtime details:
   "name": "booking-assistant",
   "source": { "type": "git", "repository": "https://github.com/me/bee.git" },
   "surfaces": ["openai", "web", "a2a"],
-  "billing": { "mode": "user-pays", "clientId": "pk_app_key" }
+  "billing": { "mode": "author-pays" }
 }
 ```
 

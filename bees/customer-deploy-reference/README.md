@@ -49,7 +49,7 @@ common manifest omits both `runtime` and `state`:
   "name": "booking-assistant",
   "source": { "type": "git", "repository": "https://github.com/me/bee.git" },
   "surfaces": ["web", "a2a"],
-  "billing": { "mode": "user-pays", "clientId": "pk_app_key" }
+  "billing": { "mode": "author-pays" }
 }
 ```
 

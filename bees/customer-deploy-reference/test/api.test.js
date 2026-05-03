@@ -81,8 +81,14 @@ test("validates worker and container bee manifests", () => {
 });
 
 test("manifest validation catches invalid runtime, state, surface, and user-pays client id", () => {
-    const manifest = createStarterManifest("Bad Bee");
-    delete manifest.billing.clientId;
+    const manifest = {
+        ...createStarterManifest("Bad Bee"),
+        billing: { mode: "user-pays" },
+    };
+    const placeholderClientId = {
+        ...createStarterManifest("Bad Client"),
+        billing: { mode: "user-pays", clientId: "pk_replace_me" },
+    };
     const badRuntime = {
         ...createStarterManifest("Bad Runtime"),
         runtime: { kind: "sandbox", provider: "auto" },
@@ -104,6 +110,11 @@ test("manifest validation catches invalid runtime, state, surface, and user-pays
     assert.ok(
         validateBeeManifest(manifest).errors.includes(
             "billing.clientId is required for user-pays bees",
+        ),
+    );
+    assert.ok(
+        validateBeeManifest(placeholderClientId).errors.includes(
+            "billing.clientId must be a real App Key",
         ),
     );
     assert.equal(validateBeeManifest(badRuntime).valid, false);
@@ -226,6 +237,6 @@ test("runtime, scopes, and billing helpers are deterministic", () => {
     assert.equal(runtime.kind, "worker");
     assert.equal(runtime.provider, "cloudflare-agents");
     assert.deepEqual(scopes.developer, ["bees:read", "bees:write"]);
-    assert.deepEqual(scopes.invocation, ["generate"]);
+    assert.deepEqual(scopes.invocation, []);
     assert.equal(billing.currency, "pollen");
 });

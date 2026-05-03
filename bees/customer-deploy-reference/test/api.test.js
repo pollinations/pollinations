@@ -18,7 +18,7 @@ test("deployment ids and routes are stable", () => {
     assert.equal(id, "bee_booking-assistant");
     assert.equal(
         routeForSurface("https://gen.pollinations.ai", id, "openai"),
-        "https://gen.pollinations.ai/bees/bee_booking-assistant/v1/chat/completions",
+        "https://gen.pollinations.ai/v1/chat/completions",
     );
     assert.equal(
         routeForSurface("https://gen.pollinations.ai", id, "web"),
@@ -40,6 +40,7 @@ test("store creates deployment and events from manifest", () => {
     });
 
     assert.equal(deployment.status, "queued");
+    assert.equal(deployment.modelId, "bee_booking-assistant");
     assert.equal(deployment.runtime.provider, "cloudflare-agents");
     assert.equal(deployment.state.backend, "sqlite");
     assert.equal(deployment.surfaces.length, 2);

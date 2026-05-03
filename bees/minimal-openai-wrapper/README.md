@@ -28,11 +28,11 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 
 ## Deploy shape
 
-`bee.json` declares only the `openai` surface. A hosted deployment should project:
+`bee.json` declares only the `openai` surface. A hosted deployment should
+project the bee into the regular model list. Call it through the standard API:
 
 ```text
-/bees/bee_minimal-openai-wrapper-bee/v1/chat/completions
+/v1/chat/completions
 ```
 
-The worker also accepts `/v1/chat/completions` directly for standalone deploys.
-
+with `model` set to the deployed bee's `modelId`.

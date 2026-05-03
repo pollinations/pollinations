@@ -11,6 +11,8 @@ This is separate from the runtime examples. It answers:
 
 ## API
 
+Deploy/control API:
+
 - `POST /api/bees`
 - `POST /api/bees?upgrade=1`
 - `GET /api/bees`
@@ -18,6 +20,10 @@ This is separate from the runtime examples. It answers:
 - `GET /api/bees/{id}/events`
 - `PATCH /api/bees/{id}`
 - `DELETE /api/bees/{id}`
+
+Invocation API:
+
+- `POST /v1/chat/completions` with `model` set to the returned `modelId`.
 
 ## CLI
 
@@ -39,6 +45,8 @@ runtime, provider, URLs, scopes, and Pollen meters without calling the network.
 Non-dry-run deploy and management commands call the `/api/bees` API.
 Repeated deploys of the same bee id return a conflict unless `--upgrade`
 is passed, which maps to `POST /api/bees?upgrade=1`.
+The deploy response includes `modelId`; clients use that id through the regular
+OpenAI-compatible chat API.
 
 The local `node src/cli.js ...` script remains a standalone control-plane sketch
 for tests and experiments. The developer-facing path is `polli bees ...`.
@@ -52,7 +60,7 @@ common manifest omits both `runtime` and `state`:
 {
   "name": "booking-assistant",
   "source": { "type": "git", "repository": "https://github.com/me/bee.git" },
-  "surfaces": ["web", "a2a"],
+  "surfaces": ["openai", "web"],
   "billing": { "mode": "author-pays" }
 }
 ```

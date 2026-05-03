@@ -37,6 +37,7 @@ to `sqlite`.
 ```json
 {
   "id": "bee_booking-assistant",
+  "modelId": "bee_booking-assistant",
   "name": "booking-assistant",
   "status": "queued",
   "runtime": {
@@ -69,7 +70,7 @@ to `sqlite`.
   "surfaces": [
     {
       "kind": "openai",
-      "url": "https://gen.pollinations.ai/bees/bee_booking-assistant/v1/chat/completions"
+      "url": "https://gen.pollinations.ai/v1/chat/completions"
     },
     {
       "kind": "a2a",
@@ -95,6 +96,10 @@ to `sqlite`.
 `src/deploy-api/server.ts` contains an in-memory reference router for these
 routes. Production would replace the store with Enter-backed ownership,
 quotas, audit logs, and provider job records.
+
+The `openai` surface is a model-list projection: clients call regular
+`/v1/chat/completions` with `model` set to `modelId`. The deploy API returns
+`modelId` so clients do not need to learn a separate bee-specific chat path.
 
 ## Runtime mapping
 

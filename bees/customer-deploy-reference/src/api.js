@@ -73,7 +73,9 @@ export function estimateBilling(
 
 export function routeForSurface(baseUrl, deploymentId, surface) {
     const root = `${baseUrl.replace(/\/$/, "")}/bees/${deploymentId}`;
-    if (surface === "openai") return `${root}/v1/chat/completions`;
+    if (surface === "openai") {
+        return `${baseUrl.replace(/\/$/, "")}/v1/chat/completions`;
+    }
     if (surface === "a2a") return `${root}/a2a`;
     if (surface === "discord") return `${root}/discord/messages`;
     return `${root}/web/messages`;
@@ -98,6 +100,7 @@ export class DeployStore {
         const runtime = resolveRuntime(normalizedManifest.runtime);
         const deployment = {
             id,
+            modelId: id,
             name: normalizedManifest.name,
             status: "queued",
             runtime,

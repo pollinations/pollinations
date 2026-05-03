@@ -14,10 +14,7 @@ function errorResponse(status, code, message, hint, headers = {}) {
 }
 
 function isOpenAIChatPath(pathname) {
-    return (
-        pathname === "/v1/chat/completions" ||
-        /^\/bees\/[^/]+\/v1\/chat\/completions$/.test(pathname)
-    );
+    return pathname === "/v1/chat/completions";
 }
 
 export function buildUpstreamChatBody(body, options = {}) {

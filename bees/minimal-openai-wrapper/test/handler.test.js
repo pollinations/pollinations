@@ -83,16 +83,13 @@ test("OpenAI route forwards to the base model and returns chat completion shape"
     assert.equal(body.model, "agent-with-a-prompt");
 });
 
-test("hosted bee projection path is accepted", async () => {
+test("configured api key supplies fallback auth", async () => {
     const response = await handleOpenAIWrapperRequest(
-        new Request(
-            "https://gen.test/bees/bee_minimal-openai-wrapper-bee/v1/chat/completions",
-            {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ messages: [] }),
-            },
-        ),
+        new Request("https://gen.test/v1/chat/completions", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ messages: [] }),
+        }),
         {
             apiKey: "sk_test",
             fetch: async () =>

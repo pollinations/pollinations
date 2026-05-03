@@ -4,7 +4,6 @@ type BeeState = {
     turns: number;
 };
 
-const BEE_ID = "bee_minimal-cloudflare-agents-bee";
 const BEE_MODEL = "minimal-cloudflare-agents-bee";
 
 function json(data: unknown, init: ResponseInit = {}): Response {
@@ -29,7 +28,6 @@ function discovery(origin: string) {
             "Stateful Cloudflare Agents SDK bee with OpenAI-compatible chat.",
         endpoints: {
             openai: `${origin}/v1/chat/completions`,
-            hostedOpenai: `${origin}/bees/${BEE_ID}/v1/chat/completions`,
             web: `${origin}/web/messages`,
             a2a: `${origin}/a2a`,
             agentCard: `${origin}/.well-known/agent-card.json`,
@@ -256,21 +254,8 @@ export class MinimalCloudflareBee extends Agent<Env, BeeState> {
 
         if (
             request.method === "POST" &&
-            (url.pathname === "/v1/chat/completions" ||
-                /^\/bees\/[^/]+\/v1\/chat\/completions$/.test(url.pathname))
+            url.pathname === "/v1/chat/completions"
         ) {
-            const hostedMatch = url.pathname.match(
-                /^\/bees\/([^/]+)\/v1\/chat\/completions$/,
-            );
-            if (hostedMatch && hostedMatch[1] !== BEE_ID) {
-                return errorResponse(
-                    404,
-                    "bee_not_found",
-                    `Bee ${hostedMatch[1]} is not served by this deployment.`,
-                    `Use /bees/${BEE_ID}/v1/chat/completions or /v1/chat/completions.`,
-                );
-            }
-
             const authError = validateReferenceAuth(request);
             if (authError) return authError;
 

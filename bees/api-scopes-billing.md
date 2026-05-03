@@ -19,7 +19,7 @@ Manifest:
 {
   "name": "booking-assistant",
   "source": { "type": "git", "repository": "https://github.com/me/bee.git" },
-  "surfaces": ["openai", "web", "a2a"],
+  "surfaces": ["openai", "web"],
   "billing": { "mode": "author-pays" }
 }
 ```
@@ -49,23 +49,30 @@ DELETE /api/bees/{id}
 GET    /api/bees/{id}/events
 ```
 
-Run bees through a canonical API:
+Deployments project bees into the regular OpenAI-compatible API:
 
 ```text
-POST /bees/{id}/runs
+POST /v1/chat/completions
 ```
 
-Projected surfaces are generated from the same deployment:
+The caller selects the bee by model id:
 
 ```text
-/bees/{id}/v1/chat/completions
+model: bee_booking-assistant
+```
+
+Other projected surfaces are generated from the same deployment:
+
+```text
 /bees/{id}/web/messages
 /bees/{id}/discord/messages
 /bees/{id}/a2a
 ```
 
 All deployed bees should support the OpenAI-compatible chat-completions surface.
-Other surfaces are optional adapters around the same bee core.
+That surface should be reachable through `/v1/chat/completions`, not a separate
+bee-specific chat endpoint. Other surfaces are optional adapters around the same
+bee core.
 
 A2A discovery is exposed separately at
 `/bees/{id}/.well-known/agent-card.json`.

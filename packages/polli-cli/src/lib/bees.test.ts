@@ -107,6 +107,7 @@ describe("bee manifest helpers", () => {
         );
 
         expect(deployment.id).toBe("bee_booking-assistant");
+        expect(deployment.modelId).toBe("bee_booking-assistant");
         expect(deployment.runtime).toMatchObject({
             kind: "worker",
             provider: "cloudflare-agents",
@@ -121,6 +122,10 @@ describe("bee manifest helpers", () => {
             "web",
             "a2a",
         ]);
+        expect(deployment.surfaces).toContainEqual({
+            kind: "openai",
+            url: "https://gen.pollinations.ai/v1/chat/completions",
+        });
         expect(deployment.surfaces).toContainEqual({
             kind: "web",
             url: "https://gen.pollinations.ai/bees/bee_booking-assistant/web/messages",

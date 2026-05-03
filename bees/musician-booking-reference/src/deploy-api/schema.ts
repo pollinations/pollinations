@@ -64,6 +64,7 @@ export type BeeDeploymentRequest = {
 
 export type BeeDeployment = {
     id: string;
+    modelId: string;
     name: string;
     status: "queued" | "building" | "ready" | "failed";
     runtime: BeeResolvedRuntime;
@@ -112,9 +113,10 @@ export function projectDeploymentRoutes(
     const root = `${baseUrl.replace(/\/$/, "")}/bees/${createDeploymentId(
         request.name,
     )}`;
+    const origin = baseUrl.replace(/\/$/, "");
     return request.surfaces.map((surface) => {
         if (surface === "openai") {
-            return { kind: surface, url: `${root}/v1/chat/completions` };
+            return { kind: surface, url: `${origin}/v1/chat/completions` };
         }
         if (surface === "a2a") {
             return {
@@ -249,6 +251,7 @@ export function createQueuedDeployment(
     const runtime = resolveRuntime(normalized.runtime);
     return {
         id: createDeploymentId(normalized.name),
+        modelId: createDeploymentId(normalized.name),
         name: normalized.name,
         status: "queued",
         runtime,

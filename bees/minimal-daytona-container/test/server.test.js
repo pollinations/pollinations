@@ -38,22 +38,11 @@ test("minimal Daytona/container bee exposes health, card, message, and OpenAI ro
             },
         );
         const chatBody = await chat.json();
-        const hostedChat = await fetch(
-            `http://127.0.0.1:${port}/bees/bee_minimal-daytona-container-bee/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
-                    messages: [{ role: "user", content: "hosted" }],
-                }),
-            },
-        );
 
         assert.equal(health.status, 200);
         assert.equal(card.status, 200);
         assert.equal(message.status, 200);
         assert.equal(chat.status, 200);
-        assert.equal(hostedChat.status, 200);
         assert.match(messageBody.text, /hello/);
         assert.equal(chatBody.object, "chat.completion");
         assert.match(chatBody.choices[0].message.content, /from openai/);

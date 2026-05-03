@@ -65,6 +65,7 @@ function printDeployment(deployment: Record<string, unknown>) {
 
     printResult({
         id: deployment.id,
+        model: deployment.modelId,
         status: deployment.status,
         runtime: runtime
             ? `${runtime.kind}/${runtime.provider} (requested ${runtime.requestedProvider ?? runtime.provider})`

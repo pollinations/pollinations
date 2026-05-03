@@ -291,7 +291,9 @@ export function routeForSurface(
     surface: BeeSurface,
 ) {
     const root = `${baseUrl.replace(/\/$/, "")}/bees/${deploymentId}`;
-    if (surface === "openai") return `${root}/v1/chat/completions`;
+    if (surface === "openai") {
+        return `${baseUrl.replace(/\/$/, "")}/v1/chat/completions`;
+    }
     if (surface === "a2a") return `${root}/a2a`;
     if (surface === "discord") return `${root}/discord/messages`;
     return `${root}/web/messages`;
@@ -359,6 +361,7 @@ export function createDryRunDeployment(
     const now = new Date().toISOString();
     return {
         id,
+        modelId: id,
         name: manifest.name,
         status: "dry_run",
         runtime,

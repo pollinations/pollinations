@@ -42,7 +42,7 @@ test("deployment routes project all requested surfaces", () => {
     );
     assert.equal(
         routes.find((route) => route.kind === "openai")?.url,
-        "https://gen.pollinations.ai/bees/bee_booking-assistant/v1/chat/completions",
+        "https://gen.pollinations.ai/v1/chat/completions",
     );
     assert.equal(
         routes.find((route) => route.kind === "a2a")?.url,
@@ -58,6 +58,7 @@ test("queued deployments preserve runtime and timestamps", () => {
     );
 
     assert.equal(deployment.status, "queued");
+    assert.equal(deployment.modelId, "bee_booking-assistant");
     assert.equal(deployment.runtime.kind, "worker");
     assert.equal(deployment.runtime.provider, "cloudflare-agents");
     assert.equal(deployment.runtime.requestedProvider, "auto");

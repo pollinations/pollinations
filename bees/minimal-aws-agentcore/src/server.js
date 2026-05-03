@@ -37,10 +37,7 @@ function lastUserText(messages) {
 }
 
 function isOpenAIChatPath(pathname) {
-    return (
-        pathname === "/v1/chat/completions" ||
-        /^\/bees\/[^/]+\/v1\/chat\/completions$/.test(pathname)
-    );
+    return pathname === "/v1/chat/completions";
 }
 
 function chatCompletion(body) {

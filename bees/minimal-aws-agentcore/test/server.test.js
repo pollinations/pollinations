@@ -35,21 +35,10 @@ test("minimal AgentCore bee exposes ping, invocations, and OpenAI route", async 
             },
         );
         const chatBody = await chat.json();
-        const hostedChat = await fetch(
-            `http://127.0.0.1:${port}/bees/bee_minimal-aws-agentcore-bee/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
-                    messages: [{ role: "user", content: "hosted" }],
-                }),
-            },
-        );
 
         assert.equal(ping.status, 200);
         assert.equal(invocation.status, 200);
         assert.equal(chat.status, 200);
-        assert.equal(hostedChat.status, 200);
         assert.equal(body.session_id, "s1");
         assert.match(body.response, /hello/);
         assert.equal(chatBody.object, "chat.completion");

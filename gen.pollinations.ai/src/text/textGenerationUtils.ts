@@ -2,6 +2,13 @@ import debug from "debug";
 import type { ChatMessage, ServiceError, TransformOptions } from "./types.js";
 
 const log = debug("pollinations:utils");
+const INVALID_MESSAGE_NAME_PATTERN = /[\s<|\\/>]/;
+
+function normalizeMessageName(name: unknown): string | undefined {
+    if (typeof name !== "string" || name.length === 0) return undefined;
+    if (INVALID_MESSAGE_NAME_PATTERN.test(name)) return undefined;
+    return name;
+}
 
 export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -28,7 +35,8 @@ export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
         };
 
         if (msg.tool_call_id) normalizedMsg.tool_call_id = msg.tool_call_id;
-        if (msg.name) normalizedMsg.name = msg.name;
+        const normalizedName = normalizeMessageName(msg.name);
+        if (normalizedName) normalizedMsg.name = normalizedName;
         if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
         if (msg.function_call) normalizedMsg.function_call = msg.function_call;
         if (msg.reasoning_content)

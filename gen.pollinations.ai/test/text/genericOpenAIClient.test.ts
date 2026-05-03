@@ -76,6 +76,50 @@ describe("genericOpenAIClient", () => {
         expect(upstreamSignal).toBeInstanceOf(AbortSignal);
     });
 
+    it("drops invalid optional message names before sending upstream", async () => {
+        let upstreamBody: Record<string, unknown> | undefined;
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (_input, init) => {
+                upstreamBody = JSON.parse(String(init?.body));
+                return Response.json({
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: {
+                                role: "assistant",
+                                content: "ok",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
+                });
+            },
+        );
+
+        await genericOpenAIClient(
+            [
+                { role: "user", name: "valid_name-1", content: "hello" },
+                { role: "user", name: "bad name", content: "again" },
+            ],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(upstreamBody?.messages).toEqual([
+            { role: "user", name: "valid_name-1", content: "hello" },
+            { role: "user", content: "again" },
+        ]);
+    });
+
     it("preserves upstream 429 status for callers to back off", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10643,
+  "title": "ci: add deploy-media-cloudflare workflow",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10643",
+  "merged_at": "2026-05-03T13:23:55Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Media worker joins the automation party",
+    "blurb": "We finally added an auto-deploy workflow for the media service. No more forgetting to push the big red button after merging a fix!",
+    "summary": "Added a GitHub Actions workflow to automatically deploy the media.pollinations.ai Cloudflare worker on push.",
+    "impact": "Ensures fixes to the media service are immediately deployed to production without requiring manual intervention.",
+    "keywords": [
+      "ci",
+      "cloudflare",
+      "deployment",
+      "infrastructure",
+      "media"
+    ],
+    "visual_concept": "A cute pixel robot with a CRT monitor head pressing a big 'DEPLOY' button, while the pollinations bee mascot watches happily with a clipboard. Background features a server rack with glowing lime green lights.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head pressing a glowing lime green (#ecf874) 'DEPLOY' button on a retro console. The tiny bee mascot hovers nearby holding a tiny clipboard. Soft pastel lavender gradient background with warm lighting. Lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-03/PR-10643.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head pressing a glowing lime green (#ecf874) 'DEPLOY' button on a retro console. The tiny bee mascot hovers nearby holding a tiny clipboard. Soft pastel lavender gradient background with warm lighting. Lo-fi 8-bit aesthetic, Stardew Valley vibes, emotionally warm."
+  },
+  "generated_at": "2026-05-03T13:24:49.099885+00:00"
+}

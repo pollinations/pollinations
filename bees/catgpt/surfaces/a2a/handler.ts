@@ -17,6 +17,7 @@
 import {
     buildComicImageUrl,
     generateCatReplyWithUsage,
+    UpstreamError,
 } from "../../core/index.ts";
 
 type A2APart =
@@ -95,6 +96,50 @@ function pickQuestion(message: A2AMessage): {
     return { question: question.trim(), imageUrl };
 }
 
+// Map upstream HTTP error class to JSON-RPC error code + the same
+// {code, message, hint} vocabulary used by the HTTP surfaces. Keeps the
+// taxonomy consistent across surfaces — a JSON-RPC client and a REST
+// client see the same `code` strings, just wrapped in different envelopes.
+function upstreamErrorDetail(err: UpstreamError): {
+    rpcCode: number;
+    code: string;
+    message: string;
+    hint: string;
+} {
+    if (err.status === 401 || err.status === 403) {
+        return {
+            rpcCode: -32001,
+            code: "upstream_auth_failed",
+            message: "model provider rejected the request's credentials",
+            hint: "set Authorization: Bearer <pk_*> with a valid key from https://enter.pollinations.ai",
+        };
+    }
+    if (err.status === 402) {
+        return {
+            rpcCode: -32002,
+            code: "insufficient_pollen",
+            message: "the configured key is out of pollen for this model",
+            hint: "top up at https://enter.pollinations.ai or use a key with a higher daily limit",
+        };
+    }
+    if (err.status === 429) {
+        return {
+            rpcCode: -32003,
+            code: "upstream_rate_limited",
+            message: "model provider is rate-limiting this key",
+            hint: err.retryAfter
+                ? `back off and retry; upstream said Retry-After: ${err.retryAfter}`
+                : "back off and retry",
+        };
+    }
+    return {
+        rpcCode: -32099,
+        code: "upstream_error",
+        message: `model provider returned ${err.status}`,
+        hint: err.body || "see upstream response for details",
+    };
+}
+
 async function handleMessageSend(
     id: JsonRpcRequest["id"],
     params: unknown,
@@ -115,11 +160,37 @@ async function handleMessageSend(
         return jsonRpcError(id, -32602, "invalid params: empty question");
     }
 
-    const { text: reply, usage } = await generateCatReplyWithUsage(
-        question,
-        imageUrl,
-        { apiKey },
-    );
+    let reply: string;
+    let usage: Awaited<ReturnType<typeof generateCatReplyWithUsage>>["usage"];
+    try {
+        const result = await generateCatReplyWithUsage(question, imageUrl, {
+            apiKey,
+        });
+        reply = result.text;
+        usage = result.usage;
+    } catch (err) {
+        // JSON-RPC has its own error code space. Map the same upstream-class
+        // semantics from core/errors.ts to JSON-RPC error codes:
+        //   -32001 = upstream auth failed (server-defined, like a custom HTTP 401)
+        //   -32002 = insufficient pollen
+        //   -32003 = upstream rate limited
+        //   -32099 = generic upstream error
+        // The `data` field carries the structured detail so a JSON-RPC client
+        // that knows about us can read code/hint just like other surfaces.
+        if (err instanceof UpstreamError) {
+            const detail = upstreamErrorDetail(err);
+            return jsonRpcError(id, detail.rpcCode, detail.message, {
+                code: detail.code,
+                hint: detail.hint,
+                upstreamStatus: err.status,
+                ...(err.retryAfter && { retryAfter: err.retryAfter }),
+            });
+        }
+        return jsonRpcError(id, -32099, "upstream unavailable", {
+            code: "upstream_unavailable",
+            hint: "retry in a few seconds; check https://gen.pollinations.ai/docs",
+        });
+    }
     const comicUrl = buildComicImageUrl(question, reply, imageUrl, { apiKey });
 
     // Spec shape: a `Task` with a single completed message in its history.

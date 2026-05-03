@@ -14,6 +14,9 @@ let upstreamBody = JSON.stringify({
     choices: [{ message: { content: FAKE_REPLY } }],
     usage: FAKE_USAGE,
 });
+let upstreamHeaders: Record<string, string> = {
+    "content-type": "application/json",
+};
 
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (input: any) => {
@@ -21,15 +24,20 @@ globalThis.fetch = async (input: any) => {
     if (url.includes("/v1/chat/completions")) {
         return new Response(upstreamBody, {
             status: upstreamStatus,
-            headers: { "content-type": "application/json" },
+            headers: upstreamHeaders,
         });
     }
     return realFetch(input);
 };
 
-function setUpstream(status: number, body: string = "") {
+function setUpstream(
+    status: number,
+    body: string = "",
+    headers: Record<string, string> = {},
+) {
     upstreamStatus = status;
     upstreamBody = body;
+    upstreamHeaders = { "content-type": "application/json", ...headers };
 }
 
 function resetUpstream() {
@@ -38,6 +46,7 @@ function resetUpstream() {
         choices: [{ message: { content: FAKE_REPLY } }],
         usage: FAKE_USAGE,
     });
+    upstreamHeaders = { "content-type": "application/json" };
 }
 
 const { handleChatCompletions } = await import("./handler.ts");
@@ -261,6 +270,23 @@ test("upstream 429 → structured 429 upstream_rate_limited", async () => {
         const body = (await res.json()) as any;
         assert.equal(body.error.code, "upstream_rate_limited");
         assert.match(body.error.hint, /Retry-After|retry/);
+    } finally {
+        resetUpstream();
+    }
+});
+
+test("upstream 429 with Retry-After header → forwarded verbatim (lifted from codex 4d3c9dec)", async () => {
+    setUpstream(429, '{"error":"slow"}', { "retry-after": "60" });
+    try {
+        const res = await handleChatCompletions(
+            makeReq({ messages: [{ role: "user", content: "why?" }] }),
+        );
+        assert.equal(res.status, 429);
+        // Header forwarded so auto-retrying clients honor upstream guidance.
+        assert.equal(res.headers.get("Retry-After"), "60");
+        const body = (await res.json()) as any;
+        // Hint embeds the value for human readers.
+        assert.match(body.error.hint, /Retry-After: 60/);
     } finally {
         resetUpstream();
     }

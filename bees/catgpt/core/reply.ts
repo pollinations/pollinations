@@ -22,11 +22,18 @@ function cleanReply(content: string): string {
 export class UpstreamError extends Error {
     readonly status: number;
     readonly body: string;
-    constructor(status: number, body: string) {
+    /** `Retry-After` header value if upstream sent one (typically on 429/503). */
+    readonly retryAfter: string | null;
+    constructor(
+        status: number,
+        body: string,
+        retryAfter: string | null = null,
+    ) {
         super(`upstream returned ${status}`);
         this.name = "UpstreamError";
         this.status = status;
         this.body = body;
+        this.retryAfter = retryAfter;
     }
 }
 
@@ -64,9 +71,12 @@ export async function generateCatReplyWithUsage(
     if (!res.ok) {
         // Capture the body so the surface adapter can include it in the
         // structured error response (or log it). Limit length to keep
-        // pathological responses out of memory.
+        // pathological responses out of memory. Capture Retry-After
+        // verbatim so the surface can forward it on 429/503 responses
+        // (lifted from codex's `4d3c9dec` on PR #10636).
         const body = await res.text().catch(() => "");
-        throw new UpstreamError(res.status, body.slice(0, 500));
+        const retryAfter = res.headers.get("retry-after");
+        throw new UpstreamError(res.status, body.slice(0, 500), retryAfter);
     }
     const data = (await res.json()) as {
         choices: Array<{ message: { content: string } }>;

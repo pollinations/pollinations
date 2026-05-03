@@ -18,7 +18,11 @@
 
 import {
     buildComicImageUrl,
+    errorResponse,
     generateCatReplyWithUsage,
+    UpstreamError,
+    unavailableResponse,
+    upstreamErrorResponse,
 } from "../../core/index.ts";
 
 type ChatRequest = {
@@ -32,25 +36,56 @@ function sseEvent(event: string, data: unknown): string {
 
 export async function handleChatRequest(req: Request): Promise<Response> {
     if (req.method !== "POST") {
-        return new Response("method not allowed", { status: 405 });
+        return errorResponse(
+            405,
+            "method_not_allowed",
+            `${req.method} is not supported on this endpoint`,
+            "use POST with a JSON body containing `question`",
+        );
     }
 
     const url = new URL(req.url);
     const stream = url.searchParams.get("stream") === "1";
 
-    const body = (await req.json().catch(() => null)) as ChatRequest | null;
+    let body: ChatRequest | null;
+    try {
+        body = (await req.json()) as ChatRequest;
+    } catch {
+        return errorResponse(
+            400,
+            "invalid_json",
+            "request body is not valid JSON",
+            'send a JSON body like {"question":"why?"}',
+        );
+    }
     if (!body?.question) {
-        return new Response("question required", { status: 400 });
+        return errorResponse(
+            400,
+            "missing_question",
+            "`question` is required",
+            'send {"question":"why?"} (optionally with imageUrl)',
+        );
     }
 
     const auth = req.headers.get("authorization");
     const apiKey = auth?.startsWith("Bearer ") ? auth.slice(7) : undefined;
 
-    const { text: reply, usage } = await generateCatReplyWithUsage(
-        body.question,
-        body.imageUrl ?? null,
-        { apiKey },
-    );
+    let reply: string;
+    let usage: Awaited<ReturnType<typeof generateCatReplyWithUsage>>["usage"];
+    try {
+        const result = await generateCatReplyWithUsage(
+            body.question,
+            body.imageUrl ?? null,
+            { apiKey },
+        );
+        reply = result.text;
+        usage = result.usage;
+    } catch (err) {
+        if (err instanceof UpstreamError) {
+            return upstreamErrorResponse(err);
+        }
+        return unavailableResponse();
+    }
     const comicUrl = buildComicImageUrl(
         body.question,
         reply,

@@ -60,6 +60,25 @@ Goal: make the PR readable for review, give #10628 a single artifact to point at
 
 **Verification:** rendering on github looks right; links resolve.
 
+## Phase M — cross-surface upstream errors + Retry-After [DONE]
+
+Two compounding moves: codex took Phase L wholesale on `minimal-openai-wrapper` (their commit `4d3c9dec`) AND added `Retry-After` preservation that we hadn't done. Lifted that back, hoisted the translation logic into `core/`, and applied to web-chat + a2a (same gap was in both — they called `generateCatReplyWithUsage` with no try/catch).
+
+- [x] **M1.** Added `retryAfter: string | null` to `UpstreamError`. `core/reply.ts` reads `res.headers.get("retry-after")` on non-2xx and stores it. Lifted from codex `4d3c9dec`.
+- [x] **M2.** New `bees/catgpt/core/errors.ts` hoists `errorResponse`, `upstreamErrorResponse`, `unavailableResponse` into shared module. 429 path now sets the `Retry-After` response header from upstream + embeds the value in the hint.
+- [x] **M3.** Refactored `bees/catgpt/surfaces/openai-compat/handler.ts` to use the shared helpers (~50 LOC removed; codes/hints unchanged). Added test for `Retry-After: 60` forwarding.
+- [x] **M4.** `bees/catgpt/surfaces/web-chat/handler.ts` now translates upstream errors. Plain-text 400/405 responses replaced with structured envelope (`method_not_allowed`, `invalid_json`, `missing_question`). 3 new tests including the `Retry-After: 30` forwarding case.
+- [x] **M5.** `bees/catgpt/surfaces/a2a/handler.ts` translates upstream errors to JSON-RPC `error` envelopes. JSON-RPC has its own code space — mapped to server-defined codes:
+  - `-32001` → `upstream_auth_failed` (401/403)
+  - `-32002` → `insufficient_pollen` (402)
+  - `-32003` → `upstream_rate_limited` (429, with `data.retryAfter`)
+  - `-32099` → `upstream_error` (any other non-2xx)
+  Same `code`/`hint` taxonomy as the HTTP surfaces, just wrapped in JSON-RPC. A client looking at `body.error.data.code` sees the same string across all three surfaces.
+
+**Cross-surface invariant achieved.** All three catgpt surfaces now return the same `code` strings for the same upstream conditions. A bee operator switching from a REST client to A2A sees identical error vocabulary; only the envelope changes.
+
+**Verification:** `bash bees/catgpt/scripts/smoke.sh` — 77/77 (was 69, +8 across the three surfaces). Other smokes unchanged: code-bee 20/20, deploy-api 71/71. Total 168 unit tests install-free.
+
 ## Phase L — propagate upstream auth/rate errors as structured responses [DONE]
 
 Catgpt previously did `if (!res.ok) throw new Error(...)` on upstream non-2xx — caller saw an unhandled 500 with the V8 stack trace, exactly the leak pattern the friction research B5 said never to do. Codex's `d24f7630` handles caller-side `Authorization` shape with `401 invalid_api_key`; this is the parallel slice on the upstream side: when *the upstream model provider* returns 401/402/429/5xx, surface it cleanly.

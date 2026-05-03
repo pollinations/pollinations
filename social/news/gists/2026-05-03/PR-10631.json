@@ -1,0 +1,35 @@
+{
+  "pr_number": 10631,
+  "title": "chore: update app metrics 2026-05-03",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10631",
+  "merged_at": "2026-05-03T05:17:39Z",
+  "labels": [
+    "API",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the greenhouse",
+    "blurb": "Our automated bot just did its daily rounds, updating metrics and health checks for all community apps.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse status.",
+    "impact": "Ensures the app showcase and README reflect the latest community usage statistics and health statuses.",
+    "keywords": [
+      "metrics",
+      "automated",
+      "apps",
+      "greenhouse",
+      "bot"
+    ],
+    "visual_concept": "A robot and a bee doing daily chores in a greenhouse. The robot represents the automated bot, checking metrics on a clipboard, while the bee waters the community 'app' plants.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head holding a tiny clipboard, checking on glowing code-plants in a greenhouse. The tiny bee mascot hovers nearby with a tiny watering can. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-03/PR-10631.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head holding a tiny clipboard, checking on glowing code-plants in a greenhouse. The tiny bee mascot hovers nearby with a tiny watering can. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-05-03T05:18:28.132960+00:00"
+}

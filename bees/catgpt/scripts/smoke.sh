@@ -12,9 +12,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "==> 1. Running pure-function tests"
-# Auto-discover *.test.ts under core/ and surfaces/ (excludes live.test.ts).
+# Auto-discover *.test.ts at the bee root + under core/ and surfaces/
+# (excludes live.test.ts).
 mapfile -t TEST_FILES < <(
-  find core surfaces -name '*.test.ts' ! -name 'live.test.ts' | sort
+  {
+    find . -maxdepth 1 -name '*.test.ts' ! -name 'live.test.ts'
+    find core surfaces -name '*.test.ts' ! -name 'live.test.ts'
+  } | sort
 )
 node --experimental-strip-types --test "${TEST_FILES[@]}"
 

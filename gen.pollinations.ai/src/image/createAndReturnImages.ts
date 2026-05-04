@@ -171,6 +171,28 @@ export function calculateScaledDimensions(
 }
 
 /**
+ * Clamp width/height so total pixels never exceed `maxPixels`, preserving
+ * aspect ratio. Used for the high-end cap on user-supplied dimensions —
+ * matches the backend's total-pixel validator instead of imposing a
+ * per-axis ceiling that would mishandle non-square shapes.
+ */
+export function clampToPixelBudget(
+    width: number,
+    height: number,
+    maxPixels: number,
+): { scaledWidth: number; scaledHeight: number } {
+    const currentPixels = width * height;
+    if (currentPixels <= maxPixels) {
+        return { scaledWidth: width, scaledHeight: height };
+    }
+    const factor = Math.sqrt(maxPixels / currentPixels);
+    return {
+        scaledWidth: Math.round(width * factor),
+        scaledHeight: Math.round(height * factor),
+    };
+}
+
+/**
  * Resizes an input image buffer for GPT Image editing to reduce token costs.
  * GPT Image 1.5 calculates input tokens as: (width × height) / 750
  * Large images can result in very high token costs (e.g., 4K = ~11,000 tokens)
@@ -218,27 +240,25 @@ export const callSelfHostedServer = async (
         // Smart dimension handling with safety constraints:
         // 1. Respect user input when above minimum pixel count
         // 2. Upscale proportionally if below minimum pixel count
-        // 3. Clamp to maximum limits while preserving aspect ratio
+        // 3. Clamp to the backend's total-pixel cap while preserving aspect ratio
+        //
+        // The cap matches z-image's MAX_FINAL_PIXELS (image.pollinations.ai/
+        // z-image/server.py): 768*768*4 = 2,359,296 px (~1536×1536 square).
+        // Anything above the backend hard-rejects with 422, so clamping here
+        // by total pixels — not by per-axis dimension — keeps a wide-aspect
+        // request (e.g. 2048×512 = 1.05 MP) usable while still rejecting the
+        // 4096×4096 case. Per-axis caps would either let oversized squares
+        // through or wrongly reject thin panoramas.
         const requestedPixels = safeParams.width * safeParams.height;
-        const MAX_DIMENSION = 2048; // Prevent extreme resolution requests
+        const MAX_BACKEND_PIXELS = 2_359_296;
 
         const { scaledWidth, scaledHeight } =
             requestedPixels >= TARGET_PIXEL_COUNT
-                ? (() => {
-                      const scaleFactor = Math.min(
-                          1,
-                          MAX_DIMENSION / safeParams.width,
-                          MAX_DIMENSION / safeParams.height,
-                      );
-                      return {
-                          scaledWidth: Math.round(
-                              safeParams.width * scaleFactor,
-                          ),
-                          scaledHeight: Math.round(
-                              safeParams.height * scaleFactor,
-                          ),
-                      };
-                  })()
+                ? clampToPixelBudget(
+                      safeParams.width,
+                      safeParams.height,
+                      MAX_BACKEND_PIXELS,
+                  )
                 : calculateScaledDimensions(
                       safeParams.width,
                       safeParams.height,

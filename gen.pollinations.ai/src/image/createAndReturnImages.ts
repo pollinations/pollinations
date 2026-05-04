@@ -590,7 +590,7 @@ const callGPTImageWithEndpoint = async (
         usage?: AzureGPTImageUsage;
     };
 
-    if (!data.data || !data.data[0] || !data.data[0].b64_json) {
+    if (!data.data?.[0]?.b64_json) {
         throw new Error("Invalid response from GPT Image API");
     }
 

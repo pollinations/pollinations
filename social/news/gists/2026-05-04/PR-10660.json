@@ -1,0 +1,34 @@
+{
+  "pr_number": 10660,
+  "title": "fix: align key modal blue styling",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10660",
+  "merged_at": "2026-05-04T07:37:16Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A fresh coat of blue paint",
+    "blurb": "We've polished up the API key dialogs with a soothing new blue color palette. Managing your keys just got a little easier on the eyes.",
+    "summary": "Aligned the styling of API key creation, editing, and deletion dialogs to match the dashboard's cohesive blue palette.",
+    "impact": "Users will experience a cleaner, more consistent interface when managing their API keys and permissions.",
+    "keywords": [
+      "ui",
+      "dashboard",
+      "api-keys",
+      "styling",
+      "frontend"
+    ],
+    "visual_concept": "The bee mascot acting as a painter, painting a giant golden key with soft blue paint to represent the UI color alignment for API keys.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a brush to paint a giant golden key with soft pastel blue paint. A chunky retro monitor in the background displays a clean blue user interface. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-04/PR-10660.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, using a brush to paint a giant golden key with soft pastel blue paint. A chunky retro monitor in the background displays a clean blue user interface. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-04T07:38:12.471166+00:00"
+}

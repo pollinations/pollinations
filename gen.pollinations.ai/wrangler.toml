@@ -44,6 +44,9 @@ LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
 
 [dev]
 port = 8788
@@ -103,6 +106,9 @@ ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
 POLLEN_REFILL_PER_HOUR = 1
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
 
 # Staging routes
 [env.staging]
@@ -157,6 +163,9 @@ LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
 
 [env.test]
 
@@ -232,3 +241,6 @@ PLN_GPU_TOKEN = "not-a-secret-workers-test-only"
 POLLEN_REFILL_PER_HOUR = 1
 PRUNA_API_KEY = "not-a-secret-workers-test-only"
 XAI_API_KEY = "not-a-secret-workers-test-only"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "test-guardrail"
+BEDROCK_GUARDRAIL_VERSION = "1"

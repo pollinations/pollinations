@@ -1,4 +1,5 @@
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
@@ -66,11 +67,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "What to avoid in the generated image. Only supported by `flux` and `zimage` — other models ignore this.",
         }),
-    safe: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Enable safety content filters" }),
+    safe: SafeSchema,
     quality: z
         .enum(QUALITIES as unknown as [string, ...string[]])
         .optional()

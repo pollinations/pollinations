@@ -5,6 +5,7 @@ import { HttpError } from "../httpError.ts";
 import { getScaledDimensions } from "../models.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 
 // Logger
@@ -279,40 +280,29 @@ async function generateWithSeedream(
     logOps("Seedream API request body:", JSON.stringify(requestBody, null, 2));
 
     // Make API call
-    const response = await fetch(
-        "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify(requestBody),
+    const seedreamUrl =
+        "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations";
+    // Pass through the original status code from Seedream API
+    // 400 errors are client errors (invalid parameters, content policy, etc.)
+    const response = await fetchUpstream(seedreamUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
         },
-    );
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError(
-            `Seedream API request failed, status:`,
-            response.status,
-            "response:",
-            errorText,
-        );
-        // Pass through the original status code from Seedream API
-        // 400 errors are client errors (invalid parameters, content policy, etc.)
-        throw new HttpError(
-            `Seedream API request failed: ${errorText}`,
-            response.status,
-        );
-    }
+        body: JSON.stringify(requestBody),
+        errorLabel: "Seedream API request failed",
+    });
 
     const data = (await response.json()) as SeedreamResponse;
     logOps("Seedream API response:", JSON.stringify(data, null, 2));
 
     if (!data.data || !data.data[0] || !data.data[0].url) {
-        throw new Error(
+        throw new HttpError(
             "Invalid response from Seedream API - no image URL received",
+            500,
+            undefined,
+            seedreamUrl,
         );
     }
 
@@ -327,14 +317,9 @@ async function generateWithSeedream(
     const imageUrl = data.data[0].url;
     logOps("Downloading image from URL:", imageUrl);
 
-    const imageResponse = await fetch(imageUrl);
-
-    if (!imageResponse.ok) {
-        throw new Error(
-            `Failed to download image: ${imageResponse.status} ${imageResponse.statusText}`,
-        );
-    }
-
+    const imageResponse = await fetchUpstream(imageUrl, {
+        errorLabel: "Failed to download image",
+    });
     const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
     logOps("Downloaded image, buffer size:", imageBuffer.length);
 

@@ -26,7 +26,9 @@ type DashboardShellProps = PropsWithChildren<{
     avatarUrl?: string;
     discordLinked?: boolean;
     isLinkingDiscord?: boolean;
+    isUnlinkingDiscord?: boolean;
     onLinkDiscord?: () => void;
+    onUnlinkDiscord?: () => void;
     onPageChange: (page: DashboardPage) => void;
     onSignOut?: () => void;
     accountArea?: ReactNode;
@@ -39,7 +41,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     avatarUrl,
     discordLinked,
     isLinkingDiscord,
+    isUnlinkingDiscord,
     onLinkDiscord,
+    onUnlinkDiscord,
     onPageChange,
     onSignOut,
     accountArea,
@@ -112,7 +116,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             avatarUrl={avatarUrl}
             discordLinked={discordLinked}
             isLinkingDiscord={isLinkingDiscord}
+            isUnlinkingDiscord={isUnlinkingDiscord}
             onLinkDiscord={onLinkDiscord}
+            onUnlinkDiscord={onUnlinkDiscord}
             onPageChange={handlePageChange}
             onSignOut={onSignOut}
             accountArea={accountArea}
@@ -218,7 +224,9 @@ type DashboardRailProps = {
     avatarUrl?: string;
     discordLinked?: boolean;
     isLinkingDiscord?: boolean;
+    isUnlinkingDiscord?: boolean;
     onLinkDiscord?: () => void;
+    onUnlinkDiscord?: () => void;
     onPageChange: (page: DashboardPage) => void;
     onSignOut?: () => void;
     accountArea?: ReactNode;
@@ -231,7 +239,9 @@ const DashboardRail: FC<DashboardRailProps> = ({
     avatarUrl,
     discordLinked,
     isLinkingDiscord,
+    isUnlinkingDiscord,
     onLinkDiscord,
+    onUnlinkDiscord,
     onPageChange,
     onSignOut,
     accountArea,
@@ -287,7 +297,9 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             avatarUrl={avatarUrl ?? ""}
                             discordLinked={discordLinked}
                             isLinkingDiscord={isLinkingDiscord}
+                            isUnlinkingDiscord={isUnlinkingDiscord}
                             onLinkDiscord={onLinkDiscord}
+                            onUnlinkDiscord={onUnlinkDiscord}
                             onSignOut={onSignOut}
                             className="w-full justify-start"
                             menuItems={<AccountMenuLinks />}
@@ -478,7 +490,7 @@ const AccountIconLink: FC<{
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
+        className="flex items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}

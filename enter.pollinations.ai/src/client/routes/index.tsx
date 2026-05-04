@@ -116,6 +116,7 @@ function RouteComponent() {
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isLinkingDiscord, setIsLinkingDiscord] = useState(false);
+    const [isUnlinkingDiscord, setIsUnlinkingDiscord] = useState(false);
     const [linkAccountError, setLinkAccountError] = useState<string | null>(
         null,
     );
@@ -156,7 +157,7 @@ function RouteComponent() {
     }
 
     async function handleLinkDiscord(): Promise<void> {
-        if (isLinkingDiscord || discordLinked) return;
+        if (isLinkingDiscord || isUnlinkingDiscord || discordLinked) return;
         setIsLinkingDiscord(true);
         setLinkAccountError(null);
         try {
@@ -189,6 +190,42 @@ function RouteComponent() {
                     : "Failed to connect Discord",
             );
             setIsLinkingDiscord(false);
+        }
+    }
+
+    async function handleUnlinkDiscord(): Promise<void> {
+        if (isUnlinkingDiscord || isLinkingDiscord || !discordLinked) return;
+        setIsUnlinkingDiscord(true);
+        setLinkAccountError(null);
+        try {
+            const response = await fetch("/api/auth/unlink-account", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ providerId: "discord" }),
+            });
+            const data = (await response.json().catch(() => null)) as {
+                error?: string;
+                message?: string;
+            } | null;
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.message ||
+                        data?.error ||
+                        "Failed to disconnect Discord",
+                );
+            }
+
+            await router.invalidate();
+        } catch (error) {
+            setLinkAccountError(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to disconnect Discord",
+            );
+        } finally {
+            setIsUnlinkingDiscord(false);
         }
     }
 
@@ -291,7 +328,9 @@ function RouteComponent() {
             avatarUrl={user?.image || ""}
             discordLinked={discordLinked}
             isLinkingDiscord={isLinkingDiscord}
+            isUnlinkingDiscord={isUnlinkingDiscord}
             onLinkDiscord={handleLinkDiscord}
+            onUnlinkDiscord={handleUnlinkDiscord}
             onPageChange={handlePageChange}
             onSignOut={handleSignOut}
         >

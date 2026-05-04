@@ -56,7 +56,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "mistral",
-        config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
+        config: portkeyConfig["mistral-small-2503"],
     },
     {
         name: "deepseek",
@@ -187,9 +187,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "llama",
-        config: portkeyConfig[
-            "accounts/fireworks/models/llama-v3p3-70b-instruct"
-        ],
+        config: portkeyConfig["Llama-3.3-70B-Instruct"],
+    },
+    {
+        name: "llama-maverick",
+        config: portkeyConfig["Llama-4-Maverick-17B-128E-Instruct-FP8"],
+    },
+    {
+        name: "llama-scout",
+        config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
     },
     {
         name: "mistral-large",

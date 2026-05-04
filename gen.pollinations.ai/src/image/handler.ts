@@ -166,12 +166,22 @@ function mediaHeaders(
     return headers;
 }
 
+function safeUpstreamUrl(value: string | undefined): URL | undefined {
+    if (!value) return undefined;
+    try {
+        return new URL(value);
+    } catch {
+        return undefined;
+    }
+}
+
 function throwImageError(error: unknown, c: ImageContext): never {
     if (error instanceof UpstreamError) throw error;
     if (error instanceof HttpError) {
         throw new UpstreamError(error.status as ContentfulStatusCode, {
             message: error.message,
-            requestUrl: new URL(c.req.url),
+            requestUrl:
+                safeUpstreamUrl(error.upstreamUrl) ?? new URL(c.req.url),
             upstreamStatus: error.status,
             responseBody: JSON.stringify(error.details || {}),
             cause: error,

@@ -217,7 +217,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 onSubmit={onCreate}
                                 onComplete={() => {}}
                                 triggerLabel="🔑 + API Key"
-                                triggerColor="blue"
                             />
                         </div>
                         {!sortedApiKeys.length && (
@@ -277,7 +276,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 onSubmit={onCreate}
                                 onComplete={() => {}}
                                 triggerLabel="🖥️ + Add App"
-                                triggerColor="blue"
                                 simplified
                                 canReceiveRewards={canReceiveRewards}
                             />

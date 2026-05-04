@@ -72,7 +72,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                             type="text"
                             value={uri}
                             onChange={(e) => update(index, e.target.value)}
-                            className="flex-1 rounded-lg border border-blue-300 px-3 py-2 focus:outline-none focus-visible:border-blue-500 focus-visible:ring-1 focus-visible:ring-blue-500/60"
+                            className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
                             placeholder="https://myapp.com/auth/callback"
                             disabled={disabled}
                         />
@@ -89,7 +89,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         )}
                     </Field.Root>
                 ))}
-                <p className="text-xs text-blue-800/70">
+                <p className="text-xs text-gray-600">
                     Loopback URLs match any port (RFC 8252).
                 </p>
             </div>

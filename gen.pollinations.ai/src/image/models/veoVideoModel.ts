@@ -5,6 +5,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
@@ -223,33 +224,26 @@ export const callVeoAPI = async (
     const generateEndpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${MODEL_ID}:predictLongRunning`;
     logOps("Generate endpoint:", generateEndpoint);
 
-    const generateResponse = await fetch(generateEndpoint, {
+    const generateResponse = await fetchUpstream(generateEndpoint, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${accessToken}`,
             "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
+        errorLabel: "Veo API request failed",
     });
-
-    if (!generateResponse.ok) {
-        const errorText = await generateResponse.text();
-        logError(
-            "Veo API generate request failed:",
-            generateResponse.status,
-            errorText,
-        );
-        throw new HttpError(
-            `Veo API request failed: ${errorText}`,
-            generateResponse.status,
-        );
-    }
 
     const generateData: VeoOperationResponse = await generateResponse.json();
     logOps("Generate response:", JSON.stringify(generateData, null, 2));
 
     if (!generateData.name) {
-        throw new HttpError("Veo API did not return operation name", 500);
+        throw new HttpError(
+            "Veo API did not return operation name",
+            500,
+            undefined,
+            generateEndpoint,
+        );
     }
 
     // Step 2: Poll for completion using fetchPredictOperation
@@ -359,6 +353,8 @@ async function pollVeoOperation(
                 throw new HttpError(
                     `Video generation failed: ${pollData.error.message}`,
                     isClientError ? 400 : 500,
+                    undefined,
+                    pollUrl,
                 );
             }
 
@@ -388,11 +384,18 @@ async function pollVeoOperation(
                     throw new HttpError(
                         "Video returned as GCS URI which is not supported",
                         500,
+                        undefined,
+                        pollUrl,
                     );
                 }
             }
 
-            throw new HttpError("No video data in response", 500);
+            throw new HttpError(
+                "No video data in response",
+                500,
+                undefined,
+                pollUrl,
+            );
         }
 
         // Not done yet, wait and try again
@@ -400,5 +403,10 @@ async function pollVeoOperation(
         delayMs = Math.min(delayMs * 1.2, 30000); // Exponential backoff, cap at 30s
     }
 
-    throw new HttpError("Video generation timed out after 3 minutes", 504);
+    throw new HttpError(
+        "Video generation timed out after 3 minutes",
+        504,
+        undefined,
+        pollUrl,
+    );
 }

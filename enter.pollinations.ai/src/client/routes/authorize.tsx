@@ -454,21 +454,23 @@ function AuthorizeComponent() {
                         </AuthInfoCard>
                     )}
 
-                    <div className="flex flex-wrap gap-2 justify-end">
-                        <Button
-                            as="button"
-                            onClick={handleDeny}
-                            weight="outline"
-                            color="dark"
-                            disabled={isSigningIn}
-                        >
-                            Deny
-                        </Button>
+                    <div className="space-y-4">
                         <SocialSignInButtons
                             pendingProvider={pendingProvider}
                             disabled={!!error}
                             onSignIn={signIn}
                         />
+                        <div className="flex justify-end">
+                            <Button
+                                as="button"
+                                onClick={handleDeny}
+                                weight="outline"
+                                color="dark"
+                                disabled={isSigningIn}
+                            >
+                                Deny
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </AuthModal>

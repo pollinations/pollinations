@@ -3,9 +3,10 @@ import type { TierName } from "../tier-config.ts";
 /**
  * BYOP markup applied to requests authenticated by a BYOP-issued sk_ token with
  * a trusted byop_client_key_id. The payer is billed baseline + markup; the
- * markup is credited to the app owner's dev_balance.
+ * markup is credited to the app owner's tier_balance.
  */
 export const BYOP_MARKUP_PCT = 0.25;
+export const BYOP_MARKUP_PERCENT = BYOP_MARKUP_PCT * 100;
 
 export const MARKUP_ELIGIBLE_PAYER_TIERS: ReadonlyArray<TierName> = [
     "microbe",

@@ -289,9 +289,7 @@ function AuthorizeComponent() {
             .then((data) => {
                 if (!data) return;
                 setTotalBalance(
-                    (data.tierBalance ?? 0) +
-                        (data.devBalance ?? 0) +
-                        (data.packBalance ?? 0),
+                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
                 );
             })
             .catch(() => {});

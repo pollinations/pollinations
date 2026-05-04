@@ -34,7 +34,6 @@ async function setupPayerAndDev({
             name: payerId,
             tier: payerTier,
             tierBalance: 2,
-            devBalance: 0,
             packBalance: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -45,7 +44,6 @@ async function setupPayerAndDev({
             name: devId,
             tier: devTier,
             tierBalance: 0,
-            devBalance: 0,
             packBalance: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -111,7 +109,7 @@ describe("BYOP markup", () => {
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
     });
 
-    it("credits dev_balance and bills payer baseline plus markup", async () => {
+    it("credits creator tier_balance and bills payer baseline plus markup", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({
@@ -129,9 +127,9 @@ describe("BYOP markup", () => {
             2 - 1 - BYOP_MARKUP_PCT,
             10,
         );
-        const devBalances = await getUserBalances(db, devId);
-        expect(devBalances.devBalance).toBeCloseTo(BYOP_MARKUP_PCT, 10);
-        expect(devBalances.packBalance).toBe(0);
+        const creatorBalances = await getUserBalances(db, devId);
+        expect(creatorBalances.tierBalance).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+        expect(creatorBalances.packBalance).toBe(0);
     });
 
     it("bills baseline only when markup is not eligible", async () => {
@@ -149,7 +147,7 @@ describe("BYOP markup", () => {
 
         expect(markup).toBeNull();
         expect((await getUserBalances(db, payerId)).tierBalance).toBe(1);
-        expect((await getUserBalances(db, devId)).devBalance).toBe(0);
+        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
     });
 
     it("does not credit or deduct for unbilled requests", async () => {
@@ -165,7 +163,7 @@ describe("BYOP markup", () => {
 
         expect(markup).toBeNull();
         expect((await getUserBalances(db, payerId)).tierBalance).toBe(2);
-        expect((await getUserBalances(db, devId)).devBalance).toBe(0);
+        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
     });
 
     it("reverts dev credit when payer deduction fails", async () => {
@@ -181,14 +179,14 @@ describe("BYOP markup", () => {
             }),
         ).rejects.toThrow(/affected 0 rows/);
 
-        expect((await getUserBalances(db, devId)).devBalance).toBe(0);
+        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
     });
 
     it("returns ok=false when crediting a missing user", async () => {
         const { ok, newBalance } = await atomicCreditUserBalance(
             db,
             "missing-credit-user",
-            "dev",
+            "tier",
             1,
         );
 

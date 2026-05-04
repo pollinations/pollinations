@@ -253,7 +253,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     </span>
                                     <span>
                                         Turn on developer earnings to receive
-                                        20% of what they spend.
+                                        25% extra from what they spend.
                                     </span>
                                 </p>
                                 <a

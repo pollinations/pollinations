@@ -22,7 +22,7 @@ There are **three ways**:
 
 1. 💳 **Buy It** — Purchase Pollen packs with a credit card. Goes into your wallet and *never expires*. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
 2. 🌱 **Tier Grants** — All accounts receive free Pollen that refills every hour. Contribute to unlock bigger hourly grants.
-3. **🌻 Dev earnings** — Turn on developer earnings for an App Key and receive 20% of the Pollen your users spend in your app.
+3. **🌻 Dev earnings** — Turn on developer earnings for an App Key and receive 25% extra from Pollen your users spend in your app.
 
 ## 🆓 Can I try it for free?
 
@@ -92,7 +92,7 @@ BYOP lets your users connect their Pollinations account to your app and spend th
 **Why use it:**
 
 - **No shared balance drain:** user usage does not spend your Pollen.
-- **🌻 Dev earnings:** Each request through your app charges users 20% extra — credited to you.
+- **🌻 Dev earnings:** Each request through your app charges users 25% extra — credited to you.
 - **Scoped access:** users approve a key for your app with model limits, budget, and expiry.
 
 📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**

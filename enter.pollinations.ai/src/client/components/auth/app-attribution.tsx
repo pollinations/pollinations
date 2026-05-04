@@ -25,7 +25,7 @@ export function AppAttribution({
         (isDeviceMode ? "A device" : redirectHostname || "An app");
     const tipText =
         attribution?.found && attribution.byopEnabled
-            ? "Same as copy-pasting an API key into their app. Only share with apps you trust. The developer earns 20%."
+            ? "Same as copy-pasting an API key into their app. Only share with apps you trust. The developer earns 25% extra."
             : "Same as copy-pasting an API key into their app. Only share with apps you trust.";
     return (
         <>

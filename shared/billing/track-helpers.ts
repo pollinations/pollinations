@@ -145,7 +145,7 @@ export async function handleBalanceDeduction(
             const { ok } = await atomicCreditUserBalance(
                 db,
                 resolved.devUserId,
-                "dev",
+                "tier",
                 resolved.devCredit,
             );
             if (!ok) {
@@ -194,7 +194,7 @@ export async function handleBalanceDeduction(
                 await atomicAdjustUserBalance(
                     db,
                     resolved.devUserId,
-                    "dev",
+                    "tier",
                     -resolved.devCredit,
                 );
                 log.warn(
@@ -304,7 +304,7 @@ async function deductUserBalance(
         }
 
         log.debug(
-            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, dev: -{fromDev}, pack: -{fromPack})",
+            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
             {
                 price: amount,
                 userId,

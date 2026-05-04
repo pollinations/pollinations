@@ -32,7 +32,6 @@ function createTestApp(consumePollen: (amount: number) => Promise<void>) {
             requirePaidBalance: async () => {},
             getBalance: async () => ({
                 tierBalance: 1,
-                devBalance: 0,
                 packBalance: 0,
             }),
         });

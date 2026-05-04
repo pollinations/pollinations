@@ -9,7 +9,6 @@ import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
-    devBalance: number;
     packBalance: number;
     tier?: string;
 };
@@ -26,7 +25,6 @@ type GaugeSegmentProps = {
 
 const gaugeSegmentColors = {
     ...pillColors,
-    dev: { bg: "bg-orange-200", text: "text-orange-950" },
 } as const;
 
 const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
@@ -69,49 +67,41 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
-    devBalance,
     packBalance,
     tier = "spore",
 }) => {
     const tierEmoji = getTierEmoji(tier);
     const tierColor = getTierColor(tier) as GaugeSegmentProps["color"];
 
-    // Clamp at 0 for display — individual buckets can go slightly negative from overage
-    const displayTier = Math.max(0, tierBalance);
-    const displayDev = Math.max(0, devBalance);
-    const displayPaid = Math.max(0, packBalance);
-    const totalPollen = displayTier + displayDev + displayPaid;
+    const positiveTier = Math.max(0, tierBalance);
+    const positivePaid = Math.max(0, packBalance);
+    const totalPollen = tierBalance + packBalance;
 
     const gaugeHeightClass = "h-[30px] sm:h-[34px]";
-    const hideTierGaugeSegment = tier === "microbe" && displayTier === 0;
+    const hideTierGaugeSegment = tier === "microbe" && positiveTier === 0;
 
     // Each visible segment gets at least MIN_SEGMENT% so labels stay readable;
-    // the remaining width is split proportionally to the raw values.
+    // the remaining width is split proportionally to positive balances.
     const MIN_SEGMENT = 20;
-    const showPaid = displayPaid > 0;
-    const showDev = displayDev > 0;
-    const showTier = !hideTierGaugeSegment && displayTier > 0;
-    const visibleCount =
-        (showPaid ? 1 : 0) + (showDev ? 1 : 0) + (showTier ? 1 : 0);
+    const showPaid = positivePaid > 0;
+    const showTier = !hideTierGaugeSegment && positiveTier > 0;
+    const visibleCount = (showPaid ? 1 : 0) + (showTier ? 1 : 0);
 
     let paidPercentage = 0;
-    let devPercentage = 0;
     let freePercentage = 0;
-    if (visibleCount === 0 || totalPollen <= 0) {
+    const positiveTotal = positiveTier + positivePaid;
+    if (visibleCount === 0 || positiveTotal <= 0) {
         paidPercentage = 50;
         freePercentage = 50;
     } else {
         const surplus = 100 - MIN_SEGMENT * visibleCount;
         if (showPaid) {
             paidPercentage =
-                MIN_SEGMENT + (displayPaid / totalPollen) * surplus;
-        }
-        if (showDev) {
-            devPercentage = MIN_SEGMENT + (displayDev / totalPollen) * surplus;
+                MIN_SEGMENT + (positivePaid / positiveTotal) * surplus;
         }
         if (showTier) {
             freePercentage =
-                MIN_SEGMENT + (displayTier / totalPollen) * surplus;
+                MIN_SEGMENT + (positiveTier / positiveTotal) * surplus;
         }
     }
 
@@ -132,34 +122,23 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         {paidPercentage > 0 && (
                             <PollenGaugeSegment
                                 percentage={paidPercentage}
-                                value={displayPaid}
+                                value={packBalance}
                                 label="🪷"
                                 color="amber"
                                 tooltipText="🪷 Top-up — Pollen you bought. Never expires."
                                 position="left"
                             />
                         )}
-                        {displayDev > 0 && (
-                            <PollenGaugeSegment
-                                percentage={devPercentage}
-                                value={displayDev}
-                                label="🌻"
-                                color="dev"
-                                tooltipText="🌻 Dev earnings — your 20% share from users spending in your apps."
-                                position="right"
-                                offset={paidPercentage}
-                            />
-                        )}
                         {/* Free Pollen - Soft teal for free */}
                         {!hideTierGaugeSegment && freePercentage > 0 && (
                             <PollenGaugeSegment
                                 percentage={freePercentage}
-                                value={displayTier}
+                                value={tierBalance}
                                 label={tierEmoji}
                                 color={tierColor}
                                 tooltipText={`${tierEmoji} Tier — your free hourly Pollen.`}
                                 position="right"
-                                offset={paidPercentage + devPercentage}
+                                offset={paidPercentage}
                             />
                         )}
                     </div>

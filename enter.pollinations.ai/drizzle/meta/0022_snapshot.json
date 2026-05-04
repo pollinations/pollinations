@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "90e77bec-da28-4505-813e-4cf8fae08716",
+  "id": "60710c27-b060-44a5-a002-2446b13f0256",
   "prevId": "d4b78ed6-f24c-4cbc-a7de-0ddc2ba43118",
   "tables": {
     "account": {
@@ -728,13 +728,6 @@
         },
         "tier_balance": {
           "name": "tier_balance",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "dev_balance": {
-          "name": "dev_balance",
           "type": "real",
           "primaryKey": false,
           "notNull": false,

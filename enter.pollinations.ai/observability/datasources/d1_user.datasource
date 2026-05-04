@@ -19,7 +19,6 @@ SCHEMA >
     `github_username` Nullable(String) `json:$.github_username`,
     `tier` String `json:$.tier` DEFAULT 'spore',
     `tier_balance` Nullable(Float64) `json:$.tier_balance`,
-    `dev_balance` Nullable(Float64) `json:$.dev_balance`,
     `pack_balance` Nullable(Float64) `json:$.pack_balance`,
     `crypto_balance` Nullable(Float64) `json:$.crypto_balance`,
     `last_tier_grant` Nullable(Int64) `json:$.last_tier_grant`,

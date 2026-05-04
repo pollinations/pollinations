@@ -62,7 +62,6 @@ export const Route = createFileRoute("/")({
             ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
-        const devBalance = d1BalanceResult?.devBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
@@ -74,7 +73,6 @@ export const Route = createFileRoute("/")({
             apiKeys,
             tierData,
             tierBalance,
-            devBalance,
             packBalance,
         };
     },
@@ -88,7 +86,6 @@ function RouteComponent() {
         apiKeys,
         tierData,
         tierBalance,
-        devBalance,
         packBalance,
     } = Route.useLoaderData();
 
@@ -101,7 +98,6 @@ function RouteComponent() {
     const canReceiveRewards = isRewardEligibleCreatorTier(
         tierData?.active?.tier ?? user?.tier,
     );
-    const visibleDevBalance = canReceiveRewards ? devBalance : 0;
 
     useEffect(() => {
         function syncPageFromHash(): void {
@@ -242,7 +238,6 @@ function RouteComponent() {
                     <DashboardSection title="Balance" theme="amber" framed>
                         <PollenBalance
                             tierBalance={tierBalance}
-                            devBalance={visibleDevBalance}
                             packBalance={packBalance}
                             tier={tierData?.active?.tier}
                         />
@@ -307,11 +302,7 @@ function RouteComponent() {
                 />
             )}
             {activePage === "models" && (
-                <Pricing
-                    tierBalance={tierBalance}
-                    devBalance={visibleDevBalance}
-                    packBalance={packBalance}
-                />
+                <Pricing tierBalance={tierBalance} packBalance={packBalance} />
             )}
         </DashboardShell>
     );

@@ -31,7 +31,6 @@ export const user = sqliteTable("user", {
   githubUsername: text("github_username"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
-  devBalance: real("dev_balance"),
   packBalance: real("pack_balance"),
   lastTierGrant: integer("last_tier_grant"),
 }, (table) => [

@@ -2,25 +2,35 @@ import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
 
-export const BALANCE_BUCKETS = ["tier", "dev", "pack"] as const;
+export const BALANCE_BUCKETS = ["tier", "pack"] as const;
 export type Bucket = (typeof BALANCE_BUCKETS)[number];
 
 const BUCKET_COLUMNS = {
     tier: userTable.tierBalance,
-    dev: userTable.devBalance,
     pack: userTable.packBalance,
 } as const satisfies Record<Bucket, unknown>;
+
+export const BILLING_POLICIES = {
+    regular: {
+        spendOrder: ["tier", "pack"],
+        debtBucket: "tier",
+    },
+    paidOnly: {
+        spendOrder: ["pack"],
+        debtBucket: "pack",
+    },
+} as const satisfies Record<
+    string,
+    { spendOrder: readonly Bucket[]; debtBucket: Bucket }
+>;
+
+type BillingPolicy = (typeof BILLING_POLICIES)[keyof typeof BILLING_POLICIES];
 
 /**
  * Atomically deducts pollen from user balance.
  *
- * If the user has no positive non-tier balance, always deducts from tier.
- * Tier resets hourly so going negative is fine and prevents spillover into
- * non-tier buckets.
- *
- * If the user has a positive non-tier balance, uses priority: tier → dev → pack.
- * Dev and pack must be checked independently so a negative dev balance cannot
- * cancel out a positive pack balance and skip paid balance.
+ * Regular requests spend positive tier balance first, then positive pack
+ * balance. Any remaining debt lands in tier balance because tier refills hourly.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
@@ -32,20 +42,17 @@ export async function atomicDeductUserBalance(
     const result = await db.run(sql`
 			UPDATE ${userTable}
 			SET
-				tier_balance = CASE
-					WHEN COALESCE(pack_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
-					WHEN COALESCE(tier_balance, 0) > 0 THEN COALESCE(tier_balance, 0) - ${amount}
-					ELSE tier_balance
+				tier_balance = COALESCE(tier_balance, 0) - CASE
+					WHEN ${amount} <= MAX(COALESCE(tier_balance, 0), 0) THEN ${amount}
+					WHEN ${amount} <= MAX(COALESCE(tier_balance, 0), 0) + MAX(COALESCE(pack_balance, 0), 0)
+						THEN MAX(COALESCE(tier_balance, 0), 0)
+					ELSE ${amount} - MAX(COALESCE(pack_balance, 0), 0)
 				END,
-				dev_balance = CASE
-					WHEN COALESCE(pack_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN dev_balance
-					WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) > 0 THEN COALESCE(dev_balance, 0) - ${amount}
-					ELSE dev_balance
-				END,
-				pack_balance = CASE
-					WHEN COALESCE(pack_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN pack_balance
-					WHEN COALESCE(tier_balance, 0) <= 0 AND COALESCE(dev_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
-					ELSE pack_balance
+				pack_balance = COALESCE(pack_balance, 0) - CASE
+					WHEN ${amount} <= MAX(COALESCE(tier_balance, 0), 0) THEN 0
+					WHEN ${amount} <= MAX(COALESCE(tier_balance, 0), 0) + MAX(COALESCE(pack_balance, 0), 0)
+						THEN ${amount} - MAX(COALESCE(tier_balance, 0), 0)
+					ELSE MAX(COALESCE(pack_balance, 0), 0)
 				END
 			WHERE id = ${userId}
 		`);
@@ -83,7 +90,6 @@ export async function atomicDeductApiKeyBalance(
 
 export type UserBalances = {
     tierBalance: number;
-    devBalance: number;
     packBalance: number;
 };
 
@@ -136,7 +142,6 @@ export async function getUserBalances(
     const result = await db
         .select({
             tierBalance: userTable.tierBalance,
-            devBalance: userTable.devBalance,
             packBalance: userTable.packBalance,
         })
         .from(userTable)
@@ -146,7 +151,6 @@ export async function getUserBalances(
     const user = result[0];
     return {
         tierBalance: user?.tierBalance ?? 0,
-        devBalance: user?.devBalance ?? 0,
         packBalance: user?.packBalance ?? 0,
     };
 }
@@ -154,26 +158,31 @@ export async function getUserBalances(
 export type DeductionSource = Record<`from${Capitalize<Bucket>}`, number>;
 
 /**
- * Identifies which single balance bucket a deduction comes from.
- * Matches the logic in atomicDeductUserBalance:
- * - If no positive non-tier balance → always tier
- * - Otherwise: tier → dev → pack
+ * Identifies how a deduction will split across buckets under a policy.
  */
 export function identifyDeductionSource(
     balances: UserBalances,
     amount: number,
+    policy: BillingPolicy = BILLING_POLICIES.regular,
 ): DeductionSource {
     const zero: DeductionSource = {
         fromTier: 0,
-        fromDev: 0,
         fromPack: 0,
     };
-    const { tierBalance, devBalance, packBalance } = balances;
-    if (devBalance <= 0 && packBalance <= 0)
-        return { ...zero, fromTier: amount };
-    if (tierBalance > 0) return { ...zero, fromTier: amount };
-    if (devBalance > 0) return { ...zero, fromDev: amount };
-    return { ...zero, fromPack: amount };
+    if (amount <= 0) return zero;
+
+    let remaining = amount;
+    const source = { ...zero };
+    for (const bucket of policy.spendOrder) {
+        const available = Math.max(0, getBucketBalance(balances, bucket));
+        const spent = Math.min(available, remaining);
+        source[`from${capitalizeBucket(bucket)}`] += spent;
+        remaining -= spent;
+        if (remaining <= 0) return source;
+    }
+
+    source[`from${capitalizeBucket(policy.debtBucket)}`] += remaining;
+    return source;
 }
 
 /**
@@ -198,4 +207,12 @@ export async function atomicDeductPaidBalance(
 		`);
 
     return { ok: (result.meta.changes ?? 0) > 0 };
+}
+
+function capitalizeBucket(bucket: Bucket): Capitalize<Bucket> {
+    return (bucket[0].toUpperCase() + bucket.slice(1)) as Capitalize<Bucket>;
+}
+
+function getBucketBalance(balances: UserBalances, bucket: Bucket): number {
+    return bucket === "tier" ? balances.tierBalance : balances.packBalance;
 }

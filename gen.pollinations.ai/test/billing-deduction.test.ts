@@ -13,11 +13,9 @@ const db = drizzle(env.DB);
 
 async function createUser({
     tierBalance,
-    devBalance = 0,
     packBalance,
 }: {
     tierBalance: number;
-    devBalance?: number;
     packBalance: number;
 }) {
     const userId = `billing-${crypto.randomUUID()}`;
@@ -27,7 +25,6 @@ async function createUser({
         name: "Billing Test User",
         tier: "flower",
         tierBalance,
-        devBalance,
         packBalance,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -36,103 +33,52 @@ async function createUser({
 }
 
 describe("billing deduction", () => {
-    it("identifies the single bucket a regular generation charge will use", () => {
+    it("identifies regular generation charges as tier, then pack, then tier debt", () => {
         expect(
-            identifyDeductionSource(
-                { tierBalance: 5, devBalance: 0, packBalance: 5 },
-                7,
-            ),
+            identifyDeductionSource({ tierBalance: 5, packBalance: 5 }, 7),
         ).toEqual({
-            fromTier: 7,
-            fromDev: 0,
-            fromPack: 0,
+            fromTier: 5,
+            fromPack: 2,
         });
         expect(
-            identifyDeductionSource(
-                { tierBalance: 0, devBalance: 8, packBalance: 5 },
-                5,
-            ),
+            identifyDeductionSource({ tierBalance: 0, packBalance: 8 }, 5),
         ).toEqual({
             fromTier: 0,
-            fromDev: 5,
-            fromPack: 0,
-        });
-        expect(
-            identifyDeductionSource(
-                { tierBalance: 0, devBalance: 0, packBalance: 8 },
-                5,
-            ),
-        ).toEqual({
-            fromTier: 0,
-            fromDev: 0,
             fromPack: 5,
         });
         expect(
-            identifyDeductionSource(
-                { tierBalance: -3, devBalance: 0, packBalance: 0 },
-                4,
-            ),
+            identifyDeductionSource({ tierBalance: -3, packBalance: 0 }, 4),
         ).toEqual({
             fromTier: 4,
-            fromDev: 0,
             fromPack: 0,
         });
         expect(
-            identifyDeductionSource(
-                { tierBalance: -3, devBalance: 0, packBalance: 2 },
-                4,
-            ),
+            identifyDeductionSource({ tierBalance: -3, packBalance: 2 }, 4),
         ).toEqual({
-            fromTier: 0,
-            fromDev: 0,
-            fromPack: 4,
+            fromTier: 2,
+            fromPack: 2,
         });
     });
 
-    it("deducts regular generation charges from tier before paid pack balance", async () => {
+    it("deducts regular generation charges from tier, then pack, then tier debt", async () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 
         await atomicDeductUserBalance(db, userId, 3);
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: 2,
-            devBalance: 0,
-            packBalance: 10,
-        });
-
-        await atomicDeductUserBalance(db, userId, 4);
-        expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: -2,
-            devBalance: 0,
-            packBalance: 10,
-        });
-
-        await atomicDeductUserBalance(db, userId, 5);
-        expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: -2,
-            devBalance: 0,
-            packBalance: 5,
-        });
-    });
-
-    it("deducts regular generation charges from dev before pack after tier runs out", async () => {
-        const userId = await createUser({
-            tierBalance: 0,
-            devBalance: 3,
-            packBalance: 10,
-        });
-
-        await atomicDeductUserBalance(db, userId, 2);
-        expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: 0,
-            devBalance: 1,
             packBalance: 10,
         });
 
         await atomicDeductUserBalance(db, userId, 4);
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: 0,
-            devBalance: -3,
-            packBalance: 10,
+            packBalance: 8,
+        });
+
+        await atomicDeductUserBalance(db, userId, 10);
+        expect(await getUserBalances(db, userId)).toEqual({
+            tierBalance: -2,
+            packBalance: 0,
         });
     });
 
@@ -143,7 +89,6 @@ describe("billing deduction", () => {
 
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: -3,
-            devBalance: 0,
             packBalance: 0,
         });
     });
@@ -151,21 +96,18 @@ describe("billing deduction", () => {
     it("deducts paid-only generation charges only from paid pack balance", async () => {
         const userId = await createUser({
             tierBalance: 10,
-            devBalance: 7,
             packBalance: 5,
         });
 
         await atomicDeductPaidBalance(db, userId, 2);
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: 10,
-            devBalance: 7,
             packBalance: 3,
         });
 
         await atomicDeductPaidBalance(db, userId, 4);
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: 10,
-            devBalance: 7,
             packBalance: -1,
         });
     });
@@ -178,9 +120,8 @@ describe("billing deduction", () => {
         await atomicDeductUserBalance(db, userId, 6);
 
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: -4,
-            devBalance: 0,
-            packBalance: 6,
+            tierBalance: 0,
+            packBalance: 2,
         });
     });
 });

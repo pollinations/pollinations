@@ -14,15 +14,10 @@ import { useModelStats } from "./use-model-stats.ts";
 
 type PricingProps = {
     tierBalance?: number;
-    devBalance?: number;
     packBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({
-    tierBalance,
-    devBalance,
-    packBalance,
-}) => {
+export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);
@@ -87,7 +82,6 @@ export const Pricing: FC<PricingProps> = ({
                         textModels={textModels}
                         activeTab={activeTab}
                         tierBalance={tierBalance}
-                        devBalance={devBalance}
                         packBalance={packBalance}
                     />
                 </div>
@@ -102,7 +96,7 @@ export const Pricing: FC<PricingProps> = ({
                         <div className="space-y-1 text-xs text-gray-500">
                             <div>
                                 1. Regular models spend tier grants, then
-                                developer earnings, then purchased pollen
+                                purchased pollen
                             </div>
                             <div className="text-purple-700">
                                 2. 🪷 Paid Only models require purchased pollen

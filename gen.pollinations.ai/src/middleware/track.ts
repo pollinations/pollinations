@@ -68,7 +68,6 @@ function checkedUserBalance(balance: BalanceVariables["balance"]) {
 
     return {
         tierBalance: balances["v1:meter:tier"] ?? 0,
-        devBalance: balances["v1:meter:dev"] ?? 0,
         packBalance: balances["v1:meter:pack"] ?? 0,
     };
 }

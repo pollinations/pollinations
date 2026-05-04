@@ -31,7 +31,7 @@ test.for(
     expect(sessionCookieResponse.status).toBe(200);
 });
 
-test("/balance should return all balance types and lastTierGrant", async ({
+test("/balance should return tier, pack, and lastTierGrant", async ({
     sessionToken,
     mocks,
 }) => {
@@ -53,7 +53,6 @@ test("/balance should return all balance types and lastTierGrant", async ({
     // Set up test balances for the user
     const testBalances = {
         tierBalance: 10.5,
-        devBalance: 2.25,
         packBalance: 25.3,
     };
     const lastTierGrant = Date.now() - 3600000; // 1 hour ago
@@ -81,17 +80,16 @@ test("/balance should return all balance types and lastTierGrant", async ({
     // Verify all balance fields are returned correctly
     expect(data).toEqual({
         tierBalance: testBalances.tierBalance,
-        devBalance: testBalances.devBalance,
         packBalance: testBalances.packBalance,
         lastTierGrant,
     });
 });
 
-test("/balance should hide dev balance below seed tier", async ({
+test("/balance should return raw tier and pack balances below seed tier", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const db = drizzle(env.DB);
 
     const sessionResponse = await SELF.fetch(
@@ -110,7 +108,6 @@ test("/balance should hide dev balance below seed tier", async ({
         .set({
             tier: "spore",
             tierBalance: 1,
-            devBalance: 2,
             packBalance: 3,
             lastTierGrant: null,
         })
@@ -126,7 +123,6 @@ test("/balance should hide dev balance below seed tier", async ({
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
         tierBalance: 1,
-        devBalance: 0,
         packBalance: 3,
         lastTierGrant: null,
     });
@@ -156,7 +152,6 @@ test("/balance should return zero balances for new users", async ({
         .update(userTable)
         .set({
             tierBalance: 0,
-            devBalance: 0,
             packBalance: 0,
             lastTierGrant: null,
         })
@@ -174,7 +169,6 @@ test("/balance should return zero balances for new users", async ({
 
     expect(data).toEqual({
         tierBalance: 0,
-        devBalance: 0,
         packBalance: 0,
         lastTierGrant: null,
     });

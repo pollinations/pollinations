@@ -1,0 +1,34 @@
+{
+  "pr_number": 10675,
+  "title": "fix(nova-canvas): use FetchHttpHandler in Workers runtime",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10675",
+  "merged_at": "2026-05-04T13:37:16Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Painting with Nova Canvas again",
+    "blurb": "We fixed a pesky bug that was causing Nova Canvas to trip over its own paintbrushes in our Workers environment. It's back online and ready for your prompts!",
+    "summary": "Resolved a production 500 error for the Nova Canvas model by updating the Bedrock SDK to use a Fetch-compatible HTTP handler for Cloudflare Workers.",
+    "impact": "Users can once again successfully generate images using the Nova Canvas model without encountering server errors.",
+    "keywords": [
+      "bug-fix",
+      "nova-canvas",
+      "bedrock",
+      "cloudflare-workers",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot fixing a literal digital canvas on an easel, representing the restored functionality of the Nova Canvas model.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky monitor-head robot working together to fix a glowing digital canvas on a wooden easel. The robot holds a tiny paintbrush, and the canvas displays a beautiful lime green (#ecf874) and pastel landscape. Soft warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-04/PR-10675.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot and a chunky monitor-head robot working together to fix a glowing digital canvas on a wooden easel. The robot holds a tiny paintbrush, and the canvas displays a beautiful lime green (#ecf874) and pastel landscape. Soft warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-04T13:38:09.792817+00:00"
+}

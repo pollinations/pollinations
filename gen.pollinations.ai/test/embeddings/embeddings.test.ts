@@ -11,7 +11,7 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, describe, expect } from "vitest";
-import worker from "../src/index.ts";
+import worker from "../../src/index.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-embedding-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";

@@ -85,7 +85,7 @@ test("/balance should return tier, pack, and lastTierGrant", async ({
     });
 });
 
-test("/balance should return raw tier and pack balances below seed tier", async ({
+test("/balance should return raw tier and pack balances for spore users", async ({
     sessionToken,
     mocks,
 }) => {

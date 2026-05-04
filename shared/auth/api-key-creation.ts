@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
-import { isRewardEligibleCreatorTier } from "../billing/markup.ts";
 import * as schema from "../db/better-auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 
@@ -64,7 +63,6 @@ type VerifiedClientAttribution = {
     clientId: string;
     createdForUserId: string;
     createdForApp: string;
-    byopEnabled: boolean;
 };
 
 export function validateRedirectUriFormat(redirectUri: string): void {
@@ -118,12 +116,6 @@ function cleanRedirectUris(redirectUris: string[]): string[] {
 function rejectInvalidClientId(): never {
     throw new HTTPException(400, {
         message: "Invalid client_id",
-    });
-}
-
-function rejectRewardIneligible(): never {
-    throw new HTTPException(403, {
-        message: "Developer earnings require seed tier or higher",
     });
 }
 
@@ -184,19 +176,18 @@ function pickCallerMetadata(
     attribution: VerifiedClientAttribution | null,
     isPublishable: boolean,
 ): Record<string, unknown> {
-    if (!metadata) return {};
     const out: Record<string, unknown> = {};
-    if (Array.isArray(metadata.redirectUris)) {
+    if (Array.isArray(metadata?.redirectUris)) {
         out.redirectUris = cleanRedirectUris(metadata.redirectUris);
     }
-    if (typeof metadata.redirectOrigin === "string")
+    if (typeof metadata?.redirectOrigin === "string")
         out.redirectOrigin = metadata.redirectOrigin;
-    if (typeof metadata.deviceUserCode === "string")
+    if (typeof metadata?.deviceUserCode === "string")
         out.deviceUserCode = metadata.deviceUserCode;
-    if (typeof metadata.description === "string")
+    if (typeof metadata?.description === "string")
         out.description = metadata.description;
-    if (isPublishable && typeof metadata.byopEnabled === "boolean") {
-        out.byopEnabled = metadata.byopEnabled;
+    if (isPublishable) {
+        out.byopEnabled = metadata?.byopEnabled !== false;
     }
     if (attribution) {
         out.clientId = attribution.clientId;
@@ -248,21 +239,10 @@ async function validateClientRedirectBinding(
     if (!clientKey || clientKey.prefix !== "pk") {
         rejectInvalidClientId();
     }
-    const clientMetadata = parseMetadata(clientKey.metadata);
-    const [creatorRow] = await db
-        .select({ tier: schema.user.tier })
-        .from(schema.user)
-        .where(eq(schema.user.id, clientKey.userId))
-        .limit(1);
-    const creatorCanReceiveRewards = isRewardEligibleCreatorTier(
-        creatorRow?.tier,
-    );
     const attribution = {
         clientId: clientKey.id,
         createdForUserId: clientKey.userId,
         createdForApp: clientKey.name ?? "Unknown app",
-        byopEnabled:
-            clientMetadata.byopEnabled === true && creatorCanReceiveRewards,
     };
 
     if (typeof metadata.deviceUserCode === "string") {
@@ -323,21 +303,6 @@ export async function createApiKeyForUser({
     );
 
     const isPublishable = type === "publishable";
-    const [creatorRow] = await db
-        .select({ tier: schema.user.tier })
-        .from(schema.user)
-        .where(eq(schema.user.id, userId))
-        .limit(1);
-    const creatorCanReceiveRewards = isRewardEligibleCreatorTier(
-        creatorRow?.tier,
-    );
-    if (
-        isPublishable &&
-        metadata?.byopEnabled === true &&
-        !creatorCanReceiveRewards
-    ) {
-        rejectRewardIneligible();
-    }
     const callerMetadata = pickCallerMetadata(
         metadata,
         attribution,
@@ -395,7 +360,7 @@ export async function createApiKeyForUser({
         metadata: JSON.stringify(finalMetadata),
     };
     if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
-    if (!isPublishable && attribution?.byopEnabled === true) {
+    if (!isPublishable && attribution) {
         d1Updates.byopClientKeyId = attribution.clientId;
     }
 
@@ -416,9 +381,7 @@ export async function createApiKeyForUser({
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: pollenBudget ?? null,
         byopClientKeyId:
-            !isPublishable && attribution?.byopEnabled === true
-                ? attribution.clientId
-                : null,
+            !isPublishable && attribution ? attribution.clientId : null,
         metadata: finalMetadata,
     };
 }

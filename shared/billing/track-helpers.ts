@@ -18,7 +18,6 @@ import {
     BYOP_MARKUP_PCT,
     computeDevCredit,
     isMarkupEligiblePayerTier,
-    isRewardEligibleCreatorTier,
 } from "./markup.ts";
 
 const log = getLogger(["track", "helpers"]);
@@ -84,16 +83,6 @@ export async function resolveDevMarkup(
     if (!clientRow?.userId) return null;
     if (parseMetadata(clientRow.metadata).byopEnabled !== true) return null;
     if (clientRow.userId === payerUserId) return null;
-
-    const [creatorRow] = await db
-        .select({ tier: userTable.tier })
-        .from(userTable)
-        .where(eq(userTable.id, clientRow.userId))
-        .limit(1);
-
-    if (!isRewardEligibleCreatorTier(creatorRow?.tier)) {
-        return null;
-    }
 
     const [payerRow] = await db
         .select({ tier: userTable.tier })

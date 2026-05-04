@@ -21,7 +21,6 @@ type ApiKeyDialogProps = {
     triggerClassName?: string;
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only name + URL. */
     simplified?: boolean;
-    canReceiveRewards?: boolean;
 };
 
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
@@ -30,7 +29,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     triggerLabel = "Create new key",
     triggerClassName,
     simplified = false,
-    canReceiveRewards = false,
 }) => {
     function generateFunName(): string {
         return uniqueNamesGenerator({
@@ -49,7 +47,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         ? "publishable"
         : "secret";
     const [redirectUris, setRedirectUris] = useState<string[]>([]);
-    const [byopEnabled, setByopEnabled] = useState(canReceiveRewards);
+    const [byopEnabled, setByopEnabled] = useState(true);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -85,7 +83,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             .map((v) => v.trim())
                             .filter(Boolean),
                     }),
-                ...(isPublishable && canReceiveRewards && { byopEnabled }),
+                ...(isPublishable && { byopEnabled }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -168,7 +166,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setError(null);
                     setName(generateFunName());
                     setRedirectUris([]);
-                    setByopEnabled(canReceiveRewards);
+                    setByopEnabled(true);
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
                         month: "2-digit",
@@ -322,11 +320,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
                                     byopEnabled={byopEnabled}
-                                    onByopEnabledChange={
-                                        canReceiveRewards
-                                            ? setByopEnabled
-                                            : undefined
-                                    }
+                                    onByopEnabledChange={setByopEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

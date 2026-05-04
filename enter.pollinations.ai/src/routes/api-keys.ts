@@ -3,7 +3,6 @@ import {
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
-import { isRewardEligibleCreatorTier } from "@shared/billing/markup.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -87,19 +86,6 @@ async function requireOwnedKey(
         throw new HTTPException(404, { message: "API key not found" });
     }
     return key;
-}
-
-async function canCurrentUserReceiveRewards(
-    db: ReturnType<typeof drizzle<typeof schema>>,
-    userId: string,
-    fallbackTier: string | null | undefined,
-): Promise<boolean> {
-    const [userRow] = await db
-        .select({ tier: schema.user.tier })
-        .from(schema.user)
-        .where(eq(schema.user.id, userId))
-        .limit(1);
-    return isRewardEligibleCreatorTier(userRow?.tier ?? fallbackTier);
 }
 
 /**
@@ -415,15 +401,6 @@ export const apiKeysRoutes = new Hono<Env>()
                         "BYOP earnings can only be enabled on publishable app keys",
                 });
             }
-            if (
-                metadataUpdate.byopEnabled === true &&
-                !(await canCurrentUserReceiveRewards(db, user.id, user.tier))
-            ) {
-                throw new HTTPException(403, {
-                    message: "Developer earnings require seed tier or higher",
-                });
-            }
-
             const metadata = await updateKeyMetadata(
                 db,
                 id,

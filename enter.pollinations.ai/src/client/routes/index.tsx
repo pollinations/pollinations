@@ -1,4 +1,3 @@
-import { isRewardEligibleCreatorTier } from "@shared/billing/markup.ts";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -95,10 +94,6 @@ function RouteComponent() {
     );
     const [usagePeriod, setUsagePeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
-    const canReceiveRewards = isRewardEligibleCreatorTier(
-        tierData?.active?.tier ?? user?.tier,
-    );
-
     useEffect(() => {
         function syncPageFromHash(): void {
             setActivePage(pageFromHash(window.location.hash));
@@ -145,8 +140,8 @@ function RouteComponent() {
                 ...(isPublishable && formState.redirectUris?.length
                     ? { redirectUris: formState.redirectUris }
                     : {}),
-                ...(isPublishable && canReceiveRewards
-                    ? { byopEnabled: formState.byopEnabled ?? false }
+                ...(isPublishable
+                    ? { byopEnabled: formState.byopEnabled ?? true }
                     : {}),
             },
             permissions: {
@@ -298,7 +293,6 @@ function RouteComponent() {
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
-                    canReceiveRewards={canReceiveRewards}
                 />
             )}
             {activePage === "models" && (

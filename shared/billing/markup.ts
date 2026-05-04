@@ -13,22 +13,9 @@ export const MARKUP_ELIGIBLE_PAYER_TIERS: ReadonlyArray<TierName> = [
     "spore",
 ];
 
-export const REWARD_ELIGIBLE_CREATOR_TIERS: ReadonlyArray<TierName> = [
-    "seed",
-    "flower",
-    "nectar",
-    "router",
-];
-
 export function isMarkupEligiblePayerTier(tier: string): boolean {
     return (MARKUP_ELIGIBLE_PAYER_TIERS as ReadonlyArray<string>).includes(
         tier,
-    );
-}
-
-export function isRewardEligibleCreatorTier(tier: string | null | undefined) {
-    return (REWARD_ELIGIBLE_CREATOR_TIERS as ReadonlyArray<string>).includes(
-        tier ?? "",
     );
 }
 

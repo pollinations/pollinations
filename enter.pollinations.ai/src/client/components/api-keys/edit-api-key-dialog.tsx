@@ -16,7 +16,6 @@ interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
-    canReceiveRewards: boolean;
 }
 
 function readInitialRedirectUris(
@@ -38,7 +37,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
     onClose,
-    canReceiveRewards,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
@@ -97,19 +95,14 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             if (
                 isPublishable &&
                 (!sameRedirectUris(redirectUris, initialRedirectUris) ||
-                    (canReceiveRewards && byopEnabled !== initialByopEnabled) ||
-                    (!canReceiveRewards && initialByopEnabled))
+                    byopEnabled !== initialByopEnabled)
             ) {
                 const cleaned = redirectUris
                     .map((v) => v.trim())
                     .filter((v) => v !== "");
                 const metadataBody = {
                     redirectUris: cleaned,
-                    ...(canReceiveRewards
-                        ? { byopEnabled }
-                        : initialByopEnabled
-                          ? { byopEnabled: false }
-                          : {}),
+                    byopEnabled,
                 };
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
@@ -225,11 +218,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
                                     byopEnabled={byopEnabled}
-                                    onByopEnabledChange={
-                                        canReceiveRewards
-                                            ? setByopEnabled
-                                            : undefined
-                                    }
+                                    onByopEnabledChange={setByopEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

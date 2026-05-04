@@ -19,7 +19,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
-    canReceiveRewards,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
@@ -161,7 +160,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             )}
                         </span>
                     )}
-                    {isApp && canReceiveRewards && (
+                    {isApp && (
                         <span
                             className={`rounded px-2 py-0.5 font-medium ${
                                 byopEnabled
@@ -277,7 +276,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 onComplete={() => {}}
                                 triggerLabel="🖥️ + Add App"
                                 simplified
-                                canReceiveRewards={canReceiveRewards}
                             />
                         </div>
                         {!sortedAppKeys.length && (
@@ -309,7 +307,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     apiKey={editingKey}
                     onUpdate={onUpdate}
                     onClose={() => setEditingKey(null)}
-                    canReceiveRewards={canReceiveRewards}
                 />
             )}
         </>

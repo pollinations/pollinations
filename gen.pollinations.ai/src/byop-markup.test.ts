@@ -101,12 +101,16 @@ describe("BYOP markup", () => {
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
     });
 
-    it("does not resolve markup for app owners below seed tier", async () => {
-        const { payerId, pkId } = await setupPayerAndDev({
+    it("resolves markup for app owners on any tier", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev({
             devTier: "spore",
         });
 
-        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
+        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toEqual({
+            devUserId: devId,
+            devCredit: 4 * BYOP_MARKUP_PCT,
+            markupPct: BYOP_MARKUP_PCT,
+        });
     });
 
     it("credits creator tier_balance and bills payer baseline plus markup", async () => {

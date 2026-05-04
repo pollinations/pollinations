@@ -61,7 +61,7 @@ describe("API Key Management", () => {
             });
         });
 
-        test("rejects reward-enabled app keys below seed tier", async ({
+        test("allows reward-enabled app keys for any owner tier", async ({
             sessionToken,
         }) => {
             const response = await SELF.fetch(
@@ -85,7 +85,9 @@ describe("API Key Management", () => {
                 },
             );
 
-            expect(response.status).toBe(403);
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.metadata.byopEnabled).toBe(true);
         });
 
         test("should accept loopback redirectUris metadata", async ({
@@ -114,6 +116,7 @@ describe("API Key Management", () => {
             expect(created.metadata.redirectUris).toEqual([
                 "http://localhost:3456/callback",
             ]);
+            expect(created.metadata.byopEnabled).toBe(true);
         });
 
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({
@@ -291,6 +294,60 @@ describe("API Key Management", () => {
                 "spoofed-user",
             );
             expect(matchingCreated.byopClientKeyId).toBe(appKey.id);
+        });
+
+        test("stores app attribution even when rewards are currently disabled", async ({
+            sessionToken,
+        }) => {
+            const appResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "disabled-reward-app",
+                        type: "publishable",
+                        metadata: {
+                            redirectUris: [
+                                "https://disabled-reward.example/callback",
+                            ],
+                            byopEnabled: false,
+                        },
+                    }),
+                },
+            );
+            expect(appResponse.status).toBe(200);
+            const appKey = await appResponse.json();
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "disabled-reward-attributed-secret",
+                        type: "secret",
+                        metadata: {
+                            requestedClientId: appKey.key,
+                            clientId: appKey.id,
+                            redirectUri:
+                                "https://disabled-reward.example/callback",
+                            redirectOrigin: "https://disabled-reward.example",
+                        },
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const created = await response.json();
+            expect(created.metadata.clientId).toBe(appKey.id);
+            expect(created.byopClientKeyId).toBe(appKey.id);
         });
 
         test("allows device-flow attribution without redirect_uri when client_id matches the device code", async ({
@@ -843,7 +900,7 @@ describe("API Key Management", () => {
             ]);
         });
 
-        test("rejects enabling rewards from metadata below seed tier", async ({
+        test("allows enabling rewards from app key metadata", async ({
             sessionToken,
         }) => {
             const createResponse = await SELF.fetch(
@@ -855,7 +912,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        name: "metadata-reward-gate",
+                        name: "metadata-reward-toggle",
                         type: "publishable",
                         metadata: {
                             redirectUris: [
@@ -880,7 +937,9 @@ describe("API Key Management", () => {
                 },
             );
 
-            expect(metadataResponse.status).toBe(403);
+            expect(metadataResponse.status).toBe(200);
+            const updated = await metadataResponse.json();
+            expect(updated.metadata.byopEnabled).toBe(true);
         });
 
         test("should update pollen budget", async ({ auth, sessionToken }) => {

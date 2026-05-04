@@ -141,11 +141,13 @@ export const TEXT_SERVICES = {
     "mistral": {
         aliases: [
             "mistral-small",
+            "mistral-small-3.1",
+            "mistral-small-2503",
             "mistral-small-3.2",
             "mistral-small-3.2-24b-instruct-2506",
         ],
-        modelId: "Mistral-Small-3.2-24B-Instruct-2506",
-        provider: "ovhcloud",
+        modelId: "mistral-small-2503",
+        provider: "azure",
         brand: "Mistral",
         category: "text",
         cost: [
@@ -155,7 +157,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.3),
             },
         ],
-        description: "Mistral Small 3.2 - Efficient & Cost-Effective",
+        description: "Mistral Small 3.1 - Efficient & Cost-Effective",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

@@ -30,6 +30,7 @@ const genAliases = [
     "middleware/text-cache.ts",
     "middleware/track.ts",
     "middleware/validator.ts",
+    "schemas/embeddings.ts",
     "schemas/image.ts",
     "schemas/text.ts",
     "util",
@@ -37,6 +38,7 @@ const genAliases = [
     "utils/api-docs.ts",
     "utils/bedrock-guardrail.ts",
     "utils/generation-access.ts",
+    "utils/googleCloudAuth.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
     "utils/safety-features.ts",
@@ -50,6 +52,10 @@ const baseConfig = defineConfig({
                 find: `@/${path}`,
                 replacement: `${genSrc}${path}`,
             })),
+            {
+                find: /^@\/embeddings\/(.*)$/,
+                replacement: `${genSrc}embeddings/$1`,
+            },
             {
                 find: /^@\/text\/(.*)$/,
                 replacement: `${genSrc}text/$1`,

@@ -26,11 +26,13 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
     const videoModels = allModels.filter((m) => m.type === "video");
     const audioModels = allModels.filter((m) => m.type === "audio");
     const textModels = allModels.filter((m) => m.type === "text");
+    const embeddingModels = allModels.filter((m) => m.type === "embedding");
     const availableSections: SectionType[] = [
         "image",
         "video",
         ...(audioModels.length > 0 ? (["audio"] as SectionType[]) : []),
         "text",
+        ...(embeddingModels.length > 0 ? (["embedding"] as SectionType[]) : []),
     ];
 
     return (
@@ -80,6 +82,7 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                         videoModels={videoModels}
                         audioModels={audioModels}
                         textModels={textModels}
+                        embeddingModels={embeddingModels}
                         activeTab={activeTab}
                         tierBalance={tierBalance}
                         packBalance={packBalance}

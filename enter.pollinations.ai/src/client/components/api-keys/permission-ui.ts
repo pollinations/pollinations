@@ -116,6 +116,7 @@ const PERMISSION_CATEGORY_PILLS = {
     image: "bg-pink-200 text-pink-900 border-pink-400",
     video: "bg-teal-200 text-teal-900 border-teal-400",
     audio: "bg-violet-200 text-violet-900 border-violet-400",
+    embedding: "bg-indigo-200 text-indigo-900 border-indigo-400",
 } as const;
 
 export function getPermissionUiTheme(
@@ -125,7 +126,12 @@ export function getPermissionUiTheme(
 }
 
 export function getPermissionPillClasses(category: string): string {
-    const normalized = category.toLowerCase() === "images" ? "image" : category;
+    const normalized =
+        category.toLowerCase() === "images"
+            ? "image"
+            : category.toLowerCase() === "embeddings"
+              ? "embedding"
+              : category;
     return (
         PERMISSION_CATEGORY_PILLS[
             normalized.toLowerCase() as keyof typeof PERMISSION_CATEGORY_PILLS

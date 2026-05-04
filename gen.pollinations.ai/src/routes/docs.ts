@@ -1,5 +1,6 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
@@ -81,10 +82,14 @@ const TEXT_ALIASES = new Set(
 const AUDIO_ALIASES = new Set(
     Object.values(AUDIO_SERVICES).flatMap((service) => service.aliases),
 );
+const EMBEDDING_ALIASES = new Set(
+    Object.values(EMBEDDING_SERVICES).flatMap((service) => service.aliases),
+);
 const ALL_ALIASES = new Set([
     ...IMAGE_ALIASES,
     ...TEXT_ALIASES,
     ...AUDIO_ALIASES,
+    ...EMBEDDING_ALIASES,
 ]);
 
 const imageModelDisplayNames = Object.keys(IMAGE_SERVICES)
@@ -108,6 +113,7 @@ const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
 
 const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
 const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
+const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
 
 function filterAliases(schema: OpenApiSchema): OpenApiSchema {
     return JSON.parse(
@@ -127,7 +133,7 @@ function generateLLMDoc(): string {
     return [
         "# Pollinations API",
         "",
-        "> Generate text, images, video, and audio with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
+        "> Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
         "",
         "Base URL: https://gen.pollinations.ai",
         "API Keys: https://enter.pollinations.ai",
@@ -192,6 +198,7 @@ function generateLLMDoc(): string {
         "- GET /image/{prompt}: image generation.",
         "- GET /video/{prompt}: video generation.",
         "- GET /audio/{text}: speech or music generation.",
+        "- POST /v1/embeddings: OpenAI-compatible embeddings.",
         "- POST /v1/audio/speech: OpenAI-compatible speech generation.",
         "- POST /v1/audio/transcriptions: audio transcription.",
         "- POST /v1/images/generations: OpenAI-compatible image generation.",
@@ -208,6 +215,7 @@ function generateLLMDoc(): string {
         "- GET /text/models",
         "- GET /image/models",
         "- GET /audio/models",
+        "- GET /embeddings/models",
         "",
         "## Request Safety Checking",
         "",
@@ -254,7 +262,7 @@ function generationDocumentation(): OpenApiSchema {
             description: [
                 "## Introduction",
                 "",
-                "Generate text, images, video, and audio with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
+                "Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.",
                 "",
                 "**Base URL:** `https://gen.pollinations.ai`",
                 "",
@@ -412,6 +420,19 @@ function generationDocumentation(): OpenApiSchema {
                 ].join("\n"),
             },
             {
+                name: "🔢 Embeddings",
+                description: [
+                    "Generate vector embeddings for text, images, audio, and video.",
+                    "",
+                    "| Endpoint | Description |",
+                    "|----------|-------------|",
+                    "| `POST /v1/embeddings` | OpenAI-compatible embeddings endpoint |",
+                    "| `GET /embeddings/models` | Embedding models with pricing and modalities |",
+                    "",
+                    `**Embedding models:** ${embeddingModelDisplayNames}`,
+                ].join("\n"),
+            },
+            {
                 name: "📦 Media Storage",
                 description: [
                     "Content-addressed media storage. Upload and retrieve images, audio, and video by content hash.",
@@ -436,6 +457,7 @@ function generationDocumentation(): OpenApiSchema {
                     "| `GET /text/models` | Text models with pricing, context window, tool support |",
                     "| `GET /image/models` | Image & video models with capabilities and pricing |",
                     "| `GET /audio/models` | Audio models with supported voices |",
+                    "| `GET /embeddings/models` | Embedding models with supported modalities |",
                 ].join("\n"),
             },
             {

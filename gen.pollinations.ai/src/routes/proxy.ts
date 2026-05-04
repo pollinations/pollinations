@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import { generateEmbeddings } from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
@@ -22,9 +23,11 @@ import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getAudioModelsInfo,
+    getEmbeddingModelsInfo,
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
@@ -46,6 +49,10 @@ import {
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
 import { validator } from "@/middleware/validator.ts";
+import {
+    CreateEmbeddingRequestSchema,
+    CreateEmbeddingResponseSchema,
+} from "@/schemas/embeddings.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
@@ -76,6 +83,9 @@ const videoModelNames = Object.entries(IMAGE_SERVICES)
 const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
+});
+const embeddingBodyLimit = bodyLimit({
+    maxSize: 30 * 1024 * 1024,
 });
 
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
@@ -184,6 +194,7 @@ export const proxyRoutes = new Hono<Env>()
     .use("/image/models", auth())
     .use("/text/models", auth())
     .use("/audio/models", auth())
+    .use("/embeddings/models", auth())
     .use("/models", auth())
     .get(
         "/v1/models",
@@ -191,7 +202,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models (text, image, audio) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, or `/audio/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                'Returns available models (text, image, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -219,6 +230,11 @@ export const proxyRoutes = new Hono<Env>()
             );
             const audioModels = filterModelsByPermissions(
                 getAudioModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
+            const embeddingModels = filterModelsByPermissions(
+                getEmbeddingModelsInfo(),
                 allowedModels,
                 paidBalance,
             );
@@ -260,6 +276,9 @@ export const proxyRoutes = new Hono<Env>()
                     ),
                     ...audioModels.map((m) =>
                         toModelEntry(m, ["/audio/{text}"]),
+                    ),
+                    ...embeddingModels.map((m) =>
+                        toModelEntry(m, ["/v1/embeddings"]),
                     ),
                 ],
             });
@@ -412,6 +431,41 @@ export const proxyRoutes = new Hono<Env>()
             return c.json(models);
         },
     )
+    .get(
+        "/embeddings/models",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "List Embedding Models",
+            description:
+                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of embedding models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        async (c) => {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            const models = filterModelsByPermissions(
+                getEmbeddingModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
+            return c.json(models);
+        },
+    )
     .post("/register", handleRegisterServer)
     .get("/register", handleRegisterServer)
     // Auth required for all endpoints below (API key only - no session cookies)
@@ -443,6 +497,55 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/embeddings",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "Create Embeddings",
+            description: [
+                "Generate vector embeddings for text, images, audio, or video. Compatible with the OpenAI Embeddings API format, extended with multimodal content part support.",
+                "",
+                "**Multimodal input:** Pass content parts (text, image_url, input_audio, video_url) in the `input` field.",
+                "",
+                "**Task types:** Optionally specify `task_type` (for example `RETRIEVAL_QUERY` or `CLASSIFICATION`) to optimize embeddings for your use case.",
+                "",
+                "**Dimensions:** Default 3072. Use `dimensions` to reduce output vector size.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateEmbeddingResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        embeddingBodyLimit,
+        validator("json", CreateEmbeddingRequestSchema),
+        resolveModel("generate.embedding"),
+        track("generate.embedding"),
+        generationAccess,
+        async (c) => {
+            const requestBody = c.req.valid("json" as never) as z.infer<
+                typeof CreateEmbeddingRequestSchema
+            >;
+            const serviceDef = getModelDefinition(c.var.model.resolved);
+            const response = await generateEmbeddings(
+                c.env,
+                {
+                    ...requestBody,
+                    model: serviceDef.modelId,
+                },
+                c.var.model.resolved,
+            );
+            return new Response(response.body, {
+                headers: Object.fromEntries(response.headers),
+            });
+        },
     )
     .post(
         "/text",

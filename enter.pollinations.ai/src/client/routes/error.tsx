@@ -10,6 +10,8 @@ export const Route = createFileRoute("/error")({
 function ErrorPage() {
     const { error } = Route.useSearch();
     const isBanned = error === "banned";
+    const isLinkedToDifferentUser =
+        error === "account_already_linked_to_different_user";
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
@@ -23,7 +25,9 @@ function ErrorPage() {
                 <p className="font-body text-green-800 mb-6 leading-relaxed">
                     {isBanned
                         ? "Your account has been deactivated. This might be a mistake — reach out and we'll sort it out together."
-                        : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening."}
+                        : isLinkedToDifferentUser
+                          ? "That login method is already connected to another Pollinations account. Sign in with that account first if you need to disconnect it."
+                          : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening."}
                 </p>
 
                 <div className="flex flex-col gap-3">

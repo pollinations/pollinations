@@ -29,6 +29,9 @@ import {
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
+const DISCORD_LINK_MARKER_PARAM = "discordLink";
+const AUTH_ERROR_PARAM = "error";
+const AUTH_ERROR_DESCRIPTION_PARAM = "error_description";
 
 type LinkedAuthAccount = {
     providerId: string;
@@ -53,6 +56,39 @@ function pageFromHash(hash: string): DashboardPage {
     if (page === "buy-pollen") return "pollen";
     if (page === "pricing") return "models";
     return "pollen";
+}
+
+function clearDiscordLinkParams(url: URL): void {
+    url.searchParams.delete(DISCORD_LINK_MARKER_PARAM);
+    url.searchParams.delete(AUTH_ERROR_PARAM);
+    url.searchParams.delete(AUTH_ERROR_DESCRIPTION_PARAM);
+}
+
+function getDiscordLinkCallbackURL(): string {
+    const url = new URL(window.location.href);
+    clearDiscordLinkParams(url);
+    return url.toString();
+}
+
+function getDiscordLinkErrorCallbackURL(): string {
+    const url = new URL(window.location.href);
+    clearDiscordLinkParams(url);
+    url.hash = "";
+    url.searchParams.set(DISCORD_LINK_MARKER_PARAM, "1");
+    return url.toString();
+}
+
+function getDiscordLinkErrorMessage(error: string): string {
+    if (error === "account_already_linked_to_different_user") {
+        return "That Discord account is already connected to another Pollinations account. Sign out and sign in with Discord to manage that account, or use another Discord account.";
+    }
+    if (error === "email_doesn't_match") {
+        return "Discord returned a different email than this account allows.";
+    }
+    if (error === "unable_to_link_account") {
+        return "Discord could not be connected. Try again, or disconnect it from another Pollinations account first.";
+    }
+    return "Discord could not be connected. Try again.";
 }
 
 export const Route = createFileRoute("/")({
@@ -135,6 +171,25 @@ function RouteComponent() {
         return () => window.removeEventListener("hashchange", syncPageFromHash);
     }, []);
 
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        const isDiscordLinkError =
+            url.searchParams.get(DISCORD_LINK_MARKER_PARAM) === "1";
+        if (!isDiscordLinkError) return;
+
+        const error = url.searchParams.get(AUTH_ERROR_PARAM);
+        if (error) {
+            setLinkAccountError(getDiscordLinkErrorMessage(error));
+        }
+
+        clearDiscordLinkParams(url);
+        window.history.replaceState(
+            null,
+            "",
+            `${url.pathname}${url.search}${url.hash}`,
+        );
+    }, []);
+
     const selectableKeys = useMemo(
         () =>
             apiKeys
@@ -167,7 +222,8 @@ function RouteComponent() {
                 credentials: "include",
                 body: JSON.stringify({
                     provider: "discord",
-                    callbackURL: window.location.href,
+                    callbackURL: getDiscordLinkCallbackURL(),
+                    errorCallbackURL: getDiscordLinkErrorCallbackURL(),
                 }),
             });
             const data = (await response.json().catch(() => null)) as {

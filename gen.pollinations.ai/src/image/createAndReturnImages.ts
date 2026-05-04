@@ -189,6 +189,8 @@ async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
 
 /**
  * Calls self-hosted image generation servers (flux, zimage pools).
+ * Only upscales dimensions if the user-requested dimensions result in less than
+ * TARGET_PIXEL_COUNT pixels. Respects user input when dimensions are adequate.
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - The parameters for image generation.
  * @param {number} concurrentRequests - The number of concurrent requests.
@@ -213,11 +215,34 @@ export const callSelfHostedServer = async (
 
         prompt = sanitizeString(prompt);
 
-        // Calculate scaled dimensions
-        const { scaledWidth, scaledHeight } = calculateScaledDimensions(
-            safeParams.width,
-            safeParams.height,
-        );
+        // Smart dimension handling with safety constraints:
+        // 1. Respect user input when above minimum pixel count
+        // 2. Upscale proportionally if below minimum pixel count
+        // 3. Clamp to maximum limits while preserving aspect ratio
+        const requestedPixels = safeParams.width * safeParams.height;
+        const MAX_DIMENSION = 2048; // Prevent extreme resolution requests
+
+        const { scaledWidth, scaledHeight } =
+            requestedPixels >= TARGET_PIXEL_COUNT
+                ? (() => {
+                      const scaleFactor = Math.min(
+                          1,
+                          MAX_DIMENSION / safeParams.width,
+                          MAX_DIMENSION / safeParams.height,
+                      );
+                      return {
+                          scaledWidth: Math.round(
+                              safeParams.width * scaleFactor,
+                          ),
+                          scaledHeight: Math.round(
+                              safeParams.height * scaleFactor,
+                          ),
+                      };
+                  })()
+                : calculateScaledDimensions(
+                      safeParams.width,
+                      safeParams.height,
+                  );
 
         const body = {
             prompts: [prompt],

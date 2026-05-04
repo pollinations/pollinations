@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-03",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-03",
+  "generated_at": "2026-05-04T06:58:28.152838+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-03/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 7 PRs. meta llama models are now live in codex. added opt-in safety guardrails for generation. also had to explicitly reject speech-to-text models on text-to-speech endpoints, because physics. plus 3 new community apps in the showcase."
+}

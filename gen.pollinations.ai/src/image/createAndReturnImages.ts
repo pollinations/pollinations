@@ -582,7 +582,7 @@ const callGPTImageWithEndpoint = async (
             config.provider === "azure" && response.status === 403
                 ? 502
                 : response.status;
-        throw new HttpError(errorText, status);
+        throw new HttpError(errorText, status, undefined, endpoint);
     }
 
     const data = (await response.json()) as {

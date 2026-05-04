@@ -1,0 +1,34 @@
+{
+  "pr_number": 10653,
+  "title": "fix: sanitize invalid message names",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10653",
+  "merged_at": "2026-05-04T13:28:27Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Cleaning up the name tags",
+    "blurb": "We've added a quick scrub to chat message names before they hit the API. No more mysterious 500 errors when your metadata gets a little too creative for Grok.",
+    "summary": "Added sanitization for optional message names in chat payloads to enforce upstream regex contracts and prevent provider-side 500 errors.",
+    "impact": "API users will experience fewer unexpected 500 errors when sending chat requests with malformed metadata names, particularly when using Grok models.",
+    "keywords": [
+      "api",
+      "bug-fix",
+      "grok",
+      "reliability",
+      "chat"
+    ],
+    "visual_concept": "The Nomnom creature eating invalid/messy name tags before they reach the server, representing the sanitization of message names. Polly the bee oversees the process.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating messy, scribbled name tags off a conveyor belt, while the bee mascot wearing a tiny inspector hat watches with a clipboard. A retro terminal nearby glows lime green (#ecf874) showing clean code. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-04/PR-10653.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating messy, scribbled name tags off a conveyor belt, while the bee mascot wearing a tiny inspector hat watches with a clipboard. A retro terminal nearby glows lime green (#ecf874) showing clean code. Soft pastel gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-05-04T13:29:28.983317+00:00"
+}

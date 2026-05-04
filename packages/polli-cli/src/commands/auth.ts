@@ -154,7 +154,7 @@ const login = new Command("login")
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                client_id: "pk_NgBAArhUeGvSRFba",
+                client_id: "pk_VZF38YW4tQX36SEn",
                 scope: "generate keys usage",
             }),
         }).catch((err) => {

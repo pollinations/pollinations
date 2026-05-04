@@ -175,16 +175,9 @@ export const callSelfHostedServer = async (
             "safeParams",
             safeParams,
         );
-
         // Always use max steps (4) - all requests go through enter.pollinations.ai
         const steps = 4;
         logOps("calculated_steps", steps);
-
-        prompt = sanitizeString(prompt);
-        
-        // Pre-scaling here actively contradicted that contract — a caller
-        // asking for 960×640 would get silently upscaled to ~1248×832
-        // before the backend ever saw the request. See issue #10629.
         const body = {
             prompts: [prompt],
             width: safeParams.width,

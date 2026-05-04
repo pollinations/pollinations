@@ -170,12 +170,6 @@ export function calculateScaledDimensions(
     return { scaledWidth, scaledHeight, scalingFactor };
 }
 
-/**
- * Clamp width/height so total pixels never exceed `maxPixels`, preserving
- * aspect ratio. Used for the high-end cap on user-supplied dimensions —
- * matches the backend's total-pixel validator instead of imposing a
- * per-axis ceiling that would mishandle non-square shapes.
- */
 export function clampToPixelBudget(
     width: number,
     height: number,

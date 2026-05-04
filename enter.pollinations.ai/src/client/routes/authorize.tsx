@@ -142,12 +142,7 @@ function AuthorizeComponent() {
     const user = session?.user;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const {
-        isSigningIn,
-        pendingProvider,
-        error: signInError,
-        signIn,
-    } = useSocialSignIn();
+    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [deviceOutcome, setDeviceOutcome] = useState<
@@ -454,24 +449,11 @@ function AuthorizeComponent() {
                         </AuthInfoCard>
                     )}
 
-                    <div className="space-y-4">
-                        <SocialSignInButtons
-                            pendingProvider={pendingProvider}
-                            disabled={!!error}
-                            onSignIn={signIn}
-                        />
-                        <div className="flex justify-end">
-                            <Button
-                                as="button"
-                                onClick={handleDeny}
-                                weight="outline"
-                                color="dark"
-                                disabled={isSigningIn}
-                            >
-                                Deny
-                            </Button>
-                        </div>
-                    </div>
+                    <SocialSignInButtons
+                        pendingProvider={pendingProvider}
+                        disabled={!!error}
+                        onSignIn={signIn}
+                    />
                 </div>
             </AuthModal>
         );
@@ -689,8 +671,8 @@ function AuthorizeComponent() {
                     <Button
                         as="button"
                         onClick={handleDeny}
-                        weight="outline"
-                        color="dark"
+                        color="red"
+                        weight="light"
                         disabled={isAuthorizing}
                     >
                         Deny
@@ -699,7 +681,8 @@ function AuthorizeComponent() {
                         as="button"
                         onClick={handleAuthorize}
                         disabled={!canAuthorize || isAuthorizing || !!error}
-                        color="dark"
+                        color="amber"
+                        weight="light"
                     >
                         {isAuthorizing ? "Authorizing..." : "Authorize"}
                     </Button>

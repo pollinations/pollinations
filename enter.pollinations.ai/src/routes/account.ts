@@ -137,6 +137,10 @@ const CreateKeySchema = z.object({
         .describe(
             "Allowed OAuth redirect URIs for publishable app keys. Loopback ports are matched port-agnostically.",
         ),
+    earningsEnabled: z
+        .boolean()
+        .optional()
+        .describe("Enable developer earnings for publishable app keys."),
 });
 
 // CSV escape helper
@@ -1097,7 +1101,18 @@ export const accountRoutes = new Hono<Env>()
                 pollenBudget,
                 accountPermissions,
                 redirectUris,
+                earningsEnabled,
             } = c.req.valid("json");
+
+            const metadata =
+                type === "publishable"
+                    ? {
+                          ...(redirectUris?.length ? { redirectUris } : {}),
+                          ...(earningsEnabled !== undefined
+                              ? { earningsEnabled }
+                              : {}),
+                      }
+                    : undefined;
 
             const created = await createApiKeyForUser({
                 authClient: c.var.auth.client,
@@ -1109,10 +1124,7 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
-                metadata:
-                    type === "publishable" && redirectUris?.length
-                        ? { redirectUris }
-                        : undefined,
+                metadata,
                 allowAccountKeysPermission: false,
                 defaultCreatedVia: "api",
             });

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
+import type { UserBalance } from "./balance.ts";
 
 export const BALANCE_BUCKETS = ["tier", "pack"] as const;
 export type Bucket = (typeof BALANCE_BUCKETS)[number];
@@ -88,10 +89,7 @@ export async function atomicDeductApiKeyBalance(
     return { ok: (result.meta.changes ?? 0) > 0 };
 }
 
-export type UserBalances = {
-    tierBalance: number;
-    packBalance: number;
-};
+export type { UserBalance };
 
 /**
  * Atomically adjusts any user balance bucket by a positive or negative amount.
@@ -138,7 +136,7 @@ export async function atomicCreditUserBalance(
 export async function getUserBalances(
     db: DrizzleD1Database,
     userId: string,
-): Promise<UserBalances> {
+): Promise<UserBalance> {
     const result = await db
         .select({
             tierBalance: userTable.tierBalance,
@@ -161,7 +159,7 @@ export type DeductionSource = Record<`from${Capitalize<Bucket>}`, number>;
  * Identifies how a deduction will split across buckets under a policy.
  */
 export function identifyDeductionSource(
-    balances: UserBalances,
+    balances: UserBalance,
     amount: number,
     policy: BillingPolicy = BILLING_POLICIES.regular,
 ): DeductionSource {
@@ -213,6 +211,6 @@ function capitalizeBucket(bucket: Bucket): Capitalize<Bucket> {
     return (bucket[0].toUpperCase() + bucket.slice(1)) as Capitalize<Bucket>;
 }
 
-function getBucketBalance(balances: UserBalances, bucket: Bucket): number {
+function getBucketBalance(balances: UserBalance, bucket: Bucket): number {
     return bucket === "tier" ? balances.tierBalance : balances.packBalance;
 }

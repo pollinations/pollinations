@@ -42,7 +42,7 @@ export type CreateApiKey = {
     /** Allowed OAuth redirect URLs for publishable keys (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];
     /** Enable BYOP developer earnings for publishable app keys */
-    byopEnabled?: boolean;
+    earningsEnabled?: boolean;
 };
 
 export type CreateApiKeyResponse = ApiKey & {

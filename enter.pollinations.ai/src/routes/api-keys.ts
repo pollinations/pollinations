@@ -198,7 +198,7 @@ const UrlWithSchemeSchema = z.string().refine(
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
     redirectUris: z.array(UrlWithSchemeSchema).optional(),
-    byopEnabled: z.boolean().optional(),
+    earningsEnabled: z.boolean().optional(),
 });
 
 /**
@@ -393,7 +393,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 }
             }
             if (
-                metadataUpdate.byopEnabled !== undefined &&
+                metadataUpdate.earningsEnabled !== undefined &&
                 existingKey.prefix !== "pk"
             ) {
                 throw new HTTPException(400, {

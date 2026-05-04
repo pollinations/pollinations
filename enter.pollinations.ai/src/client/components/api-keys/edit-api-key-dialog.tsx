@@ -47,11 +47,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
     const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
-    const initialByopEnabled = apiKey.metadata?.byopEnabled === true;
+    const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
     const isAppKey = isPublishable && initialRedirectUris.length > 0;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
-    const [byopEnabled, setByopEnabled] = useState(initialByopEnabled);
+    const [earningsEnabled, setEarningsEnabled] = useState(
+        initialEarningsEnabled,
+    );
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -95,14 +97,14 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             if (
                 isPublishable &&
                 (!sameRedirectUris(redirectUris, initialRedirectUris) ||
-                    byopEnabled !== initialByopEnabled)
+                    earningsEnabled !== initialEarningsEnabled)
             ) {
                 const cleaned = redirectUris
                     .map((v) => v.trim())
                     .filter((v) => v !== "");
                 const metadataBody = {
                     redirectUris: cleaned,
-                    byopEnabled,
+                    earningsEnabled,
                 };
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
@@ -217,8 +219,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
-                                    byopEnabled={byopEnabled}
-                                    onByopEnabledChange={setByopEnabled}
+                                    earningsEnabled={earningsEnabled}
+                                    onEarningsEnabledChange={setEarningsEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

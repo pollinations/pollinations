@@ -47,7 +47,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         ? "publishable"
         : "secret";
     const [redirectUris, setRedirectUris] = useState<string[]>([]);
-    const [byopEnabled, setByopEnabled] = useState(true);
+    const [earningsEnabled, setEarningsEnabled] = useState(true);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -83,7 +83,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             .map((v) => v.trim())
                             .filter(Boolean),
                     }),
-                ...(isPublishable && { byopEnabled }),
+                ...(isPublishable && { earningsEnabled }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -166,7 +166,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setError(null);
                     setName(generateFunName());
                     setRedirectUris([]);
-                    setByopEnabled(true);
+                    setEarningsEnabled(true);
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
                         month: "2-digit",
@@ -319,8 +319,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
-                                    byopEnabled={byopEnabled}
-                                    onByopEnabledChange={setByopEnabled}
+                                    earningsEnabled={earningsEnabled}
+                                    onEarningsEnabledChange={setEarningsEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

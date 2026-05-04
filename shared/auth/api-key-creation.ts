@@ -16,7 +16,7 @@ export type CallerMetadata = {
     createdForUserId?: string;
     createdForApp?: string;
     description?: string;
-    byopEnabled?: boolean;
+    earningsEnabled?: boolean;
 };
 
 type CreateApiKeyForUserInput = {
@@ -187,7 +187,7 @@ function pickCallerMetadata(
     if (typeof metadata?.description === "string")
         out.description = metadata.description;
     if (isPublishable) {
-        out.byopEnabled = metadata?.byopEnabled !== false;
+        out.earningsEnabled = metadata?.earningsEnabled !== false;
     }
     if (attribution) {
         out.clientId = attribution.clientId;

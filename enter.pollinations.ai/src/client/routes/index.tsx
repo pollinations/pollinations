@@ -141,7 +141,7 @@ function RouteComponent() {
                     ? { redirectUris: formState.redirectUris }
                     : {}),
                 ...(isPublishable
-                    ? { byopEnabled: formState.byopEnabled ?? true }
+                    ? { earningsEnabled: formState.earningsEnabled ?? true }
                     : {}),
             },
             permissions: {

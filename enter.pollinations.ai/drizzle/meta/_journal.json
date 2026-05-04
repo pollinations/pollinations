@@ -173,8 +173,8 @@
     {
       "idx": 24,
       "version": "6",
-      "when": 1777905948296,
-      "tag": "0024_enable-byop-rewards",
+      "when": 1777914189905,
+      "tag": "0024_enable-earnings-rewards",
       "breakpoints": true
     }
   ]

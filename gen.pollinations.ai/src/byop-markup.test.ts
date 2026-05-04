@@ -57,7 +57,7 @@ async function setupPayerAndDev({
         prefix: "pk",
         key: `hashed-${pkId}`,
         enabled: true,
-        metadata: JSON.stringify({ byopEnabled: true }),
+        metadata: JSON.stringify({ earningsEnabled: true }),
         createdAt: new Date(),
         updatedAt: new Date(),
     });
@@ -96,7 +96,7 @@ describe("BYOP markup", () => {
             .where(sql`${userTable.id} = ${payerId}`);
         await db
             .update(apikeyTable)
-            .set({ metadata: JSON.stringify({ byopEnabled: false }) })
+            .set({ metadata: JSON.stringify({ earningsEnabled: false }) })
             .where(sql`${apikeyTable.id} = ${pkId}`);
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
     });

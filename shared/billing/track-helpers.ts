@@ -12,7 +12,7 @@ import {
     atomicDeductUserBalance,
     getUserBalances,
     identifyDeductionSource,
-    type UserBalances,
+    type UserBalance,
 } from "./deduction.ts";
 import {
     BYOP_MARKUP_PCT,
@@ -37,7 +37,7 @@ interface DeductionParams {
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelResolved?: string;
-    userBalanceBeforeDeduction?: UserBalances;
+    userBalanceBeforeDeduction?: UserBalance;
 }
 
 function parseMetadata(
@@ -81,7 +81,7 @@ export async function resolveDevMarkup(
         .limit(1);
 
     if (!clientRow?.userId) return null;
-    if (parseMetadata(clientRow.metadata).byopEnabled !== true) return null;
+    if (parseMetadata(clientRow.metadata).earningsEnabled !== true) return null;
     if (clientRow.userId === payerUserId) return null;
 
     const [payerRow] = await db
@@ -256,7 +256,7 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
-    userBalanceBeforeDeduction?: UserBalances,
+    userBalanceBeforeDeduction?: UserBalance,
 ): Promise<void> {
     try {
         const isPaidOnly = modelResolved

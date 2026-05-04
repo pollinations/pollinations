@@ -43,7 +43,7 @@ describe("API Key Management", () => {
                         metadata: {
                             description: "created in one step",
                             redirectUris: ["https://one-step.example/callback"],
-                            byopEnabled: true,
+                            earningsEnabled: true,
                         },
                     }),
                 },
@@ -56,7 +56,7 @@ describe("API Key Management", () => {
                 keyType: "publishable",
                 description: "created in one step",
                 redirectUris: ["https://one-step.example/callback"],
-                byopEnabled: true,
+                earningsEnabled: true,
                 plaintextKey: created.key,
             });
         });
@@ -79,7 +79,7 @@ describe("API Key Management", () => {
                             redirectUris: [
                                 "https://spore-rewards.example/callback",
                             ],
-                            byopEnabled: true,
+                            earningsEnabled: true,
                         },
                     }),
                 },
@@ -87,7 +87,7 @@ describe("API Key Management", () => {
 
             expect(response.status).toBe(200);
             const created = await response.json();
-            expect(created.metadata.byopEnabled).toBe(true);
+            expect(created.metadata.earningsEnabled).toBe(true);
         });
 
         test("should accept loopback redirectUris metadata", async ({
@@ -116,7 +116,7 @@ describe("API Key Management", () => {
             expect(created.metadata.redirectUris).toEqual([
                 "http://localhost:3456/callback",
             ]);
-            expect(created.metadata.byopEnabled).toBe(true);
+            expect(created.metadata.earningsEnabled).toBe(true);
         });
 
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({
@@ -208,7 +208,7 @@ describe("API Key Management", () => {
                         type: "publishable",
                         metadata: {
                             redirectUris: ["https://legit.example/callback"],
-                            byopEnabled: true,
+                            earningsEnabled: true,
                         },
                     }),
                 },
@@ -314,7 +314,7 @@ describe("API Key Management", () => {
                             redirectUris: [
                                 "https://disabled-reward.example/callback",
                             ],
-                            byopEnabled: false,
+                            earningsEnabled: false,
                         },
                     }),
                 },
@@ -933,13 +933,13 @@ describe("API Key Management", () => {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
-                    body: JSON.stringify({ byopEnabled: true }),
+                    body: JSON.stringify({ earningsEnabled: true }),
                 },
             );
 
             expect(metadataResponse.status).toBe(200);
             const updated = await metadataResponse.json();
-            expect(updated.metadata.byopEnabled).toBe(true);
+            expect(updated.metadata.earningsEnabled).toBe(true);
         });
 
         test("should update pollen budget", async ({ auth, sessionToken }) => {

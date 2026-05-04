@@ -27,7 +27,7 @@ async function resolveAttribution(
         githubUsername: user?.githubUsername || undefined,
         appName: keyRow.name,
         redirectUris,
-        byopEnabled: meta.byopEnabled === true,
+        earningsEnabled: meta.earningsEnabled === true,
     };
 }
 

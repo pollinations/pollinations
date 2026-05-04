@@ -39,7 +39,7 @@ type Attribution = {
     githubUsername?: string;
     appName?: string;
     redirectUris?: string[];
-    byopEnabled?: boolean;
+    earningsEnabled?: boolean;
 };
 
 function parseList(val: unknown): string[] | null {

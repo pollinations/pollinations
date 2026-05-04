@@ -7,8 +7,8 @@ import { InfoTip } from "../ui/info-tip.tsx";
 type PublishableKeySettingsProps = {
     redirectUris: string[];
     onRedirectUrisChange: (uris: string[]) => void;
-    byopEnabled?: boolean;
-    onByopEnabledChange?: (enabled: boolean) => void;
+    earningsEnabled?: boolean;
+    onEarningsEnabledChange?: (enabled: boolean) => void;
     disabled?: boolean;
 };
 
@@ -22,8 +22,8 @@ type PublishableKeySettingsProps = {
 export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     redirectUris,
     onRedirectUrisChange,
-    byopEnabled = false,
-    onByopEnabledChange,
+    earningsEnabled = false,
+    onEarningsEnabledChange,
     disabled = false,
 }) => {
     const rows = redirectUris.length > 0 ? redirectUris : [""];
@@ -93,11 +93,11 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                     Loopback URLs match any port (RFC 8252).
                 </p>
             </div>
-            {onByopEnabledChange && (
+            {onEarningsEnabledChange && (
                 <DeveloperEarningsSwitch
-                    enabled={byopEnabled}
+                    enabled={earningsEnabled}
                     disabled={disabled}
-                    onToggle={onByopEnabledChange}
+                    onToggle={onEarningsEnabledChange}
                 />
             )}
         </div>

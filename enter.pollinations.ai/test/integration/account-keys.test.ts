@@ -56,6 +56,37 @@ describe("Account Key Management API", () => {
             expect(data.metadata.redirectUris).toEqual([
                 "https://cli.example/callback",
             ]);
+            expect(data.metadata.earningsEnabled).toBe(true);
+        });
+
+        test("should create a publishable app key with earnings disabled", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "test-pub-key-no-earnings",
+                        type: "publishable",
+                        redirectUris: ["https://cli-disabled.example/callback"],
+                        earningsEnabled: false,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.key.startsWith("pk_")).toBe(true);
+            expect(data.type).toBe("publishable");
+            expect(data.metadata.redirectUris).toEqual([
+                "https://cli-disabled.example/callback",
+            ]);
+            expect(data.metadata.earningsEnabled).toBe(false);
         });
 
         test("should create key with permissions and budget", async ({

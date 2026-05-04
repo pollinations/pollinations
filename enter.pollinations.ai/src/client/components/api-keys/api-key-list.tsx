@@ -62,7 +62,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         const primaryRedirectUri = redirectUrisMeta[0] || "";
         const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
         const isApp = isPublishable && !!primaryRedirectUri;
-        const byopEnabled = apiKey.metadata?.byopEnabled === true;
+        const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
 
         return (
             <Card
@@ -163,13 +163,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     {isApp && (
                         <span
                             className={`rounded px-2 py-0.5 font-medium ${
-                                byopEnabled
+                                earningsEnabled
                                     ? "bg-green-100 text-green-700"
                                     : "bg-gray-100 text-gray-500"
                             }`}
                             title="Developer earnings"
                         >
-                            Earnings {byopEnabled ? "on" : "off"}
+                            Earnings {earningsEnabled ? "on" : "off"}
                         </span>
                     )}
                     {!isApp && (

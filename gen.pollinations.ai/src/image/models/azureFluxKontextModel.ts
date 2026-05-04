@@ -206,7 +206,7 @@ export async function callAzureFluxKontext(
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new HttpError(errorText, response.status);
+        throw new HttpError(errorText, response.status, undefined, endpoint);
     }
 
     const data = (await response.json()) as {
@@ -219,7 +219,12 @@ export async function callAzureFluxKontext(
     };
 
     if (!data.data || !data.data[0] || !data.data[0].b64_json) {
-        throw new Error("Invalid response from Azure Flux Kontext API");
+        throw new HttpError(
+            "Invalid response from Azure Flux Kontext API",
+            500,
+            undefined,
+            endpoint,
+        );
     }
 
     // Convert base64 to buffer

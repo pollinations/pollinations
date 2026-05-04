@@ -5,6 +5,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
@@ -197,13 +198,9 @@ async function downloadVideo(
 ): Promise<Buffer> {
     progress.updateBar(requestId, 90, "Processing", "Downloading video...");
 
-    const response = await fetch(videoUrl);
-    if (!response.ok) {
-        throw new HttpError(
-            `Failed to download video: ${response.status}`,
-            500,
-        );
-    }
+    const response = await fetchUpstream(videoUrl, {
+        errorLabel: "Failed to download video",
+    });
 
     const buffer = Buffer.from(await response.arrayBuffer());
     logOps(
@@ -358,27 +355,17 @@ async function createDashScopeTask(
         "Initiating video generation...",
     );
 
-    const response = await fetch(
-        `${DASHSCOPE_API_BASE}/services/aigc/video-generation/video-synthesis`,
-        {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-                "X-DashScope-Async": "enable",
-            },
-            body: JSON.stringify(requestBody),
+    const submitUrl = `${DASHSCOPE_API_BASE}/services/aigc/video-generation/video-synthesis`;
+    const response = await fetchUpstream(submitUrl, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "X-DashScope-Async": "enable",
         },
-    );
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError("DashScope API failed:", response.status, errorText);
-        throw new HttpError(
-            `DashScope API request failed: ${errorText}`,
-            response.status,
-        );
-    }
+        body: JSON.stringify(requestBody),
+        errorLabel: "DashScope API request failed",
+    });
 
     const data: WanTaskResponse = await response.json();
     logOps("Task creation response:", JSON.stringify(data, null, 2));
@@ -387,12 +374,19 @@ async function createDashScopeTask(
         throw new HttpError(
             `DashScope API error: ${data.message || data.code}`,
             400,
+            undefined,
+            submitUrl,
         );
     }
 
     const taskId = data.output?.task_id;
     if (!taskId) {
-        throw new HttpError("DashScope API did not return task ID", 500);
+        throw new HttpError(
+            "DashScope API did not return task ID",
+            500,
+            undefined,
+            submitUrl,
+        );
     }
 
     progress.updateBar(
@@ -438,13 +432,18 @@ async function pollWanTask(
         }
 
         if (pollResult.status === "failed") {
-            throw new HttpError(pollResult.error, 500);
+            throw new HttpError(pollResult.error, 500, undefined, pollUrl);
         }
 
         await sleep(POLL_DELAY_MS);
     }
 
-    throw new HttpError("Video generation timed out after 5 minutes", 504);
+    throw new HttpError(
+        "Video generation timed out after 5 minutes",
+        504,
+        undefined,
+        pollUrl,
+    );
 }
 
 /**
@@ -500,7 +499,12 @@ async function pollTaskOnce(
     switch (taskStatus) {
         case "SUCCEEDED":
             if (!data.output?.video_url) {
-                throw new HttpError("No video URL in completed response", 500);
+                throw new HttpError(
+                    "No video URL in completed response",
+                    500,
+                    undefined,
+                    pollUrl,
+                );
             }
             return {
                 status: "completed",

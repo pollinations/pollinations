@@ -196,11 +196,29 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/minimax-m2p7",
         }),
 
-    // -- Fireworks AI (Meta Llama) --------------------------------------------
-    "accounts/fireworks/models/llama-v3p3-70b-instruct": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/llama-v3p3-70b-instruct",
-        }),
+    // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
+    "Llama-3.3-70B-Instruct": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-3.3-70B-Instruct/chat/completions?api-version=2024-12-01-preview",
+            "Llama-3.3-70B-Instruct",
+        ),
+    "Llama-4-Maverick-17B-128E-Instruct-FP8": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
+            "Llama-4-Maverick-17B-128E-Instruct-FP8",
+            undefined,
+            { requiresBase64ImageUrls: true },
+        ),
+    "Llama-4-Scout-17B-16E-Instruct": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Scout-17B-16E-Instruct/chat/completions?api-version=2024-12-01-preview",
+            "Llama-4-Scout-17B-16E-Instruct",
+            undefined,
+            { requiresBase64ImageUrls: true },
+        ),
 
     // -- Alibaba DashScope (Qwen) ---------------------------------------------
     "qwen3-coder-next": () =>

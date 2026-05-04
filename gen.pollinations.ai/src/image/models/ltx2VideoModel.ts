@@ -4,6 +4,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 // Logger
@@ -108,27 +109,25 @@ async function enqueueLtx2Job(
 
     logOps("Enqueuing LTX-2 job:", requestBody);
 
-    const response = await fetch(`${getLtx2BaseUrl()}/enqueue`, {
+    const enqueueUrl = `${getLtx2BaseUrl()}/enqueue`;
+    const response = await fetchUpstream(enqueueUrl, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             ...backendHeaders(),
         },
         body: JSON.stringify(requestBody),
+        errorLabel: "Failed to enqueue video generation",
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError("Enqueue failed:", response.status, errorText);
-        throw new HttpError(
-            `Failed to enqueue video generation: ${errorText}`,
-            response.status,
-        );
-    }
 
     const data = (await response.json()) as { prompt_id?: string };
     if (!data.prompt_id) {
-        throw new HttpError("No prompt_id returned from enqueue", 500);
+        throw new HttpError(
+            "No prompt_id returned from enqueue",
+            500,
+            undefined,
+            enqueueUrl,
+        );
     }
 
     logOps("Job enqueued with prompt_id:", data.prompt_id);
@@ -181,6 +180,8 @@ async function pollLtx2Status(
                 throw new HttpError(
                     `Video generation failed: ${data.error || "Unknown error"}`,
                     500,
+                    undefined,
+                    statusUrl,
                 );
             }
         } catch (error) {
@@ -196,6 +197,8 @@ async function pollLtx2Status(
     throw new HttpError(
         `Video generation timed out after ${DEFAULT_TIMEOUT_SECS} seconds`,
         504,
+        undefined,
+        statusUrl,
     );
 }
 
@@ -221,7 +224,12 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
     }
 
     if (!response) {
-        throw new HttpError("Failed to fetch video result: no response", 502);
+        throw new HttpError(
+            "Failed to fetch video result: no response",
+            502,
+            undefined,
+            resultUrl,
+        );
     }
 
     if (!response.ok) {
@@ -229,6 +237,8 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
             throw new HttpError(
                 "Video result still not ready after retries",
                 504,
+                undefined,
+                resultUrl,
             );
         }
         const errorText = await response.text();
@@ -236,6 +246,8 @@ async function fetchLtx2Result(promptId: string): Promise<Buffer> {
         throw new HttpError(
             `Failed to fetch video result: ${errorText}`,
             response.status,
+            undefined,
+            resultUrl,
         );
     }
 

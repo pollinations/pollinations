@@ -4,6 +4,7 @@ import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:wan-image:ops");
@@ -194,23 +195,15 @@ async function callDashScopeWanImageAPI(
     });
     logOps("DashScope Wan image request:", safeBody);
 
-    const response = await fetch(DASHSCOPE_API_BASE, {
+    const response = await fetchUpstream(DASHSCOPE_API_BASE, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
+        errorLabel: `${modelLabel} API failed`,
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError(`${modelLabel} API failed:`, response.status, errorText);
-        throw new HttpError(
-            `${modelLabel} API failed: ${errorText}`,
-            response.status,
-        );
-    }
 
     const data: WanImageResponse = await response.json();
 
@@ -218,25 +211,27 @@ async function callDashScopeWanImageAPI(
         throw new HttpError(
             `${modelLabel} error: ${data.message || data.code}`,
             400,
+            undefined,
+            DASHSCOPE_API_BASE,
         );
     }
 
     const imageUrl = data.output?.choices?.[0]?.message?.content?.[0]?.image;
     if (!imageUrl) {
-        throw new HttpError(`No image URL in ${modelLabel} response`, 500);
+        throw new HttpError(
+            `No image URL in ${modelLabel} response`,
+            500,
+            undefined,
+            DASHSCOPE_API_BASE,
+        );
     }
 
     logOps("Image generated, downloading from:", imageUrl);
     progress.updateBar(requestId, 80, "Processing", "Downloading image...");
 
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-        throw new HttpError(
-            `Failed to download generated image: ${imageResponse.status}`,
-            500,
-        );
-    }
-
+    const imageResponse = await fetchUpstream(imageUrl, {
+        errorLabel: "Failed to download generated image",
+    });
     const buffer = Buffer.from(await imageResponse.arrayBuffer());
     logOps(`Image downloaded, size: ${(buffer.length / 1024).toFixed(1)} KB`);
     progress.updateBar(requestId, 95, "Success", "Image generation completed");

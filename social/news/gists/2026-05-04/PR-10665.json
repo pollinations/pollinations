@@ -1,0 +1,34 @@
+{
+  "pr_number": 10665,
+  "title": "refactor(image): fetchUpstream helper + propagate upstreamUrl in errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10665",
+  "merged_at": "2026-05-04T09:16:16Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "X-Ray Vision for Errors",
+    "blurb": "We've refactored how our image and video models talk to their upstream backends. Less boilerplate code, and much smarter error logs that tell us exactly which server is acting up.",
+    "summary": "Introduced a new fetchUpstream helper to reduce boilerplate and improved error handling to propagate the exact upstream URL when a backend fails.",
+    "impact": "Developers get cleaner code, and our infrastructure team gets precise error logs showing exactly which upstream model server is experiencing issues.",
+    "keywords": [
+      "refactor",
+      "error-handling",
+      "observability",
+      "api",
+      "fetch"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot inspecting data pipes or a server map. The robot's screen shows a magnifying glass or a specific server node, representing the new ability to trace exact upstream URLs in errors.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, inspecting glowing lime green (#ecf874) data pipes in a cozy server room. Next to her, a chunky Monitor Robot displays a magnifying glass over a specific server node on its screen. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-04/PR-10665.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, inspecting glowing lime green (#ecf874) data pipes in a cozy server room. Next to her, a chunky Monitor Robot displays a magnifying glass over a specific server node on its screen. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-04T09:17:18.751652+00:00"
+}

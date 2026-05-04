@@ -1,0 +1,34 @@
+{
+  "pr_number": 10676,
+  "title": "fix(mistral): route to Azure Foundry mistral-small-2503",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10676",
+  "merged_at": "2026-05-04T13:59:10Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fresh breeze for Mistral",
+    "blurb": "Mistral was taking too many naps on its old server, so we packed its bags and moved it to Azure. It's now wide awake and responding in milliseconds.",
+    "summary": "Rerouted Mistral Small requests to a new Azure Foundry deployment to eliminate recent gateway timeouts.",
+    "impact": "Mistral text generations are back to being lightning fast and highly reliable.",
+    "keywords": [
+      "mistral",
+      "azure",
+      "reliability",
+      "api",
+      "models"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot moving a glowing wind/cloud symbol (representing Mistral) into a shiny new, fast server rack.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot carefully placing a glowing blue cloud into a shiny new lime green (#ecf874) server rack. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-04/PR-10676.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot carefully placing a glowing blue cloud into a shiny new lime green (#ecf874) server rack. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-04T14:00:17.515447+00:00"
+}

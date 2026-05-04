@@ -519,7 +519,7 @@ function createTrackingEvent({
         totalPrice:
             (responseTracking.price?.totalPrice || 0) +
             (markup?.devCredit ?? 0),
-        devPrice: markup ? responseTracking.price?.totalPrice || 0 : 0,
+        devPrice: responseTracking.price?.totalPrice || 0,
         byopMarkupPct: markup?.markupPct ?? 0,
 
         ...responseTracking.contentFilterResults,

@@ -1,0 +1,33 @@
+{
+  "pr_number": 10677,
+  "title": "fix(polli-cli): update device-flow app key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10677",
+  "merged_at": "2026-05-04T14:38:27Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "New keys to the hive",
+    "blurb": "We've updated the OAuth client ID for the polli CLI so you can keep logging in without a hitch.",
+    "summary": "Updated the OAuth client ID used for device flow authentication in the polli CLI.",
+    "impact": "CLI users can successfully authenticate using `polli auth login` with the correct application key.",
+    "keywords": [
+      "cli",
+      "auth",
+      "oauth",
+      "bugfix"
+    ],
+    "visual_concept": "The bee mascot holding a shiny new golden key or a pixelated security badge next to a retro terminal, representing the updated OAuth client ID.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden pixel key next to a retro computer terminal glowing with lime green (#ecf874) code. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-04/PR-10677.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a shiny golden pixel key next to a retro computer terminal glowing with lime green (#ecf874) code. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-04T14:39:27.096106+00:00"
+}

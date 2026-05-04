@@ -49,15 +49,6 @@ const logPerf = debug("pollinations:perf");
 const logOps = debug("pollinations:ops");
 const logCloudflare = debug("pollinations:cloudflare");
 
-// Constants
-const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
-
-type ScaledDimensions = {
-    scaledWidth: number;
-    scaledHeight: number;
-    scalingFactor: number;
-};
-
 type AzureGPTImageTokenDetails = {
     cached_tokens?: number;
     image_tokens?: number;
@@ -149,28 +140,6 @@ function mapAzureGPTImageUsage(
 }
 
 /**
- * Calculates scaled dimensions while maintaining aspect ratio
- * @param {number} width - Original width
- * @param {number} height - Original height
- * @returns {ScaledDimensions}
- */
-export function calculateScaledDimensions(
-    width: number,
-    height: number,
-): ScaledDimensions {
-    const currentPixels = width * height;
-    if (currentPixels >= TARGET_PIXEL_COUNT) {
-        return { scaledWidth: width, scaledHeight: height, scalingFactor: 1 };
-    }
-
-    const scalingFactor = Math.sqrt(TARGET_PIXEL_COUNT / currentPixels);
-    const scaledWidth = Math.round(width * scalingFactor);
-    const scaledHeight = Math.round(height * scalingFactor);
-
-    return { scaledWidth, scaledHeight, scalingFactor };
-}
-
-/**
  * Resizes an input image buffer for GPT Image editing to reduce token costs.
  * GPT Image 1.5 calculates input tokens as: (width × height) / 750
  * Large images can result in very high token costs (e.g., 4K = ~11,000 tokens)
@@ -212,17 +181,14 @@ export const callSelfHostedServer = async (
         logOps("calculated_steps", steps);
 
         prompt = sanitizeString(prompt);
-
-        // Calculate scaled dimensions
-        const { scaledWidth, scaledHeight } = calculateScaledDimensions(
-            safeParams.width,
-            safeParams.height,
-        );
-
+        
+        // Pre-scaling here actively contradicted that contract — a caller
+        // asking for 960×640 would get silently upscaled to ~1248×832
+        // before the backend ever saw the request. See issue #10629.
         const body = {
             prompts: [prompt],
-            width: scaledWidth,
-            height: scaledHeight,
+            width: safeParams.width,
+            height: safeParams.height,
             seed: safeParams.seed,
             negative_prompt: safeParams.negative_prompt,
             steps: steps,

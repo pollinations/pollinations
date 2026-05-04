@@ -1,0 +1,34 @@
+{
+  "pr_number": 10658,
+  "title": "chore: remove 1 dead apps (2026-05-04)",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10658",
+  "merged_at": "2026-05-04T11:43:58Z",
+  "labels": [
+    "WEB",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the garden",
+    "blurb": "Just doing some routine maintenance to keep our community app showcase fresh and working perfectly.",
+    "summary": "Automated cleanup removing an inactive community app link from the showcase.",
+    "impact": "Ensures the community showcase only features active, working applications for users to explore.",
+    "keywords": [
+      "cleanup",
+      "apps",
+      "maintenance",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee doing some light gardening or sweeping up dead leaves around the community garden, representing routine maintenance.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, gently sweeping up a few brown pixelated leaves from a vibrant digital garden. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-04/PR-10658.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's apron, gently sweeping up a few brown pixelated leaves from a vibrant digital garden. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-04T11:44:59.049620+00:00"
+}

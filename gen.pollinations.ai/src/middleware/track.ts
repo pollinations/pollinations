@@ -195,8 +195,8 @@ export const track = (eventType: EventType) =>
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
 
-                // Deduct payer + credit dev before emitting the event so dev_credit
-                // reflects the ledger, not just the intended credit.
+                // Deduct payer + credit dev before emitting the event so billing
+                // telemetry reflects the committed ledger state.
                 const balanceDb = db as unknown as Parameters<
                     typeof handleBalanceDeduction
                 >[0]["db"];
@@ -245,7 +245,7 @@ export const track = (eventType: EventType) =>
                         '  selectedMeterSlug="{event.selectedMeterSlug}"',
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
-                        "  devCredit={event.devCredit}",
+                        "  devPrice={event.devPrice}",
                     ].join("\n"),
                     { event: finalEvent },
                 );
@@ -519,7 +519,7 @@ function createTrackingEvent({
         totalPrice:
             (responseTracking.price?.totalPrice || 0) +
             (markup?.devCredit ?? 0),
-        devCredit: markup?.devCredit ?? 0,
+        devPrice: markup ? responseTracking.price?.totalPrice || 0 : 0,
         byopMarkupPct: markup?.markupPct ?? 0,
 
         ...responseTracking.contentFilterResults,

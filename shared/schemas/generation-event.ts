@@ -80,7 +80,7 @@ export type TinybirdEvent = {
     // Totals
     totalCost: number;
     totalPrice: number;
-    devCredit?: number;
+    devPrice?: number;
     byopMarkupPct?: number;
 
     // Prompt Moderation

@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
+import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import * as schema from "@/db/schema/better-auth.ts";
 import { test } from "./fixtures.ts";
 
 const BASE = "http://localhost:3000";
@@ -103,7 +103,7 @@ describe("Device Authorization Flow", () => {
         sessionToken,
         mocks,
     }) => {
-        await mocks.enable("polar", "tinybird", "github");
+        await mocks.enable("tinybird", "github");
         const device = await insertDeviceCode();
 
         const denyRes = await SELF.fetch(`${BASE}/api/device/deny`, {
@@ -192,7 +192,7 @@ describe("Device Authorization Flow", () => {
         sessionToken,
         mocks,
     }) => {
-        await mocks.enable("polar", "tinybird", "github");
+        await mocks.enable("tinybird", "github");
         const device = await insertDeviceCode();
 
         // Get the user ID from session
@@ -252,7 +252,7 @@ describe("Device Authorization Flow", () => {
         sessionToken,
         mocks,
     }) => {
-        await mocks.enable("polar", "tinybird", "github");
+        await mocks.enable("tinybird", "github");
         const res = await SELF.fetch(`${BASE}/api/device/userinfo`, {
             headers: {
                 Cookie: `better-auth.session_token=${sessionToken}`,

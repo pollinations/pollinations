@@ -7,10 +7,10 @@ type StatProps = {
 
 export const Stat: FC<StatProps> = ({ label, value }) => (
     <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-wide text-pink-400 font-bold">
+        <span className="text-[10px] uppercase tracking-wide text-pink-600 font-bold">
             {label}
         </span>
-        <span className="text-lg font-bold text-green-950 tabular-nums">
+        <span className="text-lg font-bold text-pink-950 tabular-nums">
             {value}
         </span>
     </div>

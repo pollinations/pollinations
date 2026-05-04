@@ -1,12 +1,13 @@
 import { type FC, type ReactNode, useEffect, useState } from "react";
-import { Panel } from "../ui/panel.tsx";
+import { cn } from "@/util.ts";
+import { Card } from "../ui/card.tsx";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
-const HIGHLIGHTS_GITHUB_URL =
+export const HIGHLIGHTS_GITHUB_URL =
     "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
 
-const TOTAL_NEWS_COUNT = 5;
+const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
     date: string;
@@ -18,15 +19,14 @@ interface Highlight {
 /**
  * Pinned news items that stay visible regardless of daily updates.
  * Edit this array to add/remove pinned announcements.
- * When empty, the full TOTAL_NEWS_COUNT dynamic highlights are shown.
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-04-17",
-        emoji: "💰",
-        title: "Transparent Pricing: Cost vs Price",
+        date: "2026-04-28",
+        emoji: "💸",
+        title: "ElevenLabs TTS, Music, and GPT Image 2 are now paid",
         description:
-            "The registry now tracks provider cost separately from user price. See the [pricing table](/#pricing) for the rates you pay.",
+            "As of May 1, 2026, ElevenLabs TTS, Music, and GPT Image 2 require paid pollen.",
     },
 ];
 
@@ -78,66 +78,101 @@ function parseHighlights(md: string): Highlight[] {
         });
 }
 
+function formatNewsDate(date: string): string {
+    if (!date) return "";
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+    if (Number.isNaN(parsed.getTime())) return date;
+    return parsed.toLocaleDateString("en-US", {
+        timeZone: "UTC",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
+type NewsItem = Highlight & {
+    key: string;
+    pinned: boolean;
+};
+
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
-    const dynamicCount = TOTAL_NEWS_COUNT - PINNED_NEWS.length;
 
     useEffect(() => {
         fetch(HIGHLIGHTS_RAW_URL)
             .then((res) => res.text())
             .then((md) =>
-                setHighlights(parseHighlights(md).slice(0, dynamicCount)),
+                setHighlights(parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT)),
             )
             .catch((err) => console.error("Failed to fetch highlights:", err));
-    }, [dynamicCount]);
+    }, []);
 
     if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
 
+    const items: NewsItem[] = [
+        ...PINNED_NEWS.map((item) => ({
+            ...item,
+            key: `pinned-${item.title}`,
+            pinned: true,
+        })),
+        ...highlights.map((item) => ({
+            ...item,
+            key: `${item.date}-${item.title}`,
+            pinned: false,
+        })),
+    ];
+
     return (
-        <Panel
-            color="violet"
-            compact
-            className="border-transparent !bg-transparent"
-        >
-            <div className="flex flex-col gap-2">
-                <span className="text-xs text-gray-500">What's new</span>
-                {PINNED_NEWS.length > 0 && (
-                    <div className="bg-white/80 rounded-xl px-3 py-2">
-                        <ul className="text-xs space-y-1.5">
-                            {PINNED_NEWS.map((h) => (
-                                <li
-                                    key={`pinned-${h.title}`}
-                                    className="text-gray-900"
-                                >
-                                    {h.emoji} <strong>{h.title}:</strong>{" "}
-                                    {renderWithLinks(h.description)}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-                {highlights.length > 0 && (
-                    <ul className="text-xs space-y-1.5">
-                        {highlights.map((h) => (
-                            <li
-                                key={h.date + h.title}
-                                className="text-gray-600"
-                            >
-                                {h.emoji} <strong>{h.title}:</strong>{" "}
-                                {renderWithLinks(h.description)}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-                <a
-                    href={HIGHLIGHTS_GITHUB_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-violet-600 hover:text-violet-800 hover:underline"
-                >
-                    More...
-                </a>
-            </div>
-        </Panel>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {items.map((item) => (
+                <NewsCard key={item.key} item={item} />
+            ))}
+        </div>
     );
 };
+
+const NewsCard: FC<{ item: NewsItem }> = ({ item }) => (
+    <Card
+        color="violet"
+        className={cn(
+            "flex leading-relaxed",
+            item.pinned
+                ? "min-h-0 md:col-span-2 xl:col-span-3 !border-transparent !bg-violet-200/70 text-base"
+                : "min-h-48 !border-transparent text-sm",
+        )}
+    >
+        <div
+            className={cn(
+                "flex min-h-0 flex-1 items-start gap-3",
+                item.pinned ? "flex-row" : "flex-col",
+            )}
+        >
+            {!item.pinned && (
+                <span className="shrink-0 text-2xl leading-none">
+                    {item.emoji}
+                </span>
+            )}
+            <div className="min-w-0">
+                <div
+                    className={cn(
+                        "font-semibold text-gray-900",
+                        item.pinned && "text-base sm:text-lg",
+                    )}
+                >
+                    <span>{item.title}</span>
+                    {item.pinned && item.emoji && (
+                        <span className="ml-2">{item.emoji}</span>
+                    )}
+                </div>
+                {item.date && !item.pinned && (
+                    <div className="mt-1 text-xs font-medium text-gray-400">
+                        {formatNewsDate(item.date)}
+                    </div>
+                )}
+                <p className="mt-1 text-gray-700">
+                    {renderWithLinks(item.description)}
+                </p>
+            </div>
+        </div>
+    </Card>
+);

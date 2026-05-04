@@ -1,4 +1,3 @@
-import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -68,7 +67,7 @@ function generateLLMDoc(): string {
     lines.push("");
     lines.push("Base URL: https://gen.pollinations.ai");
     lines.push("API Keys: https://enter.pollinations.ai");
-    lines.push("Docs: https://gen.pollinations.ai/api/docs");
+    lines.push("Docs: https://gen.pollinations.ai/docs");
     lines.push(
         "CLI: `npx @pollinations_ai/cli` (binary: `polli`) — agent-friendly, `--json` everywhere",
     );
@@ -193,7 +192,7 @@ function generateLLMDoc(): string {
     lines.push('- model (string, default: "zimage"): Image or video model');
     lines.push("- width (int, default: 1024), height (int, default: 1024)");
     lines.push(
-        "- seed (int, default: 0): Works with flux, zimage, seedream, klein, seedance. -1 for random",
+        "- seed (int, default: 0): Works with flux, zimage, seedream, klein, seedance, nova-reel. -1 for random",
     );
     lines.push("- enhance (boolean, default: false): AI prompt enhancement");
     lines.push("- negative_prompt (string): Only flux, zimage");
@@ -341,16 +340,16 @@ function generateLLMDoc(): string {
     lines.push(
         "All account endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission.",
     );
-    lines.push("Base path: /api/account");
+    lines.push("Base path: /account");
     lines.push("");
 
-    lines.push("### GET /api/account/profile");
+    lines.push("### GET /account/profile");
     lines.push(
         "Returns user profile. `githubUsername`, `image`, `tier`, and `nextResetAt` are always included. `name` and `email` are included only when the API key has the `account:profile` permission. `nextResetAt` is `null` for tiers with no hourly refill.",
     );
     lines.push("");
 
-    lines.push("### GET /api/account/balance");
+    lines.push("### GET /account/balance");
     lines.push(
         "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
     );
@@ -359,7 +358,7 @@ function generateLLMDoc(): string {
     );
     lines.push("");
 
-    lines.push("### GET /api/account/usage");
+    lines.push("### GET /account/usage");
     lines.push(
         "Per-request usage history: model, token counts, cost, response time.",
     );
@@ -369,7 +368,7 @@ function generateLLMDoc(): string {
     lines.push("Requires `account:usage` permission.");
     lines.push("");
 
-    lines.push("### GET /api/account/usage/daily");
+    lines.push("### GET /account/usage/daily");
     lines.push(
         "Daily aggregated usage for the requested time window (max 90 days) grouped by date and model: { date, model, meter_source, requests, cost_usd }.",
     );
@@ -379,13 +378,13 @@ function generateLLMDoc(): string {
     lines.push("Requires `account:usage` permission. Cached 1 hour.");
     lines.push("");
 
-    lines.push("### GET /api/account/keys");
+    lines.push("### GET /account/keys");
     lines.push(
         "List all API keys for the current user. Requires secret key (sk_) with `account:keys` permission.",
     );
     lines.push("");
 
-    lines.push("### POST /api/account/keys");
+    lines.push("### POST /account/keys");
     lines.push(
         "Create an API key. Requires secret key (sk_) with `account:keys` permission.",
     );
@@ -409,14 +408,14 @@ function generateLLMDoc(): string {
     );
     lines.push("");
 
-    lines.push("### DELETE /api/account/keys/:id");
+    lines.push("### DELETE /account/keys/:id");
     lines.push(
         "Revoke an API key by ID. Cannot revoke the key authenticating the request.",
     );
     lines.push("Requires secret key (sk_) with `account:keys` permission.");
     lines.push("");
 
-    lines.push("### GET /api/account/key");
+    lines.push("### GET /account/key");
     lines.push(
         "Info about the current API key: { valid, type, name, expiresAt, expiresIn, permissions, pollenBudget, rateLimitEnabled }.",
     );
@@ -957,91 +956,6 @@ for record in response.json()["usage"]:
 };
 
 // ---------------------------------------------------------------------------
-// "Copy for LLMs" button injected into the Scalar docs page
-// ---------------------------------------------------------------------------
-
-const LLM_BUTTON_HTML = `
-<style>
-.llm-btn {
-  position: fixed; bottom: 20px; right: 20px; z-index: 10000;
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 14px;
-  background: var(--scalar-background-2, #1a1a2e);
-  color: var(--scalar-color-1, #e0e0e0);
-  border: 1px solid var(--scalar-border-color, #333);
-  border-radius: 8px; font-size: 13px;
-  font-family: var(--scalar-font, system-ui, sans-serif);
-  cursor: pointer; transition: all .15s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,.2);
-}
-.llm-btn:hover {
-  border-color: var(--scalar-color-accent, #6366f1);
-  box-shadow: 0 2px 12px rgba(99,102,241,.3);
-}
-.llm-btn svg {
-  width: 16px; height: 16px; fill: none;
-  stroke: currentColor; stroke-width: 2;
-}
-.llm-toast {
-  position: fixed; bottom: 68px; right: 20px; z-index: 10001;
-  padding: 8px 16px;
-  background: var(--scalar-color-accent, #6366f1); color: #fff;
-  border-radius: 8px; font-size: 13px;
-  font-family: var(--scalar-font, system-ui, sans-serif);
-  opacity: 0; transform: translateY(8px);
-  transition: all .2s ease; pointer-events: none;
-}
-.llm-toast.show { opacity: 1; transform: translateY(0); }
-</style>
-<div class="llm-toast" id="llm-toast">Copied to clipboard!</div>
-<button class="llm-btn" id="llm-btn" title="Copy API docs optimized for AI assistants">
-  <svg viewBox="0 0 24 24"><path d="M12 2L9.5 8.5 2 12l7.5 3.5L12 22l2.5-6.5L22 12l-7.5-3.5z"/></svg>
-  Copy for LLMs
-</button>
-<script>
-(function() {
-  var NS = 'http://www.w3.org/2000/svg';
-  function makeSvg(d, tag) {
-    var svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    var el = document.createElementNS(NS, tag || 'path');
-    if (tag === 'polyline') el.setAttribute('points', d);
-    else el.setAttribute('d', d);
-    svg.appendChild(el);
-    return svg;
-  }
-  function setBtn(btn, svgData, svgTag, label) {
-    while (btn.firstChild) btn.removeChild(btn.firstChild);
-    btn.appendChild(makeSvg(svgData, svgTag));
-    btn.appendChild(document.createTextNode(' ' + label));
-  }
-  var STAR = 'M12 2L9.5 8.5 2 12l7.5 3.5L12 22l2.5-6.5L22 12l-7.5-3.5z';
-  var CHECK = '20 6 9 17 4 12';
-  var btn = document.getElementById('llm-btn');
-  var toast = document.getElementById('llm-toast');
-  btn.addEventListener('click', async function() {
-    btn.disabled = true; btn.style.opacity = '.7';
-    try {
-      var res = await fetch('/api/docs/llm.txt');
-      if (!res.ok) throw new Error('Failed to fetch');
-      var text = await res.text();
-      await navigator.clipboard.writeText(text);
-      toast.classList.add('show');
-      setBtn(btn, CHECK, 'polyline', 'Copied!');
-      setTimeout(function() {
-        toast.classList.remove('show');
-        setBtn(btn, STAR, 'path', 'Copy for LLMs');
-        btn.disabled = false; btn.style.opacity = '1';
-      }, 2000);
-    } catch(e) {
-      window.open('/api/docs/llm.txt', '_blank');
-      btn.disabled = false; btn.style.opacity = '1';
-    }
-  });
-})();
-</script>`;
-
-// ---------------------------------------------------------------------------
 // Response examples injected into the OpenAPI schema
 // ---------------------------------------------------------------------------
 const RESPONSE_EXAMPLES: Record<string, unknown> = {
@@ -1184,51 +1098,12 @@ function transformOpenAPISchema(
 
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
-        .get("/", async (c, next) => {
-            const response = await Scalar<Env>({
-                pageTitle: "Pollinations API Reference",
-                title: "Pollinations API Reference",
-                theme: "saturn",
-                hideModels: true,
-                customCss: `
-                    .light-mode {
-                        --scalar-color-accent: #059669;
-                        --scalar-background-accent: #05966912;
-                    }
-                    .dark-mode {
-                        --scalar-color-accent: #34d399;
-                        --scalar-background-accent: #34d39912;
-                    }
-                `,
-                sources: [
-                    { url: "/api/docs/open-api/generate-schema", title: "API" },
-                    ...(c.env.ENVIRONMENT === "development"
-                        ? [
-                              {
-                                  url: "/api/auth/open-api/generate-schema",
-                                  title: "🔐 Auth",
-                              },
-                          ]
-                        : []),
-                ],
-                authentication: {
-                    preferredSecurityScheme: "bearerAuth",
-                    securitySchemes: {
-                        bearerAuth: {
-                            token: "",
-                        },
-                    },
-                },
-            })(c, next);
-            if (!response) return;
-            const html = await response.text();
-            const lastBodyIdx = html.lastIndexOf("</body>");
-            if (lastBodyIdx === -1) return c.html(html);
-            return c.html(
-                html.slice(0, lastBodyIdx) +
-                    LLM_BUTTON_HTML +
-                    html.slice(lastBodyIdx),
-            );
+        .get("/", (c) => {
+            const url = new URL(c.req.url);
+            url.protocol = "https:";
+            url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+            url.pathname = "/docs";
+            return c.redirect(url.toString(), 301);
         })
         .get("/llm.txt", (c) => {
             c.header("Cache-Control", "public, max-age=3600");
@@ -1411,7 +1286,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "",
                                 `**Available models:** ${videoModelDisplayNames}`,
                                 "",
-                                "**Video parameters:** `duration` (seconds), `aspectRatio` (`16:9` or `9:16`), `audio` (enable soundtrack), `image` (reference frames)",
+                                "**Video parameters:** `duration` (seconds), `aspectRatio` (`16:9` or `9:16`), `audio` (enable soundtrack), `image` (reference frames), `seed` (reproducibility; supported by veo, seedance, nova-reel)",
                             ].join("\n"),
                         },
                         {
@@ -1485,8 +1360,11 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
             const schema = (await response.json()) as Record<string, unknown>;
             const transformed = transformOpenAPISchema(schema) as Record<
                 string,
-                any
-            >;
+                unknown
+            > & {
+                paths: Record<string, unknown>;
+                components: { schemas: Record<string, unknown> };
+            };
 
             // Merge media.pollinations.ai spec (3 endpoints) into unified view
             try {
@@ -1494,28 +1372,38 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                     "https://media.pollinations.ai/openapi.json",
                 );
                 if (mediaRes.ok) {
-                    const media = (await mediaRes.json()) as Record<
-                        string,
-                        any
-                    >;
+                    const media = (await mediaRes.json()) as {
+                        paths?: Record<
+                            string,
+                            Record<string, unknown> & {
+                                servers?: { url: string }[];
+                            }
+                        >;
+                        components?: { schemas?: Record<string, unknown> };
+                    };
                     if (media.paths) {
                         // Add path-level servers and remap tags so Scalar groups them correctly
                         for (const ops of Object.values(media.paths)) {
-                            (ops as any).servers = [
+                            ops.servers = [
                                 {
                                     url: "https://media.pollinations.ai",
                                 },
                             ];
                             // Rename "media.pollinations.ai" tag to match our tag definition
-                            for (const op of Object.values(
-                                ops as Record<string, any>,
-                            )) {
-                                if (op?.tags) {
-                                    op.tags = (op.tags as string[]).map(
-                                        (t: string) =>
-                                            t === "media.pollinations.ai"
-                                                ? "📦 Media Storage"
-                                                : t,
+                            for (const op of Object.values(ops)) {
+                                if (
+                                    op &&
+                                    typeof op === "object" &&
+                                    "tags" in op &&
+                                    Array.isArray(
+                                        (op as { tags?: unknown }).tags,
+                                    )
+                                ) {
+                                    const operation = op as { tags: string[] };
+                                    operation.tags = operation.tags.map((t) =>
+                                        t === "media.pollinations.ai"
+                                            ? "📦 Media Storage"
+                                            : t,
                                     );
                                 }
                             }

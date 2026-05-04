@@ -141,6 +141,20 @@
       "when": 1777313809557,
       "tag": "0019_drop_crypto_column",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1777418896875,
+      "tag": "0020_migrate-appurl-to-redirect-uris",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1777746472187,
+      "tag": "0021_left_wolverine",
+      "breakpoints": true
     }
   ]
 }

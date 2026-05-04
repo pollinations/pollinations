@@ -1,18 +1,61 @@
 name = "pollinations-gen"
 main = "src/index.ts"
-compatibility_date = "2025-01-01"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2025-11-01"
+compatibility_flags = ["nodejs_compat", "nodejs_als"]
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
     { binding = "ENTER", service = "pollinations-enter" }
 ]
 
+[images]
+binding = "IMAGES"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+migrations_dir = "../enter.pollinations.ai/drizzle"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[[r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["PollenRateLimiter"]
+
+[vars]
+ENVIRONMENT = "development"
+LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
+ALLOW_ANONYMOUS_USAGE = false
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
+
 [dev]
 port = 8788
 
 # Production routes
 [env.production]
+
+[env.production.images]
+binding = "IMAGES"
 
 [[env.production.routes]]
 pattern = "gen.pollinations.ai"
@@ -23,8 +66,55 @@ custom_domain = true
 binding = "ENTER"
 service = "pollinations-enter-production"
 
+[[env.production.d1_databases]]
+remote = true
+binding = "DB"
+database_name = "production-pollinations-enter-db"
+database_id = "f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3"
+migrations_dir = "../enter.pollinations.ai/drizzle"
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "eb4ea5149a5a413db53902bf2b8c1d95"
+
+[[env.production.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.production.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[env.production.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10000, period = 10 }
+
+[[env.production.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.production.migrations]]
+tag = "v1"
+new_classes = ["PollenRateLimiter"]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
+ALLOW_ANONYMOUS_USAGE = false
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+POLLEN_REFILL_PER_HOUR = 1
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
+
 # Staging routes
 [env.staging]
+
+[env.staging.images]
+binding = "IMAGES"
 
 [[env.staging.routes]]
 pattern = "staging.gen.pollinations.ai"
@@ -34,3 +124,123 @@ custom_domain = true
 [[env.staging.services]]
 binding = "ENTER"
 service = "pollinations-enter-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "staging-pollinations-enter-db"
+database_id = "bd0ef469-d727-4ff4-9118-bd7e6e7985ae"
+migrations_dir = "../enter.pollinations.ai/drizzle"
+
+[[env.staging.kv_namespaces]]
+binding = "KV"
+id = "eb4ea5149a5a413db53902bf2b8c1d95"
+
+[[env.staging.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.staging.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[env.staging.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10000, period = 10 }
+
+[[env.staging.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.staging.migrations]]
+tag = "v1"
+new_classes = ["PollenRateLimiter"]
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
+ALLOW_ANONYMOUS_USAGE = false
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=tier_event"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
+BEDROCK_GUARDRAIL_VERSION = "2"
+
+[env.test]
+
+[env.test.images]
+binding = "IMAGES"
+
+[[env.test.services]]
+binding = "ENTER"
+service = "pollinations-enter"
+
+[[env.test.d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+migrations_dir = "../enter.pollinations.ai/drizzle"
+
+[[env.test.kv_namespaces]]
+binding = "KV"
+id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[[env.test.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.test.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-enter"
+
+[[env.test.ratelimits]]
+name = "EDGE_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10000, period = 10 }
+
+[[env.test.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.test.migrations]]
+tag = "v1"
+new_classes = ["PollenRateLimiter"]
+
+[env.test.vars]
+ENVIRONMENT = "test"
+LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
+ALLOW_ANONYMOUS_USAGE = false
+BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
+TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
+TINYBIRD_TIER_INGEST_URL = "http://localhost:7181/v0/events?name=tier_event"
+PORTKEY_GATEWAY_URL = "https://portkey.test"
+AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
+AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
+AWS_REGION = "us-east-1"
+AZURE_MYCELI_PROD_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_EASTUS2_API_KEY = "not-a-secret-workers-test-only"
+AZURE_MYCELI_PROD_SWEDEN_API_KEY = "not-a-secret-workers-test-only"
+AZURE_CONTENT_SAFETY_API_KEY = "not-a-secret-workers-test-only"
+AZURE_CONTENT_SAFETY_ENDPOINT = "https://content-safety.test"
+BYTEDANCE_API_KEY = "not-a-secret-workers-test-only"
+DEEPINFRA_API_KEY = "not-a-secret-workers-test-only"
+FIREWORKS_API_KEY = "not-a-secret-workers-test-only"
+GOOGLE_CLIENT_EMAIL = "test@example.com"
+GOOGLE_PRIVATE_KEY = "not-a-secret-workers-test-only"
+GOOGLE_PRIVATE_KEY_ID = "not-a-secret-workers-test-only"
+GOOGLE_PROJECT_ID = "test-project"
+KLEIN_URL = "https://klein.test"
+LTX2_BASE_URL = "https://ltx2.test"
+NOVA_REEL_S3_BUCKET = "test-bucket"
+OPENAI_API_KEY = "not-a-secret-workers-test-only"
+PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"
+PLN_GPU_TOKEN = "not-a-secret-workers-test-only"
+POLLEN_REFILL_PER_HOUR = 1
+PRUNA_API_KEY = "not-a-secret-workers-test-only"
+XAI_API_KEY = "not-a-secret-workers-test-only"
+AWS_BEDROCK_REGION = "us-east-1"
+BEDROCK_GUARDRAIL_ID = "test-guardrail"
+BEDROCK_GUARDRAIL_VERSION = "1"

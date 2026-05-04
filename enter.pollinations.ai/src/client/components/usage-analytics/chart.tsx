@@ -1,14 +1,15 @@
+import { getTierColor, type TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getTierColor, type TierStatus } from "@/tier-config.ts";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
     grid: "#e5e7eb", // gray-200
     paidBar: "#fde68a", // amber-200
     paidBarHover: "#fcd34d", // amber-300
-    tooltipBg: "#18181b", // zinc-950
-    tooltipSep: "#374151", // gray-700
+    tooltipBg: "#ffffff",
+    tooltipBorder: "#e5e7eb", // gray-200
+    tooltipSep: "#e5e7eb", // gray-200
 } as const;
 
 const TIER_BAR_COLORS = {
@@ -175,7 +176,7 @@ export const Chart: FC<ChartProps> = ({
 
     if (data.length === 0) {
         return (
-            <div className="flex items-center justify-center h-[180px] rounded-xl bg-gray-50 border border-dashed border-gray-200">
+            <div className="flex items-center justify-center h-[180px]">
                 <div className="text-center">
                     <p className="text-sm text-gray-400 font-medium">
                         No usage data available
@@ -199,8 +200,6 @@ export const Chart: FC<ChartProps> = ({
                 role="img"
                 aria-label="Usage chart"
             >
-                <title>Usage statistics chart</title>
-
                 {/* Grid lines */}
                 {yTicks.map((t) => (
                     <g key={`tick-${t.value}`}>
@@ -333,22 +332,28 @@ export const Chart: FC<ChartProps> = ({
                     (() => {
                         const bar = bars[hovered];
                         const allBreakdown = bar.modelBreakdown || [];
-                        const breakdown = allBreakdown.filter((m) => {
-                            const val =
-                                metric === "requests" ? m.requests : m.pollen;
-                            return val > 0;
-                        });
+                        const valOf = (m: {
+                            requests: number;
+                            pollen: number;
+                        }) => (metric === "requests" ? m.requests : m.pollen);
+                        const threshold = bar.value * 0.005;
+                        const ranked = allBreakdown
+                            .filter((m) => valOf(m) > threshold)
+                            .sort((a, b) => valOf(b) - valOf(a));
+                        const MAX_ROWS = 5;
+                        const breakdown = ranked.slice(0, MAX_ROWS);
+                        const hiddenCount = ranked.length - breakdown.length;
                         const hasBreakdown =
                             showModelBreakdown && breakdown.length > 0;
                         const lineHeight = 16;
                         const headerHeight = 48;
                         const separatorHeight = hasBreakdown ? 12 : 0;
+                        const breakdownRows =
+                            breakdown.length + (hiddenCount > 0 ? 1 : 0);
                         const tooltipHeight =
                             headerHeight +
                             separatorHeight +
-                            (hasBreakdown
-                                ? breakdown.length * lineHeight + 8
-                                : 0);
+                            (hasBreakdown ? breakdownRows * lineHeight + 8 : 0);
                         const tooltipWidth = hasBreakdown ? 280 : 160;
                         const tooltipX = Math.max(
                             pad.left,
@@ -381,13 +386,14 @@ export const Chart: FC<ChartProps> = ({
                                     height={tooltipHeight}
                                     rx="8"
                                     fill={CHART_COLORS.tooltipBg}
-                                    opacity="0.95"
+                                    stroke={CHART_COLORS.tooltipBorder}
+                                    strokeWidth="1"
                                 />
                                 <text
                                     x={tooltipX + 12}
                                     y={tooltipY + 18}
                                     textAnchor="start"
-                                    className="text-xs fill-gray-400"
+                                    className="text-xs fill-gray-500"
                                 >
                                     {dateOnly}
                                 </text>
@@ -395,7 +401,7 @@ export const Chart: FC<ChartProps> = ({
                                     x={tooltipX + 12}
                                     y={tooltipY + 36}
                                     textAnchor="start"
-                                    className="text-sm font-bold fill-white"
+                                    className="text-sm font-bold fill-gray-900"
                                 >
                                     {metric === "requests"
                                         ? "requests"
@@ -433,7 +439,7 @@ export const Chart: FC<ChartProps> = ({
                                                         4 +
                                                         i * lineHeight
                                                     }
-                                                    className="text-xs fill-gray-300"
+                                                    className="text-xs fill-gray-600"
                                                 >
                                                     {truncateLabel(m.label, 22)}
                                                 </text>
@@ -451,7 +457,7 @@ export const Chart: FC<ChartProps> = ({
                                                         i * lineHeight
                                                     }
                                                     textAnchor="end"
-                                                    className="text-xs fill-white font-medium"
+                                                    className="text-xs fill-gray-900 font-medium"
                                                 >
                                                     {formatTooltipVal(
                                                         metric === "requests"
@@ -462,6 +468,21 @@ export const Chart: FC<ChartProps> = ({
                                             </g>
                                         ),
                                     )}
+                                {hasBreakdown && hiddenCount > 0 && (
+                                    <text
+                                        x={tooltipX + 12}
+                                        y={
+                                            tooltipY +
+                                            headerHeight +
+                                            separatorHeight +
+                                            4 +
+                                            breakdown.length * lineHeight
+                                        }
+                                        className="text-xs fill-gray-400 italic"
+                                    >
+                                        +{hiddenCount} more
+                                    </text>
+                                )}
                             </g>
                         );
                     })()}

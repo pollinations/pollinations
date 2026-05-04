@@ -1,10 +1,14 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
     defineWorkersConfig,
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
 import { loadEnv } from "vite";
+import { configDefaults } from "vitest/config";
 import viteConfig from "./vite.config";
+
+const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 
 export default defineWorkersConfig(async ({ mode }) => {
     const migrationsPath = path.join(__dirname, "drizzle");
@@ -13,12 +17,24 @@ export default defineWorkersConfig(async ({ mode }) => {
 
     return {
         ...viteConfig,
+        resolve: {
+            ...viteConfig.resolve,
+            alias: [
+                ...(Array.isArray(viteConfig.resolve?.alias)
+                    ? viteConfig.resolve.alias
+                    : []),
+                {
+                    find: /^@shared\/(.*)$/,
+                    replacement: `${sharedSrc}$1`,
+                },
+            ],
+        },
         test: {
-            globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: [
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",
             ],
+            exclude: [...configDefaults.exclude, "test/e2e/**"],
             reporters: ["default"],
             teardownTimeout: 5000,
             poolOptions: {
@@ -31,8 +47,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                     miniflare: {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
-                            TEST_VCR_MODE:
-                                env.TEST_VCR_MODE || "replay-or-record",
                         },
                     },
                 },
@@ -42,7 +56,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                     ssr: {
                         enabled: true,
                         include: [
-                            "@polar-sh/sdk",
                             "better-auth",
                             "kysely",
                             "drizzle-orm",

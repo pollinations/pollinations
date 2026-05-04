@@ -1,18 +1,18 @@
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
+import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    getTierPollen,
+    isValidTier,
+    TIER_POLLEN,
+    type TierName,
+} from "@shared/tier-config.ts";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { sendTierEventToTinybird } from "@/events.ts";
 import { runD1TinybirdSync } from "@/scheduled/d1-tinybird-sync.ts";
-import {
-    getTierPollen,
-    isValidTier,
-    TIER_POLLEN,
-    type TierName,
-} from "@/tier-config.ts";
-import { user as userTable } from "../db/schema/better-auth.ts";
 import type { Env } from "../env.ts";
 
 const log = getLogger(["hono", "admin"]);
@@ -259,7 +259,6 @@ export const adminRoutes = new Hono<Env>()
         throw new HTTPException(401, { message: "Unauthorized" });
     })
     .post("/update-tier", async (c) => {
-        // D1-only tier update - no Polar sync
         const body = await c.req.json<{ userId: string; tier: string }>();
 
         if (!body.userId) {

@@ -202,9 +202,10 @@ export const IMAGE_SERVICES = {
     "gpt-image-2": {
         aliases: [],
         modelId: "gpt-image-2",
-        provider: "azure",
+        provider: "openai",
         brand: "OpenAI",
         category: "image",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -465,7 +466,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Grok Imagine - xAI official image generation",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-imagine-pro": {
@@ -489,7 +490,7 @@ export const IMAGE_SERVICES = {
         ],
         description:
             "Grok Imagine Pro - xAI official pro image generation (Aurora)",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-video-pro": {
@@ -650,7 +651,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.08, // per sec
             },
         ],
-        description: "Nova Reel - Bedrock Video Generation (6-60s, 720p)",
+        description: "Nova Reel - Bedrock Video Generation (6-120s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

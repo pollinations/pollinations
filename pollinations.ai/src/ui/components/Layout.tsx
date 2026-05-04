@@ -1,4 +1,3 @@
-import { useCallback, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { AUTH_COPY } from "../../copy/content/auth";
 import { LAYOUT, LAYOUT_NO_TRANSLATE } from "../../copy/content/layout";
@@ -70,15 +69,15 @@ function SocialIcons() {
 const tertiaryBtn =
     "h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark";
 const labelCls = "font-headline text-[7px] font-black uppercase tracking-wider";
+const desktopFooterLabelCls =
+    "font-headline text-[9px] font-black uppercase tracking-wider";
 
 function FooterLinks({
     layoutCopy,
-    emailCopied,
-    onCopyEmail,
+    labelClassName = labelCls,
 }: {
     layoutCopy: Record<string, string>;
-    emailCopied: boolean;
-    onCopyEmail: () => void;
+    labelClassName?: string;
 }) {
     return (
         <>
@@ -89,7 +88,7 @@ function FooterLinks({
                 size={null}
                 className={tertiaryBtn}
             >
-                <span className={labelCls}>{layoutCopy.termsLink}</span>
+                <span className={labelClassName}>{layoutCopy.termsLink}</span>
             </Button>
             <Button
                 as={Link}
@@ -98,21 +97,16 @@ function FooterLinks({
                 size={null}
                 className={tertiaryBtn}
             >
-                <span className={labelCls}>{layoutCopy.privacyLink}</span>
+                <span className={labelClassName}>{layoutCopy.privacyLink}</span>
             </Button>
             <Button
-                type="button"
-                onClick={onCopyEmail}
+                as={Link}
+                to="/refunds"
                 variant="iconText"
                 size={null}
                 className={tertiaryBtn}
             >
-                <span className={labelCls}>{layoutCopy.emailLink}</span>
-                <span
-                    className={`absolute -top-8 left-0 font-body text-xs font-bold text-dark uppercase tracking-wider transition-opacity duration-200 ${emailCopied ? "opacity-100" : "opacity-0"}`}
-                >
-                    {layoutCopy.copiedLabel}
-                </span>
+                <span className={labelClassName}>{layoutCopy.refundsLink}</span>
             </Button>
         </>
     );
@@ -121,9 +115,11 @@ function FooterLinks({
 function EnterButton({
     isLoggedIn,
     authCopy,
+    labelClassName = labelCls,
 }: {
     isLoggedIn: boolean;
     authCopy: Record<string, string>;
+    labelClassName?: string;
 }) {
     return (
         <Button
@@ -135,7 +131,7 @@ function EnterButton({
             size={null}
             className="h-7 bg-[rgb(var(--primary-strong))] text-dark hover:!bg-[rgb(var(--primary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
         >
-            <span className={labelCls}>
+            <span className={labelClassName}>
                 {isLoggedIn ? authCopy.enterButton : authCopy.registerButton}
             </span>
             <ExternalLinkIcon className="w-3 h-3" />
@@ -147,15 +143,9 @@ function Layout() {
     const location = useLocation();
     const showFooter = useFooterVisibility();
     const showHeader = useHeaderVisibility();
-    const [emailCopied, setEmailCopied] = useState(false);
     const { isLoggedIn } = useAuthState();
     const { copy: authCopy } = usePageCopy(AUTH_COPY);
     const { copy: layoutCopy } = usePageCopy(LAYOUT, LAYOUT_NO_TRANSLATE);
-    const handleCopyEmail = useCallback(() => {
-        navigator.clipboard.writeText(layoutCopy.contactEmail);
-        setEmailCopied(true);
-        setTimeout(() => setEmailCopied(false), 2000);
-    }, [layoutCopy.contactEmail]);
 
     return (
         <div className="relative min-h-screen">
@@ -265,11 +255,7 @@ function Layout() {
                                 </div>
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <FooterLinks
-                                    layoutCopy={layoutCopy}
-                                    emailCopied={emailCopied}
-                                    onCopyEmail={handleCopyEmail}
-                                />
+                                <FooterLinks layoutCopy={layoutCopy} />
                                 <EnterButton
                                     isLoggedIn={isLoggedIn}
                                     authCopy={authCopy}
@@ -285,10 +271,10 @@ function Layout() {
                         <div className="flex items-center justify-between gap-4">
                             {/* Left: Branding Text */}
                             <div className="text-left flex-shrink-0">
-                                <p className="font-headline text-[7px] font-black text-dark uppercase tracking-wider">
+                                <p className="font-headline text-[9px] font-black text-dark uppercase tracking-wider">
                                     {layoutCopy.footerBranding}
                                 </p>
-                                <p className="font-body text-[9px] text-dark">
+                                <p className="font-body text-[11px] text-dark">
                                     {layoutCopy.footerTagline}
                                 </p>
                             </div>
@@ -297,8 +283,7 @@ function Layout() {
                             <div className="flex items-center flex-shrink-0 gap-2">
                                 <FooterLinks
                                     layoutCopy={layoutCopy}
-                                    emailCopied={emailCopied}
-                                    onCopyEmail={handleCopyEmail}
+                                    labelClassName={desktopFooterLabelCls}
                                 />
                             </div>
 
@@ -310,6 +295,7 @@ function Layout() {
                                 <EnterButton
                                     isLoggedIn={isLoggedIn}
                                     authCopy={authCopy}
+                                    labelClassName={desktopFooterLabelCls}
                                 />
                             </div>
                         </div>

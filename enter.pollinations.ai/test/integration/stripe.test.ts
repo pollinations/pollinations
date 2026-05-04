@@ -1,9 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { user as userTable } from "@/db/schema/better-auth.ts";
 import { test } from "../fixtures.ts";
 
 const base = "http://localhost:3000/api/stripe";
@@ -16,13 +16,21 @@ const checkoutAmounts = [
     "/checkout/100",
 ];
 
+function signStripePayload(payload: string): string {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signature = createHmac("sha256", env.STRIPE_WEBHOOK_SECRET)
+        .update(`${timestamp}.${payload}`, "utf8")
+        .digest("hex");
+    return `t=${timestamp},v1=${signature}`;
+}
+
 test.for(
     checkoutAmounts,
 )("%s should only be accessible when authenticated via session cookie", async (route, {
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const anonymousResponse = await SELF.fetch(`${base}${route}`, {
         method: "GET",
     });
@@ -62,7 +70,7 @@ test("GET /api/stripe/checkout/invalid returns 400 for invalid amount", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const response = await SELF.fetch(`${base}/checkout/invalid`, {
         method: "GET",
         headers: {
@@ -107,7 +115,7 @@ test("POST /api/webhooks/stripe rejects invalid stripe-signature header", async 
     expect(response.status).toBeOneOf([400, 500]);
 });
 
-test("POST /api/webhooks/stripe credits legacy sessions without packAmount using 2x fallback", async ({
+test("POST /api/webhooks/stripe credits legacy sessions without packAmount only once", async ({
     sessionToken,
     mocks,
 }) => {
@@ -129,7 +137,7 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
         .set({ packBalance: 0 })
         .where(eq(userTable.id, user.id));
 
-    const payload = JSON.stringify({
+    const checkoutEvent = {
         id: "evt_test_legacy_checkout",
         type: "checkout.session.completed",
         livemode: false,
@@ -148,12 +156,9 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
                 payment_method_types: ["card"],
             },
         },
-    });
+    };
 
-    const timestamp = Math.floor(Date.now() / 1000);
-    const signature = createHmac("sha256", env.STRIPE_WEBHOOK_SECRET)
-        .update(`${timestamp}.${payload}`, "utf8")
-        .digest("hex");
+    const payload = JSON.stringify(checkoutEvent);
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/webhooks/stripe",
@@ -161,7 +166,7 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "stripe-signature": `t=${timestamp},v1=${signature}`,
+                "stripe-signature": signStripePayload(payload),
                 cookie: `better-auth.session_token=${sessionToken}`,
             },
             body: payload,
@@ -170,6 +175,25 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
 
     expect(response.status).toBe(200);
 
+    const duplicatePayload = JSON.stringify({
+        ...checkoutEvent,
+        id: "evt_test_legacy_checkout_duplicate",
+    });
+    const duplicateResponse = await SELF.fetch(
+        "http://localhost:3000/api/webhooks/stripe",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "stripe-signature": signStripePayload(duplicatePayload),
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: duplicatePayload,
+        },
+    );
+
+    expect(duplicateResponse.status).toBe(200);
+
     const [updatedUser] = await db
         .select({ packBalance: userTable.packBalance })
         .from(userTable)
@@ -177,4 +201,11 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
         .limit(1);
 
     expect(updatedUser?.packBalance).toBe(10);
+
+    const processedEvent = await env.DB.prepare(
+        `SELECT COUNT(*) AS count
+        FROM stripe_checkout_credits
+        WHERE session_id = 'cs_test_legacy_checkout'`,
+    ).first<{ count: number }>();
+    expect(processedEvent?.count).toBe(1);
 });

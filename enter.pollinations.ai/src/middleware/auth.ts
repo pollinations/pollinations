@@ -1,20 +1,28 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
-import type { Context } from "hono";
+import {
+    type AuthenticatedApiKey,
+    assertNotBanned,
+    authenticateApiKeyRequest,
+    BannedAccountError,
+} from "@shared/auth/api-key.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Session, User } from "@/auth.ts";
-import * as schema from "@/db/schema/better-auth.ts";
 import { createAuth } from "../auth.ts";
 import type { LoggerVariables } from "./logger.ts";
-import type { ModelVariables } from "./model.ts";
+
+type ModelVariables = {
+    model: {
+        requested: string;
+        resolved: string;
+    };
+};
 
 export type AuthVariables = {
     auth: {
         client: ReturnType<typeof createAuth>;
         user?: User;
         session?: Session;
-        apiKey?: ApiKey;
+        apiKey?: AuthenticatedApiKey;
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
         /** Throws 403 if the API key doesn't have access to the resolved model from c.var.model. */
@@ -34,43 +42,11 @@ export type AuthOptions = {
     allowApiKey: boolean;
 };
 
-interface ApiKey {
-    id: string;
-    name?: string;
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-    pollenBalance?: number | null;
-    rawKey?: string;
-}
-
 interface AuthResult {
     user?: User;
     session?: Session;
-    apiKey?: ApiKey;
+    apiKey?: AuthenticatedApiKey;
     rawApiKey?: string;
-}
-
-/** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
-function extractApiKey(c: Context<AuthEnv>): string | null {
-    const auth = c.req.header("authorization");
-    const match = auth?.match(/^Bearer (.+)$/);
-    if (match?.[1]) return match[1];
-
-    return c.req.query("key") || null;
-}
-
-function assertNotBanned(user: {
-    banned?: boolean | null;
-    banExpires?: Date | string | null;
-    banReason?: string | null;
-}): void {
-    if (user.banned !== true) return;
-    if (user.banExpires && new Date(user.banExpires) <= new Date()) return;
-    throw new HTTPException(403, {
-        message: user.banReason
-            ? `Account banned: ${user.banReason}`
-            : "Account banned",
-    });
 }
 
 export const auth = (options: AuthOptions) =>
@@ -85,7 +61,14 @@ export const auth = (options: AuthOptions) =>
             });
             if (!result?.user) return null;
 
-            assertNotBanned(result.user);
+            try {
+                assertNotBanned(result.user);
+            } catch (error) {
+                if (error instanceof BannedAccountError) {
+                    throw new HTTPException(403, { message: error.message });
+                }
+                throw error;
+            }
 
             return {
                 user: result?.user,
@@ -95,55 +78,25 @@ export const auth = (options: AuthOptions) =>
 
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
-            const rawApiKey = extractApiKey(c);
-            if (!rawApiKey) return null;
-
-            const keyResult = await client.api.verifyApiKey({
-                body: { key: rawApiKey },
-            });
-
-            if (!keyResult.valid || !keyResult.key) return null;
-
-            const key = keyResult.key;
-            const permissions = key.permissions as
-                | { models?: string[]; account?: string[] }
-                | undefined;
-
-            // verifyApiKey already checks expiry and enabled.
-            // We still need pollenBalance (custom column, not in verifyApiKey)
-            // and the user record (for ban check + downstream user.id/tier/githubId).
-            const db = drizzle(c.env.DB, { schema });
-            const [apiKeyExtra, userData] = await Promise.all([
-                db
-                    .select({ pollenBalance: schema.apikey.pollenBalance })
-                    .from(schema.apikey)
-                    .where(eq(schema.apikey.id, key.id))
-                    .get(),
-                key.userId
-                    ? db
-                          .select()
-                          .from(schema.user)
-                          .where(eq(schema.user.id, key.userId))
-                          .get()
-                    : null,
-            ]);
-
-            if (userData) {
-                assertNotBanned(userData);
+            try {
+                const result = await authenticateApiKeyRequest({
+                    request: c.req.raw,
+                    env: c.env,
+                    client,
+                    ctx: c.executionCtx,
+                });
+                if (!result) return null;
+                return {
+                    user: result.user as User,
+                    apiKey: result.apiKey,
+                    rawApiKey: result.rawApiKey,
+                };
+            } catch (error) {
+                if (error instanceof BannedAccountError) {
+                    throw new HTTPException(403, { message: error.message });
+                }
+                throw error;
             }
-
-            return {
-                user: userData as User,
-                apiKey: {
-                    id: key.id,
-                    name: key.name || undefined,
-                    permissions,
-                    metadata: key.metadata || undefined,
-                    pollenBalance: apiKeyExtra?.pollenBalance ?? null,
-                    rawKey: rawApiKey,
-                },
-                rawApiKey,
-            };
         };
 
         // Try session authentication first, then API key

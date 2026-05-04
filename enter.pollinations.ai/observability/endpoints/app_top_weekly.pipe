@@ -1,7 +1,7 @@
 DESCRIPTION >
     Top registered community apps by verified app-attributed request count
     over the last 7 days.
-    Source of truth is App Keys: publishable keys with a non-empty appUrl.
+    Source of truth is App Keys: publishable keys with a non-empty redirectUris allowlist.
     Current attribution only counts BYOP requests minted through redirect-auth
     for that registered app.
 
@@ -21,15 +21,15 @@ SQL >
         id AS app_key_id,
         user_id AS owner_user_id,
         name AS app_name,
-        JSONExtractString(metadata, 'appUrl') AS app_url
+        JSONExtractString(metadata, 'redirectUris', 1) AS app_url
     FROM d1_apikey
     WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
       AND prefix = 'pk'
       AND JSONExtractString(metadata, 'keyType') = 'publishable'
-      AND JSONExtractString(metadata, 'appUrl') != ''
-      AND positionCaseInsensitive(JSONExtractString(metadata, 'appUrl'), 'localhost') = 0
-      AND positionCaseInsensitive(JSONExtractString(metadata, 'appUrl'), '127.0.0.1') = 0
-      AND positionCaseInsensitive(JSONExtractString(metadata, 'appUrl'), 'pollinations.ai') = 0
+      AND JSONExtractString(metadata, 'redirectUris', 1) != ''
+      AND positionCaseInsensitive(JSONExtractString(metadata, 'redirectUris', 1), 'localhost') = 0
+      AND positionCaseInsensitive(JSONExtractString(metadata, 'redirectUris', 1), '127.0.0.1') = 0
+      AND positionCaseInsensitive(JSONExtractString(metadata, 'redirectUris', 1), 'pollinations.ai') = 0
 
 NODE byop_requests
 SQL >

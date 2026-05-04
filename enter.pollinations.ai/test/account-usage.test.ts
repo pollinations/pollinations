@@ -6,6 +6,13 @@ const authHeaders = (sessionToken: string) => ({
     Cookie: `better-auth.session_token=${sessionToken}`,
 });
 
+const futureUtcDayPeriod = () => {
+    const date = new Date();
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCDate(date.getUTCDate() + 7);
+    return date.toISOString().slice(0, 10);
+};
+
 test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", async ({
     sessionToken,
     mocks,
@@ -132,8 +139,9 @@ test("GET /api/account/usage/daily rejects periods outside supported bounds", as
     );
     expect(beforeUsage.status).toBe(400);
 
+    const futurePeriod = futureUtcDayPeriod();
     const future = await SELF.fetch(
-        "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-05-01",
+        `http://localhost:3000/api/account/usage/daily?granularity=day&period=${futurePeriod}`,
         { headers: authHeaders(sessionToken) },
     );
     expect(future.status).toBe(400);

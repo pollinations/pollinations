@@ -1,16 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import termsMarkdown from "../../../legal/TERMS_OF_SERVICE.md?raw";
-import { LegalPageLayout } from "../components/layout/legal-page-layout";
-import { useDocumentMeta } from "../hooks/use-document-meta.ts";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/terms")({
-    component: TermsComponent,
+    beforeLoad: () => {
+        throw redirect({ href: "https://pollinations.ai/terms" });
+    },
+    component: RedirectComponent,
 });
 
-function TermsComponent() {
-    useDocumentMeta(
-        "Terms of Service",
-        "Terms of service for pollinations.ai APIs and services.",
-    );
-    return <LegalPageLayout markdown={termsMarkdown} currentPage="terms" />;
+function RedirectComponent() {
+    return null;
 }

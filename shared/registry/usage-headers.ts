@@ -26,15 +26,15 @@ export function openaiUsageToUsage(openaiUsage: {
     completion_tokens: number;
     total_tokens: number;
     prompt_tokens_details?: {
-        cached_tokens?: number;
-        audio_tokens?: number;
-        image_tokens?: number;
+        cached_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
     } | null;
     completion_tokens_details?: {
-        reasoning_tokens?: number;
-        audio_tokens?: number;
-        accepted_prediction_tokens?: number;
-        rejected_prediction_tokens?: number;
+        reasoning_tokens?: number | null;
+        audio_tokens?: number | null;
+        accepted_prediction_tokens?: number | null;
+        rejected_prediction_tokens?: number | null;
     } | null;
 }): Usage {
     const promptDetailTokens =

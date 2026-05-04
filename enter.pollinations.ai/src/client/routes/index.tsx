@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
@@ -7,13 +7,19 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/api-keys";
-import { PollenBalance, TierPanel } from "../components/balance";
+import {
+    BuyPollenPanel,
+    PollenBalance,
+    TierPanel,
+} from "../components/balance";
 import { Button } from "../components/button.tsx";
-import { FAQ } from "../components/faq.tsx";
-import { Footer } from "../components/layout/footer.tsx";
-import { Header } from "../components/layout/header.tsx";
-import { NewsBanner } from "../components/layout/news-banner.tsx";
-import { User } from "../components/layout/user.tsx";
+import { DashboardSection } from "../components/layout/dashboard-section.tsx";
+import {
+    type DashboardPage,
+    DashboardShell,
+} from "../components/layout/dashboard-shell.tsx";
+import { isDashboardPage } from "../components/layout/dashboard-theme.ts";
+import { UpdatesPage } from "../components/layout/updates-page.tsx";
 import { Pricing } from "../components/pricing";
 import {
     currentUsagePeriod,
@@ -29,11 +35,24 @@ type LinkedAuthAccount = {
 };
 
 async function fetchLinkedAuthAccounts(): Promise<LinkedAuthAccount[]> {
-    const response = await fetch("/api/auth/list-accounts", {
-        credentials: "include",
-    });
-    if (!response.ok) return [];
-    return response.json() as Promise<LinkedAuthAccount[]>;
+    try {
+        const response = await fetch("/api/auth/list-accounts", {
+            credentials: "include",
+        });
+        if (!response.ok) return [];
+        return response.json() as Promise<LinkedAuthAccount[]>;
+    } catch {
+        return [];
+    }
+}
+
+function pageFromHash(hash: string): DashboardPage {
+    const page = hash.replace(/^#/, "");
+    if (isDashboardPage(page)) return page;
+    if (page === "news" || page === "faq") return "updates";
+    if (page === "buy-pollen") return "pollen";
+    if (page === "pricing") return "models";
+    return "pollen";
 }
 
 export const Route = createFileRoute("/")({
@@ -100,9 +119,20 @@ function RouteComponent() {
     const [linkAccountError, setLinkAccountError] = useState<string | null>(
         null,
     );
-    const [activeTab, setActiveTab] = useState<"balance" | "usage">("balance");
+    const [activePage, setActivePage] = useState<DashboardPage>(() =>
+        pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
+    );
     const [usagePeriod, setUsagePeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+
+    useEffect(() => {
+        function syncPageFromHash(): void {
+            setActivePage(pageFromHash(window.location.hash));
+        }
+
+        window.addEventListener("hashchange", syncPageFromHash);
+        return () => window.removeEventListener("hashchange", syncPageFromHash);
+    }, []);
 
     const selectableKeys = useMemo(
         () =>
@@ -175,8 +205,8 @@ function RouteComponent() {
             metadata: {
                 description: formState.description,
                 keyType,
-                ...(isPublishable && formState.appUrl
-                    ? { appUrl: formState.appUrl }
+                ...(isPublishable && formState.redirectUris?.length
+                    ? { redirectUris: formState.redirectUris }
                     : {}),
             },
             permissions: {
@@ -244,121 +274,103 @@ function RouteComponent() {
         anchor.remove();
     }
 
+    function handlePageChange(page: DashboardPage): void {
+        setActivePage(page);
+        try {
+            history.replaceState(null, "", `#${page}`);
+        } catch {
+            // Hash updates are cosmetic; navigation still works without them.
+        }
+        window.scrollTo({ top: 0, behavior: "auto" });
+    }
+
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-20">
-                <Header>
-                    <User
-                        displayName={displayName}
-                        avatarUrl={user?.image || ""}
-                        discordLinked={discordLinked}
-                        isLinkingDiscord={isLinkingDiscord}
-                        onLinkDiscord={handleLinkDiscord}
-                        onSignOut={handleSignOut}
-                    />
-                    <Button
-                        as="a"
-                        href="/api/docs"
-                        className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap"
-                    >
-                        API Reference
-                    </Button>
-                </Header>
-                {linkAccountError && (
-                    <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm text-red-800">
-                        {linkAccountError}
-                    </div>
-                )}
-                <NewsBanner />
-                <div className="flex flex-col gap-2">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                        <h2 className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab("balance")}
-                                className={`font-bold ${
-                                    activeTab === "balance"
-                                        ? "text-amber-900"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
-                                }`}
-                            >
-                                Balance
-                            </button>
-                            <span className="text-gray-300">·</span>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab("usage")}
-                                className={`font-bold ${
-                                    activeTab === "usage"
-                                        ? "text-amber-900"
-                                        : "text-gray-400 hover:text-gray-600 cursor-pointer"
-                                }`}
-                            >
-                                Usage
-                            </button>
-                        </h2>
-                        <div className="flex flex-wrap items-center gap-2">
-                            {activeTab === "usage" && (
-                                <Button
-                                    as="button"
-                                    color="amber"
-                                    weight="light"
-                                    onClick={downloadDetailedUsage}
-                                    className="flex items-center gap-1.5"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <title>Download</title>
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    Download CSV
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                    {activeTab === "balance" && (
+        <DashboardShell
+            activePage={activePage}
+            displayName={displayName}
+            avatarUrl={user?.image || ""}
+            discordLinked={discordLinked}
+            isLinkingDiscord={isLinkingDiscord}
+            onLinkDiscord={handleLinkDiscord}
+            onPageChange={handlePageChange}
+            onSignOut={handleSignOut}
+        >
+            {linkAccountError && (
+                <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                    {linkAccountError}
+                </div>
+            )}
+            {activePage === "updates" && <UpdatesPage />}
+            {activePage === "pollen" && (
+                <div className="flex flex-col gap-6">
+                    <DashboardSection title="Balance" theme="amber" framed>
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
                             tier={tierData?.active?.tier}
                         />
-                    )}
-                    {activeTab === "usage" && (
-                        <UsageGraph
-                            tier={tierData?.active?.tier}
-                            period={usagePeriod}
-                            onPeriodChange={setUsagePeriod}
-                            apiKeys={selectableKeys}
-                        />
+                    </DashboardSection>
+                    <DashboardSection
+                        title="Top-up"
+                        theme="amber"
+                        framed
+                        id="buy-pollen"
+                    >
+                        <BuyPollenPanel />
+                    </DashboardSection>
+                    {tierData && (
+                        <DashboardSection title="Tier" theme="amber" framed>
+                            <TierPanel {...tierData} />
+                        </DashboardSection>
                     )}
                 </div>
-                {tierData && (
-                    <div className="flex flex-col gap-2">
-                        <h2 className="font-bold">Tier</h2>
-                        <TierPanel {...tierData} />
-                    </div>
-                )}
+            )}
+            {activePage === "usage" && (
+                <UsageGraph
+                    tier={tierData?.active?.tier}
+                    period={usagePeriod}
+                    onPeriodChange={setUsagePeriod}
+                    apiKeys={selectableKeys}
+                    action={
+                        <Button
+                            as="button"
+                            color="pink"
+                            weight="light"
+                            onClick={downloadDetailedUsage}
+                            className="flex items-center gap-1.5"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <title>Download</title>
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            Download CSV
+                        </Button>
+                    }
+                />
+            )}
+            {activePage === "keys" && (
                 <ApiKeyList
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
                 />
+            )}
+            {activePage === "models" && (
                 <Pricing tierBalance={tierBalance} packBalance={packBalance} />
-                <FAQ />
-                <Footer />
-            </div>
-        </div>
+            )}
+        </DashboardShell>
     );
 }

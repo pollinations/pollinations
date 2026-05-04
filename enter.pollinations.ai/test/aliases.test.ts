@@ -1,3 +1,4 @@
+import { AUDIO_SERVICES } from "@shared/registry/audio";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
@@ -28,6 +29,13 @@ test.for(
 test.for(
     serviceAliasTestCases(IMAGE_SERVICES),
 )("Image service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
+    serviceAliasTestCases(AUDIO_SERVICES),
+)("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
     expect(resolved).toBe(shouldResolveTo);
 });
@@ -93,6 +101,12 @@ test("model without explicit price falls back to cost for both values", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
 });
 
+test("GPT-5.5 requires paid balance", () => {
+    const definition = getModelDefinition("gpt-5.5");
+
+    expect(definition.paidOnly).toBe(true);
+});
+
 test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,
@@ -102,7 +116,11 @@ test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
 
     const expectedCosts = {
         deepseek: 0.448,
-        "deepseek-pro": 5.365,
+        "deepseek-pro": 5.36,
+    } as const;
+    const expectedProviders = {
+        deepseek: "deepinfra",
+        "deepseek-pro": "fireworks",
     } as const;
 
     for (const model of ["deepseek", "deepseek-pro"] as const) {
@@ -110,7 +128,7 @@ test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);
 
-        expect(definition.provider).toBe("deepinfra");
+        expect(definition.provider).toBe(expectedProviders[model]);
         expect(definition.paidOnly).toBe(true);
         expect(cost.totalCost).toBeCloseTo(expectedCosts[model], 8);
         expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);

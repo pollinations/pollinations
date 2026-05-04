@@ -142,6 +142,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 node_modules/
+lefthook.yml
 .DS_Store
 
 # Tmp folder

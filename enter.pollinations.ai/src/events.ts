@@ -1,5 +1,5 @@
 import type { Logger } from "@logtape/logtape";
-import type { TinybirdEvent } from "./db/schema/event.ts";
+import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { capitalize, exponentialBackoffDelay, removeUnset } from "./util.ts";
 
 const MAX_RETRIES = 3;
@@ -146,13 +146,6 @@ async function retryWithBackoff(
     log.warn(`${message}: attempt={attempt} delay={delay}ms`, logData);
     await new Promise((resolve) => setTimeout(resolve, delay));
 }
-
-// Type for Polar event ingestion (used by test mocks)
-export type PolarEvent = {
-    external_customer_id: string;
-    name: string;
-    metadata: Record<string, unknown>;
-};
 
 export function flattenBalances(balances: Record<string, number> | null) {
     if (!balances) return {};

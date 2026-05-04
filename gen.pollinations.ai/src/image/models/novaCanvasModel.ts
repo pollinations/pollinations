@@ -102,6 +102,7 @@ export async function callNovaCanvasAPI(
     const { BedrockRuntimeClient, InvokeModelCommand } = await import(
         "@aws-sdk/client-bedrock-runtime"
     );
+    const { FetchHttpHandler } = await import("@smithy/fetch-http-handler");
 
     const client = new BedrockRuntimeClient({
         region,
@@ -109,6 +110,7 @@ export async function callNovaCanvasAPI(
             accessKeyId,
             secretAccessKey,
         },
+        requestHandler: new FetchHttpHandler(),
     });
 
     const imageGenerationConfig = {

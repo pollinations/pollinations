@@ -97,14 +97,18 @@ jobs:
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
-          # NOTE: kimi-k2.6's upstream provider (Fireworks) rejects the
-          # typed-parts content arrays (`[{type:"text",text:"..."}]`) and
-          # `cache_control` annotations that claude-code-router emits when
-          # translating Anthropic→OpenAI requests, so it can't serve as
-          # Polly's default until the gen gateway normalizes those on
-          # ingest. Using kimi (K2.5) and glm here — both have been
-          # tolerant of the format. Tracked in the follow-up issue.
-          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["kimi","glm","perplexity-reasoning"]}],"Router":{"default":"pollinations,glm","thinking":"pollinations,kimi","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
+          # NOTE: claude-code-router emits Anthropic-shaped requests with
+          # typed-parts content arrays and `cache_control` annotations.
+          # Verified live (2026-05-04) that all Fireworks-hosted models
+          # — kimi-k2.6, kimi (K2.5), glm — reject this shape with a 400
+          # ("messages[0].content.str: expected string, got list"), so
+          # they can't serve as Polly's default until the gen gateway
+          # normalizes Anthropic-shape input on ingest (#10672).
+          # gemini-fast (Gemini 2.5 Flash Lite via Vertex) accepts the
+          # shape, returns clean text without reasoning-token consumption,
+          # and is the cheapest viable default. Revert to kimi-k2.6 once
+          # #10672 lands.
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["gemini-fast","perplexity-reasoning"]}],"Router":{"default":"pollinations,gemini-fast","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
 
           # Start router with Bun
           bunx @musistudio/claude-code-router start &

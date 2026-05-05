@@ -72,7 +72,7 @@ describe("BYOP markup", () => {
         expect(computeDevCredit(4)).toBeCloseTo(4 * BYOP_MARKUP_PCT, 10);
     });
 
-    it("resolves markup only for enabled publishable app keys and eligible payer tiers", async () => {
+    it("resolves markup only for enabled publishable app keys with earnings enabled", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const resolved = await resolveDevMarkup(db, pkId, 4, payerId);
@@ -84,16 +84,6 @@ describe("BYOP markup", () => {
 
         expect(await resolveDevMarkup(db, pkId, 4, devId)).toBeNull();
 
-        await db
-            .update(userTable)
-            .set({ tier: "seed" })
-            .where(sql`${userTable.id} = ${payerId}`);
-        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
-
-        await db
-            .update(userTable)
-            .set({ tier: "spore" })
-            .where(sql`${userTable.id} = ${payerId}`);
         await db
             .update(apikeyTable)
             .set({ metadata: JSON.stringify({ earningsEnabled: false }) })
@@ -136,7 +126,7 @@ describe("BYOP markup", () => {
         expect(creatorBalances.packBalance).toBe(0);
     });
 
-    it("bills baseline only when markup is not eligible", async () => {
+    it("bills baseline plus markup for any payer tier", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev({
             payerTier: "flower",
         });
@@ -149,9 +139,16 @@ describe("BYOP markup", () => {
             byopClientKeyId: pkId,
         });
 
-        expect(markup).toBeNull();
-        expect((await getUserBalances(db, payerId)).tierBalance).toBe(1);
-        expect((await getUserBalances(db, devId)).tierBalance).toBe(0);
+        expect(markup?.devUserId).toBe(devId);
+        expect(markup?.devCredit).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+        expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
+            1 - BYOP_MARKUP_PCT,
+            10,
+        );
+        expect((await getUserBalances(db, devId)).tierBalance).toBeCloseTo(
+            BYOP_MARKUP_PCT,
+            10,
+        );
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

@@ -1,5 +1,3 @@
-import type { TierName } from "../tier-config.ts";
-
 /**
  * BYOP markup applied to requests authenticated by a BYOP-issued sk_ token with
  * a trusted byop_client_key_id. The payer is billed baseline + markup; the
@@ -7,17 +5,6 @@ import type { TierName } from "../tier-config.ts";
  */
 export const BYOP_MARKUP_PCT = 0.25;
 export const BYOP_MARKUP_PERCENT = BYOP_MARKUP_PCT * 100;
-
-export const MARKUP_ELIGIBLE_PAYER_TIERS: ReadonlyArray<TierName> = [
-    "microbe",
-    "spore",
-];
-
-export function isMarkupEligiblePayerTier(tier: string): boolean {
-    return (MARKUP_ELIGIBLE_PAYER_TIERS as ReadonlyArray<string>).includes(
-        tier,
-    );
-}
 
 export function computeDevCredit(baselinePrice: number): number {
     if (baselinePrice <= 0 || BYOP_MARKUP_PCT <= 0) return 0;

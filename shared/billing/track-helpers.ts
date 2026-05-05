@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { apikey as apikeyTable, user as userTable } from "../db/better-auth.ts";
+import { apikey as apikeyTable } from "../db/better-auth.ts";
 import type { ModelName } from "../registry/registry.ts";
 import { getModelDefinition } from "../registry/registry.ts";
 import {
@@ -14,11 +14,7 @@ import {
     identifyDeductionSource,
     type UserBalance,
 } from "./deduction.ts";
-import {
-    BYOP_MARKUP_PCT,
-    computeDevCredit,
-    isMarkupEligiblePayerTier,
-} from "./markup.ts";
+import { BYOP_MARKUP_PCT, computeDevCredit } from "./markup.ts";
 
 const log = getLogger(["track", "helpers"]);
 
@@ -83,16 +79,6 @@ export async function resolveDevMarkup(
     if (!clientRow?.userId) return null;
     if (parseMetadata(clientRow.metadata).earningsEnabled !== true) return null;
     if (clientRow.userId === payerUserId) return null;
-
-    const [payerRow] = await db
-        .select({ tier: userTable.tier })
-        .from(userTable)
-        .where(eq(userTable.id, payerUserId))
-        .limit(1);
-
-    if (!payerRow?.tier || !isMarkupEligiblePayerTier(payerRow.tier)) {
-        return null;
-    }
 
     return {
         devUserId: clientRow.userId,

@@ -169,13 +169,6 @@
       "when": 1777898201480,
       "tag": "0023_byop-backfill",
       "breakpoints": true
-    },
-    {
-      "idx": 24,
-      "version": "6",
-      "when": 1777914189905,
-      "tag": "0024_enable-earnings-rewards",
-      "breakpoints": true
     }
   ]
 }

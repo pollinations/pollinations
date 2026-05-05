@@ -47,7 +47,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         ? "publishable"
         : "secret";
     const [redirectUris, setRedirectUris] = useState<string[]>([]);
-    const [earningsEnabled, setEarningsEnabled] = useState(true);
+    const [earningsEnabled, setEarningsEnabled] = useState(false);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {

@@ -520,7 +520,7 @@ function createTrackingEvent({
             (responseTracking.price?.totalPrice || 0) +
             (markup?.devCredit ?? 0),
         devPrice: responseTracking.price?.totalPrice || 0,
-        byopMarkupPct: markup?.markupPct ?? 0,
+        markupPct: markup?.markupPct ?? 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,

@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **705** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **707** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -40,7 +40,7 @@
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@web](https://github.com/web) |  | 🫧 |
 | [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 166 apps</summary>
+<details><summary>Show all 167 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -184,6 +184,8 @@
 | [🎞️ ImageGen AI Image](https://imagegenaiimage.com/) | Generate high-quality AI images with multiple models and styles. | [@web](https://github.com/web) |  |  |
 | [🔌 Avatar GenStudio](https://astudio-dcae4.web.app) | A system for creating custom characters that uses the Pollinations API for total... | [@web](https://github.com/web) |  |  |
 | [🖼️ Zelos AI image generator](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) | Generates images using Pollinations for prompt enhancement and image synthesis. | [@web](https://github.com/web) |  |  |
+| [🖼️ ZenWall AI](https://zenwall.netlify.app/) | ZenWall AI generates minimalist 9:16 vertical wallpapers in a web application. | [@web](https://github.com/web) |  | 🫧 |
+| [📷 Photo Prompt](https://photoprompt.my.id/) | Photo Prompt generates images from detailed prompts using multi-model AI tools. It includes a library of ready-to-use prompts and creative workflows for photographers and designers. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ YSOAI IMAGE GENERATOR](https://huggingface.co/spaces/yassinovich/YSOAI) | Generate images with YSOAI using pollinations.ai, for free and quickly. | [@web](https://github.com/web) |  | 🫧 |
 | [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |  | 🫧 |
 | [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |  | 🫧 |
@@ -220,7 +222,7 @@
 | [🎬 Oasis AI](https://oasis-demo-brown.vercel.app/) | Convert long-form LinkedIn or Twitter posts into short vertical Instagram Reels with Oasis AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎛️ Dreamframe](https://funniman23.github.io/Dreamframe/) | Run Dreamframe as a zero-dependency single-HTML-file playground for the pollinations.ai API, accessing images, video, voice, TTS, and music from one interface. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 35 apps</summary>
+<details><summary>Show all 34 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -243,7 +245,6 @@
 | [🎬 PolliVision](https://fabioarieira.com/pollivision) | AI video generator with pollen credit system & prompt enhancement | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Cinepoca](https://cinepoca.com.br) | Generate AI-driven movie content including blog posts and custom imagery and automate social media reels, with human review to verify accuracy. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 ViralFlow AI](https://fabioarieira.com/viralflow) | Auto-generates cinematic viral videos from a theme (script, TTS, visuals). | [@web](https://github.com/web) |  | 🫧 |
-| [🔍 Polli YT Search](https://replit.com/@nojeheg897/VideoFind5) | Search YouTube using multimodal analysis of thumbnails, visuals, transcripts, and metrics to locate relevant videos beyond title keywords, leveraging Pollinations for deep video analysis. | [@web](https://github.com/web) |  | 🫧 |
 | [🌐 Yo el director](https://yoeldirector.dpana.com.ve) | Create films and YouTube content using Pollinations, export projects to YouTube, generate illustrated books, and import or export project files. | [@web](https://github.com/web) |  | 🫧 |
 | [🕒 PollenHours](https://aghartavault-ship-it.github.io/PollenHours/) | PollenHours is a mobile-first AI video pipeline built for Termux on Android. It runs on Android devices. | [@android](https://github.com/android) |  | 🫧 |
 | [🎬 FastStoryboard](https://faststoryboard.cloud) | AI video creation platform for generating storyboards and visual narratives. | [@web](https://github.com/web) |  |  |
@@ -690,7 +691,7 @@
 | [🌱 Pollinations Seed Plan Qualification](https://app-j.pl/Pollinations/) | Analyze a public GitHub user profile with Pollinations Seed Plan Qualification to calculate points per the Pollinations Seed Plan scoring system and display the score and breakdown. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 NEURGenerator for ESP32-S3](113021062) | Uses Pollinations.aihttpspollinations.ai API on ESP32-S3 with PSRAM and WDT support in NEURGenerator for ESP32-S3. | [@library](https://github.com/library) |  | 🫧 |
 
-<details><summary>Show all 110 apps</summary>
+<details><summary>Show all 112 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -780,6 +781,9 @@
 | [🖼️ Quicker Pollinations AI](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) | Provides faster access to Pollinations AI features and quick image and media generation workflows. | [@web](https://github.com/web) |  |  |
 | [🛠 Herramientas IA ️](https://proyectodescartes.org/descartescms/herramientas-ia) | Publishes tools built with Pollinations.AI and the DescartesJS editor and links other community-created utilities. | [@web](https://github.com/web) |  |  |
 | [🎨 Pollinations.ai Model Comparison](https://endemicmedia.github.io/FLARE/llm-comparison-tool/) | Compares outputs from multiple LLMs via a GitHub Pages tool with prompt input, selectable timeouts, and submit/cancel controls. | [@web](https://github.com/web) |  |  |
+| [🧰 App forge](torrents.signalcity.tv) | App forge. | [@web](https://github.com/web) |  | 🫧 |
+| [🤖 Pyanchor](https://pyanchor.pyan.kr) | **Pyanchor** is an open-source agent-agnostic AI live-edit sidecar for running web apps (Next.js / Vite / Astro). Add a one-line script to your page; an in-page overlay (Shadow DOM) lets you point at | [@web](https://github.com/web) |  | 🫧 |
+| [🛠️ Worl Tools](https://worldtools-mu.vercel.app/) | Worl Tools is an offline-first desktop app with a single interface for 20+ tools, including AI image editing, background removal, developer utilities, device testing, and media processing. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 Lkalma](https://lkal.ma) | Lkalma is an AI-powered, offline-first collaborative whiteboard for sketching, syncing, and sharing ideas on an infinite canvas. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Overtli Studio Suite](188361908) | OVERTLI STUDIO Suite is a collection of nodes for Comfy UI that makes local and cloud AI generation easier through a unified advanced router and specialized media nodes. It uses Pollinations.ai as its | [@api](https://github.com/api) |  | 🫧 |
 | [🛠️ PollinCoder](https://pollincoder.vercel.app) | AI app builder that generates and previews full web applications from natural language prompts. | [@web](https://github.com/web) |  |  |

@@ -1,3 +1,5 @@
+- **2026-05-04** – **⚡ Mistral Speed Boost** Rerouted Mistral Small to a new Azure Foundry deployment. Text generation is noticeably faster and gateway timeouts are a thing of the past. Try it via the [Unified API](https://gen.pollinations.ai/v1/chat/completions).
+- **2026-05-04** – **🚀 LTX-2 Video Pipeline** Re-engineered the routing tunnel for LTX-2. Video generation is stable again and properly handles Cloudflare's edge network quirks.
 - **2026-05-03** – **🦙 Smarter Llamas** Upgraded the default Llama endpoint to Llama-3.3-70B-Instruct and added new vision-capable Maverick and Scout variants to the [Text API](https://gen.pollinations.ai/v1/chat/completions).
 - **2026-05-03** – **🛡️ Optional Guardrails** Keep things PG by passing a `safe` parameter or `Pollinations-Safe` header to the [Unified API](https://gen.pollinations.ai). Powered by AWS Bedrock.
 - **2026-05-03** – **🎨 Infinite Canvas** Lkalma is an AI-powered collaborative whiteboard with offline-first sketching tools. [Try it](https://lkal.ma) <!-- app -->

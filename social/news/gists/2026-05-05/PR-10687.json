@@ -1,0 +1,34 @@
+{
+  "pr_number": 10687,
+  "title": "Add Worl Tools to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10687",
+  "merged_at": "2026-05-05T05:34:00Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The Swiss army hive",
+    "blurb": "Worl Tools just dropped into the ecosystem. It's an offline-first desktop app packing 20+ utilities—from AI image editing to dev tools—all in one place.",
+    "summary": "Added Worl Tools, a comprehensive offline-first desktop application featuring over 20 utilities, to the community showcase.",
+    "impact": "The community can now discover Worl Tools in the app directory, expanding the ecosystem of tools built with Pollinations.",
+    "keywords": [
+      "community",
+      "showcase",
+      "desktop-app",
+      "utilities",
+      "tools"
+    ],
+    "visual_concept": "The PR adds 'Worl Tools', a desktop app with 20+ utilities. Visual metaphor: a glowing toolbox or a Swiss army knife of digital tools. Characters: Polly the bee and the Monitor Robot discovering a retro toolbox overflowing with tiny pixel tools (wrenches, paintbrushes, gears).",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor-head robot exploring a glowing retro toolbox overflowing with tiny pixelated tools like wrenches, paintbrushes, and gears. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-05/PR-10687.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor-head robot exploring a glowing retro toolbox overflowing with tiny pixelated tools like wrenches, paintbrushes, and gears. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-05T05:34:57.133445+00:00",
+  "app_name": "Worl Tools",
+  "app_url": "https://worldtools-mu.vercel.app/"
+}

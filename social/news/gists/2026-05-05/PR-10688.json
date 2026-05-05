@@ -1,0 +1,34 @@
+{
+  "pr_number": 10688,
+  "title": "Add App forge to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10688",
+  "merged_at": "2026-05-05T06:03:44Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Forging new apps",
+    "blurb": "A new community creation has sprouted! App Forge just landed in the Greenhouse, ready to help you build.",
+    "summary": "Added the community-built App Forge to the Pollinations app showcase and greenhouse.",
+    "impact": "Users can now discover and explore App Forge in our growing directory of community applications.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "greenhouse",
+      "forge"
+    ],
+    "visual_concept": "A blacksmith's forge inside a lush greenhouse, representing 'App Forge' being added to the community 'Greenhouse'. Polly the bee acting as a tiny blacksmith.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny blacksmith apron, hammering a glowing piece of code on a small anvil inside a lush glass greenhouse. Code-plants sprout from lime green (#ecf874) flower pots around the forge. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-05/PR-10688.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny blacksmith apron, hammering a glowing piece of code on a small anvil inside a lush glass greenhouse. Code-plants sprout from lime green (#ecf874) flower pots around the forge. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-05T06:04:43.243495+00:00",
+  "app_name": "App forge",
+  "app_url": "torrents.signalcity.tv"
+}

@@ -23,21 +23,19 @@ export function AppAttribution({
     const displayName =
         attribution?.appName ??
         (isDeviceMode ? "A device" : redirectHostname || "An app");
-    const tipText =
-        attribution?.found && attribution.earningsEnabled
-            ? "Same as copy-pasting an API key into their app. Only share with apps you trust. 20% of what you spend in this app goes to the developer."
-            : "Same as copy-pasting an API key into their app. Only share with apps you trust.";
+    const tipText = [
+        "Same as copy-pasting an API key into their app.",
+        "Only share with apps you trust.",
+        ...(attribution?.found && attribution.earningsEnabled
+            ? ["20% of what you spend in this app goes to the developer."]
+            : []),
+    ]
+        .map((line) => `- ${line}`)
+        .join("\n");
     return (
         <>
             <p className="text-gray-900">
-                <span className="font-bold text-lg">{displayName}</span>{" "}
-                <InfoTip
-                    text={tipText}
-                    label="API key sharing warning"
-                    tone="amber"
-                    icon="!"
-                />{" "}
-                wants access to your Pollinations account
+                <span className="font-bold text-lg">{displayName}</span>
             </p>
             {attribution?.githubUsername && (
                 <p className="text-sm text-amber-900 mt-1">
@@ -62,6 +60,15 @@ export function AppAttribution({
                     Code: {userCode}
                 </p>
             )}
+            <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mt-3">
+                To access your Pollinations account{" "}
+                <InfoTip
+                    text={tipText}
+                    label="API key sharing warning"
+                    tone="amber"
+                    icon="!"
+                />
+            </p>
         </>
     );
 }

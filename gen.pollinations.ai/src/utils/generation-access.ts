@@ -1,12 +1,6 @@
-import {
-    createBalanceCheckResult,
-    getAvailableBalanceForCharge,
-} from "@shared/billing/balance.ts";
-import { resolveDevMarkup } from "@shared/billing/track-helpers.ts";
+import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
-import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -47,39 +41,6 @@ export async function checkBalance(
         estimatedCost = 2.0;
     }
 
-    const markup = await resolveDevMarkup(
-        drizzle(env.DB),
-        auth.apiKey?.byopClientKeyId,
-        estimatedCost,
-        auth.user.id,
-    );
-    const estimatedBillingPrice = estimatedCost + (markup?.devCredit ?? 0);
-
-    if (estimatedCost > 0) {
-        const apiKeyBudget = auth.apiKey?.pollenBalance;
-        if (
-            typeof apiKeyBudget === "number" &&
-            apiKeyBudget < estimatedBillingPrice
-        ) {
-            throw new HTTPException(402, {
-                message: `API key budget too low. This model costs ~${estimatedBillingPrice.toFixed(4)} pollen per request, but this key has ${apiKeyBudget.toFixed(4)} remaining.`,
-            });
-        }
-
-        const userBalance = await balance.getBalance(auth.user.id);
-        const available = getAvailableBalanceForCharge(
-            userBalance,
-            estimatedBillingPrice,
-            isPaidOnly,
-        );
-
-        if (available < estimatedBillingPrice) {
-            throw new HTTPException(402, {
-                message: `Insufficient balance. This model costs ~${estimatedBillingPrice.toFixed(4)} pollen per request, but your available balance is ${available.toFixed(4)}.`,
-            });
-        }
-    }
-
     if (isPaidOnly) {
         await balance.requirePaidBalance(
             auth.user.id,
@@ -88,7 +49,7 @@ export async function checkBalance(
         balance.balanceCheckResult = createBalanceCheckResult(
             await balance.getBalance(auth.user.id),
             true,
-            estimatedBillingPrice,
+            estimatedCost,
         );
         return;
     }
@@ -100,7 +61,7 @@ export async function checkBalance(
     balance.balanceCheckResult = createBalanceCheckResult(
         await balance.getBalance(auth.user.id),
         false,
-        estimatedBillingPrice,
+        estimatedCost,
     );
 }
 

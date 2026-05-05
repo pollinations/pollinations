@@ -204,94 +204,40 @@ describe("BYOP markup", () => {
         );
     });
 
-    it("includes markup in preflight user balance checks", async () => {
-        const { payerId, pkId } = await setupPayerAndDev();
+    it("uses total-price model estimates in preflight without resolving markup", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: {
+                    id: "sk-test",
+                    byopClientKeyId: "pk-preflight",
+                    pollenBalance: 0.1,
+                },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 1,
+                    packBalance: 2,
+                }),
+                requirePositiveBalance: async () => undefined,
+                requirePaidBalance: async () => undefined,
+            },
+            model: { requested: "openai", resolved: "openai" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
 
-        await expect(
-            checkBalance(
-                {
-                    auth: {
-                        user: { id: payerId },
-                        apiKey: {
-                            id: "sk-test",
-                            byopClientKeyId: pkId,
-                            pollenBalance: null,
-                        },
-                    },
-                    balance: {
-                        getBalance: async () => ({
-                            tierBalance: 1,
-                            packBalance: 0,
-                        }),
-                        requirePositiveBalance: async () => undefined,
-                        requirePaidBalance: async () => undefined,
-                    },
-                    model: { requested: "openai", resolved: "openai" },
-                    log: fakeLog(),
-                } as never,
-                fakeStatsEnv(1),
-            ),
-        ).rejects.toThrow(/1\.2500 pollen/);
-    });
+        await checkBalance(vars, {
+            ...fakeStatsEnv(1.25),
+            DB: {
+                prepare: () => {
+                    throw new Error("DB should not be used in preflight");
+                },
+            } as unknown as D1Database,
+        } as CloudflareBindings);
 
-    it("requires one bucket to cover the full estimated charge in preflight", async () => {
-        const { payerId, pkId } = await setupPayerAndDev();
-
-        await expect(
-            checkBalance(
-                {
-                    auth: {
-                        user: { id: payerId },
-                        apiKey: {
-                            id: "sk-test",
-                            byopClientKeyId: pkId,
-                            pollenBalance: null,
-                        },
-                    },
-                    balance: {
-                        getBalance: async () => ({
-                            tierBalance: 0.75,
-                            packBalance: 0.75,
-                        }),
-                        requirePositiveBalance: async () => undefined,
-                        requirePaidBalance: async () => undefined,
-                    },
-                    model: { requested: "openai", resolved: "openai" },
-                    log: fakeLog(),
-                } as never,
-                fakeStatsEnv(1),
-            ),
-        ).rejects.toThrow(/available balance is 0\.7500/);
-    });
-
-    it("includes markup in preflight API key budget checks", async () => {
-        const { payerId, pkId } = await setupPayerAndDev();
-
-        await expect(
-            checkBalance(
-                {
-                    auth: {
-                        user: { id: payerId },
-                        apiKey: {
-                            id: "sk-test",
-                            byopClientKeyId: pkId,
-                            pollenBalance: 1,
-                        },
-                    },
-                    balance: {
-                        getBalance: async () => ({
-                            tierBalance: 2,
-                            packBalance: 0,
-                        }),
-                        requirePositiveBalance: async () => undefined,
-                        requirePaidBalance: async () => undefined,
-                    },
-                    model: { requested: "openai", resolved: "openai" },
-                    log: fakeLog(),
-                } as never,
-                fakeStatsEnv(1),
-            ),
-        ).rejects.toThrow(/API key budget too low/);
+        expect(vars.balance.balanceCheckResult?.selectedMeterSlug).toBe(
+            "v1:meter:pack",
+        );
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

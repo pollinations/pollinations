@@ -175,7 +175,6 @@ const create = new Command("create")
         "--redirect-uri <uri...>",
         "Allowed BYOP redirect URI(s) for publishable app keys",
     )
-    .option("--earnings", "Enable developer earnings for publishable app keys")
     .option(
         "--no-earnings",
         "Disable developer earnings for publishable app keys",
@@ -206,9 +205,7 @@ Examples:
                 process.exit(1);
             }
             if (opts.earnings !== undefined && opts.type !== "publishable") {
-                printError(
-                    "--earnings/--no-earnings requires --type publishable",
-                );
+                printError("--no-earnings requires --type publishable");
                 process.exit(1);
             }
             if (opts.expiresIn !== undefined)

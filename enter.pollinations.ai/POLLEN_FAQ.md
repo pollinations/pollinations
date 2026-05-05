@@ -4,7 +4,7 @@
 
 Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolve)*.
 
-🔒 Pollen is in-app credit for the Pollinations API — **not a currency**. It lives inside your Pollinations wallet, isn't transferable between accounts, and isn't redeemable outside Pollinations.
+🔒 Pollen is in-app credit for the Pollinations API. It lives inside your Pollinations wallet, isn't transferable between accounts, and isn't redeemable outside Pollinations.
 
 ⚡ You spend Pollen to make API calls — every generation costs Pollen based on the model you use.
 
@@ -13,8 +13,8 @@ Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolv
 **No.** Pollinations is not a code editor, no-code builder, or app development platform like Lovable, Bolt, or Cursor. We provide the **building blocks** that developers integrate into their own apps:
 
 - 🤖 **AI Generation APIs** — Access 38+ models (text, image, audio, video) through a single API
-- 👛 **One Pollen wallet** — every Pollinations app shares the same wallet per user. Top up once, spend across any app. Tier balance refills hourly; paid balance never expires.
-- 💰 **BYOP monetization** — your users spend their own Pollen, not yours. Turn on Developer earnings on your App Key to earn a share of what they spend in your app.
+- 💰 **Payment Infrastructure** — Let your app's users pay per use with Pollen credits, so you don't foot the compute bill
+- 🌻 **BYOP** — your users spend their own Pollen, not yours. Turn on Developer earnings on your App Key to earn a share of what they spend in your app.
 
 🔧 You build the app your way — with any framework, any tool, any language. Plug in Pollinations for the AI capabilities and the monetization. We're the **engine and the cash register**, not the workshop.
 
@@ -56,12 +56,10 @@ Registration gives you **instant access** to the Pollinations API. Create API ke
 
 ## 👛 How does my Pollen wallet work?
 
-You get **one central wallet** for all your applications, made from two balance buckets:
+You get **one central wallet** for all your applications:
 
-- **🌱 Tier balance** — free hourly grant + earnings from tier-side traffic in your apps.
-- **💳 Paid balance** — purchased Pollen + earnings from paid-side traffic in your apps. Never expires.
-
-Earnings sit alongside the grant or purchase in their bucket — same balance, no internal priority.
+- **🌱 Tier balance** — free hourly grant plus earnings.
+- **💳 Paid balance** — purchased Pollen plus earnings. Never expires.
 
 **One bucket per request — no partial spend across buckets.**
 
@@ -91,31 +89,17 @@ BYOP lets your users connect their Pollinations account to your app and spend th
 **If you build with Pollinations:**
 
 1. Your users pay for their requests, not you.
-2. Turn on Developer earnings on an App Key to charge +25% over model cost — kept by you (= 20% of user spend).
-3. On by default. Earnings only count for traffic through that App Key.
-4. Earnings mirror the user: tier-paid request → tier-balance credit; paid-balance request → paid-balance credit.
+2. Turn on Developer earnings on an App Key to charge +25% over model cost — kept by you.
+3. Earnings only count for traffic through that App Key.
 
 **If you use a Pollinations app:**
 
 1. You spend Pollen from your wallet, not the developer's.
-2. Apps may add a 25% share — shown at sign-in (= 20% of what you pay).
+2. Apps may add a 25% share — shown at sign-in.
 3. Tier balance pays first; paid balance covers it if tier can't.
 4. Revoke or cap any app at [enter.pollinations.ai](https://enter.pollinations.ai).
 
 📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**
-
-## 🚫 Why was my request refused?
-
-Two reasons.
-
-1. **Account balance** — each model has an estimated cost based on its last-7-day average. If no eligible balance can cover that estimate (regular models: tier then paid; paid-only models: paid only), the request is refused before it runs.
-2. **Key budget** — if the App Key has spent its full budget, requests through that key are rejected even when the account balance has Pollen left.
-
-Refused requests cost zero Pollen and generate zero developer earnings — nothing fires when nothing runs.
-
-## 💸 Can I refund Pollen?
-
-Once a Pollen pack has been touched, it's non-refundable. Refunds apply to fully unused packs only — see [Refunds](/refunds).
 
 ## 🎨 What can I create with Pollen?
 

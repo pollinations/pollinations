@@ -1,0 +1,34 @@
+{
+  "pr_number": 10696,
+  "title": "fix(text): strip cache_control from content parts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10696",
+  "merged_at": "2026-05-05T20:12:30Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Speaking the same language",
+    "blurb": "We've smoothed out a quirk where Anthropic-style messages were confusing strict OpenAI-compatible models. Your prompts now flow perfectly, no matter which client you're using.",
+    "summary": "Strips the cache_control field from message content parts before forwarding requests to upstream providers.",
+    "impact": "Users can now seamlessly use Anthropic-shaped clients like Claude Code with strict OpenAI-compatible models without encountering 400 errors.",
+    "keywords": [
+      "api",
+      "compatibility",
+      "anthropic",
+      "openai",
+      "bugfix"
+    ],
+    "visual_concept": "The Nomnom creature eating a 'cache_control' data block to clean up a stream of code, representing the removal of the incompatible field. The bee mascot supervises the data cleanup.",
+    "image_prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a glowing 'cache_control' block from a stream of code, while the cute bee mascot watches with a tiny clipboard. A retro terminal nearby glows lime green (#ecf874). Soft pastel gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-05/PR-10696.jpg",
+    "prompt": "Cozy pixel art scene of the round tan Nomnom creature happily eating a glowing 'cache_control' block from a stream of code, while the cute bee mascot watches with a tiny clipboard. A retro terminal nearby glows lime green (#ecf874). Soft pastel gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-05-05T20:13:24.513450+00:00"
+}

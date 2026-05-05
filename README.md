@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🤖 Pyanchor](https://pyanchor.pyan.kr) | **Pyanchor** is an open-source agent-agnostic AI live-edit sidecar for running web apps (Next.js / Vite / Astro). Add a one-line script to your page; an in-page overlay (Shadow DOM) lets you point at | [@web](https://github.com/web) |
 | [🛠️ Worl Tools](https://worldtools-mu.vercel.app/) | Worl Tools is an offline-first desktop app with a single interface for 20+ tools, including AI image editing, background removal, developer utilities, device testing, and media processing. | [@web](https://github.com/web) |
 | [🕹️ Pollinations AIGC Control Console](https://jfliu3265.github.io/pollinations-aigc-public/) | Manage AIGC workflows in Pollinations AIGC Control Console, a web-based dashboard powered by pollinations.ai, with a unified interface for multiple generative AI capabilities. | [@web](https://github.com/web) |
 | [✍️ Storyframe Studio](https://storyframe-studio.web.app) | Storyframe Studio is an open-source AI creative workspace that uses the Pollinations API for text and image generation. | [@web](https://github.com/web) |
@@ -29,7 +30,6 @@
 | [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |
 | [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@web](https://github.com/web) |
 | [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |
-| [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

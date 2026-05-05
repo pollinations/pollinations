@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-04",
+  "period_start": "2026-05-04",
+  "period_end": "2026-05-04",
+  "generated_at": "2026-05-05T06:43:09.207181+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-04/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-04/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-04/images/instagram-3.jpg"
+    }
+  ],
+  "text": "6 PRs merged. mostly plumbing today. we unclogged some model routing for LTX-2, Nova Canvas, and Mistral so your requests flow a bit smoother. also taught the backend to sanitize messy chat payloads (nomnom ate the bugs) and added some fresh paint to the dashboard modals. better observability, fewer hiccups. code is open as always. 🛠️✨ link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #backenddev #webdev #codinglife #techupdates",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

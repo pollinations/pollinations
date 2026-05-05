@@ -85,7 +85,7 @@ test("/balance should return tier, pack, and lastTierGrant", async ({
     });
 });
 
-test("/balance should return raw tier and pack balances for spore users", async ({
+test("/balance should return raw tier and pack balances regardless of tier", async ({
     sessionToken,
     mocks,
 }) => {
@@ -103,29 +103,33 @@ test("/balance should return raw tier and pack balances for spore users", async 
     const session = await sessionResponse.json();
     const userId = session.user.id;
 
-    await db
-        .update(userTable)
-        .set({
-            tier: "spore",
+    const tiers = ["microbe", "spore", "seed", "flower", "nectar", "router"];
+
+    for (const tier of tiers) {
+        await db
+            .update(userTable)
+            .set({
+                tier,
+                tierBalance: 1,
+                packBalance: 3,
+                lastTierGrant: null,
+            })
+            .where(eq(userTable.id, userId));
+
+        const response = await SELF.fetch(`${base}/balance`, {
+            method: "GET",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
             tierBalance: 1,
             packBalance: 3,
             lastTierGrant: null,
-        })
-        .where(eq(userTable.id, userId));
-
-    const response = await SELF.fetch(`${base}/balance`, {
-        method: "GET",
-        headers: {
-            cookie: `better-auth.session_token=${sessionToken}`,
-        },
-    });
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-        tierBalance: 1,
-        packBalance: 3,
-        lastTierGrant: null,
-    });
+        });
+    }
 });
 
 test("/balance should return zero balances for new users", async ({

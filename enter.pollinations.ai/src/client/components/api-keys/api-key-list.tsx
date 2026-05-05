@@ -245,31 +245,30 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Pollinations account and spend their own
                                     Pollen.
                                 </p>
-                                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                                    <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600">
+                                <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                                    <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
-                                    <span>
-                                        Turn on developer earnings to receive
-                                        25% extra from what they spend.
-                                    </span>
-                                </p>
-                                <a
-                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="mt-1 inline-flex items-center gap-1 font-medium text-blue-700 hover:text-blue-900"
-                                >
-                                    <span className="underline underline-offset-2">
-                                        Read the guide
-                                    </span>
-                                    <span
-                                        aria-hidden="true"
-                                        className="no-underline"
+                                    Turn on developer earnings — your users are
+                                    billed +25% over model cost, meaning 20% of
+                                    their spend is credited to your wallet.{" "}
+                                    <a
+                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium text-blue-700 hover:text-blue-900"
                                     >
-                                        ↗
-                                    </span>
-                                </a>
+                                        <span className="underline underline-offset-2">
+                                            Read the guide
+                                        </span>
+                                        <span
+                                            aria-hidden="true"
+                                            className="no-underline ml-0.5"
+                                        >
+                                            ↗
+                                        </span>
+                                    </a>
+                                </p>
                             </div>
                             <ApiKeyDialog
                                 onSubmit={onCreate}

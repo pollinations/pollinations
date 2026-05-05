@@ -234,7 +234,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     content={
                                         isDisabled
                                             ? TOP_UP_TOOLTIP
-                                            : "This model uses Top-up Pollen only."
+                                            : "This model uses paid balance only."
                                     }
                                 >
                                     <Tag color="purple" size="sm">

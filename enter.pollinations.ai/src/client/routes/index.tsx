@@ -238,7 +238,7 @@ function RouteComponent() {
                         />
                     </DashboardSection>
                     <DashboardSection
-                        title="Top-up"
+                        title="Buy Pollen"
                         theme="amber"
                         framed
                         id="buy-pollen"

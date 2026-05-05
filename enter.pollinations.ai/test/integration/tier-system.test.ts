@@ -1,6 +1,11 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
-import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
+import {
+    atomicDeductUserBalance,
+    getUserBalances,
+} from "@shared/billing/deduction.ts";
+import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
@@ -420,6 +425,52 @@ describe("Tier System End-to-End", () => {
 
             expect(balance[0]?.tierBalance).toBe(1);
             expect(balance[0]?.packBalance).toBe(70);
+        });
+
+        test("regular Azure model drains tier, then pack, then puts overage on tier", async () => {
+            const db = drizzle(env.DB);
+            const userId = `azure-depletion-${crypto.randomUUID()}`;
+            const modelResolved = "openai-fast";
+            const model = getModelDefinition(modelResolved);
+
+            expect(model.provider).toBe("azure");
+            expect(model.paidOnly).not.toBe(true);
+
+            await db.insert(userTable).values({
+                id: userId,
+                email: `${userId}@test.com`,
+                name: "Azure Depletion User",
+                tier: "spore",
+                tierBalance: 0.01,
+                packBalance: 0.01,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            const totalPrice = 0.025;
+
+            const deduct = () =>
+                handleBalanceDeduction({
+                    db,
+                    isBilledUsage: true,
+                    totalPrice,
+                    userId,
+                    modelResolved,
+                });
+
+            await deduct();
+            let balance = await getUserBalances(db, userId);
+            expect(balance.tierBalance).toBeCloseTo(-0.005, 10);
+            expect(balance.packBalance).toBeCloseTo(0, 10);
+
+            await deduct();
+            balance = await getUserBalances(db, userId);
+            expect(balance.tierBalance).toBeCloseTo(-0.03, 10);
+            expect(balance.packBalance).toBeCloseTo(0, 10);
+
+            await deduct();
+            balance = await getUserBalances(db, userId);
+            expect(balance.tierBalance).toBeCloseTo(-0.055, 10);
+            expect(balance.packBalance).toBeCloseTo(0, 10);
         });
     });
 });

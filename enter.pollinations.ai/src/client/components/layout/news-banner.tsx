@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-04-28",
-        emoji: "💸",
-        title: "ElevenLabs TTS, Music, and GPT Image 2 are now paid",
+        date: "2026-05-05",
+        emoji: "🌻",
+        title: "Developer earnings are live",
         description:
-            "As of May 1, 2026, ElevenLabs TTS, Music, and GPT Image 2 require paid pollen.",
+            "Turn on Developer earnings on any App Key to take +25% over model cost (= 20% of user spend) — credited straight to your wallet, in the same bucket your user paid from.",
     },
 ];
 

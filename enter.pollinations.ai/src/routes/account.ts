@@ -481,7 +481,9 @@ const dailyUsageRecordSchema = z.object({
     meter_source: z
         .string()
         .nullable()
-        .describe("Billing source ('tier', 'pack', 'crypto')"),
+        .describe(
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+        ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
 });
@@ -588,7 +590,7 @@ const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (combines tier, pack, and crypto balances)",
+            "Remaining pollen balance (sum of tier balance + paid balance)",
         ),
 });
 
@@ -608,7 +610,9 @@ const usageRecordSchema = z.object({
     meter_source: z
         .string()
         .nullable()
-        .describe("Billing source ('tier', 'pack', 'crypto')"),
+        .describe(
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+        ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),

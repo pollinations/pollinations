@@ -5,7 +5,9 @@ import {
     getUserBalances,
     identifyDeductionSource,
 } from "@shared/billing/deduction.ts";
+import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 
@@ -129,5 +131,76 @@ describe("billing deduction", () => {
             tierBalance: 2,
             packBalance: 0,
         });
+    });
+
+    it("deducts a regular Azure model through tier, then pack, then tier overage", async () => {
+        const modelResolved = "openai-fast";
+        const model = getModelDefinition(modelResolved);
+        expect(model.provider).toBe("azure");
+        expect(model.paidOnly).not.toBe(true);
+
+        const userId = await createUser({
+            tierBalance: 0.01,
+            packBalance: 0.01,
+        });
+        const totalPrice = 0.025;
+
+        const deduct = () =>
+            handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice,
+                userId,
+                modelResolved,
+            });
+
+        await deduct();
+        let balance = await getUserBalances(db, userId);
+        expect(balance.tierBalance).toBeCloseTo(-0.005, 10);
+        expect(balance.packBalance).toBeCloseTo(0, 10);
+
+        await deduct();
+        balance = await getUserBalances(db, userId);
+        expect(balance.tierBalance).toBeCloseTo(-0.03, 10);
+        expect(balance.packBalance).toBeCloseTo(0, 10);
+
+        await deduct();
+        balance = await getUserBalances(db, userId);
+        expect(balance.tierBalance).toBeCloseTo(-0.055, 10);
+        expect(balance.packBalance).toBeCloseTo(0, 10);
+    });
+
+    it("deducts an Azure paid-only model only from pack balance", async () => {
+        const modelResolved = "gpt-5.5";
+        const model = getModelDefinition(modelResolved);
+        expect(model.provider).toBe("azure");
+        expect(model.paidOnly).toBe(true);
+
+        const userId = await createUser({
+            tierBalance: 0.01,
+            packBalance: 0.01,
+        });
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 0.01,
+            userId,
+            modelResolved,
+        });
+        let balance = await getUserBalances(db, userId);
+        expect(balance.tierBalance).toBeCloseTo(0.01, 10);
+        expect(balance.packBalance).toBeCloseTo(0, 10);
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 0.01,
+            userId,
+            modelResolved,
+        });
+        balance = await getUserBalances(db, userId);
+        expect(balance.tierBalance).toBeCloseTo(0.01, 10);
+        expect(balance.packBalance).toBeCloseTo(-0.01, 10);
     });
 });

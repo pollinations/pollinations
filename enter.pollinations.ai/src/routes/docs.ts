@@ -351,7 +351,7 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /account/balance");
     lines.push(
-        "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
+        "Returns { balance } — remaining pollen (sum of tier balance + paid balance). If API key has a budget, returns key budget instead.",
     );
     lines.push(
         "Requires `account:usage` permission when using an API key without a budget of its own.",

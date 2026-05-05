@@ -125,7 +125,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={packBalance}
                                 label="🪷"
                                 color="amber"
-                                tooltipText="🪷 Top-up — Pollen you bought. Never expires."
+                                tooltipText="💳 Paid balance — Pollen you bought, plus earnings from paid-side user spend in your apps. Never expires."
                                 position="left"
                             />
                         )}
@@ -136,7 +136,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 value={tierBalance}
                                 label={tierEmoji}
                                 color={tierColor}
-                                tooltipText={`${tierEmoji} Tier — your free hourly Pollen.`}
+                                tooltipText={`${tierEmoji} Tier balance — your free hourly Pollen, plus earnings from tier-side user spend in your apps.`}
                                 position="right"
                                 offset={paidPercentage}
                             />

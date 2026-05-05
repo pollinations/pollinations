@@ -83,7 +83,7 @@ export async function checkBalance(
     if (isPaidOnly) {
         await balance.requirePaidBalance(
             auth.user.id,
-            "This model requires 💳 Top-up Pollen. 🌱 Tier Pollen cannot be used.",
+            "This model requires 💳 paid balance. 🌱 Tier balance cannot be used.",
         );
         balance.balanceCheckResult = createBalanceCheckResult(
             await balance.getBalance(auth.user.id),

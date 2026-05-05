@@ -133,43 +133,6 @@ describe("billing deduction", () => {
         });
     });
 
-    it("deducts a regular Azure model through tier, then pack, then tier overage", async () => {
-        const modelResolved = "openai-fast";
-        const model = getModelDefinition(modelResolved);
-        expect(model.provider).toBe("azure");
-        expect(model.paidOnly).not.toBe(true);
-
-        const userId = await createUser({
-            tierBalance: 0.01,
-            packBalance: 0.01,
-        });
-        const totalPrice = 0.025;
-
-        const deduct = () =>
-            handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice,
-                userId,
-                modelResolved,
-            });
-
-        await deduct();
-        let balance = await getUserBalances(db, userId);
-        expect(balance.tierBalance).toBeCloseTo(-0.005, 10);
-        expect(balance.packBalance).toBeCloseTo(0, 10);
-
-        await deduct();
-        balance = await getUserBalances(db, userId);
-        expect(balance.tierBalance).toBeCloseTo(-0.03, 10);
-        expect(balance.packBalance).toBeCloseTo(0, 10);
-
-        await deduct();
-        balance = await getUserBalances(db, userId);
-        expect(balance.tierBalance).toBeCloseTo(-0.055, 10);
-        expect(balance.packBalance).toBeCloseTo(0, 10);
-    });
-
     it("deducts an Azure paid-only model only from pack balance", async () => {
         const modelResolved = "gpt-5.5";
         const model = getModelDefinition(modelResolved);

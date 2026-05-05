@@ -2,9 +2,8 @@ import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Tag } from "../ui/tag.tsx";
 import {
-    calculateForBalance,
     calculatePerPollen,
-    selectEffectiveBalance,
+    canAffordModel,
     TOP_UP_TOOLTIP,
 } from "./calculations.ts";
 import {
@@ -46,19 +45,15 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = packBalance ?? 0;
-    const effectiveBalance = selectEffectiveBalance(
-        model,
-        tierBalance ?? 0,
-        paidBalance,
-        showPaidOnly,
-    );
-
     const genPerPollen = calculatePerPollen(model);
-    const balanceRequests = isSignedIn
-        ? calculateForBalance(model, effectiveBalance)
-        : null;
-    const isDisabled = isSignedIn && balanceRequests === "0";
+    const isDisabled =
+        isSignedIn &&
+        !canAffordModel(
+            model,
+            tierBalance ?? 0,
+            packBalance ?? 0,
+            showPaidOnly,
+        );
     const inputPriceBadges = groupPriceBadges([
         {
             prices: [model.promptTextPrice],
@@ -254,23 +249,7 @@ export const ModelRow: FC<ModelRowProps> = ({
 
             {/* Per pollen — fixed width */}
             <div className="w-[90px] text-center shrink-0">
-                {isSignedIn ? (
-                    <Tooltip
-                        content={
-                            <span className="text-xs">
-                                {isDisabled
-                                    ? TOP_UP_TOOLTIP
-                                    : `≈ ${balanceRequests} with current balance`}
-                            </span>
-                        }
-                    >
-                        <Tag color="teal" className="cursor-default">
-                            {genPerPollen}
-                        </Tag>
-                    </Tooltip>
-                ) : (
-                    <Tag color="teal">{genPerPollen}</Tag>
-                )}
+                <Tag color="teal">{genPerPollen}</Tag>
             </div>
 
             {/* Input prices — fixed width */}

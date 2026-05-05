@@ -33,30 +33,14 @@ export function calculatePerPollen(model: ModelPrice): string {
     return "—";
 }
 
-/**
- * Calculate how many requests the user can afford with their current balance.
- * For paid-only models: only packBalance.
- * For regular models: tier if it covers one request, otherwise pack.
- * Returns "0" when balance is insufficient, "—" when no cost data.
- */
-export function calculateForBalance(
-    model: ModelPrice,
-    effectiveBalance: number,
-): string {
-    if (!model.realAvgCost || model.realAvgCost <= 0) return "—";
-
-    const requests = effectiveBalance / model.realAvgCost;
-    if (requests < 1) return "0";
-
-    return formatCount(requests);
-}
-
-export function selectEffectiveBalance(
+export function canAffordModel(
     model: ModelPrice,
     tierBalance: number,
     packBalance: number,
     isPaidOnly: boolean,
-): number {
-    if (isPaidOnly) return packBalance;
-    return tierBalance >= (model.realAvgCost ?? 0) ? tierBalance : packBalance;
+): boolean {
+    const cost = model.realAvgCost ?? 0;
+    if (cost <= 0) return true;
+    if (isPaidOnly) return packBalance >= cost;
+    return tierBalance >= cost || packBalance >= cost;
 }

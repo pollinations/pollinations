@@ -6,11 +6,7 @@ import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Tag } from "../ui/tag.tsx";
 
-import {
-    calculateForBalance,
-    calculatePerPollen,
-    selectEffectiveBalance,
-} from "./calculations.ts";
+import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
     getModelCapabilityIcons,
@@ -244,19 +240,15 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = packBalance ?? 0;
-    const effectiveBalance = selectEffectiveBalance(
-        model,
-        tierBalance ?? 0,
-        paidBalance,
-        showPaidOnly,
-    );
-
     const perPollen = calculatePerPollen(model);
-    const balanceRequests = isSignedIn
-        ? calculateForBalance(model, effectiveBalance)
-        : null;
-    const isDisabled = isSignedIn && balanceRequests === "0";
+    const isDisabled =
+        isSignedIn &&
+        !canAffordModel(
+            model,
+            tierBalance ?? 0,
+            packBalance ?? 0,
+            showPaidOnly,
+        );
 
     const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();

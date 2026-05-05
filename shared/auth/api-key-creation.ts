@@ -12,9 +12,6 @@ export type CallerMetadata = {
     redirectOrigin?: string;
     deviceUserCode?: string;
     requestedClientId?: string;
-    clientId?: string;
-    createdForUserId?: string;
-    createdForApp?: string;
     description?: string;
     earningsEnabled?: boolean;
 };
@@ -61,8 +58,6 @@ type CreateApiKeyAuthClient = {
 
 type VerifiedClientAttribution = {
     clientId: string;
-    createdForUserId: string;
-    createdForApp: string;
 };
 
 export function validateRedirectUriFormat(redirectUri: string): void {
@@ -173,7 +168,6 @@ function isLoopbackHostname(hostname: string): boolean {
 // be set or overridden by callers, even via /api/api-keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
-    attribution: VerifiedClientAttribution | null,
     isPublishable: boolean,
 ): Record<string, unknown> {
     const out: Record<string, unknown> = {};
@@ -189,11 +183,6 @@ function pickCallerMetadata(
     if (isPublishable) {
         out.earningsEnabled = metadata?.earningsEnabled !== false;
     }
-    if (attribution) {
-        out.clientId = attribution.clientId;
-        out.createdForUserId = attribution.createdForUserId;
-        out.createdForApp = attribution.createdForApp;
-    }
     return out;
 }
 
@@ -204,12 +193,12 @@ async function validateClientRedirectBinding(
 ): Promise<VerifiedClientAttribution | null> {
     if (!metadata) return null;
     const requestedClientId = metadata.requestedClientId;
-    const storedClientId = metadata.clientId;
 
-    if (
-        typeof requestedClientId !== "string" &&
-        typeof storedClientId !== "string"
-    ) {
+    if (typeof (metadata as Record<string, unknown>).clientId === "string") {
+        rejectInvalidClientId();
+    }
+
+    if (typeof requestedClientId !== "string") {
         return null;
     }
 
@@ -227,11 +216,6 @@ async function validateClientRedirectBinding(
         rejectInvalidClientId();
     }
     const clientKeyId = result.key.id;
-    if (typeof storedClientId === "string" && storedClientId !== clientKeyId) {
-        throw new HTTPException(400, {
-            message: "client_id mismatch",
-        });
-    }
 
     const clientKey = await db.query.apikey.findFirst({
         where: eq(schema.apikey.id, clientKeyId),
@@ -241,8 +225,6 @@ async function validateClientRedirectBinding(
     }
     const attribution = {
         clientId: clientKey.id,
-        createdForUserId: clientKey.userId,
-        createdForApp: clientKey.name ?? "Unknown app",
     };
 
     if (typeof metadata.deviceUserCode === "string") {
@@ -303,11 +285,7 @@ export async function createApiKeyForUser({
     );
 
     const isPublishable = type === "publishable";
-    const callerMetadata = pickCallerMetadata(
-        metadata,
-        attribution,
-        isPublishable,
-    );
+    const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
             validateRedirectUriFormat(uri);

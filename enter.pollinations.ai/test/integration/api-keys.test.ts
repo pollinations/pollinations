@@ -273,7 +273,6 @@ describe("API Key Management", () => {
                         type: "secret",
                         metadata: {
                             requestedClientId: appKey.key,
-                            clientId: appKey.id,
                             createdForUserId: "spoofed-user",
                             createdForApp: "spoofed-app",
                             redirectUri: "https://legit.example/callback",
@@ -286,13 +285,9 @@ describe("API Key Management", () => {
             expect(matchingResponse.status).toBe(200);
             const matchingCreated = await matchingResponse.json();
             expect(matchingCreated.metadata.createdVia).toBe("redirect-auth");
-            expect(matchingCreated.metadata.clientId).toBe(appKey.id);
-            expect(matchingCreated.metadata.createdForApp).toBe(
-                "registered-app",
-            );
-            expect(matchingCreated.metadata.createdForUserId).not.toBe(
-                "spoofed-user",
-            );
+            expect(matchingCreated.metadata.clientId).toBeUndefined();
+            expect(matchingCreated.metadata.createdForApp).toBeUndefined();
+            expect(matchingCreated.metadata.createdForUserId).toBeUndefined();
             expect(matchingCreated.byopClientKeyId).toBe(appKey.id);
         });
 
@@ -335,7 +330,6 @@ describe("API Key Management", () => {
                         type: "secret",
                         metadata: {
                             requestedClientId: appKey.key,
-                            clientId: appKey.id,
                             redirectUri:
                                 "https://disabled-reward.example/callback",
                             redirectOrigin: "https://disabled-reward.example",
@@ -346,7 +340,7 @@ describe("API Key Management", () => {
 
             expect(response.status).toBe(200);
             const created = await response.json();
-            expect(created.metadata.clientId).toBe(appKey.id);
+            expect(created.metadata.clientId).toBeUndefined();
             expect(created.byopClientKeyId).toBe(appKey.id);
         });
 
@@ -402,7 +396,6 @@ describe("API Key Management", () => {
                         metadata: {
                             deviceUserCode: userCode,
                             requestedClientId: appKey.key,
-                            clientId: appKey.id,
                             createdForUserId: "spoofed-user",
                             createdForApp: "spoofed-device-app",
                         },
@@ -414,11 +407,10 @@ describe("API Key Management", () => {
             const created = await response.json();
             expect(created.metadata.createdVia).toBe("redirect-auth");
             expect(created.metadata.deviceUserCode).toBe(userCode);
-            expect(created.metadata.clientId).toBe(appKey.id);
-            expect(created.metadata.createdForApp).toBe(
-                "device-registered-app",
-            );
-            expect(created.metadata.createdForUserId).not.toBe("spoofed-user");
+            expect(created.metadata.clientId).toBeUndefined();
+            expect(created.metadata.createdForApp).toBeUndefined();
+            expect(created.metadata.createdForUserId).toBeUndefined();
+            expect(created.byopClientKeyId).toBe(appKey.id);
         });
 
         test("allows unbranded device-flow key creation without caller attribution", async ({
@@ -521,7 +513,6 @@ describe("API Key Management", () => {
                         metadata: {
                             deviceUserCode: userCode,
                             requestedClientId: appKey.key,
-                            clientId: appKey.id,
                             createdForApp: "victim-device-app",
                         },
                     }),

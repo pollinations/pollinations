@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeMessages } from "../../../src/text/transforms/messageSanitizer.js";
+import { stripCacheControl } from "../../../src/text/transforms/stripCacheControl.js";
 
-const baseOptions = {
-    modelDef: { name: "kimi-k2.6" },
-    requestedModel: "kimi-k2.6",
-};
-
-describe("sanitizeMessages", () => {
+describe("stripCacheControl", () => {
     it("strips cache_control from typed text content parts", () => {
         const messages = [
             {
@@ -21,7 +16,7 @@ describe("sanitizeMessages", () => {
             },
         ];
 
-        const { messages: result } = sanitizeMessages(messages, baseOptions);
+        const { messages: result } = stripCacheControl(messages, {});
 
         expect(result[0].content).toEqual([{ type: "text", text: "hi" }]);
     });
@@ -29,16 +24,21 @@ describe("sanitizeMessages", () => {
     it("leaves plain string content untouched (identity preserved)", () => {
         const messages = [{ role: "user" as const, content: "hello" }];
 
-        const { messages: result } = sanitizeMessages(messages, baseOptions);
+        const { messages: result } = stripCacheControl(messages, {});
 
         expect(result[0]).toBe(messages[0]);
     });
 
-    it("still replaces empty user content with placeholder", () => {
-        const messages = [{ role: "user" as const, content: "" }];
+    it("preserves messages with no cache_control (identity preserved)", () => {
+        const messages = [
+            {
+                role: "user" as const,
+                content: [{ type: "text", text: "hi" }],
+            },
+        ];
 
-        const { messages: result } = sanitizeMessages(messages, baseOptions);
+        const { messages: result } = stripCacheControl(messages, {});
 
-        expect(result[0].content).toBe("Please provide a response.");
+        expect(result[0]).toBe(messages[0]);
     });
 });

@@ -8,7 +8,33 @@ import type {
 const log = debug("pollinations:transforms:sanitizer");
 
 /**
- * Transform that sanitizes messages by replacing empty user content with placeholder text.
+ * Strips Anthropic-style `cache_control` annotations from typed content parts.
+ * Strict OpenAI-compatible providers (e.g. Fireworks Kimi K2.6) reject the
+ * field with a 400. Non-array content is returned untouched.
+ */
+function stripCacheControlFromContent(content: ChatMessage["content"]) {
+    if (!Array.isArray(content)) return content;
+
+    let changed = false;
+    const next = content.map((part) => {
+        if (!part || typeof part !== "object" || Array.isArray(part)) {
+            return part;
+        }
+        const record = part as Record<string, unknown>;
+        if (!("cache_control" in record)) return part;
+
+        changed = true;
+        const { cache_control: _drop, ...rest } = record;
+        return rest;
+    });
+
+    return changed ? next : content;
+}
+
+/**
+ * Transform that sanitizes messages: replaces empty user content with a
+ * placeholder, and strips Anthropic-only `cache_control` annotations from
+ * typed content parts so strict upstream providers don't 400.
  */
 export function sanitizeMessages(
     messages: ChatMessage[],
@@ -24,18 +50,21 @@ export function sanitizeMessages(
 
     let replacedCount = 0;
     const sanitized = messages.map((message) => {
-        if (message.role !== "user") return message;
+        const content = stripCacheControlFromContent(message.content);
+        const base =
+            content === message.content ? message : { ...message, content };
+
+        if (base.role !== "user") return base;
 
         const isEmpty =
-            !message.content ||
-            (typeof message.content === "string" &&
-                message.content.trim() === "") ||
-            (Array.isArray(message.content) && message.content.length === 0);
+            !base.content ||
+            (typeof base.content === "string" && base.content.trim() === "") ||
+            (Array.isArray(base.content) && base.content.length === 0);
 
-        if (!isEmpty) return message;
+        if (!isEmpty) return base;
 
         replacedCount++;
-        return { ...message, content: "Please provide a response." };
+        return { ...base, content: "Please provide a response." };
     });
 
     if (replacedCount > 0) {

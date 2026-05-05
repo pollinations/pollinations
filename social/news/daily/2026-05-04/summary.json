@@ -1,0 +1,35 @@
+{
+  "date": "2026-05-04",
+  "period_start": "2026-05-04",
+  "period_end": "2026-05-04",
+  "title": "Unclogging the model pipes: LTX-2, Nova Canvas, and Mistral",
+  "summary": "A day of fixing pipes and rerouting traffic to get LTX-2, Nova Canvas, and Mistral back to full speed.\n\nSometimes the infrastructure fights back. We fixed a Cloudflare routing issue and added retry logic for LTX-2 video generation, swapped the Bedrock SDK HTTP handler to get Nova Canvas playing nice with Workers, and rerouted Mistral Small to a new Azure Foundry deployment to bypass gateway timeouts. All three are back online and fast.\n\nUpstream providers (especially Grok) are notoriously picky about regex contracts for message names. We added a sanitization layer to catch malformed metadata before it turns into a 500 error.\n\nOn the frontend, API key management modals now match the dashboard's blue palette. Under the hood, we rolled out a new fetchUpstream helper that propagates the exact upstream URL when a backend fails, saving us from guessing which model server is having a bad day.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 10653,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10660,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10663,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10665,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10675,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10676,
+      "date": "2026-05-04"
+    }
+  ],
+  "generated_at": "2026-05-05T06:43:09.207181+00:00"
+}

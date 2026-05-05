@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-04",
+  "period_start": "2026-05-04",
+  "period_end": "2026-05-04",
+  "generated_at": "2026-05-05T06:43:09.207181+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-04/images/reddit.jpg"
+    }
+  ],
+  "title": "Fixing LTX-2 tunnels, Mistral routing, and chat payload sanitization",
+  "text": "Merged 6 PRs today. Most of the work went into unclogging model pipes and fixing upstream routing issues.\n\n- LTX-2 routing: We were dropping the ball on async generation. LTX-2 is now routed through an HTTPS tunnel, and we added proper polling/retries when the upstream returns a 202 Accepted instead of just failing out.\n- Mistral & Nova Canvas: Mistral is now routing to Azure Foundry (mistral-small-2503). For Nova Canvas, we fixed a Cloudflare Workers runtime issue by explicitly forcing FetchHttpHandler.\n- Better error tracing: Added a `fetchUpstream` helper for image generation. It now propagates the actual `upstreamUrl` in the error response. When a provider times out or fails, you'll actually know which one it was instead of getting a generic 500.\n- Chat payloads: Added sanitization for invalid message names so malformed payloads don't crash the request before they even reach the LLM.\n\nAlso pushed a minor CSS alignment fix for the key modal on the dashboard.\n\nCode is open as always at github.com/pollinations/pollinations."
+}

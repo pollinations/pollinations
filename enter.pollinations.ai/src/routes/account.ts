@@ -106,7 +106,9 @@ const CreateKeySchema = z.object({
         .enum(["secret", "publishable"])
         .optional()
         .default("secret")
-        .describe("Key type: secret (sk_) or publishable (pk_)"),
+        .describe(
+            "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
+        ),
     expiresIn: z
         .number()
         .int()
@@ -135,12 +137,14 @@ const CreateKeySchema = z.object({
         .array(z.string())
         .optional()
         .describe(
-            "Allowed OAuth redirect URIs for publishable app keys. Loopback ports are matched port-agnostically.",
+            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Loopback ports are matched port-agnostically.",
         ),
     earningsEnabled: z
         .boolean()
         .optional()
-        .describe("Enable developer earnings for publishable app keys."),
+        .describe(
+            "Enable developer earnings for publishable app keys. Defaults to true; send false to opt out.",
+        ),
 });
 
 // CSV escape helper
@@ -1080,7 +1084,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                "Create a new API key. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.",
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings on; send `earningsEnabled: false` to opt out. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },

@@ -187,7 +187,7 @@ function pickCallerMetadata(
     if (typeof metadata?.description === "string")
         out.description = metadata.description;
     if (isPublishable) {
-        out.earningsEnabled = metadata?.earningsEnabled === true;
+        out.earningsEnabled = metadata?.earningsEnabled !== false;
     }
     if (attribution) {
         out.clientId = attribution.clientId;

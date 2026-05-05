@@ -116,7 +116,7 @@ describe("API Key Management", () => {
             expect(created.metadata.redirectUris).toEqual([
                 "http://localhost:3456/callback",
             ]);
-            expect(created.metadata.earningsEnabled).toBe(false);
+            expect(created.metadata.earningsEnabled).toBe(true);
         });
 
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({

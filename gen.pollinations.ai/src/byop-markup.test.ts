@@ -3,7 +3,7 @@ import {
     atomicCreditUserBalance,
     getUserBalances,
 } from "@shared/billing/deduction.ts";
-import { BYOP_MARKUP_PCT, computeDevCredit } from "@shared/billing/markup.ts";
+import { computeDevCredit, MARKUP_PCT } from "@shared/billing/markup.ts";
 import {
     handleBalanceDeduction,
     resolveDevMarkup,
@@ -15,8 +15,34 @@ import {
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
+import { checkBalance } from "@/utils/generation-access.ts";
 
 const db = drizzle(env.DB);
+
+function fakeStatsEnv(price: number): CloudflareBindings {
+    return {
+        DB: env.DB,
+        KV: {
+            get: async () => ({
+                value: {
+                    data: [{ model: "openai", avg_cost_usd: price }],
+                },
+                ttl: 3600,
+            }),
+            put: async () => undefined,
+        } as unknown as KVNamespace,
+    } as CloudflareBindings;
+}
+
+function fakeLog() {
+    return {
+        trace: () => undefined,
+        debug: () => undefined,
+        info: () => undefined,
+        warn: () => undefined,
+        error: () => undefined,
+    };
+}
 
 async function setupPayerAndDev({
     payerTier = "spore",
@@ -69,7 +95,7 @@ describe("BYOP markup", () => {
     it("computes the dev credit from the baseline price", () => {
         expect(computeDevCredit(0)).toBe(0);
         expect(computeDevCredit(-1)).toBe(0);
-        expect(computeDevCredit(4)).toBeCloseTo(4 * BYOP_MARKUP_PCT, 10);
+        expect(computeDevCredit(4)).toBeCloseTo(4 * MARKUP_PCT, 10);
     });
 
     it("resolves markup only for enabled publishable app keys with earnings enabled", async () => {
@@ -78,8 +104,8 @@ describe("BYOP markup", () => {
         const resolved = await resolveDevMarkup(db, pkId, 4, payerId);
         expect(resolved).toEqual({
             devUserId: devId,
-            devCredit: 4 * BYOP_MARKUP_PCT,
-            markupPct: BYOP_MARKUP_PCT,
+            devCredit: 4 * MARKUP_PCT,
+            markupPct: MARKUP_PCT,
         });
 
         expect(await resolveDevMarkup(db, pkId, 4, devId)).toBeNull();
@@ -98,8 +124,8 @@ describe("BYOP markup", () => {
 
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toEqual({
             devUserId: devId,
-            devCredit: 4 * BYOP_MARKUP_PCT,
-            markupPct: BYOP_MARKUP_PCT,
+            devCredit: 4 * MARKUP_PCT,
+            markupPct: MARKUP_PCT,
         });
     });
 
@@ -115,14 +141,14 @@ describe("BYOP markup", () => {
         });
 
         expect(markup?.devUserId).toBe(devId);
-        expect(markup?.devCredit).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
 
         expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
-            2 - 1 - BYOP_MARKUP_PCT,
+            2 - 1 - MARKUP_PCT,
             10,
         );
         const creatorBalances = await getUserBalances(db, devId);
-        expect(creatorBalances.tierBalance).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+        expect(creatorBalances.tierBalance).toBeCloseTo(MARKUP_PCT, 10);
         expect(creatorBalances.packBalance).toBe(0);
     });
 
@@ -140,15 +166,75 @@ describe("BYOP markup", () => {
         });
 
         expect(markup?.devUserId).toBe(devId);
-        expect(markup?.devCredit).toBeCloseTo(BYOP_MARKUP_PCT, 10);
+        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
         expect((await getUserBalances(db, payerId)).tierBalance).toBeCloseTo(
-            1 - BYOP_MARKUP_PCT,
+            1 - MARKUP_PCT,
             10,
         );
         expect((await getUserBalances(db, devId)).tierBalance).toBeCloseTo(
-            BYOP_MARKUP_PCT,
+            MARKUP_PCT,
             10,
         );
+    });
+
+    it("includes markup in preflight user balance checks", async () => {
+        const { payerId, pkId } = await setupPayerAndDev();
+
+        await expect(
+            checkBalance(
+                {
+                    auth: {
+                        user: { id: payerId },
+                        apiKey: {
+                            id: "sk-test",
+                            byopClientKeyId: pkId,
+                            pollenBalance: null,
+                        },
+                    },
+                    balance: {
+                        getBalance: async () => ({
+                            tierBalance: 1,
+                            packBalance: 0,
+                        }),
+                        requirePositiveBalance: async () => undefined,
+                        requirePaidBalance: async () => undefined,
+                    },
+                    model: { requested: "openai", resolved: "openai" },
+                    log: fakeLog(),
+                } as never,
+                fakeStatsEnv(1),
+            ),
+        ).rejects.toThrow(/1\.2500 pollen/);
+    });
+
+    it("includes markup in preflight API key budget checks", async () => {
+        const { payerId, pkId } = await setupPayerAndDev();
+
+        await expect(
+            checkBalance(
+                {
+                    auth: {
+                        user: { id: payerId },
+                        apiKey: {
+                            id: "sk-test",
+                            byopClientKeyId: pkId,
+                            pollenBalance: 1,
+                        },
+                    },
+                    balance: {
+                        getBalance: async () => ({
+                            tierBalance: 2,
+                            packBalance: 0,
+                        }),
+                        requirePositiveBalance: async () => undefined,
+                        requirePaidBalance: async () => undefined,
+                    },
+                    model: { requested: "openai", resolved: "openai" },
+                    log: fakeLog(),
+                } as never,
+                fakeStatsEnv(1),
+            ),
+        ).rejects.toThrow(/API key budget too low/);
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

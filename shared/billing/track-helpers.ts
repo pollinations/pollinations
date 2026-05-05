@@ -14,7 +14,7 @@ import {
     identifyDeductionSource,
     type UserBalance,
 } from "./deduction.ts";
-import { BYOP_MARKUP_PCT, computeDevCredit } from "./markup.ts";
+import { computeDevCredit, MARKUP_PCT } from "./markup.ts";
 
 const log = getLogger(["track", "helpers"]);
 
@@ -83,7 +83,7 @@ export async function resolveDevMarkup(
     return {
         devUserId: clientRow.userId,
         devCredit: credit,
-        markupPct: BYOP_MARKUP_PCT,
+        markupPct: MARKUP_PCT,
     };
 }
 

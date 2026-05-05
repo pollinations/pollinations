@@ -56,7 +56,7 @@ describe("Account Key Management API", () => {
             expect(data.metadata.redirectUris).toEqual([
                 "https://cli.example/callback",
             ]);
-            expect(data.metadata.earningsEnabled).toBe(false);
+            expect(data.metadata.earningsEnabled).toBe(true);
         });
 
         test("should create a publishable app key with earnings disabled", async ({

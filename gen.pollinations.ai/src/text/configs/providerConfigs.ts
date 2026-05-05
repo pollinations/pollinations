@@ -67,6 +67,7 @@ export function createAzureModelConfig(
     endpoint: string | undefined,
     modelName: string,
     resourceName?: string,
+    overrides: ModelOverride = {},
 ): ProviderConfig {
     const deploymentId = extractAzureDeploymentName(endpoint) || modelName;
     return {
@@ -78,6 +79,7 @@ export function createAzureModelConfig(
         "azure-api-version": extractAzureApiVersion(endpoint),
         "azure-model-name": deploymentId,
         authKey: apiKey,
+        ...overrides,
     };
 }
 

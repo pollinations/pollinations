@@ -5,6 +5,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, bufferToUint8Array } from "../utils/imageDownload.ts";
 
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
@@ -87,7 +88,7 @@ async function submitPrediction(
 
     logOps(`Submitting ${model} prediction:`, JSON.stringify(input, null, 2));
 
-    const response = await fetch(PREDICTIONS_URL, {
+    const response = await fetchUpstream(PREDICTIONS_URL, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -95,16 +96,8 @@ async function submitPrediction(
             "Model": model,
         },
         body: JSON.stringify({ input }),
+        errorLabel: "Pruna API request failed",
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError(`Pruna API submit failed (${response.status}):`, errorText);
-        throw new HttpError(
-            `Pruna API request failed: ${errorText}`,
-            response.status,
-        );
-    }
 
     return (await response.json()) as PrunaPredictionResponse;
 }
@@ -137,19 +130,12 @@ async function uploadImageToPruna(imageData: string): Promise<string> {
     const formData = new FormData();
     formData.append("content", blob, `image.${ext}`);
 
-    const response = await fetch(FILES_URL, {
+    const response = await fetchUpstream(FILES_URL, {
         method: "POST",
         headers: { apikey: apiKey },
         body: formData,
+        errorLabel: "Pruna file upload failed",
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new HttpError(
-            `Pruna file upload failed: ${errorText}`,
-            response.status,
-        );
-    }
 
     const result = (await response.json()) as { urls: { get: string } };
     logOps("Uploaded image to Pruna:", result.urls.get);
@@ -194,6 +180,8 @@ async function pollPrediction(
                 throw new HttpError(
                     `Pruna poll failed: ${errorText}`,
                     response.status,
+                    undefined,
+                    statusUrl,
                 );
             }
             await sleep(POLL_DELAY_MS);
@@ -209,6 +197,8 @@ async function pollPrediction(
                     throw new HttpError(
                         "Pruna succeeded but no generation_url",
                         500,
+                        undefined,
+                        statusUrl,
                     );
                 }
                 return data.generation_url;
@@ -217,6 +207,8 @@ async function pollPrediction(
                 throw new HttpError(
                     `Pruna generation failed: ${data.error || data.message || "unknown error"}`,
                     500,
+                    undefined,
+                    statusUrl,
                 );
 
             case "starting":
@@ -227,7 +219,12 @@ async function pollPrediction(
         await sleep(POLL_DELAY_MS);
     }
 
-    throw new HttpError("Pruna generation timed out", 504);
+    throw new HttpError(
+        "Pruna generation timed out",
+        504,
+        undefined,
+        statusUrl,
+    );
 }
 
 /**
@@ -236,17 +233,11 @@ async function pollPrediction(
 async function downloadResult(deliveryUrl: string): Promise<Buffer> {
     const apiKey = getImageEnv("PRUNA_API_KEY");
 
-    const response = await fetch(deliveryUrl, {
+    const response = await fetchUpstream(deliveryUrl, {
         method: "GET",
         headers: apiKey ? { "apikey": apiKey } : {},
+        errorLabel: "Pruna delivery download failed",
     });
-
-    if (!response.ok) {
-        throw new HttpError(
-            `Pruna delivery download failed: ${response.status}`,
-            response.status,
-        );
-    }
 
     return Buffer.from(await response.arrayBuffer());
 }

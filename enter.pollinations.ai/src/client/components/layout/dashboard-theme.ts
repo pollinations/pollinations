@@ -67,9 +67,10 @@ export const buttonColors = {
             "border-2 border-amber-500 text-amber-900 hover:bg-amber-500 hover:text-white transition-colors",
     },
     blue: {
-        light: "bg-blue-200 text-blue-900",
-        strong: "bg-blue-900 text-blue-50",
-        outline: "border-2 border-blue-900 text-blue-900",
+        light: "bg-blue-200 text-blue-900 hover:bg-blue-300 transition-colors",
+        strong: "bg-blue-200 text-blue-900 hover:bg-blue-300 transition-colors",
+        outline:
+            "border-2 border-blue-300 text-blue-900 hover:bg-blue-100 hover:border-blue-400 transition-colors",
     },
     dark: {
         light: "bg-gray-200 text-gray-900 hover:bg-gray-300",

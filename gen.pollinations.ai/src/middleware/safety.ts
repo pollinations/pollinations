@@ -24,7 +24,7 @@ type SafetyContext = Context<Env>;
 type ChatBody = CreateChatCompletionRequest & Record<string, unknown>;
 type ChatMessage = ChatBody["messages"][number];
 const SAFETY_HEADERS_KEY = "safetyHeaders";
-const SAFETY_MAX_TEXT_CHARS = 20_000;
+const SAFETY_MAX_TEXT_CHARS = 50_000;
 const SAFETY_MAX_TEXT_PARTS = 25;
 
 export type SafetyVariables = {
@@ -49,7 +49,7 @@ export async function applySafetyToTexts(
     const features = getRequestFeatures(safeValue);
     if (features.size === 0) return texts;
 
-    const guardrailInputs = getGuardrailInputs(texts);
+    const guardrailInputs = selectGuardrailInputs(texts);
     if (guardrailInputs.length === 0) return texts;
 
     setSafetyHeader(c, "X-Safety-Applied", [...features].join(","));
@@ -102,7 +102,8 @@ export async function applySafetyToTexts(
     for (const [outputIndex, input] of guardrailInputs.entries()) {
         const redacted = response.outputs?.[outputIndex]?.text;
         if (!redacted || redacted === input.text) continue;
-        safeTexts[input.originalIndex] = redacted;
+        safeTexts[input.originalIndex] =
+            texts[input.originalIndex].slice(0, input.offset) + redacted;
         changed = true;
     }
 
@@ -116,34 +117,34 @@ export async function applySafetyToTexts(
     return texts;
 }
 
-function getGuardrailInputs(texts: string[]) {
-    const inputs: { originalIndex: number; text: string }[] = [];
-    let totalChars = 0;
+function selectGuardrailInputs(texts: string[]) {
+    const inputs: { originalIndex: number; text: string; offset: number }[] =
+        [];
+    let remainingChars = SAFETY_MAX_TEXT_CHARS;
+    let remainingParts = SAFETY_MAX_TEXT_PARTS;
 
-    for (const [index, text] of texts.entries()) {
+    // Keep safety to one Bedrock call. For large requests, scan the latest
+    // text window and leave earlier context unchanged.
+    for (
+        let index = texts.length - 1;
+        index >= 0 && remainingChars > 0 && remainingParts > 0;
+        index--
+    ) {
+        const text = texts[index];
         if (!text.trim()) continue;
 
-        totalChars += text.length;
+        const scannedText =
+            text.length > remainingChars ? text.slice(-remainingChars) : text;
         inputs.push({
             originalIndex: index,
-            text,
+            text: scannedText,
+            offset: text.length - scannedText.length,
         });
+        remainingChars -= scannedText.length;
+        remainingParts--;
     }
 
-    if (
-        inputs.length > SAFETY_MAX_TEXT_PARTS ||
-        totalChars > SAFETY_MAX_TEXT_CHARS
-    ) {
-        throw safetyError(400, "input_too_large", {
-            message: "Request too large for safety checking",
-            safety: {
-                maxTextChars: SAFETY_MAX_TEXT_CHARS,
-                maxTextParts: SAFETY_MAX_TEXT_PARTS,
-            },
-        });
-    }
-
-    return inputs;
+    return inputs.reverse();
 }
 
 function resolveSafeValue(

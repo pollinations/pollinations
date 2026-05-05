@@ -5,6 +5,7 @@ import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { downloadUserImage } from "../utils/imageDownload.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
@@ -210,27 +211,15 @@ async function generateSeedanceVideo(
 
     const generateEndpoint =
         "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks";
-    const generateResponse = await fetch(generateEndpoint, {
+    const generateResponse = await fetchUpstream(generateEndpoint, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${apiKey}`,
             "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
+        errorLabel: `${config.displayName} API request failed`,
     });
-
-    if (!generateResponse.ok) {
-        const errorText = await generateResponse.text();
-        logError(
-            `${config.displayName} API failed:`,
-            generateResponse.status,
-            errorText,
-        );
-        throw new HttpError(
-            `${config.displayName} API request failed: ${errorText}`,
-            generateResponse.status,
-        );
-    }
 
     const generateData: SeedanceTaskResponse = await generateResponse.json();
     logOps("Generate response:", JSON.stringify(generateData, null, 2));
@@ -240,6 +229,8 @@ async function generateSeedanceVideo(
         throw new HttpError(
             `${config.displayName} API did not return task ID`,
             500,
+            undefined,
+            generateEndpoint,
         );
     }
 
@@ -367,7 +358,12 @@ async function pollSeedanceTask(
             const videoUrl = pollData.content?.video_url;
 
             if (!videoUrl) {
-                throw new HttpError("No video URL in completed response", 500);
+                throw new HttpError(
+                    "No video URL in completed response",
+                    500,
+                    undefined,
+                    pollUrl,
+                );
             }
 
             logOps("Video URL:", videoUrl);
@@ -380,14 +376,9 @@ async function pollSeedanceTask(
                 "Downloading video...",
             );
 
-            const videoResponse = await fetch(videoUrl);
-
-            if (!videoResponse.ok) {
-                throw new HttpError(
-                    `Failed to download video: ${videoResponse.status}`,
-                    500,
-                );
-            }
+            const videoResponse = await fetchUpstream(videoUrl, {
+                errorLabel: "Failed to download video",
+            });
 
             const buffer = Buffer.from(await videoResponse.arrayBuffer());
             logOps(
@@ -410,7 +401,7 @@ async function pollSeedanceTask(
             const errorMsg =
                 pollData.error?.message || "Video generation failed";
             logError("Seedance generation error:", pollData.error);
-            throw new HttpError(errorMsg, 500);
+            throw new HttpError(errorMsg, 500, undefined, pollUrl);
         }
 
         // Status is still pending/queued/generating - wait and try again
@@ -419,5 +410,10 @@ async function pollSeedanceTask(
         delayMs = Math.min(delayMs * 1.1, 5000);
     }
 
-    throw new HttpError("Video generation timed out after 4 minutes", 504);
+    throw new HttpError(
+        "Video generation timed out after 4 minutes",
+        504,
+        undefined,
+        pollUrl,
+    );
 }

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10689,
+  "title": "Add Pyanchor to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10689",
+  "merged_at": "2026-05-05T05:38:27Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Anchors aweigh for live edits",
+    "blurb": "Pyanchor just dropped anchor in the Greenhouse! It's a nifty AI live-edit sidecar for your web apps—just add one line of code and start pointing at things to change them.",
+    "summary": "Added Pyanchor, an open-source AI live-edit sidecar for web apps, to the community showcase.",
+    "impact": "Developers can now discover and integrate Pyanchor to easily live-edit Next.js, Vite, and Astro apps directly from the browser.",
+    "keywords": [
+      "community",
+      "apps",
+      "pyanchor",
+      "live-edit",
+      "web"
+    ],
+    "visual_concept": "Pyanchor suggests a nautical theme (anchor). Polly the bee wearing a tiny sailor hat, dropping a glowing lime green anchor into a digital garden of code-plants, representing the new app taking root in the Greenhouse.",
+    "image_prompt": "Cozy pixel art scene of Polly the cute bee mascot wearing a tiny sailor hat, dropping a glowing lime green (#ecf874) anchor into a digital garden where code-plants sprout from flower pots. A retro computer monitor in the background shows a web page being edited. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-05/PR-10689.jpg",
+    "prompt": "Cozy pixel art scene of Polly the cute bee mascot wearing a tiny sailor hat, dropping a glowing lime green (#ecf874) anchor into a digital garden where code-plants sprout from flower pots. A retro computer monitor in the background shows a web page being edited. Soft pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-05T05:39:28.532856+00:00",
+  "app_name": "Pyanchor",
+  "app_url": "https://pyanchor.pyan.kr"
+}

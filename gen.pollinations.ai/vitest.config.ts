@@ -26,6 +26,7 @@ const genAliases = [
     "middleware/model.ts",
     "middleware/rate-limit-durable.ts",
     "middleware/rate-limit-edge.ts",
+    "middleware/safety.ts",
     "middleware/text-cache.ts",
     "middleware/track.ts",
     "middleware/validator.ts",
@@ -34,9 +35,11 @@ const genAliases = [
     "util",
     "util.ts",
     "utils/api-docs.ts",
+    "utils/bedrock-guardrail.ts",
     "utils/generation-access.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
+    "utils/safety-features.ts",
     "utils/text-cache.ts",
 ];
 

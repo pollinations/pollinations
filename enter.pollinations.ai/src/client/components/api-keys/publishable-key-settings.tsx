@@ -57,13 +57,14 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         type="text"
                         value={uri}
                         onChange={(e) => update(index, e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-600"
+                        className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
                         placeholder="https://myapp.com/auth/callback"
                         disabled={disabled}
                     />
                     {rows.length > 1 && (
                         <Button
                             type="button"
+                            color="blue"
                             weight="outline"
                             onClick={() => remove(index)}
                             disabled={disabled}
@@ -76,7 +77,8 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
             <div>
                 <Button
                     type="button"
-                    weight="outline"
+                    color="blue"
+                    weight="light"
                     onClick={add}
                     disabled={disabled}
                 >

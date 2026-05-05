@@ -26,7 +26,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     onChange,
     disabled = false,
     inline = false,
-    theme = "green",
+    theme = "blue",
 }) => {
     const {
         input: { classes: inputClasses },

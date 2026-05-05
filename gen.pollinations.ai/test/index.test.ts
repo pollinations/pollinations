@@ -339,3 +339,61 @@ fixtureTest(
         ).toBe(false);
     },
 );
+
+fixtureTest(
+    "rejects transcription models on OpenAI speech endpoint",
+    async ({ apiKey }) => {
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "universal-2",
+                    input: "Hello",
+                }),
+            }),
+            {
+                ...env,
+                ELEVENLABS_API_KEY: "should-not-be-used",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    "Model 'universal-2' is not supported on text-to-audio endpoints. Use /v1/audio/transcriptions for speech-to-text models.",
+            },
+        });
+
+        await waitOnExecutionContext(ctx);
+
+        expect(
+            calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
+        ).toBe(false);
+    },
+);

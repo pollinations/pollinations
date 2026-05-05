@@ -4,6 +4,7 @@ import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:flux-klein:ops");
@@ -83,31 +84,24 @@ export const callFluxKleinAPI = async (
             headers["x-backend-token"] = backendToken;
         }
 
-        const response = await fetch(getKleinGenerateUrl(), {
+        const kleinUrl = getKleinGenerateUrl();
+        const response = await fetchUpstream(kleinUrl, {
             method: "POST",
             headers,
             body: JSON.stringify(body),
+            errorLabel: "Klein API request failed",
         });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logError(
-                "Klein API failed, status:",
-                response.status,
-                "response:",
-                errorText,
-            );
-            throw new HttpError(
-                `Klein API request failed: ${errorText}`,
-                response.status,
-            );
-        }
 
         const result = await response.json();
         const item = Array.isArray(result) ? result[0] : result;
 
         if (!item?.image) {
-            throw new Error("Klein API returned no image");
+            throw new HttpError(
+                "Klein API returned no image",
+                500,
+                undefined,
+                kleinUrl,
+            );
         }
 
         const imageBuffer = base64ToBuffer(item.image);

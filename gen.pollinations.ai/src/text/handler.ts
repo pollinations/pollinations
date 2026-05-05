@@ -340,8 +340,9 @@ export async function handleSimpleTextLocal(
     c: TextContext,
     prompt: string,
     model: string,
+    body: Record<string, unknown> = {},
 ): Promise<Response> {
-    const req = createExpressLikeRequest(c, {}, c.req.path, {
+    const req = createExpressLikeRequest(c, body, c.req.path, {
         ...c.req.param(),
         0: prompt,
     });

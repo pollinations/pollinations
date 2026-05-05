@@ -1,4 +1,7 @@
-import { getAvailableBalance } from "@shared/billing/balance.ts";
+import {
+    createBalanceCheckResult,
+    getAvailableBalanceForCharge,
+} from "@shared/billing/balance.ts";
 import { resolveDevMarkup } from "@shared/billing/track-helpers.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -64,7 +67,11 @@ export async function checkBalance(
         }
 
         const userBalance = await balance.getBalance(auth.user.id);
-        const available = getAvailableBalance(userBalance, isPaidOnly);
+        const available = getAvailableBalanceForCharge(
+            userBalance,
+            estimatedBillingPrice,
+            isPaidOnly,
+        );
 
         if (available < estimatedBillingPrice) {
             throw new HTTPException(402, {
@@ -76,7 +83,12 @@ export async function checkBalance(
     if (isPaidOnly) {
         await balance.requirePaidBalance(
             auth.user.id,
-            "This model requires 💳 Top-up Pollen. 🌱 Tier Pollen and 🌻 Dev earnings cannot be used.",
+            "This model requires 💳 Top-up Pollen. 🌱 Tier Pollen cannot be used.",
+        );
+        balance.balanceCheckResult = createBalanceCheckResult(
+            await balance.getBalance(auth.user.id),
+            true,
+            estimatedBillingPrice,
         );
         return;
     }
@@ -84,6 +96,11 @@ export async function checkBalance(
     await balance.requirePositiveBalance(
         auth.user.id,
         "Insufficient pollen balance to use this model",
+    );
+    balance.balanceCheckResult = createBalanceCheckResult(
+        await balance.getBalance(auth.user.id),
+        false,
+        estimatedBillingPrice,
     );
 }
 

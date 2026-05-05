@@ -4,6 +4,7 @@ import { Tag } from "../ui/tag.tsx";
 import {
     calculateForBalance,
     calculatePerPollen,
+    selectEffectiveBalance,
     TOP_UP_TOOLTIP,
 } from "./calculations.ts";
 import {
@@ -46,8 +47,12 @@ export const ModelRow: FC<ModelRowProps> = ({
 
     const isSignedIn = packBalance !== undefined;
     const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+    const effectiveBalance = selectEffectiveBalance(
+        model,
+        tierBalance ?? 0,
+        paidBalance,
+        showPaidOnly,
+    );
 
     const genPerPollen = calculatePerPollen(model);
     const balanceRequests = isSignedIn

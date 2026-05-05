@@ -33,12 +33,18 @@ async function createUser({
 }
 
 describe("billing deduction", () => {
-    it("identifies regular generation charges as tier, then pack, then tier debt", () => {
+    it("identifies regular generation charges as one bucket", () => {
+        expect(
+            identifyDeductionSource({ tierBalance: 5, packBalance: 5 }, 4),
+        ).toEqual({
+            fromTier: 4,
+            fromPack: 0,
+        });
         expect(
             identifyDeductionSource({ tierBalance: 5, packBalance: 5 }, 7),
         ).toEqual({
-            fromTier: 5,
-            fromPack: 2,
+            fromTier: 0,
+            fromPack: 7,
         });
         expect(
             identifyDeductionSource({ tierBalance: 0, packBalance: 8 }, 5),
@@ -49,18 +55,18 @@ describe("billing deduction", () => {
         expect(
             identifyDeductionSource({ tierBalance: -3, packBalance: 0 }, 4),
         ).toEqual({
-            fromTier: 4,
-            fromPack: 0,
+            fromTier: 0,
+            fromPack: 4,
         });
         expect(
             identifyDeductionSource({ tierBalance: -3, packBalance: 2 }, 4),
         ).toEqual({
-            fromTier: 2,
-            fromPack: 2,
+            fromTier: 0,
+            fromPack: 4,
         });
     });
 
-    it("deducts regular generation charges from tier, then pack, then tier debt", async () => {
+    it("deducts regular generation charges from tier only when tier covers the full charge", async () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 
         await atomicDeductUserBalance(db, userId, 3);
@@ -71,25 +77,25 @@ describe("billing deduction", () => {
 
         await atomicDeductUserBalance(db, userId, 4);
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: 0,
-            packBalance: 8,
+            tierBalance: 2,
+            packBalance: 6,
         });
 
         await atomicDeductUserBalance(db, userId, 10);
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: -2,
-            packBalance: 0,
+            tierBalance: 2,
+            packBalance: -4,
         });
     });
 
-    it("keeps paid pack balance untouched when the user has no positive pack balance", async () => {
+    it("uses pack debt when tier cannot cover a regular charge", async () => {
         const userId = await createUser({ tierBalance: 0, packBalance: 0 });
 
         await atomicDeductUserBalance(db, userId, 3);
 
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: -3,
-            packBalance: 0,
+            tierBalance: 0,
+            packBalance: -3,
         });
     });
 
@@ -120,8 +126,8 @@ describe("billing deduction", () => {
         await atomicDeductUserBalance(db, userId, 6);
 
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: 0,
-            packBalance: 2,
+            tierBalance: 2,
+            packBalance: 0,
         });
     });
 });

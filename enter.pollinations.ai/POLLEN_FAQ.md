@@ -54,17 +54,16 @@ Registration gives you **instant access** to the Pollinations API. Create API ke
 
 ## 👛 How does my Pollen wallet work?
 
-You get **one central wallet** for all your applications, made from three Pollen buckets:
+You get **one central wallet** for all your applications, made from two spendable Pollen balances:
 
-- **🌱 Tier Pollen** — free Pollen from your tier. Refills every hour.
-- **🌻 Dev earnings** — Pollen your apps receive from BYOP usage.
-- **💳 Top-up Pollen** — Pollen you buy. Does not expire.
+- **🌱 Tier Pollen** — free Pollen from your tier, plus BYOP earnings from requests paid by Tier Pollen. Refills every hour.
+- **💳 Top-up Pollen** — Pollen you buy, plus BYOP earnings from requests paid by Top-up Pollen. Does not expire.
 
-**Spending order:**
+**Spending rule:**
 
-🌱 Tier Pollen *(skipped for paid-only models)* → 🌻 Dev earnings → 💳 Top-up Pollen
+Regular models use 🌱 Tier Pollen only when it covers the full request; otherwise they use 💳 Top-up Pollen. Paid-only models always use 💳 Top-up Pollen.
 
-⏰ If a request costs slightly more than estimated, your 🌱 Tier Pollen balance may go briefly negative — the **next refill covers the difference** automatically.
+⏰ If a request costs slightly more than estimated, the balance that paid for the request may go briefly negative.
 
 ## 🏅 What are tiers?
 

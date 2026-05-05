@@ -95,8 +95,8 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                         </div>
                         <div className="space-y-1 text-xs text-gray-500">
                             <div>
-                                1. Regular models spend tier grants, then
-                                purchased pollen
+                                1. Regular models use tier when it covers the
+                                full request, otherwise top-up
                             </div>
                             <div className="text-purple-700">
                                 2. 🪷 Paid Only models require purchased pollen

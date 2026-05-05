@@ -5,14 +5,11 @@ import { apikey as apikeyTable } from "../db/better-auth.ts";
 import type { ModelName } from "../registry/registry.ts";
 import { getModelDefinition } from "../registry/registry.ts";
 import {
-    atomicAdjustUserBalance,
     atomicCreditUserBalance,
     atomicDeductApiKeyBalance,
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
-    getUserBalances,
-    identifyDeductionSource,
-    type UserBalance,
+    type Bucket,
 } from "./deduction.ts";
 import { computeDevCredit, MARKUP_PCT } from "./markup.ts";
 
@@ -33,7 +30,6 @@ interface DeductionParams {
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelResolved?: string;
-    userBalanceBeforeDeduction?: UserBalance;
 }
 
 function parseMetadata(
@@ -102,7 +98,6 @@ export async function handleBalanceDeduction(
         apiKeyPollenBalance,
         byopClientKeyId,
         modelResolved,
-        userBalanceBeforeDeduction,
     } = params;
 
     if (!isBilledUsage || !totalPrice) return { markup: null };
@@ -113,39 +108,9 @@ export async function handleBalanceDeduction(
         totalPrice,
         userId,
     );
-    let devCredited = false;
-    let markup: MarkupResolution | null = resolved;
-    if (resolved) {
-        try {
-            const { ok } = await atomicCreditUserBalance(
-                db,
-                resolved.devUserId,
-                "tier",
-                resolved.devCredit,
-            );
-            if (!ok) {
-                log.error(
-                    "Dev credit UPDATE affected 0 rows for {devUserId} — skipping markup",
-                    { devUserId: resolved.devUserId },
-                );
-                markup = null;
-            } else {
-                devCredited = true;
-            }
-        } catch (error) {
-            log.error(
-                "Dev credit failed for {devUserId}: {error} — skipping markup",
-                {
-                    devUserId: resolved.devUserId,
-                    error:
-                        error instanceof Error ? error.message : String(error),
-                },
-            );
-            markup = null;
-        }
-    }
-
+    const markup: MarkupResolution | null = resolved;
     const billedPrice = totalPrice + (markup?.devCredit ?? 0);
+    let payerBucket: Bucket | null = null;
 
     try {
         // API key budgets are decremented by the amount the user authorized the
@@ -155,52 +120,64 @@ export async function handleBalanceDeduction(
         }
 
         if (userId) {
-            await deductUserBalance(
+            payerBucket = await deductUserBalance(
                 db,
                 userId,
                 billedPrice,
                 modelResolved,
-                userBalanceBeforeDeduction,
+            );
+        }
+
+        if (markup) {
+            if (!payerBucket) {
+                throw new Error("BYOP markup requires a payer balance bucket");
+            }
+            const creditBucket = payerBucket;
+            const { ok } = await atomicCreditUserBalance(
+                db,
+                markup.devUserId,
+                creditBucket,
+                markup.devCredit,
+            );
+            if (!ok) {
+                throw new Error(
+                    `Dev credit UPDATE affected 0 rows for ${markup.devUserId}`,
+                );
+            }
+            log.debug(
+                "Credited {credit} pollen to dev {devUserId} {bucket} balance (markup={pct}%)",
+                {
+                    credit: markup.devCredit,
+                    devUserId: markup.devUserId,
+                    bucket: creditBucket,
+                    pct: (markup.markupPct * 100).toFixed(0),
+                },
             );
         }
     } catch (error) {
-        if (devCredited && resolved) {
-            try {
-                await atomicAdjustUserBalance(
-                    db,
-                    resolved.devUserId,
-                    "tier",
-                    -resolved.devCredit,
-                );
-                log.warn(
-                    "Reverted dev credit for {devUserId} after payer debit failure",
-                    { devUserId: resolved.devUserId },
-                );
-            } catch (revertError) {
+        if (markup) {
+            if (
+                error instanceof Error &&
+                error.message.startsWith("Dev credit")
+            ) {
+                log.error("Dev credit failed for {devUserId}: {error}", {
+                    devUserId: markup.devUserId,
+                    error: error.message,
+                });
+            } else {
                 log.error(
-                    "Failed to revert dev credit for {devUserId}: {error}",
+                    "Failed to bill BYOP request for dev {devUserId}: {error}",
                     {
-                        devUserId: resolved.devUserId,
+                        devUserId: markup.devUserId,
                         error:
-                            revertError instanceof Error
-                                ? revertError.message
-                                : String(revertError),
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
                     },
                 );
             }
         }
         throw error;
-    }
-
-    if (markup) {
-        log.debug(
-            "Credited {credit} pollen to dev {devUserId} (markup={pct}%)",
-            {
-                credit: markup.devCredit,
-                devUserId: markup.devUserId,
-                pct: (markup.markupPct * 100).toFixed(0),
-            },
-        );
     }
 
     return { markup };
@@ -242,8 +219,7 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
-    userBalanceBeforeDeduction?: UserBalance,
-): Promise<void> {
+): Promise<Bucket | null> {
     try {
         const isPaidOnly = modelResolved
             ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
@@ -260,23 +236,23 @@ async function deductUserBalance(
                 "Decremented {price} pollen from user {userId} (paid-only model, tier excluded)",
                 { price: amount, userId },
             );
-            return;
+            return "pack";
         }
 
-        // Regular deduction flow
-        // Note: TOCTOU — balances may shift between this read and the UPDATE in
-        // atomicDeductUserBalance due to concurrent requests.  The SQL CASE always
-        // picks the correct bucket; only the logged split below may mismatch.
-        const balancesBefore =
-            userBalanceBeforeDeduction ?? (await getUserBalances(db, userId));
-        const deductionSource = identifyDeductionSource(balancesBefore, amount);
-
-        const { ok } = await atomicDeductUserBalance(db, userId, amount);
+        const { ok, bucket } = await atomicDeductUserBalance(
+            db,
+            userId,
+            amount,
+        );
         if (!ok) {
             throw new Error(
                 `User balance deduction affected 0 rows for ${userId}`,
             );
         }
+        const deductionSource = {
+            fromTier: bucket === "tier" ? amount : 0,
+            fromPack: bucket === "pack" ? amount : 0,
+        };
 
         log.debug(
             "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
@@ -286,6 +262,7 @@ async function deductUserBalance(
                 ...deductionSource,
             },
         );
+        return bucket;
     } catch (error) {
         log.error("Failed to decrement user balance for {userId}: {error}", {
             userId,

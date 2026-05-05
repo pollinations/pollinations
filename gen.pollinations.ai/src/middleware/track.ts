@@ -62,16 +62,6 @@ type ModelVariables = {
     };
 };
 
-function checkedUserBalance(balance: BalanceVariables["balance"]) {
-    const balances = balance.balanceCheckResult?.balances;
-    if (!balances) return undefined;
-
-    return {
-        tierBalance: balances["v1:meter:tier"] ?? 0,
-        packBalance: balances["v1:meter:pack"] ?? 0,
-    };
-}
-
 export type ModelUsage = {
     model: string;
     usage: Usage;
@@ -209,9 +199,6 @@ export const track = (eventType: EventType) =>
                     apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                     byopClientKeyId,
                     modelResolved: c.var.model?.resolved,
-                    userBalanceBeforeDeduction: c.var.balance
-                        ? checkedUserBalance(c.var.balance)
-                        : undefined,
                 });
 
                 const finalEvent = createTrackingEvent({

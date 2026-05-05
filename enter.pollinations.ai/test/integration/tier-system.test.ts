@@ -68,10 +68,10 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Waterfall deduction: tier pays the first 0.4 pollen, then pack pays
-            // the remaining 19.6 pollen.
-            expect(afterUsage[0]?.tierBalance).toBeCloseTo(0, 4);
-            expect(afterUsage[0]?.packBalance).toBeCloseTo(30.4, 4);
+            // Binary deduction: each charge is larger than tier, so pack pays
+            // the full 20 pollen and tier remains available for smaller calls.
+            expect(afterUsage[0]?.tierBalance).toBeCloseTo(0.4, 4);
+            expect(afterUsage[0]?.packBalance).toBeCloseTo(30, 4);
 
             // Trigger tier refill
             await triggerTierRefill();
@@ -87,9 +87,9 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Tier should be refilled (additive: MIN(0 + 0.4, 0.4) = 0.4), pack unchanged
+            // Tier is already at its hourly floor and pack is unchanged.
             expect(afterRefill[0]?.tierBalance).toBeCloseTo(0.4, 4);
-            expect(afterRefill[0]?.packBalance).toBeCloseTo(30.4, 4);
+            expect(afterRefill[0]?.packBalance).toBeCloseTo(30, 4);
             expect(afterRefill[0]?.lastTierGrant).toBeGreaterThan(
                 Date.now() - 5000,
             );
@@ -406,7 +406,7 @@ describe("Tier System End-to-End", () => {
                     },
                 });
 
-            // Use 30 pollen — tier is spent first, then pack covers the rest
+            // Use 30 pollen — tier cannot cover the full charge, so pack pays it.
             await atomicDeductUserBalance(db, userId, 30);
 
             const balance = await db
@@ -418,8 +418,8 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            expect(balance[0]?.tierBalance).toBe(0);
-            expect(balance[0]?.packBalance).toBe(71);
+            expect(balance[0]?.tierBalance).toBe(1);
+            expect(balance[0]?.packBalance).toBe(70);
         });
     });
 });

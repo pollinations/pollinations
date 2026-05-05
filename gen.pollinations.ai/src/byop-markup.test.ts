@@ -129,7 +129,7 @@ describe("BYOP markup", () => {
         });
     });
 
-    it("credits creator tier_balance and bills payer baseline plus markup", async () => {
+    it("credits creator tier balance when payer spends tier balance", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({
@@ -150,6 +150,33 @@ describe("BYOP markup", () => {
         const creatorBalances = await getUserBalances(db, devId);
         expect(creatorBalances.tierBalance).toBeCloseTo(MARKUP_PCT, 10);
         expect(creatorBalances.packBalance).toBe(0);
+    });
+
+    it("credits creator pack balance when payer spends pack balance", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev();
+        await db
+            .update(userTable)
+            .set({ tierBalance: 0.5, packBalance: 2 })
+            .where(sql`${userTable.id} = ${payerId}`);
+
+        const { markup } = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 1,
+            userId: payerId,
+            byopClientKeyId: pkId,
+        });
+
+        expect(markup?.devUserId).toBe(devId);
+        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
+
+        const payerBalances = await getUserBalances(db, payerId);
+        expect(payerBalances.tierBalance).toBeCloseTo(0.5, 10);
+        expect(payerBalances.packBalance).toBeCloseTo(2 - 1 - MARKUP_PCT, 10);
+
+        const creatorBalances = await getUserBalances(db, devId);
+        expect(creatorBalances.tierBalance).toBe(0);
+        expect(creatorBalances.packBalance).toBeCloseTo(MARKUP_PCT, 10);
     });
 
     it("bills baseline plus markup for any payer tier", async () => {
@@ -205,6 +232,36 @@ describe("BYOP markup", () => {
                 fakeStatsEnv(1),
             ),
         ).rejects.toThrow(/1\.2500 pollen/);
+    });
+
+    it("requires one bucket to cover the full estimated charge in preflight", async () => {
+        const { payerId, pkId } = await setupPayerAndDev();
+
+        await expect(
+            checkBalance(
+                {
+                    auth: {
+                        user: { id: payerId },
+                        apiKey: {
+                            id: "sk-test",
+                            byopClientKeyId: pkId,
+                            pollenBalance: null,
+                        },
+                    },
+                    balance: {
+                        getBalance: async () => ({
+                            tierBalance: 0.75,
+                            packBalance: 0.75,
+                        }),
+                        requirePositiveBalance: async () => undefined,
+                        requirePaidBalance: async () => undefined,
+                    },
+                    model: { requested: "openai", resolved: "openai" },
+                    log: fakeLog(),
+                } as never,
+                fakeStatsEnv(1),
+            ),
+        ).rejects.toThrow(/available balance is 0\.7500/);
     });
 
     it("includes markup in preflight API key budget checks", async () => {

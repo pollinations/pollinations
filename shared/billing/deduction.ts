@@ -1,10 +1,14 @@
 import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
-import type { UserBalance } from "./balance.ts";
+import {
+    type BalanceBucket,
+    selectBalanceBucket,
+    type UserBalance,
+} from "./balance.ts";
 
 export const BALANCE_BUCKETS = ["tier", "pack"] as const;
-export type Bucket = (typeof BALANCE_BUCKETS)[number];
+export type Bucket = BalanceBucket;
 
 const BUCKET_COLUMNS = {
     tier: userTable.tierBalance,
@@ -30,35 +34,35 @@ type BillingPolicy = (typeof BILLING_POLICIES)[keyof typeof BILLING_POLICIES];
 /**
  * Atomically deducts pollen from user balance.
  *
- * Regular requests spend positive tier balance first, then positive pack
- * balance. Any remaining debt lands in tier balance because tier refills hourly.
+ * Regular requests are binary: if tier can cover the full charge, the full
+ * charge is deducted from tier; otherwise the full charge is deducted from pack.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
-): Promise<{ ok: boolean }> {
-    if (amount <= 0) return { ok: true };
+): Promise<{ ok: boolean; bucket: Bucket | null }> {
+    if (amount <= 0) return { ok: true, bucket: null };
+
+    const tierResult = await db.run(sql`
+			UPDATE ${userTable}
+			SET tier_balance = COALESCE(tier_balance, 0) - ${amount}
+			WHERE id = ${userId}
+			AND COALESCE(tier_balance, 0) >= ${amount}
+		`);
+
+    if ((tierResult.meta.changes ?? 0) > 0) {
+        return { ok: true, bucket: "tier" };
+    }
 
     const result = await db.run(sql`
 			UPDATE ${userTable}
-			SET
-				tier_balance = COALESCE(tier_balance, 0) - CASE
-					WHEN ${amount} <= MAX(COALESCE(tier_balance, 0), 0) THEN ${amount}
-					WHEN ${amount} <= MAX(COALESCE(tier_balance, 0), 0) + MAX(COALESCE(pack_balance, 0), 0)
-						THEN MAX(COALESCE(tier_balance, 0), 0)
-					ELSE ${amount} - MAX(COALESCE(pack_balance, 0), 0)
-				END,
-				pack_balance = COALESCE(pack_balance, 0) - CASE
-					WHEN ${amount} <= MAX(COALESCE(tier_balance, 0), 0) THEN 0
-					WHEN ${amount} <= MAX(COALESCE(tier_balance, 0), 0) + MAX(COALESCE(pack_balance, 0), 0)
-						THEN ${amount} - MAX(COALESCE(tier_balance, 0), 0)
-					ELSE MAX(COALESCE(pack_balance, 0), 0)
-				END
+			SET pack_balance = COALESCE(pack_balance, 0) - ${amount}
 			WHERE id = ${userId}
 		`);
 
-    return { ok: (result.meta.changes ?? 0) > 0 };
+    const ok = (result.meta.changes ?? 0) > 0;
+    return { ok, bucket: ok ? "pack" : null };
 }
 
 /**
@@ -155,9 +159,7 @@ export async function getUserBalances(
 
 export type DeductionSource = Record<`from${Capitalize<Bucket>}`, number>;
 
-/**
- * Identifies how a deduction will split across buckets under a policy.
- */
+/** Identifies which bucket pays a deduction under a policy. */
 export function identifyDeductionSource(
     balances: UserBalance,
     amount: number,
@@ -169,18 +171,14 @@ export function identifyDeductionSource(
     };
     if (amount <= 0) return zero;
 
-    let remaining = amount;
-    const source = { ...zero };
-    for (const bucket of policy.spendOrder) {
-        const available = Math.max(0, getBucketBalance(balances, bucket));
-        const spent = Math.min(available, remaining);
-        source[`from${capitalizeBucket(bucket)}`] += spent;
-        remaining -= spent;
-        if (remaining <= 0) return source;
-    }
-
-    source[`from${capitalizeBucket(policy.debtBucket)}`] += remaining;
-    return source;
+    const bucket =
+        policy === BILLING_POLICIES.paidOnly
+            ? "pack"
+            : selectBalanceBucket(balances, amount);
+    return {
+        ...zero,
+        [`from${capitalizeBucket(bucket)}`]: amount,
+    };
 }
 
 /**
@@ -195,8 +193,8 @@ export async function atomicDeductPaidBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
-): Promise<{ ok: boolean }> {
-    if (amount <= 0) return { ok: true };
+): Promise<{ ok: boolean; bucket: "pack" | null }> {
+    if (amount <= 0) return { ok: true, bucket: null };
 
     const result = await db.run(sql`
 			UPDATE ${userTable}
@@ -204,13 +202,10 @@ export async function atomicDeductPaidBalance(
 			WHERE id = ${userId}
 		`);
 
-    return { ok: (result.meta.changes ?? 0) > 0 };
+    const ok = (result.meta.changes ?? 0) > 0;
+    return { ok, bucket: ok ? "pack" : null };
 }
 
 function capitalizeBucket(bucket: Bucket): Capitalize<Bucket> {
     return (bucket[0].toUpperCase() + bucket.slice(1)) as Capitalize<Bucket>;
-}
-
-function getBucketBalance(balances: UserBalance, bucket: Bucket): number {
-    return bucket === "tier" ? balances.tierBalance : balances.packBalance;
 }

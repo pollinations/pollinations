@@ -6,7 +6,11 @@ import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Tag } from "../ui/tag.tsx";
 
-import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
+import {
+    calculateForBalance,
+    calculatePerPollen,
+    selectEffectiveBalance,
+} from "./calculations.ts";
 import {
     getModelBrandLogoPath,
     getModelCapabilityIcons,
@@ -241,8 +245,12 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
 
     const isSignedIn = packBalance !== undefined;
     const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
+    const effectiveBalance = selectEffectiveBalance(
+        model,
+        tierBalance ?? 0,
+        paidBalance,
+        showPaidOnly,
+    );
 
     const perPollen = calculatePerPollen(model);
     const balanceRequests = isSignedIn

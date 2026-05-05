@@ -1,7 +1,7 @@
 /**
  * BYOP markup applied to requests authenticated by a BYOP-issued sk_ token with
  * a trusted byop_client_key_id. The payer is billed baseline + markup; the
- * markup is credited to the app owner's tier_balance.
+ * markup is credited to the app owner's matching tier or pack balance.
  */
 export const MARKUP_PCT = 0.25;
 export const MARKUP_PERCENT = MARKUP_PCT * 100;

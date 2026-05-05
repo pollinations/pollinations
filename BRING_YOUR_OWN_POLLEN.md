@@ -29,13 +29,37 @@ An **App Key** is a publishable key (`pk_...`) you create on [enter.pollinations
 
 To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → **Create New App Key**:
 
-![Create New App Key](https://media.pollinations.ai/aa8ca9fe3110aff7)
+<p align="left"><img src="https://media.pollinations.ai/1133540dc4c19635" alt="Edit App Key" width="420"></p>
 
 Set the **Name** (shows on the consent screen) and at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
-When users authorize, this is what they see:
+When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
-![Authorize Screen](https://media.pollinations.ai/b030a47e32df2b2b)
+<p align="left"><img src="https://media.pollinations.ai/fbc04dd1c77dbfd8" alt="Authorize — signed out" width="420"></p>
+
+Once signed in, they review the requested access and confirm:
+
+<p align="left"><img src="https://media.pollinations.ai/a7e4a1e9c5f48b8d" alt="Authorize — signed in" width="420"></p>
+
+## 💰 Developer earnings (optional)
+
+**Developer earnings** are on by default for every App Key. Users are billed +25% over model cost; that 0.25 on every 1.25 lands in your wallet — in your **tier balance** if the user paid from their tier, or your **paid balance** if they paid from theirs. Earnings mirror the user's spend bucket. Same number, two framings: +25% markup = 20% of user spend. Toggle off on the App Key if you don't want it.
+
+## 🪣 Bucket selection (per request)
+
+```
+if (paidOnly) bucket = paid
+else if (tier ≥ amount) bucket = tier
+else bucket = paid
+```
+
+All-or-nothing per request — no partial spend across buckets. If the chosen bucket can't cover the estimate, the request is refused (HTTP 402).
+
+## 📝 Notes
+
+- Each request is sized from a 7-day rolling average for that model — if no eligible balance can cover the estimate under the spend rules, the request is refused before it runs.
+- Refused requests cost zero Pollen and generate zero developer earnings — no spend, no markup.
+- Once a Pollen pack has been touched, it's non-refundable; refunds apply to fully unused packs only.
 
 ## ⚙️ Web Apps (Redirect Flow)
 
@@ -141,5 +165,21 @@ Standard OIDC userinfo shape — works with any `sk_` or `pk_` key.
 ---
 
 🕐 Keys expire in 30 days. Users can revoke anytime from the dashboard.
+
+## 📚 Glossary
+
+| Concept | Use | Don't use |
+|---|---|---|
+| Free hourly grant + tier-side earnings | **Tier balance** | "Earning Balance", "Tier Pollen", "Free hourly Pollen" |
+| Purchased Pollen + paid-side earnings | **Paid balance** | "Earning Balance", "Top-up balance", "Pack" / "Pack balance" |
+| Models that need paid balance | **Paid-only** | "Premium", "Paid models" |
+| The +25% feature (dev-side label) | **Developer earnings** | "BYOP earnings", "App key markup" |
+| Per-key spend cap | **Budget** (field) / "spending cap" (prose) | "Limit" (ambiguous) |
+| Publishable key for BYOP apps | **App Key** (`pk_…`) — used by apps to attribute traffic, set redirect URIs, toggle Developer earnings | Don't conflate with API key. |
+| Server-side keys with no rate limits | **Secret Key** (`sk_…`) — created in the dashboard, used in backend code | Don't conflate with App Key. |
+| Generic umbrella term | **API key** = any `sk_` or `pk_` key — only use when both are valid in context | Don't use as a synonym for either App Key or Secret Key. |
+| Tier system | **Tier** (Spore / Seed / Flower) | — |
+
+**App Key vs Secret Key vs API key** is the most common confusion among new BYOP devs. App Keys (`pk_…`) are publishable, used in client apps, and attribute traffic. Secret Keys (`sk_…`) are server-side, never exposed to users, and have no rate limits. "API key" is the umbrella — use only when both apply.
 
 [edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for the idea*

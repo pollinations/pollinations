@@ -50,6 +50,7 @@ interface CloudflareBindings {
     LTX2_BASE_URL: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
+    OPENROUTER_API_KEY: string;
     PERPLEXITY_API_KEY: string;
     PRUNA_API_KEY: string;
     XAI_API_KEY: string;

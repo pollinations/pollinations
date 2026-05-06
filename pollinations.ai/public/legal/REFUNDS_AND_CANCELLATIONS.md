@@ -1,32 +1,62 @@
 # Refunds & Cancellations
 
-**Updated: 2026-01-19**
+**Updated: 2026-05-06**
 
-## Refunds & Cancellations (digital API services & credits)
+## Refunds & Cancellations (digital API services & Pollen)
 
-**Scope.** Applies to (a) paid credit top-ups used to call our AI media API ("Credits") and (b) any paid subscriptions we may introduce in the future.
+**Scope.** This policy applies to paid Pollen packs/top-ups used to call the Pollinations API and to any paid subscriptions we may introduce in the future.
 
-All sales are final except where required by law. Our API is a digital service delivered immediately at purchase. Once we start performance, we cannot "return" usage.
+## 1) Pollen Is Digital API Credit
 
-**Credits (top-ups) — non-refundable upon purchase.** Credits are non-refundable upon purchase, including unused credits, except: (a) duplicate or unauthorized charge, (b) failure to provision Credits after payment, (c) a material, documented technical fault that prevents any use within a reasonable start period, or (d) where required by law. On any approved refund, associated credits/benefits are revoked.
+Pollen is an in-service credit used only for Pollinations API usage. It is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund.
 
-**EU consumer withdrawal (14-day rule).** If you purchase as a consumer in the EEA, you normally have 14 days to withdraw from distance contracts. For digital services not supplied on a tangible medium, this right does not apply once you:
+Your wallet may include:
 
-* expressly request immediate access, and
-* acknowledge that you lose the withdrawal right once performance begins.
+- **Tier balance:** free grants and eligible developer earnings.
+- **Paid balance:** purchased Pollen and eligible developer earnings from paid-balance usage.
 
-We present this consent at checkout and store proof (text + timestamp, order_id, user_id, consent_text_version, IP). If you do not give consent, we will delay supply or you may withdraw within 14 days.
+## 2) Final-Sale Policy
 
-**Refund eligibility (limited).** We may refund where required by law or when:
+All sales are final except where required by law or expressly approved by us. Our API is a digital service delivered immediately after purchase. Once Pollen is spent on API usage, that usage cannot be returned.
 
-* duplicate or unauthorized charge is proven,
-* we fail to provision Credits after payment, or
-* a material, documented technical fault prevents any use within a reasonable start period.
+Paid Pollen packs/top-ups are non-refundable once provisioned, including unused paid balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
 
-**How to request.** Email hi@myceli.ai with order ID and account email. We aim to review within 5–10 business days; approved refunds return to the original payment method subject to payment-network timelines. Business days are calculated in EET/EEST (Tallinn).
+Used Pollen cannot be refunded or clawed back. Free tier grants, promotional credits, and developer earnings have no cash value and are not refundable.
 
-**Chargebacks.** If a chargeback is filed, we may suspend access while it's investigated and revoke Credits tied to the disputed order.
+## 3) Limited Refund Review
 
-**B2B purchases.** If you provide a valid VAT ID and purchase for business use, consumer withdrawal rules generally do not apply.
+We may review refund requests for unused paid balance in these cases:
 
-**Effect of termination.** On any refund or termination, you must stop using the Service and not make API results available to third parties if the underlying order is canceled.
+- A refund is required by law.
+- A duplicate or unauthorized charge is proven.
+- We fail to provision paid Pollen after payment.
+- A material, documented technical fault prevents any meaningful use within a reasonable start period, and you contact us promptly before substantial use.
+
+Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be revoked or adjusted.
+
+## 4) EU/EEA Consumer Withdrawal
+
+If you purchase as a consumer in the EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content or digital services not supplied on a physical medium, that right can be lost once performance begins if you:
+
+- expressly request immediate access, and
+- acknowledge that you lose the withdrawal right once performance begins.
+
+We present this consent at checkout where required and may store proof, including consent text/version, timestamp, order ID, user ID, account email, and IP address. If immediate-delivery consent is not given where required, immediate access may be unavailable or delayed, and you may be able to withdraw within the statutory period if no performance has begun.
+
+This policy does not limit any non-waivable statutory rights for non-conforming digital services.
+
+## 5) Subscriptions
+
+If we introduce paid subscriptions, cancellation stops future renewals. It does not refund prior periods, consumed usage, or already-provisioned Pollen unless required by law or expressly approved by us.
+
+## 6) Chargebacks
+
+If a chargeback or payment dispute is filed, we may suspend access while it is investigated and revoke or adjust Pollen, credits, benefits, and developer earnings tied to the disputed order.
+
+## 7) B2B Purchases
+
+If you provide a valid VAT ID or purchase for business use, consumer withdrawal rules generally do not apply.
+
+## 8) How to Request Review
+
+Email hi@myceli.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. Business days are calculated in EET/EEST (Tallinn).

@@ -41,9 +41,6 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 <Field.Label className="text-sm font-semibold">
                     Redirect URIs
                 </Field.Label>
-                <span className="text-xs text-gray-600">
-                    Loopback URLs match any port (RFC 8252).
-                </span>
             </div>
             {redirectUris.length === 0 && (
                 <p className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-3 py-2 text-sm text-gray-500">

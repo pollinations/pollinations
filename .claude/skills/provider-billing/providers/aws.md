@@ -583,6 +583,8 @@ Hardcoding a `seed_balance_usd` (e.g. "we have $32k in AWS credits") is **wrong*
 
 The rule for this account: **only trust numbers the CLI can verify**. Keep AWS as `payg` until credits actually start flowing through our view, and only then consider adding a seed.
 
+Credential gotcha for the finance app: `apps/operation/finance` loads shared gen worker model secrets for provider API keys, but it must ignore `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN` from those shared secrets. The gen worker AWS keys are Bedrock runtime credentials (`portkey-bedrock-access`) and can fail Cost Explorer with `ce:GetCostAndUsage` `AccessDenied`; finance should use the local/default AWS CLI credential chain configured for billing.
+
 ---
 
 ## Region naming

@@ -242,7 +242,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Turn on developer earnings. Users are billed
                                     25% extra, credited to your wallet.{" "}
                                     <a
-                                        href="https://gen.pollinations.ai/docs#tag/-bring-your-own-pollen"
+                                        href="https://gen.pollinations.ai/docs#tag/bring-your-own-pollen"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="font-medium text-blue-700 hover:text-blue-900"

@@ -211,7 +211,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                         Use that key for API requests paid with
                                         the user&apos;s Pollen.{" "}
                                         <a
-                                            href="https://gen.pollinations.ai/docs#tag/-bring-your-own-pollen"
+                                            href="https://gen.pollinations.ai/docs#tag/bring-your-own-pollen"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-blue-700 underline hover:text-blue-900"

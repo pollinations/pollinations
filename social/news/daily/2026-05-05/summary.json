@@ -1,0 +1,31 @@
+{
+  "date": "2026-05-05",
+  "period_start": "2026-05-05",
+  "period_end": "2026-05-05",
+  "title": "Four new apps sprout in the showcase",
+  "summary": "A healthy crop of new community apps hits the showcase, plus a quick fix for Anthropic client compatibility.\n\nThe community directory gets heavier. We merged in Worl Tools (offline desktop utilities), App Forge, Pyanchor (a live-edit sidecar for Next.js/Vite), and ZenWall AI (minimalist vertical wallpapers). More tools, more pixels, more code.\n\nIf you were using Anthropic-shaped clients like Claude Code with strict OpenAI-compatible models, you might have hit a wall of 400 errors. We now strip the cache_control field from message content parts before forwarding the request. Problem solved.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 10687,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10688,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10689,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10691,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10696,
+      "date": "2026-05-05"
+    }
+  ],
+  "generated_at": "2026-05-06T06:52:11.050581+00:00"
+}

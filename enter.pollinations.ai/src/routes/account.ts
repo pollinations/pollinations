@@ -143,7 +143,7 @@ const CreateKeySchema = z.object({
         .boolean()
         .optional()
         .describe(
-            "Enable developer earnings for publishable app keys. Defaults to true; send false to opt out.",
+            "Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.",
         ),
 });
 
@@ -1088,7 +1088,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings on; send `earningsEnabled: false` to opt out. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },

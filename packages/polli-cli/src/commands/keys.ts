@@ -175,10 +175,7 @@ const create = new Command("create")
         "--redirect-uri <uri...>",
         "Allowed BYOP redirect URI(s) for publishable app keys",
     )
-    .option(
-        "--no-earnings",
-        "Disable developer earnings for publishable app keys",
-    )
+    .option("--earnings", "Enable developer earnings for publishable app keys")
     .option(
         "--permissions <perms...>",
         'Account permissions (e.g. profile usage). "keys" is auto-stripped.',
@@ -189,7 +186,7 @@ const create = new Command("create")
 Examples:
   polli keys create --name my-bot --type secret
   polli keys create --name my-app --type publishable --redirect-uri https://myapp.com/callback
-  polli keys create --name my-app --type publishable --redirect-uri https://myapp.com/callback --no-earnings
+  polli keys create --name my-app --type publishable --redirect-uri https://myapp.com/callback --earnings
 `,
     )
     .action(async (opts) => {
@@ -205,7 +202,7 @@ Examples:
                 process.exit(1);
             }
             if (opts.earnings !== undefined && opts.type !== "publishable") {
-                printError("--no-earnings requires --type publishable");
+                printError("--earnings requires --type publishable");
                 process.exit(1);
             }
             if (opts.expiresIn !== undefined)

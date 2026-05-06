@@ -30,7 +30,7 @@ describe("Account Key Management API", () => {
             expect(data.type).toBe("secret");
         });
 
-        test("should create a publishable app key with redirect URIs", async ({
+        test("should create a publishable app key with earnings off by default", async ({
             sessionToken,
         }) => {
             const response = await SELF.fetch(
@@ -56,10 +56,10 @@ describe("Account Key Management API", () => {
             expect(data.metadata.redirectUris).toEqual([
                 "https://cli.example/callback",
             ]);
-            expect(data.metadata.earningsEnabled).toBe(true);
+            expect(data.metadata.earningsEnabled).toBe(false);
         });
 
-        test("should create a publishable app key with earnings disabled", async ({
+        test("should create a publishable app key with earnings enabled", async ({
             sessionToken,
         }) => {
             const response = await SELF.fetch(
@@ -71,10 +71,10 @@ describe("Account Key Management API", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        name: "test-pub-key-no-earnings",
+                        name: "test-pub-key-earnings",
                         type: "publishable",
-                        redirectUris: ["https://cli-disabled.example/callback"],
-                        earningsEnabled: false,
+                        redirectUris: ["https://cli-earnings.example/callback"],
+                        earningsEnabled: true,
                     }),
                 },
             );
@@ -84,9 +84,9 @@ describe("Account Key Management API", () => {
             expect(data.key.startsWith("pk_")).toBe(true);
             expect(data.type).toBe("publishable");
             expect(data.metadata.redirectUris).toEqual([
-                "https://cli-disabled.example/callback",
+                "https://cli-earnings.example/callback",
             ]);
-            expect(data.metadata.earningsEnabled).toBe(false);
+            expect(data.metadata.earningsEnabled).toBe(true);
         });
 
         test("should create key with permissions and budget", async ({

@@ -408,12 +408,12 @@ function generateLLMDoc(): string {
         "- redirectUris (string[], optional): OAuth redirect URIs for publishable app keys",
     );
     lines.push(
-        "- earningsEnabled (boolean, optional): Developer earnings for publishable app keys; false opts out",
+        "- earningsEnabled (boolean, optional): Developer earnings for publishable app keys; true opts in",
     );
     lines.push("Example app key body:");
     lines.push("```json");
     lines.push(
-        '{"name":"myapp","type":"publishable","redirectUris":["https://myapp.com/callback"]}',
+        '{"name":"myapp","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}',
     );
     lines.push("```");
     lines.push(

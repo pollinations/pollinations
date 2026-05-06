@@ -90,7 +90,7 @@ describe("API Key Management", () => {
             expect(created.metadata.earningsEnabled).toBe(true);
         });
 
-        test("should accept loopback redirectUris metadata", async ({
+        test("should accept loopback redirectUris metadata with earnings off by default", async ({
             sessionToken,
         }) => {
             const response = await SELF.fetch(
@@ -116,7 +116,7 @@ describe("API Key Management", () => {
             expect(created.metadata.redirectUris).toEqual([
                 "http://localhost:3456/callback",
             ]);
-            expect(created.metadata.earningsEnabled).toBe(true);
+            expect(created.metadata.earningsEnabled).toBe(false);
         });
 
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({

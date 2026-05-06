@@ -72,7 +72,7 @@ polli docs --open            # open in browser
 polli keys list
 polli keys create --name mybot --budget 100
 polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback
-polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback --no-earnings
+polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback --earnings
 polli keys revoke <id>
 
 polli usage                  # pollen balance
@@ -80,7 +80,7 @@ polli usage --history        # recent requests
 polli usage --daily          # daily spend
 ```
 
-Publishable app keys default developer earnings on; pass `--no-earnings` to disable them.
+Publishable app keys default developer earnings off; pass `--earnings` to enable them.
 
 ## Links
 

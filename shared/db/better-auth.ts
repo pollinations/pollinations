@@ -128,10 +128,12 @@ export const apikey = sqliteTable("apikey", {
   permissions: text("permissions"),
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
+  byopClientKeyId: text("byop_client_key_id"),
 }, (table) => [
   index("idx_apikey_key").on(table.key),
   index('idx_apikey_expires_at').on(table.expiresAt),
   index("idx_apikey_user_id").on(table.userId),
+  index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
 ]);
 
 // Drizzle relations for query builder joins

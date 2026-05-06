@@ -19,7 +19,7 @@ type ApiKeyDialogProps = {
     onComplete: () => void;
     triggerLabel?: string;
     triggerClassName?: string;
-    /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only name + URL. */
+    /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
     simplified?: boolean;
 };
 
@@ -114,14 +114,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         !simplified &&
         Array.isArray(allowedModels) &&
         allowedModels.length === 0;
-    const isMissingRedirectUris =
-        simplified && redirectUris.filter((v) => v.trim()).length === 0;
     const isCreateDisabled =
-        !createdKey &&
-        (!name.trim() ||
-            isSubmitting ||
-            noModelsSelected ||
-            isMissingRedirectUris);
+        !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
     const keyInputStyles = {
         editableInputClasses:
             "border-blue-200 bg-blue-50 focus:outline-none focus-visible:border-blue-300 focus-visible:ring-1 focus-visible:ring-blue-200",
@@ -138,9 +132,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const createDisabledReason =
         !createdKey && noModelsSelected
             ? "Select at least one model"
-            : !createdKey && isMissingRedirectUris
-              ? "Add at least one redirect URI"
-              : undefined;
+            : undefined;
 
     const submitButton = (
         <Button

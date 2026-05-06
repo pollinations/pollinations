@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { apiKey } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -15,6 +16,9 @@ export interface AuthenticatedApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    byopClientKeyId?: string | null;
+    byopClientName?: string | null;
+    byopClientUserId?: string | null;
     rawKey?: string;
 }
 
@@ -161,10 +165,20 @@ export async function authenticateApiKeyRequest(opts: {
 
     const db = drizzle(opts.env.DB, { schema });
     const userId = typeof key.userId === "string" ? key.userId : undefined;
+    const byopClientKey = alias(schema.apikey, "byop_client_key");
     const [apiKeyExtra, userData] = await Promise.all([
         db
-            .select({ pollenBalance: schema.apikey.pollenBalance })
+            .select({
+                pollenBalance: schema.apikey.pollenBalance,
+                byopClientKeyId: schema.apikey.byopClientKeyId,
+                byopClientName: byopClientKey.name,
+                byopClientUserId: byopClientKey.userId,
+            })
             .from(schema.apikey)
+            .leftJoin(
+                byopClientKey,
+                eq(byopClientKey.id, schema.apikey.byopClientKeyId),
+            )
             .where(eq(schema.apikey.id, keyId))
             .get(),
         userId
@@ -188,6 +202,9 @@ export async function authenticateApiKeyRequest(opts: {
             permissions: normalizePermissions(key.permissions),
             metadata: normalizeMetadata(key.metadata),
             pollenBalance: apiKeyExtra?.pollenBalance ?? null,
+            byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
+            byopClientName: apiKeyExtra?.byopClientName ?? null,
+            byopClientUserId: apiKeyExtra?.byopClientUserId ?? null,
             rawKey: rawApiKey,
         },
         rawApiKey,

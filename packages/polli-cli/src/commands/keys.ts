@@ -201,7 +201,7 @@ Examples:
                 printError("--redirect-uri requires --type publishable");
                 process.exit(1);
             }
-            if (opts.earnings !== undefined && opts.type !== "publishable") {
+            if (opts.earnings === true && opts.type !== "publishable") {
                 printError("--earnings requires --type publishable");
                 process.exit(1);
             }
@@ -218,8 +218,7 @@ Examples:
             }
             if (opts.permissions) body.accountPermissions = opts.permissions;
             if (opts.redirectUri) body.redirectUris = opts.redirectUri;
-            if (opts.earnings !== undefined)
-                body.earningsEnabled = opts.earnings;
+            if (opts.earnings === true) body.earningsEnabled = true;
 
             const created = await gen<CreateKeyResponse>("/account/keys", {
                 apiKey: key,

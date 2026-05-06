@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/util.ts";
 import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
+import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
 
 type MultiSelectProps = {
     options: { value: string; label: string }[];
@@ -12,6 +13,7 @@ type MultiSelectProps = {
     disabledText?: string;
     align?: "start" | "end";
     label?: string;
+    theme: DashboardTheme;
 };
 
 export const MultiSelect: FC<MultiSelectProps> = ({
@@ -23,7 +25,9 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledText,
     align = "start",
     label,
+    theme,
 }) => {
+    const tokens = themeTokens[theme];
     const [open, setOpen] = useState(false);
     const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
@@ -100,7 +104,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     return (
         <div ref={ref} className="relative group flex items-center gap-2">
             {label && (
-                <span className="text-xs font-medium text-pink-800/75">
+                <span className={cn("text-xs font-medium", tokens.text.muted)}>
                     {label}
                 </span>
             )}
@@ -111,20 +115,28 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 className={cn(
                     "inline-flex min-h-8 min-w-[140px] items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
                     disabled
-                        ? "cursor-not-allowed border-pink-200 bg-pink-50/50 opacity-60"
+                        ? cn(
+                              "cursor-not-allowed opacity-60",
+                              tokens.border.subtle,
+                              tokens.bg.subtle,
+                          )
                         : open
-                          ? "border-pink-300 bg-pink-200"
-                          : "border-pink-300 bg-pink-50/80 hover:bg-pink-100",
+                          ? cn(tokens.border.idle, tokens.bg.active)
+                          : cn(
+                                tokens.border.idle,
+                                tokens.bg.idle,
+                                tokens.bg.hover,
+                            ),
                 )}
             >
                 <span
                     className={cn(
                         "truncate flex-1 text-left",
                         disabled
-                            ? "text-pink-700/60"
+                            ? tokens.text.softer
                             : open
-                              ? "text-pink-950"
-                              : "text-pink-900",
+                              ? tokens.text.strong
+                              : tokens.text.base,
                     )}
                 >
                     {displayText}
@@ -132,7 +144,9 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 <svg
                     className={cn(
                         "w-3 h-3 transition-transform",
-                        open ? "rotate-180 text-pink-950" : "text-pink-700",
+                        open
+                            ? cn("rotate-180", tokens.text.strong)
+                            : tokens.text.soft,
                     )}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -155,7 +169,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
             {open && !disabled && (
                 <div
                     className={cn(
-                        "min-w-[320px] overflow-hidden rounded-lg border border-pink-300 bg-white shadow-lg z-50",
+                        "min-w-[320px] overflow-hidden rounded-lg border bg-white shadow-lg z-50",
+                        tokens.border.idle,
                         !dropdownStyle.position && "absolute",
                         !dropdownStyle.position &&
                             (openDirection === "up"
@@ -168,7 +183,10 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 >
                     <div
                         ref={scrollAreaRef}
-                        className="max-h-64 overflow-y-auto overflow-x-hidden scrollbar-subtle scrollbar-theme-pink"
+                        className={cn(
+                            "max-h-64 overflow-y-auto overflow-x-hidden scrollbar-subtle",
+                            tokens.scrollbar,
+                        )}
                     >
                         <button
                             type="button"
@@ -176,16 +194,24 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                 isAllSelected
-                                    ? "bg-pink-200 text-pink-950 font-medium"
-                                    : "text-pink-900 hover:bg-pink-50",
+                                    ? cn(
+                                          tokens.bg.active,
+                                          tokens.text.strong,
+                                          "font-medium",
+                                      )
+                                    : cn(tokens.text.base, tokens.bg.soft),
                             )}
                         >
                             <span
                                 className={cn(
                                     "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                     isAllSelected
-                                        ? "bg-pink-200 border-pink-300 text-pink-950"
-                                        : "border-pink-300",
+                                        ? cn(
+                                              tokens.bg.active,
+                                              tokens.border.idle,
+                                              tokens.text.strong,
+                                          )
+                                        : tokens.border.idle,
                                 )}
                             >
                                 {isAllSelected && "✓"}
@@ -202,16 +228,26 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                         isChecked
-                                            ? "bg-pink-200 text-pink-950"
-                                            : "text-pink-900 hover:bg-pink-50",
+                                            ? cn(
+                                                  tokens.bg.active,
+                                                  tokens.text.strong,
+                                              )
+                                            : cn(
+                                                  tokens.text.base,
+                                                  tokens.bg.soft,
+                                              ),
                                     )}
                                 >
                                     <span
                                         className={cn(
                                             "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                             isChecked
-                                                ? "bg-pink-200 border-pink-300 text-pink-950"
-                                                : "border-pink-300",
+                                                ? cn(
+                                                      tokens.bg.active,
+                                                      tokens.border.idle,
+                                                      tokens.text.strong,
+                                                  )
+                                                : tokens.border.idle,
                                         )}
                                     >
                                         {isChecked && "✓"}

@@ -198,10 +198,7 @@ async function validateClientRedirectBinding(
         return null;
     }
 
-    if (
-        typeof requestedClientId !== "string" ||
-        !requestedClientId.startsWith("pk_")
-    ) {
+    if (!requestedClientId.startsWith("pk_")) {
         rejectInvalidClientId();
     }
 

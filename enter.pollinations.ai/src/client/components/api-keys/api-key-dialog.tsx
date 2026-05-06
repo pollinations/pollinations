@@ -200,8 +200,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             {simplified ? (
                                 <ul className="list-disc space-y-1 pl-5">
                                     <li>
-                                        Add the callback URL your app will use
-                                        after consent.
+                                        For web apps, add the callback URL your
+                                        app will use after consent.
                                     </li>
                                     <li>
                                         We return a scoped API key in the URL

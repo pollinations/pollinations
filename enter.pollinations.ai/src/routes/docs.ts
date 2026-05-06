@@ -408,7 +408,7 @@ function generateLLMDoc(): string {
         "- redirectUris (string[], optional): OAuth redirect URIs for publishable app keys",
     );
     lines.push(
-        "- earningsEnabled (boolean, optional): Developer earnings for publishable app keys. Defaults true; false opts out",
+        "- earningsEnabled (boolean, optional): Developer earnings for publishable app keys; false opts out",
     );
     lines.push("Example app key body:");
     lines.push("```json");

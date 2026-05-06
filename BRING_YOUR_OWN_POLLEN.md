@@ -10,7 +10,7 @@ To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → 
 
 <p align="left"><img src="https://media.pollinations.ai/1133540dc4c19635" alt="Edit App Key" width="420"></p>
 
-Set the **Name** (shows on the consent screen) and at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
+Set the **Name** (shows on the consent screen). For web apps, add at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
 When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
@@ -22,7 +22,7 @@ Once signed in, they review the requested access and confirm:
 
 ## 💰 Earnings
 
-Each App Key has a `Developer earnings` flag. When on (the default), every request through the key bills the user +25% over model cost and credits the difference to your wallet.
+Each App Key has a `Developer earnings` flag. When enabled, every request through the key bills the user +25% over model cost and credits the difference to your wallet.
 
 ### How it's billed
 

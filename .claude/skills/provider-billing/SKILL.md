@@ -35,6 +35,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Perplexity (Sonar web-search) | [providers/perplexity.md](providers/perplexity.md) | ✅ Production — `POST /chat/completions` is the only endpoint that exists. Every billing/usage/models path returns 404. Shadow cost via Tinybird; credit pool balance dashboard-only. | 2026-04-12 |
 | Fireworks AI | [providers/fireworks.md](providers/fireworks.md) | ✅ Production — `firectl account get` for live balance, `billing export-metrics` for per-model CSV. $10k credit pool on `pollinations` account. | 2026-04-12 |
 | DeepInfra | [providers/deepinfra.md](providers/deepinfra.md) | ✅ Production — OpenAI-compatible runtime + REST token management. Billing usage endpoints expose cents by month/token. | 2026-04-24 |
+| OpenRouter | [providers/openrouter.md](providers/openrouter.md) | ✅ Production candidate — `/credits` exposes total credits/usage; key management API supports rolling rotation. | 2026-05-06 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |
 | Vercel | `providers/vercel.md` | ⏳ TODO | — |

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10728,
+  "title": "refactor: centralize dashboard color system",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10728",
+  "merged_at": "2026-05-06T23:17:08Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Painting by numbers",
+    "blurb": "We've centralized the dashboard color system, making it a breeze to re-theme pages with a single line of code. No more hunting down hardcoded hex codes!",
+    "summary": "Centralized the dashboard color system by introducing a per-theme token bundle for Tailwind classes, allowing one-line retheming of pages.",
+    "impact": "Developers can now easily update dashboard themes without hunting down hardcoded color classes across multiple components.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "tailwind",
+      "refactor",
+      "theme"
+    ],
+    "visual_concept": "The pollinations bee wearing a painter's beret, holding a palette of colors, standing next to a dashboard UI wireframe. A robot companion is organizing paint buckets.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a wooden paint palette next to a glowing dashboard wireframe. A chunky robot with a CRT monitor head is organizing pastel paint buckets. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-06/PR-10728.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, holding a wooden paint palette next to a glowing dashboard wireframe. A chunky robot with a CRT monitor head is organizing pastel paint buckets. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-05-06T23:18:03.130403+00:00"
+}

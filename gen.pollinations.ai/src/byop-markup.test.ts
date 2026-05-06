@@ -210,7 +210,6 @@ describe("BYOP markup", () => {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
-                    byopClientKeyId: "pk-preflight",
                     pollenBalance: 2,
                 },
             },
@@ -247,7 +246,6 @@ describe("BYOP markup", () => {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
-                    byopClientKeyId: "pk-preflight",
                     pollenBalance: 2,
                 },
             },
@@ -325,6 +323,62 @@ describe("BYOP markup", () => {
                 getBalance: async () => ({
                     tierBalance: 10,
                     packBalance: 10,
+                }),
+            },
+            model: { requested: "openai", resolved: "openai" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
+            {
+                status: 402,
+            },
+        );
+    });
+
+    it("requires finite API key budgets to cover estimated BYOP markup", async () => {
+        const { payerId, pkId } = await setupPayerAndDev();
+        const vars = {
+            auth: {
+                user: { id: payerId },
+                apiKey: {
+                    id: "sk-test",
+                    byopClientKeyId: pkId,
+                    pollenBalance: 1.1,
+                },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 10,
+                    packBalance: 10,
+                }),
+            },
+            model: { requested: "openai", resolved: "openai" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
+            {
+                status: 402,
+            },
+        );
+    });
+
+    it("uses estimated BYOP markup for user balance preflight", async () => {
+        const { payerId, pkId } = await setupPayerAndDev();
+        const vars = {
+            auth: {
+                user: { id: payerId },
+                apiKey: {
+                    id: "sk-test",
+                    byopClientKeyId: pkId,
+                    pollenBalance: 10,
+                },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 1.1,
+                    packBalance: 0,
                 }),
             },
             model: { requested: "openai", resolved: "openai" },

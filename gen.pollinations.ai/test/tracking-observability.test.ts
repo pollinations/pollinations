@@ -25,7 +25,6 @@ function createTestApp(consumePollen: (amount: number) => Promise<void>) {
                 throw new Error("user should not be required in this test");
             },
             requireModelAccess: () => {},
-            requireKeyBudget: () => {},
         });
         c.set("balance", {
             requirePositiveBalance: async () => {},

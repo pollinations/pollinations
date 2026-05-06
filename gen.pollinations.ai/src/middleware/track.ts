@@ -252,7 +252,7 @@ export const track = (eventType: EventType) =>
                 });
 
                 await c.var.frontendKeyRateLimit?.consumePollen(
-                    finalEvent.totalPrice || 0,
+                    responseTracking.price?.totalPrice || 0,
                 );
 
                 log.trace(

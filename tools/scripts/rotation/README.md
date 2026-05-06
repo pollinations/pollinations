@@ -44,7 +44,6 @@ Recipient roles are labelled in `sops-recipients.yaml` (`core`, `itachi`, `ci`) 
 | `rotate-genai-perplexity.sh` | Perplexity | `generate_auth_token` → deploy → `revoke_auth_token` | 0 (rolling) |
 | `rotate-genai-fireworks.sh` | Fireworks | REST create → deploy → delete old | 0 (rolling) |
 | `rotate-genai-deepinfra.sh` | DeepInfra | `POST /v1/api-tokens` → deploy → `DELETE /v1/api-tokens/{token}` | 0 (rolling) |
-| `rotate-genai-openrouter.sh` | OpenRouter | `POST /api/v1/keys` → deploy → `DELETE /api/v1/keys/{hash}` | 0 (rolling) |
 | `rotate-genai-xai.sh` | xAI | `POST /auth/api-keys` create → deploy → `DELETE /auth/api-keys/{id}` | 0 (rolling) |
 | `rotate-genai-elevenlabs.sh` | ElevenLabs | SA create → deploy → delete old | 0 (rolling) |
 
@@ -317,13 +316,12 @@ Each script follows the same 13-step flow; the table describes what is verified,
 
 ## Admin credentials
 
-Five scripts need extra admin credentials beyond the keys they rotate:
+Four scripts need extra admin credentials beyond the keys they rotate:
 
 | Script | Admin credentials |
 |--------|-------------------|
 | `rotate-ops-tinybird.sh` | `TINYBIRD_ADMIN_TOKEN` |
 | `rotate-genai-fireworks.sh` | `FIREWORKS_ACCOUNT_ID`, `FIREWORKS_USER_ID` |
-| `rotate-genai-openrouter.sh` | `OPENROUTER_MANAGEMENT_API_KEY` |
 | `rotate-genai-xai.sh` | `XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID` |
 | `rotate-genai-elevenlabs.sh` | `ELEVENLABS_SERVICE_ACCOUNT_ID`, `ELEVENLABS_ADMIN_API_KEY` |
 
@@ -345,7 +343,6 @@ sops tools/scripts/rotation/secrets.vars.json
 Quick ways to obtain the admin credentials:
 - `TINYBIRD_ADMIN_TOKEN` — `tb --cloud token copy "admin token"` (puts it in the macOS clipboard, then `pbpaste`).
 - `XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID` — console.x.ai → Team settings.
-- `OPENROUTER_MANAGEMENT_API_KEY` — OpenRouter → Management API Keys.
 - `ELEVENLABS_ADMIN_API_KEY`, `ELEVENLABS_SERVICE_ACCOUNT_ID` — ElevenLabs → Developers → Service Accounts (key needs `workspace_read` + `workspace_write`).
 - `FIREWORKS_ACCOUNT_ID`, `FIREWORKS_USER_ID` — Fireworks dashboard or `~/.fireworks/auth.ini`.
 

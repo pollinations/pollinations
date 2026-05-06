@@ -115,16 +115,6 @@ export function createDeepInfraModelConfig(
     );
 }
 
-export function createOpenRouterModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://openrouter.ai/api/v1",
-        process.env.OPENROUTER_API_KEY,
-        overrides,
-    );
-}
-
 export function createPerplexityModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

@@ -1,0 +1,79 @@
+name: Community Quest
+description: Propose a community quest — earn Pollen by shipping a self-contained piece of work
+title: "[QUEST] "
+labels: ["DEV-QUEST"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## How quests work
+
+        Community quests are self-contained tasks with a fixed Pollen reward paid on PR merge.
+
+        1. Comment on this issue to claim it (one dev per quest)
+        2. A core team member assigns the issue to you
+        3. Open a PR against `main` referencing this issue (`Fixes #N`)
+        4. Once merged, your reward is credited to your [enter.pollinations.ai](https://enter.pollinations.ai) account
+
+        Need help? Drop a comment here or ask in [Discord #dev-quest](https://discord.gg/pollinations-ai-885844321461485618).
+
+  - type: input
+    id: reward
+    attributes:
+      label: Reward
+      description: Pollen credited on PR merge
+      placeholder: "e.g. 20 Pollen"
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: One or two sentences describing what success looks like.
+      placeholder: "Add Llama 4 Maverick via Fireworks so it shows up in /v1/models and routes through the existing Fireworks provider config."
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: What to build
+      description: Concrete changes needed. Reference files, paths, and any existing code to follow.
+      value: |
+        -
+        -
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Testable checklist. The PR ships when every box is ticked.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ] Tests passing locally (`npm run test`)
+        - [ ] `npx biome check --write` run on modified files
+    validations:
+      required: true
+
+  - type: textarea
+    id: resources
+    attributes:
+      label: Resources
+      description: Links to docs, related code, prior PRs, or skills that help.
+      value: |
+        - [AGENTS.md](https://github.com/pollinations/pollinations/blob/main/AGENTS.md)
+        - [API docs](https://gen.pollinations.ai/api/docs)
+        -
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        > **Claiming:** Comment below to claim this quest. Wait for a core team member to assign it before starting work — this keeps quests one-dev-at-a-time.
+        > **PR:** When ready, open a PR with `Fixes #N` in the description so the issue closes automatically on merge.

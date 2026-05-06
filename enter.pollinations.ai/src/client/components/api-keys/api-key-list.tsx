@@ -239,11 +239,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
-                                    Developer earnings are on by default. Users
-                                    are billed +25% over model cost, meaning 20%
-                                    of their spend is credited to your wallet.{" "}
+                                    Turn on developer earnings. Users are billed
+                                    25% extra, credited to your wallet.{" "}
                                     <a
-                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                        href="https://gen.pollinations.ai/docs#tag/-bring-your-own-pollen"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="font-medium text-blue-700 hover:text-blue-900"

@@ -118,7 +118,7 @@ const DeveloperEarningsSwitch: FC<DeveloperEarningsSwitchProps> = ({
             <div className="flex min-w-0 items-center text-sm font-semibold">
                 Developer earnings
                 <InfoTip
-                    text="On by default. Users are billed +25% over model cost (= 20% of their spend). Earnings drip into your tier or paid balance — mirroring whichever the user paid from. App Key traffic only."
+                    text="Turn on developer earnings. Users are billed 25% extra, credited to your wallet."
                     label="Developer earnings information"
                     tone="blue"
                     placement="top"

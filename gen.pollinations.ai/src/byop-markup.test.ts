@@ -179,7 +179,7 @@ describe("BYOP markup", () => {
         expect(creatorBalances.packBalance).toBeCloseTo(MARKUP_PCT, 10);
     });
 
-    it("bills baseline plus markup for any payer tier", async () => {
+    it("bills baseline plus markup without a payer-tier gate", async () => {
         const { payerId, devId, pkId } = await setupPayerAndDev({
             payerTier: "flower",
         });

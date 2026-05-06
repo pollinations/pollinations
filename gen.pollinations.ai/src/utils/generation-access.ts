@@ -1,6 +1,8 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
+import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -28,40 +30,30 @@ export async function checkBalance(
     const isPaidOnly = serviceDefinition.paidOnly ?? false;
 
     const stats = await getModelStats(env.KV, log);
-    let estimatedCost = getEstimatedPrice(stats, model.resolved);
+    const estimatedCost = getEstimatedPrice(stats, model.resolved);
 
-    if (estimatedCost > 5) {
-        log.warn(
-            "Estimated cost for {model} is suspiciously high ({cost}). Capping to 2.0",
-            {
-                model: model.resolved,
-                cost: estimatedCost,
-            },
-        );
-        estimatedCost = 2.0;
+    const apiKeyBudget = auth.apiKey?.pollenBalance;
+    const requiredBudget = Math.max(0, estimatedCost);
+    if (typeof apiKeyBudget === "number" && apiKeyBudget <= requiredBudget) {
+        throw new HTTPException(402, {
+            message: `API key budget too low. This model costs ~${estimatedCost.toFixed(4)} pollen per request, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
+        });
     }
 
-    if (isPaidOnly) {
-        await balance.requirePaidBalance(
-            auth.user.id,
-            "This model requires 💳 paid balance. 🌱 Tier balance cannot be used.",
-        );
-        balance.balanceCheckResult = createBalanceCheckResult(
-            await balance.getBalance(auth.user.id),
-            true,
-            estimatedCost,
-        );
-        return;
+    const userBalance = await balance.getBalance(auth.user.id);
+
+    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
+        const available = isPaidOnly
+            ? userBalance.packBalance
+            : Math.max(userBalance.tierBalance, userBalance.packBalance);
+        throw new HTTPException(402, {
+            message: `Insufficient balance. This model costs ~${estimatedCost.toFixed(4)} pollen per request, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
+        });
     }
 
-    await balance.requirePositiveBalance(
-        auth.user.id,
-        "Insufficient pollen balance to use this model",
-    );
     balance.balanceCheckResult = createBalanceCheckResult(
-        await balance.getBalance(auth.user.id),
-        false,
-        estimatedCost,
+        userBalance,
+        isPaidOnly,
     );
 }
 

@@ -19,13 +19,13 @@ import { checkBalance } from "@/utils/generation-access.ts";
 
 const db = drizzle(env.DB);
 
-function fakeStatsEnv(price: number): CloudflareBindings {
+function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
     return {
         DB: env.DB,
         KV: {
             get: async () => ({
                 value: {
-                    data: [{ model: "openai", avg_cost_usd: price }],
+                    data: [{ model, avg_cost_usd: price }],
                 },
                 ttl: 3600,
             }),
@@ -204,14 +204,14 @@ describe("BYOP markup", () => {
         );
     });
 
-    it("uses total-price model estimates in preflight without resolving markup", async () => {
+    it("allows regular preflight when one bucket is above the model estimate", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
                     byopClientKeyId: "pk-preflight",
-                    pollenBalance: 0.1,
+                    pollenBalance: 2,
                 },
             },
             balance: {
@@ -235,8 +235,106 @@ describe("BYOP markup", () => {
             } as unknown as D1Database,
         } as CloudflareBindings);
 
-        expect(vars.balance.balanceCheckResult?.selectedMeterSlug).toBe(
-            "v1:meter:pack",
+        expect(vars.balance.balanceCheckResult?.balances).toEqual({
+            "v1:meter:tier": 1,
+            "v1:meter:pack": 2,
+        });
+    });
+
+    it("rejects regular preflight when neither bucket is above the model estimate", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: {
+                    id: "sk-test",
+                    byopClientKeyId: "pk-preflight",
+                    pollenBalance: 2,
+                },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 1,
+                    packBalance: 1,
+                }),
+            },
+            model: { requested: "openai", resolved: "openai" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
+            {
+                status: 402,
+            },
+        );
+    });
+
+    it("uses positive balance as the fallback when model estimate is zero", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 2 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 0,
+                    packBalance: 0.01,
+                }),
+            },
+            model: { requested: "openai", resolved: "openai" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await checkBalance(vars, fakeStatsEnv(0));
+
+        expect(vars.balance.balanceCheckResult?.balances).toEqual({
+            "v1:meter:tier": 0,
+            "v1:meter:pack": 0.01,
+        });
+    });
+
+    it("requires paid-only preflight to have pack balance above the model estimate", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 2 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 10,
+                    packBalance: 1,
+                }),
+            },
+            model: { requested: "gpt-5.5", resolved: "gpt-5.5" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, fakeStatsEnv(1, "gpt-5.5")),
+        ).rejects.toMatchObject({
+            status: 402,
+        });
+    });
+
+    it("rejects finite API key budgets that are not above the model estimate", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 1 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 10,
+                    packBalance: 10,
+                }),
+            },
+            model: { requested: "openai", resolved: "openai" },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
+            {
+                status: 402,
+            },
         );
     });
 

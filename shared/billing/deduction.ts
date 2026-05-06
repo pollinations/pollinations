@@ -1,13 +1,8 @@
 import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
-import {
-    type BalanceBucket,
-    selectBalanceBucket,
-    type UserBalance,
-} from "./balance.ts";
+import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
 
-export const BALANCE_BUCKETS = ["tier", "pack"] as const;
 export type Bucket = BalanceBucket;
 
 const BUCKET_COLUMNS = {
@@ -15,27 +10,12 @@ const BUCKET_COLUMNS = {
     pack: userTable.packBalance,
 } as const satisfies Record<Bucket, unknown>;
 
-export const BILLING_POLICIES = {
-    regular: {
-        spendOrder: ["tier", "pack"],
-        debtBucket: "tier",
-    },
-    paidOnly: {
-        spendOrder: ["pack"],
-        debtBucket: "pack",
-    },
-} as const satisfies Record<
-    string,
-    { spendOrder: readonly Bucket[]; debtBucket: Bucket }
->;
-
-type BillingPolicy = (typeof BILLING_POLICIES)[keyof typeof BILLING_POLICIES];
-
 /**
  * Atomically deducts pollen from user balance.
  *
- * Regular requests are binary: if tier can cover the full charge, the full
- * charge is deducted from tier; otherwise the full charge is deducted from pack.
+ * Regular requests are binary: tier pays when it can cover the actual charge,
+ * pack pays when tier cannot cover and pack is positive, and regular overage
+ * falls back to tier when pack is empty.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
@@ -44,25 +24,35 @@ export async function atomicDeductUserBalance(
 ): Promise<{ ok: boolean; bucket: Bucket | null }> {
     if (amount <= 0) return { ok: true, bucket: null };
 
-    const tierResult = await db.run(sql`
-			UPDATE ${userTable}
-			SET tier_balance = COALESCE(tier_balance, 0) - ${amount}
-			WHERE id = ${userId}
-			AND COALESCE(tier_balance, 0) >= ${amount}
-		`);
+    const row = await db.get<{ bucket: Bucket }>(sql`
+        WITH decision AS MATERIALIZED (
+            SELECT
+                id,
+                CASE
+                    WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
+                    WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'
+                    ELSE 'tier'
+                END AS bucket
+            FROM ${userTable}
+            WHERE id = ${userId}
+        )
+        UPDATE ${userTable}
+        SET
+            tier_balance = CASE
+                WHEN (SELECT bucket FROM decision) = 'tier'
+                    THEN COALESCE(tier_balance, 0) - ${amount}
+                ELSE tier_balance
+            END,
+            pack_balance = CASE
+                WHEN (SELECT bucket FROM decision) = 'pack'
+                    THEN COALESCE(pack_balance, 0) - ${amount}
+                ELSE pack_balance
+            END
+        WHERE id = (SELECT id FROM decision)
+        RETURNING (SELECT bucket FROM decision) AS bucket
+    `);
 
-    if ((tierResult.meta.changes ?? 0) > 0) {
-        return { ok: true, bucket: "tier" };
-    }
-
-    const result = await db.run(sql`
-			UPDATE ${userTable}
-			SET pack_balance = COALESCE(pack_balance, 0) - ${amount}
-			WHERE id = ${userId}
-		`);
-
-    const ok = (result.meta.changes ?? 0) > 0;
-    return { ok, bucket: ok ? "pack" : null };
+    return { ok: !!row, bucket: row?.bucket ?? null };
 }
 
 /**
@@ -157,30 +147,6 @@ export async function getUserBalances(
     };
 }
 
-export type DeductionSource = Record<`from${Capitalize<Bucket>}`, number>;
-
-/** Identifies which bucket pays a deduction under a policy. */
-export function identifyDeductionSource(
-    balances: UserBalance,
-    amount: number,
-    policy: BillingPolicy = BILLING_POLICIES.regular,
-): DeductionSource {
-    const zero: DeductionSource = {
-        fromTier: 0,
-        fromPack: 0,
-    };
-    if (amount <= 0) return zero;
-
-    const bucket =
-        policy === BILLING_POLICIES.paidOnly
-            ? "pack"
-            : selectBalanceBucket(balances, amount);
-    return {
-        ...zero,
-        [`from${capitalizeBucket(bucket)}`]: amount,
-    };
-}
-
 /**
  * Atomically deducts pollen from paid balance only (excluding tier_balance).
  *
@@ -204,8 +170,4 @@ export async function atomicDeductPaidBalance(
 
     const ok = (result.meta.changes ?? 0) > 0;
     return { ok, bucket: ok ? "pack" : null };
-}
-
-function capitalizeBucket(bucket: Bucket): Capitalize<Bucket> {
-    return (bucket[0].toUpperCase() + bucket.slice(1)) as Capitalize<Bucket>;
 }

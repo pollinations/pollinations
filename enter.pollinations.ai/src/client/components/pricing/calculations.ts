@@ -5,6 +5,7 @@
  * Returns "—" when no data is available - no theoretical estimates.
  */
 
+import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import millify from "millify";
 import type { ModelPrice } from "./types.ts";
 
@@ -40,7 +41,9 @@ export function canAffordModel(
     isPaidOnly: boolean,
 ): boolean {
     const cost = model.realAvgCost ?? 0;
-    if (cost <= 0) return true;
-    if (isPaidOnly) return packBalance >= cost;
-    return tierBalance >= cost || packBalance >= cost;
+    return canCoverEstimatedCharge(
+        { tierBalance, packBalance },
+        cost,
+        isPaidOnly,
+    );
 }

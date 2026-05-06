@@ -37,9 +37,10 @@ function parseMetadata(
 ): Record<string, unknown> {
     if (!raw) return {};
     try {
-        let parsed = JSON.parse(raw);
-        if (typeof parsed === "string") parsed = JSON.parse(parsed);
-        return parsed && typeof parsed === "object" ? parsed : {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+            ? parsed
+            : {};
     } catch {
         return {};
     }
@@ -88,7 +89,7 @@ export async function resolveDevMarkup(
  */
 export async function handleBalanceDeduction(
     params: DeductionParams,
-): Promise<{ markup: MarkupResolution | null }> {
+): Promise<{ markup: MarkupResolution | null; payerBucket: Bucket | null }> {
     const {
         db,
         isBilledUsage,
@@ -100,7 +101,9 @@ export async function handleBalanceDeduction(
         modelResolved,
     } = params;
 
-    if (!isBilledUsage || !totalPrice) return { markup: null };
+    if (!isBilledUsage || !totalPrice) {
+        return { markup: null, payerBucket: null };
+    }
 
     const resolved = await resolveDevMarkup(
         db,
@@ -180,7 +183,7 @@ export async function handleBalanceDeduction(
         throw error;
     }
 
-    return { markup };
+    return { markup, payerBucket };
 }
 
 function hasApiKeyBudget(

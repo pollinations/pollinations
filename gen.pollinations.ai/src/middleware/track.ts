@@ -191,16 +191,44 @@ export const track = (eventType: EventType) =>
                 const balanceDb = db as unknown as Parameters<
                     typeof handleBalanceDeduction
                 >[0]["db"];
-                const { markup } = await handleBalanceDeduction({
-                    db: balanceDb,
-                    isBilledUsage: responseTracking.isBilledUsage,
-                    totalPrice: responseTracking.price?.totalPrice,
-                    userId: userTracking.userId,
-                    apiKeyId: c.var.auth?.apiKey?.id,
-                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                    byopClientKeyId,
-                    modelResolved: c.var.model?.resolved,
-                });
+                let markup: MarkupResolution | null = null;
+                let payerBucket: Awaited<
+                    ReturnType<typeof handleBalanceDeduction>
+                >["payerBucket"] = null;
+                try {
+                    const deduction = await handleBalanceDeduction({
+                        db: balanceDb,
+                        isBilledUsage: responseTracking.isBilledUsage,
+                        totalPrice: responseTracking.price?.totalPrice,
+                        userId: userTracking.userId,
+                        apiKeyId: c.var.auth?.apiKey?.id,
+                        apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                        byopClientKeyId,
+                        modelResolved: c.var.model?.resolved,
+                    });
+                    markup = deduction.markup;
+                    payerBucket = deduction.payerBucket;
+                } catch (error) {
+                    log.error(
+                        "Billing deduction failed after response; continuing tracking: {error}",
+                        {
+                            error:
+                                error instanceof Error
+                                    ? error.message
+                                    : String(error),
+                        },
+                    );
+                }
+                const committedBalanceTracking = payerBucket
+                    ? {
+                          ...balanceTracking,
+                          selectedMeterId: `local:${payerBucket}`,
+                          selectedMeterSlug:
+                              payerBucket === "tier"
+                                  ? "v1:meter:tier"
+                                  : "v1:meter:pack",
+                      }
+                    : balanceTracking;
 
                 const finalEvent = createTrackingEvent({
                     id: generateRandomId(),
@@ -216,7 +244,7 @@ export const track = (eventType: EventType) =>
                         ...userTracking,
                         ...byopClientTracking,
                     },
-                    balanceTracking,
+                    balanceTracking: committedBalanceTracking,
                     requestTracking,
                     responseTracking,
                     markup,

@@ -427,7 +427,7 @@ describe("Tier System End-to-End", () => {
             expect(balance[0]?.packBalance).toBe(70);
         });
 
-        test("regular Azure model drains tier, then pack, then puts overage on tier", async () => {
+        test("regular Azure model puts overage on positive pack when tier cannot cover actual price", async () => {
             const db = drizzle(env.DB);
             const userId = `azure-depletion-${crypto.randomUUID()}`;
             const modelResolved = "openai-fast";
@@ -459,18 +459,18 @@ describe("Tier System End-to-End", () => {
 
             await deduct();
             let balance = await getUserBalances(db, userId);
-            expect(balance.tierBalance).toBeCloseTo(-0.005, 10);
-            expect(balance.packBalance).toBeCloseTo(0, 10);
+            expect(balance.tierBalance).toBeCloseTo(0.01, 10);
+            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
 
             await deduct();
             balance = await getUserBalances(db, userId);
-            expect(balance.tierBalance).toBeCloseTo(-0.03, 10);
-            expect(balance.packBalance).toBeCloseTo(0, 10);
+            expect(balance.tierBalance).toBeCloseTo(-0.015, 10);
+            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
 
             await deduct();
             balance = await getUserBalances(db, userId);
-            expect(balance.tierBalance).toBeCloseTo(-0.055, 10);
-            expect(balance.packBalance).toBeCloseTo(0, 10);
+            expect(balance.tierBalance).toBeCloseTo(-0.04, 10);
+            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
         });
     });
 });

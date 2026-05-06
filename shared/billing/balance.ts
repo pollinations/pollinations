@@ -1,19 +1,24 @@
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { user as userTable } from "../db/better-auth.ts";
+import {
+    type BalanceBucket,
+    selectDeductionBucket,
+    type UserBalance,
+} from "./bucket-selection.ts";
+
+export {
+    type BalanceBucket,
+    canCoverEstimatedCharge,
+    selectDeductionBucket,
+    type UserBalance,
+} from "./bucket-selection.ts";
 
 export type BalanceCheckResult = {
     selectedMeterId: string;
     selectedMeterSlug: string;
     balances: Record<string, number>;
 };
-
-export type UserBalance = {
-    tierBalance: number;
-    packBalance: number;
-};
-
-export type BalanceBucket = "tier" | "pack";
 
 export type BalanceSource = {
     source: BalanceBucket;
@@ -43,7 +48,6 @@ export async function getUserBalance(
 /**
  * Get the total positive balance across relevant buckets.
  * For paid-only models: pack only.
- * For regular model admission, use getAvailableBalanceForCharge.
  */
 export function getAvailableBalance(
     balances: UserBalance,
@@ -54,27 +58,6 @@ export function getAvailableBalance(
     }
     return (
         Math.max(0, balances.tierBalance) + Math.max(0, balances.packBalance)
-    );
-}
-
-export function selectBalanceBucket(
-    balances: UserBalance,
-    amount: number,
-    isPaidOnly = false,
-): BalanceBucket {
-    if (isPaidOnly) return "pack";
-    return balances.tierBalance >= amount ? "tier" : "pack";
-}
-
-export function getAvailableBalanceForCharge(
-    balances: UserBalance,
-    amount: number,
-    isPaidOnly = false,
-): number {
-    const bucket = selectBalanceBucket(balances, amount, isPaidOnly);
-    return Math.max(
-        0,
-        bucket === "tier" ? balances.tierBalance : balances.packBalance,
     );
 }
 
@@ -92,7 +75,7 @@ export function determineBalanceSource(
     amount?: number,
 ): BalanceSource {
     if (typeof amount === "number" && amount > 0) {
-        const source = selectBalanceBucket(balances, amount, isPaidOnly);
+        const source = selectDeductionBucket(balances, amount, isPaidOnly);
         return source === "tier"
             ? { source, slug: "v1:meter:tier" }
             : { source, slug: "v1:meter:pack" };

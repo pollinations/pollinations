@@ -3,7 +3,6 @@ import {
     atomicDeductPaidBalance,
     atomicDeductUserBalance,
     getUserBalances,
-    identifyDeductionSource,
 } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
@@ -35,40 +34,7 @@ async function createUser({
 }
 
 describe("billing deduction", () => {
-    it("identifies regular generation charges as one bucket", () => {
-        expect(
-            identifyDeductionSource({ tierBalance: 5, packBalance: 5 }, 4),
-        ).toEqual({
-            fromTier: 4,
-            fromPack: 0,
-        });
-        expect(
-            identifyDeductionSource({ tierBalance: 5, packBalance: 5 }, 7),
-        ).toEqual({
-            fromTier: 0,
-            fromPack: 7,
-        });
-        expect(
-            identifyDeductionSource({ tierBalance: 0, packBalance: 8 }, 5),
-        ).toEqual({
-            fromTier: 0,
-            fromPack: 5,
-        });
-        expect(
-            identifyDeductionSource({ tierBalance: -3, packBalance: 0 }, 4),
-        ).toEqual({
-            fromTier: 0,
-            fromPack: 4,
-        });
-        expect(
-            identifyDeductionSource({ tierBalance: -3, packBalance: 2 }, 4),
-        ).toEqual({
-            fromTier: 0,
-            fromPack: 4,
-        });
-    });
-
-    it("deducts regular generation charges from tier only when tier covers the full charge", async () => {
+    it("deducts regular generation charges from tier, then positive pack, with empty-pack overage on tier", async () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 
         await atomicDeductUserBalance(db, userId, 3);
@@ -90,14 +56,14 @@ describe("billing deduction", () => {
         });
     });
 
-    it("uses pack debt when tier cannot cover a regular charge", async () => {
+    it("uses tier debt when neither bucket covers a regular charge", async () => {
         const userId = await createUser({ tierBalance: 0, packBalance: 0 });
 
         await atomicDeductUserBalance(db, userId, 3);
 
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: 0,
-            packBalance: -3,
+            tierBalance: -3,
+            packBalance: 0,
         });
     });
 

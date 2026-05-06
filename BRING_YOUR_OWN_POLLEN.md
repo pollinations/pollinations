@@ -36,17 +36,7 @@ Earnings are credited as Pollen and spendable across the Pollinations API like a
 
 ### Where it lands
 
-The credit lands in the same bucket the user paid from — **tier balance** if the user paid from their tier, **paid balance** if they paid from theirs. Bucket selection per request:
-
-```
-if (paidOnly) bucket = paid
-else if (tier ≥ amount) bucket = tier
-else bucket = paid
-```
-
-All-or-nothing per request — no partial spend across buckets. Each request is sized from a 7-day rolling average for the model; if the chosen bucket can't cover the estimate, the request is refused (HTTP 402) **before it runs**.
-
-Refused requests, cached requests, and requests through an App Key with `earningsEnabled=false` generate zero earnings — no spend, no markup.
+The credit lands in the same bucket the user paid from — **tier balance** if the user paid from their tier, **paid balance** if they paid from theirs.
 
 ### Toggle
 

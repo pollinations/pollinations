@@ -336,14 +336,13 @@ describe("BYOP markup", () => {
         );
     });
 
-    it("requires finite API key budgets to cover estimated BYOP markup", async () => {
-        const { payerId, pkId } = await setupPayerAndDev();
+    it("uses the baseline estimate for BYOP API key budget preflight", async () => {
         const vars = {
             auth: {
-                user: { id: payerId },
+                user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
-                    byopClientKeyId: pkId,
+                    byopClientKeyId: "pk-test",
                     pollenBalance: 1.1,
                 },
             },
@@ -357,21 +356,23 @@ describe("BYOP markup", () => {
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
-        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
-            {
-                status: 402,
-            },
-        );
+        await checkBalance(vars, {
+            ...fakeStatsEnv(1),
+            DB: {
+                prepare: () => {
+                    throw new Error("DB should not be used in preflight");
+                },
+            } as unknown as D1Database,
+        } as CloudflareBindings);
     });
 
-    it("uses estimated BYOP markup for user balance preflight", async () => {
-        const { payerId, pkId } = await setupPayerAndDev();
+    it("uses the baseline estimate for BYOP user balance preflight", async () => {
         const vars = {
             auth: {
-                user: { id: payerId },
+                user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
-                    byopClientKeyId: pkId,
+                    byopClientKeyId: "pk-test",
                     pollenBalance: 10,
                 },
             },
@@ -385,11 +386,14 @@ describe("BYOP markup", () => {
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
-        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
-            {
-                status: 402,
-            },
-        );
+        await checkBalance(vars, {
+            ...fakeStatsEnv(1),
+            DB: {
+                prepare: () => {
+                    throw new Error("DB should not be used in preflight");
+                },
+            } as unknown as D1Database,
+        } as CloudflareBindings);
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

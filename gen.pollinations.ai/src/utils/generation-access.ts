@@ -1,8 +1,6 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import { resolveDevMarkup } from "@shared/billing/track-helpers.ts";
 import { getModelDefinition } from "@shared/registry/registry.ts";
-import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
@@ -33,35 +31,23 @@ export async function checkBalance(
 
     const stats = await getModelStats(env.KV, log);
     const estimatedCost = getEstimatedPrice(stats, model.resolved);
-    const estimatedMarkup = auth.apiKey?.byopClientKeyId
-        ? await resolveDevMarkup(
-              drizzle(env.DB),
-              auth.apiKey.byopClientKeyId,
-              estimatedCost,
-              auth.user.id,
-          )
-        : null;
-    const estimatedBilledCost =
-        estimatedCost + (estimatedMarkup?.devCredit ?? 0);
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
-    const requiredBudget = Math.max(0, estimatedBilledCost);
+    const requiredBudget = Math.max(0, estimatedCost);
     if (typeof apiKeyBudget === "number" && apiKeyBudget <= requiredBudget) {
         throw new HTTPException(402, {
-            message: `API key budget too low. This request costs ~${estimatedBilledCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
+            message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
         });
     }
 
     const userBalance = await balance.getBalance(auth.user.id);
 
-    if (
-        !canCoverEstimatedCharge(userBalance, estimatedBilledCost, isPaidOnly)
-    ) {
+    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
         const available = isPaidOnly
             ? userBalance.packBalance
             : Math.max(userBalance.tierBalance, userBalance.packBalance);
         throw new HTTPException(402, {
-            message: `Insufficient balance. This request costs ~${estimatedBilledCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
+            message: `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
         });
     }
 

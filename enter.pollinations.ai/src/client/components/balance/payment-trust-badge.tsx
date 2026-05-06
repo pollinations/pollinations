@@ -53,7 +53,10 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
             </div>
             <div className="flex items-center gap-1.5 text-gray-400 text-xs">
                 <LockIcon />
-                <span>Secure checkout powered by Stripe</span>
+                <span>
+                    Secure checkout powered by Stripe. Payment methods vary by
+                    country, device, and browser.
+                </span>
             </div>
         </div>
     );

@@ -10,7 +10,9 @@ export const ModelsBadge: FC<{
     const modelCount = models?.length ?? 0;
 
     const tooltipContent = (): ReactNode => {
-        if (isAllModels) return "Access to all models";
+        if (isAllModels) {
+            return "Key can request all models. Paid-only models still require purchased pollen.";
+        }
         if (modelCount === 0) return "No models allowed";
         return (
             <span className="block font-mono text-[11px] leading-relaxed text-left whitespace-nowrap">

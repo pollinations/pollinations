@@ -65,7 +65,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                 <span className="flex items-center gap-1.5 text-sm font-semibold mb-2">
                     Models
                     <InfoTip
-                        text="Limit this key to specific models"
+                        text="Limit this key to specific models. Model permission does not waive paid-only or balance requirements."
                         label="Show model access information"
                     />
                 </span>

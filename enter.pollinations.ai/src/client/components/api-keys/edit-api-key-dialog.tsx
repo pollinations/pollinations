@@ -33,6 +33,10 @@ function sameRedirectUris(a: string[], b: string[]): boolean {
     return a.every((v, i) => v === b[i]);
 }
 
+function cleanRedirectUris(uris: string[]): string[] {
+    return uris.map((v) => v.trim()).filter((v) => v !== "");
+}
+
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
@@ -47,7 +51,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
     const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
-    const isAppKey = isPublishable && initialRedirectUris.length > 0;
+    const isAppKey = isPublishable;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
 
@@ -90,13 +94,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             });
 
             // Save app settings for publishable keys
-            if (
-                isPublishable &&
-                !sameRedirectUris(redirectUris, initialRedirectUris)
-            ) {
-                const cleaned = redirectUris
-                    .map((v) => v.trim())
-                    .filter((v) => v !== "");
+            if (isPublishable) {
+                const cleaned = cleanRedirectUris(redirectUris);
+                if (sameRedirectUris(cleaned, initialRedirectUris)) {
+                    onClose();
+                    return;
+                }
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {

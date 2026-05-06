@@ -42,14 +42,16 @@ The credit lands in the same bucket the user paid from — **tier balance** if t
 
 In the dashboard: open the App Key → flip the **Developer earnings** switch.
 
-Programmatically:
+Programmatically, set `earningsEnabled` when creating a publishable App Key with a secret key that has `account:keys` permission:
 
 ```bash
-curl -X POST https://enter.pollinations.ai/api/api-keys/<keyId>/update \
+curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Authorization: Bearer sk_yoursecretkey' \
   -H 'Content-Type: application/json' \
-  -d '{"metadata": {"earningsEnabled": false}}'
+  -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
+
+To change earnings on an existing App Key, use the dashboard.
 
 ## ⚙️ Web Apps (Redirect Flow)
 

@@ -85,6 +85,521 @@ curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"
 
 ## Operations
 
+### Get Profile
+
+- **Method:** `GET`
+- **Path:** `/account/profile`
+- **Tags:** 👤 Account
+
+Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.
+
+#### Responses
+
+##### Status: 200 User profile
+
+###### Content-Type: application/json
+
+- **`githubUsername` (required)**
+
+  `object` — GitHub username if linked
+
+- **`image` (required)**
+
+  `object` — Profile picture URL (e.g. GitHub avatar)
+
+- **`nextResetAt` (required)**
+
+  `object` — Next pollen refill timestamp (ISO 8601). \`null\` for tiers with no refill.
+
+- **`tier` (required)**
+
+  `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
+
+- **`email`**
+
+  `object` — User's email address (only returned when the key has \`account:profile\`)
+
+- **`name`**
+
+  `object` — User's display name (only returned when the key has \`account:profile\`)
+
+**Example:**
+
+```json
+{
+  "tier": "anonymous"
+}
+```
+
+### Get Balance
+
+- **Method:** `GET`
+- **Path:** `/account/balance`
+- **Tags:** 👤 Account
+
+Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.
+
+#### Responses
+
+##### Status: 200 Pollen balance
+
+###### Content-Type: application/json
+
+- **`balance` (required)**
+
+  `number` — Remaining pollen balance (combines tier, pack, and crypto balances)
+
+**Example:**
+
+```json
+{
+  "balance": 1
+}
+```
+
+### Get Usage History
+
+- **Method:** `GET`
+- **Path:** `/account/usage`
+- **Tags:** 👤 Account
+
+Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.
+
+#### Responses
+
+##### Status: 200 Usage records
+
+###### Content-Type: application/json
+
+- **`count` (required)**
+
+  `number` — Number of records returned
+
+- **`usage` (required)**
+
+  `array` — Array of usage records
+
+  **Items:**
+
+  - **`api_key` (required)**
+
+    `object` — API key identifier used (masked)
+
+  - **`api_key_type` (required)**
+
+    `object` — Type of API key ('secret', 'publishable')
+
+  - **`cost_usd` (required)**
+
+    `number` — Cost in USD for this request
+
+  - **`input_audio_tokens` (required)**
+
+    `number` — Number of input audio tokens
+
+  - **`input_cached_tokens` (required)**
+
+    `number` — Number of cached input tokens
+
+  - **`input_image_tokens` (required)**
+
+    `number` — Number of input image tokens
+
+  - **`input_text_tokens` (required)**
+
+    `number` — Number of input text tokens
+
+  - **`meter_source` (required)**
+
+    `object` — Billing source ('tier', 'pack', 'crypto')
+
+  - **`model` (required)**
+
+    `object` — Model used for generation
+
+  - **`output_audio_tokens` (required)**
+
+    `number` — Number of output audio tokens
+
+  - **`output_image_tokens` (required)**
+
+    `number` — Number of output image tokens (1 per image)
+
+  - **`output_reasoning_tokens` (required)**
+
+    `number` — Number of reasoning tokens (for models with chain-of-thought)
+
+  - **`output_text_tokens` (required)**
+
+    `number` — Number of output text tokens
+
+  - **`response_time_ms` (required)**
+
+    `object` — Response time in milliseconds
+
+  - **`timestamp` (required)**
+
+    `string` — Request timestamp (YYYY-MM-DD HH:mm:ss format)
+
+  - **`type` (required)**
+
+    `string` — Request type (e.g., 'generate.image', 'generate.text')
+
+**Example:**
+
+```json
+{
+  "usage": [
+    {
+      "input_text_tokens": 1,
+      "input_cached_tokens": 1,
+      "input_audio_tokens": 1,
+      "input_image_tokens": 1,
+      "output_text_tokens": 1,
+      "output_reasoning_tokens": 1,
+      "output_audio_tokens": 1,
+      "output_image_tokens": 1,
+      "cost_usd": 1,
+      "response_time_ms": 1
+    }
+  ],
+  "count": 1
+}
+```
+
+### Get Daily Usage
+
+- **Method:** `GET`
+- **Path:** `/account/usage/daily`
+- **Tags:** 👤 Account
+
+Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.
+
+#### Responses
+
+##### Status: 200 Daily usage records aggregated by date/model
+
+###### Content-Type: application/json
+
+- **`count` (required)**
+
+  `number` — Number of records returned
+
+- **`usage` (required)**
+
+  `array` — Array of daily usage records
+
+  **Items:**
+
+  - **`cost_usd` (required)**
+
+    `number` — Total cost in USD
+
+  - **`date` (required)**
+
+    `string` — Date (YYYY-MM-DD format)
+
+  - **`meter_source` (required)**
+
+    `object` — Billing source ('tier', 'pack', 'crypto')
+
+  - **`model` (required)**
+
+    `object` — Model used
+
+  - **`requests` (required)**
+
+    `number` — Number of requests
+
+**Example:**
+
+```json
+{
+  "usage": [
+    {
+      "requests": 1,
+      "cost_usd": 1
+    }
+  ],
+  "count": 1
+}
+```
+
+### List API Keys
+
+- **Method:** `GET`
+- **Path:** `/account/keys`
+- **Tags:** 👤 Account
+
+List all API keys for the current user. Requires `account:keys` permission when using API keys. Secret key values are never returned.
+
+#### Responses
+
+##### Status: 200 List of API keys
+
+### Create API Key
+
+- **Method:** `POST`
+- **Path:** `/account/keys`
+- **Tags:** 👤 Account
+
+Create a new API key. Requires `account:keys` permission and a secret key (sk\_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`name` (required)**
+
+  `string` — Name for the API key
+
+- **`accountPermissions`**
+
+  `object` — Account permissions (e.g. \["usage"]). "keys" is auto-stripped.
+
+- **`allowedModels`**
+
+  `object` — Model IDs this key can access. null = all models
+
+- **`expiresIn`**
+
+  `integer` — Expiry in seconds from now (max 365 days)
+
+- **`pollenBudget`**
+
+  `object` — Pollen budget cap. null = unlimited
+
+- **`redirectUris`**
+
+  `array` — Allowed OAuth redirect URIs for publishable app keys. Loopback ports are matched port-agnostically.
+
+  **Items:**
+
+  `string`
+
+- **`type`**
+
+  `string`, possible values: `"secret", "publishable"`, default: `"secret"` — Key type: secret (sk\_) or publishable (pk\_)
+
+**Example:**
+
+```json
+{
+  "type": "secret",
+  "expiresIn": 1,
+  "allowedModels": [
+    ""
+  ],
+  "pollenBudget": 1,
+  "accountPermissions": [
+    ""
+  ],
+  "redirectUris": [
+    ""
+  ]
+}
+```
+
+#### Responses
+
+##### Status: 200 Created API key with full secret
+
+### Revoke API Key
+
+- **Method:** `DELETE`
+- **Path:** `/account/keys/{id}`
+- **Tags:** 👤 Account
+
+Delete/revoke an API key. Requires `account:keys` permission and a secret key (sk\_). Cannot revoke the key used to authenticate the request.
+
+#### Responses
+
+##### Status: 200 Key revoked
+
+### Get API Key Info
+
+- **Method:** `GET`
+- **Path:** `/account/key`
+- **Tags:** 👤 Account
+
+Returns information about the API key used in the request: validity, type (secret/publishable), expiry, permissions, and remaining budget. Useful for validating keys without making generation requests.
+
+#### Responses
+
+##### Status: 200 API key status and information
+
+###### Content-Type: application/json
+
+- **`expiresAt` (required)**
+
+  `object` — Expiry timestamp in ISO 8601 format, null if never expires
+
+- **`expiresIn` (required)**
+
+  `object` — Seconds until expiry, null if never expires
+
+- **`name` (required)**
+
+  `object` — Display name of the API key
+
+- **`permissions` (required)**
+
+  `object` — API key permissions
+
+  - **`account` (required)**
+
+    `object` — List of account permissions, null = no account access
+
+  - **`models` (required)**
+
+    `object` — List of allowed model IDs, null = all models allowed
+
+- **`pollenBudget` (required)**
+
+  `object` — Remaining pollen budget for this key, null = unlimited (uses user balance)
+
+- **`rateLimitEnabled` (required)**
+
+  `boolean` — Whether rate limiting is enabled for this key
+
+- **`type` (required)**
+
+  `string`, possible values: `"publishable", "secret"` — Type of API key
+
+- **`valid` (required)**
+
+  `boolean` — Whether the API key is valid and active
+
+**Example:**
+
+```json
+{
+  "valid": true,
+  "type": "publishable",
+  "expiresIn": 1,
+  "permissions": {
+    "models": [
+      ""
+    ],
+    "account": [
+      ""
+    ]
+  },
+  "pollenBudget": 1,
+  "rateLimitEnabled": true
+}
+```
+
+### Get API Key Usage
+
+- **Method:** `GET`
+- **Path:** `/account/key/usage`
+- **Tags:** 👤 Account
+
+Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.
+
+#### Responses
+
+##### Status: 200 Usage records for this key
+
+###### Content-Type: application/json
+
+- **`count` (required)**
+
+  `number` — Number of records returned
+
+- **`usage` (required)**
+
+  `array` — Array of usage records
+
+  **Items:**
+
+  - **`api_key` (required)**
+
+    `object` — API key identifier used (masked)
+
+  - **`api_key_type` (required)**
+
+    `object` — Type of API key ('secret', 'publishable')
+
+  - **`cost_usd` (required)**
+
+    `number` — Cost in USD for this request
+
+  - **`input_audio_tokens` (required)**
+
+    `number` — Number of input audio tokens
+
+  - **`input_cached_tokens` (required)**
+
+    `number` — Number of cached input tokens
+
+  - **`input_image_tokens` (required)**
+
+    `number` — Number of input image tokens
+
+  - **`input_text_tokens` (required)**
+
+    `number` — Number of input text tokens
+
+  - **`meter_source` (required)**
+
+    `object` — Billing source ('tier', 'pack', 'crypto')
+
+  - **`model` (required)**
+
+    `object` — Model used for generation
+
+  - **`output_audio_tokens` (required)**
+
+    `number` — Number of output audio tokens
+
+  - **`output_image_tokens` (required)**
+
+    `number` — Number of output image tokens (1 per image)
+
+  - **`output_reasoning_tokens` (required)**
+
+    `number` — Number of reasoning tokens (for models with chain-of-thought)
+
+  - **`output_text_tokens` (required)**
+
+    `number` — Number of output text tokens
+
+  - **`response_time_ms` (required)**
+
+    `object` — Response time in milliseconds
+
+  - **`timestamp` (required)**
+
+    `string` — Request timestamp (YYYY-MM-DD HH:mm:ss format)
+
+  - **`type` (required)**
+
+    `string` — Request type (e.g., 'generate.image', 'generate.text')
+
+**Example:**
+
+```json
+{
+  "usage": [
+    {
+      "input_text_tokens": 1,
+      "input_cached_tokens": 1,
+      "input_audio_tokens": 1,
+      "input_image_tokens": 1,
+      "output_text_tokens": 1,
+      "output_reasoning_tokens": 1,
+      "output_audio_tokens": 1,
+      "output_image_tokens": 1,
+      "cost_usd": 1,
+      "response_time_ms": 1
+    }
+  ],
+  "count": 1
+}
+```
+
 ### Text to Speech (OpenAI-compatible)
 
 - **Method:** `POST`
@@ -1846,6 +2361,34 @@ Return file metadata (hash, content type, size, upload timestamp) as JSON withou
 
 ## Schemas
 
+### ErrorDetails
+
+- **Type:**`object`
+
+* **`name` (required)**
+
+  `string`
+
+* **`upstreamBody`**
+
+  `string`
+
+* **`upstreamHost`**
+
+  `string`
+
+* **`upstreamStatus`**
+
+  `integer`
+
+**Example:**
+
+```json
+{
+  "upstreamStatus": -9007199254740991
+}
+```
+
 ### ValidationErrorDetails
 
 - **Type:**`object`
@@ -1878,34 +2421,6 @@ Return file metadata (hash, content type, size, upload timestamp) as JSON withou
       ""
     ]
   }
-}
-```
-
-### ErrorDetails
-
-- **Type:**`object`
-
-* **`name` (required)**
-
-  `string`
-
-* **`upstreamBody`**
-
-  `string`
-
-* **`upstreamHost`**
-
-  `string`
-
-* **`upstreamStatus`**
-
-  `integer`
-
-**Example:**
-
-```json
-{
-  "upstreamStatus": -9007199254740991
 }
 ```
 

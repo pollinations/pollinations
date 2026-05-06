@@ -26,6 +26,13 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: source-issue
+    attributes:
+      label: Source issue
+      description: If this quest comes from an existing issue or discussion, link it here.
+      placeholder: "#1234 or https://github.com/pollinations/pollinations/issues/1234"
+
   - type: textarea
     id: goal
     attributes:

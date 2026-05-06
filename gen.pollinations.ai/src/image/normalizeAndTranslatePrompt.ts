@@ -14,17 +14,17 @@ export type MinimalRequest = {
 
 export const normalizeAndTranslatePrompt = async (
     originalPrompt: string,
-    req: MinimalRequest,
+    _req: MinimalRequest,
     timingInfo: TimingStep[],
     safeParams: ImageParams,
 ) => {
     // if it is not a string make it a string
     originalPrompt = `${originalPrompt}`;
 
-    let { enhance, seed } = safeParams;
+    const { enhance, seed } = safeParams;
 
     // Generate a memoization key that includes the seed
-    const memoKey = `${originalPrompt}_seed_${seed}`;
+    const memoKey = `${originalPrompt}_seed_${seed}_enhance_${enhance}`;
 
     if (memoizedPrompts.has(memoKey)) {
         return memoizedPrompts.get(memoKey);
@@ -41,14 +41,8 @@ export const normalizeAndTranslatePrompt = async (
     // Sanitize prompt
     prompt = sanitizeString(prompt);
 
-    // If the user's accept-language isn't English, assume the prompt may need
-    // translation/enhancement. The prompt enhancer (LLM) handles this — there
-    // is no separate translation service.
-    const acceptLanguage = req.headers["accept-language"];
-    const englishLikely =
-        typeof acceptLanguage === "string" && acceptLanguage.startsWith("en");
-    if (!englishLikely) enhance = true;
-
+    // Keep enhancement opt-in. Inferring it from headers can create hidden
+    // text-model usage for image-only requests.
     if (enhance) {
         logPrompt("pimping prompt", prompt, seed);
         prompt = (await pimpPrompt(prompt, seed)) || prompt;

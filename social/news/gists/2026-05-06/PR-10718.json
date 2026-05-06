@@ -1,0 +1,31 @@
+{
+  "pr_number": 10718,
+  "title": "chore(observability): restore polar_event and crypto_event datasource files",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10718",
+  "merged_at": "2026-05-06T16:36:12Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Dusting off the archives",
+    "blurb": "Restored some historical data source configurations to keep our deployment pipelines happy and our archives intact.",
+    "summary": "Restored the Polar and crypto event datasource configuration files to match the live Tinybird environment.",
+    "impact": "This resolves deployment warnings and ensures historical data is preserved without blocking unrelated infrastructure updates.",
+    "keywords": [
+      "infrastructure",
+      "observability",
+      "tinybird",
+      "deployment"
+    ],
+    "visual_concept": "The bee mascot and the monitor robot organizing old dusty files or archives in a cozy storage room, representing the preservation of historical data sources.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor robot organizing glowing data files in a dusty but warm archive room. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-06/PR-10718.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor robot organizing glowing data files in a dusty but warm archive room. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-06T16:37:17.894579+00:00"
+}

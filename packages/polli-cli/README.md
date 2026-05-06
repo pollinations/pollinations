@@ -14,7 +14,7 @@ npx @pollinations_ai/cli gen image "a cat in space" --output cat.png
 
 Point your coding agent (Claude Code, Cursor, Windsurf, Codex) at the skill file and it gets the full usage map — flags, stdin conventions, `--json` output shape, error codes, the lot:
 
-> Read https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md and follow the instructions to generate media with the `polli` CLI.
+> Read [SKILL.md](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md) and follow the instructions to generate media with the `polli` CLI.
 
 The skill also ships inside the package: `node_modules/@pollinations_ai/cli/SKILL.md`.
 
@@ -44,6 +44,7 @@ echo "context" | polli gen text "question"
 
 polli gen image "cyberpunk city at night" --model flux --output city.png
 polli gen image "enhance this" --image https://media.pollinations.ai/abc --model gptimage
+polli gen image "make it sunset" --image ./photo.jpg --model grok-imagine    # local files auto-uploaded
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)

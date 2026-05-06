@@ -1,8 +1,9 @@
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
+import { uploadLocalFile } from "../../lib/media-upload.js";
 import {
     getOutputMode,
     printError,
@@ -23,8 +24,8 @@ export function createImageCommand() {
         .option("--safe", "Enable safety filters")
         .option("--transparent", "Transparent background (PNG)")
         .option(
-            "--image <url...>",
-            "Reference image URL(s) for editing/i2i (repeatable)",
+            "--image <ref...>",
+            "Reference image(s) for editing/i2i — public http(s) URL or local file path; local paths are auto-uploaded to media.pollinations.ai. Repeatable.",
         )
         .option("--output <path>", "Save to file", "image.png")
         .action(async (prompt, opts) => {
@@ -42,16 +43,34 @@ export function createImageCommand() {
             if (opts.safe) params.set("safe", "true");
             if (opts.transparent) params.set("transparent", "true");
             if (opts.image?.length) {
-                const bad = opts.image.find(
-                    (u: string) => !/^https?:\/\//i.test(u),
-                );
-                if (bad) {
-                    printError(
-                        `--image requires a public http(s) URL, not a local path: ${bad}`,
-                    );
-                    process.exit(1);
+                // Resolve each entry to a public URL: http(s) URLs pass
+                // through untouched; local paths are uploaded to
+                // media.pollinations.ai and the returned URL is substituted
+                // in place. Order is preserved — i2i providers (including
+                // the xAI Grok-Imagine path shipped in #10617) treat the
+                // first reference as the primary image.
+                const resolved: string[] = [];
+                for (const ref of opts.image as string[]) {
+                    if (/^https?:\/\//i.test(ref)) {
+                        resolved.push(ref);
+                        continue;
+                    }
+                    if (!existsSync(ref)) {
+                        printError(`Reference image not found: ${ref}`);
+                        process.exit(1);
+                    }
+                    if (isHuman) printInfo(`Uploading ${ref}...`);
+                    try {
+                        const uploaded = await uploadLocalFile(ref, key);
+                        resolved.push(uploaded.url);
+                    } catch (err) {
+                        printError(
+                            `Failed to upload ${ref}: ${err instanceof Error ? err.message : "unknown error"}`,
+                        );
+                        process.exit(1);
+                    }
                 }
-                params.set("image", opts.image.join("|"));
+                params.set("image", resolved.join("|"));
             }
 
             const encodedPrompt = encodeURIComponent(prompt);

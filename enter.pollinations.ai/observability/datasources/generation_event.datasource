@@ -107,7 +107,7 @@ SCHEMA >
 
 -- Network
 `ip_subnet`       LowCardinality(String) `json:$.ipSubnet` DEFAULT 'undefined',
-`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined',
+`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined'
 
 ENGINE "MergeTree" 
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"

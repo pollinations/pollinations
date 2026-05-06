@@ -86,9 +86,10 @@ function parseMetadata(
 ): Record<string, unknown> {
     if (!raw) return {};
     try {
-        let parsed = JSON.parse(raw);
-        if (typeof parsed === "string") parsed = JSON.parse(parsed);
-        return parsed && typeof parsed === "object" ? parsed : {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+            ? parsed
+            : {};
     } catch {
         return {};
     }
@@ -202,10 +203,7 @@ async function validateClientRedirectBinding(
         return null;
     }
 
-    if (
-        typeof requestedClientId !== "string" ||
-        !requestedClientId.startsWith("pk_")
-    ) {
+    if (!requestedClientId.startsWith("pk_")) {
         rejectInvalidClientId();
     }
 

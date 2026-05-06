@@ -26,48 +26,40 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     onEarningsEnabledChange,
     disabled = false,
 }) => {
-    const rows = redirectUris.length > 0 ? redirectUris : [""];
-
     function update(index: number, value: string) {
-        const next = [...rows];
+        const next = [...redirectUris];
         next[index] = value;
-        onRedirectUrisChange(next.filter((v) => v !== "" || rows.length === 1));
+        onRedirectUrisChange(next);
     }
 
     function add() {
-        onRedirectUrisChange([...rows, ""]);
+        onRedirectUrisChange([...redirectUris, ""]);
     }
 
     function remove(index: number) {
-        const next = rows.filter((_, i) => i !== index);
+        const next = redirectUris.filter((_, i) => i !== index);
         onRedirectUrisChange(next);
     }
 
     return (
         <div className="space-y-5">
-            <div className="flex flex-col gap-2">
-                <div className="flex justify-end">
-                    <Button
-                        type="button"
-                        color="blue"
-                        weight="light"
-                        onClick={add}
-                        disabled={disabled}
-                    >
-                        + Add redirect URL
-                    </Button>
+            <Field.Root className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    <Field.Label className="text-sm font-semibold">
+                        Redirect URIs
+                    </Field.Label>
                 </div>
-                {rows.map((uri, index) => (
-                    <Field.Root
+                {redirectUris.length === 0 && (
+                    <p className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-3 py-2 text-sm text-gray-500">
+                        No redirect URIs
+                    </p>
+                )}
+                {redirectUris.map((uri, index) => (
+                    <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
                         key={index}
-                        className="flex items-center gap-3"
+                        className="flex items-center gap-2"
                     >
-                        <Field.Label className="shrink-0 text-sm font-semibold">
-                            {rows.length > 1
-                                ? `Redirect URL ${index + 1}`
-                                : "Redirect URL"}
-                        </Field.Label>
                         <Field.Input
                             type="text"
                             value={uri}
@@ -76,23 +68,29 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                             placeholder="https://myapp.com/auth/callback"
                             disabled={disabled}
                         />
-                        {rows.length > 1 && (
-                            <Button
-                                type="button"
-                                color="blue"
-                                weight="outline"
-                                onClick={() => remove(index)}
-                                disabled={disabled}
-                            >
-                                Remove
-                            </Button>
-                        )}
-                    </Field.Root>
+                        <Button
+                            type="button"
+                            color="blue"
+                            weight="outline"
+                            onClick={() => remove(index)}
+                            disabled={disabled}
+                        >
+                            Remove
+                        </Button>
+                    </div>
                 ))}
-                <p className="text-xs text-gray-600">
-                    Loopback URLs match any port (RFC 8252).
-                </p>
-            </div>
+                <div>
+                    <Button
+                        type="button"
+                        color="blue"
+                        weight="light"
+                        onClick={add}
+                        disabled={disabled}
+                    >
+                        + Add redirect URI
+                    </Button>
+                </div>
+            </Field.Root>
             {onEarningsEnabledChange && (
                 <DeveloperEarningsSwitch
                     enabled={earningsEnabled}

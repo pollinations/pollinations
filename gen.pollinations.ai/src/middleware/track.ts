@@ -142,6 +142,9 @@ export const track = (eventType: EventType) =>
                 ? "redirect-auth"
                 : (apiKeyMetadata?.createdVia as string | undefined),
             apiKeyClientId: byopClientKeyId ?? undefined,
+            apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
+            apiKeyCreatedForUserId:
+                c.var.auth.apiKey?.byopClientUserId ?? undefined,
         } satisfies UserData;
 
         let responseOverride = null;

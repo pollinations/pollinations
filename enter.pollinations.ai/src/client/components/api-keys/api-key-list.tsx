@@ -42,13 +42,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const sortedAppKeys = sortedKeys.filter(isAppKey);
 
     function isAppKey(apiKey: ApiKey): boolean {
-        const redirectUris = Array.isArray(apiKey.metadata?.redirectUris)
-            ? (apiKey.metadata?.redirectUris as string[])
-            : [];
-        return (
-            apiKey.metadata?.keyType === "publishable" &&
-            redirectUris.length > 0
-        );
+        return apiKey.metadata?.keyType === "publishable";
     }
 
     function renderKeyCard(apiKey: ApiKey) {
@@ -61,7 +55,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             : [];
         const primaryRedirectUri = redirectUrisMeta[0] || "";
         const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
-        const isApp = isPublishable && !!primaryRedirectUri;
+        const isApp = isPublishable;
         const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
 
         return (
@@ -72,11 +66,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Tag color="blue" size="sm">
-                        {isPublishable
-                            ? primaryRedirectUri
-                                ? "🖥️ App"
-                                : "🌐 Publishable"
-                            : "🔒 Secret"}
+                        {isPublishable ? "🖥️ App" : "🔒 Secret"}
                     </Tag>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}
@@ -249,9 +239,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
-                                    Turn on developer earnings — your users are
-                                    billed +25% over model cost, meaning 20% of
-                                    their spend is credited to your wallet.{" "}
+                                    Developer earnings are on by default. Users
+                                    are billed +25% over model cost, meaning 20%
+                                    of their spend is credited to your wallet.{" "}
                                     <a
                                         href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
                                         target="_blank"

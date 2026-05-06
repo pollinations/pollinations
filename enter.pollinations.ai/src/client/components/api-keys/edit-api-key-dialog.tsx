@@ -33,6 +33,10 @@ function sameRedirectUris(a: string[], b: string[]): boolean {
     return a.every((v, i) => v === b[i]);
 }
 
+function cleanRedirectUris(uris: string[]): string[] {
+    return uris.map((v) => v.trim()).filter((v) => v !== "");
+}
+
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
@@ -48,7 +52,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
     const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
-    const isAppKey = isPublishable && initialRedirectUris.length > 0;
+    const isAppKey = isPublishable;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
     const [earningsEnabled, setEarningsEnabled] = useState(
@@ -94,14 +98,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             });
 
             // Save app settings for publishable keys
-            if (
-                isPublishable &&
-                (!sameRedirectUris(redirectUris, initialRedirectUris) ||
-                    earningsEnabled !== initialEarningsEnabled)
-            ) {
-                const cleaned = redirectUris
-                    .map((v) => v.trim())
-                    .filter((v) => v !== "");
+            if (isPublishable) {
+                const cleaned = cleanRedirectUris(redirectUris);
+                if (
+                    sameRedirectUris(cleaned, initialRedirectUris) &&
+                    earningsEnabled === initialEarningsEnabled
+                ) {
+                    onClose();
+                    return;
+                }
                 const metadataBody = {
                     redirectUris: cleaned,
                     earningsEnabled,

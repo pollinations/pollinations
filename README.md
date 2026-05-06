@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-05** – **🧰 Worl Tools** An offline-first desktop app packing over 20 utilities into one Swiss army knife. [Try it](https://worldtools-mu.vercel.app/) <!-- app -->
+- **2026-05-05** – **🔨 App Forge** A new community-built hub for discovering and exploring applications in the greenhouse. [Try it](http://torrents.signalcity.tv) <!-- app -->
+- **2026-05-05** – **⚓ Pyanchor** Live-edit your Next.js, Vite, and Astro apps straight from the browser with this open-source AI sidecar. [Try it](https://pyanchor.pyan.kr) <!-- app -->
+- **2026-05-05** – **📱 ZenWall AI** A dedicated generator for clean, minimalist 9:16 vertical wallpapers. [Try it](https://zenwall.netlify.app/) <!-- app -->
 - **2026-05-04** – **⚡ Mistral Speed Boost** Rerouted Mistral Small to a new Azure Foundry deployment. Text generation is noticeably faster and gateway timeouts are a thing of the past. Try it via the [Unified API](https://gen.pollinations.ai/v1/chat/completions).
 - **2026-05-04** – **🚀 LTX-2 Video Pipeline** Re-engineered the routing tunnel for LTX-2. Video generation is stable again and properly handles Cloudflare's edge network quirks.
 - **2026-05-03** – **🦙 Smarter Llamas** Upgraded the default Llama endpoint to Llama-3.3-70B-Instruct and added new vision-capable Maverick and Scout variants to the [Text API](https://gen.pollinations.ai/v1/chat/completions).
 - **2026-05-03** – **🛡️ Optional Guardrails** Keep things PG by passing a `safe` parameter or `Pollinations-Safe` header to the [Unified API](https://gen.pollinations.ai). Powered by AWS Bedrock.
 - **2026-05-03** – **🎨 Infinite Canvas** Lkalma is an AI-powered collaborative whiteboard with offline-first sketching tools. [Try it](https://lkal.ma) <!-- app -->
 - **2026-05-03** – **✍️ Storyframe Studio** An open-source AI creative workspace powered by the Pollinations API for your text and image workflows. [Try it](https://storyframe-studio.web.app) <!-- app -->
-- **2026-05-03** – **🎛️ AIGC Control Console** A new web-based dashboard for managing your generative AI workflows. [Try it](https://jfliu3265.github.io/pollinations-aigc-public/) <!-- app -->
-- **2026-05-01** – **🎥 120-Second Nova Reel Videos** The Nova Reel video model now supports generations up to two minutes long. Pass the updated duration parameters to the [Unified API](https://gen.pollinations.ai).
-- **2026-04-30** – **⚡ Edge Text Generation** Text generation now runs directly on the edge worker. One less network hop means faster responses when hitting the [text API](https://gen.pollinations.ai/v1/chat/completions).
-- **2026-04-30** – **🚀 Llama 3.3 70B** Meta's Llama 3.3 70B Instruct is now live. Just pass `llama` to the [text endpoint](https://gen.pollinations.ai/v1/models) and see what it has to say.
 ---
 
 ## 🌱 Introduction

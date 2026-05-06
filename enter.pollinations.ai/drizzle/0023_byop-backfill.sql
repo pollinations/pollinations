@@ -1,6 +1,5 @@
 -- Backfill BYOP attribution for secret keys created before byop_client_key_id
--- became a first-class column. This intentionally does not opt existing
--- publishable keys into developer earnings.
+-- became a first-class column.
 
 UPDATE `apikey`
 SET `byop_client_key_id` = json_extract(`metadata`, '$.clientId')

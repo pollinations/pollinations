@@ -27,6 +27,12 @@ const gaugeSegmentColors = {
     ...pillColors,
 } as const;
 
+const BALANCE_DISPLAY_EPSILON = 0.0001;
+
+function normalizeDisplayBalance(value: number): number {
+    return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
+}
+
 const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     percentage,
     value,
@@ -54,9 +60,9 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
                 </span>
             }
         >
-            <span className="absolute inset-0 flex items-center justify-center gap-1">
+            <span className="absolute inset-0 flex items-center justify-center gap-0.5 sm:gap-1">
                 <span
-                    className={`${textColor} font-bold text-sm whitespace-nowrap`}
+                    className={`${textColor} font-bold text-[11px] sm:text-sm whitespace-nowrap`}
                 >
                     {label} {formatPollen(value)}
                 </span>
@@ -73,36 +79,49 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const tierEmoji = getTierEmoji(tier);
     const tierColor = getTierColor(tier) as GaugeSegmentProps["color"];
 
-    const positiveTier = Math.max(0, tierBalance);
-    const positivePaid = Math.max(0, packBalance);
-    const totalPollen = tierBalance + packBalance;
+    const displayTierBalance = normalizeDisplayBalance(tierBalance);
+    const displayPaidBalance = normalizeDisplayBalance(packBalance);
+    const totalPollen = normalizeDisplayBalance(
+        displayTierBalance + displayPaidBalance,
+    );
+    const tierAvailable = Math.max(0, displayTierBalance);
+    const paidAvailable = Math.max(0, displayPaidBalance);
+    const tierMagnitude = Math.abs(displayTierBalance);
+    const paidMagnitude = Math.abs(displayPaidBalance);
 
     const gaugeHeightClass = "h-[30px] sm:h-[34px]";
-    const hideTierGaugeSegment = tier === "microbe" && positiveTier === 0;
+    const hideTierGaugeSegment = tier === "microbe" && displayTierBalance === 0;
 
-    // Each visible segment gets at least MIN_SEGMENT% so labels stay readable;
-    // the remaining width is split proportionally to positive balances.
-    const MIN_SEGMENT = 20;
-    const showPaid = positivePaid > 0;
-    const showTier = !hideTierGaugeSegment && positiveTier > 0;
+    // Each visible segment gets at least MIN_SEGMENT% so signed labels stay
+    // readable. Debt buckets are indicators; positive available balances get
+    // the surplus width so -1 debt does not look equivalent to +1 credit.
+    const showPaid = displayPaidBalance !== 0;
+    const showTier = !hideTierGaugeSegment && displayTierBalance !== 0;
     const visibleCount = (showPaid ? 1 : 0) + (showTier ? 1 : 0);
+    const minSegment = visibleCount > 1 ? 28 : 20;
 
     let paidPercentage = 0;
     let freePercentage = 0;
-    const positiveTotal = positiveTier + positivePaid;
-    if (visibleCount === 0 || positiveTotal <= 0) {
+    const magnitudeTotal = tierMagnitude + paidMagnitude;
+    if (visibleCount === 0 || magnitudeTotal <= 0) {
         paidPercentage = 50;
         freePercentage = 50;
     } else {
-        const surplus = 100 - MIN_SEGMENT * visibleCount;
+        const surplus = 100 - minSegment * visibleCount;
+        const availableTotal = tierAvailable + paidAvailable;
+        const paidWeight =
+            availableTotal > 0
+                ? paidAvailable / availableTotal
+                : paidMagnitude / magnitudeTotal;
+        const tierWeight =
+            availableTotal > 0
+                ? tierAvailable / availableTotal
+                : tierMagnitude / magnitudeTotal;
+
         if (showPaid) {
-            paidPercentage =
-                MIN_SEGMENT + (positivePaid / positiveTotal) * surplus;
+            paidPercentage = minSegment + paidWeight * surplus;
         }
-        if (showTier) {
-            freePercentage =
-                MIN_SEGMENT + (positiveTier / positiveTotal) * surplus;
-        }
+        if (showTier) freePercentage = minSegment + tierWeight * surplus;
     }
 
     return (
@@ -122,7 +141,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         {paidPercentage > 0 && (
                             <PollenGaugeSegment
                                 percentage={paidPercentage}
-                                value={packBalance}
+                                value={displayPaidBalance}
                                 label="🪷"
                                 color="amber"
                                 tooltipText="💳 Paid balance — Pollen you bought, plus earnings from paid-side user spend in your apps. Never expires."
@@ -133,7 +152,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         {!hideTierGaugeSegment && freePercentage > 0 && (
                             <PollenGaugeSegment
                                 percentage={freePercentage}
-                                value={tierBalance}
+                                value={displayTierBalance}
                                 label={tierEmoji}
                                 color={tierColor}
                                 tooltipText={`${tierEmoji} Tier balance — your free hourly Pollen, plus earnings from tier-side user spend in your apps.`}

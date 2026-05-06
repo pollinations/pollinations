@@ -16,11 +16,13 @@ const BUCKET_COLUMNS = {
  * Regular requests are binary: tier pays when it can cover the actual charge,
  * pack pays when tier cannot cover and pack is positive, and regular overage
  * falls back to tier when pack is empty.
+ * Paid-only requests always deduct from pack and never touch tier.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
+    isPaidOnly = false,
 ): Promise<{ ok: boolean; bucket: Bucket | null }> {
     if (amount <= 0) return { ok: true, bucket: null };
 
@@ -29,6 +31,7 @@ export async function atomicDeductUserBalance(
             SELECT
                 id,
                 CASE
+                    WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
                     WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
                     WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'
                     ELSE 'tier'
@@ -145,29 +148,4 @@ export async function getUserBalances(
         tierBalance: user?.tierBalance ?? 0,
         packBalance: user?.packBalance ?? 0,
     };
-}
-
-/**
- * Atomically deducts pollen from paid balance only (excluding tier_balance).
- *
- * @param db - Drizzle database instance
- * @param userId - User ID to deduct from
- * @param amount - Amount of pollen to deduct
- * @returns Promise that resolves when deduction is complete
- */
-export async function atomicDeductPaidBalance(
-    db: DrizzleD1Database,
-    userId: string,
-    amount: number,
-): Promise<{ ok: boolean; bucket: "pack" | null }> {
-    if (amount <= 0) return { ok: true, bucket: null };
-
-    const result = await db.run(sql`
-			UPDATE ${userTable}
-			SET pack_balance = COALESCE(pack_balance, 0) - ${amount}
-			WHERE id = ${userId}
-		`);
-
-    const ok = (result.meta.changes ?? 0) > 0;
-    return { ok, bucket: ok ? "pack" : null };
 }

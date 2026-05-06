@@ -7,7 +7,6 @@ import { getModelDefinition } from "../registry/registry.ts";
 import {
     atomicCreditUserBalance,
     atomicDeductApiKeyBalance,
-    atomicDeductPaidBalance,
     atomicDeductUserBalance,
     type Bucket,
 } from "./deduction.ts";
@@ -228,24 +227,11 @@ async function deductUserBalance(
             ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
             : false;
 
-        if (isPaidOnly) {
-            const { ok } = await atomicDeductPaidBalance(db, userId, amount);
-            if (!ok) {
-                throw new Error(
-                    `Paid-only user balance deduction affected 0 rows for ${userId}`,
-                );
-            }
-            log.debug(
-                "Decremented {price} pollen from user {userId} (paid-only model, tier excluded)",
-                { price: amount, userId },
-            );
-            return "pack";
-        }
-
         const { ok, bucket } = await atomicDeductUserBalance(
             db,
             userId,
             amount,
+            isPaidOnly,
         );
         if (!ok) {
             throw new Error(

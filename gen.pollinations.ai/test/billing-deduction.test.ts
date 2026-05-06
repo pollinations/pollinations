@@ -1,6 +1,5 @@
 import { env } from "cloudflare:test";
 import {
-    atomicDeductPaidBalance,
     atomicDeductUserBalance,
     getUserBalances,
 } from "@shared/billing/deduction.ts";
@@ -73,13 +72,13 @@ describe("billing deduction", () => {
             packBalance: 5,
         });
 
-        await atomicDeductPaidBalance(db, userId, 2);
+        await atomicDeductUserBalance(db, userId, 2, true);
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: 10,
             packBalance: 3,
         });
 
-        await atomicDeductPaidBalance(db, userId, 4);
+        await atomicDeductUserBalance(db, userId, 4, true);
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: 10,
             packBalance: -1,
@@ -90,7 +89,7 @@ describe("billing deduction", () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 
         await atomicDeductUserBalance(db, userId, 3);
-        await atomicDeductPaidBalance(db, userId, 4);
+        await atomicDeductUserBalance(db, userId, 4, true);
         await atomicDeductUserBalance(db, userId, 6);
 
         expect(await getUserBalances(db, userId)).toEqual({

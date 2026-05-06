@@ -550,7 +550,7 @@ const profileResponseSchema = z.object({
     image: z
         .string()
         .nullable()
-        .describe("Profile picture URL (e.g. GitHub avatar)"),
+        .describe("Profile picture URL from the linked login provider"),
     tier: z
         .enum(["anonymous", ...tierNames])
         .describe("User's current tier level"),
@@ -639,7 +639,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
+                "Returns your account profile. Linked GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.",
             responses: {
                 200: {
                     description: "User profile",

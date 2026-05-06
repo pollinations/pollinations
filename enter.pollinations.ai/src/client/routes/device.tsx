@@ -8,9 +8,10 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "../components/auth/auth-modal.tsx";
+import { SocialSignInButtons } from "../components/auth/social-sign-in-buttons.tsx";
 import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
-import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 
 export const Route = createFileRoute("/device")({
     component: DeviceComponent,
@@ -29,7 +30,7 @@ function DeviceComponent() {
     const [userCode, setUserCode] = useState(prefilled);
     const [error, setError] = useState<string | null>(null);
     const [checking, setChecking] = useState(false);
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
+    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const verifyAndRedirect = useCallback(
@@ -115,18 +116,10 @@ function DeviceComponent() {
                             Sign in to enter the device code.
                         </p>
                     </AuthInfoCard>
-                    <div className="flex justify-end">
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn}
-                            color="dark"
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
-                    </div>
+                    <SocialSignInButtons
+                        pendingProvider={pendingProvider}
+                        onSignIn={signIn}
+                    />
                 </div>
             </AuthModal>
         );

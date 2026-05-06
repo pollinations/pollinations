@@ -29,6 +29,25 @@ import {
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
+const DISCORD_LINK_MARKER_PARAM = "discordLink";
+const AUTH_ERROR_PARAM = "error";
+const AUTH_ERROR_DESCRIPTION_PARAM = "error_description";
+
+type LinkedAuthAccount = {
+    providerId: string;
+};
+
+async function fetchLinkedAuthAccounts(): Promise<LinkedAuthAccount[]> {
+    try {
+        const response = await fetch("/api/auth/list-accounts", {
+            credentials: "include",
+        });
+        if (!response.ok) return [];
+        return response.json() as Promise<LinkedAuthAccount[]>;
+    } catch {
+        return [];
+    }
+}
 
 function pageFromHash(hash: string): DashboardPage {
     const page = hash.replace(/^#/, "");
@@ -39,36 +58,78 @@ function pageFromHash(hash: string): DashboardPage {
     return "pollen";
 }
 
+function clearDiscordLinkParams(url: URL): void {
+    url.searchParams.delete(DISCORD_LINK_MARKER_PARAM);
+    url.searchParams.delete(AUTH_ERROR_PARAM);
+    url.searchParams.delete(AUTH_ERROR_DESCRIPTION_PARAM);
+}
+
+function getDiscordLinkCallbackURL(): string {
+    const url = new URL(window.location.href);
+    clearDiscordLinkParams(url);
+    return url.toString();
+}
+
+function getDiscordLinkErrorCallbackURL(): string {
+    const url = new URL(window.location.href);
+    clearDiscordLinkParams(url);
+    url.hash = "";
+    url.searchParams.set(DISCORD_LINK_MARKER_PARAM, "1");
+    return url.toString();
+}
+
+function getDiscordLinkErrorMessage(error: string): string {
+    if (error === "account_already_linked_to_different_user") {
+        return "That Discord account is already connected to another Pollinations account. Sign out and sign in with Discord to manage that account, or use another Discord account.";
+    }
+    if (error === "email_doesn't_match") {
+        return "Discord returned a different email than this account allows.";
+    }
+    if (error === "unable_to_link_account") {
+        return "Discord could not be connected. Try again, or disconnect it from another Pollinations account first.";
+    }
+    return "Discord could not be connected. Try again.";
+}
+
 export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [tierData, apiKeysResult, d1BalanceResult, profileResult] =
-            await Promise.all([
-                apiClient.tiers.view
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient["api-keys"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : { data: [] })),
-                apiClient.customer.balance
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient.account.profile
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-            ]);
+        const [
+            tierData,
+            apiKeysResult,
+            d1BalanceResult,
+            profileResult,
+            linkedAccounts,
+        ] = await Promise.all([
+            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            apiClient.account.profile
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            fetchLinkedAuthAccounts(),
+        ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
+        const displayName =
+            githubUsername || context.user?.name || context.user?.email || "";
 
         return {
             user: context.user,
-            githubUsername,
+            displayName,
+            discordLinked: linkedAccounts.some(
+                (account) => account.providerId === "discord",
+            ),
             apiKeys,
             tierData,
             tierBalance,
@@ -81,7 +142,8 @@ function RouteComponent() {
     const router = useRouter();
     const {
         user,
-        githubUsername,
+        displayName,
+        discordLinked,
         apiKeys,
         tierData,
         tierBalance,
@@ -89,6 +151,11 @@ function RouteComponent() {
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [isLinkingDiscord, setIsLinkingDiscord] = useState(false);
+    const [isUnlinkingDiscord, setIsUnlinkingDiscord] = useState(false);
+    const [linkAccountError, setLinkAccountError] = useState<string | null>(
+        null,
+    );
     const [activePage, setActivePage] = useState<DashboardPage>(() =>
         pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
     );
@@ -102,6 +169,25 @@ function RouteComponent() {
 
         window.addEventListener("hashchange", syncPageFromHash);
         return () => window.removeEventListener("hashchange", syncPageFromHash);
+    }, []);
+
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        const isDiscordLinkError =
+            url.searchParams.get(DISCORD_LINK_MARKER_PARAM) === "1";
+        if (!isDiscordLinkError) return;
+
+        const error = url.searchParams.get(AUTH_ERROR_PARAM);
+        if (error) {
+            setLinkAccountError(getDiscordLinkErrorMessage(error));
+        }
+
+        clearDiscordLinkParams(url);
+        window.history.replaceState(
+            null,
+            "",
+            `${url.pathname}${url.search}${url.hash}`,
+        );
     }, []);
 
     const selectableKeys = useMemo(
@@ -122,6 +208,80 @@ function RouteComponent() {
             console.error("Sign out failed:", error);
         } finally {
             setIsSigningOut(false);
+        }
+    }
+
+    async function handleLinkDiscord(): Promise<void> {
+        if (isLinkingDiscord || isUnlinkingDiscord || discordLinked) return;
+        setIsLinkingDiscord(true);
+        setLinkAccountError(null);
+        try {
+            const response = await fetch("/api/auth/link-social", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    provider: "discord",
+                    callbackURL: getDiscordLinkCallbackURL(),
+                    errorCallbackURL: getDiscordLinkErrorCallbackURL(),
+                }),
+            });
+            const data = (await response.json().catch(() => null)) as {
+                url?: string;
+                message?: string;
+            } | null;
+
+            if (!response.ok) {
+                throw new Error(data?.message || "Failed to connect Discord");
+            }
+            if (data?.url) {
+                window.location.href = data.url;
+                return;
+            }
+            await router.invalidate();
+        } catch (error) {
+            setLinkAccountError(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to connect Discord",
+            );
+            setIsLinkingDiscord(false);
+        }
+    }
+
+    async function handleUnlinkDiscord(): Promise<void> {
+        if (isUnlinkingDiscord || isLinkingDiscord || !discordLinked) return;
+        setIsUnlinkingDiscord(true);
+        setLinkAccountError(null);
+        try {
+            const response = await fetch("/api/auth/unlink-account", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ providerId: "discord" }),
+            });
+            const data = (await response.json().catch(() => null)) as {
+                error?: string;
+                message?: string;
+            } | null;
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.message ||
+                        data?.error ||
+                        "Failed to disconnect Discord",
+                );
+            }
+
+            await router.invalidate();
+        } catch (error) {
+            setLinkAccountError(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to disconnect Discord",
+            );
+        } finally {
+            setIsUnlinkingDiscord(false);
         }
     }
 
@@ -220,11 +380,21 @@ function RouteComponent() {
     return (
         <DashboardShell
             activePage={activePage}
-            githubUsername={githubUsername}
-            githubAvatarUrl={user?.image || ""}
+            displayName={displayName}
+            avatarUrl={user?.image || ""}
+            discordLinked={discordLinked}
+            isLinkingDiscord={isLinkingDiscord}
+            isUnlinkingDiscord={isUnlinkingDiscord}
+            onLinkDiscord={handleLinkDiscord}
+            onUnlinkDiscord={handleUnlinkDiscord}
             onPageChange={handlePageChange}
             onSignOut={handleSignOut}
         >
+            {linkAccountError && (
+                <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                    {linkAccountError}
+                </div>
+            )}
             {activePage === "updates" && <UpdatesPage />}
             {activePage === "pollen" && (
                 <div className="flex flex-col gap-6">

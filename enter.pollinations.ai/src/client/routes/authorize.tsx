@@ -23,10 +23,11 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "../components/auth/auth-modal.tsx";
+import { SocialSignInButtons } from "../components/auth/social-sign-in-buttons.tsx";
 import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
-import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { formatPollen } from "../lib/format-pollen.ts";
 
@@ -141,7 +142,7 @@ function AuthorizeComponent() {
     const user = session?.user;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
+    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [deviceOutcome, setDeviceOutcome] = useState<
@@ -448,27 +449,11 @@ function AuthorizeComponent() {
                         </AuthInfoCard>
                     )}
 
-                    <div className="flex gap-2 justify-end">
-                        <Button
-                            as="button"
-                            onClick={handleDeny}
-                            weight="outline"
-                            color="dark"
-                            disabled={isSigningIn}
-                        >
-                            Deny
-                        </Button>
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn || !!error}
-                            color="dark"
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
-                    </div>
+                    <SocialSignInButtons
+                        pendingProvider={pendingProvider}
+                        disabled={!!error}
+                        onSignIn={signIn}
+                    />
                 </div>
             </AuthModal>
         );
@@ -686,8 +671,8 @@ function AuthorizeComponent() {
                     <Button
                         as="button"
                         onClick={handleDeny}
-                        weight="outline"
-                        color="dark"
+                        color="red"
+                        weight="light"
                         disabled={isAuthorizing}
                     >
                         Deny
@@ -696,7 +681,8 @@ function AuthorizeComponent() {
                         as="button"
                         onClick={handleAuthorize}
                         disabled={!canAuthorize || isAuthorizing || !!error}
-                        color="dark"
+                        color="amber"
+                        weight="light"
                     >
                         {isAuthorizing ? "Authorizing..." : "Authorize"}
                     </Button>

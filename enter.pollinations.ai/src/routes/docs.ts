@@ -1323,7 +1323,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "",
                                 "| Endpoint | Description |",
                                 "|----------|-------------|",
-                                "| `GET /account/profile` | GitHub username and profile image |",
+                                "| `GET /account/profile` | Linked GitHub username and profile image |",
                                 "| `GET /account/balance` | Current pollen balance |",
                                 "| `GET /account/usage` | Per-request history with costs |",
                                 "| `GET /account/usage/daily` | Daily aggregated usage for dashboards |",

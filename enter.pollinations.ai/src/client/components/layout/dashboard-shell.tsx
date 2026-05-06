@@ -22,8 +22,13 @@ export type { DashboardPage } from "./dashboard-theme.ts";
 type DashboardShellProps = PropsWithChildren<{
     activePage: DashboardPage;
     navItems?: typeof DASHBOARD_NAV_ITEMS;
-    githubUsername?: string;
-    githubAvatarUrl?: string;
+    displayName?: string;
+    avatarUrl?: string;
+    discordLinked?: boolean;
+    isLinkingDiscord?: boolean;
+    isUnlinkingDiscord?: boolean;
+    onLinkDiscord?: () => void;
+    onUnlinkDiscord?: () => void;
     onPageChange: (page: DashboardPage) => void;
     onSignOut?: () => void;
     accountArea?: ReactNode;
@@ -32,8 +37,13 @@ type DashboardShellProps = PropsWithChildren<{
 export const DashboardShell: FC<DashboardShellProps> = ({
     activePage,
     navItems = DASHBOARD_NAV_ITEMS,
-    githubUsername,
-    githubAvatarUrl,
+    displayName,
+    avatarUrl,
+    discordLinked,
+    isLinkingDiscord,
+    isUnlinkingDiscord,
+    onLinkDiscord,
+    onUnlinkDiscord,
     onPageChange,
     onSignOut,
     accountArea,
@@ -102,8 +112,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         <DashboardRail
             activePage={activePage}
             navItems={navItems}
-            githubUsername={githubUsername}
-            githubAvatarUrl={githubAvatarUrl}
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            discordLinked={discordLinked}
+            isLinkingDiscord={isLinkingDiscord}
+            isUnlinkingDiscord={isUnlinkingDiscord}
+            onLinkDiscord={onLinkDiscord}
+            onUnlinkDiscord={onUnlinkDiscord}
             onPageChange={handlePageChange}
             onSignOut={onSignOut}
             accountArea={accountArea}
@@ -205,8 +220,13 @@ function useDashboardBodyClass(): void {
 type DashboardRailProps = {
     activePage: DashboardPage;
     navItems: typeof DASHBOARD_NAV_ITEMS;
-    githubUsername?: string;
-    githubAvatarUrl?: string;
+    displayName?: string;
+    avatarUrl?: string;
+    discordLinked?: boolean;
+    isLinkingDiscord?: boolean;
+    isUnlinkingDiscord?: boolean;
+    onLinkDiscord?: () => void;
+    onUnlinkDiscord?: () => void;
     onPageChange: (page: DashboardPage) => void;
     onSignOut?: () => void;
     accountArea?: ReactNode;
@@ -215,8 +235,13 @@ type DashboardRailProps = {
 const DashboardRail: FC<DashboardRailProps> = ({
     activePage,
     navItems,
-    githubUsername,
-    githubAvatarUrl,
+    displayName,
+    avatarUrl,
+    discordLinked,
+    isLinkingDiscord,
+    isUnlinkingDiscord,
+    onLinkDiscord,
+    onUnlinkDiscord,
     onPageChange,
     onSignOut,
     accountArea,
@@ -266,10 +291,15 @@ const DashboardRail: FC<DashboardRailProps> = ({
             </nav>
             <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
                 {accountArea ??
-                    (githubUsername && onSignOut ? (
+                    (displayName && onSignOut ? (
                         <User
-                            githubUsername={githubUsername}
-                            githubAvatarUrl={githubAvatarUrl ?? ""}
+                            displayName={displayName}
+                            avatarUrl={avatarUrl ?? ""}
+                            discordLinked={discordLinked}
+                            isLinkingDiscord={isLinkingDiscord}
+                            isUnlinkingDiscord={isUnlinkingDiscord}
+                            onLinkDiscord={onLinkDiscord}
+                            onUnlinkDiscord={onUnlinkDiscord}
                             onSignOut={onSignOut}
                             className="w-full justify-start"
                             menuItems={<AccountMenuLinks />}
@@ -460,7 +490,7 @@ const AccountIconLink: FC<{
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
+        className="flex items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}

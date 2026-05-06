@@ -1,7 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { Button } from "../components/button.tsx";
+import { ErrorBanner } from "../components/auth/auth-modal.tsx";
+import { SocialSignInButtons } from "../components/auth/social-sign-in-buttons.tsx";
 import {
     type DashboardPage,
     DashboardShell,
@@ -12,6 +13,8 @@ import {
 } from "../components/layout/dashboard-theme.ts";
 import { UpdatesPage } from "../components/layout/updates-page.tsx";
 import { Pricing } from "../components/pricing";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
+import type { SocialProvider } from "../lib/social-providers.ts";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "updates",
@@ -61,7 +64,7 @@ export const Route = createFileRoute("/sign-in")({
 });
 
 function RouteComponent() {
-    const [loading, setLoading] = useState(false);
+    const { pendingProvider, error, signIn } = useSocialSignIn();
     const [activePage, setActivePage] = useState<DashboardPage>(() =>
         pageFromHash(typeof window === "undefined" ? "" : window.location.hash),
     );
@@ -74,17 +77,6 @@ function RouteComponent() {
         window.addEventListener("hashchange", syncPageFromHash);
         return () => window.removeEventListener("hashchange", syncPageFromHash);
     }, []);
-
-    const handleSignIn = async () => {
-        setLoading(true);
-        const { error } = await authClient.signIn.social({
-            provider: "github",
-        });
-        if (error) {
-            setLoading(false);
-            throw error;
-        }
-    };
 
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
@@ -103,8 +95,9 @@ function RouteComponent() {
             onPageChange={handlePageChange}
             accountArea={
                 <SignedOutAccountArea
-                    loading={loading}
-                    onSignIn={handleSignIn}
+                    error={error}
+                    pendingProvider={pendingProvider}
+                    onSignIn={signIn}
                 />
             }
         >
@@ -115,22 +108,22 @@ function RouteComponent() {
 }
 
 function SignedOutAccountArea({
-    loading,
+    error,
+    pendingProvider,
     onSignIn,
 }: {
-    loading: boolean;
-    onSignIn: () => void;
+    error: string | null;
+    pendingProvider: SocialProvider | null;
+    onSignIn: (provider: SocialProvider) => void;
 }) {
     return (
-        <Button
-            as="button"
-            onClick={onSignIn}
-            disabled={loading}
-            color="amber"
-            weight="light"
-            className="w-full justify-center text-center"
-        >
-            {loading ? "Signing in..." : "Sign in with GitHub"}
-        </Button>
+        <div className="flex flex-col gap-2.5">
+            {error && <ErrorBanner>{error}</ErrorBanner>}
+            <SocialSignInButtons
+                pendingProvider={pendingProvider}
+                mode="github-first"
+                onSignIn={onSignIn}
+            />
+        </div>
     );
 }

@@ -15,6 +15,7 @@ import {
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
+import type { GithubProfile } from "better-auth/social-providers";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { sendTierEventToTinybird } from "./events.ts";
@@ -75,16 +76,15 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 },
             },
         },
-        socialProviders: {
-            github: {
-                clientId: env.GITHUB_CLIENT_ID,
-                clientSecret: env.GITHUB_CLIENT_SECRET,
-                mapProfileToUser: (profile) => ({
-                    githubId: profile.id,
-                    githubUsername: profile.login,
-                }),
+        account: {
+            accountLinking: {
+                enabled: true,
+                // Users often use a different email on Discord than GitHub/Google;
+                // linking still requires an active Pollinations session.
+                allowDifferentEmails: true,
             },
         },
+        socialProviders: getSocialProviders(env),
         plugins: [
             adminPlugin,
             apiKeyPlugin,
@@ -98,6 +98,36 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
 export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
+
+function getSocialProviders(env: Cloudflare.Env) {
+    return {
+        github: {
+            clientId: env.GITHUB_CLIENT_ID,
+            clientSecret: env.GITHUB_CLIENT_SECRET,
+            mapProfileToUser: (profile: GithubProfile) => ({
+                githubId: profile.id,
+                githubUsername: profile.login,
+            }),
+        },
+        ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+            ? {
+                  google: {
+                      clientId: env.GOOGLE_CLIENT_ID,
+                      clientSecret: env.GOOGLE_CLIENT_SECRET,
+                      prompt: "select_account" as const,
+                  },
+              }
+            : {}),
+        ...(env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET
+            ? {
+                  discord: {
+                      clientId: env.DISCORD_CLIENT_ID,
+                      clientSecret: env.DISCORD_CLIENT_SECRET,
+                  },
+              }
+            : {}),
+    };
+}
 
 /**
  * Plugin to initialize tier balance for new users in D1.

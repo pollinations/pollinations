@@ -25,8 +25,8 @@ export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
 /**
  * Account permissions the user can grant at the consent screen. Every scope is
  * opt-in — nothing is implicit. A caller's own key metadata (`/account/key`),
- * its budget, its usage (`/account/key/usage`), and the user's github username +
- * image (`/account/profile`) are all readable without any scope.
+ * its budget, its usage (`/account/key/usage`), and the user's linked account
+ * username + image (`/account/profile`) are all readable without any scope.
  *
  * - `profile`: read account name and email
  * - `usage`: read full account balance + account-wide usage (key's own

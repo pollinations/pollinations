@@ -29,6 +29,7 @@ Features, plans, or pricing labeled "beta" or "preview" may be modified, suspend
 
 - Tier structures and associated benefits (for example Pollen allocations and daily/hourly limits)
 - Model availability, capabilities, and per-model pricing
+- Developer-earnings rates and markup percentages
 - Usage limits, quotas, and rate limits
 - Feature availability and functionality
 
@@ -60,14 +61,14 @@ Fees are per plan/order/invoice; currency is by default USD.
 
 **Balances.** Your wallet may include:
 
-- **Tier balance:** free Pollen grants and eligible developer earnings. Tier balance refills according to your tier and can be capped by tier rules.
-- **Paid balance:** purchased Pollen and eligible developer earnings credited from paid-balance usage. Paid balance does not automatically refill.
+- **Tier balance:** free Pollen grants and developer earnings. Tier balance refills according to your tier and can be capped by tier rules.
+- **Paid balance:** purchased Pollen and developer earnings credited from paid-balance usage. Paid balance does not expire and does not automatically refill.
 
-**Request billing.** Pollen is consumed when API requests run. Regular models use tier balance first when it can cover the request; otherwise paid balance may be used. Paid-only models use paid balance only. We may refuse a request when no eligible balance can cover the pre-flight estimate. Final usage can exceed estimates and make the selected balance negative. Tier debt recovers through future tier refills; paid-balance debt clears through future top-ups or eligible paid-balance earnings.
+**Request billing.** Pollen is consumed when API requests run. Regular models use tier balance first when it can cover the request; otherwise paid balance may be used. Paid-only models use paid balance only. We may refuse a request when no allowed balance can cover the pre-flight estimate. Final usage can exceed estimates and make the selected balance negative. Tier debt recovers through future tier refills; paid-balance debt clears through future top-ups or future paid-balance developer earnings.
 
-**Developer earnings.** App developers may turn on developer earnings for a Publishable App Key. When enabled, authorized app requests may include a 25% markup over model cost. From the user's perspective, this means 20% of total spend on that request goes to the app developer. We show the app share before authorization where the app is identified.
+**Developer earnings.** App developers may turn on developer earnings for a Publishable App Key. When developer earnings are enabled on a verified Publishable App Key, authorized app requests may include a 25% markup over model cost. From the user's perspective, this means 20% of total spend on that request goes to the app developer. We show the app share before authorization.
 
-Developer earnings are credited as Pollen to the developer wallet and land in the same balance type the user paid from: tier spend credits tier balance, and paid spend credits paid balance. Developer earnings are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may reverse or adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting, or other billing corrections.
+Developer earnings are credited as Pollen to the developer wallet and land in the same balance type the user paid from: tier spend credits tier balance, and paid spend credits paid balance. Developer earnings are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may reverse or adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
 **Taxes.** Prices are net of VAT; we charge Estonian VAT (24%) where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules apply. **Check:** gross = net x 1.24.
 

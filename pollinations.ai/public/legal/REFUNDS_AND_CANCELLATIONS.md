@@ -12,8 +12,8 @@ Pollen is an in-service credit used only for Pollinations API usage. It is not l
 
 Your wallet may include:
 
-- **Tier balance:** free grants and eligible developer earnings.
-- **Paid balance:** purchased Pollen and eligible developer earnings from paid-balance usage.
+- **Tier balance:** free Pollen grants and developer earnings.
+- **Paid balance:** purchased Pollen and developer earnings from paid-balance usage.
 
 ## 2) Final-Sale Policy
 
@@ -32,7 +32,7 @@ We may review refund requests for unused paid balance in these cases:
 - We fail to provision paid Pollen after payment.
 - A material, documented technical fault prevents any meaningful use within a reasonable start period, and you contact us promptly before substantial use.
 
-Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be revoked or adjusted.
+Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be revoked or adjusted. Developer earnings may also be reversed or adjusted for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
 ## 4) EU/EEA Consumer Withdrawal
 

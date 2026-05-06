@@ -18,15 +18,6 @@ body:
         Need help? Drop a comment here or ask in [Discord #dev-quest](https://discord.gg/pollinations-ai-885844321461485618).
 
   - type: input
-    id: reward
-    attributes:
-      label: Reward
-      description: Pollen credited on PR merge
-      placeholder: "e.g. 20 Pollen"
-    validations:
-      required: true
-
-  - type: input
     id: source-issue
     attributes:
       label: Source issue
@@ -76,6 +67,15 @@ body:
         - [AGENTS.md](https://github.com/pollinations/pollinations/blob/main/AGENTS.md)
         - [API docs](https://gen.pollinations.ai/api/docs)
         -
+
+  - type: input
+    id: reward
+    attributes:
+      label: Reward
+      description: Pollen credited on PR merge
+      placeholder: "e.g. 20 Pollen"
+    validations:
+      required: true
 
   - type: markdown
     attributes:

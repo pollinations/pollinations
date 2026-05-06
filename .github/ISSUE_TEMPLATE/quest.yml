@@ -1,7 +1,7 @@
 name: Community Quest
 description: Propose a community quest — earn Pollen by shipping a self-contained piece of work
 title: "[QUEST] "
-labels: ["DEV-QUEST"]
+labels: ["POLLEN-QUEST"]
 body:
   - type: markdown
     attributes:
@@ -39,7 +39,7 @@ body:
     id: scope
     attributes:
       label: What to build
-      description: Concrete changes needed. Reference files, paths, and any existing code to follow.
+      description: Concrete changes needed.
       value: |
         -
         -

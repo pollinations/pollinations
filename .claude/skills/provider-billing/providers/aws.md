@@ -559,29 +559,48 @@ The difference between those two is **either** (a) a reseller discount Automat-I
 
 5. **Track monthly `UnblendedCost` month-over-month** as the authoritative number. This month's April MTD: $1,599. The Savings Plan is invisible to us but not hurting us. Treat this number as the real cost. Anything lower on the actual Automat-IT invoice is a gift.
 
-### Integration with the finance runway app
+### Integration with the finance runway app — credit visibility gotcha
 
-`apps/operation/finance` tracks credit pools in `vendors.json._pools`. **AWS must be configured as `"kind": "payg"`** — not as a credit pool with a seed balance — because none of our "credit" figures are fetchable or visible from this account:
+`apps/operation/finance` tracks credit pools in `vendors.json._pools`. The Cost Explorer API has a structural blind spot for AWS credits that applies to **both** our accounts:
 
+1. The Pollinations-AIT-resold account (`813596885972`): credits live at the Automat-IT payer level and never surface in our view — `RECORD_TYPE=Credit` returns no rows, `NetUnblendedCost == UnblendedCost`. See the long write-up above for the four independent signals confirming this.
+
+2. The Myceli-direct account (`301235909293`): direct-billed by AWS EMEA SARL (no reseller). The Billing Console clearly shows credits absorbing usage (e.g. $74,999.99 of NVIDIA Inception credits used on a $75k grant), but the API still shows `RECORD_TYPE` groupings of `Usage / Support / Tax / SavingsPlanCoveredUsage / SavingsPlanNegation / Other` with **no `Credit` row**, and `NetUnblendedCost == UnblendedCost`. AWS applies credits at invoice time, not via the public CE API. This is a documented inconsistency — AWS Activate-style credits are notorious for not surfacing in `RECORD_TYPE=Credit` for the recipient account.
+
+So programmatic balance tracking via the API alone isn't possible on either account. The finance app handles this with two different patterns:
+
+**Pattern A — Pollinations account (`813596885972`):** `kind: "payg"`, no balance row. Treat `UnblendedCost` as cash spend; if Automat-IT ever starts flowing credits down, the effect will appear programmatically as `NetUnblendedCost < UnblendedCost` and we can swap to Pattern B.
+
+**Pattern B — Myceli account (`301235909293`):** hybrid manual seed with auto-decrement. The operator copies the "Total amount remaining" number from `https://console.aws.amazon.com/billing/home?region=us-east-1#/credits` into `apps/operation/finance/secrets/aws-credits.json` (gitignored) plus today's date as the anchor. The `aws.mjs` provider then queries CE for daily `UnblendedCost` since the anchor and treats 100% of it as credit burn while the seed is positive. Matches reality on this account because credits absorb essentially all usage. Drift between our model and AWS's actual application is corrected on the next monthly re-anchor.
+
+`secrets/aws-credits.json` shape:
 ```json
-"AWS": {
-  "provider": "aws",
-  "kind": "payg",
-  "vendor_canonical": "AWS",
-  "mtd_total_usd": 1598.87,
-  "mtd_credit_usd": 0,
-  "mtd_cash_usd": 1598.87,
-  "as_of": "2026-04-12"
+{
+  "as_of": "2026-05-06",
+  "balance_usd": 32114.88,
+  "grants": [
+    { "name": "Myceli AI_MAP",                       "remaining": 31195.70, "expires": "2027-03-31" },
+    { "name": "AWS Activate - Antler Global PARENT", "remaining":   919.17, "expires": "2027-09-30" },
+    { "name": "AWS Activate - NVIDIA Inception",     "remaining":     0.01, "expires": "2026-11-30" }
+  ]
 }
 ```
 
-Hardcoding a `seed_balance_usd` (e.g. "we have $32k in AWS credits") is **wrong**:
+`vendors.json._pools.AWS` shape under Pattern B (no `kind` field — wrapper sets `current_balance_usd` and signals `live_balance: true`, so the orchestrator trusts it):
+```json
+"AWS": {
+  "provider": "aws",
+  "as_of": "2026-05-06",
+  "vendor_canonical": "AWS",
+  "mtd_total_usd": 4.20,
+  "mtd_credit_usd": 4.20,
+  "mtd_cash_usd": 0
+}
+```
 
-- The number isn't reachable from any AWS CLI call.
-- Every daily cron run validates "no credits applied" via `NetUnblendedCost == UnblendedCost` — so a hardcoded balance would never decrement, and would show forever as if untouched.
-- If Automat-IT ever starts flowing credits down to us, the effect will appear **programmatically** as `NetUnblendedCost < UnblendedCost`, and the finance app will pick it up automatically via `mtd_credit_usd = UnblendedCost − NetUnblendedCost`. No code change, no seed update.
+**Refresh ritual (Pattern B):** once a month, open the Credits Console, copy `Total amount remaining` into `balance_usd`, bump `as_of` to today. That's the entire operator overhead.
 
-The rule for this account: **only trust numbers the CLI can verify**. Keep AWS as `payg` until credits actually start flowing through our view, and only then consider adding a seed.
+**Why not auto-scrape the Credits Console?** It's a private React UI behind cookie auth; no documented API. Manual paste is fragile but observable; scraping would be fragile and silent. Re-anchoring takes 15 seconds and has the side benefit of forcing eyeballs on the runway number monthly.
 
 Credential gotcha for the finance app: `apps/operation/finance` loads shared gen worker model secrets for provider API keys, but it must ignore `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN` from those shared secrets. The gen worker AWS keys are Bedrock runtime credentials (`portkey-bedrock-access`) and can fail Cost Explorer with `ce:GetCostAndUsage` `AccessDenied`; finance should use the local/default AWS CLI credential chain configured for billing.
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10712,
+  "title": "feat: cloud-provider billing + key rotation (OpenRouter, DeepInfra, AWS credits)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10712",
+  "merged_at": "2026-05-06T23:52:02Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive's accounting department",
+    "blurb": "We've wired up OpenRouter to our text gateway and taught our internal systems how to count cloud credits. Better routing for your prompts, and less manual math for us.",
+    "summary": "Added OpenRouter as a provider to the text generation gateway and updated internal finance tools for automated billing tracking and key rotation.",
+    "impact": "Users benefit from a more resilient text generation backend, while our infrastructure gets smarter about managing API keys and cloud credits.",
+    "keywords": [
+      "infrastructure",
+      "billing",
+      "openrouter",
+      "security",
+      "backend"
+    ],
+    "visual_concept": "The PR is about finance, billing, keys, and adding a new provider (OpenRouter). Visuals: The bee mascot acting as an accountant or managing glowing keys/coins. A retro computer showing charts or routing paths.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, organizing glowing digital coins and golden keys on a wooden desk. A retro computer monitor in the background displays a green routing map. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-06/PR-10712.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, organizing glowing digital coins and golden keys on a wooden desk. A retro computer monitor in the background displays a green routing map. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-06T23:53:01.083672+00:00"
+}

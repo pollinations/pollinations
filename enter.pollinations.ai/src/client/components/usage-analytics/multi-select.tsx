@@ -3,6 +3,67 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/util.ts";
 import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
 
+type MultiSelectTheme = "pink" | "yellow";
+
+const THEME_TOKENS: Record<
+    MultiSelectTheme,
+    {
+        labelText: string;
+        triggerIdle: string;
+        triggerOpen: string;
+        triggerDisabled: string;
+        triggerTextIdle: string;
+        triggerTextOpen: string;
+        triggerTextDisabled: string;
+        chevronIdle: string;
+        chevronOpen: string;
+        popupBorder: string;
+        scrollbar: string;
+        rowSelected: string;
+        rowIdle: string;
+        rowHover: string;
+        checkSelected: string;
+        checkIdle: string;
+    }
+> = {
+    pink: {
+        labelText: "text-pink-800/75",
+        triggerIdle: "border-pink-300 bg-pink-50/80 hover:bg-pink-100",
+        triggerOpen: "border-pink-300 bg-pink-200",
+        triggerDisabled: "border-pink-200 bg-pink-50/50",
+        triggerTextIdle: "text-pink-900",
+        triggerTextOpen: "text-pink-950",
+        triggerTextDisabled: "text-pink-700/60",
+        chevronIdle: "text-pink-700",
+        chevronOpen: "text-pink-950",
+        popupBorder: "border-pink-300",
+        scrollbar: "scrollbar-theme-pink",
+        rowSelected: "bg-pink-200 text-pink-950",
+        rowIdle: "text-pink-900",
+        rowHover: "hover:bg-pink-50",
+        checkSelected: "bg-pink-200 border-pink-300 text-pink-950",
+        checkIdle: "border-pink-300",
+    },
+    yellow: {
+        labelText: "text-yellow-800/75",
+        triggerIdle: "border-yellow-200 bg-yellow-50/80 hover:bg-yellow-100",
+        triggerOpen: "border-yellow-200 bg-yellow-200",
+        triggerDisabled: "border-yellow-100 bg-yellow-50/50",
+        triggerTextIdle: "text-yellow-900",
+        triggerTextOpen: "text-yellow-950",
+        triggerTextDisabled: "text-yellow-700/60",
+        chevronIdle: "text-yellow-700",
+        chevronOpen: "text-yellow-950",
+        popupBorder: "border-yellow-200",
+        scrollbar: "scrollbar-theme-yellow",
+        rowSelected: "bg-yellow-200 text-yellow-950",
+        rowIdle: "text-yellow-900",
+        rowHover: "hover:bg-yellow-50",
+        checkSelected: "bg-yellow-200 border-yellow-200 text-yellow-950",
+        checkIdle: "border-yellow-200",
+    },
+};
+
 type MultiSelectProps = {
     options: { value: string; label: string }[];
     selected: string[];
@@ -12,6 +73,7 @@ type MultiSelectProps = {
     disabledText?: string;
     align?: "start" | "end";
     label?: string;
+    theme?: MultiSelectTheme;
 };
 
 export const MultiSelect: FC<MultiSelectProps> = ({
@@ -23,7 +85,9 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledText,
     align = "start",
     label,
+    theme = "pink",
 }) => {
+    const tokens = THEME_TOKENS[theme];
     const [open, setOpen] = useState(false);
     const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
@@ -100,7 +164,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     return (
         <div ref={ref} className="relative group flex items-center gap-2">
             {label && (
-                <span className="text-xs font-medium text-pink-800/75">
+                <span className={cn("text-xs font-medium", tokens.labelText)}>
                     {label}
                 </span>
             )}
@@ -111,20 +175,23 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 className={cn(
                     "inline-flex min-h-8 min-w-[140px] items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
                     disabled
-                        ? "cursor-not-allowed border-pink-200 bg-pink-50/50 opacity-60"
+                        ? cn(
+                              "cursor-not-allowed opacity-60",
+                              tokens.triggerDisabled,
+                          )
                         : open
-                          ? "border-pink-300 bg-pink-200"
-                          : "border-pink-300 bg-pink-50/80 hover:bg-pink-100",
+                          ? tokens.triggerOpen
+                          : tokens.triggerIdle,
                 )}
             >
                 <span
                     className={cn(
                         "truncate flex-1 text-left",
                         disabled
-                            ? "text-pink-700/60"
+                            ? tokens.triggerTextDisabled
                             : open
-                              ? "text-pink-950"
-                              : "text-pink-900",
+                              ? tokens.triggerTextOpen
+                              : tokens.triggerTextIdle,
                     )}
                 >
                     {displayText}
@@ -132,7 +199,9 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 <svg
                     className={cn(
                         "w-3 h-3 transition-transform",
-                        open ? "rotate-180 text-pink-950" : "text-pink-700",
+                        open
+                            ? cn("rotate-180", tokens.chevronOpen)
+                            : tokens.chevronIdle,
                     )}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -155,7 +224,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
             {open && !disabled && (
                 <div
                     className={cn(
-                        "min-w-[320px] overflow-hidden rounded-lg border border-pink-300 bg-white shadow-lg z-50",
+                        "min-w-[320px] overflow-hidden rounded-lg border bg-white shadow-lg z-50",
+                        tokens.popupBorder,
                         !dropdownStyle.position && "absolute",
                         !dropdownStyle.position &&
                             (openDirection === "up"
@@ -168,7 +238,10 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 >
                     <div
                         ref={scrollAreaRef}
-                        className="max-h-64 overflow-y-auto overflow-x-hidden scrollbar-subtle scrollbar-theme-pink"
+                        className={cn(
+                            "max-h-64 overflow-y-auto overflow-x-hidden scrollbar-subtle",
+                            tokens.scrollbar,
+                        )}
                     >
                         <button
                             type="button"
@@ -176,16 +249,16 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                 isAllSelected
-                                    ? "bg-pink-200 text-pink-950 font-medium"
-                                    : "text-pink-900 hover:bg-pink-50",
+                                    ? cn(tokens.rowSelected, "font-medium")
+                                    : cn(tokens.rowIdle, tokens.rowHover),
                             )}
                         >
                             <span
                                 className={cn(
                                     "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                     isAllSelected
-                                        ? "bg-pink-200 border-pink-300 text-pink-950"
-                                        : "border-pink-300",
+                                        ? tokens.checkSelected
+                                        : tokens.checkIdle,
                                 )}
                             >
                                 {isAllSelected && "✓"}
@@ -202,16 +275,19 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                         isChecked
-                                            ? "bg-pink-200 text-pink-950"
-                                            : "text-pink-900 hover:bg-pink-50",
+                                            ? tokens.rowSelected
+                                            : cn(
+                                                  tokens.rowIdle,
+                                                  tokens.rowHover,
+                                              ),
                                     )}
                                 >
                                     <span
                                         className={cn(
                                             "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                             isChecked
-                                                ? "bg-pink-200 border-pink-300 text-pink-950"
-                                                : "border-pink-300",
+                                                ? tokens.checkSelected
+                                                : tokens.checkIdle,
                                         )}
                                     >
                                         {isChecked && "✓"}

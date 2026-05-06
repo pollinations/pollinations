@@ -1,0 +1,72 @@
+DESCRIPTION >
+    Period-rolled-up developer earnings summary, used for top-line stat cards.
+    Returns one row per BYOP app the dev owns (with markup-applied earnings)
+    plus one synthetic row with empty app_key_id holding the global totals
+    (requests, pollen_earned, markup_rate, unique_users across all apps).
+    Use 'since' and 'until' for date range; defaults to the full event history.
+
+TOKEN tinybird_read READ
+
+NODE dev_apps
+SQL >
+    %
+    SELECT
+        id AS app_key_id,
+        coalesce(nullIf(name, ''), id) AS app_name
+    FROM d1_apikey
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
+      AND prefix = 'pk'
+      AND user_id = {{String(dev_user_id, '')}}
+
+NODE per_app_summary
+SQL >
+    %
+    SELECT
+        ge.api_key_client_id AS app_key_id,
+        any(da.app_name) AS app_name,
+        count() AS requests,
+        sum(ge.total_price - ge.dev_price) AS pollen_earned,
+        avg(ge.markup_rate) AS markup_rate,
+        uniq(ge.user_id) AS unique_users
+    FROM generation_event ge
+    INNER JOIN dev_apps da
+        ON ge.api_key_client_id = da.app_key_id
+    WHERE ge.markup_rate > 0
+      AND ge.total_price > ge.dev_price
+    {% if defined(since) %}
+    AND ge.start_time >= {{DateTime(since)}}
+    {% end %}
+    {% if defined(until) %}
+    AND ge.start_time < {{DateTime(until)}}
+    {% end %}
+    GROUP BY app_key_id
+
+NODE global_summary
+SQL >
+    %
+    SELECT
+        '' AS app_key_id,
+        '' AS app_name,
+        count() AS requests,
+        sum(ge.total_price - ge.dev_price) AS pollen_earned,
+        avg(ge.markup_rate) AS markup_rate,
+        uniq(ge.user_id) AS unique_users
+    FROM generation_event ge
+    INNER JOIN dev_apps da
+        ON ge.api_key_client_id = da.app_key_id
+    WHERE ge.markup_rate > 0
+      AND ge.total_price > ge.dev_price
+    {% if defined(since) %}
+    AND ge.start_time >= {{DateTime(since)}}
+    {% end %}
+    {% if defined(until) %}
+    AND ge.start_time < {{DateTime(until)}}
+    {% end %}
+
+NODE developer_earnings_summary_node
+SQL >
+    SELECT * FROM per_app_summary
+    UNION ALL
+    SELECT * FROM global_summary
+
+TYPE endpoint

@@ -1,4 +1,5 @@
 export { Chart } from "./chart";
+export { EarningsGraph } from "./earnings-graph";
 export { MultiSelect } from "./multi-select";
 export { currentUsagePeriod } from "./period-utils";
 export { Stat } from "./stat";

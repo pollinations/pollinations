@@ -1,0 +1,309 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
+import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
+
+export type DailyEarningsRecord = {
+    date: string;
+    app_key_id: string;
+    app_name: string | null;
+    requests: number;
+    pollen_earned: number;
+    markup_rate: number;
+};
+
+export type EarningsSummaryRow = {
+    app_key_id: string;
+    app_name: string | null;
+    requests: number;
+    pollen_earned: number;
+    markup_rate: number;
+    unique_users: number;
+};
+
+export type EarningsFilterState = {
+    period: UsagePeriodSelection;
+    selectedAppKeyIds: string[];
+};
+
+type TopApp = {
+    id: string;
+    label: string;
+    requests: number;
+    pollen: number;
+    uniqueUsers: number;
+};
+
+type EarningsDataResult = {
+    dailyEarnings: DailyEarningsRecord[];
+    loading: boolean;
+    error: string | null;
+    fetchEarnings: () => void;
+    usedApps: { id: string; label: string }[];
+    chartData: DataPoint[];
+    stats: {
+        totalPollen: number;
+        averageMarkupRate: number;
+        activeUsers: number;
+        appCount: number;
+        topApp: TopApp | null;
+    };
+};
+
+export function useEarningsData(
+    filters: EarningsFilterState,
+): EarningsDataResult {
+    const [dailyEarnings, setDailyEarnings] = useState<DailyEarningsRecord[]>(
+        [],
+    );
+    const [perApp, setPerApp] = useState<EarningsSummaryRow[]>([]);
+    const [globalSummary, setGlobalSummary] =
+        useState<EarningsSummaryRow | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchEarnings = useCallback(() => {
+        setLoading(true);
+        setError(null);
+        const params = new URLSearchParams({
+            granularity: filters.period.granularity,
+            period: filters.period.period,
+        });
+        if (filters.selectedAppKeyIds.length > 0) {
+            params.set("api_key_ids", filters.selectedAppKeyIds.join(","));
+        }
+        const summaryParams = new URLSearchParams({
+            granularity: filters.period.granularity,
+            period: filters.period.period,
+        });
+
+        Promise.all([
+            fetch(`/api/account/earnings/daily?${params.toString()}`).then(
+                (r) => {
+                    if (!r.ok)
+                        throw new Error(
+                            `Failed to fetch earnings data: ${r.status}`,
+                        );
+                    return r.json() as Promise<{
+                        earnings: DailyEarningsRecord[];
+                    }>;
+                },
+            ),
+            fetch(
+                `/api/account/earnings/summary?${summaryParams.toString()}`,
+            ).then((r) => {
+                if (!r.ok)
+                    throw new Error(
+                        `Failed to fetch earnings summary: ${r.status}`,
+                    );
+                return r.json() as Promise<{
+                    perApp: EarningsSummaryRow[];
+                    global: EarningsSummaryRow | null;
+                }>;
+            }),
+        ])
+            .then(([dailyData, summaryData]) => {
+                setDailyEarnings(dailyData?.earnings || []);
+                setPerApp(summaryData?.perApp || []);
+                setGlobalSummary(summaryData?.global || null);
+            })
+            .catch((err) => {
+                console.error("Earnings fetch error:", err);
+                setError(err.message || "Failed to load earnings data");
+                setDailyEarnings([]);
+                setPerApp([]);
+                setGlobalSummary(null);
+            })
+            .finally(() => setLoading(false));
+    }, [
+        filters.period.granularity,
+        filters.period.period,
+        filters.selectedAppKeyIds,
+    ]);
+
+    useEffect(() => {
+        fetchEarnings();
+    }, [fetchEarnings]);
+
+    const usedApps = useMemo(() => {
+        const seen = new Map<string, string>();
+        for (const r of dailyEarnings) {
+            if (!r.app_key_id) continue;
+            if (!seen.has(r.app_key_id)) {
+                seen.set(r.app_key_id, r.app_name || r.app_key_id);
+            }
+        }
+        return Array.from(seen.entries())
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [dailyEarnings]);
+
+    const chartData = useMemo<DataPoint[]>(() => {
+        const filtered = dailyEarnings.filter((r) => {
+            if (
+                filters.selectedAppKeyIds.length > 0 &&
+                !filters.selectedAppKeyIds.includes(r.app_key_id)
+            )
+                return false;
+            return true;
+        });
+
+        type DayBucket = {
+            requests: number;
+            pollen: number;
+            byApp: Map<
+                string,
+                { label: string; requests: number; pollen: number }
+            >;
+        };
+        const buckets = new Map<string, DayBucket>();
+
+        for (const r of filtered) {
+            const dateKey = r.date;
+            const cur = buckets.get(dateKey) || {
+                requests: 0,
+                pollen: 0,
+                byApp: new Map(),
+            };
+            cur.requests += r.requests || 0;
+            cur.pollen += r.pollen_earned || 0;
+
+            const appData = cur.byApp.get(r.app_key_id) || {
+                label: r.app_name || r.app_key_id,
+                requests: 0,
+                pollen: 0,
+            };
+            appData.requests += r.requests || 0;
+            appData.pollen += r.pollen_earned || 0;
+            cur.byApp.set(r.app_key_id, appData);
+            buckets.set(dateKey, cur);
+        }
+
+        const isHourly = filters.period.granularity === "day";
+        const bucketKeys = getPeriodBucketKeys(filters.period);
+
+        return bucketKeys.map((bucketKey) => {
+            const date = periodBucketKeyToDate(
+                bucketKey,
+                filters.period.granularity,
+            );
+            const d = buckets.get(bucketKey) || {
+                requests: 0,
+                pollen: 0,
+                byApp: new Map<
+                    string,
+                    { label: string; requests: number; pollen: number }
+                >(),
+            };
+            const appBreakdown: ModelBreakdown[] = Array.from(d.byApp.entries())
+                .map(([appKeyId, appStats]) => ({
+                    model: appKeyId,
+                    label: appStats.label,
+                    requests: appStats.requests,
+                    pollen: appStats.pollen,
+                }))
+                .sort((a, b) => b.pollen - a.pollen);
+
+            return {
+                label: isHourly
+                    ? date.toLocaleTimeString("en-US", {
+                          timeZone: "UTC",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                      })
+                    : date.toLocaleDateString("en-US", {
+                          timeZone: "UTC",
+                          month: "short",
+                          day: "numeric",
+                      }),
+                fullDate: date.toLocaleDateString("en-US", {
+                    timeZone: "UTC",
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    ...(isHourly && {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                    }),
+                }),
+                value: d.pollen,
+                tierValue: 0,
+                paidValue: d.pollen,
+                timestamp: date,
+                modelBreakdown: appBreakdown,
+            };
+        });
+    }, [dailyEarnings, filters.selectedAppKeyIds, filters.period]);
+
+    const stats = useMemo(() => {
+        const visiblePerApp =
+            filters.selectedAppKeyIds.length > 0
+                ? perApp.filter((r) =>
+                      filters.selectedAppKeyIds.includes(r.app_key_id),
+                  )
+                : perApp;
+
+        const useGlobal =
+            filters.selectedAppKeyIds.length === 0 && globalSummary != null;
+
+        const totalPollen = useGlobal
+            ? globalSummary.pollen_earned
+            : visiblePerApp.reduce((s, r) => s + (r.pollen_earned || 0), 0);
+        const averageMarkupRate = useGlobal
+            ? globalSummary.markup_rate
+            : (() => {
+                  const totalReq = visiblePerApp.reduce(
+                      (s, r) => s + (r.requests || 0),
+                      0,
+                  );
+                  if (totalReq === 0) return 0;
+                  const weighted = visiblePerApp.reduce(
+                      (s, r) => s + (r.markup_rate || 0) * (r.requests || 0),
+                      0,
+                  );
+                  return weighted / totalReq;
+              })();
+        // Distinct payers can only be summed correctly when filtering to a
+        // single app — otherwise it overcounts users active across multiple
+        // apps. Fall back to the per-app value when one app is selected.
+        const activeUsers = useGlobal
+            ? globalSummary.unique_users
+            : visiblePerApp.length === 1
+              ? visiblePerApp[0].unique_users
+              : 0;
+        const appCount = visiblePerApp.length;
+
+        const topAppRow = visiblePerApp.toSorted(
+            (a, b) => b.pollen_earned - a.pollen_earned,
+        )[0];
+        const topApp: TopApp | null = topAppRow
+            ? {
+                  id: topAppRow.app_key_id,
+                  label: topAppRow.app_name || topAppRow.app_key_id,
+                  requests: topAppRow.requests,
+                  pollen: topAppRow.pollen_earned,
+                  uniqueUsers: topAppRow.unique_users,
+              }
+            : null;
+
+        return {
+            totalPollen,
+            averageMarkupRate,
+            activeUsers,
+            appCount,
+            topApp,
+        };
+    }, [perApp, globalSummary, filters.selectedAppKeyIds]);
+
+    return {
+        dailyEarnings,
+        loading,
+        error,
+        fetchEarnings,
+        usedApps,
+        chartData,
+        stats,
+    };
+}

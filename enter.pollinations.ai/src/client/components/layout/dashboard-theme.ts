@@ -1,4 +1,10 @@
-export type DashboardPage = "updates" | "pollen" | "usage" | "keys" | "models";
+export type DashboardPage =
+    | "updates"
+    | "pollen"
+    | "usage"
+    | "earnings"
+    | "keys"
+    | "models";
 
 export type DashboardTheme =
     | "amber"
@@ -7,7 +13,8 @@ export type DashboardTheme =
     | "green"
     | "pink"
     | "teal"
-    | "violet";
+    | "violet"
+    | "yellow";
 
 export const DASHBOARD_NAV_ITEMS: {
     id: DashboardPage;
@@ -15,18 +22,20 @@ export const DASHBOARD_NAV_ITEMS: {
     theme: DashboardTheme;
 }[] = [
     { id: "updates", label: "News & FAQ", theme: "violet" },
-    { id: "pollen", label: "Pollen", theme: "amber" },
-    { id: "usage", label: "Usage", theme: "pink" },
-    { id: "keys", label: "Keys", theme: "blue" },
     { id: "models", label: "Models", theme: "teal" },
+    { id: "keys", label: "Keys", theme: "blue" },
+    { id: "pollen", label: "Pollen", theme: "amber" },
+    { id: "earnings", label: "Earnings", theme: "yellow" },
+    { id: "usage", label: "Usage", theme: "pink" },
 ];
 
 export const DASHBOARD_PAGES: DashboardPage[] = [
     "updates",
-    "pollen",
-    "usage",
-    "keys",
     "models",
+    "keys",
+    "pollen",
+    "earnings",
+    "usage",
 ];
 
 // ─── Color palette (single source of truth) ──────────────────
@@ -43,6 +52,7 @@ export const panelColors = {
     purple: "border-purple-300 bg-purple-50/70",
     teal: "border-teal-200 bg-teal-50/70",
     violet: "border-violet-300 bg-violet-50/70",
+    yellow: "border-yellow-300 bg-yellow-50/70",
 } as const;
 
 export const cardColors = {
@@ -118,6 +128,12 @@ export const buttonColors = {
         strong: "bg-violet-600 text-white",
         outline: "border-2 border-violet-600 text-violet-900",
     },
+    yellow: {
+        light: "bg-yellow-200 text-yellow-900 hover:bg-yellow-300",
+        strong: "bg-yellow-500 text-white hover:bg-yellow-400",
+        outline:
+            "border-2 border-yellow-500 text-yellow-900 hover:bg-yellow-500 hover:text-white transition-colors",
+    },
 } as const;
 
 export const pillColors = {
@@ -129,6 +145,7 @@ export const pillColors = {
     pink: { bg: "bg-pink-200", text: "text-pink-900" },
     teal: { bg: "bg-teal-200", text: "text-teal-900" },
     violet: { bg: "bg-violet-200", text: "text-violet-950" },
+    yellow: { bg: "bg-yellow-200", text: "text-yellow-900" },
 } as const;
 
 export const tabColors = {
@@ -166,6 +183,11 @@ export const tabColors = {
         active: "border-violet-300 bg-violet-200 text-violet-950 hover:bg-violet-200",
         inactive:
             "border-violet-300 bg-violet-50/80 text-violet-900 hover:bg-violet-100",
+    },
+    yellow: {
+        active: "border-yellow-300 bg-yellow-200 text-yellow-900 hover:bg-yellow-200",
+        inactive:
+            "border-yellow-300 bg-yellow-50/80 text-yellow-800 hover:bg-yellow-100",
     },
 } as const satisfies Record<
     DashboardTheme,
@@ -246,6 +268,15 @@ export const dashboardThemeClasses: Record<
         card: cardColors.violet,
         button: buttonColors.violet,
         tab: tabColors.violet,
+    },
+    yellow: {
+        title: "text-yellow-900",
+        dot: "bg-yellow-500",
+        active: "bg-yellow-200 text-yellow-900",
+        panel: panelColors.yellow,
+        card: cardColors.yellow,
+        button: buttonColors.yellow,
+        tab: tabColors.yellow,
     },
 };
 

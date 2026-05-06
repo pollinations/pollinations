@@ -129,6 +129,10 @@
         --scrollbar-thumb-color: rgba(124, 58, 237, 0.6);
     }
 
+    .scrollbar-theme-yellow {
+        --scrollbar-thumb-color: rgba(202, 138, 4, 0.55);
+    }
+
     .scrollbar-subtle::-webkit-scrollbar {
         width: 12px;
         height: 12px;

@@ -13,9 +13,52 @@ import {
 } from "./period-utils.ts";
 import type { PeriodGranularity, UsagePeriodSelection } from "./types.ts";
 
+type PeriodPickerTheme = "pink" | "yellow";
+
+const THEME_TOKENS: Record<
+    PeriodPickerTheme,
+    {
+        triggerIdle: string;
+        triggerOpen: string;
+        popupBorder: string;
+        navText: string;
+        navHover: string;
+        labelText: string;
+        cellSelected: string;
+        cellHover: string;
+        todayRing: string;
+    }
+> = {
+    pink: {
+        triggerIdle:
+            "border-pink-300 bg-pink-50/80 text-pink-900 hover:bg-pink-100",
+        triggerOpen: "bg-pink-200 text-pink-950",
+        popupBorder: "border-pink-300",
+        navText: "text-pink-900",
+        navHover: "hover:bg-pink-50",
+        labelText: "text-pink-900",
+        cellSelected: "bg-pink-200 text-pink-950",
+        cellHover: "hover:bg-pink-50",
+        todayRing: "ring-pink-400/70",
+    },
+    yellow: {
+        triggerIdle:
+            "border-yellow-200 bg-yellow-50/80 text-yellow-900 hover:bg-yellow-100",
+        triggerOpen: "bg-yellow-200 text-yellow-950",
+        popupBorder: "border-yellow-200",
+        navText: "text-yellow-900",
+        navHover: "hover:bg-yellow-50",
+        labelText: "text-yellow-900",
+        cellSelected: "bg-yellow-200 text-yellow-950",
+        cellHover: "hover:bg-yellow-50",
+        todayRing: "ring-yellow-300/70",
+    },
+};
+
 type PeriodPickerProps = {
     value: UsagePeriodSelection;
     onChange: (value: UsagePeriodSelection) => void;
+    theme?: PeriodPickerTheme;
 };
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -72,7 +115,12 @@ function viewBounds(
     return { start, end: addUtcMonths(start, 1) };
 }
 
-export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
+export const PeriodPicker: FC<PeriodPickerProps> = ({
+    value,
+    onChange,
+    theme = "pink",
+}) => {
+    const tokens = THEME_TOKENS[theme];
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(() => periodDate(value));
     const ref = useRef<HTMLDivElement>(null);
@@ -147,7 +195,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                     (granularity) => (
                         <TabButton
                             key={granularity}
-                            theme="pink"
+                            theme={theme}
                             active={value.granularity === granularity}
                             onClick={() => setGranularity(granularity)}
                         >
@@ -164,9 +212,9 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                 aria-label={`Select usage period, current ${formatPeriodLabel(value)}`}
                 onClick={() => setOpen((isOpen) => !isOpen)}
                 className={cn(
-                    "inline-flex min-h-8 min-w-[150px] items-center justify-between gap-2 rounded-full border px-3 py-1.5 text-left text-xs font-medium",
-                    "border-pink-300 bg-pink-50/80 text-pink-900 transition-all duration-200 ease-out hover:bg-pink-100",
-                    open && "bg-pink-200 text-pink-950 shadow-sm",
+                    "inline-flex min-h-8 min-w-[150px] items-center justify-between gap-2 rounded-full border px-3 py-1.5 text-left text-xs font-medium transition-all duration-200 ease-out",
+                    tokens.triggerIdle,
+                    open && cn(tokens.triggerOpen, "shadow-sm"),
                 )}
             >
                 <span>{formatPeriodLabel(value)}</span>
@@ -194,7 +242,10 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                 <div
                     role="dialog"
                     aria-label="Usage period picker"
-                    className="absolute left-0 top-full z-30 mt-2 w-[304px] rounded-xl border border-pink-300 bg-white p-3 shadow-lg transition-opacity duration-200 ease-out"
+                    className={cn(
+                        "absolute left-0 top-full z-30 mt-2 w-[304px] rounded-xl border bg-white p-3 shadow-lg transition-opacity duration-200 ease-out",
+                        tokens.popupBorder,
+                    )}
                 >
                     <div className="mb-3 flex items-center justify-between">
                         <button
@@ -207,14 +258,21 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                             disabled={previousDisabled}
                             onClick={() => setViewDate(previousViewDate)}
                             className={cn(
-                                "rounded-full px-2 py-1 text-xs font-semibold text-pink-900 transition-colors hover:bg-pink-50",
+                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors",
+                                tokens.navText,
+                                tokens.navHover,
                                 previousDisabled &&
                                     "cursor-not-allowed opacity-30 hover:bg-transparent",
                             )}
                         >
                             {"<"}
                         </button>
-                        <div className="text-sm font-bold text-pink-900">
+                        <div
+                            className={cn(
+                                "text-sm font-bold",
+                                tokens.labelText,
+                            )}
+                        >
                             {viewLabel}
                         </div>
                         <button
@@ -227,7 +285,9 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                             disabled={nextDisabled}
                             onClick={() => setViewDate(nextViewDate)}
                             className={cn(
-                                "rounded-full px-2 py-1 text-xs font-semibold text-pink-900 transition-colors hover:bg-pink-50",
+                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors",
+                                tokens.navText,
+                                tokens.navHover,
                                 nextDisabled &&
                                     "cursor-not-allowed opacity-30 hover:bg-transparent",
                             )}
@@ -272,8 +332,11 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                                         className={cn(
                                             "rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150",
                                             selected
-                                                ? "bg-pink-200 text-pink-950"
-                                                : "text-gray-700 hover:bg-pink-50",
+                                                ? tokens.cellSelected
+                                                : cn(
+                                                      "text-gray-700",
+                                                      tokens.cellHover,
+                                                  ),
                                             !selectable &&
                                                 "cursor-not-allowed text-gray-300 hover:bg-transparent",
                                         )}
@@ -331,10 +394,16 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                                                 !inCurrentMonth &&
                                                     "text-gray-300",
                                                 sameUtcDay(date, today) &&
-                                                    "ring-1 ring-pink-400/70",
+                                                    cn(
+                                                        "ring-1",
+                                                        tokens.todayRing,
+                                                    ),
                                                 selected
-                                                    ? "bg-pink-200 text-pink-950"
-                                                    : "text-gray-700 hover:bg-pink-50",
+                                                    ? tokens.cellSelected
+                                                    : cn(
+                                                          "text-gray-700",
+                                                          tokens.cellHover,
+                                                      ),
                                                 !selectable &&
                                                     "cursor-not-allowed text-gray-300 hover:bg-transparent",
                                             )}

@@ -27,6 +27,7 @@ type ChartProps = {
     metric: Metric;
     showModelBreakdown: boolean;
     tier?: TierStatus;
+    paidBarColor?: { base: string; hover: string };
 };
 
 export const Chart: FC<ChartProps> = ({
@@ -34,7 +35,10 @@ export const Chart: FC<ChartProps> = ({
     metric,
     showModelBreakdown,
     tier,
+    paidBarColor,
 }) => {
+    const paidBar = paidBarColor?.base ?? CHART_COLORS.paidBar;
+    const paidBarHover = paidBarColor?.hover ?? CHART_COLORS.paidBarHover;
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -306,8 +310,8 @@ export const Chart: FC<ChartProps> = ({
                                 style={{
                                     fill:
                                         hovered === idx
-                                            ? CHART_COLORS.paidBarHover
-                                            : CHART_COLORS.paidBar,
+                                            ? paidBarHover
+                                            : paidBar,
                                     transition: "fill 0.15s ease-out",
                                 }}
                             />

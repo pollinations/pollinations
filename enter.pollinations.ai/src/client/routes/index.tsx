@@ -23,6 +23,7 @@ import { UpdatesPage } from "../components/layout/updates-page.tsx";
 import { Pricing } from "../components/pricing";
 import {
     currentUsagePeriod,
+    EarningsGraph,
     UsageGraph,
     type UsagePeriodSelection,
 } from "../components/usage-analytics";
@@ -94,6 +95,8 @@ function RouteComponent() {
     );
     const [usagePeriod, setUsagePeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
+    const [earningsPeriod, setEarningsPeriod] =
+        useState<UsagePeriodSelection>(currentUsagePeriod);
 
     useEffect(() => {
         function syncPageFromHash(): void {
@@ -108,6 +111,19 @@ function RouteComponent() {
         () =>
             apiKeys
                 .filter((k): k is typeof k & { name: string } => !!k.name)
+                .map((k) => ({ id: k.id, name: k.name })),
+        [apiKeys],
+    );
+
+    const publishableApps = useMemo(
+        () =>
+            apiKeys
+                .filter(
+                    (k): k is typeof k & { name: string } =>
+                        !!k.name &&
+                        (k.metadata as { keyType?: string } | null)?.keyType ===
+                            "publishable",
+                )
                 .map((k) => ({ id: k.id, name: k.name })),
         [apiKeys],
     );
@@ -283,6 +299,13 @@ function RouteComponent() {
                             Download CSV
                         </Button>
                     }
+                />
+            )}
+            {activePage === "earnings" && (
+                <EarningsGraph
+                    period={earningsPeriod}
+                    onPeriodChange={setEarningsPeriod}
+                    apps={publishableApps}
                 />
             )}
             {activePage === "keys" && (

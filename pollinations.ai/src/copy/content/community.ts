@@ -8,32 +8,33 @@ export const COMMUNITY_PAGE = {
     title: "Contribute",
     subtitlePrefix:
         "🌸 pollinations.ai is open source — the code, the roadmap, the conversations.",
-    subtitleBold: "Contributors shape the platform directly.",
+    subtitleBold: "Builders shape the platform directly.",
     subtitleSuffix:
-        " Your PR can land in production tomorrow, and starting Q2, every contribution earns you Pollen. 🌿",
+        " Share what you need, meet the people using it, and help build what comes next. 🌿",
     heroStat1: "17K+",
     heroStat1Label: "Discord members",
     heroStat2: "4K+",
     heroStat2Label: "GitHub stars",
     heroStat3: "500+",
-    heroStat3Label: "new developers daily",
+    heroStat3Label: "live apps",
 
-    // Section 2 — Level up
-    contributeTitle: "Level up",
+    // Section 2 — Build with the community
+    contributeTitle: "Build with the community",
     contributeBody:
-        "Activity on the platform moves you up tiers. Higher tier, more compute.",
+        "Meet other builders, talk with users, and work directly on the open source platform.",
     contributeCard1Title: "Ship an app",
     contributeCard1Body:
-        "Publish something to the ecosystem. Biggest tier boost.",
+        "Share what you built, get feedback, and help users discover it.",
     contributeCard2Title: "Fix a bug or improve the docs",
-    contributeCard2Body: "Open a PR, close an issue, make it better.",
+    contributeCard2Body:
+        "Open a PR, close an issue, improve examples, or make the docs clearer.",
     contributeCard3Title: "Help in Discord",
     contributeCard3Body:
-        "Answer a question, share what you built, help someone get unstuck.",
-    contributeNotePre: "All activity feeds your tier: ",
-    contributeNoteLink: "Seed → Flower",
-    contributeNotePost: ". More you do, more compute you get.",
-    learnAboutTiersButton: "Learn about tiers",
+        "Answer questions, share experiments, and tell the team what feels missing.",
+    contributeNotePre: "Community feedback shapes the roadmap: ",
+    contributeNoteLink: "models, wallets, docs, and developer tools",
+    contributeNotePost: " all improve through what builders report and ship.",
+    learnAboutTiersButton: "Join the conversation",
 
     // Section 3 — Jump In
     jumpInTitle: "Where to start",
@@ -52,7 +53,7 @@ export const COMMUNITY_PAGE = {
     githubDescEnd: ".",
     submitAppTitle: "Submit Your App",
     submitEmoji: "🚀",
-    submitDesc: "Built something? ",
+    submitDesc: "Built something with Pollinations? ",
     submitDescBold: "Add it to the showcase.",
 
     // Buttons

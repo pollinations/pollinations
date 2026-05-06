@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-05",
+  "period_start": "2026-05-05",
+  "period_end": "2026-05-05",
+  "generated_at": "2026-05-06T06:52:11.050581+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-05/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-05/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-05/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Five pull requests merged today. Four new apps just sprouted in the showcase (shoutout to Worl Tools, App forge, Pyanchor, and ZenWall AI). Always cool seeing what you all build with the infrastructure.\n\nWe also spent some time in the text API pulling weeds — specifically stripping out some stubborn cache_control tags that were tripping up Anthropic clients. Cross-model chatting should feel a lot smoother now.\n\nCheck out the new apps (or submit yours to hit Flower tier 🌸) at pollinations.ai/showcase.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #anthropic #llm",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

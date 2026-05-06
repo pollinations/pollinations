@@ -1,0 +1,33 @@
+{
+  "pr_number": 10721,
+  "title": "fix: clean app directory entries",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10721",
+  "merged_at": "2026-05-06T17:06:50Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Pruning the greenhouse",
+    "blurb": "Did a little weeding in the community greenhouse! We've updated some app ownership credits and removed a few dead links to keep the showcase fresh.",
+    "summary": "Cleaned up the community app directory by correcting ownership credits and removing dead links.",
+    "impact": "The app showcase is now more accurate and free of broken links.",
+    "keywords": [
+      "community",
+      "showcase",
+      "cleanup",
+      "apps"
+    ],
+    "visual_concept": "The PR is about cleaning up the app directory (APPS.md, GREENHOUSE.md). Metaphor: weeding a garden, pruning plants in a greenhouse. Characters: Polly the bee and the Nomnom creature eating dead weeds/code.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, pulling a dead pixelated weed from a lime green (#ecf874) flower pot in a digital greenhouse. The round tan nomnom creature happily eats the discarded weeds. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-06/PR-10721.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's hat, pulling a dead pixelated weed from a lime green (#ecf874) flower pot in a digital greenhouse. The round tan nomnom creature happily eats the discarded weeds. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-06T17:07:44.610431+00:00"
+}

@@ -1,0 +1,32 @@
+{
+  "pr_number": 10708,
+  "title": "fix: persist BYOP attribution",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10708",
+  "merged_at": "2026-05-06T11:53:20Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Credit where credit is due",
+    "blurb": "We've tightened up how BYOP attribution is tracked and saved. Your API keys now perfectly remember who generated what, making sure every app gets its rightful credit.",
+    "summary": "Fixed an issue with BYOP attribution by persisting the client key ID for verified secret keys and backfilling existing metadata.",
+    "impact": "Developers using BYOP will now see accurate, persistent app attribution for all generation events tied to their publishable keys.",
+    "keywords": [
+      "byop",
+      "attribution",
+      "api-keys",
+      "database",
+      "tracking"
+    ],
+    "visual_concept": "Polly the bee acting as an archivist or accountant, organizing glowing golden API keys into a neat filing system to represent accurate attribution and tracking.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, holding a glowing golden key and a small clipboard. She is carefully organizing the key into a neatly labeled wooden filing cabinet. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-06/PR-10708.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, holding a glowing golden key and a small clipboard. She is carefully organizing the key into a neatly labeled wooden filing cabinet. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-06T11:54:20.460779+00:00"
+}

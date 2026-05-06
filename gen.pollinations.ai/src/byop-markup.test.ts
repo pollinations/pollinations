@@ -105,7 +105,7 @@ describe("BYOP markup", () => {
         expect(resolved).toEqual({
             devUserId: devId,
             devCredit: 4 * MARKUP_PCT,
-            markupPct: MARKUP_PCT,
+            markupRate: MARKUP_PCT,
         });
 
         expect(await resolveDevMarkup(db, pkId, 4, devId)).toBeNull();
@@ -125,7 +125,7 @@ describe("BYOP markup", () => {
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toEqual({
             devUserId: devId,
             devCredit: 4 * MARKUP_PCT,
-            markupPct: MARKUP_PCT,
+            markupRate: MARKUP_PCT,
         });
     });
 

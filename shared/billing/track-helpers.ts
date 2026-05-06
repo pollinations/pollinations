@@ -18,7 +18,7 @@ const log = getLogger(["track", "helpers"]);
 export type MarkupResolution = {
     devUserId: string;
     devCredit: number;
-    markupPct: number;
+    markupRate: number;
 };
 
 interface DeductionParams {
@@ -80,7 +80,7 @@ export async function resolveDevMarkup(
     return {
         devUserId: clientRow.userId,
         devCredit: credit,
-        markupPct: MARKUP_PCT,
+        markupRate: MARKUP_PCT,
     };
 }
 
@@ -153,7 +153,7 @@ export async function handleBalanceDeduction(
                     credit: markup.devCredit,
                     devUserId: markup.devUserId,
                     bucket: creditBucket,
-                    pct: (markup.markupPct * 100).toFixed(0),
+                    pct: (markup.markupRate * 100).toFixed(0),
                 },
             );
         }

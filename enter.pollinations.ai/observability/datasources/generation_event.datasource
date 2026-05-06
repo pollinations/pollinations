@@ -74,7 +74,7 @@ SCHEMA >
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 `dev_price`     Float64 `json:$.devPrice` DEFAULT 0,
-`markup_pct` Float64 `json:$.markupPct` DEFAULT 0,
+`markup_rate` Float64 `json:$.markupRate` DEFAULT 0,
 
 -- Prompt Moderation
 `moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',

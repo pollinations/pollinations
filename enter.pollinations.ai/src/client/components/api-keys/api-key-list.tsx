@@ -42,13 +42,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const sortedAppKeys = sortedKeys.filter(isAppKey);
 
     function isAppKey(apiKey: ApiKey): boolean {
-        const redirectUris = Array.isArray(apiKey.metadata?.redirectUris)
-            ? (apiKey.metadata?.redirectUris as string[])
-            : [];
-        return (
-            apiKey.metadata?.keyType === "publishable" &&
-            redirectUris.length > 0
-        );
+        return apiKey.metadata?.keyType === "publishable";
     }
 
     function renderKeyCard(apiKey: ApiKey) {
@@ -60,7 +54,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             ? (apiKey.metadata?.redirectUris as string[])
             : [];
         const primaryRedirectUri = redirectUrisMeta[0] || "";
-        const isApp = isPublishable && !!primaryRedirectUri;
+        const isApp = isPublishable;
 
         return (
             <Card
@@ -70,11 +64,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Tag color="blue" size="sm">
-                        {isPublishable
-                            ? primaryRedirectUri
-                                ? "🖥️ App"
-                                : "🌐 Publishable"
-                            : "🔒 Secret"}
+                        {isPublishable ? "🖥️ App" : "🔒 Secret"}
                     </Tag>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}

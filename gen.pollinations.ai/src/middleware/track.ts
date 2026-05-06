@@ -1,5 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import { apikey as apikeyTable } from "@shared/db/better-auth.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
@@ -33,6 +34,7 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -132,6 +134,7 @@ export const track = (eventType: EventType) =>
         const apiKeyMetadata = c.var.auth.apiKey?.metadata as
             | Record<string, unknown>
             | undefined;
+        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
@@ -142,14 +145,10 @@ export const track = (eventType: EventType) =>
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,
-            apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
-            apiKeyCreatedForApp: apiKeyMetadata?.createdForApp as
-                | string
-                | undefined,
-            apiKeyCreatedForUserId: apiKeyMetadata?.createdForUserId as
-                | string
-                | undefined,
-            apiKeyClientId: apiKeyMetadata?.clientId as string | undefined,
+            apiKeyCreatedVia: byopClientKeyId
+                ? "redirect-auth"
+                : (apiKeyMetadata?.createdVia as string | undefined),
+            apiKeyClientId: byopClientKeyId ?? undefined,
         } satisfies UserData;
 
         let responseOverride = null;
@@ -191,6 +190,10 @@ export const track = (eventType: EventType) =>
                 } satisfies BalanceData;
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
+                const byopClientTracking = await resolveByopClientTracking(
+                    db,
+                    byopClientKeyId,
+                );
 
                 const finalEvent = createTrackingEvent({
                     id: generateRandomId(),
@@ -202,7 +205,10 @@ export const track = (eventType: EventType) =>
                     eventType,
                     ipSubnet,
                     ipHash,
-                    userTracking,
+                    userTracking: {
+                        ...userTracking,
+                        ...byopClientTracking,
+                    },
                     balanceTracking,
                     requestTracking,
                     responseTracking,
@@ -834,6 +840,29 @@ type ErrorData = {
     errorMessage?: string;
     // errorStack and errorDetails removed to reduce D1 memory usage
 };
+
+async function resolveByopClientTracking(
+    db: ReturnType<typeof drizzle>,
+    byopClientKeyId: string | null | undefined,
+): Promise<Partial<UserData>> {
+    if (!byopClientKeyId) return {};
+
+    const [clientKey] = await db
+        .select({
+            id: apikeyTable.id,
+            name: apikeyTable.name,
+            userId: apikeyTable.userId,
+        })
+        .from(apikeyTable)
+        .where(eq(apikeyTable.id, byopClientKeyId))
+        .limit(1);
+
+    return {
+        apiKeyClientId: clientKey?.id ?? byopClientKeyId,
+        apiKeyCreatedForApp: clientKey?.name ?? undefined,
+        apiKeyCreatedForUserId: clientKey?.userId ?? undefined,
+    };
+}
 
 function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};

@@ -11,7 +11,7 @@ body:
         Community quests are self-contained tasks with a fixed Pollen reward paid on PR merge.
 
         1. Comment on this issue if you'd like to take it on — multiple devs can express interest
-        2. A core team member picks one dev and assigns the issue to them
+        2. A maintainer picks one dev and assigns the issue to them
         3. Once assigned, open a PR against `main` referencing this issue (`Fixes #N`)
         4. Once merged, the reward is credited to your [enter.pollinations.ai](https://enter.pollinations.ai) account
 
@@ -82,5 +82,5 @@ body:
       value: |
         ---
 
-        > **Interested?** Comment below — multiple devs can express interest, and a core team member will pick one and assign the issue. Please wait until you're assigned before starting work to avoid duplicate effort.
+        > **Interested?** Comment below — multiple devs can express interest, and a maintainer will pick one and assign the issue. Please wait until you're assigned before starting work to avoid duplicate effort.
         > **PR:** When ready, open a PR with `Fixes #N` in the description so the issue closes automatically on merge.

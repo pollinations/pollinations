@@ -78,11 +78,10 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         type="button"
                         color="blue"
                         weight="light"
-                        size="small"
                         onClick={add}
                         disabled={disabled}
                     >
-                        + Add redirect URI
+                        + Add
                     </Button>
                 </div>
             </Field.Root>

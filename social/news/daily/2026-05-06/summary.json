@@ -1,0 +1,19 @@
+{
+  "date": "2026-05-06",
+  "period_start": "2026-05-06",
+  "period_end": "2026-05-06",
+  "title": "Accurate attribution for BYOP developers",
+  "summary": "A quiet day of backend tuning, featuring accurate BYOP attribution and a more resilient text generation gateway.\n\nFixed a tracking bug so developers using Bring-Your-Own-Prompt (BYOP) now get persistent, accurate app attribution for all generation events tied to their publishable keys. Existing metadata was backfilled to keep historical data intact.\n\nAdded OpenRouter to the text generation gateway, making the backend more resilient. Under the hood, we automated internal key rotation and cloud credit tracking to keep the infrastructure humming without manual intervention.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 10708,
+      "date": "2026-05-06"
+    },
+    {
+      "number": 10712,
+      "date": "2026-05-06"
+    }
+  ],
+  "generated_at": "2026-05-07T06:56:34.210839+00:00"
+}

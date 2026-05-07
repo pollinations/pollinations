@@ -109,8 +109,8 @@ CONFIG = {
     "discord_uid_to_github": {
         "304378879705874432": "voodoohop",
         "884468469452656732": "ElliotEtag",
-        "859708931478388767": "Itachi-1824",
         "738661669332320287": "Circuit-Overtime",
+        "859708931478388767": "Itachi-1824",
     },
 }
 

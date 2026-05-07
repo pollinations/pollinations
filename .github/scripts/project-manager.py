@@ -469,6 +469,24 @@ def main():
         if not project or not project.get("id"):
             log_error("Quest project not configured (CONFIG.projects.quest.id is empty); skipping route")
             return
+
+
+        try:
+            r = requests.get(
+                f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
+                headers=GITHUB_HEADERS,
+                timeout=10,
+            )
+            if r.status_code == 200:
+                live = r.json()
+                live_labels = [l.get("name", "").upper() for l in live.get("labels", [])]
+                if "POLLEN-QUEST" not in live_labels or live.get("state") == "closed":
+                    log_debug("POLLEN-QUEST no longer present or issue closed; skipping Quest route")
+                    return
+        except requests.RequestException as e:
+            log_error(f"Live label re-fetch failed: {e}; skipping Quest route to be safe")
+            return
+
         item_id = add_to_project(project["id"])
         if item_id:
             log_debug("Added to Quest project successfully")

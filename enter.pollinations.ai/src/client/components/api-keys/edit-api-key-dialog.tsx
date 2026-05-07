@@ -242,7 +242,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 />
                             )}
 
-                            {!appKey && (
+                            {!isPublishable && (
                                 <KeyPermissionsInputs
                                     value={keyPermissions}
                                     disabled={isSubmitting}

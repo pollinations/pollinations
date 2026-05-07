@@ -318,6 +318,36 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    "seedance-2": {
+        aliases: [],
+        modelId: "seedance-2",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        paidOnly: true,
+        cost: [
+            // Replicate per-second pricing, anchored at 720p+audio (~$0.22/sec).
+            // Split: $0.18 video + $0.04 audio premium ($0.22 total at 720p w/audio).
+            // 480p under-bills (~50% margin shortfall accepted); 1080p blocked at handler.
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.18,
+                completionAudioSeconds: 0.04,
+            },
+        ],
+        price: [
+            // 1.5× cost
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.27,
+                completionAudioSeconds: 0.06,
+            },
+        ],
+        description:
+            "Seedance 2.0 - ByteDance multimodal video gen via Replicate (480p/720p, native audio default on)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+    },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
         modelId: "wan",

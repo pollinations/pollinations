@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
 
@@ -54,8 +54,13 @@ export function useEarningsData(
         useState<DeveloperEarningsRow | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const inFlightRef = useRef<AbortController | null>(null);
 
     const fetchEarnings = useCallback(() => {
+        inFlightRef.current?.abort();
+        const controller = new AbortController();
+        inFlightRef.current = controller;
+
         setLoading(true);
         setError(null);
         const params = new URLSearchParams({
@@ -63,7 +68,9 @@ export function useEarningsData(
             period: filters.period.period,
         });
 
-        fetch(`/api/account/earnings?${params.toString()}`)
+        fetch(`/api/account/earnings?${params.toString()}`, {
+            signal: controller.signal,
+        })
             .then((r) => {
                 if (!r.ok)
                     throw new Error(
@@ -76,22 +83,30 @@ export function useEarningsData(
                 }>;
             })
             .then((data) => {
+                if (controller.signal.aborted) return;
                 setDailyEarnings(data?.daily || []);
                 setPerApp(data?.perApp || []);
                 setGlobalSummary(data?.global || null);
             })
             .catch((err) => {
+                if (controller.signal.aborted) return;
                 console.error("Earnings fetch error:", err);
                 setError(err.message || "Failed to load earnings data");
                 setDailyEarnings([]);
                 setPerApp([]);
                 setGlobalSummary(null);
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (controller.signal.aborted) return;
+                setLoading(false);
+            });
     }, [filters.period.granularity, filters.period.period]);
 
     useEffect(() => {
         fetchEarnings();
+        return () => {
+            inFlightRef.current?.abort();
+        };
     }, [fetchEarnings]);
 
     const usedApps = useMemo(() => {

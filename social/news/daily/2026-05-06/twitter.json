@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-06",
+  "period_start": "2026-05-06",
+  "period_end": "2026-05-06",
+  "generated_at": "2026-05-07T06:56:34.210839+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-06/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped two infrastructure updates today.\n\n1. fixed BYOP attribution so your credits actually persist when bringing your own keys.\n2. automated key rotation for openrouter, deepinfra & aws.\n\nless manual babysitting, more stable routing."
+}

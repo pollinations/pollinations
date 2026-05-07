@@ -466,14 +466,12 @@ def main():
             log_error("Tier project not configured")
             return
 
-    # POLLEN-QUEST issues are reward-bearing community quests. They live in
-    # their own QUEST project, never get routed to dev/support/news (even if
-    # AI would classify them that way), and are NOT auto-assigned — assignment
-    # is the explicit "claimed" signal in the quest lifecycle. Early-return
-    # here so the AI classification path (which auto-assigns internal authors)
-    # never runs.
+    # POLLEN-QUEST issues are reward-bearing community quests. They always
+    # land in the QUEST project and are NEVER auto-assigned — assignment is
+    # the explicit "claimed" signal in the quest lifecycle. AI still runs
+    # to attach DEV-* type labels, but its project routing is ignored.
     if "POLLEN-QUEST" in existing_labels:
-        log_debug("Found POLLEN-QUEST label, routing to QUEST project (skipping AI + auto-assign)")
+        log_debug("Found POLLEN-QUEST label, routing to QUEST project (skipping auto-assign)")
         project = CONFIG["projects"].get("quest")
         if not project or not project.get("id"):
             log_error("QUEST project not configured (CONFIG.projects.quest.id is empty); skipping route")
@@ -483,6 +481,12 @@ def main():
             log_debug("Added to QUEST project successfully")
         else:
             log_error("Failed to add POLLEN-QUEST issue to QUEST project")
+
+        classification = classify_with_ai(is_internal=True)
+        labels = normalize_labels("dev", classification.get("labels", []))
+        if labels:
+            log_debug(f"Applying quest labels: {labels}")
+            add_labels(labels)
         return
 
     if "NEWS" in existing_labels:

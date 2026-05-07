@@ -6,8 +6,8 @@ DESCRIPTION >
     Earnings per event = total_price - dev_price (the dev's markup take).
     Attribution uses the immutable `api_key_created_for_user_id` recorded on
     each event, so totals are stable across `d1_apikey` syncs and survive
-    app deletion. The `d1_apikey` snapshot is consulted only as a label
-    fallback; the event's own `api_key_name` is used when no row matches.
+    app deletion. Display labels come from the `d1_apikey` snapshot when
+    available; deleted apps fall back to the raw `api_key_client_id`.
     Use 'since' and 'until' for date range filtering.
     Use 'grain=hour' to group daily buckets by hour; defaults to daily.
 
@@ -31,12 +31,7 @@ SQL >
         ge.start_time AS start_time,
         ge.total_price - ge.dev_price AS earned,
         ge.markup_rate AS markup_rate,
-        coalesce(
-            nullIf(al.app_name, ''),
-            nullIf(ge.api_key_created_for_app, 'undefined'),
-            nullIf(ge.api_key_name, 'undefined'),
-            ge.api_key_client_id
-        ) AS app_name
+        coalesce(nullIf(al.app_name, ''), ge.api_key_client_id) AS app_name
     FROM generation_event ge
     LEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id
     WHERE ge.api_key_created_for_user_id = {{String(dev_user_id, '')}}

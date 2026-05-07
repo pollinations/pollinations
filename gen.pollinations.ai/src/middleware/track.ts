@@ -1,5 +1,9 @@
 import { getLogger } from "@logtape/logtape";
-import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import {
+    handleBalanceDeduction,
+    type MarkupResolution,
+} from "@shared/billing/track-helpers.ts";
+import { apikey as apikeyTable } from "@shared/db/better-auth.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
@@ -33,6 +37,7 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -58,16 +63,6 @@ type ModelVariables = {
         resolved: ModelName;
     };
 };
-
-function checkedUserBalance(balance: BalanceVariables["balance"]) {
-    const balances = balance.balanceCheckResult?.balances;
-    if (!balances) return undefined;
-
-    return {
-        tierBalance: balances["v1:meter:tier"] ?? 0,
-        packBalance: balances["v1:meter:pack"] ?? 0,
-    };
-}
 
 export type ModelUsage = {
     model: string;
@@ -132,6 +127,7 @@ export const track = (eventType: EventType) =>
         const apiKeyMetadata = c.var.auth.apiKey?.metadata as
             | Record<string, unknown>
             | undefined;
+        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
@@ -142,14 +138,13 @@ export const track = (eventType: EventType) =>
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,
-            apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
-            apiKeyCreatedForApp: apiKeyMetadata?.createdForApp as
-                | string
-                | undefined,
-            apiKeyCreatedForUserId: apiKeyMetadata?.createdForUserId as
-                | string
-                | undefined,
-            apiKeyClientId: apiKeyMetadata?.clientId as string | undefined,
+            apiKeyCreatedVia: byopClientKeyId
+                ? "redirect-auth"
+                : (apiKeyMetadata?.createdVia as string | undefined),
+            apiKeyClientId: byopClientKeyId ?? undefined,
+            apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
+            apiKeyCreatedForUserId:
+                c.var.auth.apiKey?.byopClientUserId ?? undefined,
         } satisfies UserData;
 
         let responseOverride = null;
@@ -176,11 +171,6 @@ export const track = (eventType: EventType) =>
                     response,
                 );
 
-                // register pollen consumption with rate limiter
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.price?.totalPrice || 0,
-                );
-
                 // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
@@ -191,6 +181,54 @@ export const track = (eventType: EventType) =>
                 } satisfies BalanceData;
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
+                const byopClientTracking = await resolveByopClientTracking(
+                    db,
+                    byopClientKeyId,
+                );
+
+                // Deduct payer + credit dev before emitting the event so billing
+                // telemetry reflects the committed ledger state.
+                const balanceDb = db as unknown as Parameters<
+                    typeof handleBalanceDeduction
+                >[0]["db"];
+                let markup: MarkupResolution | null = null;
+                let payerBucket: Awaited<
+                    ReturnType<typeof handleBalanceDeduction>
+                >["payerBucket"] = null;
+                try {
+                    const deduction = await handleBalanceDeduction({
+                        db: balanceDb,
+                        isBilledUsage: responseTracking.isBilledUsage,
+                        totalPrice: responseTracking.price?.totalPrice,
+                        userId: userTracking.userId,
+                        apiKeyId: c.var.auth?.apiKey?.id,
+                        apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                        byopClientKeyId,
+                        modelResolved: c.var.model?.resolved,
+                    });
+                    markup = deduction.markup;
+                    payerBucket = deduction.payerBucket;
+                } catch (error) {
+                    log.error(
+                        "Billing deduction failed after response; continuing tracking: {error}",
+                        {
+                            error:
+                                error instanceof Error
+                                    ? error.message
+                                    : String(error),
+                        },
+                    );
+                }
+                const committedBalanceTracking = payerBucket
+                    ? {
+                          ...balanceTracking,
+                          selectedMeterId: `local:${payerBucket}`,
+                          selectedMeterSlug:
+                              payerBucket === "tier"
+                                  ? "v1:meter:tier"
+                                  : "v1:meter:pack",
+                      }
+                    : balanceTracking;
 
                 const finalEvent = createTrackingEvent({
                     id: generateRandomId(),
@@ -202,12 +240,20 @@ export const track = (eventType: EventType) =>
                     eventType,
                     ipSubnet,
                     ipHash,
-                    userTracking,
-                    balanceTracking,
+                    userTracking: {
+                        ...userTracking,
+                        ...byopClientTracking,
+                    },
+                    balanceTracking: committedBalanceTracking,
                     requestTracking,
                     responseTracking,
+                    markup,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
+
+                await c.var.frontendKeyRateLimit?.consumePollen(
+                    responseTracking.price?.totalPrice || 0,
+                );
 
                 log.trace(
                     [
@@ -218,6 +264,7 @@ export const track = (eventType: EventType) =>
                         '  selectedMeterSlug="{event.selectedMeterSlug}"',
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
+                        "  devPrice={event.devPrice}",
                     ].join("\n"),
                     { event: finalEvent },
                 );
@@ -228,23 +275,6 @@ export const track = (eventType: EventType) =>
                     c.env.TINYBIRD_INGEST_TOKEN,
                     log,
                 );
-
-                // Handle balance deduction for both API keys and users
-                const balanceDb = db as unknown as Parameters<
-                    typeof handleBalanceDeduction
-                >[0]["db"];
-                await handleBalanceDeduction({
-                    db: balanceDb,
-                    isBilledUsage: responseTracking.isBilledUsage,
-                    totalPrice: responseTracking.price?.totalPrice,
-                    userId: userTracking.userId,
-                    apiKeyId: c.var.auth?.apiKey?.id,
-                    apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                    modelResolved: c.var.model?.resolved,
-                    userBalanceBeforeDeduction: c.var.balance
-                        ? checkedUserBalance(c.var.balance)
-                        : undefined,
-                });
             })(),
         );
     });
@@ -454,6 +484,7 @@ type TrackingEventInput = {
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
+    markup: MarkupResolution | null;
     errorTracking?: ErrorData;
 };
 
@@ -471,6 +502,7 @@ function createTrackingEvent({
     balanceTracking,
     requestTracking,
     responseTracking,
+    markup,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
@@ -503,7 +535,11 @@ function createTrackingEvent({
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
-        totalPrice: responseTracking.price?.totalPrice || 0,
+        totalPrice:
+            (responseTracking.price?.totalPrice || 0) +
+            (markup?.devCredit ?? 0),
+        devPrice: responseTracking.price?.totalPrice || 0,
+        markupRate: markup?.markupRate ?? 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,
@@ -834,6 +870,29 @@ type ErrorData = {
     errorMessage?: string;
     // errorStack and errorDetails removed to reduce D1 memory usage
 };
+
+async function resolveByopClientTracking(
+    db: ReturnType<typeof drizzle>,
+    byopClientKeyId: string | null | undefined,
+): Promise<Partial<UserData>> {
+    if (!byopClientKeyId) return {};
+
+    const [clientKey] = await db
+        .select({
+            id: apikeyTable.id,
+            name: apikeyTable.name,
+            userId: apikeyTable.userId,
+        })
+        .from(apikeyTable)
+        .where(eq(apikeyTable.id, byopClientKeyId))
+        .limit(1);
+
+    return {
+        apiKeyClientId: clientKey?.id ?? byopClientKeyId,
+        apiKeyCreatedForApp: clientKey?.name ?? undefined,
+        apiKeyCreatedForUserId: clientKey?.userId ?? undefined,
+    };
+}
 
 function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};

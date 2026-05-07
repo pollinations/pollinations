@@ -6,11 +6,16 @@ type AuthModalProps = {
         label?: string;
         labelledBy?: string;
     };
+    tone?: "default" | "error";
 };
 
 // Backdrop uses `items-start` + `my-auto` on the card so short dialogs center
 // vertically and tall dialogs scroll the page. One variant fits both cases.
-export function AuthModal({ children, dialog }: AuthModalProps) {
+export function AuthModal({
+    children,
+    dialog,
+    tone = "default",
+}: AuthModalProps) {
     const dialogProps = dialog
         ? {
               role: "dialog" as const,
@@ -21,10 +26,12 @@ export function AuthModal({ children, dialog }: AuthModalProps) {
               }),
           }
         : {};
+    const borderClass =
+        tone === "error" ? "border-red-300" : "border-amber-300";
     return (
         <div className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto bg-green-950/50">
             <div
-                className="bg-amber-50 border-4 border-green-950 rounded-lg shadow-lg max-w-xl w-full my-auto"
+                className={`bg-amber-50 border-4 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
                 {...dialogProps}
             >
                 {children}

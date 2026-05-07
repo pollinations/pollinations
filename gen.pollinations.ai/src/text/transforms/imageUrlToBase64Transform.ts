@@ -333,8 +333,7 @@ async function processMessageContent(
 
 /**
  * Creates a transform that converts HTTP image URLs to base64 data URLs
- * for Vertex AI and Bedrock compatibility. These providers require base64
- * inline data rather than HTTP URLs.
+ * for providers/models that require inline image data.
  */
 export function createImageUrlToBase64Transform(): TransformFn {
     return async (messages, options) => {
@@ -342,6 +341,8 @@ export function createImageUrlToBase64Transform(): TransformFn {
             | Record<string, unknown>
             | undefined;
         const provider = config?.provider as string | undefined;
+        const requiresBase64ImageUrls =
+            config?.requiresBase64ImageUrls === true;
         const targets = (config?.targets || []) as Array<
             Record<string, unknown>
         >;
@@ -352,6 +353,7 @@ export function createImageUrlToBase64Transform(): TransformFn {
         if (
             provider !== "vertex-ai" &&
             provider !== "bedrock" &&
+            !requiresBase64ImageUrls &&
             !hasBase64Target
         ) {
             return { messages, options };

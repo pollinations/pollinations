@@ -351,7 +351,7 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /account/balance");
     lines.push(
-        "Returns { balance } — remaining pollen (sum of tier + pack + crypto). If API key has a budget, returns key budget instead.",
+        "Returns { balance } — remaining pollen (sum of tier balance + paid balance). If API key has a budget, returns key budget instead.",
     );
     lines.push(
         "Requires `account:usage` permission when using an API key without a budget of its own.",
@@ -393,6 +393,7 @@ function generateLLMDoc(): string {
     lines.push(
         '- type ("secret"|"publishable", default "secret"): Key type (sk_ or pk_)',
     );
+    lines.push('- App keys: set type to "publishable" and pass redirectUris');
     lines.push("- expiresIn (int, optional): Seconds until expiry (max 365d)");
     lines.push(
         "- allowedModels (string[], optional): Restrict to specific models. null = all",
@@ -403,6 +404,18 @@ function generateLLMDoc(): string {
     lines.push(
         '- accountPermissions (string[], optional): e.g. ["profile","usage"]. "keys" is auto-stripped',
     );
+    lines.push(
+        "- redirectUris (string[], optional): OAuth redirect URIs for publishable app keys",
+    );
+    lines.push(
+        "- earningsEnabled (boolean, optional): Developer earnings for publishable app keys; true opts in",
+    );
+    lines.push("Example app key body:");
+    lines.push("```json");
+    lines.push(
+        '{"name":"myapp","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}',
+    );
+    lines.push("```");
     lines.push(
         "Returns full key value once: { id, key, name, type, prefix, start, expiresAt, permissions, pollenBudget }",
     );
@@ -482,6 +495,20 @@ const CODE_SAMPLES: Record<
     string,
     { label: string; lang: string; source: string }[]
 > = {
+    "post /account/keys": [
+        {
+            label: "Create app key",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/account/keys \\
+  -H "Authorization: Bearer YOUR_SECRET_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "myapp",
+    "type": "publishable",
+    "redirectUris": ["https://myapp.com/callback"]
+  }'`,
+        },
+    ],
     "post /v1/chat/completions": [
         {
             label: "cURL",

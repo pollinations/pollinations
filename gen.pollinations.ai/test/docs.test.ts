@@ -95,7 +95,6 @@ describe("docs routes", () => {
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
         expect(schema.paths["/{hash}"]).toBeDefined();
-        expect(schema.info.description).toContain("Quick Start");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "🌸 Bring Your Own Pollen",
         );

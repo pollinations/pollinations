@@ -4,6 +4,7 @@ import { getImageEnv } from "../env.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const logOps = debug("pollinations:xai:ops");
 const logError = debug("pollinations:xai:error");
@@ -95,42 +96,34 @@ export async function callXaiImageAPI(
 
     logOps("Request body:", JSON.stringify(requestBody));
 
-    const response = await fetch(endpoint, {
+    const response = await fetchUpstream(endpoint, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify(requestBody),
+        errorLabel: "xAI image generation failed",
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        logError("xAI request failed:", response.status, errorText);
-        throw new HttpError(
-            `xAI image generation failed: ${errorText}`,
-            response.status,
-        );
-    }
 
     const data = (await response.json()) as { data?: Array<{ url?: string }> };
     const result = data.data?.[0];
 
     if (!result?.url) {
-        throw new HttpError("xAI returned no image URL", 500);
+        throw new HttpError(
+            "xAI returned no image URL",
+            500,
+            undefined,
+            endpoint,
+        );
     }
 
     logOps("Downloading result from URL:", result.url);
     progress.updateBar(requestId, 70, "Processing", "Downloading result...");
 
-    const imageResponse = await fetch(result.url);
-    if (!imageResponse.ok) {
-        throw new HttpError(
-            `Failed to download xAI result: ${imageResponse.status}`,
-            500,
-        );
-    }
-
+    const imageResponse = await fetchUpstream(result.url, {
+        errorLabel: "Failed to download xAI result",
+    });
     const buffer = Buffer.from(await imageResponse.arrayBuffer());
     progress.updateBar(
         requestId,

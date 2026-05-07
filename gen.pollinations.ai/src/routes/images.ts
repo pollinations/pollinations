@@ -9,10 +9,12 @@ import {
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@shared/schemas/openai.ts";
+import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { UpstreamError } from "@/error.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 
 // biome-ignore lint/suspicious/noExplicitAny: internal callback bridging typed proxy.ts and untyped Context.var
 type CheckBalanceFn = (vars: any, env: any) => Promise<void>;
@@ -52,7 +54,6 @@ function imageResponse(
 async function requireAuthAndBalance(c: Context, checkBalance: CheckBalanceFn) {
     await c.var.auth.requireAuthorization();
     c.var.auth.requireModelAccess();
-    c.var.auth.requireKeyBudget();
     await checkBalance(c.var, c.env);
 }
 
@@ -92,6 +93,7 @@ async function parseEditInput(c: Context): Promise<{
     size?: string;
     quality?: string;
     seed?: number;
+    safe?: SafeValue;
     extra: Record<string, unknown>;
 }> {
     const contentType = c.req.header("content-type") || "";
@@ -128,7 +130,12 @@ async function parseEditInput(c: Context): Promise<{
             imageUrls,
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
-            extra: {},
+            safe: formData.get("safe") as string | null,
+            extra: {
+                ...(formData.has("safe")
+                    ? { safe: formData.get("safe") as string }
+                    : {}),
+            },
         };
     }
 
@@ -161,6 +168,7 @@ async function parseEditInput(c: Context): Promise<{
         size: parsed.data.size,
         quality: parsed.data.quality,
         seed,
+        safe: body.safe as SafeValue,
         extra: passthrough,
     };
 }
@@ -175,9 +183,15 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
             Record<string, unknown>;
         const model = c.var.model.resolved;
         const resolved = resolveParams(body);
+        const safePrompt = await applySafety(
+            c,
+            body.prompt,
+            body.safe as SafeValue,
+        );
 
-        const response = await generateImageOrVideoResponse(c, body.prompt, {
+        const response = await generateImageOrVideoResponse(c, safePrompt, {
             ...body,
+            prompt: safePrompt,
             ...collectPassthrough(body, "image"),
             ...resolved,
             model,
@@ -187,7 +201,7 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
 
         if (body.response_format === "url") {
             const imageUrl = new URL(
-                `https://gen.pollinations.ai/image/${encodeURIComponent(body.prompt)}`,
+                `https://gen.pollinations.ai/image/${encodeURIComponent(safePrompt)}`,
             );
             for (const [key, value] of Object.entries({
                 model,
@@ -195,14 +209,22 @@ export function handleImageGeneration(checkBalance: CheckBalanceFn) {
                 nologo: "true",
             }))
                 imageUrl.searchParams.set(key, String(value));
+            const safeValue = normalizeSafeValue(body.safe as SafeValue);
+            if (safeValue) {
+                imageUrl.searchParams.set("safe", safeValue);
+            }
             await response.arrayBuffer();
-            return c.json(
-                imageResponse({ url: imageUrl.toString() }, body.prompt),
+            return withSafetyHeaders(
+                c,
+                c.json(imageResponse({ url: imageUrl.toString() }, safePrompt)),
             );
         }
 
         const base64 = arrayBufferToBase64(await response.arrayBuffer());
-        return c.json(imageResponse({ b64_json: base64 }, body.prompt));
+        return withSafetyHeaders(
+            c,
+            c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+        );
     };
 }
 
@@ -210,12 +232,13 @@ export function handleImageEdit(checkBalance: CheckBalanceFn) {
     return async (c: Context) => {
         await requireAuthAndBalance(c, checkBalance);
 
-        const { prompt, imageUrls, size, quality, seed, extra } =
+        const { prompt, imageUrls, size, quality, seed, safe, extra } =
             await parseEditInput(c);
+        const safePrompt = await applySafety(c, prompt, safe);
         const resolved = resolveParams({ size, quality, seed });
 
-        const response = await generateImageOrVideoResponse(c, prompt, {
-            prompt,
+        const response = await generateImageOrVideoResponse(c, safePrompt, {
+            prompt: safePrompt,
             image: imageUrls,
             ...extra,
             ...resolved,
@@ -225,6 +248,9 @@ export function handleImageEdit(checkBalance: CheckBalanceFn) {
         c.var.track.overrideResponseTracking(response.clone());
 
         const base64 = arrayBufferToBase64(await response.arrayBuffer());
-        return c.json(imageResponse({ b64_json: base64 }, prompt));
+        return withSafetyHeaders(
+            c,
+            c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+        );
     };
 }

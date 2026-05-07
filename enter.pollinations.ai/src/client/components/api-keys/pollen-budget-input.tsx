@@ -26,7 +26,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     onChange,
     disabled = false,
     inline = false,
-    theme = "green",
+    theme = "blue",
 }) => {
     const {
         input: { classes: inputClasses },
@@ -40,7 +40,7 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
             >
                 Budget
                 <InfoTip
-                    text="Set a spending limit for this key. Leave empty for unlimited."
+                    text="Spending cap for this key. Leave empty for unlimited. Once the key spends its budget, requests through it are rejected."
                     label="Budget information"
                     tone={tipTone}
                 />

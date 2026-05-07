@@ -3,6 +3,7 @@ import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
+import type { SafetyVariables } from "@/middleware/safety.ts";
 import type { ModelVariables } from "./middleware/model.ts";
 import type { TrackVariables } from "./middleware/track.ts";
 
@@ -18,6 +19,7 @@ export type Env = {
         AuthVariables &
         BalanceVariables &
         FrontendKeyRateLimitVariables &
+        SafetyVariables &
         TrackVariables &
         ModelVariables;
 };

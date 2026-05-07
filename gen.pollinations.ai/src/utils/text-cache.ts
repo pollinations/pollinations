@@ -5,13 +5,24 @@
  */
 
 import type { Logger } from "@logtape/logtape";
+import {
+    parseSafeFeatures,
+    SAFETY_HEADER_NAME,
+} from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
 const CACHED_HEADER_NAMES = new Set(["x-model-used"]);
-const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-"];
+const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
+const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+
+function hasActiveSafety(value: unknown): boolean {
+    return (
+        parseSafeFeatures(value as string | boolean | undefined | null).size > 0
+    );
+}
 
 /**
  * Generate a cache key for the request using SHA-256 hash
@@ -45,23 +56,39 @@ export async function generateCacheKey(
         url.pathname,
         filteredParams.toString(), // Only include non-auth query params
     ];
+    const hasQuerySafe = url.searchParams.has("safe");
+    let hasBodySafe = false;
+    let usesSafety = hasActiveSafety(url.searchParams.get("safe"));
 
     // Add filtered body for POST/PUT requests
     if (bodyText && (request.method === "POST" || request.method === "PUT")) {
         try {
             // Try to parse as JSON and filter auth fields
             const bodyObj = JSON.parse(bodyText);
+            hasBodySafe = Object.hasOwn(bodyObj, "safe");
+            usesSafety ||= hasActiveSafety(bodyObj.safe);
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
                 if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
                     filteredBody[key] = value;
                 }
             }
+            // Cache is keyed by the user's original input plus safe mode. On a
+            // MISS, safety may redact before generation, but keeping the
+            // original input in the key prevents unrelated prompts from sharing.
             parts.push(stableStringify(filteredBody));
         } catch {
             // If not JSON, use body as-is
             parts.push(bodyText);
         }
+    }
+    const safeHeader = request.headers.get(SAFETY_HEADER_NAME);
+    if (safeHeader !== null && !hasQuerySafe && !hasBodySafe) {
+        parts.push(`${SAFETY_HEADER_NAME}:${safeHeader}`);
+        usesSafety ||= hasActiveSafety(safeHeader);
+    }
+    if (usesSafety) {
+        parts.push(SAFETY_CACHE_VERSION);
     }
 
     // Generate a hash of all parts using Web Crypto API

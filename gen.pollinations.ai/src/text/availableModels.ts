@@ -9,6 +9,7 @@ import { createSystemPromptTransform } from "./transforms/createSystemPromptTran
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
+import { stripCacheControl } from "./transforms/stripCacheControl.js";
 import type { TransformFn } from "./types.js";
 
 interface ModelDefinition {
@@ -56,7 +57,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "mistral",
-        config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
+        config: portkeyConfig["mistral-small-2503"],
+        transform: stripCacheControl,
     },
     {
         name: "deepseek",
@@ -154,10 +156,12 @@ const models: ModelDefinition[] = [
     {
         name: "kimi",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
+        transform: stripCacheControl,
     },
     {
         name: "kimi-k2.6",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
+        transform: stripCacheControl,
     },
     {
         name: "gemini-large",
@@ -180,6 +184,7 @@ const models: ModelDefinition[] = [
     {
         name: "glm",
         config: portkeyConfig["accounts/fireworks/models/glm-5p1"],
+        transform: stripCacheControl,
     },
     {
         name: "minimax",
@@ -187,9 +192,15 @@ const models: ModelDefinition[] = [
     },
     {
         name: "llama",
-        config: portkeyConfig[
-            "accounts/fireworks/models/llama-v3p3-70b-instruct"
-        ],
+        config: portkeyConfig["Llama-3.3-70B-Instruct"],
+    },
+    {
+        name: "llama-maverick",
+        config: portkeyConfig["Llama-4-Maverick-17B-128E-Instruct-FP8"],
+    },
+    {
+        name: "llama-scout",
+        config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
     },
     {
         name: "mistral-large",

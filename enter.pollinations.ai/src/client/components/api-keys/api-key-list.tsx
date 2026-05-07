@@ -42,13 +42,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const sortedAppKeys = sortedKeys.filter(isAppKey);
 
     function isAppKey(apiKey: ApiKey): boolean {
-        const redirectUris = Array.isArray(apiKey.metadata?.redirectUris)
-            ? (apiKey.metadata?.redirectUris as string[])
-            : [];
-        return (
-            apiKey.metadata?.keyType === "publishable" &&
-            redirectUris.length > 0
-        );
+        return apiKey.metadata?.keyType === "publishable";
     }
 
     function renderKeyCard(apiKey: ApiKey) {
@@ -60,7 +54,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             ? (apiKey.metadata?.redirectUris as string[])
             : [];
         const primaryRedirectUri = redirectUrisMeta[0] || "";
-        const isApp = isPublishable && !!primaryRedirectUri;
+        const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
+        const isApp = isPublishable;
+        const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
 
         return (
             <Card
@@ -70,11 +66,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Tag color="blue" size="sm">
-                        {isPublishable
-                            ? primaryRedirectUri
-                                ? "🖥️ App"
-                                : "🌐 Publishable"
-                            : "🔒 Secret"}
+                        {isPublishable ? "🖥️ App" : "🔒 Secret"}
                     </Tag>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}
@@ -133,7 +125,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </span>
                     </span>
                     {isPublishable && primaryRedirectUri && (
-                        <span>
+                        <span className="inline-flex min-w-0 items-center gap-1">
                             <span className="text-gray-400">Redirect: </span>
                             <a
                                 href={primaryRedirectUri}
@@ -143,6 +135,31 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             >
                                 {primaryRedirectUri.replace(/^https?:\/\//, "")}
                             </a>
+                            {extraRedirectUriCount > 0 && (
+                                <span
+                                    className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700"
+                                    title={redirectUrisMeta
+                                        .slice(1)
+                                        .map((uri) =>
+                                            uri.replace(/^https?:\/\//, ""),
+                                        )
+                                        .join("\n")}
+                                >
+                                    +{extraRedirectUriCount}
+                                </span>
+                            )}
+                        </span>
+                    )}
+                    {isApp && (
+                        <span
+                            className={`rounded px-2 py-0.5 font-medium ${
+                                earningsEnabled
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-500"
+                            }`}
+                            title="Developer earnings"
+                        >
+                            Earnings {earningsEnabled ? "on" : "off"}
                         </span>
                     )}
                     {!isApp && (
@@ -189,7 +206,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 onSubmit={onCreate}
                                 onComplete={() => {}}
                                 triggerLabel="🔑 + API Key"
-                                triggerColor="blue"
                             />
                         </div>
                         {!sortedApiKeys.length && (
@@ -213,23 +229,40 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 <DashboardSection title="App" theme="blue" framed>
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <p className="min-w-0 flex-1 text-sm text-gray-600">
-                                For apps where users sign in with their own
-                                Pollinations account — billed to them.{" "}
-                                <a
-                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
-                                >
-                                    Read the guide
-                                </a>
-                            </p>
+                            <div className="min-w-0 flex-1 text-sm text-gray-600">
+                                <p>
+                                    For apps where users sign in with their own
+                                    Pollinations account and spend their own
+                                    Pollen.
+                                </p>
+                                <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                                    <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                                        New!
+                                    </span>
+                                    Turn on developer earnings. Users are billed
+                                    25% extra, credited to your wallet.{" "}
+                                    <a
+                                        href="https://gen.pollinations.ai/docs#tag/bring-your-own-pollen"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium text-blue-700 hover:text-blue-900"
+                                    >
+                                        <span className="underline underline-offset-2">
+                                            Read the guide
+                                        </span>
+                                        <span
+                                            aria-hidden="true"
+                                            className="no-underline ml-0.5"
+                                        >
+                                            ↗
+                                        </span>
+                                    </a>
+                                </p>
+                            </div>
                             <ApiKeyDialog
                                 onSubmit={onCreate}
                                 onComplete={() => {}}
                                 triggerLabel="🖥️ + Add App"
-                                triggerColor="blue"
                                 simplified
                             />
                         </div>

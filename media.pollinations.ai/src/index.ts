@@ -90,13 +90,33 @@ async function initDb(db: D1Database | undefined): Promise<void> {
             `CREATE INDEX IF NOT EXISTS idx_media_objects_owner ON media_objects(owner)`,
         ];
 
-        for (const migration of migrations) {
-            await db.exec(migration);
+        try {
+            for (const migration of migrations) {
+                await db.exec(migration);
+            }
+            dbInitialized = true;
+        } catch (err) {
+            // Reset so the next request can retry rather than permanently failing
+            dbInitPromise = null;
+            throw err;
         }
-        dbInitialized = true;
     })();
 
     await dbInitPromise;
+}
+
+// URL-safe base64 encoding/decoding for pagination cursors
+function encodeCursor(data: object): string {
+    return btoa(JSON.stringify(data))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+}
+
+function decodeCursor(cursor: string): { createdAt: string; hash: string } {
+    const padded = cursor.replace(/-/g, "+").replace(/_/g, "/");
+    const padding = (4 - (padded.length % 4)) % 4;
+    return JSON.parse(atob(padded + "=".repeat(padding)));
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -552,6 +572,12 @@ api.get(
                     },
                 },
             },
+            400: {
+                description: "Invalid cursor",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             401: {
                 description: "Unauthorized",
                 content: {
@@ -566,7 +592,7 @@ api.get(
             return c.json({ error: "API key required" }, 401);
         }
         const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
+        if (!authResult || !authResult.name) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
 
@@ -596,9 +622,7 @@ api.get(
 
             if (cursor) {
                 try {
-                    const decoded = JSON.parse(
-                        atob(cursor),
-                    ) as { createdAt: string; hash: string };
+                    const decoded = decodeCursor(cursor);
                     query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash < ?))`;
                     params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
                 } catch {
@@ -643,12 +667,10 @@ api.get(
 
                 if (hasMore) {
                     const lastRow = rows[rows.length - 1];
-                    nextCursor = btoa(
-                        JSON.stringify({
-                            createdAt: lastRow.created_at,
-                            hash: lastRow.hash,
-                        }),
-                    );
+                    nextCursor = encodeCursor({
+                        createdAt: lastRow.created_at,
+                        hash: lastRow.hash,
+                    });
                 }
             }
 
@@ -723,32 +745,45 @@ api.put(
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
 
+        let body: { public?: unknown; private?: unknown };
         try {
-            const body = await c.req.json<{
-                public?: string[];
-                private?: string[];
-            }>();
+            body = await c.req.json();
+        } catch {
+            return c.json({ error: "Invalid JSON body" }, 400);
+        }
 
-            const publicTags = (body.public || [])
-                .map(normalizeTag)
-                .filter(validateTag);
-            const privateTags = (body.private || [])
-                .map(normalizeTag)
-                .filter(validateTag);
+        if (
+            (body.public !== undefined && !Array.isArray(body.public)) ||
+            (body.private !== undefined && !Array.isArray(body.private))
+        ) {
+            return c.json({ error: "'public' and 'private' must be arrays" }, 400);
+        }
+
+        try {
+            const publicTags = [
+                ...new Set(
+                    ((body.public as string[]) || [])
+                        .map(normalizeTag)
+                        .filter(validateTag),
+                ),
+            ];
+            const privateTags = [
+                ...new Set(
+                    ((body.private as string[]) || [])
+                        .map(normalizeTag)
+                        .filter(validateTag),
+                ),
+            ];
 
             if (publicTags.length > MAX_PUBLIC_TAGS) {
                 return c.json(
-                    {
-                        error: `Too many public tags (max ${MAX_PUBLIC_TAGS})`,
-                    },
+                    { error: `Too many public tags (max ${MAX_PUBLIC_TAGS})` },
                     400,
                 );
             }
             if (privateTags.length > MAX_PRIVATE_TAGS) {
                 return c.json(
-                    {
-                        error: `Too many private tags (max ${MAX_PRIVATE_TAGS})`,
-                    },
+                    { error: `Too many private tags (max ${MAX_PRIVATE_TAGS})` },
                     400,
                 );
             }
@@ -774,10 +809,8 @@ api.put(
                 return c.json({ error: "Not the file owner" }, 403);
             }
 
-            // Clear existing tags and insert new ones
-            await c.env.DB.prepare(
-                "DELETE FROM public_tags WHERE hash = ?",
-            )
+            // Replace tags atomically: delete then re-insert
+            await c.env.DB.prepare("DELETE FROM public_tags WHERE hash = ?")
                 .bind(hash)
                 .run();
             await c.env.DB.prepare(
@@ -788,7 +821,7 @@ api.put(
 
             for (const tag of publicTags) {
                 await c.env.DB.prepare(
-                    "INSERT INTO public_tags (hash, tag) VALUES (?, ?)",
+                    "INSERT OR IGNORE INTO public_tags (hash, tag) VALUES (?, ?)",
                 )
                     .bind(hash, tag)
                     .run();
@@ -796,7 +829,7 @@ api.put(
 
             for (const tag of privateTags) {
                 await c.env.DB.prepare(
-                    "INSERT INTO private_tags (hash, owner, tag) VALUES (?, ?, ?)",
+                    "INSERT OR IGNORE INTO private_tags (hash, owner, tag) VALUES (?, ?, ?)",
                 )
                     .bind(hash, authResult.name, tag)
                     .run();
@@ -884,9 +917,7 @@ api.get(
 
             if (cursor) {
                 try {
-                    const decoded = JSON.parse(
-                        atob(cursor),
-                    ) as { createdAt: string; hash: string };
+                    const decoded = decodeCursor(cursor);
                     query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash < ?))`;
                     params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
                 } catch {
@@ -923,12 +954,10 @@ api.get(
 
                 if (hasMore) {
                     const lastRow = rows[rows.length - 1];
-                    nextCursor = btoa(
-                        JSON.stringify({
-                            createdAt: lastRow.created_at,
-                            hash: lastRow.hash,
-                        }),
-                    );
+                    nextCursor = encodeCursor({
+                        createdAt: lastRow.created_at,
+                        hash: lastRow.hash,
+                    });
                 }
             }
 
@@ -946,7 +975,7 @@ app.use(
     "*",
     cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "HEAD", "OPTIONS"],
+        allowMethods: ["GET", "POST", "PUT", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
         exposeHeaders: ["X-Content-Hash", "X-Content-Size"],
     }),

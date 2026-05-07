@@ -73,11 +73,12 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         </Button>
                     </div>
                 ))}
-                <div>
+                <div className="flex justify-end">
                     <Button
                         type="button"
                         color="blue"
                         weight="light"
+                        size="small"
                         onClick={add}
                         disabled={disabled}
                     >

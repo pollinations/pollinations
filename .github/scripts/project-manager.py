@@ -94,13 +94,6 @@ CONFIG = {
             "name": "Tier",
             "internal_only": False,
         },
-        # Community Quests. POLLEN-QUEST issues (and the PRs that resolve
-        # them) live here — separate from dev/support/news so reward-bearing
-        # work has its own kanban view. Project ID is bootstrapped via the
-        # GraphQL v2 mutation documented in the companion PR description;
-        # maintainers must paste the resulting node ID here on first run.
-        # If left blank, POLLEN-QUEST routing falls through with a warning
-        # and the issue stays unrouted instead of crashing the workflow.
         "quest": {
             "id": "",
             "name": "QUEST",

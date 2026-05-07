@@ -1,0 +1,35 @@
+{
+  "pr_number": 10730,
+  "title": "chore: update app metrics 2026-05-07",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10730",
+  "merged_at": "2026-05-07T05:33:49Z",
+  "labels": [
+    "API",
+    ".QUESTION"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Watering the Greenhouse",
+    "blurb": "Our automated bot just finished its daily rounds, updating health metrics and stats for all the amazing apps in our community greenhouse.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse statistics.",
+    "impact": "Keeps the app showcase and greenhouse documentation up-to-date with the latest usage and health data.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated",
+      "health-check"
+    ],
+    "visual_concept": "The PR is about automated daily checks on the 'greenhouse' (community apps). The Monitor Robot acting as an automated gardener checking on plants, with Polly the bee assisting.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a tiny clipboard, checking on glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby wearing a tiny gardener's hat. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-07/PR-10730.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a tiny clipboard, checking on glowing code-plants in a digital greenhouse. The cute bee mascot hovers nearby wearing a tiny gardener's hat. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites."
+  },
+  "generated_at": "2026-05-07T05:34:47.573054+00:00"
+}

@@ -1,6 +1,7 @@
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
+import { genDocsUrl } from "../../config.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { Card } from "../ui/card.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
@@ -242,7 +243,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Turn on developer earnings. Users are billed
                                     25% extra, credited to your wallet.{" "}
                                     <a
-                                        href="https://gen.pollinations.ai/docs#tag/bring-your-own-pollen"
+                                        href={genDocsUrl(
+                                            "#tag/bring-your-own-pollen",
+                                        )}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="font-medium text-blue-700 hover:text-blue-900"

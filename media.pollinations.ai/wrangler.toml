@@ -17,6 +17,7 @@ bucket_name = "pollinations-media-dev"
 [[env.development.d1_databases]]
 binding = "DB"
 database_name = "media-dev"
+# TODO: Replace with actual D1 UUID from `wrangler d1 create media-dev`
 database_id = "media-dev"
 
 # Production environment
@@ -38,6 +39,7 @@ bucket_name = "pollinations-media"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "media-prod"
+# TODO: Replace with actual D1 UUID from `wrangler d1 create media-prod --remote`
 database_id = "media-prod"
 
 [vars]

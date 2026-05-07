@@ -6,13 +6,11 @@ import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
 import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
 import { MultiSelect } from "./multi-select";
-import { PeriodPicker } from "./period-picker.tsx";
 import type { UsagePeriodSelection } from "./types";
 import { useEarningsData } from "./use-earnings-data";
 
 type EarningsGraphProps = {
     period: UsagePeriodSelection;
-    onPeriodChange: (period: UsagePeriodSelection) => void;
     apps: Array<{ id: string; name: string }>;
     theme: DashboardTheme;
     action?: ReactNode;
@@ -33,7 +31,6 @@ const PAID_BAR_COLOR_BY_THEME: Record<
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({
     period,
-    onPeriodChange,
     apps,
     theme,
     action,
@@ -58,12 +55,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     return (
         <DashboardSection title="Earnings" theme={theme} framed action={action}>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <PeriodPicker
-                        value={period}
-                        onChange={onPeriodChange}
-                        theme={theme}
-                    />
+                <div className="flex flex-wrap items-start justify-end gap-4">
                     <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
                         <MultiSelect
                             options={appSelectOptions}

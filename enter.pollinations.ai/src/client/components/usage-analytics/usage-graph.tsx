@@ -14,14 +14,12 @@ import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
 import { MultiSelect } from "./multi-select";
-import { PeriodPicker } from "./period-picker.tsx";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 type UsageGraphProps = {
     tier?: TierStatus;
     period: UsagePeriodSelection;
-    onPeriodChange: (period: UsagePeriodSelection) => void;
     apiKeys: Array<{ id: string; name: string }>;
     action?: ReactNode;
     theme: DashboardTheme;
@@ -30,7 +28,6 @@ type UsageGraphProps = {
 export const UsageGraph: FC<UsageGraphProps> = ({
     tier,
     period,
-    onPeriodChange,
     apiKeys,
     action,
     theme,
@@ -83,29 +80,22 @@ export const UsageGraph: FC<UsageGraphProps> = ({
         <DashboardSection title="Usage" theme={theme} framed action={action}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex flex-col gap-4">
-                        <PeriodPicker
-                            value={period}
-                            onChange={onPeriodChange}
-                            theme={theme}
-                        />
-                        <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
-                            {(["requests", "pollen"] as Metric[]).map((m) => (
-                                <TabButton
-                                    key={m}
-                                    theme={theme}
-                                    active={filters.metric === m}
-                                    onClick={() =>
-                                        setFilters((f) => ({
-                                            ...f,
-                                            metric: m,
-                                        }))
-                                    }
-                                >
-                                    {m === "requests" ? "Request" : "Pollen"}
-                                </TabButton>
-                            ))}
-                        </div>
+                    <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
+                        {(["requests", "pollen"] as Metric[]).map((m) => (
+                            <TabButton
+                                key={m}
+                                theme={theme}
+                                active={filters.metric === m}
+                                onClick={() =>
+                                    setFilters((f) => ({
+                                        ...f,
+                                        metric: m,
+                                    }))
+                                }
+                            >
+                                {m === "requests" ? "Request" : "Pollen"}
+                            </TabButton>
+                        ))}
                     </div>
                     <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
                         <MultiSelect

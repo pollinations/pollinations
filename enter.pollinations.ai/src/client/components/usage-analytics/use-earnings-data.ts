@@ -68,43 +68,23 @@ export function useEarningsData(
             granularity: filters.period.granularity,
             period: filters.period.period,
         });
-        if (filters.selectedAppKeyIds.length > 0) {
-            params.set("api_key_ids", filters.selectedAppKeyIds.join(","));
-        }
-        const summaryParams = new URLSearchParams({
-            granularity: filters.period.granularity,
-            period: filters.period.period,
-        });
 
-        Promise.all([
-            fetch(`/api/account/earnings/daily?${params.toString()}`).then(
-                (r) => {
-                    if (!r.ok)
-                        throw new Error(
-                            `Failed to fetch earnings data: ${r.status}`,
-                        );
-                    return r.json() as Promise<{
-                        earnings: DailyEarningsRecord[];
-                    }>;
-                },
-            ),
-            fetch(
-                `/api/account/earnings/summary?${summaryParams.toString()}`,
-            ).then((r) => {
+        fetch(`/api/account/earnings?${params.toString()}`)
+            .then((r) => {
                 if (!r.ok)
                     throw new Error(
-                        `Failed to fetch earnings summary: ${r.status}`,
+                        `Failed to fetch earnings data: ${r.status}`,
                     );
                 return r.json() as Promise<{
+                    daily: DailyEarningsRecord[];
                     perApp: EarningsSummaryRow[];
                     global: EarningsSummaryRow | null;
                 }>;
-            }),
-        ])
-            .then(([dailyData, summaryData]) => {
-                setDailyEarnings(dailyData?.earnings || []);
-                setPerApp(summaryData?.perApp || []);
-                setGlobalSummary(summaryData?.global || null);
+            })
+            .then((data) => {
+                setDailyEarnings(data?.daily || []);
+                setPerApp(data?.perApp || []);
+                setGlobalSummary(data?.global || null);
             })
             .catch((err) => {
                 console.error("Earnings fetch error:", err);
@@ -114,11 +94,7 @@ export function useEarningsData(
                 setGlobalSummary(null);
             })
             .finally(() => setLoading(false));
-    }, [
-        filters.period.granularity,
-        filters.period.period,
-        filters.selectedAppKeyIds,
-    ]);
+    }, [filters.period.granularity, filters.period.period]);
 
     useEffect(() => {
         fetchEarnings();

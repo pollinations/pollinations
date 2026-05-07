@@ -87,6 +87,9 @@ function indexPoolsByVendor(pools) {
         // into matrix.data by rebuild-sheet.mjs before the layout runs.
         // Skip them here so renderPoolVendor isn't called for them.
         if (pool.role === "revenue") continue;
+        // single_row pools (e.g. DeepInfra prepaid) skip the 3-row treatment
+        // and render as a plain Wise-cash vendor row.
+        if (pool.single_row === true) continue;
         byVendor.set(canonical, { poolName, pool });
     }
     return byVendor;
@@ -665,6 +668,11 @@ export function buildLayout(
         formats,
         columnWidths,
         freezeRows: cashRowIdx + 1,
+        // 1-based row of the Total Expenses row — the first row that should
+        // receive currency number formatting. Summary rows (Total expenses /
+        // Net / Running cash) are inside the freeze pane but still numeric,
+        // so the formatter range starts here, not after freezeRows.
+        firstNumericRow: totalExpRowIdx + 1,
         creditRowRanges,
     };
 }

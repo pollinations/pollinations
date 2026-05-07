@@ -1,4 +1,5 @@
 import { InfoTip } from "../ui/info-tip.tsx";
+import { Tag } from "../ui/tag.tsx";
 
 type Attribution = {
     appName?: string;
@@ -26,9 +27,6 @@ export function AppAttribution({
     const tipText = [
         "Same as copy-pasting an API key into their app.",
         "Only share with apps you trust.",
-        ...(attribution?.found && attribution.earningsEnabled
-            ? ["20% of what you spend in this app goes to the developer."]
-            : []),
     ]
         .map((line) => `- ${line}`)
         .join("\n");
@@ -69,6 +67,17 @@ export function AppAttribution({
                     icon="!"
                 />
             </p>
+            {attribution?.found && attribution.earningsEnabled && (
+                <div className="mt-2">
+                    <Tag
+                        color="amber"
+                        size="sm"
+                        className="bg-amber-900 text-yellow-200"
+                    >
+                        The developer of this app earns 20%
+                    </Tag>
+                </div>
+            )}
         </>
     );
 }

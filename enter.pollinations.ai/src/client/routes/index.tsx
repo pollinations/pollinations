@@ -40,6 +40,7 @@ function pageFromHash(hash: string): DashboardPage {
     if (page === "news" || page === "faq") return "updates";
     if (page === "buy-pollen") return "pollen";
     if (page === "pricing") return "models";
+    if (page === "earnings") return "usage";
     return "pollen";
 }
 
@@ -270,47 +271,51 @@ function RouteComponent() {
                 </div>
             )}
             {activePage === "usage" && (
-                <UsageGraph
-                    tier={tierData?.active?.tier}
-                    period={usagePeriod}
-                    onPeriodChange={setUsagePeriod}
-                    apiKeys={selectableKeys}
-                    theme={dashboardThemeByPage.usage}
-                    action={
-                        <Button
-                            as="button"
-                            color={dashboardThemeByPage.usage}
-                            weight="light"
-                            onClick={downloadDetailedUsage}
-                            className="flex items-center gap-1.5"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                <div className="flex flex-col gap-6">
+                    <UsageGraph
+                        tier={tierData?.active?.tier}
+                        period={usagePeriod}
+                        onPeriodChange={setUsagePeriod}
+                        apiKeys={selectableKeys}
+                        theme={dashboardThemeByPage.usage}
+                        action={
+                            <Button
+                                as="button"
+                                color={dashboardThemeByPage.usage}
+                                weight="light"
+                                onClick={downloadDetailedUsage}
+                                className="flex items-center gap-1.5"
                             >
-                                <title>Download</title>
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="7 10 12 15 17 10" />
-                                <line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            Download CSV
-                        </Button>
-                    }
-                />
-            )}
-            {activePage === "earnings" && (
-                <EarningsGraph
-                    period={earningsPeriod}
-                    onPeriodChange={setEarningsPeriod}
-                    apps={publishableApps}
-                />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <title>Download</title>
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Download CSV
+                            </Button>
+                        }
+                    />
+                    <EarningsGraph
+                        period={earningsPeriod}
+                        onPeriodChange={setEarningsPeriod}
+                        apps={publishableApps}
+                        theme={dashboardThemeByPage.usage}
+                    />
+                    <p className="text-[10px] text-gray-400">
+                        Data refreshes every hour. Times shown in UTC.
+                    </p>
+                </div>
             )}
             {activePage === "keys" && (
                 <ApiKeyList

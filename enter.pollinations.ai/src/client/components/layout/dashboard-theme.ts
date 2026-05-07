@@ -1,10 +1,4 @@
-export type DashboardPage =
-    | "updates"
-    | "pollen"
-    | "usage"
-    | "earnings"
-    | "keys"
-    | "models";
+export type DashboardPage = "updates" | "pollen" | "usage" | "keys" | "models";
 
 export type DashboardTheme =
     | "amber"
@@ -13,8 +7,7 @@ export type DashboardTheme =
     | "green"
     | "pink"
     | "teal"
-    | "violet"
-    | "yellow";
+    | "violet";
 
 export const DASHBOARD_NAV_ITEMS: {
     id: DashboardPage;
@@ -25,8 +18,7 @@ export const DASHBOARD_NAV_ITEMS: {
     { id: "models", label: "Models", theme: "teal" },
     { id: "keys", label: "Keys", theme: "blue" },
     { id: "pollen", label: "Pollen", theme: "amber" },
-    { id: "earnings", label: "Earnings", theme: "yellow" },
-    { id: "usage", label: "Usage", theme: "pink" },
+    { id: "usage", label: "Activity", theme: "pink" },
 ];
 
 export const DASHBOARD_PAGES: DashboardPage[] = [
@@ -34,7 +26,6 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     "models",
     "keys",
     "pollen",
-    "earnings",
     "usage",
 ];
 
@@ -59,7 +50,6 @@ export const panelColors = {
     purple: "border-purple-300 bg-purple-50/70",
     teal: "border-teal-200 bg-teal-50/70",
     violet: "border-violet-300 bg-violet-50/70",
-    yellow: "border-yellow-300 bg-yellow-50/70",
 } as const;
 
 export const cardColors = {
@@ -73,7 +63,6 @@ export const cardColors = {
     red: "border-red-300",
     teal: "border-teal-200",
     violet: "border-violet-200",
-    yellow: "border-yellow-200",
 } as const;
 
 export const buttonColors = {
@@ -135,12 +124,6 @@ export const buttonColors = {
         strong: "bg-violet-600 text-white",
         outline: "border-2 border-violet-600 text-violet-900",
     },
-    yellow: {
-        light: "bg-yellow-200 text-yellow-900 hover:bg-yellow-300",
-        strong: "bg-yellow-500 text-white hover:bg-yellow-400",
-        outline:
-            "border-2 border-yellow-500 text-yellow-900 hover:bg-yellow-500 hover:text-white transition-colors",
-    },
 } as const;
 
 export const pillColors = {
@@ -152,7 +135,6 @@ export const pillColors = {
     pink: { bg: "bg-pink-200", text: "text-pink-900" },
     teal: { bg: "bg-teal-200", text: "text-teal-900" },
     violet: { bg: "bg-violet-200", text: "text-violet-950" },
-    yellow: { bg: "bg-yellow-200", text: "text-yellow-900" },
 } as const;
 
 export const tabColors = {
@@ -190,11 +172,6 @@ export const tabColors = {
         active: "border-violet-300 bg-violet-200 text-violet-950 hover:bg-violet-200",
         inactive:
             "border-violet-300 bg-violet-50/80 text-violet-900 hover:bg-violet-100",
-    },
-    yellow: {
-        active: "border-yellow-300 bg-yellow-200 text-yellow-900 hover:bg-yellow-200",
-        inactive:
-            "border-yellow-300 bg-yellow-50/80 text-yellow-800 hover:bg-yellow-100",
     },
 } as const satisfies Record<
     DashboardTheme,
@@ -381,31 +358,6 @@ export const themeTokens = {
         ring: "ring-violet-400/70",
         scrollbar: "scrollbar-theme-violet",
     },
-    yellow: {
-        text: {
-            label: "text-yellow-600",
-            base: "text-yellow-900",
-            strong: "text-yellow-950",
-            muted: "text-yellow-800/75",
-            soft: "text-yellow-700",
-            softer: "text-yellow-700/60",
-        },
-        border: {
-            idle: "border-yellow-300",
-            soft: "border-yellow-300/70",
-            subtle: "border-yellow-200",
-        },
-        bg: {
-            idle: "bg-yellow-50/80",
-            subtle: "bg-yellow-50/50",
-            hover: "hover:bg-yellow-100",
-            active: "bg-yellow-200",
-            soft: "hover:bg-yellow-50",
-        },
-        divide: "divide-yellow-300/70",
-        ring: "ring-yellow-400/70",
-        scrollbar: "scrollbar-theme-yellow",
-    },
 } as const satisfies Record<DashboardTheme, ThemeTokens>;
 
 export type ThemeTokens = {
@@ -520,17 +472,6 @@ export const dashboardThemeClasses: Record<
         tab: tabColors.violet,
         pill: pillColors.violet,
         tokens: themeTokens.violet,
-    },
-    yellow: {
-        title: "text-yellow-900",
-        dot: "bg-yellow-500",
-        active: "bg-yellow-200 text-yellow-900",
-        panel: panelColors.yellow,
-        card: cardColors.yellow,
-        button: buttonColors.yellow,
-        tab: tabColors.yellow,
-        pill: pillColors.yellow,
-        tokens: themeTokens.yellow,
     },
 };
 

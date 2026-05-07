@@ -1,6 +1,8 @@
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
+import { cn } from "@/util.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
+import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
 import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
 import { MultiSelect } from "./multi-select";
@@ -12,15 +14,31 @@ type EarningsGraphProps = {
     period: UsagePeriodSelection;
     onPeriodChange: (period: UsagePeriodSelection) => void;
     apps: Array<{ id: string; name: string }>;
+    theme: DashboardTheme;
     action?: ReactNode;
+};
+
+const PAID_BAR_COLOR_BY_THEME: Record<
+    DashboardTheme,
+    { base: string; hover: string }
+> = {
+    amber: { base: "#fde68a", hover: "#fcd34d" },
+    blue: { base: "#bfdbfe", hover: "#93c5fd" },
+    gray: { base: "#e5e7eb", hover: "#d1d5db" },
+    green: { base: "#bbf7d0", hover: "#86efac" },
+    pink: { base: "#fbcfe8", hover: "#f9a8d4" },
+    teal: { base: "#99f6e4", hover: "#5eead4" },
+    violet: { base: "#ddd6fe", hover: "#c4b5fd" },
 };
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({
     period,
     onPeriodChange,
     apps,
+    theme,
     action,
 }) => {
+    const tokens = themeTokens[theme];
     const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
 
     const appSelectOptions = apps.map((a) => ({
@@ -38,170 +56,171 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     const showAppBreakdown = apps.length > 1;
 
     return (
-        <div className="flex flex-col gap-6">
-            <DashboardSection
-                title="Earnings"
-                theme="yellow"
-                framed
-                action={action}
-            >
-                <div className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                        <PeriodPicker
-                            value={period}
-                            onChange={onPeriodChange}
-                            theme="yellow"
+        <DashboardSection title="Earnings" theme={theme} framed action={action}>
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <PeriodPicker
+                        value={period}
+                        onChange={onPeriodChange}
+                        theme={theme}
+                    />
+                    <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
+                        <MultiSelect
+                            options={appSelectOptions}
+                            selected={selectedAppKeyIds}
+                            onChange={setSelectedAppKeyIds}
+                            placeholder="All"
+                            disabled={appSelectOptions.length === 0}
+                            disabledText="None"
+                            align="end"
+                            label="Apps"
+                            theme={theme}
                         />
-                        <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
-                            <MultiSelect
-                                options={appSelectOptions}
-                                selected={selectedAppKeyIds}
-                                onChange={setSelectedAppKeyIds}
-                                placeholder="All"
-                                disabled={appSelectOptions.length === 0}
-                                disabledText="None"
-                                align="end"
-                                label="Apps"
-                                theme="yellow"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="border-t border-yellow-300/70 pt-4">
-                        {loading && (
-                            <div className="flex items-center justify-center h-[180px]">
-                                <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
-                                    Fetching earnings data…
-                                </p>
-                            </div>
-                        )}
-                        {error && !loading && (
-                            <div className="flex items-center justify-center h-[180px]">
-                                <div className="text-center">
-                                    <p className="text-sm text-red-500 font-medium">
-                                        {error}
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => fetchEarnings()}
-                                        className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
-                                    >
-                                        Try again
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                        {!loading && !error && (
-                            <Chart
-                                data={chartData}
-                                metric="pollen"
-                                showModelBreakdown={showAppBreakdown}
-                                paidBarColor={{
-                                    base: "#fef9c3",
-                                    hover: "#fef08a",
-                                }}
-                            />
-                        )}
-                    </div>
-
-                    <div className="flex flex-col gap-4 border-t border-yellow-300/70 pt-4 sm:flex-row sm:gap-0 sm:divide-x sm:divide-yellow-300/70">
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <EarningsStatCard
-                                label="Pollen earned"
-                                value={formatPollen(stats.totalPollen)}
-                                detail={
-                                    stats.averageMarkupRate > 0 ? (
-                                        <Tag
-                                            color="yellow"
-                                            size="lg"
-                                            className="font-semibold text-yellow-900"
-                                            title="Weighted average markup applied across served requests"
-                                        >
-                                            <span aria-hidden="true">📈</span>
-                                            <span className="tabular-nums">
-                                                {formatPercent(
-                                                    stats.averageMarkupRate,
-                                                )}
-                                            </span>{" "}
-                                            avg markup
-                                        </Tag>
-                                    ) : null
-                                }
-                            />
-                        </div>
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <EarningsStatCard
-                                label="Active users"
-                                value={stats.activeUsers.toLocaleString()}
-                                detail={
-                                    stats.appCount > 0 ? (
-                                        <span className="text-yellow-900/75">
-                                            across {stats.appCount} app
-                                            {stats.appCount === 1 ? "" : "s"}
-                                        </span>
-                                    ) : (
-                                        "No users yet"
-                                    )
-                                }
-                            />
-                        </div>
-                        <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
-                            <EarningsStatCard
-                                label="Top app"
-                                value={
-                                    <span className="text-xl leading-tight">
-                                        {stats.topApp?.label || "None"}
-                                    </span>
-                                }
-                                detail={
-                                    stats.topApp ? (
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Tag
-                                                color="yellow"
-                                                size="lg"
-                                                className="font-semibold text-yellow-900"
-                                                title={`${formatPollen(stats.topApp.pollen)} pollen earned`}
-                                            >
-                                                <span aria-hidden="true">
-                                                    🪷
-                                                </span>
-                                                <span className="tabular-nums">
-                                                    {formatPollen(
-                                                        stats.topApp.pollen,
-                                                    )}
-                                                </span>
-                                            </Tag>
-                                            {stats.topApp.uniqueUsers > 0 && (
-                                                <Tag
-                                                    color="yellow"
-                                                    size="lg"
-                                                    className="font-semibold text-yellow-900"
-                                                    title={`${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
-                                                >
-                                                    <span aria-hidden="true">
-                                                        👥
-                                                    </span>
-                                                    <span className="tabular-nums">
-                                                        {stats.topApp.uniqueUsers.toLocaleString()}
-                                                    </span>
-                                                </Tag>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        "No earnings yet"
-                                    )
-                                }
-                            />
-                        </div>
                     </div>
                 </div>
-            </DashboardSection>
-            {!loading && !error && (
-                <p className="text-[10px] text-gray-400">
-                    Data refreshes every hour. Times shown in UTC.
-                </p>
-            )}
-        </div>
+
+                <div className={cn("border-t pt-4", tokens.border.soft)}>
+                    {loading && (
+                        <div className="flex items-center justify-center h-[180px]">
+                            <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
+                                Fetching earnings data…
+                            </p>
+                        </div>
+                    )}
+                    {error && !loading && (
+                        <div className="flex items-center justify-center h-[180px]">
+                            <div className="text-center">
+                                <p className="text-sm text-red-500 font-medium">
+                                    {error}
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => fetchEarnings()}
+                                    className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
+                                >
+                                    Try again
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {!loading && !error && (
+                        <Chart
+                            data={chartData}
+                            metric="pollen"
+                            showModelBreakdown={showAppBreakdown}
+                            paidBarColor={PAID_BAR_COLOR_BY_THEME[theme]}
+                        />
+                    )}
+                </div>
+
+                <div
+                    className={cn(
+                        "flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x",
+                        tokens.border.soft,
+                        tokens.divide,
+                    )}
+                >
+                    <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                        <EarningsStatCard
+                            theme={theme}
+                            label="Pollen earned"
+                            value={formatPollen(stats.totalPollen)}
+                            detail={
+                                stats.averageMarkupRate > 0 ? (
+                                    <Tag
+                                        color={theme}
+                                        size="lg"
+                                        className={cn(
+                                            "font-semibold",
+                                            tokens.text.base,
+                                        )}
+                                        title="Weighted average markup applied across served requests"
+                                    >
+                                        <span aria-hidden="true">📈</span>
+                                        <span className="tabular-nums">
+                                            {formatPercent(
+                                                stats.averageMarkupRate,
+                                            )}
+                                        </span>{" "}
+                                        avg markup
+                                    </Tag>
+                                ) : null
+                            }
+                        />
+                    </div>
+                    <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                        <EarningsStatCard
+                            theme={theme}
+                            label="Active users"
+                            value={stats.activeUsers.toLocaleString()}
+                            detail={
+                                stats.appCount > 0 ? (
+                                    <span className={tokens.text.muted}>
+                                        across {stats.appCount} app
+                                        {stats.appCount === 1 ? "" : "s"}
+                                    </span>
+                                ) : (
+                                    "No users yet"
+                                )
+                            }
+                        />
+                    </div>
+                    <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                        <EarningsStatCard
+                            theme={theme}
+                            label="Top app"
+                            value={
+                                <span className="text-xl leading-tight">
+                                    {stats.topApp?.label || "None"}
+                                </span>
+                            }
+                            detail={
+                                stats.topApp ? (
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Tag
+                                            color={theme}
+                                            size="lg"
+                                            className={cn(
+                                                "font-semibold",
+                                                tokens.text.base,
+                                            )}
+                                            title={`${formatPollen(stats.topApp.pollen)} pollen earned`}
+                                        >
+                                            <span aria-hidden="true">🪷</span>
+                                            <span className="tabular-nums">
+                                                {formatPollen(
+                                                    stats.topApp.pollen,
+                                                )}
+                                            </span>
+                                        </Tag>
+                                        {stats.topApp.uniqueUsers > 0 && (
+                                            <Tag
+                                                color={theme}
+                                                size="lg"
+                                                className={cn(
+                                                    "font-semibold",
+                                                    tokens.text.base,
+                                                )}
+                                                title={`${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
+                                            >
+                                                <span aria-hidden="true">
+                                                    👥
+                                                </span>
+                                                <span className="tabular-nums">
+                                                    {stats.topApp.uniqueUsers.toLocaleString()}
+                                                </span>
+                                            </Tag>
+                                        )}
+                                    </div>
+                                ) : (
+                                    "No earnings yet"
+                                )
+                            }
+                        />
+                    </div>
+                </div>
+            </div>
+        </DashboardSection>
     );
 };
 
@@ -217,21 +236,37 @@ const formatPercent = (value: number): string => {
 };
 
 const EarningsStatCard: FC<{
+    theme: DashboardTheme;
     label: string;
     value: ReactNode;
     detail?: ReactNode;
-}> = ({ label, value, detail }) => (
-    <div className="text-sm">
-        <div className="text-[10px] uppercase tracking-wide text-yellow-800 font-bold">
-            {label}
+}> = ({ theme, label, value, detail }) => {
+    const tokens = themeTokens[theme];
+    return (
+        <div className="text-sm">
+            <div
+                className={cn(
+                    "text-[10px] uppercase tracking-wide font-bold",
+                    tokens.text.soft,
+                )}
+            >
+                {label}
+            </div>
+            <div
+                className={cn(
+                    "mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums",
+                    tokens.text.base,
+                )}
+            >
+                {value}
+            </div>
+            {detail && (
+                <div className={cn("mt-2 text-xs", tokens.text.muted)}>
+                    {detail}
+                </div>
+            )}
         </div>
-        <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight text-yellow-900 tabular-nums">
-            {value}
-        </div>
-        {detail && (
-            <div className="mt-2 text-xs text-yellow-900/75">{detail}</div>
-        )}
-    </div>
-);
+    );
+};
 
 export default EarningsGraph;

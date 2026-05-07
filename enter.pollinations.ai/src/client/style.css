@@ -129,10 +129,6 @@
         --scrollbar-thumb-color: rgba(124, 58, 237, 0.6);
     }
 
-    .scrollbar-theme-yellow {
-        --scrollbar-thumb-color: rgba(202, 138, 4, 0.55);
-    }
-
     .scrollbar-theme-teal {
         --scrollbar-thumb-color: rgba(13, 148, 136, 0.6);
     }

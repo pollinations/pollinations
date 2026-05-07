@@ -3,6 +3,7 @@
  */
 
 import { AUDIO_SERVICES } from "../../../../../shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "../../../../../shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "../../../../../shared/registry/image.ts";
 import {
     getActivePriceDefinition,
@@ -140,6 +141,35 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
                 ),
             });
         }
+    }
+
+    // Add embedding models — input-only pricing (output is a vector).
+    // Gemini Embedding 2 bills every modality at its own per-million rate.
+    for (const serviceName of Object.keys(EMBEDDING_SERVICES)) {
+        const latestPrice = getActivePriceDefinition(serviceName as ModelName);
+        if (!latestPrice) continue;
+
+        prices.push({
+            name: serviceName,
+            type: "embedding",
+            perToken: true,
+            promptTextPrice: formatPrice(
+                latestPrice.promptTextTokens,
+                formatPricePer1M,
+            ),
+            promptImagePrice: formatPrice(
+                latestPrice.promptImageTokens,
+                formatPricePer1M,
+            ),
+            promptAudioPrice: formatPrice(
+                latestPrice.promptAudioTokens,
+                formatPricePer1M,
+            ),
+            promptVideoPrice: formatPrice(
+                latestPrice.promptVideoTokens,
+                formatPricePer1M,
+            ),
+        });
     }
 
     // Add audio models (TTS and STT)

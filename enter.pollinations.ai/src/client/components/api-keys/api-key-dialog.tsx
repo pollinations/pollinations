@@ -225,8 +225,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 </ul>
                             ) : (
                                 <p>
-                                    Access AI models for text, image, and audio
-                                    generation.
+                                    Access AI models for text, image, audio,
+                                    video, and embeddings.
                                 </p>
                             )}
                         </div>

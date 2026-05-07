@@ -103,7 +103,7 @@ function DeviceComponent() {
 
     if (!user) {
         return (
-            <AuthModal>
+            <AuthModal tone={signInError ? "error" : undefined}>
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {signInError && <ErrorBanner>{signInError}</ErrorBanner>}
@@ -120,7 +120,8 @@ function DeviceComponent() {
                             as="button"
                             onClick={signIn}
                             disabled={isSigningIn}
-                            color="dark"
+                            color="amber"
+                            weight="light"
                         >
                             {isSigningIn
                                 ? "Signing in..."
@@ -133,7 +134,7 @@ function DeviceComponent() {
     }
 
     return (
-        <AuthModal>
+        <AuthModal tone={error ? "error" : undefined}>
             <AuthModalHeader />
             <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-4">
                 {error && <ErrorBanner>{error}</ErrorBanner>}
@@ -162,7 +163,8 @@ function DeviceComponent() {
                     <Button
                         as="button"
                         type="submit"
-                        color="dark"
+                        color="amber"
+                        weight="light"
                         disabled={checking}
                     >
                         {checking ? "Verifying..." : "Continue"}

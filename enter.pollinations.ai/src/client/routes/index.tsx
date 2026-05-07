@@ -161,6 +161,9 @@ function RouteComponent() {
                 ...(isPublishable && formState.redirectUris?.length
                     ? { redirectUris: formState.redirectUris }
                     : {}),
+                ...(isPublishable
+                    ? { earningsEnabled: formState.earningsEnabled === true }
+                    : {}),
             },
             permissions: {
                 allowedModels: formState.allowedModels,
@@ -256,7 +259,7 @@ function RouteComponent() {
                         />
                     </DashboardSection>
                     <DashboardSection
-                        title="Top-up"
+                        title="Buy Pollen"
                         theme="amber"
                         framed
                         id="buy-pollen"

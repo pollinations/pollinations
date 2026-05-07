@@ -29,7 +29,9 @@ export const customerRoutes = new Hono<Env>()
             );
             const db = drizzle(c.env.DB);
             const users = await db
-                .select({ lastTierGrant: userTable.lastTierGrant })
+                .select({
+                    lastTierGrant: userTable.lastTierGrant,
+                })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
                 .limit(1);

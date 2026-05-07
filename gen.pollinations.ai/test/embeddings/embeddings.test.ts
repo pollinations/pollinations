@@ -188,7 +188,7 @@ async function fetchWorker(path: string, init: RequestInit = {}) {
 
 describe("POST /v1/embeddings", () => {
     test("returns an OpenAI-compatible response and tracks billing", async ({
-        apiKey,
+        paidApiKey: apiKey,
         mocks,
     }) => {
         await mocks.enable("tinybird", "tinybirdStats", "vertex");
@@ -243,7 +243,7 @@ describe("POST /v1/embeddings", () => {
     });
 
     test("uses the provider model id and supports custom dimensions", async ({
-        apiKey,
+        paidApiKey: apiKey,
         mocks,
     }) => {
         await mocks.enable("tinybird", "tinybirdStats", "vertex");
@@ -268,7 +268,7 @@ describe("POST /v1/embeddings", () => {
     });
 
     test("returns base64-encoded Float32 when encoding_format=base64", async ({
-        apiKey,
+        paidApiKey: apiKey,
         mocks,
     }) => {
         await mocks.enable("tinybird", "tinybirdStats", "vertex");
@@ -295,7 +295,7 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
-    test("supports batch input", async ({ apiKey, mocks }) => {
+    test("supports batch input", async ({ paidApiKey: apiKey, mocks }) => {
         await mocks.enable("tinybird", "tinybirdStats", "vertex");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
@@ -521,7 +521,7 @@ describe("POST /v1/embeddings", () => {
     });
 
     test("sends data URL images using Vertex REST media fields", async ({
-        apiKey,
+        paidApiKey: apiKey,
         mocks,
     }) => {
         await mocks.enable("tinybird", "tinybirdStats", "vertex");
@@ -584,7 +584,10 @@ describe("POST /v1/embeddings", () => {
         expect(body).toContain("embeddings endpoint");
     });
 
-    test("rejects malformed media URLs", async ({ apiKey, mocks }) => {
+    test("rejects malformed media URLs", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
         await mocks.enable("tinybird", "tinybirdStats");
         const { response } = await fetchWorker("/v1/embeddings", {
             method: "POST",

@@ -12,7 +12,7 @@ export type EmbeddingServiceId = keyof EmbeddingModelDefinitions;
 export type EmbeddingModelId =
     EmbeddingModelDefinitions[EmbeddingServiceId]["modelId"];
 
-export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "gemini-2";
+export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "openai-3-small";
 
 export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
     "gemini-2": {
@@ -21,6 +21,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         provider: "google",
         brand: "Google",
         category: "embedding",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,

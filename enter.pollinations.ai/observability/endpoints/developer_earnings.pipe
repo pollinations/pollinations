@@ -4,13 +4,16 @@ DESCRIPTION >
     Daily rows have a non-empty `date`; rollup rows have empty `date`.
     Within rollups, the global row has empty `app_key_id`.
     Earnings per event = total_price - dev_price (the dev's markup take).
-    Filter: events through one of the dev's publishable (pk) keys with markup applied.
+    Attribution uses the immutable `api_key_created_for_user_id` recorded on
+    each event, so totals are stable across `d1_apikey` syncs and survive
+    app deletion. The `d1_apikey` snapshot is consulted only as a label
+    fallback; the event's own `api_key_name` is used when no row matches.
     Use 'since' and 'until' for date range filtering.
     Use 'grain=hour' to group daily buckets by hour; defaults to daily.
 
 TOKEN tinybird_read READ
 
-NODE dev_apps
+NODE app_labels
 SQL >
     %
     SELECT
@@ -18,8 +21,32 @@ SQL >
         coalesce(nullIf(name, ''), id) AS app_name
     FROM d1_apikey
     WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
-      AND prefix = 'pk'
-      AND user_id = {{String(dev_user_id, '')}}
+
+NODE dev_events
+SQL >
+    %
+    SELECT
+        ge.api_key_client_id AS app_key_id,
+        ge.user_id AS user_id,
+        ge.start_time AS start_time,
+        ge.total_price - ge.dev_price AS earned,
+        ge.markup_rate AS markup_rate,
+        coalesce(
+            nullIf(al.app_name, ''),
+            nullIf(ge.api_key_name, 'undefined'),
+            ge.api_key_client_id
+        ) AS app_name
+    FROM generation_event ge
+    LEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id
+    WHERE ge.api_key_created_for_user_id = {{String(dev_user_id, '')}}
+      AND ge.markup_rate > 0
+      AND ge.total_price > ge.dev_price
+    {% if defined(since) %}
+    AND ge.start_time >= {{DateTime(since)}}
+    {% end %}
+    {% if defined(until) %}
+    AND ge.start_time < {{DateTime(until)}}
+    {% end %}
 
 NODE daily_buckets
 SQL >
@@ -27,74 +54,42 @@ SQL >
     SELECT
         if(
             {{String(grain, 'day')}} = 'hour',
-            formatDateTime(toStartOfHour(ge.start_time), '%F %T'),
-            formatDateTime(toStartOfDay(ge.start_time), '%F')
+            formatDateTime(toStartOfHour(start_time), '%F %T'),
+            formatDateTime(toStartOfDay(start_time), '%F')
         ) AS date,
-        ge.api_key_client_id AS app_key_id,
-        any(da.app_name) AS app_name,
+        app_key_id,
+        any(app_name) AS app_name,
         count() AS requests,
-        sum(ge.total_price - ge.dev_price) AS pollen_earned,
-        avg(ge.markup_rate) AS markup_rate,
+        sum(earned) AS pollen_earned,
+        avg(markup_rate) AS markup_rate,
         toUInt64(0) AS unique_users
-    FROM generation_event ge
-    INNER JOIN dev_apps da
-        ON ge.api_key_client_id = da.app_key_id
-    WHERE ge.markup_rate > 0
-      AND ge.total_price > ge.dev_price
-    {% if defined(since) %}
-    AND ge.start_time >= {{DateTime(since)}}
-    {% end %}
-    {% if defined(until) %}
-    AND ge.start_time < {{DateTime(until)}}
-    {% end %}
+    FROM dev_events
     GROUP BY date, app_key_id
 
 NODE per_app_rollup
 SQL >
-    %
     SELECT
         '' AS date,
-        ge.api_key_client_id AS app_key_id,
-        any(da.app_name) AS app_name,
+        app_key_id,
+        any(app_name) AS app_name,
         count() AS requests,
-        sum(ge.total_price - ge.dev_price) AS pollen_earned,
-        avg(ge.markup_rate) AS markup_rate,
-        uniq(ge.user_id) AS unique_users
-    FROM generation_event ge
-    INNER JOIN dev_apps da
-        ON ge.api_key_client_id = da.app_key_id
-    WHERE ge.markup_rate > 0
-      AND ge.total_price > ge.dev_price
-    {% if defined(since) %}
-    AND ge.start_time >= {{DateTime(since)}}
-    {% end %}
-    {% if defined(until) %}
-    AND ge.start_time < {{DateTime(until)}}
-    {% end %}
+        sum(earned) AS pollen_earned,
+        avg(markup_rate) AS markup_rate,
+        uniq(user_id) AS unique_users
+    FROM dev_events
     GROUP BY app_key_id
 
 NODE global_rollup
 SQL >
-    %
     SELECT
         '' AS date,
         '' AS app_key_id,
         '' AS app_name,
         count() AS requests,
-        sum(ge.total_price - ge.dev_price) AS pollen_earned,
-        avg(ge.markup_rate) AS markup_rate,
-        uniq(ge.user_id) AS unique_users
-    FROM generation_event ge
-    INNER JOIN dev_apps da
-        ON ge.api_key_client_id = da.app_key_id
-    WHERE ge.markup_rate > 0
-      AND ge.total_price > ge.dev_price
-    {% if defined(since) %}
-    AND ge.start_time >= {{DateTime(since)}}
-    {% end %}
-    {% if defined(until) %}
-    AND ge.start_time < {{DateTime(until)}}
-    {% end %}
+        sum(earned) AS pollen_earned,
+        avg(markup_rate) AS markup_rate,
+        uniq(user_id) AS unique_users
+    FROM dev_events
 
 NODE developer_earnings_node
 SQL >

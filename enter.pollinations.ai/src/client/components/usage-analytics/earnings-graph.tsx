@@ -144,9 +144,17 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                         <EarningsStatCard
                             theme={theme}
                             label="Active users"
-                            value={stats.activeUsers.toLocaleString()}
+                            value={
+                                stats.activeUsers === null
+                                    ? "—"
+                                    : stats.activeUsers.toLocaleString()
+                            }
                             detail={
-                                stats.appCount > 0 ? (
+                                stats.activeUsers === null ? (
+                                    <span className={tokens.text.muted}>
+                                        select a single app for distinct users
+                                    </span>
+                                ) : stats.appCount > 0 ? (
                                     <span className={tokens.text.muted}>
                                         across {stats.appCount} app
                                         {stats.appCount === 1 ? "" : "s"}

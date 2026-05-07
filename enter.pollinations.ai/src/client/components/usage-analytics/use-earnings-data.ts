@@ -2,16 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
 
-export type DailyEarningsRecord = {
+export type DeveloperEarningsRow = {
     date: string;
-    app_key_id: string;
-    app_name: string | null;
-    requests: number;
-    pollen_earned: number;
-    markup_rate: number;
-};
-
-export type EarningsSummaryRow = {
     app_key_id: string;
     app_name: string | null;
     requests: number;
@@ -34,7 +26,7 @@ type TopApp = {
 };
 
 type EarningsDataResult = {
-    dailyEarnings: DailyEarningsRecord[];
+    dailyEarnings: DeveloperEarningsRow[];
     loading: boolean;
     error: string | null;
     fetchEarnings: () => void;
@@ -43,7 +35,9 @@ type EarningsDataResult = {
     stats: {
         totalPollen: number;
         averageMarkupRate: number;
-        activeUsers: number;
+        // null when a multi-app subset is selected — distinct user counts
+        // can't be aggregated client-side without overcount.
+        activeUsers: number | null;
         appCount: number;
         topApp: TopApp | null;
     };
@@ -52,12 +46,12 @@ type EarningsDataResult = {
 export function useEarningsData(
     filters: EarningsFilterState,
 ): EarningsDataResult {
-    const [dailyEarnings, setDailyEarnings] = useState<DailyEarningsRecord[]>(
+    const [dailyEarnings, setDailyEarnings] = useState<DeveloperEarningsRow[]>(
         [],
     );
-    const [perApp, setPerApp] = useState<EarningsSummaryRow[]>([]);
+    const [perApp, setPerApp] = useState<DeveloperEarningsRow[]>([]);
     const [globalSummary, setGlobalSummary] =
-        useState<EarningsSummaryRow | null>(null);
+        useState<DeveloperEarningsRow | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -76,9 +70,9 @@ export function useEarningsData(
                         `Failed to fetch earnings data: ${r.status}`,
                     );
                 return r.json() as Promise<{
-                    daily: DailyEarningsRecord[];
-                    perApp: EarningsSummaryRow[];
-                    global: EarningsSummaryRow | null;
+                    daily: DeveloperEarningsRow[];
+                    perApp: DeveloperEarningsRow[];
+                    global: DeveloperEarningsRow | null;
                 }>;
             })
             .then((data) => {
@@ -241,14 +235,15 @@ export function useEarningsData(
                   );
                   return weighted / totalReq;
               })();
-        // Distinct payers can only be summed correctly when filtering to a
-        // single app — otherwise it overcounts users active across multiple
-        // apps. Fall back to the per-app value when one app is selected.
-        const activeUsers = useGlobal
+        // Distinct payers only roll up correctly for a single app or
+        // across all apps (the global rollup row). For a 2+ app subset
+        // we'd need a server-side query — return null so the UI can
+        // render an em dash instead of a misleading zero.
+        const activeUsers: number | null = useGlobal
             ? globalSummary.unique_users
             : visiblePerApp.length === 1
               ? visiblePerApp[0].unique_users
-              : 0;
+              : null;
         const appCount = visiblePerApp.length;
 
         const topAppRow = visiblePerApp.toSorted(

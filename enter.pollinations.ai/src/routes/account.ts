@@ -545,7 +545,9 @@ const developerEarningsRowSchema = z.object({
     markup_rate: z.number().describe("Average markup rate applied"),
     unique_users: z
         .number()
-        .describe("Distinct end-users who paid (always 0 on daily rows)"),
+        .describe(
+            "Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').",
+        ),
 });
 
 const developerEarningsResponseSchema = z.object({

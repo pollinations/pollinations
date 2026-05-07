@@ -325,11 +325,16 @@ function RouteComponent() {
             )}
             {activePage === "usage" && (
                 <div className="flex flex-col gap-6">
-                    <PeriodPicker
-                        value={activityPeriod}
-                        onChange={setActivityPeriod}
-                        theme={dashboardThemeByPage.usage}
-                    />
+                    <div className="flex flex-col gap-1">
+                        <PeriodPicker
+                            value={activityPeriod}
+                            onChange={setActivityPeriod}
+                            theme={dashboardThemeByPage.usage}
+                        />
+                        <p className="text-[10px] text-gray-400">
+                            Data refreshes every hour. Times shown in UTC.
+                        </p>
+                    </div>
                     <UsageGraph
                         tier={tierData?.active?.tier}
                         period={activityPeriod}
@@ -353,9 +358,6 @@ function RouteComponent() {
                             />
                         }
                     />
-                    <p className="text-[10px] text-gray-400">
-                        Data refreshes every hour. Times shown in UTC.
-                    </p>
                 </div>
             )}
             {activePage === "keys" && (

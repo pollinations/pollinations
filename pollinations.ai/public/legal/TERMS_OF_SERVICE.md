@@ -84,7 +84,7 @@ All sales are final except where required by law or expressly approved by us. Ou
 
 **Paid Pollen packs/top-ups.** Paid Pollen is non-refundable once provisioned, including unused paid balance, except where required by law or where we approve a refund case-by-case. Used Pollen cannot be refunded or clawed back. Free tier grants, promotional credits, and developer earnings have no cash value and are not refundable.
 
-**EU/EEA consumer withdrawal.** If you purchase as a consumer in the EU/EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content/services delivered immediately, you can lose this right once performance begins if you expressly consent to immediate delivery and acknowledge that you lose the withdrawal right. We present this consent at checkout as a required terms-of-service acknowledgement.
+**EU/EEA consumer withdrawal.** If you purchase as a consumer in the EU/EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content/services delivered immediately, this right can be lost once performance begins if you expressly consent to immediate delivery and acknowledge that you lose the withdrawal right. We do not currently collect a separate immediate-delivery waiver at checkout. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
 
 **Limited refund review.** We may review refund requests for unused paid balance where required by law or for a proven duplicate/unauthorized charge, failure to provision paid Pollen after payment, or a material documented technical fault that prevents any meaningful use within a reasonable start period. Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be manually reviewed and reversed or adjusted after refund notification.
 
@@ -129,10 +129,9 @@ When we process personal data on your behalf, you are the **controller** and we 
 
 **Categories of sub-processors** we may use to deliver the Service:
 
-- **Payments / Merchant of Record**
+- **Payments / Merchant of Record** (also delivers purchase invoices by email on our behalf)
 - **CDN/WAF & edge routing**
 - **Cloud infrastructure & storage (EU-first)**
-- **Email / notifications**
 - **Analytics / data pipeline**
 - **Model / inference compute providers** (for text/image/video generation)
 

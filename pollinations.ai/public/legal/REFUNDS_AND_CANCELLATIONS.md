@@ -41,7 +41,7 @@ If you purchase as a consumer in the EEA, you may have a 14-day right of withdra
 - expressly request immediate access, and
 - acknowledge that you lose the withdrawal right once performance begins.
 
-We present this consent at checkout as a required terms-of-service acknowledgement and may store proof of acceptance, including consent text/version, timestamp, order ID, user ID, and account email. Proof of checkout acceptance is held by our checkout provider (Stripe) and mirrored to our internal analytics datasource. If immediate-delivery consent is not given where required, immediate access may be unavailable or delayed, and you may be able to withdraw within the statutory period if no performance has begun.
+We do not currently collect a separate immediate-delivery waiver at checkout. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
 
 This policy does not limit any non-waivable statutory rights for non-conforming digital services.
 

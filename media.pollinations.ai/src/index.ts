@@ -38,6 +38,10 @@ const TAG_MAX_LEN = 32;
 const MAX_PUBLIC_TAGS = 20;
 const MAX_PRIVATE_TAGS = 50;
 
+// Cache DB initialization per worker isolate to avoid repeated DDL calls
+let dbInitialized = false;
+let dbInitPromise: Promise<void> | null = null;
+
 function normalizeTag(tag: string): string {
     return tag.toLowerCase().trim();
 }
@@ -53,35 +57,46 @@ function validateTag(tag: string): boolean {
 
 async function initDb(db: D1Database | undefined): Promise<void> {
     if (!db) return;
-    const migrations = [
-        `CREATE TABLE IF NOT EXISTS media_objects (
-            hash TEXT PRIMARY KEY,
-            owner TEXT NOT NULL,
-            content_type TEXT NOT NULL,
-            size INTEGER NOT NULL,
-            created_at TEXT NOT NULL
-        )`,
-        `CREATE TABLE IF NOT EXISTS public_tags (
-            hash TEXT NOT NULL,
-            tag TEXT NOT NULL,
-            PRIMARY KEY (hash, tag),
-            FOREIGN KEY (hash) REFERENCES media_objects(hash) ON DELETE CASCADE
-        )`,
-        `CREATE TABLE IF NOT EXISTS private_tags (
-            hash TEXT NOT NULL,
-            owner TEXT NOT NULL,
-            tag TEXT NOT NULL,
-            PRIMARY KEY (hash, owner, tag),
-            FOREIGN KEY (hash) REFERENCES media_objects(hash) ON DELETE CASCADE
-        )`,
-        `CREATE INDEX IF NOT EXISTS idx_public_tags_tag ON public_tags(tag)`,
-        `CREATE INDEX IF NOT EXISTS idx_private_tags_owner_hash ON private_tags(owner, hash)`,
-        `CREATE INDEX IF NOT EXISTS idx_media_objects_owner ON media_objects(owner)`,
-    ];
-
-    for (const migration of migrations) {
-        await db.exec(migration);
+    if (dbInitialized) return;
+    if (dbInitPromise) {
+        await dbInitPromise;
+        return;
     }
+
+    dbInitPromise = (async () => {
+        const migrations = [
+            `CREATE TABLE IF NOT EXISTS media_objects (
+                hash TEXT PRIMARY KEY,
+                owner TEXT NOT NULL,
+                content_type TEXT NOT NULL,
+                size INTEGER NOT NULL,
+                created_at TEXT NOT NULL
+            )`,
+            `CREATE TABLE IF NOT EXISTS public_tags (
+                hash TEXT NOT NULL,
+                tag TEXT NOT NULL,
+                PRIMARY KEY (hash, tag),
+                FOREIGN KEY (hash) REFERENCES media_objects(hash) ON DELETE CASCADE
+            )`,
+            `CREATE TABLE IF NOT EXISTS private_tags (
+                hash TEXT NOT NULL,
+                owner TEXT NOT NULL,
+                tag TEXT NOT NULL,
+                PRIMARY KEY (hash, owner, tag),
+                FOREIGN KEY (hash) REFERENCES media_objects(hash) ON DELETE CASCADE
+            )`,
+            `CREATE INDEX IF NOT EXISTS idx_public_tags_tag ON public_tags(tag)`,
+            `CREATE INDEX IF NOT EXISTS idx_private_tags_owner_hash ON private_tags(owner, hash)`,
+            `CREATE INDEX IF NOT EXISTS idx_media_objects_owner ON media_objects(owner)`,
+        ];
+
+        for (const migration of migrations) {
+            await db.exec(migration);
+        }
+        dbInitialized = true;
+    })();
+
+    await dbInitPromise;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -178,7 +193,7 @@ api.post(
             );
         }
         const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
+        if (!authResult || !authResult.name) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
 
@@ -555,10 +570,11 @@ api.get(
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
 
-        const limit = Math.min(
-            parseInt(c.req.query("limit") || "50"),
-            500,
-        );
+        const limitParam = c.req.query("limit");
+        const parsedLimit = Number.parseInt(limitParam || "50", 10);
+        const limit = Number.isFinite(parsedLimit) && parsedLimit >= 1
+            ? Math.min(parsedLimit, 500)
+            : 50;
         const cursor = c.req.query("cursor");
 
         try {
@@ -569,21 +585,25 @@ api.get(
             await initDb(c.env.DB);
 
             let query = `SELECT m.*,
-                GROUP_CONCAT(CASE WHEN pt.tag IS NOT NULL THEN pt.tag END) as public_tags,
-                GROUP_CONCAT(CASE WHEN prt.tag IS NOT NULL THEN prt.tag END) as private_tags
+                GROUP_CONCAT(DISTINCT CASE WHEN pt.tag IS NOT NULL THEN pt.tag END) as public_tags,
+                GROUP_CONCAT(DISTINCT CASE WHEN prt.tag IS NOT NULL THEN prt.tag END) as private_tags
             FROM media_objects m
             LEFT JOIN public_tags pt ON m.hash = pt.hash
             LEFT JOIN private_tags prt ON m.hash = prt.hash AND prt.owner = ?
             WHERE m.owner = ?`;
 
-            const params: (string | number)[] = [authResult.name || "", authResult.name || ""];
+            const params: (string | number)[] = [authResult.name, authResult.name];
 
             if (cursor) {
-                const decoded = JSON.parse(
-                    atob(cursor),
-                ) as { createdAt: string; hash: string };
-                query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash > ?))`;
-                params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
+                try {
+                    const decoded = JSON.parse(
+                        atob(cursor),
+                    ) as { createdAt: string; hash: string };
+                    query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash < ?))`;
+                    params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
+                } catch {
+                    return c.json({ error: "Invalid cursor format" }, 400);
+                }
             }
 
             query += ` GROUP BY m.hash ORDER BY m.created_at DESC, m.hash DESC LIMIT ?`;
@@ -699,7 +719,7 @@ api.put(
             return c.json({ error: "API key required" }, 401);
         }
         const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
+        if (!authResult || !authResult.name) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
 
@@ -801,6 +821,7 @@ api.get(
         summary: "Browse by public tag",
         description:
             "Get all media files tagged with a specific public tag. No authentication required.",
+        security: [],
         responses: {
             200: {
                 description: "Paginated list of media with tag",
@@ -840,10 +861,11 @@ api.get(
             return c.json({ error: "Invalid tag format" }, 400);
         }
 
-        const limit = Math.min(
-            parseInt(c.req.query("limit") || "50"),
-            500,
-        );
+        const limitParam = c.req.query("limit");
+        const parsedLimit = Number.parseInt(limitParam || "50", 10);
+        const limit = Number.isFinite(parsedLimit) && parsedLimit >= 1
+            ? Math.min(parsedLimit, 500)
+            : 50;
         const cursor = c.req.query("cursor");
 
         try {
@@ -861,11 +883,15 @@ api.get(
             const params: (string | number)[] = [tag];
 
             if (cursor) {
-                const decoded = JSON.parse(
-                    atob(cursor),
-                ) as { createdAt: string; hash: string };
-                query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash > ?))`;
-                params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
+                try {
+                    const decoded = JSON.parse(
+                        atob(cursor),
+                    ) as { createdAt: string; hash: string };
+                    query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash < ?))`;
+                    params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
+                } catch {
+                    return c.json({ error: "Invalid cursor format" }, 400);
+                }
             }
 
             query += ` ORDER BY m.created_at DESC, m.hash DESC LIMIT ?`;

@@ -40,7 +40,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             },
         ],
         description:
-            "Gemini 2 - Multimodal Embeddings for Text, Images, Audio, and Video. 3072 dimensions, 8192 token limit.",
+            "Gemini Embedding 2 - Multimodal Embeddings for Text, Images, Audio, and Video. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -64,7 +64,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             },
         ],
         description:
-            "OpenAI Embedding 3 Small - Low-Cost Text Embeddings. 1536 dimensions, 8192 token limit.",
+            "Text Embedding 3 Small - Low-Cost Text Embeddings. 1536 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -88,7 +88,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             },
         ],
         description:
-            "OpenAI Embedding 3 Large - High-Quality Text Embeddings. 3072 dimensions, 8192 token limit.",
+            "Text Embedding 3 Large - High-Quality Text Embeddings. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,

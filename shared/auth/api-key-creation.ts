@@ -13,6 +13,7 @@ export type CallerMetadata = {
     deviceUserCode?: string;
     requestedClientId?: string;
     description?: string;
+    earningsEnabled?: boolean;
 };
 
 type CreateApiKeyForUserInput = {
@@ -168,18 +169,21 @@ function isLoopbackHostname(hostname: string): boolean {
 // be set or overridden by callers, even via /api/api-keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
+    isPublishable: boolean,
 ): Record<string, unknown> {
-    if (!metadata) return {};
     const out: Record<string, unknown> = {};
-    if (Array.isArray(metadata.redirectUris)) {
+    if (Array.isArray(metadata?.redirectUris)) {
         out.redirectUris = cleanRedirectUris(metadata.redirectUris);
     }
-    if (typeof metadata.redirectOrigin === "string")
+    if (typeof metadata?.redirectOrigin === "string")
         out.redirectOrigin = metadata.redirectOrigin;
-    if (typeof metadata.deviceUserCode === "string")
+    if (typeof metadata?.deviceUserCode === "string")
         out.deviceUserCode = metadata.deviceUserCode;
-    if (typeof metadata.description === "string")
+    if (typeof metadata?.description === "string")
         out.description = metadata.description;
+    if (isPublishable) {
+        out.earningsEnabled = metadata?.earningsEnabled === true;
+    }
     return out;
 }
 
@@ -278,7 +282,8 @@ export async function createApiKeyForUser({
         metadata,
     );
 
-    const callerMetadata = pickCallerMetadata(metadata);
+    const isPublishable = type === "publishable";
+    const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
             validateRedirectUriFormat(uri);
@@ -297,7 +302,6 @@ export async function createApiKeyForUser({
         permissions.account = safeAccountPerms;
     }
 
-    const isPublishable = type === "publishable";
     const prefix = isPublishable ? "pk" : "sk";
     const baseMetadata = {
         ...callerMetadata,

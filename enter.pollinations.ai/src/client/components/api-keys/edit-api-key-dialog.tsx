@@ -51,9 +51,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
     const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
+    const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
     const isAppKey = isPublishable;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
+    const [earningsEnabled, setEarningsEnabled] = useState(
+        initialEarningsEnabled,
+    );
 
     async function handleCopyKey(): Promise<void> {
         if (!plaintextKey) return;
@@ -96,17 +100,24 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             // Save app settings for publishable keys
             if (isPublishable) {
                 const cleaned = cleanRedirectUris(redirectUris);
-                if (sameRedirectUris(cleaned, initialRedirectUris)) {
+                if (
+                    sameRedirectUris(cleaned, initialRedirectUris) &&
+                    earningsEnabled === initialEarningsEnabled
+                ) {
                     onClose();
                     return;
                 }
+                const metadataBody = {
+                    redirectUris: cleaned,
+                    earningsEnabled,
+                };
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
-                        body: JSON.stringify({ redirectUris: cleaned }),
+                        body: JSON.stringify(metadataBody),
                     },
                 );
                 if (!metaRes.ok) {
@@ -213,6 +224,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
+                                    earningsEnabled={earningsEnabled}
+                                    onEarningsEnabledChange={setEarningsEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

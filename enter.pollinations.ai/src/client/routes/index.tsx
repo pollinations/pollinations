@@ -97,7 +97,6 @@ function RouteComponent() {
     );
     const [usagePeriod, setUsagePeriod] =
         useState<UsagePeriodSelection>(currentUsagePeriod);
-
     useEffect(() => {
         function syncPageFromHash(): void {
             setActivePage(pageFromHash(window.location.hash));
@@ -143,6 +142,9 @@ function RouteComponent() {
                 keyType,
                 ...(isPublishable && formState.redirectUris?.length
                     ? { redirectUris: formState.redirectUris }
+                    : {}),
+                ...(isPublishable
+                    ? { earningsEnabled: formState.earningsEnabled === true }
                     : {}),
             },
             permissions: {
@@ -239,7 +241,7 @@ function RouteComponent() {
                         />
                     </DashboardSection>
                     <DashboardSection
-                        title="Top-up"
+                        title="Buy Pollen"
                         theme="amber"
                         framed
                         id="buy-pollen"

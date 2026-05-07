@@ -9,7 +9,7 @@ No CI workflows — operators run scripts from their own machine with admin cred
 | Token | Trust boundary | SOPS files | Fan-out targets |
 |-------|---------------|------------|-----------------|
 | `PLN_ENTER_TOKEN` | CF Worker (enter) → EC2 (image/text) | enter `{dev,staging,prod}.vars.json`, image `env.json`, text `env.json` | GitHub secrets (`PLN_ENTER_TOKEN`, `ENTER_TOKEN`), Wrangler (production, staging) |
-| `PLN_GPU_TOKEN` | EC2 image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
+| `PLN_GPU_TOKEN` | gen image + enter (ACE-Step) → GPU workers | image `env.json`, enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging), RunPod pods (Flux+Z-Image, Klein), Lambda Labs GH200 (LTX-2, ACE-Step, Sana) |
 | `TINYBIRD_INGEST_TOKEN` | enter runtime → Tinybird current workspace append | enter `{dev,staging,prod}.vars.json` | Wrangler (production, staging) |
 | `TINYBIRD_READ_TOKEN` | enter/KPI/economics/app metrics → Tinybird current workspace read | enter `{dev,staging,prod}.vars.json`, kpi `env.json`, economics `secrets.vars.json` | GitHub secret `TINYBIRD_READ_TOKEN` |
 | `TINYBIRD_SYNC_TOKEN` | GitHub Actions + enter admin route → Tinybird sync writes | enter `{dev,staging,prod}.vars.json` | GitHub secret `TINYBIRD_SYNC_TOKEN`, Wrangler (production, staging) |
@@ -44,6 +44,7 @@ Recipient roles are labelled in `sops-recipients.yaml` (`core`, `itachi`, `ci`) 
 | `rotate-genai-perplexity.sh` | Perplexity | `generate_auth_token` → deploy → `revoke_auth_token` | 0 (rolling) |
 | `rotate-genai-fireworks.sh` | Fireworks | REST create → deploy → delete old | 0 (rolling) |
 | `rotate-genai-deepinfra.sh` | DeepInfra | `POST /v1/api-tokens` → deploy → `DELETE /v1/api-tokens/{token}` | 0 (rolling) |
+| `rotate-genai-openrouter.sh` | OpenRouter | `POST /api/v1/keys` → deploy → `DELETE /api/v1/keys/{hash}` | 0 (rolling) |
 | `rotate-genai-xai.sh` | xAI | `POST /auth/api-keys` create → deploy → `DELETE /auth/api-keys/{id}` | 0 (rolling) |
 | `rotate-genai-elevenlabs.sh` | ElevenLabs | SA create → deploy → delete old | 0 (rolling) |
 
@@ -92,7 +93,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-cloudflare.yml` AND `deploy-enter-services.yml` |
+| Deploy wait | `deploy-enter-cloudflare.yml` AND `deploy-gen-cloudflare.yml` |
 | Health check | `GET gen.pollinations.ai/v1/models` → 200 (verifies enter gateway + EC2) |
 | Failure handling | If any step after SOPS update fails, new token is still half-live; operator must reconcile |
 | Cleanup | Restore original branch at end |
@@ -110,7 +111,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-cloudflare.yml` + `deploy-enter-services.yml` |
+| Deploy wait | `deploy-enter-cloudflare.yml` + `deploy-gen-cloudflare.yml` |
 | Health check | `GET gen.pollinations.ai/image/...` (image path exercises GPU backend) |
 | Failure handling | Step ordering places SSH fan-out BEFORE wrangler put so GPUs accept new token before enter starts sending it |
 | Cleanup | Restore original branch at end |
@@ -128,7 +129,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-services.yml` |
+| Deploy wait | `deploy-gen-cloudflare.yml` |
 | Health check | `GET gen.pollinations.ai/v1/models` → 200 |
 | Failure handling | Any failure after key creation = abort without deleting old key; old still valid |
 | Cleanup | Restore original branch at end |
@@ -146,7 +147,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-services.yml` |
+| Deploy wait | `deploy-gen-cloudflare.yml` |
 | Health check | `POST gen.pollinations.ai/v1/chat/completions` with an Azure-backed model → 200 |
 | Failure handling | If deploy fails, previous slot still valid in SOPS via git revert |
 | Cleanup | Restore original branch at end |
@@ -164,7 +165,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-services.yml` |
+| Deploy wait | `deploy-gen-cloudflare.yml` |
 | Health check | `POST gen.pollinations.ai/v1/chat/completions` with a GCP/Vertex-backed model → 200 |
 | Failure handling | Any failure after key creation = abort without deleting old key |
 | Cleanup | Restore original branch at end |
@@ -182,7 +183,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-services.yml` |
+| Deploy wait | `deploy-gen-cloudflare.yml` |
 | Health check | `POST gen.pollinations.ai/v1/chat/completions` with `sonar` model → 200 |
 | Failure handling | Any failure after new-key creation = abort without revoking old |
 | Cleanup | Restore original branch at end |
@@ -200,7 +201,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-services.yml` |
+| Deploy wait | `deploy-gen-cloudflare.yml` |
 | Health check | `POST gen.pollinations.ai/v1/chat/completions` with a Fireworks-backed model → 200 |
 | Failure handling | Any failure after new-key creation = abort without deleting old |
 | Cleanup | Restore original branch at end |
@@ -218,7 +219,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-services.yml` |
+| Deploy wait | `deploy-gen-cloudflare.yml` |
 | Health check | `POST gen.pollinations.ai/v1/chat/completions` with `deepseek` model → 200 |
 | Failure handling | Any failure after new-key creation = abort without deleting old |
 | Cleanup | Restore original branch at end |
@@ -236,7 +237,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` |
 | Merge wait | Poll PR state, 15min timeout |
 | main→production | `git push origin main:production` (admin push) |
-| Deploy wait | `deploy-enter-services.yml` (xAI is consumed by image EC2) |
+| Deploy wait | `deploy-gen-cloudflare.yml` (xAI is consumed by gen image) |
 | Health check | `POST gen.pollinations.ai/v1/chat/completions` with a grok model → 200 |
 | Failure handling | Any failure after new-key creation = abort without deleting old |
 | Cleanup | Restore original branch at end |
@@ -272,7 +273,7 @@ Each script follows the same 13-step flow; the table describes what is verified,
 | Auto-merge | `gh pr merge --auto --squash` (both PRs) |
 | Merge wait | Poll PR state, 15min timeout per phase |
 | main→production | n/a — this is a CI-identity rotation, not a deploy. Staging deploy is used only to verify the new key decrypts; production unaffected |
-| Deploy wait | `deploy-enter-services.yml` triggered via `workflow_dispatch -f environment=staging` between Phase 1 and Phase 3 |
+| Deploy wait | `deploy-gen-cloudflare.yml` triggered via `workflow_dispatch -f environment=staging` between Phase 1 and Phase 3 |
 | Health check | "Decrypt .env files with SOPS" step green in staging run |
 | Failure handling | Old recipient is still a valid decryptor until Phase 3 — revert GH secret with old key if staging fails, abort before Phase 3 |
 | Cleanup | Shred temp new-key file via EXIT trap; print new private key one last time for the operator to back up |
@@ -316,12 +317,13 @@ Each script follows the same 13-step flow; the table describes what is verified,
 
 ## Admin credentials
 
-Four scripts need extra admin credentials beyond the keys they rotate:
+Five scripts need extra admin credentials beyond the keys they rotate:
 
 | Script | Admin credentials |
 |--------|-------------------|
 | `rotate-ops-tinybird.sh` | `TINYBIRD_ADMIN_TOKEN` |
 | `rotate-genai-fireworks.sh` | `FIREWORKS_ACCOUNT_ID`, `FIREWORKS_USER_ID` |
+| `rotate-genai-openrouter.sh` | `OPENROUTER_MANAGEMENT_API_KEY` |
 | `rotate-genai-xai.sh` | `XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID` |
 | `rotate-genai-elevenlabs.sh` | `ELEVENLABS_SERVICE_ACCOUNT_ID`, `ELEVENLABS_ADMIN_API_KEY` |
 
@@ -343,6 +345,7 @@ sops tools/scripts/rotation/secrets.vars.json
 Quick ways to obtain the admin credentials:
 - `TINYBIRD_ADMIN_TOKEN` — `tb --cloud token copy "admin token"` (puts it in the macOS clipboard, then `pbpaste`).
 - `XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID` — console.x.ai → Team settings.
+- `OPENROUTER_MANAGEMENT_API_KEY` — OpenRouter → Management API Keys.
 - `ELEVENLABS_ADMIN_API_KEY`, `ELEVENLABS_SERVICE_ACCOUNT_ID` — ElevenLabs → Developers → Service Accounts (key needs `workspace_read` + `workspace_write`).
 - `FIREWORKS_ACCOUNT_ID`, `FIREWORKS_USER_ID` — Fireworks dashboard or `~/.fireworks/auth.ini`.
 
@@ -367,7 +370,7 @@ Quick ways to obtain the admin credentials:
 | `PLN_ENTER_TOKEN` in SOPS but not Wrangler | EC2 expects new token → enter worker sends old → 403 |
 | `PLN_GPU_TOKEN` in Wrangler but not GPU workers | enter sends new token to ACE-Step → GPU worker rejects → music generation fails |
 | `PLN_GPU_TOKEN` on GPU workers but not Wrangler | ACE-Step GPU worker expects new token → enter sends old → music generation fails |
-| `PLN_GPU_TOKEN` in SOPS/EC2 deploy but not GPU workers | image service sends new token → GPU workers reject → image generation fails |
+| `PLN_GPU_TOKEN` in SOPS/gen deploy but not GPU workers | image service sends new token → GPU workers reject → image generation fails |
 | `PLN_GPU_TOKEN` on GPU workers but EC2 not redeployed yet | GPU workers expect new token → image service still sends old → image generation fails |
 
 **Key insight:** both sides of each trust boundary must be updated together. The end-to-end flow handles this atomically; individual `wrangler secret put` or SOPS edits do not.
@@ -378,7 +381,7 @@ If rotation breaks production, revert to the previous token value:
 
 ```bash
 # 1. Get the old token from git history
-git log -p -- image.pollinations.ai/secrets/env.json | head -50
+git log -p -- enter.pollinations.ai/secrets/prod.vars.json gen.pollinations.ai/secrets/prod.vars.json | head -50
 
 # 2. Re-run the script with the old token
 ./rotate-infra-enter-token.sh OLD_TOKEN_VALUE --execute
@@ -405,7 +408,7 @@ Hosts reached by SSH during `rotate-infra-gpu-token.sh`. SSH keys are stored in 
 | Klein 4B | RunPod `lqh6weiexk4sth` | RunPod relay | `<pod-id>-<key-id>@ssh.runpod.io` (interactive only) | `/workspace/restart.sh` reads `PLN_GPU_TOKEN` from process env | `/workspace/restart.sh` |
 | LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | `SSH_LAMBDA_SANA_LTX2_ACESTEP` | `ubuntu@192.222.51.105` | `$HOME/.env` | `systemctl restart ltx2 acestep sana` |
 
-Klein's pod ID changes if recreated. Verify current ID with `runpodctl pod list` and the `KLEIN_URL` env in `image.pollinations.ai/secrets/env.json`. The relay does not support non-interactive command execution — rotations against Klein currently require a manual edit of `/workspace/restart.sh` (which has the token baked in via `export`) followed by re-running it inside an interactive SSH session.
+Klein's pod ID changes if recreated. Verify current ID with `runpodctl pod list` and the `KLEIN_URL` env in `gen.pollinations.ai/secrets/prod.vars.json`. The relay does not support non-interactive command execution — rotations against Klein currently require a manual edit of `/workspace/restart.sh` (which has the token baked in via `export`) followed by re-running it inside an interactive SSH session.
 
 `MUSIC_SERVICE_URL` in enter's SOPS points at the ACE-Step endpoint on the Lambda GH200 host. It is configuration (not an auth token) and is not rotated — but if the Lambda host changes, this URL has to move with it.
 

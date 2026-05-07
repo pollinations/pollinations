@@ -83,7 +83,7 @@ test.for(
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const anonymousResponse = await SELF.fetch(`${base}${route}`, {
         method: "GET",
     });
@@ -123,7 +123,7 @@ test("GET /api/stripe/checkout/invalid returns 400 for invalid amount", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("polar", "tinybird");
+    await mocks.enable("tinybird");
     const response = await SELF.fetch(`${base}/checkout/invalid`, {
         method: "GET",
         headers: {
@@ -139,7 +139,7 @@ test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const response = await SELF.fetch(`${base}/checkout/10`, {
         method: "GET",
@@ -173,7 +173,7 @@ test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const response = await SELF.fetch(`${base}/billing/portal`, {
         method: "POST",
@@ -226,7 +226,7 @@ test("POST /api/stripe/billing/portal updates existing Stripe Portal headline", 
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     mocks.stripe.state.portalConfigurations.push({
         id: "bpc_existing",
@@ -289,7 +289,7 @@ test("GET /api/stripe/billing returns default card billing address", async ({
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const db = drizzle(env.DB);
     const [user] = await db
@@ -370,7 +370,7 @@ test("GET /api/stripe/billing disables auto top-up when default card is removed"
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const db = drizzle(env.DB);
     const [user] = await db
@@ -424,7 +424,7 @@ test("GET /api/stripe/billing disables auto top-up when billing address is missi
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const db = drizzle(env.DB);
     const [user] = await db
@@ -484,7 +484,7 @@ test("PATCH /api/stripe/auto-top-up uses fixed threshold and rejects invalid pac
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const customThresholdResponse = await SELF.fetch(`${base}/auto-top-up`, {
         method: "PATCH",
@@ -529,7 +529,7 @@ test("PATCH /api/stripe/auto-top-up requires a default card before enabling", as
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const response = await SELF.fetch(`${base}/auto-top-up`, {
         method: "PATCH",
@@ -552,7 +552,7 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const db = drizzle(env.DB);
     const [user] = await db
@@ -622,7 +622,7 @@ test("POST /api/stripe/auto-top-up/trigger charges default card and credits poll
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const db = drizzle(env.DB);
     const [user] = await db
@@ -688,7 +688,7 @@ test("POST /api/stripe/auto-top-up/trigger disables auto top-up when setup is in
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const db = drizzle(env.DB);
     const [user] = await db
@@ -744,7 +744,7 @@ test("POST /api/stripe/auto-top-up/trigger skips during failure cooldown", async
     sessionToken,
     mocks,
 }) => {
-    await mocks.enable("stripe", "polar", "tinybird");
+    await mocks.enable("stripe", "tinybird");
 
     const db = drizzle(env.DB);
     const [user] = await db
@@ -1082,7 +1082,7 @@ test("POST /api/webhooks/stripe rejects invalid stripe-signature header", async 
     expect(response.status).toBeOneOf([400, 500]);
 });
 
-test("POST /api/webhooks/stripe credits legacy sessions without packAmount using 2x fallback", async ({
+test("POST /api/webhooks/stripe credits legacy sessions without packAmount only once", async ({
     sessionToken,
     mocks,
 }) => {
@@ -1104,7 +1104,7 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
         .set({ packBalance: 0 })
         .where(eq(userTable.id, user.id));
 
-    const payload = JSON.stringify({
+    const checkoutEvent = {
         id: "evt_test_legacy_checkout",
         type: "checkout.session.completed",
         livemode: false,
@@ -1123,7 +1123,9 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
                 payment_method_types: ["card"],
             },
         },
-    });
+    };
+
+    const payload = JSON.stringify(checkoutEvent);
 
     const response = await SELF.fetch(stripeWebhookUrl, {
         method: "POST",
@@ -1137,6 +1139,22 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
 
     expect(response.status).toBe(200);
 
+    const duplicatePayload = JSON.stringify({
+        ...checkoutEvent,
+        id: "evt_test_legacy_checkout_duplicate",
+    });
+    const duplicateResponse = await SELF.fetch(stripeWebhookUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "stripe-signature": signStripeWebhookPayload(duplicatePayload),
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: duplicatePayload,
+    });
+
+    expect(duplicateResponse.status).toBe(200);
+
     const [updatedUser] = await db
         .select({ packBalance: userTable.packBalance })
         .from(userTable)
@@ -1144,4 +1162,11 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount using
         .limit(1);
 
     expect(updatedUser?.packBalance).toBe(10);
+
+    const processedEvent = await env.DB.prepare(
+        `SELECT COUNT(*) AS count
+        FROM stripe_checkout_credits
+        WHERE session_id = 'cs_test_legacy_checkout'`,
+    ).first<{ count: number }>();
+    expect(processedEvent?.count).toBe(1);
 });

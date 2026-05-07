@@ -1,3 +1,6 @@
+import { user as userTable } from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import { getPollenPack } from "@/pollen-packs.ts";
@@ -25,10 +28,73 @@ interface StripeEventData {
 
 const LEGACY_BETA_MULTIPLIER = 2;
 
-type CheckoutUserRow = {
-    id: string;
-    packBalance: number | null;
+type CheckoutSessionResult = {
+    success: boolean;
+    message: string;
+    pollenCredited?: number;
+    duplicate?: boolean;
 };
+
+function isUniqueConstraintError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes("UNIQUE constraint failed");
+}
+
+async function creditCheckoutSessionOnce({
+    env,
+    event,
+    session,
+    userId,
+    creditsToAdd,
+}: {
+    env: CloudflareBindings;
+    event: Stripe.Event;
+    session: Stripe.Checkout.Session;
+    userId: string;
+    creditsToAdd: number;
+}): Promise<{ credited: boolean }> {
+    const createdAt = Date.now();
+
+    try {
+        const [, updateResult] = await env.DB.batch([
+            env.DB.prepare(
+                `INSERT INTO stripe_checkout_credits (
+                    session_id,
+                    event_id,
+                    event_type,
+                    user_id,
+                    pollen_credited,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)`,
+            ).bind(
+                session.id,
+                event.id,
+                event.type,
+                userId,
+                creditsToAdd,
+                createdAt,
+            ),
+            env.DB.prepare(
+                `UPDATE user
+                SET pack_balance = COALESCE(pack_balance, 0) + ?
+                WHERE id = ?`,
+            ).bind(creditsToAdd, userId),
+        ]);
+
+        if ((updateResult.meta.changes ?? 0) !== 1) {
+            throw new Error(
+                `Stripe checkout credit failed to update user ${userId} for session ${session.id}`,
+            );
+        }
+
+        return { credited: true };
+    } catch (error) {
+        if (isUniqueConstraintError(error)) {
+            return { credited: false };
+        }
+        throw error;
+    }
+}
 
 async function sendStripeEventToTinybird(
     env: CloudflareBindings,
@@ -85,9 +151,10 @@ async function sendStripeEventToTinybird(
  * Pollen amount is derived from the selected pack metadata.
  */
 const handleCheckoutSessionCompleted = async (
+    event: Stripe.Event,
     session: Stripe.Checkout.Session,
     env: CloudflareBindings,
-): Promise<{ success: boolean; message: string; pollenCredited?: number }> => {
+): Promise<CheckoutSessionResult> => {
     const metadata = session.metadata;
 
     if (!metadata?.userId) {
@@ -121,6 +188,39 @@ const handleCheckoutSessionCompleted = async (
         ? pack.pollenGrant
         : amountPaid * LEGACY_BETA_MULTIPLIER;
 
+    const db = drizzle(env.DB);
+
+    // Check if user exists
+    const [user] = await db
+        .select({ id: userTable.id, packBalance: userTable.packBalance })
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .limit(1);
+
+    if (!user) {
+        console.error("User not found:", userId);
+        return { success: false, message: "User not found" };
+    }
+
+    const { credited } = await creditCheckoutSessionOnce({
+        env,
+        event,
+        session,
+        userId,
+        creditsToAdd,
+    });
+
+    if (!credited) {
+        console.log(
+            `Stripe: Skipping duplicate checkout credit for user ${userId} (session: ${session.id}, event: ${event.id})`,
+        );
+        return {
+            success: true,
+            message: `Skipped duplicate checkout credit for session ${session.id}`,
+            duplicate: true,
+        };
+    }
+
     if (!pack) {
         console.warn(
             "Legacy Stripe checkout session missing packAmount; applying 2x fallback",
@@ -130,25 +230,6 @@ const handleCheckoutSessionCompleted = async (
             },
         );
     }
-
-    // Check if user exists
-    const user = await env.DB.prepare(
-        "SELECT id, pack_balance AS packBalance FROM user WHERE id = ? LIMIT 1",
-    )
-        .bind(userId)
-        .first<CheckoutUserRow>();
-
-    if (!user) {
-        console.error("User not found:", userId);
-        return { success: false, message: "User not found" };
-    }
-
-    // Credit pollen to packBalance (cumulative)
-    await env.DB.prepare(
-        "UPDATE user SET pack_balance = COALESCE(pack_balance, 0) + ? WHERE id = ?",
-    )
-        .bind(creditsToAdd, userId)
-        .run();
 
     console.log(
         pack
@@ -210,9 +291,14 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 // Only process completed payments (not pending async payments)
                 if (session.payment_status === "paid") {
                     const result = await handleCheckoutSessionCompleted(
+                        event,
                         session,
                         c.env,
                     );
+
+                    if (result.duplicate) {
+                        break;
+                    }
 
                     if (result.success && session.metadata) {
                         // Send to TinyBird in background using waitUntil
@@ -258,9 +344,14 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 const session = event.data.object as Stripe.Checkout.Session;
 
                 const result = await handleCheckoutSessionCompleted(
+                    event,
                     session,
                     c.env,
                 );
+
+                if (result.duplicate) {
+                    break;
+                }
 
                 if (result.success && session.metadata) {
                     // Send to TinyBird in background using waitUntil

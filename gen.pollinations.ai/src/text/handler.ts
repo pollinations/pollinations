@@ -29,6 +29,7 @@ const TEXT_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "OPENROUTER_API_KEY",
     "OVHCLOUD_API_KEY",
     "PERPLEXITY_API_KEY",
     "PORTKEY_GATEWAY_URL",
@@ -340,8 +341,9 @@ export async function handleSimpleTextLocal(
     c: TextContext,
     prompt: string,
     model: string,
+    body: Record<string, unknown> = {},
 ): Promise<Response> {
-    const req = createExpressLikeRequest(c, {}, c.req.path, {
+    const req = createExpressLikeRequest(c, body, c.req.path, {
         ...c.req.param(),
         0: prompt,
     });

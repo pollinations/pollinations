@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { Card } from "../ui/card.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { AccountBadge } from "./account-badge.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { DeleteConfirmation } from "./delete-confirmation.tsx";
@@ -41,13 +42,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const sortedAppKeys = sortedKeys.filter(isAppKey);
 
     function isAppKey(apiKey: ApiKey): boolean {
-        const redirectUris = Array.isArray(apiKey.metadata?.redirectUris)
-            ? (apiKey.metadata?.redirectUris as string[])
-            : [];
-        return (
-            apiKey.metadata?.keyType === "publishable" &&
-            redirectUris.length > 0
-        );
+        return apiKey.metadata?.keyType === "publishable";
     }
 
     function renderKeyCard(apiKey: ApiKey) {
@@ -59,7 +54,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             ? (apiKey.metadata?.redirectUris as string[])
             : [];
         const primaryRedirectUri = redirectUrisMeta[0] || "";
-        const isApp = isPublishable && !!primaryRedirectUri;
+        const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
+        const isApp = isPublishable;
 
         return (
             <Card
@@ -68,13 +64,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 className="!border-transparent transition-colors hover:bg-white/90"
             >
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium shrink-0 bg-blue-100 text-blue-700">
-                        {isPublishable
-                            ? primaryRedirectUri
-                                ? "🖥️ App"
-                                : "🌐 Publishable"
-                            : "🔒 Secret"}
-                    </span>
+                    <Tag color="blue" size="sm">
+                        {isPublishable ? "🖥️ App" : "🔒 Secret"}
+                    </Tag>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}
                     </span>
@@ -132,7 +124,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </span>
                     </span>
                     {isPublishable && primaryRedirectUri && (
-                        <span>
+                        <span className="inline-flex min-w-0 items-center gap-1">
                             <span className="text-gray-400">Redirect: </span>
                             <a
                                 href={primaryRedirectUri}
@@ -142,6 +134,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             >
                                 {primaryRedirectUri.replace(/^https?:\/\//, "")}
                             </a>
+                            {extraRedirectUriCount > 0 && (
+                                <span
+                                    className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700"
+                                    title={redirectUrisMeta
+                                        .slice(1)
+                                        .map((uri) =>
+                                            uri.replace(/^https?:\/\//, ""),
+                                        )
+                                        .join("\n")}
+                                >
+                                    +{extraRedirectUriCount}
+                                </span>
+                            )}
                         </span>
                     )}
                     {!isApp && (
@@ -188,7 +193,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 onSubmit={onCreate}
                                 onComplete={() => {}}
                                 triggerLabel="🔑 + API Key"
-                                triggerColor="blue"
                             />
                         </div>
                         {!sortedApiKeys.length && (
@@ -212,23 +216,33 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 <DashboardSection title="App" theme="blue" framed>
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <p className="min-w-0 flex-1 text-sm text-gray-600">
-                                For apps where users sign in with their own
-                                Pollinations account — billed to them.{" "}
+                            <div className="min-w-0 flex-1 text-sm text-gray-600">
+                                <p>
+                                    For apps where users sign in with their own
+                                    Pollinations account and spend their own
+                                    Pollen.
+                                </p>
                                 <a
                                     href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
+                                    className="mt-1 inline-flex items-center gap-1 font-medium text-blue-700 hover:text-blue-900"
                                 >
-                                    Read the guide
+                                    <span className="underline underline-offset-2">
+                                        Read the guide
+                                    </span>
+                                    <span
+                                        aria-hidden="true"
+                                        className="no-underline"
+                                    >
+                                        ↗
+                                    </span>
                                 </a>
-                            </p>
+                            </div>
                             <ApiKeyDialog
                                 onSubmit={onCreate}
                                 onComplete={() => {}}
                                 triggerLabel="🖥️ + Add App"
-                                triggerColor="blue"
                                 simplified
                             />
                         </div>

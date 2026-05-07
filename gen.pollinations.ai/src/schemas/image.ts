@@ -1,4 +1,5 @@
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
@@ -10,8 +11,12 @@ const VALID_IMAGE_MODELS = [
     ...Object.keys(IMAGE_SERVICES),
     ...Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
 ] as const;
+const NOVA_REEL_MODELS = new Set([
+    "nova-reel",
+    ...IMAGE_SERVICES["nova-reel"].aliases,
+]);
 
-export const GenerateImageRequestQueryParamsSchema = z.object({
+const GenerateImageRequestQueryParamsBaseSchema = z.object({
     // Image model params
     model: z
         .preprocess(
@@ -23,7 +28,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan. See /image/models for full list.",
+                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan, nova-reel. See /image/models for full list.",
         }),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
@@ -48,7 +53,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance. Other models ignore this parameter.",
+                "Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
         }),
     enhance: z.coerce.boolean().optional().default(false).meta({
         description:
@@ -62,11 +67,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             description:
                 "What to avoid in the generated image. Only supported by `flux` and `zimage` — other models ignore this.",
         }),
-    safe: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Enable safety content filters" }),
+    safe: SafeSchema,
     quality: z
         .enum(QUALITIES as unknown as [string, ...string[]])
         .optional()
@@ -108,9 +109,9 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
     }),
 
     // Video-specific params
-    duration: z.coerce.number().int().min(1).max(30).optional().meta({
+    duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `wan`: 2-15s. `nova-reel`: 6-60s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:
@@ -121,6 +122,22 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             "Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio.",
     }),
 });
+
+export const GenerateImageRequestQueryParamsSchema =
+    GenerateImageRequestQueryParamsBaseSchema.superRefine((params, ctx) => {
+        if (
+            params.duration !== undefined &&
+            params.duration > 30 &&
+            !NOVA_REEL_MODELS.has(params.model)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["duration"],
+                message:
+                    "Duration above 30 seconds is only supported by nova-reel.",
+            });
+        }
+    });
 
 export type GenerateImageRequestQueryParams = z.infer<
     typeof GenerateImageRequestQueryParamsSchema

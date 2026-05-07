@@ -3,8 +3,8 @@ import { apiClient } from "@/client/api.ts";
 import { POLLEN_PACKS, type PollenPack } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
-import { Badge } from "../ui/badge.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import {
     PollenPackBonusPill,
@@ -448,9 +448,9 @@ const SetupSnippet: FC<SetupSnippetProps> = ({ title, ready, value }) => (
             <span className="text-[15px] font-bold text-amber-950">
                 {title}
             </span>
-            <Badge color={ready ? "green" : "red"} size="sm">
+            <Tag color={ready ? "green" : "pink"} size="sm">
                 {ready ? "Ready" : "Required"}
-            </Badge>
+            </Tag>
         </div>
         <div className="break-words text-sm font-medium leading-relaxed text-amber-950">
             {value}

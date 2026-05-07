@@ -227,7 +227,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
             aria-label="Dashboard navigation"
         >
             <div className="hidden flex-col gap-2 pb-4 pl-1 md:flex">
-                <Brand />
+                <Brand imageClassName="h-6" />
                 <BrandSocialChips />
             </div>
             <nav className="flex flex-col gap-1">
@@ -275,6 +275,32 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             menuItems={<AccountMenuLinks />}
                         />
                     ) : null)}
+                <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-[11px] leading-snug text-green-950/55">
+                    <a
+                        href="https://pollinations.ai/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-green-950"
+                    >
+                        Terms
+                    </a>
+                    <a
+                        href="https://pollinations.ai/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-green-950"
+                    >
+                        Privacy
+                    </a>
+                    <a
+                        href="https://pollinations.ai/refunds"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-green-950"
+                    >
+                        Refunds
+                    </a>
+                </div>
                 <div className="px-3 text-[11px] leading-none text-green-950/45">
                     © 2026 Myceli.AI
                 </div>

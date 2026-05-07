@@ -320,11 +320,6 @@ function AuthorizeComponent() {
                             redirectOrigin: parsedRedirectUrl.origin,
                             redirectUri: parsedRedirectUrl.href,
                         }),
-                    ...(attribution?.found && {
-                        clientId: attribution.clientId,
-                        createdForUserId: attribution.userId,
-                        createdForApp: attribution.appName,
-                    }),
                 },
                 permissions: {
                     allowedModels,

@@ -321,6 +321,33 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(1);
     });
 
+    it("normalizes GET query parameter order for cache keys", async () => {
+        const cache = createTextCacheApp();
+        const { app } = cache;
+        const env = createTextCacheEnv();
+
+        const first = await dispatch(
+            app,
+            "/text/cache-test-prompt?model=openai-fast&referrer=test",
+            undefined,
+            env,
+        );
+        await consumeAndWait(first);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+
+        const second = await dispatch(
+            app,
+            "/text/cache-test-prompt?referrer=test&model=openai-fast",
+            undefined,
+            env,
+        );
+        const body = await consumeAndWait(second);
+
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
+        expect(body).toBe("hit:1:cache-test-prompt");
+        expect(cache.originHits).toBe(1);
+    });
+
     it("uses different cache keys for streaming and non-streaming chat bodies", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;

@@ -13,7 +13,6 @@ import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
 import { ensureConfigured } from "@/logger.ts";
 import { createMockGithub } from "./mocks/github.ts";
-import { createMockPolar } from "./mocks/polar.ts";
 import { createMockStripe } from "./mocks/stripe.ts";
 
 const createAuthClientInstance = () =>
@@ -27,7 +26,6 @@ const createAuthClientInstance = () =>
     });
 
 const createMocks = () => ({
-    polar: createMockPolar(),
     tinybird: createMockTinybird(),
     github: createMockGithub(),
     stripe: createMockStripe(),
@@ -74,7 +72,7 @@ export const test = base.extend<Fixtures>({
         await use(auth);
     },
     sessionToken: async ({ mocks }, use) => {
-        await mocks.enable("github", "polar", "tinybird");
+        await mocks.enable("github", "tinybird");
         const signupUrl = new URL(
             "http://localhost:3000/api/auth/sign-in/social",
         );

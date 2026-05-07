@@ -58,6 +58,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "gpt-5.4",
         ),
 
+    // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
+    "gpt-5.5": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.5/chat/completions?api-version=2024-12-01-preview",
+            "gpt-5.5",
+        ),
+
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
         createAzureModelConfig(
@@ -109,13 +117,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/kimi-k2p6",
         }),
 
-    // -- OVHcloud Mistral (cheaper than Azure, same model) ---------------------
-    "mistral-small-3.2-24b-instruct-2506": () =>
-        createOVHcloudMistralConfig({
-            model: "Mistral-Small-3.2-24B-Instruct-2506",
-        }),
-
-    // -- Azure (Myceli Prod — eastus, Mistral Large) --------------------------
+    // -- Azure (Myceli Prod — eastus, Mistral Small + Large) ------------------
+    "mistral-small-2503": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/mistral-small-2503/chat/completions?api-version=2024-12-01-preview",
+            "mistral-small-2503",
+        ),
     "Mistral-Large-3": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
@@ -187,6 +195,30 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",
         }),
+
+    // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
+    "Llama-3.3-70B-Instruct": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-3.3-70B-Instruct/chat/completions?api-version=2024-12-01-preview",
+            "Llama-3.3-70B-Instruct",
+        ),
+    "Llama-4-Maverick-17B-128E-Instruct-FP8": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
+            "Llama-4-Maverick-17B-128E-Instruct-FP8",
+            undefined,
+            { requiresBase64ImageUrls: true },
+        ),
+    "Llama-4-Scout-17B-16E-Instruct": () =>
+        createAzureModelConfig(
+            process.env.AZURE_MYCELI_PROD_API_KEY,
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Scout-17B-16E-Instruct/chat/completions?api-version=2024-12-01-preview",
+            "Llama-4-Scout-17B-16E-Instruct",
+            undefined,
+            { requiresBase64ImageUrls: true },
+        ),
 
     // -- Alibaba DashScope (Qwen) ---------------------------------------------
     "qwen3-coder-next": () =>

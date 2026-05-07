@@ -20,20 +20,18 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     onRedirectUrisChange,
     disabled = false,
 }) => {
-    const rows = redirectUris.length > 0 ? redirectUris : [""];
-
     function update(index: number, value: string) {
-        const next = [...rows];
+        const next = [...redirectUris];
         next[index] = value;
-        onRedirectUrisChange(next.filter((v) => v !== "" || rows.length === 1));
+        onRedirectUrisChange(next);
     }
 
     function add() {
-        onRedirectUrisChange([...rows, ""]);
+        onRedirectUrisChange([...redirectUris, ""]);
     }
 
     function remove(index: number) {
-        const next = rows.filter((_, i) => i !== index);
+        const next = redirectUris.filter((_, i) => i !== index);
         onRedirectUrisChange(next);
     }
 
@@ -43,11 +41,13 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 <Field.Label className="text-sm font-semibold">
                     Redirect URIs
                 </Field.Label>
-                <span className="text-xs text-gray-600">
-                    Loopback URLs match any port (RFC 8252).
-                </span>
             </div>
-            {rows.map((uri, index) => (
+            {redirectUris.length === 0 && (
+                <p className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-3 py-2 text-sm text-gray-500">
+                    No redirect URIs
+                </p>
+            )}
+            {redirectUris.map((uri, index) => (
                 <div
                     // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
                     key={index}
@@ -57,26 +57,26 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         type="text"
                         value={uri}
                         onChange={(e) => update(index, e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-600"
+                        className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
                         placeholder="https://myapp.com/auth/callback"
                         disabled={disabled}
                     />
-                    {rows.length > 1 && (
-                        <Button
-                            type="button"
-                            weight="outline"
-                            onClick={() => remove(index)}
-                            disabled={disabled}
-                        >
-                            Remove
-                        </Button>
-                    )}
+                    <Button
+                        type="button"
+                        color="blue"
+                        weight="outline"
+                        onClick={() => remove(index)}
+                        disabled={disabled}
+                    >
+                        Remove
+                    </Button>
                 </div>
             ))}
             <div>
                 <Button
                     type="button"
-                    weight="outline"
+                    color="blue"
+                    weight="light"
                     onClick={add}
                     disabled={disabled}
                 >

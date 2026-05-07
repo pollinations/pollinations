@@ -20,16 +20,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ ZenWall AI](https://zenwall.netlify.app/) | ZenWall AI generates minimalist 9:16 vertical wallpapers in a web application. | [@Replikate648](https://github.com/Replikate648) |
+| [🧰 App forge](torrents.signalcity.tv) | App forge. | [@sourdiesel135](https://github.com/sourdiesel135) |
+| [📷 Photo Prompt](https://photoprompt.my.id/) | Photo Prompt generates images from detailed prompts using multi-model AI tools. It includes a library of ready-to-use prompts and creative workflows for photographers and designers. | [@thevoxer](https://github.com/thevoxer) |
+| [🤖 Pyanchor](https://pyanchor.pyan.kr) | **Pyanchor** is an open-source agent-agnostic AI live-edit sidecar for running web apps (Next.js / Vite / Astro). Add a one-line script to your page; an in-page overlay (Shadow DOM) lets you point at | [@ikellllllll](https://github.com/ikellllllll) |
+| [🛠️ Worl Tools](https://worldtools-mu.vercel.app/) | Worl Tools is an offline-first desktop app with a single interface for 20+ tools, including AI image editing, background removal, developer utilities, device testing, and media processing. | [@Monkez](https://github.com/Monkez) |
+| [🕹️ Pollinations AIGC Control Console](https://jfliu3265.github.io/pollinations-aigc-public/) | Manage AIGC workflows in Pollinations AIGC Control Console, a web-based dashboard powered by pollinations.ai, with a unified interface for multiple generative AI capabilities. | [@jfliu3265](https://github.com/jfliu3265) |
+| [✍️ Storyframe Studio](https://storyframe-studio.web.app) | Storyframe Studio is an open-source AI creative workspace that uses the Pollinations API for text and image generation. | [@YashEkhande24](https://github.com/YashEkhande24) |
+| [🧠 Lkalma](https://lkal.ma) | Lkalma is an AI-powered, offline-first collaborative whiteboard for sketching, syncing, and sharing ideas on an infinite canvas. | [@alibouhrouche](https://github.com/alibouhrouche) |
 | [🖼️ LAHgen](https://image.khminds.com/) | LAHgen generates AI images from text prompts on https://image.khminds.com/. It produces unlimited images using AI models across different artistic styles. | [@LuqmanLAH](https://github.com/LuqmanLAH) |
 | [🖼️ YSOAI IMAGE GENERATOR](https://huggingface.co/spaces/yassinovich/YSOAI) | Generate images with YSOAI using pollinations.ai, for free and quickly. | [@gumbynews24](https://github.com/gumbynews24) |
-| 🖼️ Frieze | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |
-| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@Giyuu7777](https://github.com/Giyuu7777) |
-| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@timemachine-studio](https://github.com/timemachine-studio) |
-| 🖼️ Frieze | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@peterjaric](https://github.com/peterjaric) |
-| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@Giyuu7777](https://github.com/Giyuu7777) |
-| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@timemachine-studio](https://github.com/timemachine-studio) |
-| [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@tatn](https://github.com/tatn) |
-| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@OSK0020](https://github.com/OSK0020) |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-04-29** – **🎬 Seed support for Nova Reel** You can now pass a `seed` parameter to our video generation model. Iterative prompting is finally possible without the output hallucinating a completely new timeline on every request. Check the [API Docs](https://gen.pollinations.ai/docs).
-- **2026-04-29** – **🌸 YSOAI Image Generator** A new community-built image generation interface joins the showcase. [Try it](https://huggingface.co/spaces/yassinovich/YSOAI) <!-- app -->
-- **2026-04-29** – **✨ LAHgen** Another text-to-image creation tool takes root in the community directory. [Try it](https://image.khminds.com/) <!-- app -->
-- **2026-04-28** – **🤖 OpenClaw Integration** Added an `openclaw` model alias backed by Qwen3-Coder-30B. You can now wire up the OpenClaw CLI to use Pollinations for automated coding workflows. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).
-- **2026-04-28** – **⚡ Unbottlenecking gpt-image-2** Ripped out the old Azure routing for `gpt-image-2` and wired it directly to OpenAI. Expect significantly higher capacity and fewer rate limits when generating pixels.
-- **2026-04-27** – **📖 StoryForge** A new community app that generates illustrated, chapter-based short stories using the [Unified API](https://gen.pollinations.ai). [Try it](http://pollen-story-forge.vercel.app/) <!-- app -->
-- **2026-04-27** – **🖥️ Frieze** Because your terminal needs art too. A community-built shell tool for generating AI banners and slogans right in your CLI. [View repo](https://github.com/peterjaric/frieze) <!-- app -->
-- **2026-04-24** – **🎨 Thinking in three speeds** Image generation reasoning is no longer just on or off. You can now pass `fast`, `balanced`, or `pro` modes to the [Image API](https://gen.pollinations.ai/image/{prompt}) to dial in exactly how hard you want the models to think.
-- **2026-04-24** – **🧠 DeepSeek V4 arrives** DeepSeek V4 Flash and Pro are now live on the [Text API](https://gen.pollinations.ai/v1/chat/completions). Point your requests at the new models for heavy-duty reasoning and coding tasks.
-- **2026-04-24** – **🎵 Planting audio seeds** The [Audio API](https://gen.pollinations.ai/audio/{text}) now accepts a `seed` parameter. Lock in that perfect voice inflection or music track instead of rolling the dice on every request.
+- **2026-05-05** – **🧰 Worl Tools** An offline-first desktop app packing over 20 utilities into one Swiss army knife. [Try it](https://worldtools-mu.vercel.app/) <!-- app -->
+- **2026-05-05** – **🔨 App Forge** A new community-built hub for discovering and exploring applications in the greenhouse. [Try it](http://torrents.signalcity.tv) <!-- app -->
+- **2026-05-05** – **⚓ Pyanchor** Live-edit your Next.js, Vite, and Astro apps straight from the browser with this open-source AI sidecar. [Try it](https://pyanchor.pyan.kr) <!-- app -->
+- **2026-05-05** – **📱 ZenWall AI** A dedicated generator for clean, minimalist 9:16 vertical wallpapers. [Try it](https://zenwall.netlify.app/) <!-- app -->
+- **2026-05-04** – **⚡ Mistral Speed Boost** Rerouted Mistral Small to a new Azure Foundry deployment. Text generation is noticeably faster and gateway timeouts are a thing of the past. Try it via the [Unified API](https://gen.pollinations.ai/v1/chat/completions).
+- **2026-05-04** – **🚀 LTX-2 Video Pipeline** Re-engineered the routing tunnel for LTX-2. Video generation is stable again and properly handles Cloudflare's edge network quirks.
+- **2026-05-03** – **🦙 Smarter Llamas** Upgraded the default Llama endpoint to Llama-3.3-70B-Instruct and added new vision-capable Maverick and Scout variants to the [Text API](https://gen.pollinations.ai/v1/chat/completions).
+- **2026-05-03** – **🛡️ Optional Guardrails** Keep things PG by passing a `safe` parameter or `Pollinations-Safe` header to the [Unified API](https://gen.pollinations.ai). Powered by AWS Bedrock.
+- **2026-05-03** – **🎨 Infinite Canvas** Lkalma is an AI-powered collaborative whiteboard with offline-first sketching tools. [Try it](https://lkal.ma) <!-- app -->
+- **2026-05-03** – **✍️ Storyframe Studio** An open-source AI creative workspace powered by the Pollinations API for your text and image workflows. [Try it](https://storyframe-studio.web.app) <!-- app -->
 ---
 
 ## 🌱 Introduction

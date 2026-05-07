@@ -4,9 +4,9 @@ import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
-import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { Input } from "../ui/input.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -33,6 +33,10 @@ function sameRedirectUris(a: string[], b: string[]): boolean {
     return a.every((v, i) => v === b[i]);
 }
 
+function cleanRedirectUris(uris: string[]): string[] {
+    return uris.map((v) => v.trim()).filter((v) => v !== "");
+}
+
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
@@ -47,7 +51,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
     const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
-    const isAppKey = isPublishable && initialRedirectUris.length > 0;
+    const isAppKey = isPublishable;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
 
@@ -90,13 +94,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             });
 
             // Save app settings for publishable keys
-            if (
-                isPublishable &&
-                !sameRedirectUris(redirectUris, initialRedirectUris)
-            ) {
-                const cleaned = redirectUris
-                    .map((v) => v.trim())
-                    .filter((v) => v !== "");
+            if (isPublishable) {
+                const cleaned = cleanRedirectUris(redirectUris);
+                if (sameRedirectUris(cleaned, initialRedirectUris)) {
+                    onClose();
+                    return;
+                }
                 const metaRes = await fetch(
                     `/api/api-keys/${apiKey.id}/metadata`,
                     {
@@ -130,12 +133,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
     return (
         <Dialog.Root open onOpenChange={({ open }) => !open && onClose()}>
-            <Dialog.Backdrop className="fixed inset-0 z-[100] bg-green-950/50" />
+            <Dialog.Backdrop className="fixed inset-0 z-[100] bg-gray-950/50" />
             <Dialog.Positioner className="fixed inset-0 z-[110] flex h-dvh items-start justify-center overflow-hidden p-4">
                 <Dialog.Content
                     className={cn(
                         "my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-lg border-4 shadow-lg",
-                        "bg-green-100 border-green-950",
+                        "border-blue-300 bg-white",
                     )}
                 >
                     <div className="shrink-0 p-6 pb-4">
@@ -144,13 +147,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </Dialog.Title>
 
                         <div className="flex items-center gap-3">
-                            <Badge color="blue">
+                            <Tag color="blue">
                                 {isAppKey
                                     ? "🖥️ App"
                                     : isPublishable
                                       ? "🌐 Publishable"
                                       : "🔒 Secret"}
-                            </Badge>
+                            </Tag>
                             {isPublishable && plaintextKey ? (
                                 <Tooltip
                                     triggerAs="span"
@@ -165,7 +168,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                         className={cn(
                                             "font-mono text-sm cursor-pointer transition-all",
                                             copied
-                                                ? "text-green-600 font-semibold"
+                                                ? "text-blue-700 font-semibold"
                                                 : "text-blue-600 hover:text-blue-800 hover:underline",
                                         )}
                                     >
@@ -200,7 +203,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="flex-1"
+                                    className="flex-1 border-blue-200 bg-blue-50 focus-visible:border-blue-300 focus-visible:ring-blue-200"
                                     placeholder="Enter API key name"
                                     disabled={isSubmitting}
                                 />
@@ -227,7 +230,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
                         <Button
                             type="button"
-                            weight="outline"
+                            color="red"
+                            weight="light"
                             onClick={onClose}
                             disabled={isSubmitting}
                         >
@@ -235,6 +239,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </Button>
                         <Button
                             type="button"
+                            color="blue"
                             onClick={handleSave}
                             disabled={isSubmitting}
                         >

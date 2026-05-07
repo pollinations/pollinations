@@ -2,9 +2,15 @@ import type { TierStatus } from "@shared/tier-config.ts";
 import { getTierColor, TIER_EMOJIS } from "@shared/tier-config.ts";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { cn } from "@/util.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { pillColors } from "../layout/dashboard-theme.ts";
+import {
+    type DashboardTheme,
+    pillColors,
+    themeTokens,
+} from "../layout/dashboard-theme.ts";
 import { TabButton } from "../ui/tab-button.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
 import { MultiSelect } from "./multi-select";
@@ -18,6 +24,7 @@ type UsageGraphProps = {
     onPeriodChange: (period: UsagePeriodSelection) => void;
     apiKeys: Array<{ id: string; name: string }>;
     action?: ReactNode;
+    theme: DashboardTheme;
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
@@ -26,7 +33,9 @@ export const UsageGraph: FC<UsageGraphProps> = ({
     onPeriodChange,
     apiKeys,
     action,
+    theme,
 }) => {
+    const tokens = themeTokens[theme];
     const [filters, setFilters] = useState<Omit<FilterState, "period">>({
         metric: "pollen",
         selectedKeyIds: [],
@@ -74,7 +83,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
         <div className="flex flex-col gap-6">
             <DashboardSection
                 title="Activity"
-                theme="pink"
+                theme={theme}
                 framed
                 action={action}
             >
@@ -84,13 +93,14 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             <PeriodPicker
                                 value={period}
                                 onChange={onPeriodChange}
+                                theme={theme}
                             />
                             <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
                                 {(["requests", "pollen"] as Metric[]).map(
                                     (m) => (
                                         <TabButton
                                             key={m}
-                                            theme="pink"
+                                            theme={theme}
                                             active={filters.metric === m}
                                             onClick={() =>
                                                 setFilters((f) => ({
@@ -122,6 +132,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 disabledText="None"
                                 align="end"
                                 label="Models"
+                                theme={theme}
                             />
                             <MultiSelect
                                 options={keySelectOptions}
@@ -137,11 +148,12 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 disabledText="None"
                                 align="end"
                                 label="API Keys"
+                                theme={theme}
                             />
                         </div>
                     </div>
 
-                    <div className="border-t border-pink-300/70 pt-4">
+                    <div className={cn("border-t pt-4", tokens.border.soft)}>
                         {loading && (
                             <div className="flex items-center justify-center h-[180px]">
                                 <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
@@ -176,7 +188,13 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                     </div>
 
                     {!loading && !error && (
-                        <div className="flex flex-col gap-4 border-t border-pink-300/70 pt-4 sm:flex-row sm:gap-0 sm:divide-x sm:divide-pink-300/70">
+                        <div
+                            className={cn(
+                                "flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x",
+                                tokens.border.soft,
+                                tokens.divide,
+                            )}
+                        >
                             <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                                 <UsageStatCard
                                     label="Requests"
@@ -184,8 +202,10 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     detail={
                                         <ModalityPills
                                             breakdown={stats.requestsByModality}
+                                            theme={theme}
                                         />
                                     }
+                                    theme={theme}
                                 />
                             </div>
                             <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
@@ -194,18 +214,24 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     value={formatPollen(stats.totalPollen)}
                                     detail={
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <span
-                                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${tierPill.bg} ${tierPill.text}`}
+                                            <Tag
+                                                size="lg"
+                                                className={`font-semibold ${tierPill.bg} ${tierPill.text}`}
                                             >
                                                 {tierEmoji}{" "}
                                                 {formatPollen(stats.tierPollen)}
-                                            </span>
-                                            <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                                            </Tag>
+                                            <Tag
+                                                color="amber"
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
                                                 🪷{" "}
                                                 {formatPollen(stats.paidPollen)}
-                                            </span>
+                                            </Tag>
                                         </div>
                                     }
+                                    theme={theme}
                                 />
                             </div>
                             <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
@@ -219,9 +245,14 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     detail={
                                         stats.topModel ? (
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <span
+                                                <Tag
+                                                    color={theme}
+                                                    size="lg"
+                                                    className={cn(
+                                                        "font-semibold",
+                                                        tokens.text.base,
+                                                    )}
                                                     title={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
-                                                    className="inline-flex items-center gap-1 rounded-full bg-pink-200 px-2.5 py-1 text-xs font-semibold text-pink-900"
                                                 >
                                                     <span aria-hidden="true">
                                                         🔁
@@ -229,10 +260,12 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                                     <span className="tabular-nums">
                                                         {stats.topModel.requests.toLocaleString()}
                                                     </span>
-                                                </span>
-                                                <span
+                                                </Tag>
+                                                <Tag
+                                                    color="amber"
+                                                    size="lg"
+                                                    className="font-semibold"
                                                     title={`${formatPollen(stats.topModel.pollen)} pollen`}
-                                                    className="inline-flex items-center gap-1 rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900"
                                                 >
                                                     <span aria-hidden="true">
                                                         🪷
@@ -243,12 +276,13 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                                                 .pollen,
                                                         )}
                                                     </span>
-                                                </span>
+                                                </Tag>
                                             </div>
                                         ) : (
                                             "No model usage yet"
                                         )
                                     }
+                                    theme={theme}
                                 />
                             </div>
                         </div>
@@ -274,23 +308,41 @@ const UsageStatCard: FC<{
     label: string;
     value: ReactNode;
     detail?: ReactNode;
-}> = ({ label, value, detail }) => (
-    <div className="text-sm">
-        <div className="text-[10px] uppercase tracking-wide text-pink-600 font-bold">
-            {label}
+    theme: DashboardTheme;
+}> = ({ label, value, detail, theme }) => {
+    const tokens = themeTokens[theme];
+    return (
+        <div className="text-sm">
+            <div
+                className={cn(
+                    "text-[10px] uppercase tracking-wide font-bold",
+                    tokens.text.label,
+                )}
+            >
+                {label}
+            </div>
+            <div
+                className={cn(
+                    "mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums",
+                    tokens.text.strong,
+                )}
+            >
+                {value}
+            </div>
+            {detail && (
+                <div className={cn("mt-2 text-xs", tokens.text.muted)}>
+                    {detail}
+                </div>
+            )}
         </div>
-        <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight text-pink-950 tabular-nums">
-            {value}
-        </div>
-        {detail && (
-            <div className="mt-2 text-xs text-pink-800/75">{detail}</div>
-        )}
-    </div>
-);
+    );
+};
 
-const ModalityPills: FC<{ breakdown: Record<ModelModality, number> }> = ({
-    breakdown,
-}) => {
+const ModalityPills: FC<{
+    breakdown: Record<ModelModality, number>;
+    theme: DashboardTheme;
+}> = ({ breakdown, theme }) => {
+    const tokens = themeTokens[theme];
     const entries = (Object.keys(MODALITY_META) as ModelModality[])
         .map((modality) => ({ modality, count: breakdown[modality] }))
         .filter(({ count }) => count > 0);
@@ -300,16 +352,18 @@ const ModalityPills: FC<{ breakdown: Record<ModelModality, number> }> = ({
             {entries.map(({ modality, count }) => {
                 const { emoji, label } = MODALITY_META[modality];
                 return (
-                    <span
+                    <Tag
                         key={modality}
+                        color={theme}
+                        size="lg"
+                        className={cn("font-semibold", tokens.text.base)}
                         title={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
-                        className="inline-flex items-center gap-1 rounded-full bg-pink-200 px-2.5 py-1 text-xs font-semibold text-pink-900"
                     >
                         <span aria-hidden="true">{emoji}</span>
                         <span className="tabular-nums">
                             {count.toLocaleString()}
                         </span>
-                    </span>
+                    </Tag>
                 );
             })}
         </div>

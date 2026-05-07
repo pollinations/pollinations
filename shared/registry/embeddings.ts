@@ -6,7 +6,6 @@ type EmbeddingModelDefinitions = {
     "gemini-embedding-2": ModelDefinition<"gemini-embedding-2-preview">;
     "text-embedding-3-small": ModelDefinition<"text-embedding-3-small">;
     "text-embedding-3-large": ModelDefinition<"text-embedding-3-large">;
-    "azure-embedding-v4": ModelDefinition<"embed-v-4-0">;
 };
 
 export type EmbeddingServiceId = keyof EmbeddingModelDefinitions;
@@ -93,29 +92,5 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
-    },
-    "azure-embedding-v4": {
-        aliases: ["embed-v-4-0", "cohere-embed-v4"],
-        modelId: "embed-v-4-0",
-        provider: "azure",
-        brand: "Azure AI Foundry",
-        category: "embedding",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.12),
-            },
-        ],
-        price: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.18),
-            },
-        ],
-        description:
-            "Azure AI Foundry embed-v-4-0 - Text embeddings with 256, 512, 1024, or 1536 dimensions.",
-        inputModalities: ["text"],
-        outputModalities: ["embedding"],
-        contextLength: 131072,
     },
 };

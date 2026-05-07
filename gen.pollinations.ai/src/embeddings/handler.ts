@@ -24,10 +24,6 @@ const AZURE_DIMENSION_RULES: Record<
     string,
     { allowed?: Set<number>; max?: number; description: string }
 > = {
-    "embed-v-4-0": {
-        allowed: new Set([256, 512, 1024, 1536]),
-        description: "256, 512, 1024, or 1536",
-    },
     "text-embedding-3-small": {
         max: 1536,
         description: "up to 1536",

@@ -90,8 +90,20 @@ CONFIG = {
             "internal_only": False,
         },
         "tier": {
-            "id": "PVT_kwDOBS76fs4BLtE_",  
+            "id": "PVT_kwDOBS76fs4BLtE_",
             "name": "Tier",
+            "internal_only": False,
+        },
+        # Community Quests. POLLEN-QUEST issues (and the PRs that resolve
+        # them) live here — separate from dev/support/news so reward-bearing
+        # work has its own kanban view. Project ID is bootstrapped via the
+        # GraphQL v2 mutation documented in the companion PR description;
+        # maintainers must paste the resulting node ID here on first run.
+        # If left blank, POLLEN-QUEST routing falls through with a warning
+        # and the issue stays unrouted instead of crashing the workflow.
+        "quest": {
+            "id": "",
+            "name": "QUEST",
             "internal_only": False,
         },
     },
@@ -460,7 +472,26 @@ def main():
         else:
             log_error("Tier project not configured")
             return
-    
+
+    # POLLEN-QUEST issues are reward-bearing community quests. They live in
+    # their own QUEST project, never get routed to dev/support/news (even if
+    # AI would classify them that way), and are NOT auto-assigned — assignment
+    # is the explicit "claimed" signal in the quest lifecycle. Early-return
+    # here so the AI classification path (which auto-assigns internal authors)
+    # never runs.
+    if "POLLEN-QUEST" in existing_labels:
+        log_debug("Found POLLEN-QUEST label, routing to QUEST project (skipping AI + auto-assign)")
+        project = CONFIG["projects"].get("quest")
+        if not project or not project.get("id"):
+            log_error("QUEST project not configured (CONFIG.projects.quest.id is empty); skipping route")
+            return
+        item_id = add_to_project(project["id"])
+        if item_id:
+            log_debug("Added to QUEST project successfully")
+        else:
+            log_error("Failed to add POLLEN-QUEST issue to QUEST project")
+        return
+
     if "NEWS" in existing_labels:
         log_debug("Found NEWS label, routing to News project (skipping AI)")
         project = CONFIG["projects"].get("news")

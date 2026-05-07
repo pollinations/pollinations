@@ -1,0 +1,34 @@
+{
+  "pr_number": 10422,
+  "title": "feat(enter): simplify BYOP margin billing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10422",
+  "merged_at": "2026-05-07T09:08:02Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sweetening the BYOP pot",
+    "blurb": "We've simplified how Bring Your Own Pollen (BYOP) billing works under the hood. Now, when your app users spend pollen, your creator markup flows seamlessly into the right honey jar!",
+    "summary": "Simplified the Bring Your Own Pollen (BYOP) margin billing system to explicitly track creator markups and route earnings to the correct balance buckets.",
+    "impact": "App creators can now easily opt-in to rewards per API key and reliably earn pollen when users generate content through their apps.",
+    "keywords": [
+      "billing",
+      "byop",
+      "api-keys",
+      "creators",
+      "rewards"
+    ],
+    "visual_concept": "Billing, balances, and 'Bring Your Own Pollen' (BYOP) creator rewards. Visual symbols: honey jars representing balance buckets, glowing pollen drops representing credits. Polly the bee acting as an accountant or shopkeeper organizing the earnings.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny green accountant visor, carefully pouring glowing golden pollen drops from a large glass jar into smaller jars. A chunky retro cash register sits on a wooden desk nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-07/PR-10422.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny green accountant visor, carefully pouring glowing golden pollen drops from a large glass jar into smaller jars. A chunky retro cash register sits on a wooden desk nearby. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-07T09:09:03.780466+00:00"
+}

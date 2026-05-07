@@ -58,10 +58,7 @@ export function createMediaCache(config: MediaCacheConfig) {
                     config.defaultContentType,
                     cached.customMetadata,
                 );
-                c.header(
-                    "Cache-Control",
-                    "public, max-age=31536000, immutable",
-                );
+                c.header("Cache-Control", "public, max-age=2592000, immutable");
                 c.header("X-Cache", "HIT");
                 c.header("X-Cache-Type", "EXACT");
                 return c.body(cached.body);

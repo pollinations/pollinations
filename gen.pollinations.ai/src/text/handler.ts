@@ -145,7 +145,7 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
 
 function sendTextContentResponse(completion: ChatCompletion): Response {
     const headers = usageHeaders(completion);
-    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    headers.set("Cache-Control", "public, max-age=2592000, immutable");
 
     if (!completion.choices?.[0]) {
         throw new UpstreamError(502, {

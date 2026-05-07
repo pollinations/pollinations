@@ -250,7 +250,7 @@ describe("text cache", () => {
 
         expect(second.headers.get("X-Cache")).toBe("HIT");
         expect(second.headers.get("Cache-Control")).toBe(
-            "public, max-age=31536000, immutable",
+            "public, max-age=2592000, immutable",
         );
         expect(second.headers.get("Content-Type")).toBe(
             "application/json; charset=utf-8",

@@ -148,7 +148,7 @@ function mediaHeaders(
 ): Headers {
     const headers = new Headers({
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=2592000, immutable",
     });
     const extension = contentType.includes("video")
         ? "mp4"

@@ -1,6 +1,6 @@
 {
   "name": "@pollinations_ai/cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "The Pollinations CLI — for humans, AI agents, and everything in between",
   "type": "module",
   "bin": {

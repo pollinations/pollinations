@@ -95,7 +95,8 @@ CONFIG = {
             "internal_only": False,
         },
         "quest": {
-            "id": "",
+            # https://github.com/orgs/pollinations/projects/30
+            "id": "PVT_kwDOBS76fs4BW8uW",
             "name": "QUEST",
             "internal_only": False,
         },

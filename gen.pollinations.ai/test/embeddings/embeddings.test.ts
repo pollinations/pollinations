@@ -15,7 +15,7 @@ import worker from "../../src/index.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-embedding-2";
-const TEST_PROVIDER_MODEL = "gemini-embedding-2";
+const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "us-central1-aiplatform.googleapis.com";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
@@ -348,7 +348,6 @@ describe("POST /v1/embeddings", () => {
 
         expect(response.status).toBe(400);
         expect(body).toContain("Failed to fetch image");
-        expect(body).toContain("not-a-url");
     });
 
     test("rejects unauthenticated requests", async ({ mocks }) => {

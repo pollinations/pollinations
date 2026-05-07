@@ -109,19 +109,8 @@ fi
 log "Pre-flight OK"
 
 if $DRY_RUN; then
-    warn "DRY RUN — no changes will be made. Pass --execute (with REPLICATE_NEW_TOKEN set) to rotate."
-    echo
-    log "Plan:"
-    echo "  1. (Manual) Create new token at https://replicate.com/account/api-tokens"
-    echo "  2. Validate new token via GET /v1/account"
-    echo "  3. Update SOPS: gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json"
-    echo "  4. Direct Replicate smoke: $SMOKE_MODEL 480p × 4s no-audio (~\$0.32)"
-    echo "  5. Open PR rotate/replicate-<date> → main, auto-merge"
-    echo "  6. Push main → production (admin)"
-    echo "  7. Watch $DEPLOY_WORKFLOW"
-    echo "  8. End-to-end smoke via $GEN_PROD_URL (if POLLINATIONS_SK_TOKEN set)"
-    echo "  9. (Manual) Delete old token at https://replicate.com/account/api-tokens"
-    echo "     Old token prefix to delete: ${OLD_TOKEN:0:10}..."
+    warn "DRY RUN — pass --execute (with REPLICATE_NEW_TOKEN set) to rotate."
+    log "Old token prefix that will be deleted: ${OLD_TOKEN:0:10}..."
     exit 0
 fi
 
@@ -158,7 +147,7 @@ done
 #######################################
 # 3. Direct Replicate smoke test
 #######################################
-section "Direct Replicate smoke test ($SMOKE_MODEL 480p × 2s)"
+section "Direct Replicate smoke test ($SMOKE_MODEL 480p × 4s)"
 
 SMOKE_PAYLOAD=$(jq -n \
     '{

@@ -214,6 +214,7 @@ Use `model_used IN ('seedance-2.0', ...)` if `model_provider` filter ever return
 - **Pricing varies by resolution + audio for video models.** The registry stores a flat anchor rate (720p+audio for Seedance 2.0); 480p under-bills users (~50% of cost), 1080p is blocked at the model handler to avoid eating margin (~60% loss). Revisit per-resolution cost schema only when rule #3 (variant-tier with users spanning tiers) hits twice.
 - **Same token across dev/staging/prod.** Replicate doesn't support per-environment scoping without separate orgs; we accept this trade-off. Document if isolation becomes important.
 - **Org name matters in rotation.** Rotation script refuses to deploy a new token unless `GET /v1/account` returns `username == "myceli-ai"`.
+- **No invoice export, no per-token attribution, no per-model spend API.** Monthly reconciliation: Wise feed (auto) + manual UI cross-check. Tinybird `generation_event.total_cost` is our authoritative per-model attribution.
 
 ## Question -> query cheat sheet
 
@@ -228,8 +229,3 @@ Use `model_used IN ('seedance-2.0', ...)` if `model_provider` filter ever return
 | Is model X healthy? | POST a tiny prediction with `Prefer: wait=60`; check `status: succeeded` |
 | What tokens exist? | UI only — https://replicate.com/account/api-tokens |
 
-## Known unknowns
-
-- No invoice export endpoint. Monthly reconciliation: Wise feed (auto) + manual UI cross-check.
-- No per-token attribution. If we ever issue multiple tokens, no API tells us which token spent what.
-- No per-model spend API. Tinybird `generation_event.total_cost` is our authoritative per-model attribution.

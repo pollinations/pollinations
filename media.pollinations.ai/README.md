@@ -102,11 +102,11 @@ Retrieve a media file by its hash.
 
 **Response:**
 - Binary file with correct `Content-Type`
-- `Cache-Control: public, max-age=2592000, immutable`
+- `Cache-Control: public, max-age=2592000`
 
 **Headers:**
 - `Content-Type` - MIME type
-- `Cache-Control` - `public, max-age=2592000, immutable`
+- `Cache-Control` - `public, max-age=2592000`
 - `X-Content-Hash` - 16-char hex content hash
 - `X-Content-Size` - File size in bytes
 
@@ -168,19 +168,19 @@ npm run deploy:production
 
 - **Max file size:** 10MB
 - **Storage:** Cloudflare R2
-- **Default expiry:** 30 days (re-uploading the same file resets the TTL)
+- **Default retention:** typically up to 30 days (re-uploading the same file resets the timer)
 
 ## 🔒 Content Addressing
 
 Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as the key:
 - **Deduplication:** Uploading the same file twice returns the same URL
 - **Immutable:** Once uploaded, content cannot change (hash = content)
-- **Cacheable:** Files are cached for 30 days with `immutable` directive
+- **Cacheable:** Files are cached for 30 days without the `immutable` directive
 - **Collision resistance:** Birthday-paradox collision expected around ~4 billion files
 
 ## 📌 Retention Policy
 
-- **30-day TTL:** Files expire 30 days after upload. Re-uploading the same file resets the timer.
+- **30-day retention:** Files are typically retained up to 30 days after upload. Re-uploading the same file resets the timer.
 - **No delete endpoint:** Content-addressed storage is append-only. Files cannot be deleted via the API.
 - **No user file listing:** There is no endpoint to list or manage your uploaded files.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.

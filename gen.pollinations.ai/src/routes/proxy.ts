@@ -285,9 +285,9 @@ export const proxyRoutes = new Hono<Env>()
         "/models",
         describeRoute({
             tags: ["🤖 Models"],
-            summary: "List Text Models",
+            summary: "List Models",
             description:
-                "Convenience alias for `/text/models`. Returns all available text generation models with pricing, capabilities, and metadata.",
+                "Returns all available text, image, video, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -296,7 +296,7 @@ export const proxyRoutes = new Hono<Env>()
                             schema: resolver(
                                 z.array(z.any()).meta({
                                     description:
-                                        "List of text models with pricing and metadata",
+                                        "List of models with pricing and metadata",
                                 }),
                             ),
                         },
@@ -309,7 +309,12 @@ export const proxyRoutes = new Hono<Env>()
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
-                getTextModelsInfo(),
+                [
+                    ...getTextModelsInfo(),
+                    ...getImageModelsInfo(),
+                    ...getAudioModelsInfo(),
+                    ...getEmbeddingModelsInfo(),
+                ],
                 allowedModels,
                 paidBalance,
             );

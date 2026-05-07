@@ -20,18 +20,9 @@ type EmbeddingData = {
     index: number;
 };
 
-const AZURE_DIMENSION_RULES: Record<
-    string,
-    { allowed?: Set<number>; max?: number; description: string }
-> = {
-    "text-embedding-3-small": {
-        max: 1536,
-        description: "up to 1536",
-    },
-    "text-embedding-3-large": {
-        max: 3072,
-        description: "up to 3072",
-    },
+const AZURE_MAX_DIMENSIONS: Record<string, number> = {
+    "text-embedding-3-small": 1536,
+    "text-embedding-3-large": 3072,
 };
 
 export async function generateEmbeddings(
@@ -130,16 +121,12 @@ function validateAzureDimensions(
 ) {
     if (!request.dimensions) return;
 
-    const rule = AZURE_DIMENSION_RULES[request.model];
+    const maxDimensions = AZURE_MAX_DIMENSIONS[request.model];
 
-    if (!rule) return;
-
-    if (rule.allowed && !rule.allowed.has(request.dimensions)) {
-        badRequest(`${responseModel} supports dimensions ${rule.description}`);
-    }
-
-    if (rule.max && request.dimensions > rule.max) {
-        badRequest(`${responseModel} supports dimensions ${rule.description}`);
+    if (maxDimensions && request.dimensions > maxDimensions) {
+        badRequest(
+            `${responseModel} supports dimensions up to ${maxDimensions}`,
+        );
     }
 }
 

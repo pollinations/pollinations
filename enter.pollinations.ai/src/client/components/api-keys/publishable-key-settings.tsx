@@ -48,11 +48,6 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         Redirect URIs
                     </Field.Label>
                 </div>
-                {redirectUris.length === 0 && (
-                    <p className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-3 py-2 text-sm text-gray-500">
-                        No redirect URIs
-                    </p>
-                )}
                 {redirectUris.map((uri, index) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list

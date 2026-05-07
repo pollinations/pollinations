@@ -443,7 +443,7 @@ function generateLLMDoc(): string {
         "Content-addressed file storage. Upload requires API key; retrieval is public.",
     );
     lines.push(
-        "Max file size: 10 MB. Files are typically retained up to 30 days; re-uploading resets the timer.",
+        "Max file size: 10 MB. Files are retained for 30 days; re-uploading resets the timer.",
     );
     lines.push("");
 

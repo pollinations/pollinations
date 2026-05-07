@@ -168,7 +168,7 @@ npm run deploy:production
 
 - **Max file size:** 10MB
 - **Storage:** Cloudflare R2
-- **Default retention:** typically up to 30 days (re-uploading the same file resets the timer)
+- **Default retention:** 30 days (re-uploading the same file resets the timer)
 
 ## 🔒 Content Addressing
 
@@ -180,7 +180,7 @@ Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as
 
 ## 📌 Retention Policy
 
-- **30-day retention:** Files are typically retained up to 30 days after upload. Re-uploading the same file resets the timer.
+- **30-day retention:** Files are retained for 30 days after upload. Re-uploading the same file resets the timer.
 - **No delete endpoint:** Content-addressed storage is append-only. Files cannot be deleted via the API.
 - **No user file listing:** There is no endpoint to list or manage your uploaded files.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.

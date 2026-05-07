@@ -4,7 +4,7 @@
  * Adapted from gen.pollinations.ai/cloudflare-cache
  */
 
-import { MEDIA_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { R2_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -134,5 +134,5 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     c.res.headers.set("X-Cache", "MISS");
     c.res.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
     // Same request = same response (deterministic). Cache TTL aligned with R2 retention.
-    c.res.headers.set("Cache-Control", MEDIA_CACHE_CONTROL);
+    c.res.headers.set("Cache-Control", R2_CACHE_CONTROL);
 });

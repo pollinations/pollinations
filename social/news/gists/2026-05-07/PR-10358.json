@@ -1,0 +1,34 @@
+{
+  "pr_number": 10358,
+  "title": "[codex] restack embeddings modality",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10358",
+  "merged_at": "2026-05-07T23:10:41Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Mapping the hive mind",
+    "blurb": "We've officially added embeddings to the API! Now you can turn your text into neat little vectors to help your apps understand context and search smarter.",
+    "summary": "Added full support for text embeddings via a new /v1/embeddings endpoint, complete with model registries, API key scoping, and pricing UI.",
+    "impact": "Developers can now generate vector embeddings directly through the API to power semantic search, RAG, and clustering in their applications.",
+    "keywords": [
+      "embeddings",
+      "api",
+      "models",
+      "vectors",
+      "rag"
+    ],
+    "visual_concept": "Embeddings turn text into structured vectors. Visual metaphor: organizing raw text into neat, structured, glowing data cubes or seeds. Polly the bee and Nomnom working together to process information.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny librarian glasses, organizing glowing numbered cubes into a neat garden grid. The round tan Nomnom creature happily eats a stack of text documents and produces the glowing cubes. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-07/PR-10358.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny librarian glasses, organizing glowing numbered cubes into a neat garden grid. The round tan Nomnom creature happily eats a stack of text documents and produces the glowing cubes. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-07T23:11:37.323644+00:00"
+}

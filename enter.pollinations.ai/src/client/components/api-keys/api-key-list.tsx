@@ -56,6 +56,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         const primaryRedirectUri = redirectUrisMeta[0] || "";
         const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
         const isApp = isPublishable;
+        const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
 
         return (
             <Card
@@ -149,6 +150,18 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             )}
                         </span>
                     )}
+                    {isApp && (
+                        <span
+                            className={`rounded px-2 py-0.5 font-medium ${
+                                earningsEnabled
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-500"
+                            }`}
+                            title="Developer earnings"
+                        >
+                            Earnings {earningsEnabled ? "on" : "off"}
+                        </span>
+                    )}
                     {!isApp && (
                         <>
                             <LimitsBadge
@@ -222,22 +235,29 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Pollinations account and spend their own
                                     Pollen.
                                 </p>
-                                <a
-                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="mt-1 inline-flex items-center gap-1 font-medium text-blue-700 hover:text-blue-900"
-                                >
-                                    <span className="underline underline-offset-2">
-                                        Read the guide
+                                <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                                    <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                                        New!
                                     </span>
-                                    <span
-                                        aria-hidden="true"
-                                        className="no-underline"
+                                    Turn on developer earnings. Users are billed
+                                    25% extra, credited to your wallet.{" "}
+                                    <a
+                                        href="https://gen.pollinations.ai/docs#tag/bring-your-own-pollen"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium text-blue-700 hover:text-blue-900"
                                     >
-                                        ↗
-                                    </span>
-                                </a>
+                                        <span className="underline underline-offset-2">
+                                            Read the guide
+                                        </span>
+                                        <span
+                                            aria-hidden="true"
+                                            className="no-underline ml-0.5"
+                                        >
+                                            ↗
+                                        </span>
+                                    </a>
+                                </p>
                             </div>
                             <ApiKeyDialog
                                 onSubmit={onCreate}

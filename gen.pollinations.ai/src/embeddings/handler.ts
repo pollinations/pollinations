@@ -20,7 +20,23 @@ type EmbeddingData = {
     index: number;
 };
 
-const AZURE_EMBED_V4_DIMENSIONS = new Set([256, 512, 1024, 1536]);
+const AZURE_DIMENSION_RULES: Record<
+    string,
+    { allowed?: Set<number>; max?: number; description: string }
+> = {
+    "embed-v-4-0": {
+        allowed: new Set([256, 512, 1024, 1536]),
+        description: "256, 512, 1024, or 1536",
+    },
+    "text-embedding-3-small": {
+        max: 1536,
+        description: "up to 1536",
+    },
+    "text-embedding-3-large": {
+        max: 3072,
+        description: "up to 3072",
+    },
+};
 
 export async function generateEmbeddings(
     env: CloudflareBindings,
@@ -84,14 +100,7 @@ async function generateAzureEmbeddings(
         badRequest("task_type is only supported by Gemini embedding models");
     }
 
-    if (
-        request.dimensions &&
-        !AZURE_EMBED_V4_DIMENSIONS.has(request.dimensions)
-    ) {
-        badRequest(
-            `${responseModel} supports dimensions 256, 512, 1024, or 1536`,
-        );
-    }
+    validateAzureDimensions(request, responseModel);
 
     const inputs = normalizeInputs(request.input);
     const textInputs = inputs.map(inputToText);
@@ -117,6 +126,25 @@ async function generateAzureEmbeddings(
         }));
 
     return embeddingsResponse(responseModel, data, usage);
+}
+
+function validateAzureDimensions(
+    request: EmbeddingRequest,
+    responseModel: string,
+) {
+    if (!request.dimensions) return;
+
+    const rule = AZURE_DIMENSION_RULES[request.model];
+
+    if (!rule) return;
+
+    if (rule.allowed && !rule.allowed.has(request.dimensions)) {
+        badRequest(`${responseModel} supports dimensions ${rule.description}`);
+    }
+
+    if (rule.max && request.dimensions > rule.max) {
+        badRequest(`${responseModel} supports dimensions ${rule.description}`);
+    }
 }
 
 function encodeEmbedding(

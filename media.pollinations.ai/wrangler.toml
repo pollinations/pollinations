@@ -14,6 +14,11 @@ MAX_FILE_SIZE = "10485760"  # 10MB in bytes
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media-dev"
 
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "media-dev"
+database_id = "media-dev"
+
 # Production environment
 [env.production]
 name = "pollinations-media-prod"
@@ -29,6 +34,11 @@ custom_domain = true
 [[env.production.r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "media-prod"
+database_id = "media-prod"
 
 [vars]
 MAX_FILE_SIZE = "10485760"  # 10MB in bytes

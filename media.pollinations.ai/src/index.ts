@@ -13,6 +13,7 @@ const DEFAULT_MAX_SIZE = 10485760; // 10 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
+    DB?: D1Database;
     MAX_FILE_SIZE: string;
 }
 
@@ -20,6 +21,67 @@ interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
+}
+
+interface MediaItem {
+    id: string;
+    url: string;
+    contentType: string;
+    size: number;
+    createdAt: string;
+    publicTags?: string[];
+    privateTags?: string[];
+}
+
+const TAG_PATTERN = /^[a-z0-9\-_]+$/;
+const TAG_MAX_LEN = 32;
+const MAX_PUBLIC_TAGS = 20;
+const MAX_PRIVATE_TAGS = 50;
+
+function normalizeTag(tag: string): string {
+    return tag.toLowerCase().trim();
+}
+
+function validateTag(tag: string): boolean {
+    const normalized = normalizeTag(tag);
+    return (
+        normalized.length > 0 &&
+        normalized.length <= TAG_MAX_LEN &&
+        TAG_PATTERN.test(normalized)
+    );
+}
+
+async function initDb(db: D1Database | undefined): Promise<void> {
+    if (!db) return;
+    const migrations = [
+        `CREATE TABLE IF NOT EXISTS media_objects (
+            hash TEXT PRIMARY KEY,
+            owner TEXT NOT NULL,
+            content_type TEXT NOT NULL,
+            size INTEGER NOT NULL,
+            created_at TEXT NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS public_tags (
+            hash TEXT NOT NULL,
+            tag TEXT NOT NULL,
+            PRIMARY KEY (hash, tag),
+            FOREIGN KEY (hash) REFERENCES media_objects(hash) ON DELETE CASCADE
+        )`,
+        `CREATE TABLE IF NOT EXISTS private_tags (
+            hash TEXT NOT NULL,
+            owner TEXT NOT NULL,
+            tag TEXT NOT NULL,
+            PRIMARY KEY (hash, owner, tag),
+            FOREIGN KEY (hash) REFERENCES media_objects(hash) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_public_tags_tag ON public_tags(tag)`,
+        `CREATE INDEX IF NOT EXISTS idx_private_tags_owner_hash ON private_tags(owner, hash)`,
+        `CREATE INDEX IF NOT EXISTS idx_media_objects_owner ON media_objects(owner)`,
+    ];
+
+    for (const migration of migrations) {
+        await db.exec(migration);
+    }
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -221,6 +283,21 @@ api.post(
                     keyType: authResult.type,
                 },
             });
+
+            // Initialize DB and insert into media_objects table
+            if (c.env.DB) {
+                try {
+                    await initDb(c.env.DB);
+                    const now = new Date().toISOString();
+                    await c.env.DB.prepare(
+                        `INSERT OR IGNORE INTO media_objects (hash, owner, content_type, size, created_at)
+                         VALUES (?, ?, ?, ?, ?)`,
+                    ).bind(hash, authResult.name, contentType, fileBuffer.byteLength, now).run();
+                } catch (dbError) {
+                    console.error("Database error during upload:", dbError);
+                    // Don't fail upload if DB write fails - blob is safely in R2
+                }
+            }
 
             console.log(
                 JSON.stringify({
@@ -425,6 +502,418 @@ api.on(
     },
 );
 
+api.get(
+    "/me/media",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "List my uploads",
+        description:
+            "Retrieve a paginated list of your uploaded media with tags. Requires authentication.",
+        responses: {
+            200: {
+                description: "Paginated list of uploads",
+                content: {
+                    "application/json": {
+                        schema: resolver(
+                            z.object({
+                                items: z.array(
+                                    z.object({
+                                        id: z.string(),
+                                        url: z.string(),
+                                        contentType: z.string(),
+                                        size: z.number(),
+                                        createdAt: z.string(),
+                                        publicTags: z
+                                            .array(z.string())
+                                            .optional(),
+                                        privateTags: z
+                                            .array(z.string())
+                                            .optional(),
+                                    }),
+                                ),
+                                nextCursor: z.string().optional(),
+                            }),
+                        ),
+                    },
+                },
+            },
+            401: {
+                description: "Unauthorized",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) {
+            return c.json({ error: "API key required" }, 401);
+        }
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+
+        const limit = Math.min(
+            parseInt(c.req.query("limit") || "50"),
+            500,
+        );
+        const cursor = c.req.query("cursor");
+
+        try {
+            if (!c.env.DB) {
+                return c.json({ items: [] });
+            }
+
+            await initDb(c.env.DB);
+
+            let query = `SELECT m.*,
+                GROUP_CONCAT(CASE WHEN pt.tag IS NOT NULL THEN pt.tag END) as public_tags,
+                GROUP_CONCAT(CASE WHEN prt.tag IS NOT NULL THEN prt.tag END) as private_tags
+            FROM media_objects m
+            LEFT JOIN public_tags pt ON m.hash = pt.hash
+            LEFT JOIN private_tags prt ON m.hash = prt.hash AND prt.owner = ?
+            WHERE m.owner = ?`;
+
+            const params: (string | number)[] = [authResult.name || "", authResult.name || ""];
+
+            if (cursor) {
+                const decoded = JSON.parse(
+                    atob(cursor),
+                ) as { createdAt: string; hash: string };
+                query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash > ?))`;
+                params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
+            }
+
+            query += ` GROUP BY m.hash ORDER BY m.created_at DESC, m.hash DESC LIMIT ?`;
+            params.push(limit + 1);
+
+            const result = await c.env.DB.prepare(query)
+                .bind(...params)
+                .all<{
+                    hash: string;
+                    content_type: string;
+                    size: number;
+                    created_at: string;
+                    public_tags: string | null;
+                    private_tags: string | null;
+                }>();
+
+            let items: MediaItem[] = [];
+            let nextCursor: string | undefined;
+
+            if (result.results && result.results.length > 0) {
+                const hasMore = result.results.length > limit;
+                const rows = hasMore ? result.results.slice(0, limit) : result.results;
+
+                items = rows.map((row) => ({
+                    id: row.hash,
+                    url: mediaUrl(row.hash),
+                    contentType: row.content_type,
+                    size: row.size,
+                    createdAt: row.created_at,
+                    publicTags: row.public_tags
+                        ? row.public_tags.split(",").filter(Boolean)
+                        : [],
+                    privateTags: row.private_tags
+                        ? row.private_tags.split(",").filter(Boolean)
+                        : [],
+                }));
+
+                if (hasMore) {
+                    const lastRow = rows[rows.length - 1];
+                    nextCursor = btoa(
+                        JSON.stringify({
+                            createdAt: lastRow.created_at,
+                            hash: lastRow.hash,
+                        }),
+                    );
+                }
+            }
+
+            return c.json({ items, ...(nextCursor && { nextCursor }) });
+        } catch (error) {
+            console.error("List media error:", error);
+            return c.json({ error: "Failed to list media" }, 500);
+        }
+    },
+);
+
+api.put(
+    "/:hash/tags",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Set media tags",
+        description:
+            "Set public and/or private tags for a media file. Requires authentication and ownership.",
+        responses: {
+            200: {
+                description: "Tags updated",
+                content: {
+                    "application/json": {
+                        schema: resolver(
+                            z.object({
+                                id: z.string(),
+                                public: z.array(z.string()),
+                                private: z.array(z.string()),
+                            }),
+                        ),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid request",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            401: {
+                description: "Unauthorized",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "Not the file owner",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            404: {
+                description: "File not found",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        const hash = c.req.param("hash");
+        if (!HASH_PATTERN.test(hash)) {
+            return c.json({ error: "Invalid hash format" }, 400);
+        }
+
+        const apiKey = extractApiKey(c.req.raw);
+        if (!apiKey) {
+            return c.json({ error: "API key required" }, 401);
+        }
+        const authResult = await verifyApiKey(apiKey);
+        if (!authResult) {
+            return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+
+        try {
+            const body = await c.req.json<{
+                public?: string[];
+                private?: string[];
+            }>();
+
+            const publicTags = (body.public || [])
+                .map(normalizeTag)
+                .filter(validateTag);
+            const privateTags = (body.private || [])
+                .map(normalizeTag)
+                .filter(validateTag);
+
+            if (publicTags.length > MAX_PUBLIC_TAGS) {
+                return c.json(
+                    {
+                        error: `Too many public tags (max ${MAX_PUBLIC_TAGS})`,
+                    },
+                    400,
+                );
+            }
+            if (privateTags.length > MAX_PRIVATE_TAGS) {
+                return c.json(
+                    {
+                        error: `Too many private tags (max ${MAX_PRIVATE_TAGS})`,
+                    },
+                    400,
+                );
+            }
+
+            if (!c.env.DB) {
+                return c.json({ error: "Database not available" }, 500);
+            }
+
+            await initDb(c.env.DB);
+
+            // Verify ownership
+            const media = await c.env.DB.prepare(
+                "SELECT owner FROM media_objects WHERE hash = ?",
+            )
+                .bind(hash)
+                .first<{ owner: string }>();
+
+            if (!media) {
+                return c.json({ error: "Media not found" }, 404);
+            }
+
+            if (media.owner !== authResult.name) {
+                return c.json({ error: "Not the file owner" }, 403);
+            }
+
+            // Clear existing tags and insert new ones
+            await c.env.DB.prepare(
+                "DELETE FROM public_tags WHERE hash = ?",
+            )
+                .bind(hash)
+                .run();
+            await c.env.DB.prepare(
+                "DELETE FROM private_tags WHERE hash = ? AND owner = ?",
+            )
+                .bind(hash, authResult.name)
+                .run();
+
+            for (const tag of publicTags) {
+                await c.env.DB.prepare(
+                    "INSERT INTO public_tags (hash, tag) VALUES (?, ?)",
+                )
+                    .bind(hash, tag)
+                    .run();
+            }
+
+            for (const tag of privateTags) {
+                await c.env.DB.prepare(
+                    "INSERT INTO private_tags (hash, owner, tag) VALUES (?, ?, ?)",
+                )
+                    .bind(hash, authResult.name, tag)
+                    .run();
+            }
+
+            return c.json({
+                id: hash,
+                public: publicTags,
+                private: privateTags,
+            });
+        } catch (error) {
+            console.error("Tag error:", error);
+            return c.json({ error: "Failed to set tags" }, 500);
+        }
+    },
+);
+
+api.get(
+    "/tags/:tag",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Browse by public tag",
+        description:
+            "Get all media files tagged with a specific public tag. No authentication required.",
+        responses: {
+            200: {
+                description: "Paginated list of media with tag",
+                content: {
+                    "application/json": {
+                        schema: resolver(
+                            z.object({
+                                tag: z.string(),
+                                items: z.array(
+                                    z.object({
+                                        id: z.string(),
+                                        url: z.string(),
+                                        contentType: z.string(),
+                                        size: z.number(),
+                                        createdAt: z.string(),
+                                    }),
+                                ),
+                                nextCursor: z.string().optional(),
+                            }),
+                        ),
+                    },
+                },
+            },
+            400: {
+                description: "Invalid tag format",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+        },
+    }),
+    async (c) => {
+        let tag = c.req.param("tag");
+        tag = normalizeTag(tag);
+
+        if (!validateTag(tag)) {
+            return c.json({ error: "Invalid tag format" }, 400);
+        }
+
+        const limit = Math.min(
+            parseInt(c.req.query("limit") || "50"),
+            500,
+        );
+        const cursor = c.req.query("cursor");
+
+        try {
+            if (!c.env.DB) {
+                return c.json({ tag, items: [] });
+            }
+
+            await initDb(c.env.DB);
+
+            let query = `SELECT m.hash, m.content_type, m.size, m.created_at
+            FROM media_objects m
+            INNER JOIN public_tags pt ON m.hash = pt.hash
+            WHERE pt.tag = ?`;
+
+            const params: (string | number)[] = [tag];
+
+            if (cursor) {
+                const decoded = JSON.parse(
+                    atob(cursor),
+                ) as { createdAt: string; hash: string };
+                query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash > ?))`;
+                params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
+            }
+
+            query += ` ORDER BY m.created_at DESC, m.hash DESC LIMIT ?`;
+            params.push(limit + 1);
+
+            const result = await c.env.DB.prepare(query)
+                .bind(...params)
+                .all<{
+                    hash: string;
+                    content_type: string;
+                    size: number;
+                    created_at: string;
+                }>();
+
+            let items: Omit<MediaItem, "publicTags" | "privateTags">[] = [];
+            let nextCursor: string | undefined;
+
+            if (result.results && result.results.length > 0) {
+                const hasMore = result.results.length > limit;
+                const rows = hasMore ? result.results.slice(0, limit) : result.results;
+
+                items = rows.map((row) => ({
+                    id: row.hash,
+                    url: mediaUrl(row.hash),
+                    contentType: row.content_type,
+                    size: row.size,
+                    createdAt: row.created_at,
+                }));
+
+                if (hasMore) {
+                    const lastRow = rows[rows.length - 1];
+                    nextCursor = btoa(
+                        JSON.stringify({
+                            createdAt: lastRow.created_at,
+                            hash: lastRow.hash,
+                        }),
+                    );
+                }
+            }
+
+            return c.json({ tag, items, ...(nextCursor && { nextCursor }) });
+        } catch (error) {
+            console.error("Browse tag error:", error);
+            return c.json({ error: "Failed to browse tag" }, 500);
+        }
+    },
+);
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.use(
@@ -444,10 +933,17 @@ app.get("/", (c) => {
         endpoints: {
             upload: "POST /upload (requires API key)",
             retrieve: "GET /:hash",
+            metadata: "GET /:hash/metadata",
+            listMyMedia: "GET /me/media (requires API key)",
+            setTags: "PUT /:hash/tags (requires API key)",
+            browseTag: "GET /tags/:tag",
             docs: "GET /openapi.json",
         },
         limits: {
             maxFileSize: "10MB",
+            maxPublicTagsPerFile: MAX_PUBLIC_TAGS,
+            maxPrivateTagsPerFile: MAX_PRIVATE_TAGS,
+            maxTagLength: TAG_MAX_LEN,
         },
     });
 });

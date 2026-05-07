@@ -1,9 +1,8 @@
 import { HTTPException } from "hono/http-exception";
 import { HttpError } from "@/image/httpError.ts";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
+import { MAX_EMBEDDING_BATCH_SIZE } from "./limits.ts";
 import type { ContentPart, EmbeddingRequest, GeminiPart } from "./types.ts";
-
-const MAX_EMBEDDING_BATCH_SIZE = 32;
 
 export function badRequest(message: string): never {
     throw new HTTPException(400, { message });

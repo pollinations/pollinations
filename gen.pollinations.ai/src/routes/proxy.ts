@@ -501,13 +501,15 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔢 Embeddings"],
             summary: "Create Embeddings",
             description: [
-                "Generate vector embeddings for text, images, audio, or video. Compatible with the OpenAI Embeddings API format, extended with multimodal content part support.",
+                "Generate vector embeddings with an OpenAI-compatible response format.",
                 "",
-                "**Multimodal input:** Pass content parts (text, image_url, input_audio, video_url) in the `input` field.",
+                "**Models:** `gemini-embedding-2` supports text, image, audio, and video inputs. `text-embedding-3-small` and `text-embedding-3-large` are Azure OpenAI text-only models.",
                 "",
-                "**Task types:** Optionally specify `task_type` (for example `RETRIEVAL_QUERY` or `CLASSIFICATION`) to optimize embeddings for your use case.",
+                "**Input:** Pass a string, an array of up to 32 strings, or Gemini multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
                 "",
-                "**Dimensions:** Default 3072. Use `dimensions` to reduce output vector size.",
+                "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-embedding-2`.",
+                "",
+                "**Dimensions:** Defaults are model-specific. `gemini-embedding-2` and `text-embedding-3-large` support up to 3072 dimensions; `text-embedding-3-small` supports up to 1536.",
             ].join("\n"),
             responses: {
                 200: {

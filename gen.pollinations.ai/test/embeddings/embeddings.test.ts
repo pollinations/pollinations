@@ -11,6 +11,7 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
+import { MAX_EMBEDDING_BATCH_SIZE } from "../../src/embeddings/limits.ts";
 import worker from "../../src/index.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
@@ -312,6 +313,30 @@ describe("POST /v1/embeddings", () => {
         expect(data.data).toHaveLength(2);
         expect(data.data.map(({ index }) => index)).toEqual([0, 1]);
         expect(mocks.vertex.state.requests).toHaveLength(2);
+        await wait();
+    });
+
+    test("rejects string batches above the public input limit", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                input: Array.from(
+                    { length: MAX_EMBEDDING_BATCH_SIZE + 1 },
+                    (_, index) => `input ${index}`,
+                ),
+            }),
+        });
+
+        expect(response.status).toBe(400);
+        expect(mocks.vertex.state.requests).toHaveLength(0);
         await wait();
     });
 

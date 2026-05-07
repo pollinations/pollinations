@@ -1,5 +1,6 @@
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { z } from "zod";
+import { MAX_EMBEDDING_BATCH_SIZE } from "@/embeddings/limits.ts";
 
 // --- Request schemas ---
 
@@ -63,13 +64,12 @@ export const CreateEmbeddingRequestSchema = z
         input: z
             .union([
                 z.string(),
-                z.array(z.string()),
+                z.array(z.string()).max(MAX_EMBEDDING_BATCH_SIZE),
                 ContentPartSchema,
                 z.array(ContentPartSchema),
             ])
             .meta({
-                description:
-                    "Input text or content parts to embed. Supports strings, arrays of strings, or multimodal content parts (text, image_url, input_audio, video_url).",
+                description: `Input text or content parts to embed. Supports strings, arrays of strings (max ${MAX_EMBEDDING_BATCH_SIZE} inputs), or multimodal content parts (text, image_url, input_audio, video_url). Multimodal content parts are supported by Gemini embedding models only.`,
                 example: "Hello world",
             }),
         dimensions: z.number().int().min(128).max(3072).optional().meta({

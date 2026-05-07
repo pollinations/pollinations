@@ -121,5 +121,8 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await response.text();
+        expect(body).toContain("/v1/embeddings");
+        expect(body).toContain("text-embedding-3-small");
     });
 });

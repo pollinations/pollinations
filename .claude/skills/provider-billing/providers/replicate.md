@@ -206,51 +206,10 @@ curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_T
 
 Use `model_used IN ('seedance-2.0', ...)` if `model_provider` filter ever returns empty.
 
-## Adding a new Replicate model
-
-Turnkey checklist for the next Replicate model (Ideogram v3, FLUX-2 Pro, Recraft v4, Hunyuan, Kling, etc.):
-
-```
-1. Verify the model exists:
-   curl -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
-     "https://api.replicate.com/v1/models/{owner}/{name}" | jq '.name'
-
-2. Pull the input schema:
-   ... | jq '.latest_version.openapi_schema.components.schemas.Input.properties'
-
-3. Scrape pricing from https://replicate.com/{owner}/{name} (see "Per-model
-   schema and pricing" section above for the regex).
-
-4. Decide cost rubric:
-   - Single-tier pricing → flat cost array
-   - Variant-tier with one dominant tier → flat at dominant tier, document
-   - Variant-tier with users spanning tiers → per-tier multiplier in handler
-
-5. Drop a new file under gen.pollinations.ai/src/image/models/
-   (mirror models/seedanceV2VideoModel.ts for video, or follow
-   models/seedreamModel.ts for image).
-
-6. Add a switch case in createAndReturnImages.ts (image) or
-   createAndReturnVideos.ts (video).
-
-7. Add registry entry in shared/registry/image.ts:
-   - provider: "replicate"
-   - paidOnly: true
-   - cost + price arrays (price = 1.5× cost is the standing rule)
-
-8. Add a unit test under gen.pollinations.ai/test/image/ (mock fetch).
-
-9. Smoke locally with the token from dev SOPS, then hit production via
-   gen.pollinations.ai/image/test?model=NEW_MODEL.
-
-10. (No vendor.json change needed unless you also paid for it via a new
-    method — the existing Replicate Wise pool covers all replicate models.)
-```
-
 ## Gotchas
 
 - **No token CRUD API.** `/v1/account/api-tokens` returns 404. Only the web UI can create or delete tokens.
-- **`Prefer: wait` maxes at 60 seconds.** Predictions over 60s require polling — `replicateClient.ts` does this automatically with exponential backoff (cap 5s, hard timeout 4 min).
+- **`Prefer: wait` maxes at 60 seconds.** Predictions over 60s require polling — `replicateClient.ts` polls every 5s until terminal. No app-level timeout; relies on Worker platform limits.
 - **`metrics.predict_time` ≠ user-facing pricing.** Replicate charges per-second of output (or per-image/etc.), but `predict_time` is GPU wall-clock for their internal accounting. Use it for margin analysis only.
 - **Pricing varies by resolution + audio for video models.** The registry stores a flat anchor rate (720p+audio for Seedance 2.0); 480p under-bills users (~50% of cost), 1080p is blocked at the model handler to avoid eating margin (~60% loss). Revisit per-resolution cost schema only when rule #3 (variant-tier with users spanning tiers) hits twice.
 - **Same token across dev/staging/prod.** Replicate doesn't support per-environment scoping without separate orgs; we accept this trade-off. Document if isolation becomes important.

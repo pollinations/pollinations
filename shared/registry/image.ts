@@ -325,18 +325,14 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "video",
         paidOnly: true,
+        // non_video_in tier @ 720p; see provider-billing/providers/replicate.md
         cost: [
-            // Replicate "non_video_in" tier at 720p (verified empirically via
-            // metrics.model_variant). Audio is free. Image input is free.
-            // The "video_in" tier only triggers with reference_videos, which we
-            // don't expose. Resolution locked to 720p in the handler.
             {
                 date: COST_START_DATE,
                 completionVideoSeconds: 0.18,
             },
         ],
         price: [
-            // 1.5× cost
             {
                 date: COST_START_DATE,
                 completionVideoSeconds: 0.27,

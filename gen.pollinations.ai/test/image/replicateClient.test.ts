@@ -30,7 +30,10 @@ describe("runReplicatePrediction", () => {
                     id: "pred_123",
                     status: "succeeded",
                     output: "https://replicate.delivery/x/video.mp4",
-                    metrics: { predict_time: 12.5 },
+                    metrics: {
+                        predict_time: 12.5,
+                        video_output_duration_seconds: 8,
+                    },
                 }),
                 { status: 201 },
             ),
@@ -45,6 +48,7 @@ describe("runReplicatePrediction", () => {
 
         expect(result.output).toBe("https://replicate.delivery/x/video.mp4");
         expect(result.predictTimeSeconds).toBe(12.5);
+        expect(result.videoOutputDurationSeconds).toBe(8);
         expect(result.id).toBe("pred_123");
 
         const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];

@@ -49,12 +49,12 @@ export async function callSeedanceV2API(
         "Starting Seedance 2.0 video generation...",
     );
 
-    // Seedance 2.0 requires duration in [4, 15] or -1 (intelligent duration).
-    const requestedDuration = safeParams.duration ?? 5;
-    const duration =
-        requestedDuration === -1
-            ? -1
-            : Math.max(4, Math.min(15, Math.floor(requestedDuration)));
+    // Seedance 2.0 requires duration in [4, 15]. The schema enforces min=1
+    // so we only need to clamp into the upstream's accepted range.
+    const duration = Math.max(
+        4,
+        Math.min(15, Math.floor(safeParams.duration ?? 5)),
+    );
 
     const images = safeParams.image ?? [];
     const lastFrameImage = safeParams.last_frame_image;
@@ -144,11 +144,9 @@ export async function callSeedanceV2API(
 
     progress.updateBar(requestId, 95, "Success", "Video generation completed");
 
-    // Bill on the actual output length Replicate reports. Falls back to
-    // requested duration if the metric is missing; for intelligent mode (-1),
-    // the actual length is the only valid source.
-    const billedDuration =
-        actualDurationSeconds ?? (duration === -1 ? 5 : duration);
+    // Bill on the actual output length Replicate reports; fall back to the
+    // requested duration if the metric is missing.
+    const billedDuration = actualDurationSeconds ?? duration;
 
     return {
         buffer,

@@ -111,11 +111,6 @@ jobs:
       - uses: actions/checkout@v4
         if: steps.resolve.outputs.payouts != '' && steps.resolve.outputs.payouts != '[]'
 
-      - uses: actions/setup-node@v4
-        if: steps.resolve.outputs.payouts != '' && steps.resolve.outputs.payouts != '[]'
-        with:
-          node-version: '20'
-
       - name: Grant Pollen via D1
         if: steps.resolve.outputs.payouts != '' && steps.resolve.outputs.payouts != '[]'
         id: grant
@@ -125,7 +120,6 @@ jobs:
           PAYOUTS: ${{ steps.resolve.outputs.payouts }}
         run: |
           set -e
-          npm install -g wrangler
           cd enter.pollinations.ai
           npm install
 

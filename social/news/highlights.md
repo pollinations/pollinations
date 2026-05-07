@@ -1,3 +1,5 @@
+- **2026-05-06** – **🔑 BYOP Attribution** Bring-your-own-keys tracking is now persistent. Your app actually gets credit for the generations it drives, which is helpful if you like accurate stats. [Check your dashboard](https://enter.pollinations.ai).
+- **2026-05-06** – **🌸 Showcase Pruning** We swept through the [community showcase](https://hello.pollinations.ai) to remove dead links and fix ownership credits. The garden is slightly more organized now.
 - **2026-05-05** – **🧰 Worl Tools** An offline-first desktop app packing over 20 utilities into one Swiss army knife. [Try it](https://worldtools-mu.vercel.app/) <!-- app -->
 - **2026-05-05** – **🔨 App Forge** A new community-built hub for discovering and exploring applications in the greenhouse. [Try it](http://torrents.signalcity.tv) <!-- app -->
 - **2026-05-05** – **⚓ Pyanchor** Live-edit your Next.js, Vite, and Astro apps straight from the browser with this open-source AI sidecar. [Try it](https://pyanchor.pyan.kr) <!-- app -->

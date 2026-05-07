@@ -128,7 +128,7 @@ curl -sS -X POST "https://api.replicate.com/v1/models/bytedance/seedance-2.0.0/p
 > - `POST /v1/predictions` — community models OR pinned version (requires `version` hash in body)
 >
 > Sending `model` as a body field to `/v1/predictions` returns HTTP 422 (`version is required`).
-> Seedance 2.0 requires `duration` in `[4, 15]` or `-1` (intelligent duration).
+> Seedance 2.0 requires `duration` in `[4, 15]`.
 
 End-to-end via Pollinations:
 

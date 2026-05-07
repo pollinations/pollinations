@@ -50,7 +50,7 @@ jobs:
             const body = [
                 `Hi @${actor} — thanks for the contribution!`,
                 ``,
-                `The **Community Quest** template is reserved for Pollinations maintainers, since quests carry a Pollen reward paid on PR merge. I've removed the **POLLEN-QUEST** label, but your issue stays open as a regular request.`,
+                `The **Community Quest** template is reserved for Pollinations maintainers, since quests carry a Pollen reward paid on PR merge. I've removed the **POLLEN-QUEST** label and closed this issue.`,
                 ``,
                 `If you'd like to **propose** a quest, please open a blank issue describing the work and tag any of the [Pollinations org members](https://github.com/orgs/pollinations/people) — a maintainer can review and convert it into an official quest if it's a good fit.`,
                 ``,
@@ -62,4 +62,12 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: issue.number,
                 body,
+            });
+
+            await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'not_planned',
             });

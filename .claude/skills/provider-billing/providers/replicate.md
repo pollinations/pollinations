@@ -85,6 +85,20 @@ Pollinations v1 only exposes the `non_video_in` tier at 720p ($0.18/sec cost,
 $0.27/sec price = 1.5×). The handler rejects non-720p with HTTP 400 and never
 sets `reference_videos`, so V2V can't be triggered.
 
+The seedance-2 handler maps `safeParams.image` (existing pipe/comma-separated
+array param) into one of three Replicate input modes:
+
+- **0 images** → T2V (text only)
+- **1 image, no `last_frame_image`** → I2V first frame
+- **1 image + `last_frame_image`** → first + last frame interpolation
+- **2-9 images** (no `last_frame_image`) → `reference_images` mode (character
+  consistency / style guidance — model conditions on visuals, prompt with
+  `[Image1]`, `[Image2]`, etc.)
+- **2+ images + `last_frame_image`** → HTTP 400 (Replicate disallows mixing)
+
+This mirrors the multi-image pattern already used by `flux-klein`, `qwen-image`,
+and `seedream` — users just pipe-separate URLs in `?image=`.
+
 Each completed prediction's `metrics` object includes `model_variant`,
 `resolution_target`, and `video_output_duration_seconds` — useful for
 reconciling Replicate's billing if a discrepancy ever shows up.

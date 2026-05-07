@@ -44,6 +44,8 @@ type SeedanceAspectRatio =
     | "9:21"
     | "adaptive";
 
+const MAX_REFERENCE_IMAGES = 9;
+
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
@@ -53,6 +55,7 @@ interface SeedanceV2Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    reference_images?: string[];
 }
 
 export async function callSeedanceV2API(
@@ -96,15 +99,23 @@ export async function callSeedanceV2API(
             ? -1
             : Math.max(4, Math.min(15, Math.floor(requestedDuration)));
     const generateAudio = safeParams.audio;
-    const firstImage =
-        safeParams.image && safeParams.image.length > 0
-            ? safeParams.image[0]
-            : undefined;
+    const images = safeParams.image ?? [];
     const lastFrameImage = safeParams.last_frame_image;
 
-    if (lastFrameImage && !firstImage) {
+    // Three mutually-exclusive modes (Replicate enforces this; we mirror it):
+    //   1. T2V                 — no image, no last_frame_image
+    //   2. Frame mode          — 1 image (first frame), optional last_frame_image
+    //   3. Reference mode      — 2+ images used as reference_images (max 9)
+    // last_frame_image cannot combine with reference_images.
+    if (lastFrameImage && images.length === 0) {
         throw new HttpError(
             "last_frame_image requires image (first frame) to also be provided",
+            400,
+        );
+    }
+    if (lastFrameImage && images.length > 1) {
+        throw new HttpError(
+            "last_frame_image (frame mode) cannot combine with multiple images (reference mode). Pass exactly one image alongside last_frame_image, or omit last_frame_image to use multiple reference images.",
             400,
         );
     }
@@ -119,14 +130,24 @@ export async function callSeedanceV2API(
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         input.seed = safeParams.seed;
     }
-    if (firstImage) input.image = firstImage;
-    if (lastFrameImage) input.last_frame_image = lastFrameImage;
+
+    if (images.length === 1) {
+        // Frame mode (single first frame, optional last frame)
+        input.image = images[0];
+        if (lastFrameImage) input.last_frame_image = lastFrameImage;
+    } else if (images.length > 1) {
+        // Reference mode (character consistency / style guidance, 2-9 images)
+        input.reference_images = images.slice(0, MAX_REFERENCE_IMAGES);
+    }
 
     logOps("Seedance 2.0 input:", {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
+        reference_images: input.reference_images
+            ? `[${input.reference_images.length} url(s)]`
+            : undefined,
     });
 
     progress.updateBar(

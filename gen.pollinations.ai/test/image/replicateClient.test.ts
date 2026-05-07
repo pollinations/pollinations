@@ -218,8 +218,11 @@ describe("runReplicatePrediction", () => {
             model: MODEL,
             input: { prompt: "x" },
         });
+        const assertion = expect(promise).rejects.toThrowError(
+            ReplicateRateLimitError,
+        );
         await vi.advanceTimersByTimeAsync(10_000);
-        await expect(promise).rejects.toThrowError(ReplicateRateLimitError);
+        await assertion;
     });
 
     it("throws ReplicateTimeoutError when polling exceeds timeoutMs", async () => {
@@ -241,7 +244,10 @@ describe("runReplicatePrediction", () => {
             pollIntervalMs: 50,
             timeoutMs: 200,
         });
+        const assertion = expect(promise).rejects.toThrowError(
+            ReplicateTimeoutError,
+        );
         await vi.advanceTimersByTimeAsync(500);
-        await expect(promise).rejects.toThrowError(ReplicateTimeoutError);
+        await assertion;
     });
 });

@@ -98,15 +98,11 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                         </div>
                         <div className="space-y-1 text-xs text-gray-500">
                             <div>
-                                1. Tier grants (refilled hourly) are used first
+                                1. Regular models use tier balance when it
+                                covers the full request, otherwise paid balance
                             </div>
-                            <div>
-                                2. Purchased pollen is used after tier grants
-                                are depleted
-                            </div>
-                            <div className="text-purple-700 mt-2">
-                                ⚠️ <strong>Exception:</strong> 🪷 Paid Only
-                                models require purchased pollen only
+                            <div className="text-purple-700">
+                                2. 🪷 Paid-only models use paid balance only
                             </div>
                         </div>
                     </Card>

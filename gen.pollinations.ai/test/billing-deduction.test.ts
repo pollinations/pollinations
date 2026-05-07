@@ -1,11 +1,11 @@
 import { env } from "cloudflare:test";
 import {
-    atomicDeductPaidBalance,
     atomicDeductUserBalance,
     getUserBalances,
-    identifyDeductionSource,
 } from "@shared/billing/deduction.ts";
+import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 
@@ -33,26 +33,7 @@ async function createUser({
 }
 
 describe("billing deduction", () => {
-    it("identifies the single bucket a regular generation charge will use", () => {
-        expect(identifyDeductionSource(5, 5, 7)).toEqual({
-            fromTier: 7,
-            fromPack: 0,
-        });
-        expect(identifyDeductionSource(0, 8, 5)).toEqual({
-            fromTier: 0,
-            fromPack: 5,
-        });
-        expect(identifyDeductionSource(-3, 0, 4)).toEqual({
-            fromTier: 4,
-            fromPack: 0,
-        });
-        expect(identifyDeductionSource(-3, 2, 4)).toEqual({
-            fromTier: 0,
-            fromPack: 4,
-        });
-    });
-
-    it("deducts regular generation charges from tier before paid pack balance", async () => {
+    it("deducts regular generation charges from tier, then positive pack, with empty-pack overage on tier", async () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 
         await atomicDeductUserBalance(db, userId, 3);
@@ -63,18 +44,18 @@ describe("billing deduction", () => {
 
         await atomicDeductUserBalance(db, userId, 4);
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: -2,
-            packBalance: 10,
+            tierBalance: 2,
+            packBalance: 6,
         });
 
-        await atomicDeductUserBalance(db, userId, 5);
+        await atomicDeductUserBalance(db, userId, 10);
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: -2,
-            packBalance: 5,
+            tierBalance: 2,
+            packBalance: -4,
         });
     });
 
-    it("keeps paid pack balance untouched when the user has no positive pack balance", async () => {
+    it("uses tier debt when neither bucket covers a regular charge", async () => {
         const userId = await createUser({ tierBalance: 0, packBalance: 0 });
 
         await atomicDeductUserBalance(db, userId, 3);
@@ -86,15 +67,18 @@ describe("billing deduction", () => {
     });
 
     it("deducts paid-only generation charges only from paid pack balance", async () => {
-        const userId = await createUser({ tierBalance: 10, packBalance: 5 });
+        const userId = await createUser({
+            tierBalance: 10,
+            packBalance: 5,
+        });
 
-        await atomicDeductPaidBalance(db, userId, 2);
+        await atomicDeductUserBalance(db, userId, 2, true);
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: 10,
             packBalance: 3,
         });
 
-        await atomicDeductPaidBalance(db, userId, 4);
+        await atomicDeductUserBalance(db, userId, 4, true);
         expect(await getUserBalances(db, userId)).toEqual({
             tierBalance: 10,
             packBalance: -1,
@@ -105,12 +89,46 @@ describe("billing deduction", () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 
         await atomicDeductUserBalance(db, userId, 3);
-        await atomicDeductPaidBalance(db, userId, 4);
+        await atomicDeductUserBalance(db, userId, 4, true);
         await atomicDeductUserBalance(db, userId, 6);
 
         expect(await getUserBalances(db, userId)).toEqual({
-            tierBalance: -4,
-            packBalance: 6,
+            tierBalance: 2,
+            packBalance: 0,
         });
+    });
+
+    it("deducts an Azure paid-only model only from pack balance", async () => {
+        const modelResolved = "gpt-5.5";
+        const model = getModelDefinition(modelResolved);
+        expect(model.provider).toBe("azure");
+        expect(model.paidOnly).toBe(true);
+
+        const userId = await createUser({
+            tierBalance: 0.01,
+            packBalance: 0.01,
+        });
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 0.01,
+            userId,
+            modelResolved,
+        });
+        let balance = await getUserBalances(db, userId);
+        expect(balance.tierBalance).toBeCloseTo(0.01, 10);
+        expect(balance.packBalance).toBeCloseTo(0, 10);
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 0.01,
+            userId,
+            modelResolved,
+        });
+        balance = await getUserBalances(db, userId);
+        expect(balance.tierBalance).toBeCloseTo(0.01, 10);
+        expect(balance.packBalance).toBeCloseTo(-0.01, 10);
     });
 });

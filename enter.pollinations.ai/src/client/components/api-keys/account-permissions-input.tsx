@@ -79,7 +79,7 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
     allowedModels,
     onModelsChange,
     visiblePermissions,
-    theme = "green",
+    theme = "blue",
     showApiName = true,
     modelsInitiallyExpanded = false,
 }) => {
@@ -333,7 +333,7 @@ const ModelCategory: FC<{
     toggleCategory,
     isCategoryAllSelected,
     showApiName = true,
-    theme = "green",
+    theme = "blue",
 }) => (
     <div>
         <div className="flex items-center justify-between mb-1">

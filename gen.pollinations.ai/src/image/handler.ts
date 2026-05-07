@@ -57,6 +57,7 @@ const IMAGE_ENV_KEYS = [
     "OPENAI_API_KEY",
     "PLN_GPU_TOKEN",
     "PRUNA_API_KEY",
+    "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 
@@ -166,12 +167,22 @@ function mediaHeaders(
     return headers;
 }
 
+function safeUpstreamUrl(value: string | undefined): URL | undefined {
+    if (!value) return undefined;
+    try {
+        return new URL(value);
+    } catch {
+        return undefined;
+    }
+}
+
 function throwImageError(error: unknown, c: ImageContext): never {
     if (error instanceof UpstreamError) throw error;
     if (error instanceof HttpError) {
         throw new UpstreamError(error.status as ContentfulStatusCode, {
             message: error.message,
-            requestUrl: new URL(c.req.url),
+            requestUrl:
+                safeUpstreamUrl(error.upstreamUrl) ?? new URL(c.req.url),
             upstreamStatus: error.status,
             responseBody: JSON.stringify(error.details || {}),
             cause: error,

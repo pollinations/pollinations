@@ -58,6 +58,7 @@ const IMAGE_ENV_KEYS = [
     "OPENAI_API_KEY",
     "PLN_GPU_TOKEN",
     "PRUNA_API_KEY",
+    "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 

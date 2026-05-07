@@ -17,7 +17,8 @@ const log = debug("pollinations:video:resolution");
 export interface VideoResolutionInput {
     width?: number;
     height?: number;
-    aspectRatio?: "16:9" | "9:16";
+    // Helper outputs only "16:9" or "9:16"; anything else narrows to "16:9".
+    aspectRatio?: string;
     defaultResolution?: "480P" | "720P" | "1080P";
 }
 
@@ -85,8 +86,10 @@ export function calculateVideoResolution(
         return { aspectRatio, resolution };
     }
 
-    // Case 2: Only aspect ratio provided - use defaults
-    const aspectRatio = input.aspectRatio || "16:9";
+    // Case 2: Only aspect ratio provided - narrow to the two values legacy
+    // video models support
+    const aspectRatio: "16:9" | "9:16" =
+        input.aspectRatio === "9:16" ? "9:16" : "16:9";
 
     log(`Using aspect ratio preset: ${aspectRatio} @ ${defaultRes} (default)`);
 

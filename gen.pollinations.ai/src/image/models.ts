@@ -126,6 +126,16 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
+    // ByteDance Seedance 2.0 via Replicate - Multimodal video gen with native audio
+    "seedance-2.0": {
+        type: "replicate-seedance-2",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 15,
+        defaultResolution: "720p",
+    },
+
     // Alibaba Wan 2.6 - Video generation with audio
     wan: {
         type: "alibaba-dashscope-video",

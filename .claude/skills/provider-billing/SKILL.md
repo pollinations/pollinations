@@ -36,6 +36,7 @@ The goal is simple: **never re-derive a billing API shape twice.** Every time we
 | Fireworks AI | [providers/fireworks.md](providers/fireworks.md) | ✅ Production — `firectl account get` for live balance, `billing export-metrics` for per-model CSV. $10k credit pool on `pollinations` account. | 2026-04-12 |
 | DeepInfra | [providers/deepinfra.md](providers/deepinfra.md) | ✅ Production — OpenAI-compatible runtime + REST token management. Billing usage endpoints expose cents by month/token. | 2026-04-24 |
 | OpenRouter | [providers/openrouter.md](providers/openrouter.md) | ✅ Production candidate — `/credits` exposes total credits/usage; key management API supports rolling rotation. | 2026-05-06 |
+| Replicate | [providers/replicate.md](providers/replicate.md) | ✅ Production candidate — single token, no public credit/balance API, no token CRUD API (UI-only). Pay-as-you-go via Wise. Per-second video pricing tiered by resolution + audio. | 2026-05-07 |
 | Cloudflare | `providers/cloudflare.md` | ⏳ TODO | — |
 | Tinybird | `providers/tinybird.md` | ⏳ TODO (see also `tinybird-deploy` skill for deploys) | — |
 | Vercel | `providers/vercel.md` | ⏳ TODO | — |

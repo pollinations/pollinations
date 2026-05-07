@@ -183,7 +183,9 @@ async function postPrediction<TOutput>({
     const url = usePinnedVersion
         ? `${API_BASE}/predictions`
         : `${API_BASE}/models/${model}/predictions`;
-    const payload = usePinnedVersion ? { ...body, version: body.version } : body;
+    const payload = usePinnedVersion
+        ? { ...body, version: body.version }
+        : body;
     let lastError: unknown;
     for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
         const response = await fetch(url, {

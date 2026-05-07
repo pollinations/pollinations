@@ -21,7 +21,9 @@ const ImageUrlContentPartSchema = z.object({
 const AudioContentPartSchema = z.object({
     type: z.literal("input_audio"),
     input_audio: z.object({
-        data: z.string().meta({ description: "Base64-encoded audio data" }),
+        data: z
+            .string()
+            .meta({ description: "Base64-encoded audio data. Max 180s." }),
         format: z.string().meta({
             description: "Audio format (e.g. mp3, wav)",
             example: "mp3",
@@ -34,7 +36,7 @@ const VideoUrlContentPartSchema = z.object({
     video_url: z.object({
         url: z.string().meta({
             description:
-                "Video URL or base64 data URI. Supports mp4 and mpeg. Max 80s with audio, 120s without.",
+                "Video URL or base64 data URI. Supports mp4 and mpeg. Max 120s.",
             example: "https://example.com/video.mp4",
         }),
         mime_type: z.string().optional().meta({
@@ -70,8 +72,9 @@ export const CreateEmbeddingRequestSchema = z
                     "Input text or content parts to embed. Supports strings, arrays of strings, or multimodal content parts (text, image_url, input_audio, video_url).",
                 example: "Hello world",
             }),
-        dimensions: z.number().int().min(1).max(3072).optional().meta({
-            description: "Output embedding dimensions (1-3072). Default: 3072.",
+        dimensions: z.number().int().min(128).max(3072).optional().meta({
+            description:
+                "Output embedding dimensions (128-3072). Default: 3072.",
             example: 768,
         }),
         task_type: z

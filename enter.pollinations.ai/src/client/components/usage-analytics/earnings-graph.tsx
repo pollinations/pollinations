@@ -16,18 +16,7 @@ type EarningsGraphProps = {
     action?: ReactNode;
 };
 
-const PAID_BAR_COLOR_BY_THEME: Record<
-    DashboardTheme,
-    { base: string; hover: string }
-> = {
-    amber: { base: "#fde68a", hover: "#fcd34d" },
-    blue: { base: "#bfdbfe", hover: "#93c5fd" },
-    gray: { base: "#e5e7eb", hover: "#d1d5db" },
-    green: { base: "#bbf7d0", hover: "#86efac" },
-    pink: { base: "#fbcfe8", hover: "#f9a8d4" },
-    teal: { base: "#99f6e4", hover: "#5eead4" },
-    violet: { base: "#ddd6fe", hover: "#c4b5fd" },
-};
+const PAID_BAR_COLOR = { base: "#fbcfe8", hover: "#f9a8d4" } as const;
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({
     period,
@@ -100,7 +89,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             data={chartData}
                             metric="pollen"
                             showModelBreakdown={showAppBreakdown}
-                            paidBarColor={PAID_BAR_COLOR_BY_THEME[theme]}
+                            paidBarColor={PAID_BAR_COLOR}
                         />
                     )}
                 </div>

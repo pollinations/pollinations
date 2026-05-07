@@ -347,17 +347,19 @@ function RouteComponent() {
                             />
                         }
                     />
-                    <EarningsGraph
-                        period={activityPeriod}
-                        apps={publishableApps}
-                        theme={dashboardThemeByPage.usage}
-                        action={
-                            <DownloadCsvButton
-                                theme={dashboardThemeByPage.usage}
-                                onClick={downloadEarnings}
-                            />
-                        }
-                    />
+                    {publishableApps.length > 0 && (
+                        <EarningsGraph
+                            period={activityPeriod}
+                            apps={publishableApps}
+                            theme={dashboardThemeByPage.usage}
+                            action={
+                                <DownloadCsvButton
+                                    theme={dashboardThemeByPage.usage}
+                                    onClick={downloadEarnings}
+                                />
+                            }
+                        />
+                    )}
                 </div>
             )}
             {activePage === "keys" && (

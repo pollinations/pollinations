@@ -523,7 +523,7 @@ function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
 type DeveloperEarningsRow = {
     date: string;
     app_key_id: string;
-    app_name: string | null;
+    app_name: string;
     requests: number;
     pollen_earned: number;
     markup_rate: number;
@@ -539,7 +539,7 @@ const developerEarningsRowSchema = z.object({
     app_key_id: z
         .string()
         .describe("BYOP app key id; empty string on the global rollup row"),
-    app_name: z.string().nullable().describe("App display name"),
+    app_name: z.string().describe("App display name"),
     requests: z.number().describe("Number of billed requests"),
     pollen_earned: z.number().describe("Pollen earned (markup take)"),
     markup_rate: z.number().describe("Average markup rate applied"),
@@ -985,18 +985,12 @@ export const accountRoutes = new Hono<Env>()
             const windows = buildUsageWindows(days, { granularity, period });
 
             try {
-                let usage: DailyUsageRecord[] | null = null;
-                let cached = false;
-
-                try {
-                    const cachedData = await kv.get(cacheKey, "json");
-                    if (cachedData) {
-                        usage = cachedData as DailyUsageRecord[];
-                        cached = true;
-                    }
-                } catch (err) {
-                    log.trace("KV get error: {err}", { err });
-                }
+                const cachedData = await kv.get<DailyUsageRecord[]>(
+                    cacheKey,
+                    "json",
+                );
+                let usage = cachedData;
+                const cached = usage !== null;
 
                 if (!usage) {
                     const chunkResults = await Promise.all(
@@ -1020,13 +1014,9 @@ export const accountRoutes = new Hono<Env>()
                     );
                     usage = sortDailyUsageRecords(chunkResults.flat());
 
-                    try {
-                        await kv.put(cacheKey, JSON.stringify(usage), {
-                            expirationTtl: CACHE_TTL,
-                        });
-                    } catch (err) {
-                        log.trace("KV put error: {err}", { err });
-                    }
+                    await kv.put(cacheKey, JSON.stringify(usage), {
+                        expirationTtl: CACHE_TTL,
+                    });
                 }
 
                 log.debug(
@@ -1133,18 +1123,12 @@ export const accountRoutes = new Hono<Env>()
             };
 
             try {
-                let payload: EarningsPayload | null = null;
-                let cached = false;
-
-                try {
-                    const cachedData = await kv.get(cacheKey, "json");
-                    if (cachedData) {
-                        payload = cachedData as EarningsPayload;
-                        cached = true;
-                    }
-                } catch (err) {
-                    log.trace("KV get error: {err}", { err });
-                }
+                const cachedData = await kv.get<EarningsPayload>(
+                    cacheKey,
+                    "json",
+                );
+                let payload = cachedData;
+                const cached = payload !== null;
 
                 if (!payload) {
                     const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
@@ -1167,13 +1151,9 @@ export const accountRoutes = new Hono<Env>()
                         rollups.find((r) => r.app_key_id === "") ?? null;
                     payload = { daily, perApp, global };
 
-                    try {
-                        await kv.put(cacheKey, JSON.stringify(payload), {
-                            expirationTtl: CACHE_TTL,
-                        });
-                    } catch (err) {
-                        log.trace("KV put error: {err}", { err });
-                    }
+                    await kv.put(cacheKey, JSON.stringify(payload), {
+                        expirationTtl: CACHE_TTL,
+                    });
                 }
 
                 log.debug(

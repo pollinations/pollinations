@@ -5,7 +5,7 @@ import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
 export type DeveloperEarningsRow = {
     date: string;
     app_key_id: string;
-    app_name: string | null;
+    app_name: string;
     requests: number;
     pollen_earned: number;
     markup_rate: number;
@@ -26,7 +26,6 @@ type TopApp = {
 };
 
 type EarningsDataResult = {
-    dailyEarnings: DeveloperEarningsRow[];
     loading: boolean;
     error: string | null;
     fetchEarnings: () => void;
@@ -84,9 +83,9 @@ export function useEarningsData(
             })
             .then((data) => {
                 if (controller.signal.aborted) return;
-                setDailyEarnings(data?.daily || []);
-                setPerApp(data?.perApp || []);
-                setGlobalSummary(data?.global || null);
+                setDailyEarnings(data.daily);
+                setPerApp(data.perApp);
+                setGlobalSummary(data.global);
             })
             .catch((err) => {
                 if (controller.signal.aborted) return;
@@ -149,16 +148,16 @@ export function useEarningsData(
                 pollen: 0,
                 byApp: new Map(),
             };
-            cur.requests += r.requests || 0;
-            cur.pollen += r.pollen_earned || 0;
+            cur.requests += r.requests;
+            cur.pollen += r.pollen_earned;
 
             const appData = cur.byApp.get(r.app_key_id) || {
-                label: r.app_name || r.app_key_id,
+                label: r.app_name,
                 requests: 0,
                 pollen: 0,
             };
-            appData.requests += r.requests || 0;
-            appData.pollen += r.pollen_earned || 0;
+            appData.requests += r.requests;
+            appData.pollen += r.pollen_earned;
             cur.byApp.set(r.app_key_id, appData);
             buckets.set(dateKey, cur);
         }
@@ -235,17 +234,17 @@ export function useEarningsData(
 
         const totalPollen = useGlobal
             ? globalSummary.pollen_earned
-            : visiblePerApp.reduce((s, r) => s + (r.pollen_earned || 0), 0);
+            : visiblePerApp.reduce((s, r) => s + r.pollen_earned, 0);
         const averageMarkupRate = useGlobal
             ? globalSummary.markup_rate
             : (() => {
                   const totalReq = visiblePerApp.reduce(
-                      (s, r) => s + (r.requests || 0),
+                      (s, r) => s + r.requests,
                       0,
                   );
                   if (totalReq === 0) return 0;
                   const weighted = visiblePerApp.reduce(
-                      (s, r) => s + (r.markup_rate || 0) * (r.requests || 0),
+                      (s, r) => s + r.markup_rate * r.requests,
                       0,
                   );
                   return weighted / totalReq;
@@ -267,7 +266,7 @@ export function useEarningsData(
         const topApp: TopApp | null = topAppRow
             ? {
                   id: topAppRow.app_key_id,
-                  label: topAppRow.app_name || topAppRow.app_key_id,
+                  label: topAppRow.app_name,
                   requests: topAppRow.requests,
                   pollen: topAppRow.pollen_earned,
                   uniqueUsers: topAppRow.unique_users,
@@ -284,7 +283,6 @@ export function useEarningsData(
     }, [perApp, globalSummary, filters.selectedAppKeyIds]);
 
     return {
-        dailyEarnings,
         loading,
         error,
         fetchEarnings,

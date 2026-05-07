@@ -1,0 +1,34 @@
+{
+  "pr_number": 10739,
+  "title": "feat: add replicate provider + seedance 2.0 video model",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10739",
+  "merged_at": "2026-05-07T18:07:08Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seedance 2.0 joins the hive",
+    "blurb": "We've wired up Replicate as a new provider, bringing ByteDance's Seedance 2.0 video model to the API. Whether you're turning text into motion or interpolating between frames, your video generation just got a major upgrade.",
+    "summary": "Integrated Replicate as a new provider and added the Seedance 2.0 video model with support for text-to-video, image-to-video, and frame interpolation.",
+    "impact": "Developers can now generate high-quality 720p videos using the Seedance 2.0 model directly through the API.",
+    "keywords": [
+      "video",
+      "replicate",
+      "seedance",
+      "api",
+      "models"
+    ],
+    "visual_concept": "Polly the bee acting as a film director, filming a dancing pixel flower with a retro camera, while the Monitor Robot displays the video output. Represents the new video model (Seedance) and the addition of a new provider.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, filming a dancing pixel flower with a retro camera. The chunky monitor robot stands nearby, its screen glowing lime green (#ecf874) displaying the video playback. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-07/PR-10739.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's beret, filming a dancing pixel flower with a retro camera. The chunky monitor robot stands nearby, its screen glowing lime green (#ecf874) displaying the video playback. Soft pastel lavender and cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-07T18:09:03.525533+00:00"
+}

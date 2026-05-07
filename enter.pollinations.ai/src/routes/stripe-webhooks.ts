@@ -168,6 +168,32 @@ const handleCheckoutSessionCompleted = async (
         return { success: false, message: "Invalid payment amount" };
     }
 
+    // Defense in depth for sessions created after consentVersion was added:
+    // Stripe should enforce the required checkbox before payment completes.
+    // Older in-flight sessions did not have this metadata, so keep crediting
+    // them after payment instead of charging a user without provisioning.
+    const requiresConsentAcceptance = metadata.consentVersion !== undefined;
+    if (
+        requiresConsentAcceptance &&
+        session.consent?.terms_of_service !== "accepted"
+    ) {
+        console.error(
+            `Stripe checkout missing consent acceptance: session=${session.id} consent=${session.consent?.terms_of_service ?? "null"}`,
+        );
+        return {
+            success: false,
+            message: "Checkout completed without required consent acceptance",
+        };
+    }
+    if (
+        !requiresConsentAcceptance &&
+        session.consent?.terms_of_service !== "accepted"
+    ) {
+        console.warn(
+            `Stripe checkout session has no consentVersion; treating as legacy session: session=${session.id}`,
+        );
+    }
+
     if (!pack && metadata.packAmount) {
         console.error("Missing or invalid packAmount in checkout session:", {
             sessionId: session.id,

@@ -6,6 +6,10 @@ import {
     POLLEN_PACKS,
 } from "@/pollen-packs.ts";
 import { createAuth } from "../auth.ts";
+import {
+    ONE_TIME_CONSENT_MESSAGE,
+    ONE_TIME_CONSENT_VERSION,
+} from "../checkout-consent.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 
@@ -87,6 +91,18 @@ export const stripeRoutes = new Hono<Env>()
                 // Always create customer for invoicing
                 customer_creation: "always",
                 customer_email: userEmail,
+                // Required terms-of-service checkbox carries the immediate-
+                // delivery waiver: EU/EEA consumers expressly request immediate
+                // provisioning and acknowledge loss of the 14-day withdrawal
+                // right once Pollen is credited.
+                consent_collection: {
+                    terms_of_service: "required",
+                },
+                custom_text: {
+                    terms_of_service_acceptance: {
+                        message: ONE_TIME_CONSENT_MESSAGE,
+                    },
+                },
                 // Invoice creation after payment
                 invoice_creation: {
                     enabled: true,
@@ -97,10 +113,12 @@ export const stripeRoutes = new Hono<Env>()
                     },
                 },
                 // Metadata links the completed checkout back to the shared pack
-                // definition used by the webhook.
+                // definition used by the webhook. consentVersion pins the
+                // session to the exact consent text the user saw.
                 metadata: {
                     userId,
                     packAmount: String(pack.amountUsd),
+                    consentVersion: ONE_TIME_CONSENT_VERSION,
                 },
                 success_url: `${successUrl}?stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${cancelUrl}?stripe_canceled=true`,

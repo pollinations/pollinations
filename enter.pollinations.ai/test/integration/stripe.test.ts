@@ -4,6 +4,10 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import {
+    ONE_TIME_CONSENT_MESSAGE,
+    ONE_TIME_CONSENT_VERSION,
+} from "../../src/checkout-consent.ts";
 import { test } from "../fixtures.ts";
 
 const base = "http://localhost:3000/api/stripe";
@@ -208,4 +212,98 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount only 
         WHERE session_id = 'cs_test_legacy_checkout'`,
     ).first<{ count: number }>();
     expect(processedEvent?.count).toBe(1);
+});
+
+test("POST /api/webhooks/stripe rejects checkout sessions missing consent acceptance", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id, packBalance: userTable.packBalance })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) {
+        throw new Error("Expected seeded test user");
+    }
+
+    await db
+        .update(userTable)
+        .set({ packBalance: 0 })
+        .where(eq(userTable.id, user.id));
+
+    const checkoutEvent = {
+        id: "evt_test_no_consent",
+        type: "checkout.session.completed",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_no_consent",
+                object: "checkout.session",
+                metadata: {
+                    userId: user.id,
+                    consentVersion: ONE_TIME_CONSENT_VERSION,
+                },
+                payment_status: "paid",
+                amount_subtotal: 500,
+                amount_total: 500,
+                currency: "usd",
+                customer_email: "no-consent@example.com",
+                payment_method_types: ["card"],
+                // consent intentionally omitted — webhook must refuse to credit
+            },
+        },
+    };
+
+    const payload = JSON.stringify(checkoutEvent);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/webhooks/stripe",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "stripe-signature": signStripePayload(payload),
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: payload,
+        },
+    );
+
+    // Webhook always 200s to ack receipt, but credit must be skipped
+    expect(response.status).toBe(200);
+
+    const [updatedUser] = await db
+        .select({ packBalance: userTable.packBalance })
+        .from(userTable)
+        .where(eq(userTable.id, user.id))
+        .limit(1);
+    expect(updatedUser?.packBalance).toBe(0);
+
+    const processedEvent = await env.DB.prepare(
+        `SELECT COUNT(*) AS count
+        FROM stripe_checkout_credits
+        WHERE session_id = 'cs_test_no_consent'`,
+    ).first<{ count: number }>();
+    expect(processedEvent?.count).toBe(0);
+});
+
+test("checkout consent constants are present and well-formed", () => {
+    expect(ONE_TIME_CONSENT_VERSION).toMatch(/^v\d+-\d{4}-\d{2}-\d{2}$/);
+    expect(ONE_TIME_CONSENT_MESSAGE).toContain(
+        "[Terms of Service](https://pollinations.ai/terms)",
+    );
+    expect(ONE_TIME_CONSENT_MESSAGE).toContain(
+        "[Privacy Policy](https://pollinations.ai/privacy)",
+    );
+    expect(ONE_TIME_CONSENT_MESSAGE).toContain(
+        "[Refunds & Cancellations Policy](https://pollinations.ai/refunds)",
+    );
+    expect(ONE_TIME_CONSENT_MESSAGE).toContain("14-day right of withdrawal");
+    // Stripe custom_text fields are limited to 1200 chars
+    expect(ONE_TIME_CONSENT_MESSAGE.length).toBeLessThanOrEqual(1200);
 });

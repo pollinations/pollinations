@@ -88,7 +88,7 @@ SQL >
         '' AS app_name,
         count() AS requests,
         sum(earned) AS pollen_earned,
-        avg(markup_rate) AS markup_rate,
+        if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
         uniq(user_id) AS unique_users
     FROM dev_events
 

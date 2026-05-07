@@ -29,14 +29,11 @@ type EarningsDataResult = {
     loading: boolean;
     error: string | null;
     fetchEarnings: () => void;
-    usedApps: { id: string; label: string }[];
     chartData: DataPoint[];
     stats: {
         totalPollen: number;
         averageMarkupRate: number;
-        // null when a multi-app subset is selected — distinct user counts
-        // can't be aggregated client-side without overcount.
-        activeUsers: number | null;
+        activeUsers: number;
         appCount: number;
         topApp: TopApp | null;
     };
@@ -55,6 +52,8 @@ export function useEarningsData(
     const [error, setError] = useState<string | null>(null);
     const inFlightRef = useRef<AbortController | null>(null);
 
+    const selectedAppKeyIdsKey = filters.selectedAppKeyIds.join(",");
+
     const fetchEarnings = useCallback(() => {
         inFlightRef.current?.abort();
         const controller = new AbortController();
@@ -69,6 +68,9 @@ export function useEarningsData(
             granularity: filters.period.granularity,
             period: filters.period.period,
         });
+        if (selectedAppKeyIdsKey) {
+            params.set("api_key_ids", selectedAppKeyIdsKey);
+        }
 
         fetch(`/api/account/earnings?${params.toString()}`, {
             signal: controller.signal,
@@ -102,7 +104,11 @@ export function useEarningsData(
                 if (controller.signal.aborted) return;
                 setLoading(false);
             });
-    }, [filters.period.granularity, filters.period.period]);
+    }, [
+        filters.period.granularity,
+        filters.period.period,
+        selectedAppKeyIdsKey,
+    ]);
 
     useEffect(() => {
         fetchEarnings();
@@ -111,29 +117,7 @@ export function useEarningsData(
         };
     }, [fetchEarnings]);
 
-    const usedApps = useMemo(() => {
-        const seen = new Map<string, string>();
-        for (const r of dailyEarnings) {
-            if (!r.app_key_id) continue;
-            if (!seen.has(r.app_key_id)) {
-                seen.set(r.app_key_id, r.app_name || r.app_key_id);
-            }
-        }
-        return Array.from(seen.entries())
-            .map(([id, label]) => ({ id, label }))
-            .sort((a, b) => a.label.localeCompare(b.label));
-    }, [dailyEarnings]);
-
     const chartData = useMemo<DataPoint[]>(() => {
-        const filtered = dailyEarnings.filter((r) => {
-            if (
-                filters.selectedAppKeyIds.length > 0 &&
-                !filters.selectedAppKeyIds.includes(r.app_key_id)
-            )
-                return false;
-            return true;
-        });
-
         type DayBucket = {
             requests: number;
             pollen: number;
@@ -144,7 +128,7 @@ export function useEarningsData(
         };
         const buckets = new Map<string, DayBucket>();
 
-        for (const r of filtered) {
+        for (const r of dailyEarnings) {
             const dateKey = r.date;
             const cur = buckets.get(dateKey) || {
                 requests: 0,
@@ -222,48 +206,15 @@ export function useEarningsData(
                 modelBreakdown: appBreakdown,
             };
         });
-    }, [dailyEarnings, filters.selectedAppKeyIds, filters.period]);
+    }, [dailyEarnings, filters.period]);
 
     const stats = useMemo(() => {
-        const visiblePerApp =
-            filters.selectedAppKeyIds.length > 0
-                ? perApp.filter((r) =>
-                      filters.selectedAppKeyIds.includes(r.app_key_id),
-                  )
-                : perApp;
+        const totalPollen = globalSummary?.pollen_earned ?? 0;
+        const averageMarkupRate = globalSummary?.markup_rate ?? 0;
+        const activeUsers = globalSummary?.unique_users ?? 0;
+        const appCount = perApp.length;
 
-        const useGlobal =
-            filters.selectedAppKeyIds.length === 0 && globalSummary != null;
-
-        const totalPollen = useGlobal
-            ? globalSummary.pollen_earned
-            : visiblePerApp.reduce((s, r) => s + r.pollen_earned, 0);
-        const averageMarkupRate = useGlobal
-            ? globalSummary.markup_rate
-            : (() => {
-                  const totalReq = visiblePerApp.reduce(
-                      (s, r) => s + r.requests,
-                      0,
-                  );
-                  if (totalReq === 0) return 0;
-                  const weighted = visiblePerApp.reduce(
-                      (s, r) => s + r.markup_rate * r.requests,
-                      0,
-                  );
-                  return weighted / totalReq;
-              })();
-        // Distinct payers only roll up correctly for a single app or
-        // across all apps (the global rollup row). For a 2+ app subset
-        // we'd need a server-side query — return null so the UI can
-        // render an em dash instead of a misleading zero.
-        const activeUsers: number | null = useGlobal
-            ? globalSummary.unique_users
-            : visiblePerApp.length === 1
-              ? visiblePerApp[0].unique_users
-              : null;
-        const appCount = visiblePerApp.length;
-
-        const topAppRow = [...visiblePerApp].sort(
+        const topAppRow = [...perApp].sort(
             (a, b) => b.pollen_earned - a.pollen_earned,
         )[0];
         const topApp: TopApp | null = topAppRow
@@ -283,13 +234,12 @@ export function useEarningsData(
             appCount,
             topApp,
         };
-    }, [perApp, globalSummary, filters.selectedAppKeyIds]);
+    }, [perApp, globalSummary]);
 
     return {
         loading,
         error,
         fetchEarnings,
-        usedApps,
         chartData,
         stats,
     };

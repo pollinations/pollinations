@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-05-06**
+**Updated: 2026-05-07**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -32,7 +32,7 @@ We may review refund requests for unused paid balance in these cases:
 - We fail to provision paid Pollen after payment.
 - A material, documented technical fault prevents any meaningful use within a reasonable start period, and you contact us promptly before substantial use.
 
-Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be revoked or adjusted. Developer earnings may also be reversed or adjusted for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
+Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be manually reviewed and reversed or adjusted after refund notification. Developer earnings may also be manually reviewed and reversed or adjusted for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
 ## 4) EU/EEA Consumer Withdrawal
 
@@ -41,7 +41,7 @@ If you purchase as a consumer in the EEA, you may have a 14-day right of withdra
 - expressly request immediate access, and
 - acknowledge that you lose the withdrawal right once performance begins.
 
-We present this consent at checkout where required and may store proof, including consent text/version, timestamp, order ID, user ID, account email, and IP address. If immediate-delivery consent is not given where required, immediate access may be unavailable or delayed, and you may be able to withdraw within the statutory period if no performance has begun.
+We present this consent at checkout as a required terms-of-service acknowledgement and may store proof of acceptance, including consent text/version, timestamp, order ID, user ID, and account email. Proof of checkout acceptance is held by our checkout provider (Stripe) and mirrored to our internal analytics datasource. If immediate-delivery consent is not given where required, immediate access may be unavailable or delayed, and you may be able to withdraw within the statutory period if no performance has begun.
 
 This policy does not limit any non-waivable statutory rights for non-conforming digital services.
 
@@ -51,11 +51,11 @@ If we introduce paid subscriptions, cancellation stops future renewals. It does 
 
 ## 6) Chargebacks
 
-If a chargeback or payment dispute is filed, we may suspend access while it is investigated and revoke or adjust Pollen, credits, benefits, and developer earnings tied to the disputed order.
+If a chargeback or payment dispute is filed, we may suspend access while it is investigated. Pollen, credits, benefits, and developer earnings tied to the disputed order may be manually reviewed and reversed or adjusted after dispute notification.
 
 ## 7) B2B Purchases
 
-If you provide a valid VAT ID or purchase for business use, consumer withdrawal rules generally do not apply.
+If you provide a valid VAT ID or purchase for business use, consumer withdrawal rules generally do not apply. We may request reasonable evidence to classify a purchase.
 
 ## 8) How to Request Review
 

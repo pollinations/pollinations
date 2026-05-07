@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Updated: 2026-05-06**
+**Updated: 2026-05-07**
 
 ## What Myceli.AI Is
 
@@ -47,7 +47,7 @@ We may make non-breaking changes and will notify you of material reductions wher
 - **Processing.** We process Customer Data to provide and secure the Service, prevent abuse, run billing/wallet features, attribute authorized app usage, and improve core functionality.
 - **Content storage.** Prompts/outputs are processed transiently/in-memory to deliver results and are not retained beyond what's necessary to run the Service, except configuration you choose to save and legally required logs, consent records, security records, app authorization records, and billing/wallet records.
 - **No training without opt-in.** We do not use prompts/outputs to train models without your permission.
-- **GDPR/DPA.** When we process personal data on your behalf, you are the controller and we are the processor. Our DPA and sub-processor list are linked at /terms#dpa-subprocessors.
+- **GDPR/DPA.** When we process personal data on your behalf, you are the controller and we are the processor. Our DPA and sub-processor categories are linked at /terms#15-dpa-and-sub-processors; the full named sub-processor list is available on request.
 
 ## 5) Acceptable Use & Safety
 
@@ -66,11 +66,11 @@ Fees are per plan/order/invoice; currency is by default USD.
 
 **Request billing.** Pollen is consumed when API requests run. Regular models use tier balance first when it can cover the request; otherwise paid balance may be used. Paid-only models use paid balance only. We may refuse a request when no allowed balance can cover the pre-flight estimate. Final usage can exceed estimates and make the selected balance negative. Tier debt recovers through future tier refills; paid-balance debt clears through future top-ups or future paid-balance developer earnings.
 
-**Developer earnings.** App developers may turn on developer earnings for a Publishable App Key. When developer earnings are enabled on a verified Publishable App Key, authorized app requests may include a 25% markup over model cost. From the user's perspective, this means 20% of total spend on that request goes to the app developer. We show the app share before authorization.
+**Developer earnings.** App developers may turn on developer earnings for a Publishable App Key. When developer earnings are enabled on a Publishable App Key, authorized app requests may include a 25% markup over model cost. From the user's perspective, this means 20% of total spend on that request goes to the app developer. We show the app share before authorization.
 
-Developer earnings are credited as Pollen to the developer wallet and land in the same balance type the user paid from: tier spend credits tier balance, and paid spend credits paid balance. Developer earnings are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may reverse or adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
+Developer earnings are credited as Pollen to the developer wallet and land in the same balance type the user paid from: tier spend credits tier balance, and paid spend credits paid balance. Developer earnings are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may manually review and reverse or adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
-**Taxes.** Prices are net of VAT; we charge Estonian VAT (24%) where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules apply. **Check:** gross = net x 1.24.
+**Taxes.** Prices include applicable VAT or similar transaction taxes where required. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 
 **Payments.** Payments are processed through the checkout provider shown at checkout where applicable.
 
@@ -84,13 +84,13 @@ All sales are final except where required by law or expressly approved by us. Ou
 
 **Paid Pollen packs/top-ups.** Paid Pollen is non-refundable once provisioned, including unused paid balance, except where required by law or where we approve a refund case-by-case. Used Pollen cannot be refunded or clawed back. Free tier grants, promotional credits, and developer earnings have no cash value and are not refundable.
 
-**EU/EEA consumer withdrawal.** If you purchase as a consumer in the EU/EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content/services delivered immediately, you can lose this right once performance begins if you expressly consent to immediate delivery and acknowledge that you lose the withdrawal right. We present this consent at checkout where required.
+**EU/EEA consumer withdrawal.** If you purchase as a consumer in the EU/EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content/services delivered immediately, you can lose this right once performance begins if you expressly consent to immediate delivery and acknowledge that you lose the withdrawal right. We present this consent at checkout as a required terms-of-service acknowledgement.
 
-**Limited refund review.** We may review refund requests for unused paid balance where required by law or for a proven duplicate/unauthorized charge, failure to provision paid Pollen after payment, or a material documented technical fault that prevents any meaningful use within a reasonable start period. Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be revoked or adjusted.
+**Limited refund review.** We may review refund requests for unused paid balance where required by law or for a proven duplicate/unauthorized charge, failure to provision paid Pollen after payment, or a material documented technical fault that prevents any meaningful use within a reasonable start period. Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be manually reviewed and reversed or adjusted after refund notification.
 
 **How to request.** Contact hi@myceli.ai with order ID and account email. Approved refunds are returned to the original payment method subject to payment-network timelines.
 
-**Chargebacks.** Unpaid/charged-back amounts may lead to suspension; we will revoke or adjust associated Pollen, credits, benefits, and developer earnings.
+**Chargebacks.** Unpaid/charged-back amounts may lead to suspension. Associated Pollen, credits, benefits, and developer earnings may be manually reviewed and reversed or adjusted after chargeback or dispute notification.
 
 ## 8) IP & Open-Source
 
@@ -123,9 +123,9 @@ We may use your name/logo to identify you as a customer unless you opt out in wr
 
 **Estonia** / **Harju County Court (Tallinn)**.
 
-## 15) DPA & Sub-Processors {#dpa-subprocessors}
+## 15) DPA and Sub-Processors
 
-When we process personal data on your behalf, you are the **controller** and we are the **processor** under our Data Processing Addendum (DPA). The DPA (including EU Standard Contractual Clauses for international transfers) and our current list of **sub-processors** are maintained at this location. We provide at least **14 days'** prior notice of material changes to sub-processors.
+When we process personal data on your behalf, you are the **controller** and we are the **processor** under our Data Processing Addendum (DPA). The DPA (including EU Standard Contractual Clauses for international transfers) is maintained at this location. Categories of **sub-processors** we may use are listed below. The full named list is available on request, and we provide at least **14 days'** prior notice of material changes to sub-processors.
 
 **Categories of sub-processors** we may use to deliver the Service:
 
@@ -136,6 +136,6 @@ When we process personal data on your behalf, you are the **controller** and we 
 - **Analytics / data pipeline**
 - **Model / inference compute providers** (for text/image/video generation)
 
-**Data residency.** We route jobs to **EU regions by default**. If a model/provider is only available outside the EEA, we use appropriate safeguards (e.g., SCCs) and only enable upon project-level opt-in.
+**Data residency.** Depending on the selected model, provider, and availability, Customer Data may be processed in the EEA, the United States, or other locations where our model and infrastructure providers operate. Where personal data leaves the EEA, we use approved safeguards such as EU Standard Contractual Clauses and appropriate supplementary measures.
 
 We'll email workspace owners on sub-processor changes.

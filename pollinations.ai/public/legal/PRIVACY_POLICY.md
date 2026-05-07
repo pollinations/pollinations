@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Updated: 2026-05-06**
+**Updated: 2026-05-07**
 
 ## 1) Scope & Roles
 
@@ -10,12 +10,13 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 
 ## 2) Data We Process
 
-* **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs, MFA status.
+* **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs.
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
-* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, tier balance, paid balance, grants, developer earnings, refunds, chargebacks, consent records, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
+* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, tier balance, paid balance, grants, developer earnings, refunds, chargebacks, checkout consent records, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
-* **Prompts/outputs (commercial & demos):** processed transiently/in-memory to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived caches.
+* **Prompts/outputs (commercial & demos):** processed transiently/in-memory to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily in R2 for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
 * **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub username (if you contribute or identify an app); email if you contact us.
+* **Internal analytics datasource:** to support product analytics, billing attribution, abuse prevention, and developer-earnings reporting, we replicate selected fields from our auth and billing tables (user, API key, session, OAuth account, and Stripe event records) into an internal analytics datasource. Replicated fields include account identifiers, email, name, GitHub identity (where linked), tier and balance attributes, API key metadata (name, prefix, usage counters), session metadata (user agent, expiry), and Stripe event payloads (including customer email). We do not replicate passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses.
 * **Telemetry:** aggregated counters and performance metrics.
 * **Support:** emails, tickets, in-app chats.
 
@@ -25,8 +26,8 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 * **Run API keys, app authorization, wallet, and developer-earnings features** (contract; legitimate interests).
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
-* **Analytics & product research** using aggregated/pseudonymised data (legitimate interests).
-* **Marketing communications** (consent; opt-out anytime). All marketing emails include an unsubscribe link.
+* **Analytics & product research** using aggregated/pseudonymised metrics and the internal analytics datasource described in §2 (legitimate interests).
+* **Email communications** (contract; legitimate interests). We currently send only transactional messages such as verification, billing, security, and service notices. If we introduce marketing emails, we will send them only where permitted (consent) and include an unsubscribe link and `List-Unsubscribe` header.
 
 ## 4) Authorized Apps
 
@@ -40,13 +41,13 @@ We do not use your prompts/outputs to train or fine-tune models without your per
 
 ## 6) Cookies & SDKs
 
-Essential cookies for login/session. Any non-essential analytics cookies/SDKs are opt-in via the banner; you can withdraw consent anytime and change preferences in the cookie settings (accessible in the page footer).
+We currently use only essential cookies and similar storage needed for login, session, security, and service operation. We do not use third-party analytics or marketing cookies/SDKs at this time. If we add non-essential cookies or SDKs, we will request consent first and provide a way to change preferences.
 
 ## 7) Sharing & Recipients
 
-* **Service providers (sub-processors):** we use the **categories** described at /terms#dpa-subprocessors. **Full named list available on request; we give at least 14 days' prior notice of material changes.**
+* **Service providers (sub-processors):** we use the **categories** described at /terms#15-dpa-and-sub-processors. **Full named list available on request; we give at least 14 days' prior notice of material changes.**
 
-**Depending on your model/provider selection, prompts and outputs may be sent transiently to our model/inference compute sub-processors (see categories at /terms#dpa-subprocessors).**
+**Depending on your model/provider selection, prompts and outputs may be sent transiently to our model/inference compute sub-processors (see categories at /terms#15-dpa-and-sub-processors).**
 
 * **Authorized apps:** when you approve an app connection, we share the approved API key/token and authorization details with that app.
 * **Affiliates:** internal operations under this policy.
@@ -62,8 +63,9 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 * **Account, billing, wallet, tax, and checkout consent records:** account term + 7 years (accounting/tax/legal proof).
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
-* **App authorization records:** while active, then typically up to 24 months after revocation or expiry for security, billing, and dispute handling.
-* **Security/abuse logs:** 30-180 days (up to 12 months for incidents).
+* **Generated response caches (text, image, audio, video):** typically up to 30 days in R2 and in downstream public/browser caches.
+* **Uploaded media files (media.pollinations.ai):** typically up to 30 days in R2 from upload; re-uploading the same file resets the timer.
+* **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
 * **Support tickets:** up to 24 months after closure.
 * **Backups:** encrypted, rolling 30-90 days.
 
@@ -71,13 +73,13 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 ## 10) Your Rights (GDPR)
 
-Access, correction, deletion, restriction, portability, objection to legitimate-interest processing, and withdrawal of consent (cookies/marketing).
+Access, correction, deletion, restriction, portability, objection to legitimate-interest processing, and withdrawal of consent where applicable.
 
 You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hi@myceli.ai.
 
 ## 11) Security
 
-TLS in transit; encryption at rest where stored; key management; least-privilege; admin 2FA; audit logs; vulnerability management; incident response.
+TLS in transit; encryption at rest where stored; key management; least-privilege admin access controls; audit logs; vulnerability management; incident response.
 
 ## 12) Children
 

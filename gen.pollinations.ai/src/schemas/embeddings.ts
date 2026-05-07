@@ -59,7 +59,7 @@ export const CreateEmbeddingRequestSchema = z
     .object({
         model: z.string().default(DEFAULT_EMBEDDING_MODEL).meta({
             description: "Embedding model to use",
-            example: "gemini-embedding-2",
+            example: "gemini-2",
         }),
         input: z
             .union([
@@ -74,7 +74,7 @@ export const CreateEmbeddingRequestSchema = z
             }),
         dimensions: z.number().int().min(128).max(3072).optional().meta({
             description:
-                "Output embedding dimensions (128-3072). Model-specific limits apply; text-embedding-3-small supports up to 1536.",
+                "Output embedding dimensions (128-3072). Model-specific limits apply; openai-3-small supports up to 1536.",
             example: 768,
         }),
         task_type: z

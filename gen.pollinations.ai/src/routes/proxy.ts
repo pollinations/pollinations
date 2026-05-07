@@ -503,13 +503,13 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate vector embeddings with an OpenAI-compatible response format.",
                 "",
-                "**Models:** `gemini-embedding-2` supports text, image, audio, and video inputs. `text-embedding-3-small` and `text-embedding-3-large` are Azure OpenAI text-only models.",
+                "**Models:** `gemini-2` supports text, image, audio, and video inputs. `openai-3-small` and `openai-3-large` are text-only models.",
                 "",
                 "**Input:** Pass a string, an array of up to 32 strings, or Gemini multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
                 "",
-                "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-embedding-2`.",
+                "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.",
                 "",
-                "**Dimensions:** Defaults are model-specific. `gemini-embedding-2` and `text-embedding-3-large` support up to 3072 dimensions; `text-embedding-3-small` supports up to 1536.",
+                "**Dimensions:** Defaults are model-specific. `gemini-2` and `openai-3-large` support up to 3072 dimensions; `openai-3-small` supports up to 1536.",
             ].join("\n"),
             responses: {
                 200: {

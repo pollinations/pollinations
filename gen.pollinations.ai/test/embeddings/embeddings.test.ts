@@ -15,10 +15,12 @@ import { MAX_EMBEDDING_BATCH_SIZE } from "../../src/embeddings/limits.ts";
 import worker from "../../src/index.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
-const TEST_EMBEDDING_MODEL = "gemini-embedding-2";
+const TEST_EMBEDDING_MODEL = "gemini-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
-const TEST_AZURE_SMALL_MODEL = "text-embedding-3-small";
-const TEST_AZURE_LARGE_MODEL = "text-embedding-3-large";
+const TEST_AZURE_SMALL_MODEL = "openai-3-small";
+const TEST_AZURE_LARGE_MODEL = "openai-3-large";
+const TEST_AZURE_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
+const TEST_AZURE_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "us-central1-aiplatform.googleapis.com";
 const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
@@ -379,7 +381,7 @@ describe("POST /v1/embeddings", () => {
         expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("8");
         expect(mocks.azure.state.requests).toEqual([
             {
-                model: TEST_AZURE_SMALL_MODEL,
+                model: TEST_AZURE_SMALL_PROVIDER_MODEL,
                 input: ["Hello", "World"],
                 dimensions: 512,
             },
@@ -431,7 +433,7 @@ describe("POST /v1/embeddings", () => {
         expect(data.data[0].embedding).toHaveLength(256);
         expect(mocks.azure.state.requests).toEqual([
             {
-                model: TEST_AZURE_LARGE_MODEL,
+                model: TEST_AZURE_LARGE_PROVIDER_MODEL,
                 input: [TEST_EMBEDDING_INPUT],
                 dimensions: 256,
             },

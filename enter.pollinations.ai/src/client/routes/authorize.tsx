@@ -39,6 +39,7 @@ type Attribution = {
     githubUsername?: string;
     appName?: string;
     redirectUris?: string[];
+    earningsEnabled?: boolean;
 };
 
 function parseList(val: unknown): string[] | null {
@@ -320,11 +321,6 @@ function AuthorizeComponent() {
                             redirectOrigin: parsedRedirectUrl.origin,
                             redirectUri: parsedRedirectUrl.href,
                         }),
-                    ...(attribution?.found && {
-                        clientId: attribution.clientId,
-                        createdForUserId: attribution.userId,
-                        createdForApp: attribution.appName,
-                    }),
                 },
                 permissions: {
                     allowedModels,
@@ -428,7 +424,10 @@ function AuthorizeComponent() {
     if (!user) {
         const displayedError = error ?? signInError;
         return (
-            <AuthModal dialog={{ label: "Sign in to authorize" }}>
+            <AuthModal
+                dialog={{ label: "Sign in to authorize" }}
+                tone={displayedError ? "error" : undefined}
+            >
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {displayedError ? (
@@ -452,22 +451,25 @@ function AuthorizeComponent() {
                         <Button
                             as="button"
                             onClick={handleDeny}
-                            weight="outline"
-                            color="dark"
+                            weight="light"
+                            color="red"
                             disabled={isSigningIn}
                         >
                             Deny
                         </Button>
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn || !!error}
-                            color="dark"
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
+                        {!error && (
+                            <Button
+                                as="button"
+                                onClick={signIn}
+                                disabled={isSigningIn}
+                                color="amber"
+                                weight="light"
+                            >
+                                {isSigningIn
+                                    ? "Signing in..."
+                                    : "Continue with GitHub"}
+                            </Button>
+                        )}
                     </div>
                 </div>
             </AuthModal>
@@ -475,7 +477,14 @@ function AuthorizeComponent() {
     }
 
     return (
-        <AuthModal dialog={{ labelledBy: "authorize-dialog-title" }}>
+        <AuthModal
+            dialog={
+                error
+                    ? { label: "Authorization error" }
+                    : { labelledBy: "authorize-dialog-title" }
+            }
+            tone={error ? "error" : undefined}
+        >
             <AuthModalHeader>
                 <div className="flex items-center gap-3 min-w-0">
                     <a
@@ -555,8 +564,29 @@ function AuthorizeComponent() {
                                     "profile",
                                 ) && (
                                     <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-amber-800">
-                                            &#x2709;
+                                        <span
+                                            className="flex h-5 w-4 shrink-0 items-center justify-center text-amber-800"
+                                            aria-hidden="true"
+                                        >
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth={2.2}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                className="h-4 w-4"
+                                            >
+                                                <title>Email</title>
+                                                <rect
+                                                    width="18"
+                                                    height="14"
+                                                    x="3"
+                                                    y="5"
+                                                    rx="2"
+                                                />
+                                                <path d="m3 7 9 6 9-6" />
+                                            </svg>
                                         </span>
                                         <span>See your name and email.</span>
                                     </li>
@@ -686,20 +716,23 @@ function AuthorizeComponent() {
                     <Button
                         as="button"
                         onClick={handleDeny}
-                        weight="outline"
-                        color="dark"
+                        weight="light"
+                        color="red"
                         disabled={isAuthorizing}
                     >
                         Deny
                     </Button>
-                    <Button
-                        as="button"
-                        onClick={handleAuthorize}
-                        disabled={!canAuthorize || isAuthorizing || !!error}
-                        color="dark"
-                    >
-                        {isAuthorizing ? "Authorizing..." : "Authorize"}
-                    </Button>
+                    {!error && (
+                        <Button
+                            as="button"
+                            onClick={handleAuthorize}
+                            disabled={!canAuthorize || isAuthorizing}
+                            color="amber"
+                            weight="light"
+                        >
+                            {isAuthorizing ? "Authorizing..." : "Authorize"}
+                        </Button>
+                    )}
                 </div>
             </div>
         </AuthModal>

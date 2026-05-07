@@ -159,9 +159,15 @@ const info = new Command("info")
     });
 
 const create = new Command("create")
-    .description("Create a new API key")
+    .description(
+        "Create a new API key. Use --type publishable to create an app key.",
+    )
     .requiredOption("--name <name>", "Key name")
-    .option("--type <type>", "Key type: secret or publishable", "secret")
+    .option(
+        "--type <type>",
+        "Key type: secret or publishable app key",
+        "secret",
+    )
     .option("--expires-in <seconds>", "Expiry in seconds (max 365 days)")
     .option("--models <models...>", "Restrict to specific model IDs")
     .option("--budget <pollen>", "Pollen budget cap")
@@ -169,9 +175,19 @@ const create = new Command("create")
         "--redirect-uri <uri...>",
         "Allowed BYOP redirect URI(s) for publishable app keys",
     )
+    .option("--earnings", "Enable developer earnings for publishable app keys")
     .option(
         "--permissions <perms...>",
         'Account permissions (e.g. profile usage). "keys" is auto-stripped.',
+    )
+    .addHelpText(
+        "after",
+        `
+Examples:
+  polli keys create --name my-bot --type secret
+  polli keys create --name my-app --type publishable --redirect-uri https://myapp.com/callback
+  polli keys create --name my-app --type publishable --redirect-uri https://myapp.com/callback --earnings
+`,
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -183,6 +199,10 @@ const create = new Command("create")
             };
             if (opts.redirectUri && opts.type !== "publishable") {
                 printError("--redirect-uri requires --type publishable");
+                process.exit(1);
+            }
+            if (opts.earnings === true && opts.type !== "publishable") {
+                printError("--earnings requires --type publishable");
                 process.exit(1);
             }
             if (opts.expiresIn !== undefined)
@@ -198,6 +218,7 @@ const create = new Command("create")
             }
             if (opts.permissions) body.accountPermissions = opts.permissions;
             if (opts.redirectUri) body.redirectUris = opts.redirectUri;
+            if (opts.earnings === true) body.earningsEnabled = true;
 
             const created = await gen<CreateKeyResponse>("/account/keys", {
                 apiKey: key,
@@ -221,6 +242,7 @@ const create = new Command("create")
                 permissions: created.permissions,
                 budget: created.pollenBudget ?? "unlimited",
                 redirectUris: created.metadata?.redirectUris,
+                earnings: created.metadata?.earningsEnabled,
             });
         } catch (err) {
             printError(

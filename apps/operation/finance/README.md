@@ -48,7 +48,9 @@ The sheet has a `CREDIT POOLS (USD)` section that tracks the remaining balance o
 Supported providers:
 
 - **Azure** — `az rest` against `Microsoft.Consumption/usageDetails`. Requires `az login`. The remaining balance is manually seeded (Azure does not expose it via CLI without the `Billing Reader` role); MTD consumption is pulled live and subtracted from the seed.
-- **AWS** — `aws ce get-cost-and-usage`. Requires `aws` credentials with Cost Explorer permission. Credit application is detected via `UnblendedCost − NetUnblendedCost`.
+- **AWS** — `aws ce get-cost-and-usage`. Requires local `aws` credentials with Cost Explorer permission. Finance intentionally ignores gen worker `AWS_*` secrets because those are Bedrock runtime keys, not billing keys. Credit application is detected via `UnblendedCost − NetUnblendedCost`.
+- **Deep Infra** — `GET /v1/me?checklist=true` for remaining prepaid balance plus `GET /payment/usage` for current-month credit burn. Cash top-ups come from Wise card transactions only.
+- **OpenRouter** — `GET /api/v1/credits` with a management API key. Remaining balance is live; MTD consumption is derived from the account usage counter at month open.
 - **Runpod, Lambda Labs** — currently static seeds only (no CLI integration yet).
 
 Manual seed values live under `_pools.<pool>.seed_balance_usd` and should be updated from the provider's dashboard whenever a new grant is applied.
@@ -90,6 +92,8 @@ launchctl load ~/Library/LaunchAgents/ai.pollinations.finance-update.plist
 launchctl start ai.pollinations.finance-update  # run immediately to verify
 tail -f apps/operation/finance/secrets/update-live.log
 ```
+
+`bin/update-live.sh` sets `SOPS_AGE_KEY_FILE` from the local age key file when launchd does not inherit `SOPS_AGE_KEY`, so shared provider secrets can decrypt in non-interactive daily runs.
 
 To disable: `launchctl unload ~/Library/LaunchAgents/ai.pollinations.finance-update.plist`.
 

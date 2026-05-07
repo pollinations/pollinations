@@ -18,7 +18,10 @@ import {
     type DashboardPage,
     DashboardShell,
 } from "../components/layout/dashboard-shell.tsx";
-import { isDashboardPage } from "../components/layout/dashboard-theme.ts";
+import {
+    dashboardThemeByPage,
+    isDashboardPage,
+} from "../components/layout/dashboard-theme.ts";
 import { UpdatesPage } from "../components/layout/updates-page.tsx";
 import { Pricing } from "../components/pricing";
 import {
@@ -272,10 +275,11 @@ function RouteComponent() {
                     period={usagePeriod}
                     onPeriodChange={setUsagePeriod}
                     apiKeys={selectableKeys}
+                    theme={dashboardThemeByPage.usage}
                     action={
                         <Button
                             as="button"
-                            color="pink"
+                            color={dashboardThemeByPage.usage}
                             weight="light"
                             onClick={downloadDetailedUsage}
                             className="flex items-center gap-1.5"

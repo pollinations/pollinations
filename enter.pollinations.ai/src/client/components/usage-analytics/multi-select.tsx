@@ -2,67 +2,7 @@ import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/util.ts";
 import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
-
-type MultiSelectTheme = "pink" | "yellow";
-
-const THEME_TOKENS: Record<
-    MultiSelectTheme,
-    {
-        labelText: string;
-        triggerIdle: string;
-        triggerOpen: string;
-        triggerDisabled: string;
-        triggerTextIdle: string;
-        triggerTextOpen: string;
-        triggerTextDisabled: string;
-        chevronIdle: string;
-        chevronOpen: string;
-        popupBorder: string;
-        scrollbar: string;
-        rowSelected: string;
-        rowIdle: string;
-        rowHover: string;
-        checkSelected: string;
-        checkIdle: string;
-    }
-> = {
-    pink: {
-        labelText: "text-pink-800/75",
-        triggerIdle: "border-pink-300 bg-pink-50/80 hover:bg-pink-100",
-        triggerOpen: "border-pink-300 bg-pink-200",
-        triggerDisabled: "border-pink-200 bg-pink-50/50",
-        triggerTextIdle: "text-pink-900",
-        triggerTextOpen: "text-pink-950",
-        triggerTextDisabled: "text-pink-700/60",
-        chevronIdle: "text-pink-700",
-        chevronOpen: "text-pink-950",
-        popupBorder: "border-pink-300",
-        scrollbar: "scrollbar-theme-pink",
-        rowSelected: "bg-pink-200 text-pink-950",
-        rowIdle: "text-pink-900",
-        rowHover: "hover:bg-pink-50",
-        checkSelected: "bg-pink-200 border-pink-300 text-pink-950",
-        checkIdle: "border-pink-300",
-    },
-    yellow: {
-        labelText: "text-yellow-800/75",
-        triggerIdle: "border-yellow-200 bg-yellow-50/80 hover:bg-yellow-100",
-        triggerOpen: "border-yellow-200 bg-yellow-200",
-        triggerDisabled: "border-yellow-100 bg-yellow-50/50",
-        triggerTextIdle: "text-yellow-900",
-        triggerTextOpen: "text-yellow-950",
-        triggerTextDisabled: "text-yellow-700/60",
-        chevronIdle: "text-yellow-700",
-        chevronOpen: "text-yellow-950",
-        popupBorder: "border-yellow-200",
-        scrollbar: "scrollbar-theme-yellow",
-        rowSelected: "bg-yellow-200 text-yellow-950",
-        rowIdle: "text-yellow-900",
-        rowHover: "hover:bg-yellow-50",
-        checkSelected: "bg-yellow-200 border-yellow-200 text-yellow-950",
-        checkIdle: "border-yellow-200",
-    },
-};
+import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
 
 type MultiSelectProps = {
     options: { value: string; label: string }[];
@@ -73,7 +13,7 @@ type MultiSelectProps = {
     disabledText?: string;
     align?: "start" | "end";
     label?: string;
-    theme?: MultiSelectTheme;
+    theme: DashboardTheme;
 };
 
 export const MultiSelect: FC<MultiSelectProps> = ({
@@ -85,9 +25,9 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledText,
     align = "start",
     label,
-    theme = "pink",
+    theme,
 }) => {
-    const tokens = THEME_TOKENS[theme];
+    const tokens = themeTokens[theme];
     const [open, setOpen] = useState(false);
     const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
@@ -164,7 +104,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     return (
         <div ref={ref} className="relative group flex items-center gap-2">
             {label && (
-                <span className={cn("text-xs font-medium", tokens.labelText)}>
+                <span className={cn("text-xs font-medium", tokens.text.muted)}>
                     {label}
                 </span>
             )}
@@ -177,21 +117,26 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     disabled
                         ? cn(
                               "cursor-not-allowed opacity-60",
-                              tokens.triggerDisabled,
+                              tokens.border.subtle,
+                              tokens.bg.subtle,
                           )
                         : open
-                          ? tokens.triggerOpen
-                          : tokens.triggerIdle,
+                          ? cn(tokens.border.idle, tokens.bg.active)
+                          : cn(
+                                tokens.border.idle,
+                                tokens.bg.idle,
+                                tokens.bg.hover,
+                            ),
                 )}
             >
                 <span
                     className={cn(
                         "truncate flex-1 text-left",
                         disabled
-                            ? tokens.triggerTextDisabled
+                            ? tokens.text.softer
                             : open
-                              ? tokens.triggerTextOpen
-                              : tokens.triggerTextIdle,
+                              ? tokens.text.strong
+                              : tokens.text.base,
                     )}
                 >
                     {displayText}
@@ -200,8 +145,8 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     className={cn(
                         "w-3 h-3 transition-transform",
                         open
-                            ? cn("rotate-180", tokens.chevronOpen)
-                            : tokens.chevronIdle,
+                            ? cn("rotate-180", tokens.text.strong)
+                            : tokens.text.soft,
                     )}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -225,7 +170,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 <div
                     className={cn(
                         "min-w-[320px] overflow-hidden rounded-lg border bg-white shadow-lg z-50",
-                        tokens.popupBorder,
+                        tokens.border.idle,
                         !dropdownStyle.position && "absolute",
                         !dropdownStyle.position &&
                             (openDirection === "up"
@@ -249,16 +194,24 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                 isAllSelected
-                                    ? cn(tokens.rowSelected, "font-medium")
-                                    : cn(tokens.rowIdle, tokens.rowHover),
+                                    ? cn(
+                                          tokens.bg.active,
+                                          tokens.text.strong,
+                                          "font-medium",
+                                      )
+                                    : cn(tokens.text.base, tokens.bg.soft),
                             )}
                         >
                             <span
                                 className={cn(
                                     "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                     isAllSelected
-                                        ? tokens.checkSelected
-                                        : tokens.checkIdle,
+                                        ? cn(
+                                              tokens.bg.active,
+                                              tokens.border.idle,
+                                              tokens.text.strong,
+                                          )
+                                        : tokens.border.idle,
                                 )}
                             >
                                 {isAllSelected && "✓"}
@@ -275,10 +228,13 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                         isChecked
-                                            ? tokens.rowSelected
+                                            ? cn(
+                                                  tokens.bg.active,
+                                                  tokens.text.strong,
+                                              )
                                             : cn(
-                                                  tokens.rowIdle,
-                                                  tokens.rowHover,
+                                                  tokens.text.base,
+                                                  tokens.bg.soft,
                                               ),
                                     )}
                                 >
@@ -286,8 +242,12 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                         className={cn(
                                             "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                             isChecked
-                                                ? tokens.checkSelected
-                                                : tokens.checkIdle,
+                                                ? cn(
+                                                      tokens.bg.active,
+                                                      tokens.border.idle,
+                                                      tokens.text.strong,
+                                                  )
+                                                : tokens.border.idle,
                                         )}
                                     >
                                         {isChecked && "✓"}

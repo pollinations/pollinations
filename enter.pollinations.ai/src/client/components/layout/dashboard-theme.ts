@@ -38,6 +38,13 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
     "usage",
 ];
 
+// Page → theme lookup, derived from DASHBOARD_NAV_ITEMS.
+// Pages should read their theme from here so flipping a nav item's `theme`
+// retheme the corresponding page in one edit.
+export const dashboardThemeByPage = Object.fromEntries(
+    DASHBOARD_NAV_ITEMS.map(({ id, theme }) => [id, theme]),
+) as Record<DashboardPage, DashboardTheme>;
+
 // ─── Color palette (single source of truth) ──────────────────
 // `Panel`, `Card`, and `Button` import their slice from here.
 // `dashboardThemeClasses` (below) rolls these up for the 7 nav themes.
@@ -194,6 +201,235 @@ export const tabColors = {
     { active: string; inactive: string }
 >;
 
+// Per-theme token bundle for page chrome — literal class strings so Tailwind's JIT picks them up.
+// Covers per-page-themed surfaces only: text, borders, backgrounds, dividers, ring accents,
+// and scrollbar thumb. Out of scope: neutral grays/reds (loading/error/disabled), tier/modality
+// semantic colors, and Tag badge styling (`tagColors` in `ui/tag.tsx`).
+export const themeTokens = {
+    amber: {
+        text: {
+            label: "text-amber-600",
+            base: "text-amber-900",
+            strong: "text-amber-950",
+            muted: "text-amber-800/75",
+            soft: "text-amber-700",
+            softer: "text-amber-700/60",
+        },
+        border: {
+            idle: "border-amber-300",
+            soft: "border-amber-300/70",
+            subtle: "border-amber-200",
+        },
+        bg: {
+            idle: "bg-amber-50/80",
+            subtle: "bg-amber-50/50",
+            hover: "hover:bg-amber-100",
+            active: "bg-amber-200",
+            soft: "hover:bg-amber-50",
+        },
+        divide: "divide-amber-300/70",
+        ring: "ring-amber-400/70",
+        scrollbar: "scrollbar-theme-amber",
+    },
+    blue: {
+        text: {
+            label: "text-blue-600",
+            base: "text-blue-900",
+            strong: "text-blue-950",
+            muted: "text-blue-800/75",
+            soft: "text-blue-700",
+            softer: "text-blue-700/60",
+        },
+        border: {
+            idle: "border-blue-300",
+            soft: "border-blue-300/70",
+            subtle: "border-blue-200",
+        },
+        bg: {
+            idle: "bg-blue-50/80",
+            subtle: "bg-blue-50/50",
+            hover: "hover:bg-blue-100",
+            active: "bg-blue-200",
+            soft: "hover:bg-blue-50",
+        },
+        divide: "divide-blue-300/70",
+        ring: "ring-blue-400/70",
+        scrollbar: "scrollbar-theme-blue",
+    },
+    gray: {
+        text: {
+            label: "text-gray-600",
+            base: "text-gray-900",
+            strong: "text-gray-950",
+            muted: "text-gray-800/75",
+            soft: "text-gray-700",
+            softer: "text-gray-700/60",
+        },
+        border: {
+            idle: "border-gray-300",
+            soft: "border-gray-300/70",
+            subtle: "border-gray-200",
+        },
+        bg: {
+            idle: "bg-gray-50/80",
+            subtle: "bg-gray-50/50",
+            hover: "hover:bg-gray-100",
+            active: "bg-gray-200",
+            soft: "hover:bg-gray-50",
+        },
+        divide: "divide-gray-300/70",
+        ring: "ring-gray-400/70",
+        scrollbar: "scrollbar-theme-gray",
+    },
+    green: {
+        text: {
+            label: "text-green-600",
+            base: "text-green-900",
+            strong: "text-green-950",
+            muted: "text-green-800/75",
+            soft: "text-green-700",
+            softer: "text-green-700/60",
+        },
+        border: {
+            idle: "border-green-300",
+            soft: "border-green-300/70",
+            subtle: "border-green-200",
+        },
+        bg: {
+            idle: "bg-green-50/80",
+            subtle: "bg-green-50/50",
+            hover: "hover:bg-green-100",
+            active: "bg-green-200",
+            soft: "hover:bg-green-50",
+        },
+        divide: "divide-green-300/70",
+        ring: "ring-green-400/70",
+        scrollbar: "scrollbar-theme-green",
+    },
+    pink: {
+        text: {
+            label: "text-pink-600",
+            base: "text-pink-900",
+            strong: "text-pink-950",
+            muted: "text-pink-800/75",
+            soft: "text-pink-700",
+            softer: "text-pink-700/60",
+        },
+        border: {
+            idle: "border-pink-300",
+            soft: "border-pink-300/70",
+            subtle: "border-pink-200",
+        },
+        bg: {
+            idle: "bg-pink-50/80",
+            subtle: "bg-pink-50/50",
+            hover: "hover:bg-pink-100",
+            active: "bg-pink-200",
+            soft: "hover:bg-pink-50",
+        },
+        divide: "divide-pink-300/70",
+        ring: "ring-pink-400/70",
+        scrollbar: "scrollbar-theme-pink",
+    },
+    teal: {
+        text: {
+            label: "text-teal-600",
+            base: "text-teal-900",
+            strong: "text-teal-950",
+            muted: "text-teal-800/75",
+            soft: "text-teal-700",
+            softer: "text-teal-700/60",
+        },
+        border: {
+            idle: "border-teal-300",
+            soft: "border-teal-300/70",
+            subtle: "border-teal-200",
+        },
+        bg: {
+            idle: "bg-teal-50/80",
+            subtle: "bg-teal-50/50",
+            hover: "hover:bg-teal-100",
+            active: "bg-teal-200",
+            soft: "hover:bg-teal-50",
+        },
+        divide: "divide-teal-300/70",
+        ring: "ring-teal-400/70",
+        scrollbar: "scrollbar-theme-teal",
+    },
+    violet: {
+        text: {
+            label: "text-violet-600",
+            base: "text-violet-900",
+            strong: "text-violet-950",
+            muted: "text-violet-800/75",
+            soft: "text-violet-700",
+            softer: "text-violet-700/60",
+        },
+        border: {
+            idle: "border-violet-300",
+            soft: "border-violet-300/70",
+            subtle: "border-violet-200",
+        },
+        bg: {
+            idle: "bg-violet-50/80",
+            subtle: "bg-violet-50/50",
+            hover: "hover:bg-violet-100",
+            active: "bg-violet-200",
+            soft: "hover:bg-violet-50",
+        },
+        divide: "divide-violet-300/70",
+        ring: "ring-violet-400/70",
+        scrollbar: "scrollbar-theme-violet",
+    },
+    yellow: {
+        text: {
+            label: "text-yellow-600",
+            base: "text-yellow-900",
+            strong: "text-yellow-950",
+            muted: "text-yellow-800/75",
+            soft: "text-yellow-700",
+            softer: "text-yellow-700/60",
+        },
+        border: {
+            idle: "border-yellow-300",
+            soft: "border-yellow-300/70",
+            subtle: "border-yellow-200",
+        },
+        bg: {
+            idle: "bg-yellow-50/80",
+            subtle: "bg-yellow-50/50",
+            hover: "hover:bg-yellow-100",
+            active: "bg-yellow-200",
+            soft: "hover:bg-yellow-50",
+        },
+        divide: "divide-yellow-300/70",
+        ring: "ring-yellow-400/70",
+        scrollbar: "scrollbar-theme-yellow",
+    },
+} as const satisfies Record<DashboardTheme, ThemeTokens>;
+
+export type ThemeTokens = {
+    text: {
+        label: string;
+        base: string;
+        strong: string;
+        muted: string;
+        soft: string;
+        softer: string;
+    };
+    border: { idle: string; soft: string; subtle: string };
+    bg: {
+        idle: string;
+        subtle: string;
+        hover: string;
+        active: string;
+        soft: string;
+    };
+    divide: string;
+    ring: string;
+    scrollbar: string;
+};
+
 export const dashboardThemeClasses: Record<
     DashboardTheme,
     {
@@ -204,6 +440,8 @@ export const dashboardThemeClasses: Record<
         card: string;
         button: (typeof buttonColors)[keyof typeof buttonColors];
         tab: (typeof tabColors)[keyof typeof tabColors];
+        pill: (typeof pillColors)[keyof typeof pillColors];
+        tokens: ThemeTokens;
     }
 > = {
     amber: {
@@ -214,6 +452,8 @@ export const dashboardThemeClasses: Record<
         card: cardColors.amber,
         button: buttonColors.amber,
         tab: tabColors.amber,
+        pill: pillColors.amber,
+        tokens: themeTokens.amber,
     },
     blue: {
         title: "text-blue-950",
@@ -223,6 +463,8 @@ export const dashboardThemeClasses: Record<
         card: cardColors.blue,
         button: buttonColors.blue,
         tab: tabColors.blue,
+        pill: pillColors.blue,
+        tokens: themeTokens.blue,
     },
     gray: {
         title: "text-gray-950",
@@ -232,6 +474,8 @@ export const dashboardThemeClasses: Record<
         card: cardColors.gray,
         button: buttonColors.gray,
         tab: tabColors.gray,
+        pill: pillColors.gray,
+        tokens: themeTokens.gray,
     },
     green: {
         title: "text-green-950",
@@ -241,6 +485,8 @@ export const dashboardThemeClasses: Record<
         card: cardColors.green,
         button: buttonColors.green,
         tab: tabColors.green,
+        pill: pillColors.green,
+        tokens: themeTokens.green,
     },
     pink: {
         title: "text-pink-950",
@@ -250,6 +496,8 @@ export const dashboardThemeClasses: Record<
         card: cardColors.pink,
         button: buttonColors.pink,
         tab: tabColors.pink,
+        pill: pillColors.pink,
+        tokens: themeTokens.pink,
     },
     teal: {
         title: "text-teal-950",
@@ -259,6 +507,8 @@ export const dashboardThemeClasses: Record<
         card: cardColors.teal,
         button: buttonColors.teal,
         tab: tabColors.teal,
+        pill: pillColors.teal,
+        tokens: themeTokens.teal,
     },
     violet: {
         title: "text-violet-950",
@@ -268,6 +518,8 @@ export const dashboardThemeClasses: Record<
         card: cardColors.violet,
         button: buttonColors.violet,
         tab: tabColors.violet,
+        pill: pillColors.violet,
+        tokens: themeTokens.violet,
     },
     yellow: {
         title: "text-yellow-900",
@@ -277,6 +529,8 @@ export const dashboardThemeClasses: Record<
         card: cardColors.yellow,
         button: buttonColors.yellow,
         tab: tabColors.yellow,
+        pill: pillColors.yellow,
+        tokens: themeTokens.yellow,
     },
 };
 

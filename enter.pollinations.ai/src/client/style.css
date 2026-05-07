@@ -133,6 +133,14 @@
         --scrollbar-thumb-color: rgba(202, 138, 4, 0.55);
     }
 
+    .scrollbar-theme-teal {
+        --scrollbar-thumb-color: rgba(13, 148, 136, 0.6);
+    }
+
+    .scrollbar-theme-gray {
+        --scrollbar-thumb-color: rgba(75, 85, 99, 0.6);
+    }
+
     .scrollbar-subtle::-webkit-scrollbar {
         width: 12px;
         height: 12px;

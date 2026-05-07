@@ -74,7 +74,7 @@ export const CreateEmbeddingRequestSchema = z
             }),
         dimensions: z.number().int().min(128).max(3072).optional().meta({
             description:
-                "Output embedding dimensions (128-3072). Default: 3072.",
+                "Output embedding dimensions (128-3072). Model-specific limits apply; azure-embedding-v4 supports 256, 512, 1024, or 1536.",
             example: 768,
         }),
         task_type: z

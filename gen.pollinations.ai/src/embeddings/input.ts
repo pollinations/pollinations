@@ -5,7 +5,7 @@ import type { ContentPart, EmbeddingRequest, GeminiPart } from "./types.ts";
 
 const MAX_EMBEDDING_BATCH_SIZE = 32;
 
-function badRequest(message: string): never {
+export function badRequest(message: string): never {
     throw new HTTPException(400, { message });
 }
 
@@ -112,6 +112,27 @@ export async function inputToGeminiParts(
         }
     }
     return parts;
+}
+
+export function inputToText(
+    input: string | ContentPart | ContentPart[],
+): string {
+    if (typeof input === "string") {
+        return input;
+    }
+
+    const parts = Array.isArray(input) ? input : [input];
+    const textParts: string[] = [];
+
+    for (const part of parts) {
+        if (part.type !== "text") {
+            badRequest("Model supports text input only");
+        }
+
+        textParts.push(part.text);
+    }
+
+    return textParts.join("\n");
 }
 
 export function normalizeInputs(

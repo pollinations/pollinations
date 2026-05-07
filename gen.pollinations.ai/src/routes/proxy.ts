@@ -534,6 +534,7 @@ export const proxyRoutes = new Hono<Env>()
             return generateEmbeddings(
                 c.env,
                 { ...requestBody, model: serviceDef.modelId },
+                serviceDef,
                 c.var.model.resolved,
             );
         },

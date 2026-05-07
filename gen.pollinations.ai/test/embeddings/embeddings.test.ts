@@ -16,8 +16,11 @@ import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-embedding-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
+const TEST_AZURE_EMBEDDING_MODEL = "azure-embedding-v4";
+const TEST_AZURE_PROVIDER_MODEL = "embed-v-4-0";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "us-central1-aiplatform.googleapis.com";
+const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
 
 beforeEach(() => {
@@ -51,6 +54,7 @@ function buildEmbeddingsBody(extra: Record<string, unknown> = {}) {
 
 function createEmbeddingMocks() {
     env.GOOGLE_PROJECT_ID = "test-project";
+    env.AZURE_MYCELI_PROD_API_KEY = "test-azure-api-key";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
 
     return createFetchMock({
@@ -62,6 +66,7 @@ function createEmbeddingMocks() {
             },
             reset: () => {},
         } satisfies MockAPI<Record<string, never>>,
+        azure: createAzureMock(),
         vertex: createVertexMock(),
     });
 }
@@ -107,6 +112,51 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
                         promptTokenCount: 5,
                         totalTokenCount: 5,
                         promptTokensDetails: [{ modality, tokenCount: 5 }],
+                    },
+                });
+            },
+        },
+        reset: () => {
+            state.requests = [];
+            state.urls = [];
+        },
+    };
+}
+
+function createAzureMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
+    const state: { requests: unknown[]; urls: string[] } = {
+        requests: [],
+        urls: [],
+    };
+    return {
+        state,
+        handlerMap: {
+            [AZURE_HOST]: async (request) => {
+                const body = (await request.json()) as {
+                    input?: string[];
+                    dimensions?: number;
+                    model?: string;
+                };
+                state.urls.push(request.url);
+                state.requests.push(body);
+
+                const inputs = body.input ?? [];
+                const dimensions = body.dimensions ?? 1536;
+
+                return Response.json({
+                    object: "list",
+                    data: inputs.map((_, index) => ({
+                        object: "embedding",
+                        embedding: Array.from(
+                            { length: dimensions },
+                            (_, valueIndex) => index + valueIndex / 10,
+                        ),
+                        index,
+                    })),
+                    model: body.model,
+                    usage: {
+                        prompt_tokens: inputs.length * 4,
+                        total_tokens: inputs.length * 4,
                     },
                 });
             },
@@ -263,6 +313,141 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
+    test("supports Azure embed-v-4-0", async ({ apiKey, mocks }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_AZURE_EMBEDDING_MODEL,
+                input: ["Hello", "World"],
+                dimensions: 512,
+            }),
+        });
+        const body = await response.text();
+
+        expect(
+            response.status,
+            `Expected 200 but got ${response.status}: ${body}`,
+        ).toBe(200);
+        const data = JSON.parse(body) as {
+            data: { embedding: number[]; index: number }[];
+            model: string;
+            usage: { prompt_tokens: number; total_tokens: number };
+        };
+        expect(data.model).toBe(TEST_AZURE_EMBEDDING_MODEL);
+        expect(data.data).toHaveLength(2);
+        expect(data.data[0].embedding).toHaveLength(512);
+        expect(data.data.map(({ index }) => index)).toEqual([0, 1]);
+        expect(data.usage).toEqual({ prompt_tokens: 8, total_tokens: 8 });
+        expect(response.headers.get("x-model-used")).toBe(
+            TEST_AZURE_EMBEDDING_MODEL,
+        );
+        expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("8");
+        expect(mocks.azure.state.requests).toEqual([
+            {
+                model: TEST_AZURE_PROVIDER_MODEL,
+                input: ["Hello", "World"],
+                dimensions: 512,
+            },
+        ]);
+
+        await wait();
+
+        const events = mocks.tinybird.state.events;
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            eventType: "generate.embedding",
+            modelRequested: TEST_AZURE_EMBEDDING_MODEL,
+            resolvedModelRequested: TEST_AZURE_EMBEDDING_MODEL,
+            modelUsed: TEST_AZURE_EMBEDDING_MODEL,
+            tokenCountPromptText: 8,
+            isBilledUsage: true,
+        });
+    });
+
+    test("rejects Azure dimensions above its model limit", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_AZURE_EMBEDDING_MODEL,
+                dimensions: 2048,
+            }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("supports dimensions 256, 512, 1024, or 1536");
+        expect(mocks.azure.state.requests).toHaveLength(0);
+        await wait();
+    });
+
+    test("rejects multimodal input for Azure text embeddings", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_AZURE_EMBEDDING_MODEL,
+                input: [
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "data:image/png;base64,aGVsbG8=",
+                        },
+                    },
+                ],
+            }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("text input only");
+        expect(mocks.azure.state.requests).toHaveLength(0);
+        await wait();
+    });
+
+    test("rejects Gemini task hints for Azure text embeddings", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "azure");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_AZURE_EMBEDDING_MODEL,
+                task_type: "RETRIEVAL_QUERY",
+            }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(400);
+        expect(body).toContain("task_type");
+        expect(mocks.azure.state.requests).toHaveLength(0);
+        await wait();
+    });
+
     test("sends data URL images using Vertex REST media fields", async ({
         apiKey,
         mocks,
@@ -378,6 +563,10 @@ describe("embedding models", () => {
                     name: TEST_EMBEDDING_MODEL,
                     output_modalities: ["embedding"],
                 }),
+                expect.objectContaining({
+                    name: TEST_AZURE_EMBEDDING_MODEL,
+                    output_modalities: ["embedding"],
+                }),
             ]),
         );
     });
@@ -395,6 +584,10 @@ describe("embedding models", () => {
             expect.arrayContaining([
                 expect.objectContaining({
                     id: TEST_EMBEDDING_MODEL,
+                    supported_endpoints: ["/v1/embeddings"],
+                }),
+                expect.objectContaining({
+                    id: TEST_AZURE_EMBEDDING_MODEL,
                     supported_endpoints: ["/v1/embeddings"],
                 }),
             ]),

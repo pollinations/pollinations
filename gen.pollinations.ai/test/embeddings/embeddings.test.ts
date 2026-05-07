@@ -10,18 +10,25 @@ import {
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
-import { afterEach, describe, expect } from "vitest";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 import worker from "../../src/index.ts";
+import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-embedding-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
 const TEST_EMBEDDING_INPUT = "Hello world";
-const MAX_MEDIA_SIZE = 20 * 1024 * 1024;
 const VERTEX_HOST = "us-central1-aiplatform.googleapis.com";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
 
+beforeEach(() => {
+    vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+        "test-google-access-token",
+    );
+});
+
 afterEach(async () => {
     await teardownFetchMock();
+    vi.restoreAllMocks();
 });
 
 const test = baseTest.extend<{
@@ -44,31 +51,19 @@ function buildEmbeddingsBody(extra: Record<string, unknown> = {}) {
 
 function createEmbeddingMocks() {
     env.GOOGLE_PROJECT_ID = "test-project";
-    (env as unknown as Record<string, string>).TEST_GOOGLE_ACCESS_TOKEN =
-        "test-google-access-token";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
 
     return createFetchMock({
         tinybird: createMockTinybird(),
-        tinybirdStats: createTinybirdStatsMock(),
+        tinybirdStats: {
+            state: {},
+            handlerMap: {
+                [TINYBIRD_STATS_HOST]: async () => Response.json({ data: [] }),
+            },
+            reset: () => {},
+        } satisfies MockAPI<Record<string, never>>,
         vertex: createVertexMock(),
     });
-}
-
-function createTinybirdStatsMock(): MockAPI<{ calls: number }> {
-    const state = { calls: 0 };
-    return {
-        state,
-        handlerMap: {
-            [TINYBIRD_STATS_HOST]: async () => {
-                state.calls += 1;
-                return Response.json({ data: [] });
-            },
-        },
-        reset: () => {
-            state.calls = 0;
-        },
-    };
 }
 
 function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
@@ -88,8 +83,19 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
                 state.requests.push(body);
                 const dimensions =
                     body.embedContentConfig?.outputDimensionality ?? 3;
-                const parts = body.content?.parts ?? [];
-                const modality = inferModality(parts[0]);
+                const inlineData =
+                    (
+                        body.content?.parts?.[0]?.inline_data as
+                            | { mime_type?: string }
+                            | undefined
+                    )?.mime_type ?? "";
+                const modality = inlineData.startsWith("image/")
+                    ? "IMAGE"
+                    : inlineData.startsWith("audio/")
+                      ? "AUDIO"
+                      : inlineData.startsWith("video/")
+                        ? "VIDEO"
+                        : "TEXT";
                 return Response.json({
                     embedding: {
                         values: Array.from(
@@ -110,16 +116,6 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
             state.urls = [];
         },
     };
-}
-
-function inferModality(part: Record<string, unknown> | undefined) {
-    if (!part) return "TEXT";
-    const inlineData = part.inline_data as { mime_type?: string } | undefined;
-    const mimeType = inlineData?.mime_type ?? "";
-    if (mimeType.startsWith("image/")) return "IMAGE";
-    if (mimeType.startsWith("audio/")) return "AUDIO";
-    if (mimeType.startsWith("video/")) return "VIDEO";
-    return "TEXT";
 }
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -216,6 +212,34 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
+    test("returns base64-encoded Float32 when encoding_format=base64", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({ encoding_format: "base64" }),
+        });
+        const body = await response.text();
+
+        expect(response.status).toBe(200);
+        const data = JSON.parse(body) as { data: { embedding: string }[] };
+        const encoded = data.data[0].embedding;
+        expect(typeof encoded).toBe("string");
+        const decoded = new Float32Array(Buffer.from(encoded, "base64").buffer);
+        expect(Array.from(decoded)).toEqual([
+            0,
+            Math.fround(0.1),
+            Math.fround(0.2),
+        ]);
+        await wait();
+    });
+
     test("supports batch input", async ({ apiKey, mocks }) => {
         await mocks.enable("tinybird", "tinybirdStats", "vertex");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
@@ -281,30 +305,6 @@ describe("POST /v1/embeddings", () => {
         expect(response.status).toBe(400);
         expect(body).toContain("Blocked request to private/internal URL");
         expect(body).toContain("127.0.0.1");
-    });
-
-    test("rejects oversized data URLs", async ({ apiKey, mocks }) => {
-        await mocks.enable("tinybird", "tinybirdStats");
-        const oversizedDataUrl = `data:image/png,${"a".repeat(MAX_MEDIA_SIZE + 1)}`;
-        const { response } = await fetchWorker("/v1/embeddings", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${apiKey}`,
-            },
-            body: buildEmbeddingsBody({
-                input: [
-                    {
-                        type: "image_url",
-                        image_url: { url: oversizedDataUrl },
-                    },
-                ],
-            }),
-        });
-        const body = await response.text();
-
-        expect(response.status).toBe(400);
-        expect(body).toContain("Image too large");
     });
 
     test("rejects unauthenticated requests", async ({ mocks }) => {

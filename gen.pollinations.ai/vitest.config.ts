@@ -38,7 +38,6 @@ const genAliases = [
     "utils/api-docs.ts",
     "utils/bedrock-guardrail.ts",
     "utils/generation-access.ts",
-    "utils/googleCloudAuth.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
     "utils/safety-features.ts",

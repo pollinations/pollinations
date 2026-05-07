@@ -1,45 +1,12 @@
-export type GeminiTaskType =
-    | "SEMANTIC_SIMILARITY"
-    | "CLASSIFICATION"
-    | "CLUSTERING"
-    | "RETRIEVAL_DOCUMENT"
-    | "RETRIEVAL_QUERY"
-    | "CODE_RETRIEVAL_QUERY"
-    | "QUESTION_ANSWERING"
-    | "FACT_VERIFICATION";
+import type { z } from "zod";
+import type {
+    ContentPartSchema,
+    CreateEmbeddingRequestSchema,
+} from "@/schemas/embeddings.ts";
 
-export interface TextInput {
-    type: "text";
-    text: string;
-}
-
-export interface ImageUrlInput {
-    type: "image_url";
-    image_url: { url: string };
-}
-
-export interface AudioInput {
-    type: "input_audio";
-    input_audio: { data: string; format: string };
-}
-
-export interface VideoUrlInput {
-    type: "video_url";
-    video_url: { url: string; mime_type?: string };
-}
-
-export type ContentPart =
-    | TextInput
-    | ImageUrlInput
-    | AudioInput
-    | VideoUrlInput;
-
-export interface EmbeddingRequest {
-    model: string;
-    input: string | string[] | ContentPart | ContentPart[];
-    dimensions?: number;
-    task_type?: GeminiTaskType;
-}
+export type EmbeddingRequest = z.infer<typeof CreateEmbeddingRequestSchema>;
+export type ContentPart = z.infer<typeof ContentPartSchema>;
+export type GeminiTaskType = NonNullable<EmbeddingRequest["task_type"]>;
 
 export interface GeminiPart {
     text?: string;

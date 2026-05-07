@@ -84,9 +84,6 @@ const factory = createFactory<Env>();
 const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
 });
-const embeddingBodyLimit = bodyLimit({
-    maxSize: 30 * 1024 * 1024,
-});
 
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
@@ -524,7 +521,7 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
             },
         }),
-        embeddingBodyLimit,
+        textBodyLimit,
         validator("json", CreateEmbeddingRequestSchema),
         resolveModel("generate.embedding"),
         track("generate.embedding"),
@@ -534,17 +531,11 @@ export const proxyRoutes = new Hono<Env>()
                 typeof CreateEmbeddingRequestSchema
             >;
             const serviceDef = getModelDefinition(c.var.model.resolved);
-            const response = await generateEmbeddings(
+            return generateEmbeddings(
                 c.env,
-                {
-                    ...requestBody,
-                    model: serviceDef.modelId,
-                },
+                { ...requestBody, model: serviceDef.modelId },
                 c.var.model.resolved,
             );
-            return new Response(response.body, {
-                headers: Object.fromEntries(response.headers),
-            });
         },
     )
     .post(

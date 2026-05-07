@@ -14,97 +14,60 @@ export async function generateEmbeddings(
     responseModel: string = request.model,
 ): Promise<Response> {
     syncGoogleEnvironment(env);
-    const { model, input, dimensions, task_type } = request;
-    const modelId = model;
+    const inputs = normalizeInputs(request.input);
 
-    const inputs = normalizeInputs(input);
-
-    if (inputs.length === 0) {
-        return new Response(
-            JSON.stringify({
-                object: "list",
-                data: [],
-                model: responseModel,
-                usage: { prompt_tokens: 0, total_tokens: 0 },
-            }),
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-model-used": responseModel,
-                },
-            },
-        );
-    }
-
-    // Process in chunks to avoid saturating Vertex AI with concurrent requests
-    const EMBED_CONCURRENCY = 10;
-    const results: {
-        object: "embedding";
-        embedding: number[];
-        index: number;
-        usage: Usage;
-    }[] = [];
-    for (let i = 0; i < inputs.length; i += EMBED_CONCURRENCY) {
-        const chunk = inputs.slice(i, i + EMBED_CONCURRENCY);
-        const chunkResults = await Promise.all(
-            chunk.map(async (singleInput, j) => {
-                const parts = await inputToGeminiParts(singleInput);
-                const result = await callGeminiEmbed(
-                    env,
-                    modelId,
-                    parts,
-                    task_type,
-                    dimensions,
-                );
-                return {
-                    object: "embedding" as const,
-                    embedding: result.embedding.values,
-                    index: i + j,
-                    usage: extractModalityUsage(result),
-                };
-            }),
-        );
-        results.push(...chunkResults);
-    }
-
-    const embeddings = results.map(({ object, embedding, index }) => ({
-        object,
-        embedding,
-        index,
-    }));
+    const results = await Promise.all(
+        inputs.map(async (singleInput, index) => {
+            const parts = await inputToGeminiParts(singleInput);
+            const result = await callGeminiEmbed(
+                request.model,
+                parts,
+                request.task_type,
+                request.dimensions,
+            );
+            const values = result.embedding.values;
+            return {
+                object: "embedding" as const,
+                embedding:
+                    request.encoding_format === "base64"
+                        ? Buffer.from(new Float32Array(values).buffer).toString(
+                              "base64",
+                          )
+                        : values,
+                index,
+                usage: extractModalityUsage(result),
+            };
+        }),
+    );
 
     const aggregatedUsage: Usage = {};
+    let promptTokens = 0;
     for (const r of results) {
         for (const [key, value] of Object.entries(r.usage) as [
             keyof Usage,
-            number | undefined,
+            number,
         ][]) {
-            if (value) {
-                aggregatedUsage[key] = (aggregatedUsage[key] ?? 0) + value;
-            }
+            aggregatedUsage[key] = (aggregatedUsage[key] ?? 0) + value;
+            promptTokens += value;
         }
     }
-    const promptTokens = Object.values(aggregatedUsage).reduce(
-        (s, v) => s + (v ?? 0),
-        0,
+
+    return new Response(
+        JSON.stringify({
+            object: "list",
+            data: results.map(({ object, embedding, index }) => ({
+                object,
+                embedding,
+                index,
+            })),
+            model: responseModel,
+            usage: { prompt_tokens: promptTokens, total_tokens: promptTokens },
+        }),
+        {
+            headers: {
+                "Content-Type": "application/json",
+                ...buildUsageHeaders(responseModel, aggregatedUsage),
+            },
+        },
     );
-
-    const usageHeaders = buildUsageHeaders(responseModel, aggregatedUsage);
-
-    const responseBody = {
-        object: "list",
-        data: embeddings,
-        model: responseModel,
-        usage: {
-            prompt_tokens: promptTokens,
-            total_tokens: promptTokens,
-        },
-    };
-
-    return new Response(JSON.stringify(responseBody), {
-        headers: {
-            "Content-Type": "application/json",
-            ...usageHeaders,
-        },
-    });
 }

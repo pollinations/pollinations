@@ -45,7 +45,7 @@ const VideoUrlContentPartSchema = z.object({
     }),
 });
 
-const ContentPartSchema = z.union([
+export const ContentPartSchema = z.union([
     TextContentPartSchema,
     ImageUrlContentPartSchema,
     AudioContentPartSchema,
@@ -91,6 +91,11 @@ export const CreateEmbeddingRequestSchema = z
                     "Gemini-specific task type hint for optimized embeddings",
                 example: "RETRIEVAL_QUERY",
             }),
+        encoding_format: z.enum(["float", "base64"]).default("float").meta({
+            description:
+                "Output encoding for the embedding vector. `base64` packs Float32 little-endian like OpenAI.",
+            example: "float",
+        }),
     })
     .meta({ $id: "CreateEmbeddingRequest" });
 
@@ -98,8 +103,9 @@ export const CreateEmbeddingRequestSchema = z
 
 const EmbeddingObjectSchema = z.object({
     object: z.literal("embedding"),
-    embedding: z.array(z.number()).meta({
-        description: "The embedding vector",
+    embedding: z.union([z.array(z.number()), z.string()]).meta({
+        description:
+            "Embedding vector — array of floats, or base64-encoded Float32 (little-endian) when `encoding_format=base64`.",
     }),
     index: z.number().int().meta({
         description: "Index of the embedding in the list",

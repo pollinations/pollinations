@@ -26,7 +26,7 @@ const PINNED_NEWS: Highlight[] = [
         emoji: "🌻",
         title: "Developer earnings are live",
         description:
-            "Turn on Developer earnings on any App Key. Users are billed 25% extra, credited to your wallet.",
+            "Turn on Developer earnings on any App Key. Users pay 25% over base rates. Markup credits to your balance.",
     },
 ];
 

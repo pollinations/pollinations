@@ -18,10 +18,7 @@ import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
-    ReplicateAuthError,
-    ReplicateModelError,
-    ReplicateRateLimitError,
-    ReplicateTimeoutError,
+    ReplicateError,
     runReplicatePrediction,
 } from "../utils/replicateClient.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
@@ -169,20 +166,8 @@ export async function callSeedanceV2API(
             predict_time: result.predictTimeSeconds,
         });
     } catch (err) {
-        if (err instanceof ReplicateAuthError) {
-            logError("Replicate auth failed:", err.message);
-            throw new HttpError(`Replicate authentication failed`, 500);
-        }
-        if (err instanceof ReplicateRateLimitError) {
-            logError("Replicate rate limit:", err.message);
-            throw new HttpError(`Replicate rate limit exceeded`, 429);
-        }
-        if (err instanceof ReplicateTimeoutError) {
-            logError("Replicate timeout:", err.message);
-            throw new HttpError(`Seedance 2.0 generation timed out`, 504);
-        }
-        if (err instanceof ReplicateModelError) {
-            logError("Replicate model error:", err.message);
+        if (err instanceof ReplicateError) {
+            logError("Replicate error:", err.message);
             throw new HttpError(
                 `Seedance 2.0 generation failed: ${err.message}`,
                 500,

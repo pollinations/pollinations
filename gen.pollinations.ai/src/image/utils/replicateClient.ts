@@ -1,8 +1,8 @@
 /**
  * Generic Replicate prediction client.
  *
- * Uses Prefer: wait=60 for synchronous attempts, falls back to polling
- * /v1/predictions/{id} on processing status. Token from REPLICATE_API_TOKEN.
+ * Submits via Prefer: wait=60 and polls every 5s until the prediction reaches
+ * a terminal status. Token from REPLICATE_API_TOKEN.
  *
  * Replicate has no public token CRUD API — rotation is semi-automated via
  * tools/scripts/rotation/rotate-genai-replicate.sh.
@@ -12,42 +12,17 @@ import { getImageEnv } from "../env.ts";
 import { sleep } from "../util.ts";
 
 const API_BASE = "https://api.replicate.com/v1";
-const DEFAULT_PREFER_WAIT_SECONDS = 60;
-const DEFAULT_POLL_INTERVAL_MS = 2000;
-const POLL_BACKOFF_CAP_MS = 5000;
-const DEFAULT_TIMEOUT_MS = 240_000; // 4 minutes
-const MAX_RATE_LIMIT_RETRIES = 3;
+const PREFER_WAIT_SECONDS = 60;
+const POLL_INTERVAL_MS = 5000;
 
-export class ReplicateAuthError extends Error {
-    readonly status = 401 as const;
-    constructor(message: string) {
-        super(message);
-        this.name = "ReplicateAuthError";
-    }
-}
-
-export class ReplicateRateLimitError extends Error {
-    readonly status = 429 as const;
-    constructor(message: string) {
-        super(message);
-        this.name = "ReplicateRateLimitError";
-    }
-}
-
-export class ReplicateTimeoutError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = "ReplicateTimeoutError";
-    }
-}
-
-export class ReplicateModelError extends Error {
+export class ReplicateError extends Error {
     constructor(
         message: string,
+        readonly status?: number,
         readonly predictionId?: string,
     ) {
         super(message);
-        this.name = "ReplicateModelError";
+        this.name = "ReplicateError";
     }
 }
 
@@ -56,17 +31,14 @@ interface ReplicatePrediction<TOutput> {
     status: "starting" | "processing" | "succeeded" | "failed" | "canceled";
     output?: TOutput;
     error?: string | null;
-    urls?: { get?: string; cancel?: string };
+    urls?: { get?: string };
     metrics?: { predict_time?: number };
 }
 
 interface RunOptions<TInput> {
-    model: string; // "owner/name" or "owner/name:version"
+    model: string; // "owner/name"
     version?: string; // optional pinned version hash
     input: TInput;
-    preferWaitSeconds?: number;
-    pollIntervalMs?: number;
-    timeoutMs?: number;
 }
 
 interface RunResult<TOutput> {
@@ -84,78 +56,53 @@ export async function runReplicatePrediction<TInput, TOutput>(
         throw new Error("REPLICATE_API_TOKEN environment variable is required");
     }
 
-    const {
-        model,
-        version,
-        input,
-        preferWaitSeconds = DEFAULT_PREFER_WAIT_SECONDS,
-        pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
-        timeoutMs = DEFAULT_TIMEOUT_MS,
-    } = opts;
-
-    const startedAt = Date.now();
+    const { model, version, input } = opts;
 
     // Two endpoints exist:
     //   - POST /v1/models/{owner}/{name}/predictions  → official models, latest version (no hash needed)
     //   - POST /v1/predictions                        → community models OR pinned version (requires `version` hash)
-    // Pick by whether the caller pinned a version.
+    const url = version
+        ? `${API_BASE}/predictions`
+        : `${API_BASE}/models/${model}/predictions`;
     const body: Record<string, unknown> = { input };
     if (version) body.version = version;
 
-    const initial = await postPrediction<TOutput>({
-        token,
-        model,
+    let prediction = await replicateFetch<ReplicatePrediction<TOutput>>(token, {
+        method: "POST",
+        url,
         body,
-        preferWaitSeconds,
-        usePinnedVersion: Boolean(version),
+        prefer: `wait=${PREFER_WAIT_SECONDS}`,
     });
 
-    if (initial.status === "succeeded") {
-        return finalize(initial);
-    }
-    if (initial.status === "failed" || initial.status === "canceled") {
-        throw new ReplicateModelError(
-            initial.error || `Prediction ${initial.status}`,
-            initial.id,
-        );
-    }
-
-    // Poll until terminal or timeout
     const pollUrl =
-        initial.urls?.get || `${API_BASE}/predictions/${initial.id}`;
-    let delay = pollIntervalMs;
-    while (Date.now() - startedAt < timeoutMs) {
-        await sleep(delay);
-        delay = Math.min(delay * 1.1, POLL_BACKOFF_CAP_MS);
+        prediction.urls?.get || `${API_BASE}/predictions/${prediction.id}`;
 
-        const polled = await fetchJson<ReplicatePrediction<TOutput>>({
-            url: pollUrl,
-            token,
+    while (
+        prediction.status === "starting" ||
+        prediction.status === "processing"
+    ) {
+        await sleep(POLL_INTERVAL_MS);
+        prediction = await replicateFetch<ReplicatePrediction<TOutput>>(token, {
             method: "GET",
+            url: pollUrl,
         });
-        if (polled.status === "succeeded") return finalize(polled);
-        if (polled.status === "failed" || polled.status === "canceled") {
-            throw new ReplicateModelError(
-                polled.error || `Prediction ${polled.status}`,
-                polled.id,
-            );
-        }
     }
 
-    throw new ReplicateTimeoutError(
-        `Prediction ${initial.id} did not complete within ${timeoutMs}ms`,
-    );
-}
-
-function finalize<TOutput>(
-    prediction: ReplicatePrediction<TOutput>,
-): RunResult<TOutput> {
-    if (prediction.output === undefined || prediction.output === null) {
-        throw new ReplicateModelError(
-            "Prediction succeeded but output is missing",
+    if (prediction.status === "failed" || prediction.status === "canceled") {
+        throw new ReplicateError(
+            prediction.error || `Prediction ${prediction.status}`,
+            undefined,
             prediction.id,
         );
     }
+    if (prediction.output === undefined || prediction.output === null) {
+        throw new ReplicateError(
+            "Prediction succeeded but output is missing",
+            undefined,
+            prediction.id,
+        );
+    }
+
     return {
         output: prediction.output,
         predictTimeSeconds: prediction.metrics?.predict_time ?? 0,
@@ -164,88 +111,33 @@ function finalize<TOutput>(
     };
 }
 
-interface PostArgs {
-    token: string;
-    model: string;
-    body: Record<string, unknown>;
-    preferWaitSeconds: number;
-    usePinnedVersion: boolean;
-}
-
-async function postPrediction<TOutput>({
-    token,
-    model,
-    body,
-    preferWaitSeconds,
-    usePinnedVersion,
-}: PostArgs): Promise<ReplicatePrediction<TOutput>> {
-    // Official models endpoint when no version is pinned, else generic endpoint with version in body.
-    const url = usePinnedVersion
-        ? `${API_BASE}/predictions`
-        : `${API_BASE}/models/${model}/predictions`;
-    const payload = usePinnedVersion
-        ? { ...body, version: body.version }
-        : body;
-    let lastError: unknown;
-    for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-                Prefer: `wait=${preferWaitSeconds}`,
-            },
-            body: JSON.stringify(payload),
-        });
-
-        if (response.status === 401) {
-            throw new ReplicateAuthError(
-                `Replicate auth failed: ${await safeText(response)}`,
-            );
-        }
-        if (response.status === 429) {
-            const retryAfter = Number(response.headers.get("Retry-After")) || 1;
-            lastError = new ReplicateRateLimitError(
-                `Rate limited by Replicate (retry-after=${retryAfter}s)`,
-            );
-            if (attempt === MAX_RATE_LIMIT_RETRIES) break;
-            await sleep(Math.max(retryAfter, 1) * 1000);
-            continue;
-        }
-        if (!response.ok) {
-            throw new ReplicateModelError(
-                `Replicate POST /predictions failed (HTTP ${response.status}): ${await safeText(response)}`,
-            );
-        }
-        return (await response.json()) as ReplicatePrediction<TOutput>;
-    }
-    throw lastError instanceof Error
-        ? lastError
-        : new ReplicateRateLimitError("Rate limit retries exhausted");
-}
-
 interface FetchArgs {
+    method: "GET" | "POST";
     url: string;
-    token: string;
-    method: "GET";
+    body?: Record<string, unknown>;
+    prefer?: string;
 }
 
-async function fetchJson<T>({ url, token, method }: FetchArgs): Promise<T> {
+async function replicateFetch<T>(
+    token: string,
+    { method, url, body, prefer }: FetchArgs,
+): Promise<T> {
+    const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+    };
+    if (body) headers["Content-Type"] = "application/json";
+    if (prefer) headers.Prefer = prefer;
+
     const response = await fetch(url, {
         method,
-        headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-        },
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
     });
-    if (response.status === 401) {
-        throw new ReplicateAuthError(
-            `Replicate auth failed: ${await safeText(response)}`,
-        );
-    }
+
     if (!response.ok) {
-        throw new ReplicateModelError(
+        throw new ReplicateError(
             `Replicate ${method} ${url} failed (HTTP ${response.status}): ${await safeText(response)}`,
+            response.status,
         );
     }
     return (await response.json()) as T;

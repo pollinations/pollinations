@@ -33,6 +33,7 @@ SQL >
         ge.markup_rate AS markup_rate,
         coalesce(
             nullIf(al.app_name, ''),
+            nullIf(ge.api_key_created_for_app, 'undefined'),
             nullIf(ge.api_key_name, 'undefined'),
             ge.api_key_client_id
         ) AS app_name

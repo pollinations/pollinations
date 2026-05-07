@@ -2,40 +2,56 @@
 
 Your users pay for their own AI usage. You pay $0.
 
-## 🔄 How It Works
-
-1. User connects — via your web app or CLI
-2. Signs in, creates a scoped API key
-3. Their pollen, your app
-
-Why this is good:
-
-- 💸 **$0 costs** — scales to any number of users without costing you a cent
-- 🔑 **No key management** — the auth flow handles it
-- ⚖️ **Self-regulating** — everyone pays for what they use
-- 🌐 **Works everywhere** — web apps, CLIs, MCP servers, anything
-
-Both flows land on the same authorize screen where users set model restrictions, budget, and expiry. Same key, same pollen, different entry point.
-
 ## 🗝️ App Key
 
-An **App Key** is a publishable key (`pk_...`) you create on [enter.pollinations.ai](https://enter.pollinations.ai) specifically for BYOP. It's optional but strongly recommended:
-
-| Without App Key | With App Key |
-|----------------|-------------|
-| Consent screen shows generic hostname | Consent screen shows **your app name + your GitHub** |
-| No traffic attribution | Traffic your app drives is **tracked to your account** |
-| No tier benefit | Real usage → **automatic tier upgrades** → higher pollen grants |
+An **App Key** (`pk_…`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
 To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → **Create New App Key**:
 
-![Create New App Key](https://media.pollinations.ai/aa8ca9fe3110aff7)
+<p align="left"><img src="https://media.pollinations.ai/1133540dc4c19635" alt="Edit App Key" width="420"></p>
 
-Set the **Name** (shows on the consent screen) and at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
+Set the **Name** (shows on the consent screen). For web apps, add at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
-When users authorize, this is what they see:
+When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
-![Authorize Screen](https://media.pollinations.ai/b030a47e32df2b2b)
+<p align="left"><img src="https://media.pollinations.ai/fbc04dd1c77dbfd8" alt="Authorize — signed out" width="420"></p>
+
+Once signed in, they review the requested access and confirm:
+
+<p align="left"><img src="https://media.pollinations.ai/a7e4a1e9c5f48b8d" alt="Authorize — signed in" width="420"></p>
+
+## 💰 Earnings
+
+Each App Key has a `Developer earnings` flag. When enabled, every request through the key bills the user +25% over model cost and credits the difference to your wallet.
+
+### How it's billed
+
+```
+Model cost:    1.00 pollen   (the request's billed cost)
+User billed:   1.25 pollen   (+25% over model cost)
+Your credit:   0.25 pollen   (= 20% of user spend)
+```
+
+Earnings are credited as Pollen and spendable across the Pollinations API like any other balance.
+
+### Where it lands
+
+The credit lands in the same bucket the user paid from — **tier balance** if the user paid from their tier, **paid balance** if they paid from theirs.
+
+### Toggle
+
+In the dashboard: open the App Key → flip the **Developer earnings** switch.
+
+Programmatically, set `earningsEnabled` when creating a publishable App Key with a secret key that has `account:keys` permission:
+
+```bash
+curl -X POST https://gen.pollinations.ai/account/keys \
+  -H 'Authorization: Bearer sk_yoursecretkey' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
+```
+
+To change earnings on an existing App Key, use the dashboard.
 
 ## ⚙️ Web Apps (Redirect Flow)
 

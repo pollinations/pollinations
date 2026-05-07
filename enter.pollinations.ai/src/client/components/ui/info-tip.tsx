@@ -69,7 +69,7 @@ export const InfoTip: FC<InfoTipProps> = ({
             <span
                 id={tooltipId}
                 role="tooltip"
-                className={`${show ? "visible" : "invisible"} absolute right-0 sm:left-0 sm:right-auto ${placementClasses} px-3 py-2 text-gray-800 text-xs font-normal rounded-lg shadow-lg border w-[200px] sm:w-[280px] z-50 pointer-events-none ${classes.popup}`}
+                className={`${show ? "visible" : "invisible"} absolute right-0 sm:left-0 sm:right-auto ${placementClasses} z-50 w-[200px] whitespace-pre-line rounded-lg border px-3 py-2 text-left text-xs font-normal text-gray-800 shadow-lg pointer-events-none sm:w-[280px] ${classes.popup}`}
             >
                 {text}
             </span>

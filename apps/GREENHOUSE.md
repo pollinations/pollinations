@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **709** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **708** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -222,7 +222,7 @@
 | [🎬 Oasis AI](https://oasis-demo-brown.vercel.app/) | Convert long-form LinkedIn or Twitter posts into short vertical Instagram Reels with Oasis AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎛️ Dreamframe](https://funniman23.github.io/Dreamframe/) | Run Dreamframe as a zero-dependency single-HTML-file playground for the pollinations.ai API, accessing images, video, voice, TTS, and music from one interface. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 34 apps</summary>
+<details><summary>Show all 33 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -856,3 +856,4 @@
 | [🥗 FoodAnaly](https://foodanaly.vercel.app/) | Analyze ingredients, nutrition, safety, and health impacts of food. | [@web](https://github.com/web) |  |  |
 
 </details>
+

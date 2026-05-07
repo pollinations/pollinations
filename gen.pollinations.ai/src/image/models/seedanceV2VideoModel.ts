@@ -30,7 +30,7 @@ const logOps = debug("pollinations:seedance2:ops");
 const logError = debug("pollinations:seedance2:error");
 
 const MODEL = "bytedance/seedance-2.0";
-const TRACKING_LABEL = "seedance-2";
+const TRACKING_LABEL = "seedance-2.0";
 // Seedance 2.0 supports all 8 aspect ratios. We pass safeParams.aspectRatio
 // straight through (params.ts validates the enum) and default to 16:9 when
 // the user doesn't specify.
@@ -81,7 +81,7 @@ export async function callSeedanceV2API(
     const resolution = resolutionUpper.toLowerCase();
     if (resolution !== "720p") {
         throw new HttpError(
-            `seedance-2 only supports 720p in v1 (got ${resolution}). Set width=1280 height=720 (or use the default).`,
+            `seedance-2.0 only supports 720p in v1 (got ${resolution}). Set width=1280 height=720 (or use the default).`,
             400,
         );
     }

@@ -91,7 +91,7 @@ export const ImageParamsSchema = z
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
         fps: z.coerce.number().optional(),
-        // Models that support more than 16:9/9:16 (e.g. seedance-2) read this
+        // Models that support more than 16:9/9:16 (e.g. seedance-2.0) read this
         // value directly. Models that only support landscape/portrait fall
         // through calculateVideoResolution which clamps to 16:9 or 9:16.
         aspectRatio: z

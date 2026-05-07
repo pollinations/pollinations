@@ -318,9 +318,9 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
-    "seedance-2": {
-        aliases: [],
-        modelId: "seedance-2",
+    "seedance-2.0": {
+        aliases: ["seedance-2"],
+        modelId: "seedance-2.0",
         provider: "replicate",
         brand: "ByteDance",
         category: "video",

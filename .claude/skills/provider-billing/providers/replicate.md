@@ -21,7 +21,7 @@ REPLICATE_API_TOKEN=$(sops -d gen.pollinations.ai/secrets/prod.vars.json | jq -r
 
 Pollinations production models on Replicate (as of 2026-05-07):
 
-- `bytedance/seedance-2.0` → registered as `seedance-2` (paid only)
+- `bytedance/seedance-2.0.0` → registered as `seedance-2.0` (paid only)
 
 ## Querying spend and usage
 
@@ -51,7 +51,7 @@ For Pollinations operational tracking, use Tinybird (see Finance below).
 Schema lives in the model's OpenAPI:
 
 ```bash
-MODEL=bytedance/seedance-2.0
+MODEL=bytedance/seedance-2.0.0
 curl -sS "https://api.replicate.com/v1/models/$MODEL" \
   -H "Authorization: Bearer $REPLICATE_API_TOKEN" |
   jq '.latest_version.openapi_schema.components.schemas.Input.properties'
@@ -85,7 +85,7 @@ Pollinations v1 only exposes the `non_video_in` tier at 720p ($0.18/sec cost,
 $0.27/sec price = 1.5×). The handler rejects non-720p with HTTP 400 and never
 sets `reference_videos`, so V2V can't be triggered.
 
-The seedance-2 handler maps `safeParams.image` (existing pipe/comma-separated
+The seedance-2.0 handler maps `safeParams.image` (existing pipe/comma-separated
 array param) into one of three Replicate input modes:
 
 - **0 images** → T2V (text only)
@@ -108,7 +108,7 @@ reconciling Replicate's billing if a discrepancy ever shows up.
 Cheapest sanity check (~$0.32) — uses the official-model endpoint (no `version` field needed):
 
 ```bash
-curl -sS -X POST "https://api.replicate.com/v1/models/bytedance/seedance-2.0/predictions" \
+curl -sS -X POST "https://api.replicate.com/v1/models/bytedance/seedance-2.0.0/predictions" \
   -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
   -H "Content-Type: application/json" \
   -H "Prefer: wait=60" \
@@ -134,7 +134,7 @@ End-to-end via Pollinations:
 
 ```bash
 TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -d= -f2)
-curl -s "https://gen.pollinations.ai/image/seedance-2-test?model=seedance-2&width=854&height=480&duration=2&audio=false" \
+curl -s "https://gen.pollinations.ai/image/seedance-2.0-test?model=seedance-2.0&width=854&height=480&duration=2&audio=false" \
   -H "Authorization: Bearer $TOKEN" \
   -o /tmp/seedance2-smoke.mp4 \
   -w "HTTP: %{http_code}, size: %{size_download} bytes\n"
@@ -204,7 +204,7 @@ curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_T
     AND start_time >= toStartOfMonth(now())"
 ```
 
-Use `model_used IN ('seedance-2', ...)` if `model_provider` filter ever returns empty.
+Use `model_used IN ('seedance-2.0', ...)` if `model_provider` filter ever returns empty.
 
 ## Adding a new Replicate model
 

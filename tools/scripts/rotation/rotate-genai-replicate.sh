@@ -234,7 +234,7 @@ if [ -n "$POLLINATIONS_SK_TOKEN" ]; then
     section "End-to-end smoke via $GEN_PROD_URL"
     E2E_OUT=$(mktemp -t pln-seedance2-smoke.XXXXXX.mp4)
     E2E_HTTP=$(curl -s -o "$E2E_OUT" -w "%{http_code}" --max-time 180 \
-        "$GEN_PROD_URL/image/seedance-2-rotation-smoke?model=seedance-2&width=854&height=480&duration=2&audio=false" \
+        "$GEN_PROD_URL/image/seedance-2-rotation-smoke?model=seedance-2.0&width=1280&height=720&duration=4&audio=false" \
         -H "Authorization: Bearer $POLLINATIONS_SK_TOKEN")
     E2E_SIZE=$(stat -f%z "$E2E_OUT" 2>/dev/null || stat -c%s "$E2E_OUT")
     if [ "$E2E_HTTP" = "200" ] && [ "$E2E_SIZE" -gt 50000 ]; then

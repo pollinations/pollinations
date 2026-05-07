@@ -127,7 +127,7 @@ export const IMAGE_CONFIG = {
     },
 
     // ByteDance Seedance 2.0 via Replicate - Multimodal video gen with native audio
-    "seedance-2": {
+    "seedance-2.0": {
         type: "replicate-seedance-2",
         enhance: false,
         isVideo: true,

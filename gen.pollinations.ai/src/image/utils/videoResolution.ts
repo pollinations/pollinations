@@ -17,7 +17,7 @@ const log = debug("pollinations:video:resolution");
 // Accepts any of the params-schema aspect ratios. Inside the helper we clamp
 // to the two we output ("16:9" or "9:16") since legacy video models only
 // support landscape/portrait. Models with broader aspect-ratio support
-// (e.g. seedance-2) read safeParams.aspectRatio directly instead.
+// (e.g. seedance-2.0) read safeParams.aspectRatio directly instead.
 export interface VideoResolutionInput {
     width?: number;
     height?: number;

@@ -62,7 +62,7 @@ export async function createAndReturnVideo(
                 requestId,
             );
             break;
-        case "seedance-2":
+        case "seedance-2.0":
             result = await callSeedanceV2API(
                 prompt,
                 safeParams,

@@ -985,12 +985,21 @@ export const accountRoutes = new Hono<Env>()
             const windows = buildUsageWindows(days, { granularity, period });
 
             try {
-                const cachedData = await kv.get<DailyUsageRecord[]>(
-                    cacheKey,
-                    "json",
-                );
-                let usage = cachedData;
-                const cached = usage !== null;
+                let usage: DailyUsageRecord[] | null = null;
+                let cached = false;
+
+                try {
+                    const cachedData = await kv.get<DailyUsageRecord[]>(
+                        cacheKey,
+                        "json",
+                    );
+                    if (cachedData) {
+                        usage = cachedData;
+                        cached = true;
+                    }
+                } catch (err) {
+                    log.trace("KV get error: {err}", { err });
+                }
 
                 if (!usage) {
                     const chunkResults = await Promise.all(
@@ -1014,9 +1023,13 @@ export const accountRoutes = new Hono<Env>()
                     );
                     usage = sortDailyUsageRecords(chunkResults.flat());
 
-                    await kv.put(cacheKey, JSON.stringify(usage), {
-                        expirationTtl: CACHE_TTL,
-                    });
+                    try {
+                        await kv.put(cacheKey, JSON.stringify(usage), {
+                            expirationTtl: CACHE_TTL,
+                        });
+                    } catch (err) {
+                        log.trace("KV put error: {err}", { err });
+                    }
                 }
 
                 log.debug(
@@ -1123,12 +1136,21 @@ export const accountRoutes = new Hono<Env>()
             };
 
             try {
-                const cachedData = await kv.get<EarningsPayload>(
-                    cacheKey,
-                    "json",
-                );
-                let payload = cachedData;
-                const cached = payload !== null;
+                let payload: EarningsPayload | null = null;
+                let cached = false;
+
+                try {
+                    const cachedData = await kv.get<EarningsPayload>(
+                        cacheKey,
+                        "json",
+                    );
+                    if (cachedData) {
+                        payload = cachedData;
+                        cached = true;
+                    }
+                } catch (err) {
+                    log.trace("KV get error: {err}", { err });
+                }
 
                 if (!payload) {
                     const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
@@ -1144,16 +1166,20 @@ export const accountRoutes = new Hono<Env>()
                     );
                     const daily = rows.filter((r) => r.date !== "");
                     const rollups = rows.filter((r) => r.date === "");
-                    const perApp = rollups
+                    const perApp = [...rollups]
                         .filter((r) => r.app_key_id !== "")
-                        .toSorted((a, b) => b.pollen_earned - a.pollen_earned);
+                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
                     const global =
                         rollups.find((r) => r.app_key_id === "") ?? null;
                     payload = { daily, perApp, global };
 
-                    await kv.put(cacheKey, JSON.stringify(payload), {
-                        expirationTtl: CACHE_TTL,
-                    });
+                    try {
+                        await kv.put(cacheKey, JSON.stringify(payload), {
+                            expirationTtl: CACHE_TTL,
+                        });
+                    } catch (err) {
+                        log.trace("KV put error: {err}", { err });
+                    }
                 }
 
                 log.debug(

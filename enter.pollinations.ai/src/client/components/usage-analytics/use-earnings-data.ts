@@ -62,6 +62,9 @@ export function useEarningsData(
 
         setLoading(true);
         setError(null);
+        setDailyEarnings([]);
+        setPerApp([]);
+        setGlobalSummary(null);
         const params = new URLSearchParams({
             granularity: filters.period.granularity,
             period: filters.period.period,
@@ -260,7 +263,7 @@ export function useEarningsData(
               : null;
         const appCount = visiblePerApp.length;
 
-        const topAppRow = visiblePerApp.toSorted(
+        const topAppRow = [...visiblePerApp].sort(
             (a, b) => b.pollen_earned - a.pollen_earned,
         )[0];
         const topApp: TopApp | null = topAppRow

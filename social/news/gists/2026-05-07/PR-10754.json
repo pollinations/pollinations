@@ -1,0 +1,34 @@
+{
+  "pr_number": 10754,
+  "title": "dx: env-aware docs urls in dashboard",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10754",
+  "merged_at": "2026-05-07T19:31:37Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Home sweet localhost",
+    "blurb": "Dashboard documentation links now respect your local environment, making local development just a little bit smoother.",
+    "summary": "Updated dashboard documentation links to dynamically point to the local generation worker during development instead of hardcoding the production URL.",
+    "impact": "Developers running the dashboard locally will now be correctly routed to their local docs instance instead of production.",
+    "keywords": [
+      "dx",
+      "dashboard",
+      "localhost",
+      "docs",
+      "routing"
+    ],
+    "visual_concept": "Polly the bee acting as a navigator, looking at a signpost that directs traffic to 'Localhost' instead of 'Production'. Represents routing and local development.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny explorer's hat, looking at a wooden signpost with arrows pointing to 'LOCALHOST' and 'PROD'. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-07/PR-10754.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny explorer's hat, looking at a wooden signpost with arrows pointing to 'LOCALHOST' and 'PROD'. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-07T19:32:38.306731+00:00"
+}

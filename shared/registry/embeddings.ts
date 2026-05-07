@@ -3,7 +3,7 @@ import type { ModelDefinition } from "./registry";
 
 // Embedding model IDs as returned by providers
 type EmbeddingModelDefinitions = {
-    "gemini-embedding-2": ModelDefinition<"gemini-embedding-2-preview">;
+    "gemini-embedding-2": ModelDefinition<"gemini-embedding-2">;
 };
 
 export type EmbeddingServiceId = keyof EmbeddingModelDefinitions;
@@ -15,7 +15,7 @@ export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "gemini-embedding-2";
 export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
     "gemini-embedding-2": {
         aliases: ["gemini-embedding", "embedding"],
-        modelId: "gemini-embedding-2-preview",
+        modelId: "gemini-embedding-2",
         provider: "google",
         brand: "Google",
         category: "embedding",

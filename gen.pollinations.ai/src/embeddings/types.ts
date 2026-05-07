@@ -10,7 +10,7 @@ export type GeminiTaskType = NonNullable<EmbeddingRequest["task_type"]>;
 
 export interface GeminiPart {
     text?: string;
-    inline_data?: { mime_type: string; data: string };
+    inlineData?: { mimeType: string; data: string };
 }
 
 export type GeminiModality = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO";

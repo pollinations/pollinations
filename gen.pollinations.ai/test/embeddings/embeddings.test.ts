@@ -15,7 +15,7 @@ import worker from "../../src/index.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
 const TEST_EMBEDDING_MODEL = "gemini-embedding-2";
-const TEST_PROVIDER_MODEL = "gemini-embedding-2-preview";
+const TEST_PROVIDER_MODEL = "gemini-embedding-2";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "us-central1-aiplatform.googleapis.com";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
@@ -85,10 +85,10 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
                     body.embedContentConfig?.outputDimensionality ?? 3;
                 const inlineData =
                     (
-                        body.content?.parts?.[0]?.inline_data as
-                            | { mime_type?: string }
+                        body.content?.parts?.[0]?.inlineData as
+                            | { mimeType?: string }
                             | undefined
-                    )?.mime_type ?? "";
+                    )?.mimeType ?? "";
                 const modality = inlineData.startsWith("image/")
                     ? "IMAGE"
                     : inlineData.startsWith("audio/")
@@ -263,6 +263,50 @@ describe("POST /v1/embeddings", () => {
         await wait();
     });
 
+    test("sends data URL images using Vertex REST media fields", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                input: [
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "data:image/png;base64,aGVsbG8=",
+                        },
+                    },
+                ],
+            }),
+        });
+        const body = await response.text();
+
+        expect(
+            response.status,
+            `Expected 200 but got ${response.status}: ${body}`,
+        ).toBe(200);
+        expect(mocks.vertex.state.requests[0]).toMatchObject({
+            content: {
+                parts: [
+                    {
+                        inlineData: {
+                            mimeType: "image/png",
+                            data: "aGVsbG8=",
+                        },
+                    },
+                ],
+            },
+        });
+        expect(response.headers.get("x-usage-prompt-image-tokens")).toBe("5");
+        await wait();
+    });
+
     test("rejects models that do not support embeddings", async ({
         apiKey,
         mocks,
@@ -283,7 +327,7 @@ describe("POST /v1/embeddings", () => {
         expect(body).toContain("embeddings endpoint");
     });
 
-    test("blocks private media URLs", async ({ apiKey, mocks }) => {
+    test("rejects malformed media URLs", async ({ apiKey, mocks }) => {
         await mocks.enable("tinybird", "tinybirdStats");
         const { response } = await fetchWorker("/v1/embeddings", {
             method: "POST",
@@ -295,7 +339,7 @@ describe("POST /v1/embeddings", () => {
                 input: [
                     {
                         type: "image_url",
-                        image_url: { url: "http://127.0.0.1/test.png" },
+                        image_url: { url: "not-a-url" },
                     },
                 ],
             }),
@@ -303,8 +347,8 @@ describe("POST /v1/embeddings", () => {
         const body = await response.text();
 
         expect(response.status).toBe(400);
-        expect(body).toContain("Blocked request to private/internal URL");
-        expect(body).toContain("127.0.0.1");
+        expect(body).toContain("Failed to fetch image");
+        expect(body).toContain("not-a-url");
     });
 
     test("rejects unauthenticated requests", async ({ mocks }) => {

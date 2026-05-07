@@ -1,34 +1,43 @@
 import { HTTPException } from "hono/http-exception";
-import { ensureUpstreamOk } from "@/error.ts";
+import { HttpError } from "@/image/httpError.ts";
+import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
 import type { ContentPart, EmbeddingRequest, GeminiPart } from "./types.ts";
 
-function isBlockedHost(hostname: string): boolean {
-    const host = hostname.replace(/^\[|\]$/g, "").toLowerCase();
-    if (host === "localhost" || host.endsWith(".localhost")) return true;
-    if (host.includes(":")) return true;
-    const parts = host.split(".").map(Number);
-    return (
-        parts.length === 4 &&
-        parts.every((p) => Number.isInteger(p) && p >= 0 && p <= 255)
-    );
+const MAX_EMBEDDING_BATCH_SIZE = 32;
+
+function badRequest(message: string): never {
+    throw new HTTPException(400, { message });
+}
+
+function parseRemoteMediaUrl(url: string): URL {
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+            badRequest(`Unsupported media URL protocol: ${parsed.protocol}`);
+        }
+        return parsed;
+    } catch (error) {
+        if (error instanceof HTTPException) throw error;
+        badRequest(`Invalid media URL: ${url}`);
+    }
 }
 
 async function fetchMedia(
     url: string,
 ): Promise<{ data: string; contentType: string }> {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        throw new HTTPException(400, {
-            message: `Unsupported media URL protocol: ${parsed.protocol}`,
-        });
+    const parsed = parseRemoteMediaUrl(url);
+    let response: Response;
+    try {
+        response = await fetch(parsed);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        badRequest(`Failed to fetch media: ${message}`);
     }
-    if (parsed.username || parsed.password || isBlockedHost(parsed.hostname)) {
-        throw new HTTPException(400, {
-            message: `Blocked request to private/internal URL: ${parsed.hostname}`,
-        });
+    if (!response.ok) {
+        badRequest(
+            `Failed to fetch media: ${response.status} ${response.statusText}`,
+        );
     }
-    const response = await fetch(parsed, { redirect: "error" });
-    await ensureUpstreamOk(response, parsed);
     const buffer = await response.arrayBuffer();
     return {
         data: Buffer.from(buffer).toString("base64"),
@@ -40,7 +49,7 @@ async function fetchMedia(
 function parseDataUrl(dataUrl: string): { mimeType: string; data: string } {
     const [meta, payload] = dataUrl.split(",", 2);
     if (!meta?.startsWith("data:") || !payload) {
-        throw new HTTPException(400, { message: "Invalid data URL" });
+        badRequest("Invalid data URL");
     }
     const mimeType =
         meta.slice(5).split(";", 1)[0] || "application/octet-stream";
@@ -56,10 +65,21 @@ async function urlToInlineData(
 ): Promise<GeminiPart> {
     if (url.startsWith("data:")) {
         const { mimeType, data } = parseDataUrl(url);
-        return { inline_data: { mime_type: mimeOverride || mimeType, data } };
+        return { inlineData: { mimeType: mimeOverride || mimeType, data } };
     }
     const { data, contentType } = await fetchMedia(url);
-    return { inline_data: { mime_type: mimeOverride || contentType, data } };
+    return { inlineData: { mimeType: mimeOverride || contentType, data } };
+}
+
+async function imageUrlToInlineData(url: string): Promise<GeminiPart> {
+    if (url.startsWith("data:")) return urlToInlineData(url);
+    try {
+        const { base64, mimeType } = await downloadImageAsBase64(url);
+        return { inlineData: { mimeType, data: base64 } };
+    } catch (error) {
+        if (error instanceof HttpError) badRequest(error.message);
+        throw error;
+    }
 }
 
 export async function inputToGeminiParts(
@@ -74,11 +94,11 @@ export async function inputToGeminiParts(
         } else if (part.type === "text") {
             parts.push({ text: part.text });
         } else if (part.type === "image_url") {
-            parts.push(await urlToInlineData(part.image_url.url));
+            parts.push(await imageUrlToInlineData(part.image_url.url));
         } else if (part.type === "input_audio") {
             parts.push({
-                inline_data: {
-                    mime_type: `audio/${part.input_audio.format || "mp3"}`,
+                inlineData: {
+                    mimeType: `audio/${part.input_audio.format}`,
                     data: part.input_audio.data,
                 },
             });
@@ -100,6 +120,13 @@ export function normalizeInputs(
     if (typeof input === "string") return [input];
     if (!Array.isArray(input)) return [[input]];
     if (input.length === 0) return [];
-    if (typeof input[0] === "string") return input as string[];
+    if (typeof input[0] === "string") {
+        if (input.length > MAX_EMBEDDING_BATCH_SIZE) {
+            badRequest(
+                `Embedding batch size exceeds ${MAX_EMBEDDING_BATCH_SIZE} inputs`,
+            );
+        }
+        return input as string[];
+    }
     return [input as ContentPart[]];
 }

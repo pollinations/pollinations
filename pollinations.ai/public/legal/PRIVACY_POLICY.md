@@ -66,7 +66,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 * **Generated response caches (text, image, audio, video):** typically up to 30 days in R2 and in downstream public/browser caches.
 * **Uploaded media files (media.pollinations.ai):** typically up to 30 days in R2 from upload; re-uploading the same file resets the timer.
 * **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
-* **Support tickets:** up to 24 months after closure.
+* **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.
 * **Backups:** encrypted, rolling 30-90 days.
 
 **Deletion rule:** deletion date = last activity + retention period. On account deletion, personal data is deleted within 30 days except where legal retention applies.

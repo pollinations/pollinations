@@ -59,4 +59,4 @@ If you provide a valid VAT ID or purchase for business use, consumer withdrawal 
 
 ## 8) How to Request Review
 
-Email hi@myceli.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. Business days are calculated in EET/EEST (Tallinn).
+Email billing@myceli.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. Business days are calculated in EET/EEST (Tallinn).

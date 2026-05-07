@@ -43,11 +43,7 @@ We may make non-breaking changes and will notify you of material reductions wher
 
 ## 4) Customer Data & Privacy
 
-- **Ownership.** You retain all rights to data you submit ("Customer Data").
-- **Processing.** We process Customer Data to provide and secure the Service, prevent abuse, run billing/wallet features, attribute authorized app usage, and improve core functionality.
-- **Content storage.** Prompts/outputs are processed transiently/in-memory to deliver results and are not retained beyond what's necessary to run the Service, except configuration you choose to save and legally required logs, consent records, security records, app authorization records, and billing/wallet records.
-- **No training without opt-in.** We do not use prompts/outputs to train models without your permission.
-- **GDPR/DPA.** When we process personal data on your behalf, you are the controller and we are the processor. Our DPA and sub-processor categories are linked at /terms#15-dpa-and-sub-processors; the full named sub-processor list is available on request.
+You retain all rights to data you submit ("Customer Data"). How personal data is collected, stored, and processed — including our no-training-without-opt-in commitment, retention periods, and sub-processors — is governed by our **[Privacy Policy](/privacy)**.
 
 ## 5) Acceptable Use & Safety
 
@@ -72,25 +68,15 @@ Developer earnings are credited as Pollen to the developer wallet and land in th
 
 **Taxes.** Prices include applicable VAT or similar transaction taxes where required. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 
-**Payments.** Payments are processed through the checkout provider shown at checkout where applicable.
+**Payments.** Payments are processed by Stripe Payments Europe, Limited. Card details are handled by Stripe and never reach our servers. Stripe sends purchase invoices by email.
 
-**Payment & late fees.** Pay by due date; late amounts may accrue 1.5%/month (or legal max). We may suspend for non-payment after notice.
+**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through future tier refills or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
 
-**Price changes.** Outside beta, we'll give 30 days' notice of fee changes; you may cancel before the effective date. During beta, pricing may change with in-product notice.
+**Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused paid balance within 14 days.
 
-## 7) Refunds & Cancellations (Digital Services & Pollen)
+## 7) Refunds & Cancellations
 
-All sales are final except where required by law or expressly approved by us. Our APIs and Pollen top-ups are digital services delivered immediately after purchase.
-
-**Paid Pollen packs/top-ups.** Paid Pollen is non-refundable once provisioned, including unused paid balance, except where required by law or where we approve a refund case-by-case. Used Pollen cannot be refunded or clawed back. Free tier grants, promotional credits, and developer earnings have no cash value and are not refundable.
-
-**EU/EEA consumer withdrawal.** If you purchase as a consumer in the EU/EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content/services delivered immediately, this right can be lost once performance begins if you expressly consent to immediate delivery and acknowledge that you lose the withdrawal right. We do not currently collect a separate immediate-delivery waiver at checkout. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
-
-**Limited refund review.** We may review refund requests for unused paid balance where required by law or for a proven duplicate/unauthorized charge, failure to provision paid Pollen after payment, or a material documented technical fault that prevents any meaningful use within a reasonable start period. Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be manually reviewed and reversed or adjusted after refund notification.
-
-**How to request.** Contact hi@myceli.ai with order ID and account email. Approved refunds are returned to the original payment method subject to payment-network timelines.
-
-**Chargebacks.** Unpaid/charged-back amounts may lead to suspension. Associated Pollen, credits, benefits, and developer earnings may be manually reviewed and reversed or adjusted after chargeback or dispute notification.
+Refunds, cancellations, and chargebacks are governed by our **[Refunds & Cancellations Policy](/refunds)**. Nothing in these Terms limits non-waivable statutory rights.
 
 ## 8) IP & Open-Source
 
@@ -98,7 +84,7 @@ We and our licensors own the Service, models, and documentation. The Service may
 
 ## 9) Service Level & Support
 
-Commercially reasonable efforts to maintain availability (target 99.5% monthly). We provide support via the channels on our site; SLA credits (if any) are set in your Order Form.
+Commercially reasonable efforts to maintain availability (target 99.5% monthly). Support is provided through the channels on our site. We do not offer SLA credits.
 
 ## 10) Warranties & Liability
 
@@ -117,7 +103,7 @@ Term begins on first access and continues per plan. Either party may terminate f
 
 ## 13) Publicity; Export; Changes; Misc.
 
-We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. Order of precedence: Order Form -> these Terms -> DPA.
+We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. If these Terms and the DPA conflict, the DPA controls for personal-data processing.
 
 ## 14) Governing Law & Venue
 
@@ -136,5 +122,3 @@ When we process personal data on your behalf, you are the **controller** and we 
 - **Model / inference compute providers** (for text/image/video generation)
 
 **Data residency.** Depending on the selected model, provider, and availability, Customer Data may be processed in the EEA, the United States, or other locations where our model and infrastructure providers operate. Where personal data leaves the EEA, we use approved safeguards such as EU Standard Contractual Clauses and appropriate supplementary measures.
-
-We'll email workspace owners on sub-processor changes.

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       setup_status_field:
-        description: "One-shot: ensure QUEST project Status field has the quest-lifecycle options"
+        description: "One-shot: ensure Quest project Status field has the quest-lifecycle options"
         type: boolean
         default: false
 
@@ -60,7 +60,7 @@ jobs:
                 }
               }`, { id: field.id, opts: merged });
 
-            core.notice(`QUEST Status field set to: ${wanted.join(', ')}`);
+            core.notice(`Quest Status field set to: ${wanted.join(', ')}`);
         env:
           QUEST_PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
           QUEST_STATUSES: ${{ env.QUEST_STATUSES }}
@@ -159,7 +159,7 @@ jobs:
             const field = fieldQ.node.field;
             const opt = field.options.find(o => o.name === target);
             if (!opt) {
-                core.warning(`QUEST Status option "${target}" not found. Run the workflow_dispatch with setup_status_field=true once to create the lifecycle options.`);
+                core.warning(`Quest Status option "${target}" not found. Run the workflow_dispatch with setup_status_field=true once to create the lifecycle options.`);
                 return;
             }
 

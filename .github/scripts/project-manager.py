@@ -96,7 +96,7 @@ CONFIG = {
         },
         "quest": {
             "id": "PVT_kwDOBS76fs4BW8uW",
-            "name": "QUEST",
+            "name": "Quest",
             "internal_only": False,
         },
     },
@@ -464,16 +464,16 @@ def main():
             log_error("Tier project not configured")
             return
     if "POLLEN-QUEST" in existing_labels:
-        log_debug("Found POLLEN-QUEST label, routing to QUEST project (skipping auto-assign)")
+        log_debug("Found POLLEN-QUEST label, routing to Quest project (skipping auto-assign)")
         project = CONFIG["projects"].get("quest")
         if not project or not project.get("id"):
-            log_error("QUEST project not configured (CONFIG.projects.quest.id is empty); skipping route")
+            log_error("Quest project not configured (CONFIG.projects.quest.id is empty); skipping route")
             return
         item_id = add_to_project(project["id"])
         if item_id:
-            log_debug("Added to QUEST project successfully")
+            log_debug("Added to Quest project successfully")
         else:
-            log_error("Failed to add POLLEN-QUEST issue to QUEST project")
+            log_error("Failed to add POLLEN-QUEST issue to Quest project")
 
         classification = classify_with_ai(is_internal=True)
         labels = normalize_labels("dev", classification.get("labels", []))

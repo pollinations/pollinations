@@ -64,7 +64,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             },
         ],
         description:
-            "OpenAI text-embedding-3-small on Azure - Low-cost text embeddings. 1536 dimensions, 8192 token limit.",
+            "OpenAI Embedding 3 Small - Low-Cost Text Embeddings. 1536 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
@@ -88,7 +88,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
             },
         ],
         description:
-            "OpenAI text-embedding-3-large on Azure - High-quality text embeddings. 3072 dimensions, 8192 token limit.",
+            "OpenAI Embedding 3 Large - High-Quality Text Embeddings. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,

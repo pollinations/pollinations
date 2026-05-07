@@ -1,0 +1,33 @@
+{
+  "pr_number": 10732,
+  "title": "docs: update README — 2026-05-07",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10732",
+  "merged_at": "2026-05-07T07:58:08Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Daily README Refresh",
+    "blurb": "Our trusty bot updated the repository's front page with the latest news and community apps.",
+    "summary": "Automated daily update to the README file to reflect the latest news and recently added community apps.",
+    "impact": "Keeps the repository's landing page fresh with the latest community creations and updates.",
+    "keywords": [
+      "readme",
+      "bot",
+      "automation",
+      "docs"
+    ],
+    "visual_concept": "The pollinations bee and the robot monitor companion updating a digital billboard or a giant book. Since it's an automated bot updating the README, the robot is the perfect representation.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head and the tiny bee mascot painting a giant digital billboard with fresh pixelated text. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-07/PR-10732.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head and the tiny bee mascot painting a giant digital billboard with fresh pixelated text. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-05-07T07:59:10.396719+00:00"
+}

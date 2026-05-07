@@ -12,6 +12,7 @@ import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 type OpenApiSchema = Record<string, unknown>;
 
 const BYOP_DOCS = BYOP_MD.trim();
+const BYOP_TAG_DOCS = stripFirstMarkdownHeading(BYOP_DOCS);
 const ERRORS_DOCS = [
     "All errors return JSON with a consistent shape:",
     "",
@@ -71,6 +72,10 @@ const CLI_DOCS = [
     "",
     "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
 ].join("\n");
+
+function stripFirstMarkdownHeading(markdown: string): string {
+    return markdown.replace(/^# .*(\r?\n)+/, "").trim();
+}
 
 const IMAGE_ALIASES = new Set(
     Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
@@ -244,6 +249,24 @@ const LLM_BUTTON_HTML = `
   document.body.appendChild(button);
 })();
 </script>`;
+
+const API_REFERENCE_CUSTOM_CSS = `
+.scalar-app .markdown:has(table) {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scalar-app .markdown:has(table) table {
+  min-width: 720px !important;
+}
+
+.scalar-app .markdown:has(table) table th,
+.scalar-app .markdown:has(table) table td {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+`;
 
 function generationDocumentation(): OpenApiSchema {
     return {
@@ -448,7 +471,7 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: "🌸 Bring Your Own Pollen",
-                description: BYOP_DOCS,
+                description: BYOP_TAG_DOCS,
             },
             {
                 name: "🖥️ CLI",
@@ -677,6 +700,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 pageTitle: "Pollinations API Reference",
                 title: "Pollinations API Reference",
                 theme: "saturn",
+                customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 sources: [
                     { url: "/docs/open-api/generate-schema", title: "API" },

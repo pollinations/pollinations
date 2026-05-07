@@ -102,7 +102,6 @@ CONFIG = {
     },
     "org_members": [
         "voodoohop",
-        "eulervoid",
         "ElliotEtag",
         "Circuit-Overtime",
         "Itachi-1824"
@@ -110,7 +109,6 @@ CONFIG = {
     "discord_uid_to_github": {
         "304378879705874432": "voodoohop",
         "884468469452656732": "ElliotEtag",
-        "1085433243102347354": "eulervoid",
         "859708931478388767": "Itachi-1824",
         "738661669332320287": "Circuit-Overtime",
     },
@@ -465,11 +463,6 @@ def main():
         else:
             log_error("Tier project not configured")
             return
-
-    # POLLEN-QUEST issues are reward-bearing community quests. They always
-    # land in the QUEST project and are NEVER auto-assigned — assignment is
-    # the explicit "claimed" signal in the quest lifecycle. AI still runs
-    # to attach DEV-* type labels, but its project routing is ignored.
     if "POLLEN-QUEST" in existing_labels:
         log_debug("Found POLLEN-QUEST label, routing to QUEST project (skipping auto-assign)")
         project = CONFIG["projects"].get("quest")

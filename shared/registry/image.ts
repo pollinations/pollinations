@@ -326,13 +326,13 @@ export const IMAGE_SERVICES = {
         category: "video",
         paidOnly: true,
         cost: [
-            // Replicate per-second pricing, anchored at 720p+audio (~$0.22/sec).
-            // Split: $0.18 video + $0.04 audio premium ($0.22 total at 720p w/audio).
-            // 480p under-bills (~50% margin shortfall accepted); 1080p blocked at handler.
+            // Replicate "non_video_in" tier at 720p (verified empirically via
+            // metrics.model_variant). Audio is free. Image input is free.
+            // The "video_in" tier only triggers with reference_videos, which we
+            // don't expose. Resolution locked to 720p in the handler.
             {
                 date: COST_START_DATE,
                 completionVideoSeconds: 0.18,
-                completionAudioSeconds: 0.04,
             },
         ],
         price: [
@@ -340,11 +340,10 @@ export const IMAGE_SERVICES = {
             {
                 date: COST_START_DATE,
                 completionVideoSeconds: 0.27,
-                completionAudioSeconds: 0.06,
             },
         ],
         description:
-            "Seedance 2.0 - ByteDance multimodal video gen via Replicate (480p/720p, native audio default on)",
+            "Seedance 2.0 - ByteDance multimodal video gen via Replicate (720p, native audio)",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
     },

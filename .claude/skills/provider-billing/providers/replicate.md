@@ -69,13 +69,25 @@ for m in re.finditer(r'(\\{[^{}]{0,200}\\\$[\\d.]+[^{}]{0,200}per second of outp
     except: pass"
 ```
 
-For Seedance 2.0 (validated 2026-05-07):
+For Seedance 2.0 (validated empirically 2026-05-07 via two 720p predictions, one
+T2V and one I2V — both came back tagged `metrics.model_variant: "non_video_in"`,
+confirming the price categories below).
 
-| Resolution | No audio | With audio |
-|---|---|---|
-| 480p | $0.08/sec | $0.10/sec |
-| 720p | $0.18/sec | $0.22/sec |
-| 1080p | $0.45/sec | $0.55/sec |
+The 6 price tiers shown on the public model page split by **resolution × model
+variant**, NOT by audio. Audio is free; image input is free.
+
+| Mode | 480p | 720p | 1080p |
+|---|---|---|---|
+| **`non_video_in`** — T2V or I2V (no `reference_videos`) | $0.08/sec | $0.18/sec | $0.45/sec |
+| **`video_in`** — V2V (`reference_videos` provided) | $0.10/sec | $0.22/sec | $0.55/sec |
+
+Pollinations v1 only exposes the `non_video_in` tier at 720p ($0.18/sec cost,
+$0.27/sec price = 1.5×). The handler rejects non-720p with HTTP 400 and never
+sets `reference_videos`, so V2V can't be triggered.
+
+Each completed prediction's `metrics` object includes `model_variant`,
+`resolution_target`, and `video_output_duration_seconds` — useful for
+reconciling Replicate's billing if a discrepancy ever shows up.
 
 ## Runtime smoke tests
 

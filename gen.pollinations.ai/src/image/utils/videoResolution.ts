@@ -14,10 +14,22 @@ import debug from "debug";
 
 const log = debug("pollinations:video:resolution");
 
+// Accepts any of the params-schema aspect ratios. Inside the helper we clamp
+// to the two we output ("16:9" or "9:16") since legacy video models only
+// support landscape/portrait. Models with broader aspect-ratio support
+// (e.g. seedance-2) read safeParams.aspectRatio directly instead.
 export interface VideoResolutionInput {
     width?: number;
     height?: number;
-    aspectRatio?: "16:9" | "9:16";
+    aspectRatio?:
+        | "16:9"
+        | "4:3"
+        | "1:1"
+        | "3:4"
+        | "9:16"
+        | "21:9"
+        | "9:21"
+        | "adaptive";
     defaultResolution?: "480P" | "720P" | "1080P";
 }
 
@@ -85,8 +97,10 @@ export function calculateVideoResolution(
         return { aspectRatio, resolution };
     }
 
-    // Case 2: Only aspect ratio provided - use defaults
-    const aspectRatio = input.aspectRatio || "16:9";
+    // Case 2: Only aspect ratio provided - use defaults. Clamp to the two
+    // values legacy video models support (anything else falls through to 16:9).
+    const aspectRatio: "16:9" | "9:16" =
+        input.aspectRatio === "9:16" ? "9:16" : "16:9";
 
     log(`Using aspect ratio preset: ${aspectRatio} @ ${defaultRes} (default)`);
 

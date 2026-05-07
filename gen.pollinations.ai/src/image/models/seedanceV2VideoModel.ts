@@ -2,8 +2,13 @@
  * ByteDance Seedance 2.0 video generation via Replicate.
  *
  * Multimodal: text→video, image→video (first frame), first+last frame
- * interpolation, native synchronized audio. 1080p blocked in v1 — flat 720p+audio
- * cost rate would lose ~40% margin at 1080p.
+ * interpolation, native synchronized audio.
+ *
+ * v1 scope: 720p only (480p and 1080p rejected). T2V + I2V only — we don't
+ * expose `reference_videos` (which would trigger Replicate's "video_in" pricing
+ * tier). Resolution + reference_videos are the only Replicate price multipliers;
+ * audio and image input are free. Empirically verified via
+ * metrics.model_variant=non_video_in for both T2V and I2V at 720p.
  */
 
 import debug from "debug";
@@ -26,13 +31,24 @@ const logError = debug("pollinations:seedance2:error");
 
 const MODEL = "bytedance/seedance-2.0";
 const TRACKING_LABEL = "seedance-2";
-const SUPPORTED_ASPECT_RATIOS = ["16:9", "9:16"] as const;
+// Seedance 2.0 supports all 8 aspect ratios. We pass safeParams.aspectRatio
+// straight through (params.ts validates the enum) and default to 16:9 when
+// the user doesn't specify.
+type SeedanceAspectRatio =
+    | "16:9"
+    | "4:3"
+    | "1:1"
+    | "3:4"
+    | "9:16"
+    | "21:9"
+    | "9:21"
+    | "adaptive";
 
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
-    resolution: "480p" | "720p";
-    aspect_ratio: "16:9" | "9:16";
+    resolution: "720p";
+    aspect_ratio: SeedanceAspectRatio;
     generate_audio: boolean;
     seed?: number;
     image?: string;
@@ -52,30 +68,25 @@ export async function callSeedanceV2API(
         "Starting Seedance 2.0 video generation...",
     );
 
-    const { aspectRatio, resolution: resolutionUpper } =
-        calculateVideoResolution({
-            width: safeParams.width,
-            height: safeParams.height,
-            aspectRatio: safeParams.aspectRatio,
-            defaultResolution: "720P",
-        });
-    const resolution = resolutionUpper.toLowerCase() as
-        | "480p"
-        | "720p"
-        | "1080p";
-
-    if (resolution === "1080p") {
+    // Resolution is locked to 720p in v1. Reject explicit 480p / 1080p requests.
+    const { resolution: resolutionUpper } = calculateVideoResolution({
+        width: safeParams.width,
+        height: safeParams.height,
+        aspectRatio: safeParams.aspectRatio,
+        defaultResolution: "720P",
+    });
+    const resolution = resolutionUpper.toLowerCase();
+    if (resolution !== "720p") {
         throw new HttpError(
-            "1080p is not yet enabled for seedance-2 (margin protection in v1). Use 480p or 720p.",
+            `seedance-2 only supports 720p in v1 (got ${resolution}). Set width=1280 height=720 (or use the default).`,
             400,
         );
     }
 
-    const aspectRatioFinal = SUPPORTED_ASPECT_RATIOS.includes(
-        aspectRatio as (typeof SUPPORTED_ASPECT_RATIOS)[number],
-    )
-        ? (aspectRatio as "16:9" | "9:16")
-        : "16:9";
+    // Aspect ratio: pass user's choice straight through (params.ts validates
+    // the enum). Default to 16:9 when not specified.
+    const aspectRatioFinal: SeedanceAspectRatio =
+        safeParams.aspectRatio ?? "16:9";
 
     // Seedance 2.0 requires duration in [4, 15] or -1 (intelligent duration).
     // Clamp shorter requests up to 4s; pass -1 through; cap at 15s.
@@ -101,7 +112,7 @@ export async function callSeedanceV2API(
     const input: SeedanceV2Input = {
         prompt,
         duration,
-        resolution: resolution as "480p" | "720p",
+        resolution: "720p",
         aspect_ratio: aspectRatioFinal,
         generate_audio: generateAudio,
     };
@@ -184,8 +195,10 @@ export async function callSeedanceV2API(
         trackingData: {
             actualModel: TRACKING_LABEL,
             usage: {
+                // Audio is free in Replicate's pricing (verified empirically),
+                // so we only emit video seconds. T2V and I2V both fall in the
+                // "non_video_in" tier at 720p.
                 completionVideoSeconds: billedDuration,
-                completionAudioSeconds: generateAudio ? billedDuration : 0,
             },
         },
     };

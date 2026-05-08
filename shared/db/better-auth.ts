@@ -11,7 +11,7 @@ import { relations } from "drizzle-orm";
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   emailVerified: integer("email_verified", { mode: "boolean" })
     .default(false)
     .notNull(),

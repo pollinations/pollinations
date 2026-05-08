@@ -1,3 +1,4 @@
+import { getCurrentAuthContext } from "@better-auth/core/context";
 import { createApiKeyPlugin } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import {
@@ -9,6 +10,8 @@ import {
     type BetterAuthOptions,
     type BetterAuthPlugin,
     betterAuth,
+    type DBAdapter,
+    type DBTransactionAdapter,
     type GenericEndpointContext,
     type User as GenericUser,
 } from "better-auth";
@@ -18,6 +21,69 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { sendTierEventToTinybird } from "./events.ts";
+
+type DBAdapterFactory = (options: BetterAuthOptions) => DBAdapter;
+type FindOneQuery = Parameters<DBAdapter["findOne"]>[0];
+
+function strictGithubOAuthAdapter(factory: DBAdapterFactory): DBAdapterFactory {
+    return (options) => strictGithubOAuthDBAdapter(factory(options));
+}
+
+function strictGithubOAuthDBAdapter(adapter: DBAdapter): DBAdapter {
+    return {
+        ...adapter,
+        findOne: strictFindOne(adapter),
+        transaction: (callback) =>
+            adapter.transaction((trx) =>
+                callback(strictGithubOAuthTransactionAdapter(trx)),
+            ),
+    };
+}
+
+function strictGithubOAuthTransactionAdapter(
+    adapter: DBTransactionAdapter,
+): DBTransactionAdapter {
+    return {
+        ...adapter,
+        findOne: strictFindOne(adapter),
+    };
+}
+
+function strictFindOne(adapter: Pick<DBAdapter, "findOne">) {
+    return async <T>(query: FindOneQuery): Promise<T | null> => {
+        // Better Auth 1.4 falls back to user.email during OAuth sign-in.
+        // GitHub auth must resolve only by the immutable provider account id.
+        if (isUserEmailLookup(query) && (await isGithubOAuthCallback())) {
+            return null;
+        }
+
+        return adapter.findOne<T>(query);
+    };
+}
+
+function isUserEmailLookup(query: FindOneQuery): boolean {
+    const [where] = query.where;
+    return (
+        query.model === "user" &&
+        query.where.length === 1 &&
+        where?.field === "email" &&
+        where.operator === undefined
+    );
+}
+
+async function isGithubOAuthCallback(): Promise<boolean> {
+    try {
+        const current = await getCurrentAuthContext();
+        const requestUrl = current.request?.url;
+        if (!requestUrl) return false;
+
+        return new URL(requestUrl).pathname.endsWith(
+            "/api/auth/callback/github",
+        );
+    } catch {
+        return false;
+    }
+}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -36,10 +102,20 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         onAPIError: {
             errorURL: "/error",
         },
-        database: drizzleAdapter(db, {
-            schema: betterAuthSchema,
-            provider: "sqlite",
-        }),
+        database: strictGithubOAuthAdapter(
+            drizzleAdapter(db, {
+                schema: betterAuthSchema,
+                provider: "sqlite",
+            }),
+        ),
+        account: {
+            accountLinking: {
+                enabled: false,
+                disableImplicitLinking: true,
+                allowDifferentEmails: false,
+                trustedProviders: [],
+            },
+        },
         advanced: {
             // Configure background tasks for Cloudflare Workers
             // Required for deferUpdates to work properly

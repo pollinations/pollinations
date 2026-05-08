@@ -17,7 +17,11 @@ function hasActiveSafety(value: string | null | undefined): boolean {
     return parseSafeFeatures(value).size > 0;
 }
 
-export function generateCacheKey(url: URL, safeHeader?: string | null): string {
+export function generateCacheKey(
+    url: URL,
+    safeHeader?: string | null,
+    resolvedModel?: string,
+): string {
     const normalizedUrl = new URL(url);
     const hasQuerySafe = normalizedUrl.searchParams.has("safe");
     const usesSafety = hasActiveSafety(normalizedUrl.searchParams.get("safe"));
@@ -29,7 +33,12 @@ export function generateCacheKey(url: URL, safeHeader?: string | null): string {
     normalizedUrl.search = "";
     for (const [key, value] of params) {
         if (!EXCLUDED_PARAMS.includes(key)) {
-            normalizedUrl.searchParams.append(key, value);
+            normalizedUrl.searchParams.append(
+                key,
+                key.toLowerCase() === "model" && resolvedModel
+                    ? resolvedModel
+                    : value,
+            );
         }
     }
     if (safeHeader !== undefined && safeHeader !== null && !hasQuerySafe) {

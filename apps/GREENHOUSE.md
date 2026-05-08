@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **709** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **708** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -222,7 +222,7 @@
 | [🎬 Oasis AI](https://oasis-demo-brown.vercel.app/) | Convert long-form LinkedIn or Twitter posts into short vertical Instagram Reels with Oasis AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎛️ Dreamframe](https://funniman23.github.io/Dreamframe/) | Run Dreamframe as a zero-dependency single-HTML-file playground for the pollinations.ai API, accessing images, video, voice, TTS, and music from one interface. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 34 apps</summary>
+<details><summary>Show all 33 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -238,7 +238,6 @@
 | [🎬 AI TikTok Video Generator](https://tiktok.pixpal.chat) | AI tool that generates catchy hooks and applies trending effects in-browser. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 AvaTube](https://avatube.ai/) | AI-powered social media where avatars create content without cameras. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 Anime AI Studio](https://www.animeaistudio.com/) | AI short drama platform with 5-stage pipeline from script to video | [@web](https://github.com/web) |  | 🫧 |
-| [🎬 YT SHORTSs](https://ytai.com) | Tool for creating and managing YouTube Shorts | [@web](https://github.com/web) |  | 🫧 |
 | [🎞️ Onyx - The AI Storyboard Engine.](https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/) | Dark AI storyboard engine turning scripts into noir visual sequences | [@web](https://github.com/web) |  | 🫧 |
 | [🗣️ Realistic Text To Speech](https://huggingface.co/spaces/NihalGazi/Text-To-Speech-Unlimited) | Unlimited high-quality TTS with prompt-level emotion control | [@web](https://github.com/web) |  | 🫧 |
 | [⛽ TuffMeter](https://tuffmeter.netlify.app/) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on visua... | [@web](https://github.com/web) |  | 🫧 |

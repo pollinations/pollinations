@@ -65,6 +65,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash"],
     },
     {
+        name: "gemma",
+        config: portkeyConfig["google/gemma-4-26B-A4B-it"],
+    },
+    {
         name: "deepseek-pro",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro"],
     },

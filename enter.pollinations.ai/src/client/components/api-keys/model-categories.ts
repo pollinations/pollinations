@@ -1,25 +1,38 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { Category } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { getModelDisplayName } from "./model-utils.ts";
 
-export type ModelCategoryLabel = "Text" | "Image" | "Video" | "Audio";
+export type ModelCategoryLabel =
+    | "Text"
+    | "Image"
+    | "Video"
+    | "Audio"
+    | "Embedding";
 export type ModelCategoryModel = { id: string; label: string };
 export type ModelCategoryGroup = {
     category: Category;
     label: ModelCategoryLabel;
-    modality: "text" | "images" | "video" | "audio";
+    modality: "text" | "images" | "video" | "audio" | "embeddings";
     models: ModelCategoryModel[];
 };
 
-const CATEGORY_ORDER: Category[] = ["text", "image", "video", "audio"];
+const CATEGORY_ORDER: Category[] = [
+    "text",
+    "image",
+    "video",
+    "audio",
+    "embedding",
+];
 
 const CATEGORY_LABELS: Record<Category, ModelCategoryLabel> = {
     text: "Text",
     image: "Image",
     video: "Video",
     audio: "Audio",
+    embedding: "Embedding",
 };
 
 const CATEGORY_MODALITIES: Record<
@@ -30,12 +43,14 @@ const CATEGORY_MODALITIES: Record<
     Image: "images",
     Video: "video",
     Audio: "audio",
+    Embedding: "embeddings",
 };
 
 const allRegistryEntries = [
     ...Object.entries(TEXT_SERVICES),
     ...Object.entries(IMAGE_SERVICES),
     ...Object.entries(AUDIO_SERVICES),
+    ...Object.entries(EMBEDDING_SERVICES),
 ] as Array<[string, { category: Category }]>;
 
 export const MODEL_CATEGORIES: ModelCategoryGroup[] = CATEGORY_ORDER.map(
@@ -71,6 +86,8 @@ export const imageModelIds = getCategoryModelIds("image");
 export const videoModelIds = getCategoryModelIds("video");
 
 export const audioModelIds = getCategoryModelIds("audio");
+
+export const embeddingModelIds = getCategoryModelIds("embedding");
 
 export function computeCategoryModalities(
     allowedModels: string[] | null,

@@ -6,7 +6,7 @@ import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Tag } from "../ui/tag.tsx";
 
-import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
+import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
     getModelCapabilityIcons,
@@ -26,13 +26,14 @@ import {
 import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
-export type SectionType = "image" | "video" | "audio" | "text";
+export type SectionType = "image" | "video" | "audio" | "text" | "embedding";
 
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
+    embeddingModels: ModelPrice[];
     activeTab: SectionType;
     tierBalance?: number;
     packBalance?: number;
@@ -65,7 +66,8 @@ const getInputSortValue = (modelName: string): number => {
         (p.promptCachedTokens ?? 0) +
         (p.promptAudioTokens ?? 0) +
         (p.promptAudioSeconds ?? 0) +
-        (p.promptImageTokens ?? 0);
+        (p.promptImageTokens ?? 0) +
+        (p.promptVideoTokens ?? 0);
     return sum > 0 ? sum : -1;
 };
 
@@ -118,6 +120,7 @@ const unitLabels: Record<string, string> = {
     image: "images",
     video: "videos",
     audio: "responses",
+    embedding: "embeddings",
 };
 
 export const sectionLabels: Record<SectionType, string> = {
@@ -125,12 +128,13 @@ export const sectionLabels: Record<SectionType, string> = {
     video: "Video",
     audio: "Audio",
     text: "Text",
+    embedding: "Embedding",
 };
 
 // --- Tab content ---
 
 type TabContentProps = {
-    type: "text" | "image" | "video" | "audio";
+    type: SectionType;
     models: ModelPrice[];
     sortKey: SortKey;
     sortDir: SortDir;
@@ -240,15 +244,15 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
-
     const perPollen = calculatePerPollen(model);
-    const balanceRequests = isSignedIn
-        ? calculateForBalance(model, effectiveBalance)
-        : null;
-    const isDisabled = isSignedIn && balanceRequests === "0";
+    const isDisabled =
+        isSignedIn &&
+        !canAffordModel(
+            model,
+            tierBalance ?? 0,
+            packBalance ?? 0,
+            showPaidOnly,
+        );
 
     const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
@@ -439,6 +443,12 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       subEmojis: ["🖼️"],
                       perToken: model.perToken,
                   },
+                  {
+                      prices: [model.promptVideoPrice],
+                      emoji: "🎬",
+                      subEmojis: ["🎬"],
+                      perToken: model.perToken,
+                  },
               ]
             : [
                   {
@@ -553,6 +563,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     videoModels,
     textModels,
     audioModels,
+    embeddingModels,
     activeTab,
     tierBalance,
     packBalance,
@@ -564,6 +575,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             ? [{ type: "audio" as const, models: audioModels }]
             : []),
         { type: "text", models: textModels },
+        ...(embeddingModels.length > 0
+            ? [{ type: "embedding" as const, models: embeddingModels }]
+            : []),
     ];
 
     const [sortKey, setSortKey] = useState<SortKey>("perPollen");

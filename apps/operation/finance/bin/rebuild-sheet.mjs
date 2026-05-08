@@ -338,7 +338,7 @@ async function main() {
         spreadsheetId,
         {
             range: fullCanvas,
-            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.textFormat.fontSize,userEnteredFormat.backgroundColor,userEnteredFormat.borders,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment",
+            fields: "userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.italic,userEnteredFormat.textFormat.foregroundColor,userEnteredFormat.textFormat.fontSize,userEnteredFormat.backgroundColor,userEnteredFormat.borders,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment,userEnteredFormat.numberFormat",
             format: {
                 textFormat: {
                     bold: false,
@@ -363,7 +363,7 @@ async function main() {
 
     const firstMonthCol = colLetter(2);
     const totalCol = colLetter(2 + extended.months.length);
-    const firstDataRow = layout.freezeRows + 1;
+    const firstDataRow = layout.firstNumericRow;
     const numericRange = `Runway!${firstMonthCol}${firstDataRow}:${totalCol}${layout.cells.length}`;
     await applyNumberFormat(
         spreadsheetId,

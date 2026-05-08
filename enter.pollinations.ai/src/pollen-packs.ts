@@ -19,12 +19,12 @@ const BASE_POLLEN_PACKS: ReadonlyArray<{
     amountUsd: number;
     bonusPollen: number;
 }> = [
-    { amountUsd: 2, bonusPollen: 0.5 },
-    { amountUsd: 5, bonusPollen: 2 },
-    { amountUsd: 10, bonusPollen: 5 },
-    { amountUsd: 20, bonusPollen: 10 },
-    { amountUsd: 50, bonusPollen: 30 },
-    { amountUsd: 100, bonusPollen: 100 },
+    { amountUsd: 2, bonusPollen: 0 },
+    { amountUsd: 5, bonusPollen: 0.5 },
+    { amountUsd: 10, bonusPollen: 2 },
+    { amountUsd: 20, bonusPollen: 6 },
+    { amountUsd: 50, bonusPollen: 20 },
+    { amountUsd: 100, bonusPollen: 50 },
 ];
 
 const PACK_AMOUNT_SET = new Set<PollenPackAmount>(
@@ -44,13 +44,20 @@ export const formatPollenPackValue = (value: number): string =>
 export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
     ({ amountUsd, bonusPollen }) => {
         const pollenGrant = amountUsd + bonusPollen;
+        const hasBonus = bonusPollen > 0;
+        const bonusSuffix = hasBonus
+            ? ` + ${formatPollenPackValue(bonusPollen)} FREE`
+            : "";
+        const bonusSentence = hasBonus
+            ? ` We’re still in beta, so this pack includes ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)}.`
+            : "";
 
         return {
             amountUsd,
             bonusPollen,
             pollenGrant,
-            checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen + ${formatPollenPackValue(bonusPollen)} FREE`,
-            checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱 We’re still in beta, so this pack includes ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)}. Feedback: ${CHECKOUT_FEEDBACK_URL}`,
+            checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen${bonusSuffix}`,
+            checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱${bonusSentence} Feedback: ${CHECKOUT_FEEDBACK_URL}`,
             checkoutImageUrl: CHECKOUT_IMAGE_URL,
             taxCode: POLLEN_TAX_CODE,
         };

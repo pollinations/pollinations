@@ -132,10 +132,9 @@ jobs:
             }
 
             // ── Status transitions (POLLEN-QUEST issues only) ─────────────
+            // Note: `unlabeled` is intentionally absent from the workflow trigger,
+            // so removing POLLEN-QUEST is a true no-op (the card stays as-is).
             if (!labels.includes('POLLEN-QUEST')) return;
-
-            // POLLEN-QUEST removed manually → leave card as-is per spec.
-            if (action === 'unlabeled') return;
 
             let target = null;
             if (action === 'opened' || (action === 'labeled' && labelEvent === 'POLLEN-QUEST')) {

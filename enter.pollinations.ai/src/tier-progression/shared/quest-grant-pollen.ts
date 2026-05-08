@@ -49,10 +49,12 @@ const grantCommand = command({
         const env = opts.env as Environment;
         const amount = opts.amount;
 
-        if (!Number.isFinite(amount) || amount <= 0) {
-            console.error(`❌ Amount must be a positive number, got: ${amount}`);
+        const MAX_AMOUNT = 10000;
+        if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_AMOUNT) {
+            console.error(`❌ Amount must be a positive number ≤ ${MAX_AMOUNT}, got: ${amount}`);
             process.exit(1);
         }
+        const safeAmount = Number(amount.toFixed(2));
 
         const user = getUser(env, opts.githubUsername);
         if (!user) {
@@ -60,7 +62,7 @@ const grantCommand = command({
             process.exit(2);
         }
 
-        const sql = `UPDATE user SET pack_balance = COALESCE(pack_balance, 0) + ${amount} WHERE id = '${user.id}';`;
+        const sql = `UPDATE user SET pack_balance = COALESCE(pack_balance, 0) + ${safeAmount} WHERE id = '${user.id}';`;
         queryD1(env, sql);
 
         const previous = user.pack_balance ?? 0;

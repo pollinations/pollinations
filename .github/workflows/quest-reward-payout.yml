@@ -84,7 +84,7 @@ jobs:
             }
 
       - name: Compute payouts
-        if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.linked.outputs.quests != '[]'
+        if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.linked.outputs.quests != '' && steps.linked.outputs.quests != '[]'
         id: resolve
         uses: actions/github-script@v7
         env:

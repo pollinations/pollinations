@@ -91,6 +91,21 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
     );
 };
 
+const ArrowRightIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+);
+
 type PollenPackReadoutProps = {
     pack: PollenPack;
     showBonus?: boolean;
@@ -120,13 +135,7 @@ export const PollenPackReadout: FC<PollenPackReadoutProps> = ({
                 >
                     ${pack.amountUsd}
                 </span>
-                <span
-                    className={
-                        isButtonTone ? "text-amber-600" : "text-amber-400"
-                    }
-                >
-                    -&gt;
-                </span>
+                <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 self-center text-amber-950" />
                 <span
                     className={cn(
                         "text-amber-950",

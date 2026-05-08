@@ -8,11 +8,6 @@ import type { Env } from "@/env.ts";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 
 const BYOP_DOCS = BYOP_MD.trim();
-const BYOP_TAG_DOCS = stripFirstMarkdownHeading(BYOP_DOCS);
-
-function stripFirstMarkdownHeading(markdown: string): string {
-    return markdown.replace(/^# .*(\r?\n)+/, "").trim();
-}
 
 // Get all model aliases (values we want to hide from docs)
 const IMAGE_ALIASES: Set<string> = new Set(
@@ -1380,7 +1375,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                         },
                         {
                             name: "🌸 Bring Your Own Pollen",
-                            description: BYOP_TAG_DOCS,
+                            description: BYOP_DOCS,
                         },
                     ],
                 },

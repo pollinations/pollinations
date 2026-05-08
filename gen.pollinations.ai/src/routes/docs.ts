@@ -12,7 +12,6 @@ import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 type OpenApiSchema = Record<string, unknown>;
 
 const BYOP_DOCS = BYOP_MD.trim();
-const BYOP_TAG_DOCS = stripFirstMarkdownHeading(BYOP_DOCS);
 const ERRORS_DOCS = [
     "All errors return JSON with a consistent shape:",
     "",
@@ -72,10 +71,6 @@ const CLI_DOCS = [
     "",
     "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
 ].join("\n");
-
-function stripFirstMarkdownHeading(markdown: string): string {
-    return markdown.replace(/^# .*(\r?\n)+/, "").trim();
-}
 
 const IMAGE_ALIASES = new Set(
     Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
@@ -471,7 +466,7 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: "🌸 Bring Your Own Pollen",
-                description: BYOP_TAG_DOCS,
+                description: BYOP_DOCS,
             },
             {
                 name: "🖥️ CLI",

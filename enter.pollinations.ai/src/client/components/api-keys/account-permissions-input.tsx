@@ -56,6 +56,7 @@ const MODEL_CATEGORY_TEXT_CLASSES = {
     Image: "text-rose-800",
     Video: "text-teal-800",
     Audio: "text-violet-800",
+    Embedding: "text-indigo-800",
 } as const;
 
 const MODEL_CATEGORY_HOVER_CLASSES = {
@@ -63,6 +64,8 @@ const MODEL_CATEGORY_HOVER_CLASSES = {
     Image: "hover:bg-rose-50 hover:text-rose-900 hover:border-rose-300",
     Video: "hover:bg-teal-50 hover:text-teal-900 hover:border-teal-300",
     Audio: "hover:bg-violet-50 hover:text-violet-900 hover:border-violet-300",
+    Embedding:
+        "hover:bg-indigo-50 hover:text-indigo-900 hover:border-indigo-300",
 } as const;
 
 /**

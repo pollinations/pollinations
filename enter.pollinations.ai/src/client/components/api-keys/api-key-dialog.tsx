@@ -8,6 +8,7 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
+import { genDocsUrl } from "../../config.ts";
 import { Button } from "../button.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
@@ -211,7 +212,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                         Use that key for API requests paid with
                                         the user&apos;s Pollen.{" "}
                                         <a
-                                            href="https://gen.pollinations.ai/docs#tag/bring-your-own-pollen"
+                                            href={genDocsUrl(
+                                                "#tag/bring-your-own-pollen",
+                                            )}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-blue-700 underline hover:text-blue-900"
@@ -222,8 +225,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 </ul>
                             ) : (
                                 <p>
-                                    Access AI models for text, image, and audio
-                                    generation.
+                                    Access AI models for text, image, audio,
+                                    video, and embeddings.
                                 </p>
                             )}
                         </div>
@@ -275,7 +278,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Publishable keys (<code>pk_</code>)
                                     deprecated – create via{" "}
                                     <a
-                                        href="https://gen.pollinations.ai/docs#tag/-account/POST/account/keys"
+                                        href={genDocsUrl(
+                                            "#tag/-account/POST/account/keys",
+                                        )}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 underline hover:text-blue-800"

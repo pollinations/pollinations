@@ -3,6 +3,7 @@ import {
     getActivePriceDefinition,
     getModelDefinition,
     getVisibleAudioModels,
+    getVisibleEmbeddingModels,
     getVisibleImageModels,
     getVisibleTextModels,
     type ModelName,
@@ -96,4 +97,11 @@ export function getImageModelsInfo(): ModelInfo[] {
  */
 export function getAudioModelsInfo(): ModelInfo[] {
     return getVisibleAudioModels().map(getModelInfo);
+}
+
+/**
+ * Get all embedding models with enriched information
+ */
+export function getEmbeddingModelsInfo(): ModelInfo[] {
+    return getVisibleEmbeddingModels().map(getModelInfo);
 }

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10791,
+  "title": "Add Madlisten to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10791",
+  "merged_at": "2026-05-08T19:06:02Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive is cooking",
+    "blurb": "Madlisten just landed in the app showcase. It's a recipe browser built on our infrastructure, proving once again that AI and food are a natural pairing.",
+    "summary": "Added Madlisten, a recipe browsing application, to the community app showcase.",
+    "impact": "The community showcase grows by one more app, giving users a new way to discover and view recipes.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "recipes",
+      "madlisten"
+    ],
+    "visual_concept": "The PR adds a recipe app to the community showcase. The visual should feature the pollinations bee in a culinary setting, perhaps wearing a chef's hat and looking at a recipe book or cooking pot, blending tech and food.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny white chef's hat, reading a glowing recipe book in a warm rustic kitchen. A chunky retro monitor on the wooden counter displays pixelated food and code. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10791.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny white chef's hat, reading a glowing recipe book in a warm rustic kitchen. A chunky retro monitor on the wooden counter displays pixelated food and code. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-08T19:06:57.896340+00:00",
+  "app_name": "Madlisten",
+  "app_url": "https://madlisten.dk/"
+}

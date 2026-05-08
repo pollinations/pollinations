@@ -44,6 +44,9 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
+# Stripe Payment Method Configurations (sandbox)
+STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
+STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
 
 
 [env.local]
@@ -80,6 +83,8 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 # Stripe payments (sandbox for local development)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
+STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
+STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
 POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
@@ -138,6 +143,9 @@ POLLEN_REFILL_PER_HOUR = 1
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
+# Stripe Payment Method Configurations (live) — replace with live-mode PMC IDs before going live
+STRIPE_AUTO_TOP_UP_PMC_ID = ""
+STRIPE_BUY_POLLEN_PMC_ID = ""
 
 [env.staging]
 
@@ -190,6 +198,8 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 # Stripe payments: sandbox mode for staging
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
+STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
+STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
 
 [env.dev]
 
@@ -234,6 +244,8 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
+STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
+STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
 
 [env.test]
 

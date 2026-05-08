@@ -126,16 +126,19 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 <span className="text-xs font-bold uppercase tracking-wide text-amber-900">
                     Total Pollen
                 </span>
-                <span className="flex items-baseline gap-3 whitespace-nowrap">
+                <span className="flex flex-col items-end gap-1 whitespace-nowrap">
+                    <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none">
+                        {formatPollen(totalPollen)}
+                    </span>
                     {totalToday > 0 && (
                         <span className="inline-flex items-baseline gap-1 text-base sm:text-lg font-bold tabular-nums text-emerald-800">
                             <span aria-hidden="true">▲</span>
                             {formatPollen(totalToday)}
+                            <span className="text-xs font-medium opacity-70">
+                                7d
+                            </span>
                         </span>
                     )}
-                    <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950">
-                        {formatPollen(totalPollen)}
-                    </span>
                 </span>
             </div>
         </div>

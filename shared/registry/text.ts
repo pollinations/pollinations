@@ -349,6 +349,33 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         paidOnly: true,
     },
+    "gemma": {
+        aliases: [
+            "gemma-4",
+            "gemma-4-26b",
+            "gemma-4-26b-a4b",
+            "gemma-4-26b-a4b-it",
+        ],
+        modelId: "google/gemma-4-26B-A4B-it",
+        provider: "deepinfra",
+        brand: "Google",
+        category: "text",
+        cost: [
+            {
+                date: new Date("2026-05-06").getTime(),
+                promptTextTokens: perMillion(0.07),
+                completionTextTokens: perMillion(0.34),
+            },
+        ],
+        description: "Gemma 4 26B A4B - Google's open multimodal MoE model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+        paidOnly: true,
+    },
     "deepseek-pro": {
         aliases: ["deepseek-v4-pro"],
         modelId: "accounts/fireworks/models/deepseek-v4-pro",

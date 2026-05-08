@@ -4,6 +4,7 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import { getPollenPack } from "@/pollen-packs.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
@@ -390,7 +391,6 @@ test("GET /api/stripe/billing disables auto top-up when default card is removed"
             stripeCustomerId: customer.id,
             autoTopUpEnabled: true,
             autoTopUpAmountUsd: 10,
-            autoTopUpLastFailure: "Previous failure",
         })
         .where(eq(userTable.id, user.id));
 
@@ -403,12 +403,11 @@ test("GET /api/stripe/billing disables auto top-up when default card is removed"
 
     expect(response.status).toBe(200);
     const data = (await response.json()) as {
-        autoTopUp: { enabled: boolean; lastFailure: string | null };
+        autoTopUp: { enabled: boolean };
         paymentMethod: { hasDefault: boolean };
         billingDetailsComplete: boolean;
     };
     expect(data.autoTopUp.enabled).toBe(false);
-    expect(data.autoTopUp.lastFailure).toMatch(/payment method/i);
     expect(data.paymentMethod.hasDefault).toBe(false);
     expect(data.billingDetailsComplete).toBe(true);
 
@@ -450,7 +449,6 @@ test("GET /api/stripe/billing disables auto top-up when billing address is missi
             stripeCustomerId: customer.id,
             autoTopUpEnabled: true,
             autoTopUpAmountUsd: 10,
-            autoTopUpLastFailure: "Previous failure",
         })
         .where(eq(userTable.id, user.id));
 
@@ -463,12 +461,11 @@ test("GET /api/stripe/billing disables auto top-up when billing address is missi
 
     expect(response.status).toBe(200);
     const data = (await response.json()) as {
-        autoTopUp: { enabled: boolean; lastFailure: string | null };
+        autoTopUp: { enabled: boolean };
         paymentMethod: { hasDefault: boolean };
         billingDetailsComplete: boolean;
     };
     expect(data.autoTopUp.enabled).toBe(false);
-    expect(data.autoTopUp.lastFailure).toMatch(/billing details/i);
     expect(data.paymentMethod.hasDefault).toBe(true);
     expect(data.billingDetailsComplete).toBe(false);
 
@@ -632,6 +629,9 @@ test("POST /api/stripe/auto-top-up/trigger charges default card and credits poll
 
     expect(user).toBeTruthy();
     if (!user) throw new Error("Expected seeded test user");
+    const pack = getPollenPack("10");
+    expect(pack).toBeDefined();
+    if (!pack) throw new Error("Expected $10 pollen pack");
 
     const customer = mockCustomer("cus_auto_top_up");
     customer.invoice_settings.default_payment_method = "pm_card";
@@ -666,14 +666,18 @@ test("POST /api/stripe/auto-top-up/trigger charges default card and credits poll
         pollenCredited?: number;
     };
     expect(data.status).toBe("credited");
-    expect(data.pollenCredited).toBe(15);
+    expect(data.pollenCredited).toBe(pack.pollenGrant);
 
     const [updatedUser] = await db
-        .select({ packBalance: userTable.packBalance })
+        .select({
+            packBalance: userTable.packBalance,
+            autoTopUpLastAttemptAt: userTable.autoTopUpLastAttemptAt,
+        })
         .from(userTable)
         .where(eq(userTable.id, user.id))
         .limit(1);
-    expect(updatedUser?.packBalance).toBe(16);
+    expect(updatedUser?.packBalance).toBe(1 + pack.pollenGrant);
+    expect(updatedUser?.autoTopUpLastAttemptAt).toBeNull();
 
     const invoiceRequest = mocks.stripe.state.requests.find(
         (request) => request.path === "/v1/invoices",
@@ -740,7 +744,7 @@ test("POST /api/stripe/auto-top-up/trigger disables auto top-up when setup is in
     expect(updatedUser?.autoTopUpEnabled).toBe(false);
 });
 
-test("POST /api/stripe/auto-top-up/trigger skips during failure cooldown", async ({
+test("POST /api/stripe/auto-top-up/trigger skips during attempt cooldown", async ({
     sessionToken,
     mocks,
 }) => {
@@ -768,11 +772,10 @@ test("POST /api/stripe/auto-top-up/trigger skips during failure cooldown", async
                 stripe_customer_id = ?,
                 auto_top_up_enabled = 1,
                 auto_top_up_amount_usd = 10,
-                auto_top_up_last_failure = ?,
-                auto_top_up_last_failure_at = ?
+                auto_top_up_last_attempt_at = ?
             WHERE id = ?`,
     )
-        .bind(customer.id, "Previous payment failure", Date.now(), user.id)
+        .bind(customer.id, Date.now(), user.id)
         .run();
 
     const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
@@ -791,7 +794,7 @@ test("POST /api/stripe/auto-top-up/trigger skips during failure cooldown", async
         reason?: string;
     };
     expect(data.status).toBe("skipped");
-    expect(data.reason).toContain("failure cooldown");
+    expect(data.reason).toContain("attempt cooldown");
     expect(
         mocks.stripe.state.requests.some(
             (request) => request.path === "/v1/invoices",
@@ -869,14 +872,14 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
 
     const updatedUser = await env.DB.prepare(
         `SELECT pack_balance AS packBalance,
-            auto_top_up_last_failure AS autoTopUpLastFailure
+            auto_top_up_last_attempt_at AS autoTopUpLastAttemptAt
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             packBalance: number | null;
-            autoTopUpLastFailure: string | null;
+            autoTopUpLastAttemptAt: number | null;
         }>();
     const attempt = await env.DB.prepare(
         `SELECT status, failure_reason AS failureReason
@@ -887,7 +890,7 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
         .first<{ status: string; failureReason: string | null }>();
 
     expect(updatedUser?.packBalance).toBe(16);
-    expect(updatedUser?.autoTopUpLastFailure).toBeNull();
+    expect(updatedUser?.autoTopUpLastAttemptAt).toBeNull();
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -926,12 +929,12 @@ test("POST /api/webhooks/stripe records payment-action-required invoice links", 
     expect(response.status).toBe(200);
 
     const updatedUser = await env.DB.prepare(
-        `SELECT auto_top_up_last_failure AS autoTopUpLastFailure
+        `SELECT auto_top_up_last_attempt_at AS autoTopUpLastAttemptAt
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
-        .first<{ autoTopUpLastFailure: string | null }>();
+        .first<{ autoTopUpLastAttemptAt: number | null }>();
     const attempt = await env.DB.prepare(
         `SELECT status, failure_reason AS failureReason
         FROM stripe_auto_top_up_attempt
@@ -940,7 +943,7 @@ test("POST /api/webhooks/stripe records payment-action-required invoice links", 
         .bind("in_action_required")
         .first<{ status: string; failureReason: string | null }>();
 
-    expect(updatedUser?.autoTopUpLastFailure).toContain(hostedInvoiceUrl);
+    expect(updatedUser?.autoTopUpLastAttemptAt).toBeTypeOf("number");
     expect(attempt?.status).toBe("requires_action");
     expect(attempt?.failureReason).toContain(hostedInvoiceUrl);
 });
@@ -1032,21 +1035,16 @@ test("POST /api/webhooks/stripe disables auto top-up after repeated failed invoi
     }
 
     const updatedUser = await env.DB.prepare(
-        `SELECT auto_top_up_enabled AS autoTopUpEnabled,
-            auto_top_up_last_failure AS autoTopUpLastFailure
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             autoTopUpEnabled: number | boolean | null;
-            autoTopUpLastFailure: string | null;
         }>();
 
     expect(updatedUser?.autoTopUpEnabled).toBe(0);
-    expect(updatedUser?.autoTopUpLastFailure).toContain(
-        "disabled after 3 consecutive failed charge attempts",
-    );
 });
 
 test("POST /api/webhooks/stripe rejects missing stripe-signature header", async () => {

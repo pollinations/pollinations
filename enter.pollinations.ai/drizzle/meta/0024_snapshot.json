@@ -887,15 +887,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "auto_top_up_last_failure": {
-          "name": "auto_top_up_last_failure",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "auto_top_up_last_failure_at": {
-          "name": "auto_top_up_last_failure_at",
+        "auto_top_up_last_attempt_at": {
+          "name": "auto_top_up_last_attempt_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

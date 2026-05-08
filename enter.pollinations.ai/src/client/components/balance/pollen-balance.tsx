@@ -43,6 +43,7 @@ const WalletRow: FC<WalletRowProps> = ({
 }) => (
     <Tooltip
         triggerAs="span"
+        displayContents
         className={`flex flex-nowrap items-center gap-3 rounded-full px-5 py-3 cursor-default ${rowClass}`}
         content={
             <span className="block whitespace-pre-line leading-snug">

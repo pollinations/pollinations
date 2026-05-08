@@ -1,11 +1,9 @@
 import { InfoTip } from "../ui/info-tip.tsx";
-import { Tag } from "../ui/tag.tsx";
 
 type Attribution = {
     appName?: string;
     githubUsername?: string;
     found?: boolean;
-    earningsEnabled?: boolean;
 };
 
 type AppAttributionProps = {
@@ -67,17 +65,6 @@ export function AppAttribution({
                     icon="!"
                 />
             </p>
-            {attribution?.found && attribution.earningsEnabled && (
-                <div className="mt-2">
-                    <Tag
-                        color="amber"
-                        size="sm"
-                        className="bg-amber-900 text-yellow-200"
-                    >
-                        The developer of this app earns 20% of pollen spent
-                    </Tag>
-                </div>
-            )}
         </>
     );
 }

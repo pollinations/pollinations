@@ -1,788 +1,368 @@
-import { useCallback, useEffect, useState } from "react";
-import ChatInput from "./components/ChatInput";
-import ConfirmModal from "./components/ConfirmModal";
-import GenerationOptionsModal from "./components/GenerationOptionsModal";
-import KeyboardShortcutsModal from "./components/KeyboardShortcutsModal";
-import MessageArea from "./components/MessageArea";
-import SettingsPanel from "./components/SettingsPanel";
-import Sidebar from "./components/Sidebar";
-import TutorialModal from "./components/TutorialModal";
-import { useAuth } from "./hooks/useAuth";
-import { useChat } from "./hooks/useChat";
-import {
-    generateImage,
-    generateVideo,
-    initializeModels,
-    sendMessage,
-    setApiToken,
-    stopGeneration,
-} from "./utils/api";
-import {
-    getSelectedModel,
-    getTheme,
-    saveSelectedModel,
-    saveTheme,
-} from "./utils/storage";
+import { useState, useEffect, useCallback } from 'react';
+import { useChat } from './hooks/useChat';
+import { sendMessage, stopGeneration, initializeModels, generateImage, generateVideo, generateAudio } from './utils/api';
+import { getSelectedModel, saveSelectedModel, getTheme, saveTheme } from './utils/storage';
+import Sidebar from './components/Sidebar';
+import MessageArea from './components/MessageArea';
+import ChatInput from './components/ChatInput';
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
+import ConfirmModal from './components/ConfirmModal';
+import SettingsPanel from './components/SettingsPanel';
+import TutorialModal from './components/TutorialModal';
+import GenerationOptionsModal from './components/GenerationOptionsModal';
 
 function App() {
-    const {
-        chats,
-        activeChatId,
-        isGenerating,
-        setIsGenerating,
-        addChat,
-        deleteChat,
-        setActiveChat,
-        getActiveChat,
-        addMessage,
-        updateMessage,
-        removeMessagesAfter,
-        clearAllChats,
-    } = useChat();
+  const {
+    chats,
+    activeChatId,
+    isGenerating,
+    setIsGenerating,
+    addChat,
+    deleteChat,
+    setActiveChat,
+    getActiveChat,
+    addMessage,
+    updateMessage,
+    removeMessagesAfter,
+    clearAllChats,
+  } = useChat();
 
-    // BYOP Authentication
-    const {
-        apiKey,
-        isLoggedIn,
-        pollenBalance,
-        isLoadingBalance,
-        login,
-        logout,
-    } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedModel,       setSelectedModel]       = useState('openai');
+  const [selectedImageModel,  setSelectedImageModel]  = useState('flux');
+  const [selectedVideoModel,  setSelectedVideoModel]  = useState('veo');
+  const [selectedAudioModel,  setSelectedAudioModel]  = useState('openai-audio');
+  const [theme, setTheme] = useState('dark');
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
 
-    const [_sidebarOpen, setSidebarOpen] = useState(false);
-    const [selectedModel, setSelectedModel] = useState("openai");
-    const [selectedImageModel, setSelectedImageModel] = useState("flux");
-    const [selectedVideoModel, setSelectedVideoModel] = useState("veo");
-    const [_theme, setTheme] = useState("light");
-    const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
-    const [models, setModels] = useState({});
-    const [imageModels, setImageModels] = useState({});
-    const [videoModels, setVideoModels] = useState({});
-    const [modelsLoaded, setModelsLoaded] = useState(false);
-    const [confirmModal, setConfirmModal] = useState({
-        isOpen: false,
-        title: "",
-        message: "",
-        onConfirm: null,
-        isDangerous: false,
+  const [models,       setModels]       = useState({});
+  const [imageModels,  setImageModels]  = useState({});
+  const [videoModels,  setVideoModels]  = useState({});
+  const [audioModels,  setAudioModels]  = useState({});
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDangerous: false });
+  const [mode, setMode] = useState('chat');
+  const [sessionSettings, setSessionSettings] = useState({
+    systemPrompt: 'You are a helpful AI assistant who speaks concisely and helpfully.',
+    maxTokens: 2000,
+    temperature: 0.7,
+    topP: 1,
+  });
+  const [isSettingsPanelOpen,    setIsSettingsPanelOpen]    = useState(false);
+  const [isTutorialOpen,         setIsTutorialOpen]         = useState(false);
+  const [isGenerationOptionsOpen, setIsGenerationOptionsOpen] = useState(false);
+  const [generationOptionsMode,  setGenerationOptionsMode]  = useState('imagine');
+  const [imageGenerationOptions, setImageGenerationOptions] = useState({
+    width: 1024, height: 1024, seed: 42, enhance: false, nologo: false, nofeed: false, safe: false, quality: 'medium',
+  });
+  const [videoGenerationOptions, setVideoGenerationOptions] = useState({
+    seed: 42, nologo: false, nofeed: false, duration: 4, aspectRatio: '16:9', audio: false,
+  });
+
+  // Tutorial on first visit
+  useEffect(() => {
+    if (!localStorage.getItem('hasSeenTutorial')) setIsTutorialOpen(true);
+  }, []);
+
+  const handleCloseTutorial = useCallback(() => {
+    setIsTutorialOpen(false);
+    localStorage.setItem('hasSeenTutorial', 'true');
+  }, []);
+
+  // Load models
+  useEffect(() => {
+    initializeModels().then(({ textModels, imageModels, videoModels, audioModels }) => {
+      setModels(textModels);
+      setImageModels(imageModels);
+      setVideoModels(videoModels);
+      setAudioModels(audioModels);
+      setModelsLoaded(true);
     });
-    const [mode, setMode] = useState("chat");
-    const [sessionSettings, setSessionSettings] = useState({
-        systemPrompt:
-            "You are a helpful AI assistant who speaks concisely and helpfully.",
-        maxTokens: 2000,
-        temperature: 0.7,
-        topP: 1,
-    });
-    const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
-    const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-    const [isGenerationOptionsOpen, setIsGenerationOptionsOpen] =
-        useState(false);
-    const [generationOptionsMode, setGenerationOptionsMode] =
-        useState("imagine");
-    const [imageGenerationOptions, setImageGenerationOptions] = useState({
-        width: 1024,
-        height: 1024,
-        seed: 42,
-        enhance: false,
-        nologo: false,
-        nofeed: false,
-        safe: false,
-        quality: "medium",
-    });
-    const [videoGenerationOptions, setVideoGenerationOptions] = useState({
-        seed: 42,
-        nologo: false,
-        nofeed: false,
-        duration: 4,
-        aspectRatio: "16:9",
-        audio: false,
-    });
+  }, []);
 
-    // Show tutorial on first visit
-    useEffect(() => {
-        const hasSeenTutorial = localStorage.getItem("hasSeenTutorial");
-        if (!hasSeenTutorial) {
-            setIsTutorialOpen(true);
-        }
-    }, []);
+  // Load persisted preferences
+  useEffect(() => {
+    const savedModel      = getSelectedModel();
+    const savedImageModel = localStorage.getItem('selectedImageModel') || 'flux';
+    const savedVideoModel = localStorage.getItem('selectedVideoModel') || 'veo';
+    const savedAudioModel = localStorage.getItem('selectedAudioModel') || 'openai-audio';
+    const savedTheme      = getTheme();
+    setSelectedModel(savedModel);
+    setSelectedImageModel(savedImageModel);
+    setSelectedVideoModel(savedVideoModel);
+    setSelectedAudioModel(savedAudioModel);
+    setTheme(savedTheme);
+    applyTheme(savedTheme);
+  }, []);
 
-    // Update API token when user logs in/out
-    useEffect(() => {
-        setApiToken(apiKey);
-    }, [apiKey]);
+  const applyTheme = (t) => {
+    document.body.classList.toggle('dark', t === 'dark');
+    document.body.classList.toggle('light', t !== 'dark');
+  };
 
-    const handleCloseTutorial = useCallback(() => {
-        setIsTutorialOpen(false);
-        localStorage.setItem("hasSeenTutorial", "true");
-    }, []);
-
-    // Debug mode changes
-    useEffect(() => {}, []);
-
-    // Initialize models on mount
-    useEffect(() => {
-        const init = async () => {
-            const { textModels, imageModels, videoModels } =
-                await initializeModels();
-            setModels(textModels);
-            setImageModels(imageModels);
-            setVideoModels(videoModels);
-            setModelsLoaded(true);
-        };
-        init();
-    }, []);
-
-    useEffect(() => {
-        const savedModel = getSelectedModel();
-        const savedImageModel =
-            localStorage.getItem("selectedImageModel") || "flux";
-        const savedVideoModel =
-            localStorage.getItem("selectedVideoModel") || "veo";
-        const savedTheme = getTheme();
-        setSelectedModel(savedModel);
-        setSelectedImageModel(savedImageModel);
-        setSelectedVideoModel(savedVideoModel);
-        setTheme(savedTheme);
-
-        // Apply theme to document
-        if (savedTheme === "dark") {
-            document.body.classList.add("dark");
-            document.body.classList.remove("light");
-        } else {
-            document.body.classList.remove("dark");
-            document.body.classList.add("light");
-        }
-    }, []);
-
-    // Keyboard shortcuts
-    const handleThemeToggle = useCallback(() => {
-        // Toggle classes immediately for instant swap
-        const isDark = document.body.classList.contains("dark");
-        const newTheme = isDark ? "light" : "dark";
-
-        // Update DOM instantly
-        document.body.classList.toggle("dark");
-        document.body.classList.toggle("light");
-
-        // Update state and storage
-        setTheme(newTheme);
-        saveTheme(newTheme);
-    }, []);
-
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            // Ctrl+K: Focus input
-            if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-                e.preventDefault();
-                document.getElementById("messageInput")?.focus();
-            }
-            // Ctrl+N: New chat
-            if ((e.ctrlKey || e.metaKey) && e.key === "n") {
-                e.preventDefault();
-                addChat();
-            }
-            // Ctrl+B: Toggle sidebar
-            if ((e.ctrlKey || e.metaKey) && e.key === "b") {
-                e.preventDefault();
-                setSidebarOpen((prev) => !prev);
-            }
-            // Ctrl+Shift+L: Toggle theme
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "L") {
-                e.preventDefault();
-                handleThemeToggle();
-            }
-            // Esc: Close modals
-            if (e.key === "Escape") {
-                setIsShortcutsModalOpen(false);
-            }
-        };
-
-        document.addEventListener("keydown", handleKeyDown);
-        return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [addChat, handleThemeToggle]);
-
-    const handleModelChange = useCallback((model) => {
-        setSelectedModel(model);
-        saveSelectedModel(model);
-    }, []);
-
-    const handleImageModelChange = useCallback((model) => {
-        setSelectedImageModel(model);
-        localStorage.setItem("selectedImageModel", model);
-    }, []);
-
-    const handleVideoModelChange = useCallback((model) => {
-        setSelectedVideoModel(model);
-        localStorage.setItem("selectedVideoModel", model);
-    }, []);
-
-    const _handleExportChat = () => {
-        const activeChat = getActiveChat();
-        if (!activeChat || !activeChat.messages.length) {
-            alert("No messages to export");
-            return;
-        }
-
-        // Create export data
-        const exportData = {
-            title: activeChat.title,
-            timestamp: new Date().toISOString(),
-            messages: activeChat.messages.map((msg) => ({
-                role: msg.role,
-                content: msg.content,
-                timestamp: msg.timestamp,
-            })),
-        };
-
-        // Download as JSON
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-            type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `chat-export-${Date.now()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('messageInput')?.focus(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); addChat(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') { e.preventDefault(); setSidebarOpen(p => !p); }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') { e.preventDefault(); handleThemeToggle(); }
+      if (e.key === 'Escape') setIsShortcutsModalOpen(false);
     };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [addChat]);
 
-    const _handleClearAll = () => {
-        setConfirmModal({
-            isOpen: true,
-            title: "Clear All Chats",
-            message:
-                "Are you sure you want to delete all chats? This action cannot be undone.",
-            onConfirm: () => clearAllChats(),
-            isDangerous: true,
-        });
-    };
+  const handleModelChange      = useCallback((m) => { setSelectedModel(m);      saveSelectedModel(m); }, []);
+  const handleImageModelChange = useCallback((m) => { setSelectedImageModel(m); localStorage.setItem('selectedImageModel', m); }, []);
+  const handleVideoModelChange = useCallback((m) => { setSelectedVideoModel(m); localStorage.setItem('selectedVideoModel', m); }, []);
+  const handleAudioModelChange = useCallback((m) => { setSelectedAudioModel(m); localStorage.setItem('selectedAudioModel', m); }, []);
 
-    const handleSessionSettingsChange = useCallback((field, value) => {
-        setSessionSettings((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
-    }, []);
+  const handleThemeToggle = useCallback(() => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    saveTheme(next);
+    applyTheme(next);
+  }, [theme]);
 
-    const handleOpenGenerationOptions = useCallback((mode) => {
-        setGenerationOptionsMode(mode);
-        setIsGenerationOptionsOpen(true);
-    }, []);
+  const handleExportChat = () => {
+    const chat = getActiveChat();
+    if (!chat?.messages.length) { if (window?.showToast) window.showToast('No messages to export', 'error'); return; }
+    const blob = new Blob([JSON.stringify({ title: chat.title, timestamp: new Date().toISOString(), messages: chat.messages.map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp })) }, null, 2)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `chat-${Date.now()}.json` });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
 
-    const handleGenerationOptionsApply = useCallback(
-        (options) => {
-            if (generationOptionsMode === "imagine") {
-                setImageGenerationOptions(options);
-            } else if (generationOptionsMode === "video") {
-                setVideoGenerationOptions(options);
-            }
+  const handleClearAll = () => setConfirmModal({ isOpen: true, title: 'Clear All Chats', message: 'Delete all chats? This cannot be undone.', onConfirm: clearAllChats, isDangerous: true });
+
+  const handleSessionSettingsChange = useCallback((field, value) => setSessionSettings(p => ({ ...p, [field]: value })), []);
+
+  const handleOpenGenerationOptions = useCallback((m) => { setGenerationOptionsMode(m); setIsGenerationOptionsOpen(true); }, []);
+
+  const handleGenerationOptionsApply = useCallback((options) => {
+    if (generationOptionsMode === 'imagine') setImageGenerationOptions(options);
+    else if (generationOptionsMode === 'video') setVideoGenerationOptions(options);
+  }, [generationOptionsMode]);
+
+  // ── Send text message ────────────────────────────────────────
+  const handleSendMessage = useCallback(async ({ text = '', attachment = null } = {}) => {
+    const trimmed = typeof text === 'string' ? text.trim() : '';
+    if ((!trimmed && !attachment) || isGenerating) return;
+
+    const attachments = attachment ? [{
+      name: attachment.name,
+      mimeType: attachment.mimeType || 'application/octet-stream',
+      data: attachment.base64 || attachment.data || '',
+      size: attachment.size,
+      preview: attachment.preview || null,
+      isImage: attachment.isImage ?? (attachment.mimeType?.startsWith('image/') || false),
+    }] : [];
+
+    if (attachments[0] && !attachments[0].data && attachment?.preview?.startsWith('data:')) {
+      const ci = attachment.preview.indexOf(',');
+      attachments[0].data = ci >= 0 ? attachment.preview.slice(ci + 1) : attachment.preview;
+    }
+
+    const messageContent = trimmed || (attachments[0]?.name ? `Shared file: ${attachments[0].name}` : 'Shared a file');
+    const updatedChat = addMessage('user', messageContent, null, attachments.length ? { attachments, ...(attachments[0]?.isImage && attachments[0]?.preview ? { image: { src: attachments[0].preview, name: attachments[0].name } } : {}) } : {});
+
+    setIsGenerating(true);
+    if (!updatedChat) { setIsGenerating(false); if (window?.showToast) window.showToast('Could not find active chat', 'error'); return; }
+
+    const assistantId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    addMessage('assistant', '', assistantId, { isStreaming: true });
+
+    const runtimeMessages = sessionSettings.systemPrompt?.trim()
+      ? [{ role: 'system', content: sessionSettings.systemPrompt.trim() }, ...updatedChat.messages]
+      : updatedChat.messages;
+
+    try {
+      await sendMessage(
+        runtimeMessages,
+        (_, fullContent) => updateMessage(assistantId, { content: fullContent, isStreaming: true }),
+        (fullContent)    => { updateMessage(assistantId, { content: fullContent, isStreaming: false }); setIsGenerating(false); },
+        (error)          => {
+          const msg = error.message === 'User aborted' ? '**Message stopped by user**' : `Error: ${error.message}`;
+          updateMessage(assistantId, { content: msg, isStreaming: false, isError: error.message !== 'User aborted' });
+          setIsGenerating(false);
         },
-        [generationOptionsMode],
-    );
+        selectedModel,
+        { maxTokens: sessionSettings.maxTokens, temperature: sessionSettings.temperature, topP: sessionSettings.topP },
+      );
+    } catch (error) {
+      const msg = error.message === 'User aborted' ? '**Message stopped by user**' : `Error: ${error.message}`;
+      updateMessage(assistantId, { content: msg, isStreaming: false, isError: error.message !== 'User aborted' });
+      setIsGenerating(false);
+    }
+  }, [isGenerating, addMessage, updateMessage, selectedModel, sessionSettings]);
 
-    const handleSendMessage = useCallback(
-        async ({ text = "", attachment = null } = {}) => {
-            const trimmedContent = typeof text === "string" ? text.trim() : "";
+  const handleStopGeneration = useCallback(() => { stopGeneration(); setIsGenerating(false); }, []);
 
-            if ((!trimmedContent && !attachment) || isGenerating) return;
+  // ── Image generation ─────────────────────────────────────────
+  const handleGenerateImage = useCallback(async (prompt) => {
+    if (!prompt.trim() || isGenerating) return;
+    const updatedChat = addMessage('user', `/imagine ${prompt}`);
+    setIsGenerating(true);
+    if (!updatedChat) { setIsGenerating(false); return; }
+    const aid = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    addMessage('assistant', 'Generating image…', aid);
+    try {
+      const img = await generateImage(prompt, { model: selectedImageModel, ...imageGenerationOptions });
+      updateMessage(aid, { content: '', imageUrl: img.url, imagePrompt: img.prompt, imageModel: img.model, isStreaming: false });
+    } catch (error) {
+      updateMessage(aid, { content: `Image generation failed: ${error.message}`, isStreaming: false, isError: true });
+      if (window?.showToast) window.showToast('Image generation failed', 'error');
+    }
+    setIsGenerating(false);
+  }, [isGenerating, selectedImageModel, imageGenerationOptions, addMessage, updateMessage]);
 
-            const attachments = attachment
-                ? [
-                      {
-                          name: attachment.name,
-                          mimeType:
-                              attachment.mimeType ||
-                              attachment.file?.type ||
-                              "application/octet-stream",
-                          data: attachment.base64 || attachment.data || "",
-                          size: attachment.size,
-                          preview: attachment.preview || null,
-                          isImage:
-                              attachment.isImage ??
-                              (attachment.mimeType
-                                  ? attachment.mimeType.startsWith("image/")
-                                  : false),
-                      },
-                  ]
-                : [];
+  // ── Video generation ─────────────────────────────────────────
+  const handleGenerateVideo = useCallback(async (prompt) => {
+    if (!prompt.trim() || isGenerating) return;
+    const updatedChat = addMessage('user', `/video ${prompt}`);
+    setIsGenerating(true);
+    if (!updatedChat) { setIsGenerating(false); return; }
+    const aid = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    addMessage('assistant', 'Generating video… This may take a minute.', aid);
+    try {
+      const vid = await generateVideo(prompt, { model: selectedVideoModel, ...videoGenerationOptions });
+      updateMessage(aid, { content: '', videoUrl: vid.url, videoPrompt: vid.prompt, videoModel: vid.model, isStreaming: false });
+    } catch (error) {
+      updateMessage(aid, { content: `Video generation failed: ${error.message}`, isStreaming: false, isError: true });
+      if (window?.showToast) window.showToast('Video generation failed', 'error');
+    }
+    setIsGenerating(false);
+  }, [isGenerating, selectedVideoModel, videoGenerationOptions, addMessage, updateMessage]);
 
-            if (
-                attachments[0] &&
-                !attachments[0].data &&
-                attachment?.preview?.startsWith("data:")
-            ) {
-                const commaIndex = attachment.preview.indexOf(",");
-                attachments[0].data =
-                    commaIndex >= 0
-                        ? attachment.preview.slice(commaIndex + 1)
-                        : attachment.preview;
-            }
+  // ── Audio generation ─────────────────────────────────────────
+  const handleGenerateAudio = useCallback(async (text, options = {}) => {
+    if (!text.trim() || isGenerating) return;
+    const updatedChat = addMessage('user', `/audio ${text}`);
+    setIsGenerating(true);
+    if (!updatedChat) { setIsGenerating(false); return; }
+    const aid = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    addMessage('assistant', 'Generating audio…', aid);
+    try {
+      const aud = await generateAudio(text, { model: selectedAudioModel, ...options });
+      updateMessage(aid, { content: '', audioUrl: aud.url, audioText: aud.text, audioVoice: aud.voice, audioModel: aud.model, isStreaming: false });
+    } catch (error) {
+      updateMessage(aid, { content: `Audio generation failed: ${error.message}`, isStreaming: false, isError: true });
+      if (window?.showToast) window.showToast('Audio generation failed', 'error');
+    }
+    setIsGenerating(false);
+  }, [isGenerating, selectedAudioModel, addMessage, updateMessage]);
 
-            const messageMetadata = attachments.length
-                ? {
-                      attachments,
-                      ...(attachments[0]?.isImage && attachments[0]?.preview
-                          ? {
-                                image: {
-                                    src: attachments[0].preview,
-                                    name: attachments[0].name,
-                                },
-                            }
-                          : {}),
-                  }
-                : {};
-
-            const isImageAttachment = attachments[0]?.isImage;
-            const attachmentLabel = isImageAttachment ? "image" : "file";
-            const attachmentArticle = isImageAttachment ? "an" : "a";
-            const messageContent =
-                trimmedContent ||
-                (attachments.length
-                    ? attachments[0]?.name
-                        ? `Shared ${attachmentArticle} ${attachmentLabel}: ${attachments[0].name}`
-                        : `Shared ${attachmentArticle} ${attachmentLabel}`
-                    : "");
-
-            // Add user message and get the updated chat
-            const updatedChat = addMessage(
-                "user",
-                messageContent,
-                null,
-                messageMetadata,
-            );
-
-            // Set generating state
-            setIsGenerating(true);
-
-            if (!updatedChat) {
-                console.error("Could not find active chat to send message.");
-                setIsGenerating(false);
-                // Show toast notification for error
-                if (window?.showToast)
-                    window.showToast(
-                        "Could not find active chat to send message.",
-                        "error",
-                    );
-                return;
-            }
-
-            // Create assistant message placeholder
-            const assistantMessageId =
-                Date.now().toString(36) + Math.random().toString(36).substr(2);
-            addMessage("assistant", "", assistantMessageId, {
-                isStreaming: true,
-            });
-
-            const runtimeMessages = sessionSettings.systemPrompt?.trim()
-                ? [
-                      {
-                          role: "system",
-                          content: sessionSettings.systemPrompt.trim(),
-                      },
-                      ...updatedChat.messages,
-                  ]
-                : updatedChat.messages;
-
-            try {
-                await sendMessage(
-                    runtimeMessages,
-                    // onChunk
-                    (_chunk, fullContent, fullReasoning) => {
-                        // Update the message content in real-time for streaming
-                        updateMessage(assistantMessageId, {
-                            content: fullContent,
-                            reasoning: fullReasoning,
-                            isStreaming: true,
-                        });
-                    },
-                    // onComplete
-                    (fullContent, fullReasoning) => {
-                        updateMessage(assistantMessageId, {
-                            content: fullContent,
-                            reasoning: fullReasoning,
-                            isStreaming: false,
-                        });
-                        setIsGenerating(false);
-                    },
-                    // onError
-                    (error) => {
-                        console.error("Message generation error:", error);
-                        if (error.message === "User aborted") {
-                            updateMessage(assistantMessageId, {
-                                content: "**Message stopped by user**",
-                                isStreaming: false,
-                                isError: false,
-                            });
-                        } else {
-                            updateMessage(assistantMessageId, {
-                                content: "An error occurred",
-                                isStreaming: false,
-                                isError: true,
-                            });
-                        }
-                        setIsGenerating(false);
-                    },
-                    // modelId - pass the selected model
-                    selectedModel,
-                    {
-                        maxTokens: sessionSettings.maxTokens,
-                        temperature: sessionSettings.temperature,
-                        topP: sessionSettings.topP,
-                    },
-                );
-            } catch (error) {
-                console.error("Message generation error:", error);
-                if (error.message === "User aborted") {
-                    updateMessage(assistantMessageId, {
-                        content: "**Message stopped by user**",
-                        isStreaming: false,
-                        isError: false,
-                    });
-                } else {
-                    updateMessage(assistantMessageId, {
-                        content: "An error occurred",
-                        isStreaming: false,
-                        isError: true,
-                    });
-                }
-                setIsGenerating(false);
-            }
+  // ── Regenerate ──────────────────────────────────────────────
+  const handleRegenerateMessage = useCallback(async () => {
+    const chat = getActiveChat();
+    if (!chat || isGenerating) return;
+    const lastUser = [...chat.messages].reverse().find(m => m.role === 'user');
+    if (!lastUser) return;
+    removeMessagesAfter(lastUser.timestamp);
+    setTimeout(() => {
+      const updated = getActiveChat();
+      const aid = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      addMessage('assistant', '', aid, { isStreaming: true });
+      setIsGenerating(true);
+      const runtimeMessages = sessionSettings.systemPrompt?.trim()
+        ? [{ role: 'system', content: sessionSettings.systemPrompt.trim() }, ...updated.messages]
+        : updated.messages;
+      sendMessage(
+        runtimeMessages,
+        (_, full) => updateMessage(aid, { content: full, isStreaming: true }),
+        (full)    => { updateMessage(aid, { content: full, isStreaming: false }); setIsGenerating(false); },
+        (error)   => {
+          updateMessage(aid, { content: error.message === 'User aborted' ? '**Message stopped by user**' : `Error: ${error.message}`, isStreaming: false, isError: error.message !== 'User aborted' });
+          setIsGenerating(false);
         },
-        [
-            isGenerating,
-            addMessage,
-            updateMessage,
-            selectedModel,
-            sessionSettings, // Set generating state
-            setIsGenerating,
-        ],
-    );
+        selectedModel,
+        { maxTokens: sessionSettings.maxTokens, temperature: sessionSettings.temperature, topP: sessionSettings.topP },
+      );
+    }, 100);
+  }, [getActiveChat, isGenerating, removeMessagesAfter, addMessage, updateMessage, selectedModel, sessionSettings]);
 
-    const handleStopGeneration = useCallback(() => {
-        stopGeneration();
-        setIsGenerating(false);
-    }, [setIsGenerating]);
+  const activeMessages = getActiveChat()?.messages || [];
 
-    const handleGenerateImage = useCallback(
-        async (prompt) => {
-            if (!prompt.trim() || isGenerating) return;
+  return (
+    <div className="app">
+      <Sidebar
+        chats={chats}
+        activeChatId={activeChatId}
+        onChatSelect={setActiveChat}
+        onNewChat={addChat}
+        onDeleteChat={deleteChat}
+        onThemeToggle={handleThemeToggle}
+        theme={theme}
+        onOpenSettings={() => setIsSettingsPanelOpen(true)}
+        onExportChat={handleExportChat}
+        onClearAll={handleClearAll}
+      />
 
-            // Add user message with the prompt
-            const updatedChat = addMessage("user", `/imagine ${prompt}`);
+      <div className={`chat-container ${activeMessages.length === 0 ? 'chat-container-empty' : ''}`}>
+        <MessageArea
+          messages={activeMessages}
+          isGenerating={isGenerating}
+          onRegenerate={handleRegenerateMessage}
+        />
 
-            // Set generating state
-            setIsGenerating(true);
+        <ChatInput
+          onSend={handleSendMessage}
+          isGenerating={isGenerating}
+          onStop={handleStopGeneration}
+          onGenerateImage={handleGenerateImage}
+          onGenerateVideo={handleGenerateVideo}
+          onGenerateAudio={handleGenerateAudio}
+          setIsUserTyping={() => {}}
+          onModeChange={setMode}
+          selectedModel={selectedModel}
+          selectedImageModel={selectedImageModel}
+          selectedVideoModel={selectedVideoModel}
+          selectedAudioModel={selectedAudioModel}
+          mode={mode}
+          models={models}
+          imageModels={imageModels}
+          videoModels={videoModels}
+          audioModels={audioModels}
+          modelsLoaded={modelsLoaded}
+          onModelChange={handleModelChange}
+          onImageModelChange={handleImageModelChange}
+          onVideoModelChange={handleVideoModelChange}
+          onAudioModelChange={handleAudioModelChange}
+          onOpenGenerationOptions={handleOpenGenerationOptions}
+        />
+      </div>
 
-            if (!updatedChat) {
-                console.error("Could not find active chat to generate image.");
-                setIsGenerating(false);
-                // Show toast notification for error
-                if (window?.showToast)
-                    window.showToast(
-                        "Could not find active chat to generate image.",
-                        "error",
-                    );
-                return;
-            }
+      <KeyboardShortcutsModal isOpen={isShortcutsModalOpen} onClose={() => setIsShortcutsModalOpen(false)} />
 
-            // Create assistant message placeholder for the image
-            const assistantMessageId =
-                Date.now().toString(36) + Math.random().toString(36).substr(2);
-            addMessage("assistant", "Generating image...", assistantMessageId);
+      <SettingsPanel
+        isOpen={isSettingsPanelOpen}
+        settings={sessionSettings}
+        onChange={handleSessionSettingsChange}
+        onClose={() => setIsSettingsPanelOpen(false)}
+      />
 
-            try {
-                // Generate the image with selected model and options
-                const imageData = await generateImage(prompt, {
-                    model: selectedImageModel,
-                    ...imageGenerationOptions,
-                });
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(p => ({ ...p, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous={confirmModal.isDangerous}
+      />
 
-                // Update the message with the generated image
-                updateMessage(assistantMessageId, {
-                    content: "",
-                    imageUrl: imageData.url,
-                    imagePrompt: imageData.prompt,
-                    imageModel: imageData.model,
-                    isStreaming: false,
-                });
+      <TutorialModal isOpen={isTutorialOpen} onClose={handleCloseTutorial} />
 
-                setIsGenerating(false);
-            } catch (error) {
-                console.error("Image generation error:", error);
-                updateMessage(assistantMessageId, {
-                    content: "An error occurred",
-                    isStreaming: false,
-                    isError: true,
-                });
-                setIsGenerating(false);
-                // Show toast notification for error
-                if (window?.showToast)
-                    window.showToast("Image generation failed", "error");
-            }
-        },
-        [
-            isGenerating,
-            selectedImageModel,
-            imageGenerationOptions,
-            addMessage,
-            updateMessage, // Set generating state
-            setIsGenerating,
-        ],
-    );
-
-    const handleGenerateVideo = useCallback(
-        async (prompt) => {
-            if (!prompt.trim() || isGenerating) return;
-
-            // Add user message with the prompt
-            const updatedChat = addMessage("user", `/video ${prompt}`);
-
-            // Set generating state
-            setIsGenerating(true);
-
-            if (!updatedChat) {
-                console.error("Could not find active chat to generate video.");
-                setIsGenerating(false);
-                // Show toast notification for error
-                if (window?.showToast)
-                    window.showToast(
-                        "Could not find active chat to generate video.",
-                        "error",
-                    );
-                return;
-            }
-
-            // Create assistant message placeholder for the video
-            const assistantMessageId =
-                Date.now().toString(36) + Math.random().toString(36).substr(2);
-            addMessage(
-                "assistant",
-                "Generating video... This may take a minute.",
-                assistantMessageId,
-            );
-
-            try {
-                // Generate the video with selected model and options
-                const videoData = await generateVideo(prompt, {
-                    model: selectedVideoModel,
-                    ...videoGenerationOptions,
-                });
-
-                // Update the message with the generated video
-                updateMessage(assistantMessageId, {
-                    content: "",
-                    videoUrl: videoData.url,
-                    videoPrompt: videoData.prompt,
-                    videoModel: videoData.model,
-                    isStreaming: false,
-                });
-
-                setIsGenerating(false);
-            } catch (error) {
-                console.error("Video generation error:", error);
-                updateMessage(assistantMessageId, {
-                    content: "An error occurred while generating video",
-                    isStreaming: false,
-                    isError: true,
-                });
-                setIsGenerating(false);
-                // Show toast notification for error
-                if (window?.showToast)
-                    window.showToast("Video generation failed", "error");
-            }
-        },
-        [
-            isGenerating,
-            selectedVideoModel,
-            videoGenerationOptions,
-            addMessage,
-            updateMessage, // Set generating state
-            setIsGenerating,
-        ],
-    );
-
-    const handleRegenerateMessage = async () => {
-        const activeChat = getActiveChat();
-        if (!activeChat || isGenerating) return;
-
-        const messages = activeChat.messages;
-        if (messages.length < 2) return;
-
-        // Find the last user message
-        let lastUserMessage = null;
-        for (let i = messages.length - 1; i >= 0; i--) {
-            if (messages[i].role === "user") {
-                lastUserMessage = messages[i];
-                break;
-            }
-        }
-
-        if (!lastUserMessage) return;
-
-        // Remove all messages after the last user message
-        removeMessagesAfter(lastUserMessage.timestamp);
-
-        // Wait a bit for state to update
-        setTimeout(() => {
-            // Regenerate the response by re-processing the messages
-            const updatedChat = getActiveChat();
-            // Create assistant message
-            const assistantMessageId =
-                Date.now().toString(36) + Math.random().toString(36).substr(2);
-            addMessage("assistant", "", assistantMessageId, {
-                isStreaming: true,
-            });
-
-            setIsGenerating(true);
-
-            const runtimeMessages = sessionSettings.systemPrompt?.trim()
-                ? [
-                      {
-                          role: "system",
-                          content: sessionSettings.systemPrompt.trim(),
-                      },
-                      ...updatedChat.messages,
-                  ]
-                : updatedChat.messages;
-
-            sendMessage(
-                runtimeMessages,
-                (_chunk, fullContent) => {
-                    updateMessage(assistantMessageId, {
-                        content: fullContent,
-                        isStreaming: true,
-                    });
-                },
-                (fullContent) => {
-                    updateMessage(assistantMessageId, {
-                        content: fullContent,
-                        isStreaming: false,
-                    });
-                    setIsGenerating(false);
-                },
-                (error) => {
-                    console.error("Message regeneration error:", error);
-                    if (error.message === "User aborted") {
-                        updateMessage(assistantMessageId, {
-                            content: "**Message stopped by user**",
-                            isStreaming: false,
-                            isError: false,
-                        });
-                    } else {
-                        updateMessage(assistantMessageId, {
-                            content: "An error occurred",
-                            isStreaming: false,
-                            isError: true,
-                        });
-                    }
-                    setIsGenerating(false);
-                },
-                selectedModel,
-                {
-                    maxTokens: sessionSettings.maxTokens,
-                    temperature: sessionSettings.temperature,
-                    topP: sessionSettings.topP,
-                },
-            );
-        }, 100);
-    };
-
-    const activeChat = getActiveChat();
-    const activeMessages = activeChat?.messages || [];
-    const isChatEmpty = activeMessages.length === 0;
-
-    return (
-        <div className="app">
-            <Sidebar
-                chats={chats}
-                activeChatId={activeChatId}
-                onChatSelect={setActiveChat}
-                onNewChat={addChat}
-                onDeleteChat={deleteChat}
-                onThemeToggle={handleThemeToggle}
-                onOpenSettings={() => setIsSettingsPanelOpen(true)}
-                isLoggedIn={isLoggedIn}
-                apiKey={apiKey}
-                pollenBalance={pollenBalance}
-                isLoadingBalance={isLoadingBalance}
-                onLogin={login}
-                onLogout={logout}
-            />
-
-            <div
-                className={`chat-container ${isChatEmpty ? "chat-container-empty" : ""}`}
-            >
-                <MessageArea
-                    messages={activeMessages}
-                    isGenerating={isGenerating}
-                    onRegenerate={handleRegenerateMessage}
-                />
-
-                <ChatInput
-                    onSend={handleSendMessage}
-                    isGenerating={isGenerating}
-                    onStop={handleStopGeneration}
-                    onGenerateImage={handleGenerateImage}
-                    onGenerateVideo={handleGenerateVideo}
-                    setIsUserTyping={() => {}}
-                    onModeChange={setMode}
-                    selectedModel={selectedModel}
-                    selectedImageModel={selectedImageModel}
-                    selectedVideoModel={selectedVideoModel}
-                    mode={mode}
-                    models={models}
-                    imageModels={imageModels}
-                    videoModels={videoModels}
-                    modelsLoaded={modelsLoaded}
-                    onModelChange={handleModelChange}
-                    onImageModelChange={handleImageModelChange}
-                    onVideoModelChange={handleVideoModelChange}
-                    onOpenGenerationOptions={handleOpenGenerationOptions}
-                />
-            </div>
-
-            <KeyboardShortcutsModal
-                isOpen={isShortcutsModalOpen}
-                onClose={() => setIsShortcutsModalOpen(false)}
-            />
-
-            <SettingsPanel
-                isOpen={isSettingsPanelOpen}
-                settings={sessionSettings}
-                onChange={handleSessionSettingsChange}
-                onClose={() => setIsSettingsPanelOpen(false)}
-            />
-
-            <ConfirmModal
-                isOpen={confirmModal.isOpen}
-                onClose={() =>
-                    setConfirmModal({ ...confirmModal, isOpen: false })
-                }
-                onConfirm={confirmModal.onConfirm}
-                title={confirmModal.title}
-                message={confirmModal.message}
-                confirmText="Delete"
-                cancelText="Cancel"
-                isDangerous={confirmModal.isDangerous}
-            />
-
-            <TutorialModal
-                isOpen={isTutorialOpen}
-                onClose={handleCloseTutorial}
-            />
-
-            <GenerationOptionsModal
-                isOpen={isGenerationOptionsOpen}
-                onClose={() => setIsGenerationOptionsOpen(false)}
-                mode={generationOptionsMode}
-                onGenerate={handleGenerationOptionsApply}
-            />
-        </div>
-    );
+      <GenerationOptionsModal
+        isOpen={isGenerationOptionsOpen}
+        onClose={() => setIsGenerationOptionsOpen(false)}
+        mode={generationOptionsMode}
+        onGenerate={handleGenerationOptionsApply}
+      />
+    </div>
+  );
 }
 
 export default App;

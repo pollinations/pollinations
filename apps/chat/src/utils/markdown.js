@@ -46,7 +46,7 @@ marked.use({
 });
 
 const md = new MarkdownIt({
-  html: false, // Disable HTML for security
+  html: false,
   linkify: true,
   typographer: true,
   breaks: false,
@@ -62,7 +62,6 @@ const md = new MarkdownIt({
   }
 }).use(markdownitHighlightjs);
 
-// Function to render LaTeX math equations
 const renderMath = (html) => {
   if (typeof document === 'undefined') {
     return html;
@@ -93,21 +92,14 @@ export const formatMessage = (content) => {
   if (!content) return '';
   
   try {
-    // Ensure content is a string
     let textContent = String(content);
     
-    // Trim leading/trailing whitespace to avoid large gaps when rendering
     textContent = textContent.trim();
     
-    // Collapse excessive vertical whitespace (3+ newlines -> 2 newlines)
     textContent = textContent.replace(/\n{3,}/g, '\n\n');
     
-    // Preserve leading spaces for proper formatting
-    
-    // Remove multiple consecutive spaces (but not in code blocks or inline code)
     textContent = textContent.replace(/([^`\n])([ ]{2,})([^`\n])/g, '$1 $3');
     
-    // Extract chart markers before rendering markdown
     const chartRegex = /__CHART__(.*?)__CHART__/g;
     const charts = [];
     let match;
@@ -119,16 +111,12 @@ export const formatMessage = (content) => {
       }
     }
     
-    // Remove chart markers from text
     textContent = textContent.replace(chartRegex, '');
     
-    // First, render markdown
     let html = md.render(textContent);
     
-    // Then, render LaTeX math equations
     html = renderMath(html);
     
-    // Append chart data for component to render
     if (charts.length > 0) {
       html += `<div data-charts='${JSON.stringify(charts).replace(/'/g, "&apos;")}'></div>`;
     }
@@ -136,7 +124,6 @@ export const formatMessage = (content) => {
     return html;
   } catch (error) {
     console.error('Markdown rendering error:', error);
-    // Return escaped HTML as fallback
     return escapeHtml(String(content));
   }
 };
@@ -147,15 +134,10 @@ export const formatStreamingMessage = (content) => {
   try {
     let textContent = String(content || '');
     
-    // More aggressive whitespace normalization for streaming
     textContent = textContent.trim();
     
-    // Collapse excessive vertical whitespace (3+ newlines -> 2 newlines)
     textContent = textContent.replace(/\n{3,}/g, '\n\n');
     
-    // Preserve leading spaces for proper formatting
-    
-    // Remove multiple consecutive spaces (but not in code blocks)
     textContent = textContent.replace(/([^`\n])([ ]{2,})([^`\n])/g, '$1 $3');
     
     const html = marked.parse(textContent, { async: false });

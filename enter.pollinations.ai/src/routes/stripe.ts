@@ -74,6 +74,10 @@ export const stripeRoutes = new Hono<Env>()
             // in sync with the credited pollen amount.
             const checkoutSession = await stripe.checkout.sessions.create({
                 mode: "payment",
+                ...(c.env.STRIPE_BUY_POLLEN_PMC_ID && {
+                    payment_method_configuration:
+                        c.env.STRIPE_BUY_POLLEN_PMC_ID,
+                }),
                 line_items: [
                     {
                         price_data: {

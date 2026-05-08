@@ -8,8 +8,7 @@ const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_PURPOSE = "pollinations_purpose";
 const AUTO_TOP_UP_PURPOSE = "auto_top_up";
 const AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
-const AUTO_TOP_UP_BASE_FAILURE_COOLDOWN_MS = 60 * 60 * 1000;
-const AUTO_TOP_UP_MAX_FAILURE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const AUTO_TOP_UP_RETRY_AFTER_MS = 60 * 60 * 1000;
 const AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES = 3;
 const AUTO_TOP_UP_ATTEMPT_STATUS_FAILED = "failed";
 const AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION = "requires_action";
@@ -35,8 +34,7 @@ type UserStripeBillingDbRow = {
     stripeCustomerId: string | null;
     autoTopUpEnabled: number | boolean | null;
     autoTopUpAmountUsd: number | null;
-    autoTopUpLastFailure: string | null;
-    autoTopUpLastFailureAt: number | string | null;
+    autoTopUpLastAttemptAt: number | string | null;
 };
 
 type UserStripeBillingRow = {
@@ -47,8 +45,7 @@ type UserStripeBillingRow = {
     stripeCustomerId: string | null;
     autoTopUpEnabled: boolean;
     autoTopUpAmountUsd: number | null;
-    autoTopUpLastFailure: string | null;
-    autoTopUpLastFailureAt: number | null;
+    autoTopUpLastAttemptAt: number | null;
 };
 
 type PendingAutoTopUpAttempt = {
@@ -79,8 +76,7 @@ export type BillingOverview = {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
-        lastFailure: string | null;
-        lastFailureAt: string | null;
+        lastAttemptAt: string | null;
     };
     paymentMethod: {
         hasDefault: boolean;
@@ -154,17 +150,9 @@ export async function getBillingOverview(
         ? isBillingDetailsComplete(customer)
         : false;
     let autoTopUpEnabled = user.autoTopUpEnabled;
-    let lastFailure = user.autoTopUpLastFailure;
-    let lastFailureAt = user.autoTopUpLastFailureAt;
     if (autoTopUpEnabled && (!paymentMethod || !billingDetailsComplete)) {
-        const reason = describeMissingBillingSetup(
-            paymentMethod,
-            billingDetailsComplete,
-        );
-        await disableAutoTopUp(env.DB, userId, reason);
+        await disableAutoTopUp(env.DB, userId);
         autoTopUpEnabled = false;
-        lastFailure = reason;
-        lastFailureAt = Date.now();
     }
 
     return {
@@ -173,9 +161,8 @@ export async function getBillingOverview(
             thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,
             packAmountUsd:
                 user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
-            lastFailure,
-            lastFailureAt: lastFailureAt
-                ? new Date(lastFailureAt).toISOString()
+            lastAttemptAt: user.autoTopUpLastAttemptAt
+                ? new Date(user.autoTopUpLastAttemptAt).toISOString()
                 : null,
         },
         paymentMethod: paymentMethod
@@ -203,6 +190,7 @@ export async function createBillingPortalSession(
     const configuration = await ensureBillingPortalConfiguration(
         stripe,
         returnUrl,
+        env.STRIPE_AUTO_TOP_UP_PMC_ID || undefined,
     );
 
     return stripe.billingPortal.sessions.create({
@@ -224,6 +212,7 @@ export async function createBillingPortalSession(
 async function ensureBillingPortalConfiguration(
     stripe: Stripe,
     returnUrl: string,
+    paymentMethodConfiguration: string | undefined,
 ): Promise<string> {
     const configurations = await stripe.billingPortal.configurations.list({
         active: true,
@@ -237,19 +226,30 @@ async function ensureBillingPortalConfiguration(
     );
 
     if (existing) {
-        if (isBillingPortalConfigurationCurrent(existing)) {
+        if (
+            isBillingPortalConfigurationCurrent(
+                existing,
+                paymentMethodConfiguration,
+            )
+        ) {
             return existing.id;
         }
 
         const updated = await stripe.billingPortal.configurations.update(
             existing.id,
-            createBillingPortalConfigurationParams(returnUrl),
+            createBillingPortalConfigurationParams(
+                returnUrl,
+                paymentMethodConfiguration,
+            ),
         );
         return updated.id;
     }
 
     const created = await stripe.billingPortal.configurations.create(
-        createBillingPortalConfigurationParams(returnUrl),
+        createBillingPortalConfigurationParams(
+            returnUrl,
+            paymentMethodConfiguration,
+        ),
         {
             idempotencyKey: `pollinations:stripe-billing-portal:${BILLING_PORTAL_CONFIGURATION_METADATA_VALUE}`,
         },
@@ -259,6 +259,7 @@ async function ensureBillingPortalConfiguration(
 
 function createBillingPortalConfigurationParams(
     returnUrl: string,
+    paymentMethodConfiguration: string | undefined,
 ): Stripe.BillingPortal.ConfigurationCreateParams {
     return {
         name: BILLING_PORTAL_CONFIGURATION_NAME,
@@ -280,6 +281,9 @@ function createBillingPortalConfigurationParams(
             },
             payment_method_update: {
                 enabled: true,
+                ...(paymentMethodConfiguration && {
+                    payment_method_configuration: paymentMethodConfiguration,
+                }),
             },
         },
     };
@@ -287,6 +291,7 @@ function createBillingPortalConfigurationParams(
 
 function isBillingPortalConfigurationCurrent(
     configuration: Stripe.BillingPortal.Configuration,
+    paymentMethodConfiguration: string | undefined,
 ): boolean {
     if (configuration.business_profile.headline !== BILLING_PORTAL_HEADLINE) {
         return false;
@@ -296,9 +301,18 @@ function isBillingPortalConfigurationCurrent(
     if (!customerUpdate.enabled) return false;
 
     const allowedUpdates = new Set(customerUpdate.allowed_updates);
-    return BILLING_PORTAL_CUSTOMER_UPDATES.every((update) =>
-        allowedUpdates.has(update),
-    );
+    if (
+        !BILLING_PORTAL_CUSTOMER_UPDATES.every((update) =>
+            allowedUpdates.has(update),
+        )
+    ) {
+        return false;
+    }
+
+    const currentPmc =
+        configuration.features.payment_method_update
+            .payment_method_configuration;
+    return (currentPmc ?? undefined) === paymentMethodConfiguration;
 }
 
 export async function updateAutoTopUpSettings(
@@ -346,8 +360,7 @@ export async function updateAutoTopUpSettings(
         `UPDATE user
             SET auto_top_up_enabled = ?,
                 auto_top_up_amount_usd = ?,
-                auto_top_up_last_failure = NULL,
-                auto_top_up_last_failure_at = NULL
+                auto_top_up_last_attempt_at = NULL
             WHERE id = ?`,
     )
         .bind(input.enabled ? 1 : 0, packAmountUsd, userId)
@@ -376,27 +389,19 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "paid balance above threshold" };
     }
 
-    const cooldownState = await getAutoTopUpCooldownState(env.DB, user);
-    if (cooldownState.msRemaining > 0) {
+    const retryMsRemaining = getAutoTopUpRetryMsRemaining(
+        user.autoTopUpLastAttemptAt,
+    );
+    if (retryMsRemaining > 0) {
         return {
             status: "skipped",
-            reason: `auto top-up in failure cooldown (${Math.ceil(cooldownState.msRemaining / 60_000)}m remaining)`,
+            reason: `auto top-up attempt cooldown (${Math.ceil(retryMsRemaining / 60_000)}m remaining)`,
         };
     }
 
-    // Reuse the count from the cooldown gate; +1 represents the failure we
-    // are about to record on this code path. Past the gate the user is still
-    // enabled, so priorConsecutiveFailures < AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES.
-    const projectedConsecutiveFailures = cooldownState.consecutiveFailures + 1;
-
     const pack = getPollenPack(String(amountUsd));
     if (!pack) {
-        await recordAutoTopUpFailureAndMaybeDisable(
-            env.DB,
-            userId,
-            "Configured auto top-up pack is unavailable.",
-            projectedConsecutiveFailures,
-        );
+        await disableAutoTopUp(env.DB, userId);
         return { status: "failed", reason: "invalid pack amount" };
     }
 
@@ -405,6 +410,14 @@ export async function processAutoTopUpForUser(
         return {
             status: "skipped",
             reason: `auto top-up already pending (${pendingAttempt.stripeInvoiceId})`,
+        };
+    }
+
+    const claimed = await claimAutoTopUpAttempt(env.DB, userId);
+    if (!claimed) {
+        return {
+            status: "skipped",
+            reason: "auto top-up already attempted recently",
         };
     }
 
@@ -418,11 +431,7 @@ export async function processAutoTopUpForUser(
         );
 
         if (!paymentMethod) {
-            await disableAutoTopUp(
-                env.DB,
-                userId,
-                "Auto top-up was disabled because your default payment method was removed in Stripe.",
-            );
+            await disableAutoTopUp(env.DB, userId);
             return {
                 status: "skipped",
                 reason: "missing default payment method",
@@ -430,11 +439,7 @@ export async function processAutoTopUpForUser(
         }
 
         if (!isBillingDetailsComplete(customer)) {
-            await disableAutoTopUp(
-                env.DB,
-                userId,
-                "Auto top-up was disabled because your billing details were removed in Stripe.",
-            );
+            await disableAutoTopUp(env.DB, userId);
             return { status: "skipped", reason: "missing billing details" };
         }
 
@@ -508,12 +513,7 @@ export async function processAutoTopUpForUser(
         const message =
             error instanceof Error ? error.message : "Auto top-up failed.";
         await failPendingAutoTopUpAttempts(env.DB, userId, message);
-        await recordAutoTopUpFailureAndMaybeDisable(
-            env.DB,
-            userId,
-            message,
-            projectedConsecutiveFailures,
-        );
+        await recordAutoTopUpFailureAndMaybeDisable(env.DB, userId);
         return { status: "failed", reason: message };
     }
 }
@@ -528,9 +528,17 @@ export async function processDueAutoTopUps(
             WHERE auto_top_up_enabled = 1
                 AND auto_top_up_amount_usd IS NOT NULL
                 AND COALESCE(pack_balance, 0) <= ?
+                AND (
+                    auto_top_up_last_attempt_at IS NULL
+                    OR auto_top_up_last_attempt_at <= ?
+                )
             LIMIT ?`,
     )
-        .bind(AUTO_TOP_UP_THRESHOLD_POLLEN, limit)
+        .bind(
+            AUTO_TOP_UP_THRESHOLD_POLLEN,
+            Date.now() - AUTO_TOP_UP_RETRY_AFTER_MS,
+            limit,
+        )
         .all<{ id: string }>();
 
     const results: AutoTopUpProcessResult[] = [];
@@ -588,8 +596,7 @@ export async function creditAutoTopUpInvoice(
     await env.DB.prepare(
         `UPDATE user
             SET pack_balance = COALESCE(pack_balance, 0) + ?,
-                auto_top_up_last_failure = NULL,
-                auto_top_up_last_failure_at = NULL
+                auto_top_up_last_attempt_at = NULL
             WHERE id = ?`,
     )
         .bind(attempt.pollenGrant, attempt.userId)
@@ -635,7 +642,8 @@ export async function markAutoTopUpInvoiceFailed(
 
     if (!attempt) return;
 
-    await recordAutoTopUpFailureAndMaybeDisable(env.DB, userId, reason);
+    await preserveAutoTopUpLastAttemptAt(env.DB, userId, now);
+    await recordAutoTopUpFailureAndMaybeDisable(env.DB, userId);
 }
 
 export async function markAutoTopUpInvoiceRequiresAction(
@@ -690,11 +698,10 @@ export async function markAutoTopUpInvoiceRequiresAction(
 
     if (!attempt) return;
 
-    // requires_action surfaces the SCA URL to the user and triggers the
-    // failure cooldown via auto_top_up_last_failure_at, but does NOT count
-    // toward the consecutive-failure disable threshold — the card may be
-    // perfectly valid and only need a one-time 3DS confirmation.
-    await recordAutoTopUpFailure(env.DB, userId, reason);
+    // requires_action leaves the attempt timestamp in place so the next retry
+    // waits for the normal auto top-up attempt window. It does not count toward
+    // the consecutive-failure disable threshold.
+    await preserveAutoTopUpLastAttemptAt(env.DB, userId, now);
 }
 
 async function getUserStripeBillingRow(
@@ -710,8 +717,7 @@ async function getUserStripeBillingRow(
                 stripe_customer_id AS stripeCustomerId,
                 auto_top_up_enabled AS autoTopUpEnabled,
                 auto_top_up_amount_usd AS autoTopUpAmountUsd,
-                auto_top_up_last_failure AS autoTopUpLastFailure,
-                auto_top_up_last_failure_at AS autoTopUpLastFailureAt
+                auto_top_up_last_attempt_at AS autoTopUpLastAttemptAt
             FROM user
             WHERE id = ?
             LIMIT 1`,
@@ -727,7 +733,7 @@ async function getUserStripeBillingRow(
         ...user,
         autoTopUpEnabled:
             user.autoTopUpEnabled === true || user.autoTopUpEnabled === 1,
-        autoTopUpLastFailureAt: coerceTimestampMs(user.autoTopUpLastFailureAt),
+        autoTopUpLastAttemptAt: coerceTimestampMs(user.autoTopUpLastAttemptAt),
     };
 }
 
@@ -765,19 +771,6 @@ function isBillingDetailsComplete(customer: Stripe.Customer): boolean {
         !!(customer.business_name || customer.name) &&
         !!customer.address?.country
     );
-}
-
-function describeMissingBillingSetup(
-    paymentMethod: Stripe.PaymentMethod | null,
-    billingDetailsComplete: boolean,
-): string {
-    if (!paymentMethod && !billingDetailsComplete) {
-        return "Auto top-up was disabled because your default payment method and billing details were removed in Stripe.";
-    }
-    if (!paymentMethod) {
-        return "Auto top-up was disabled because your default payment method was removed in Stripe.";
-    }
-    return "Auto top-up was disabled because your billing details were removed in Stripe.";
 }
 
 function getBillingDetailsSummary(
@@ -881,57 +874,28 @@ async function ensureAutoTopUpAttempt(
         .run();
 }
 
-async function recordAutoTopUpFailure(
-    db: D1Database,
-    userId: string,
-    message: string,
-): Promise<void> {
-    await db
-        .prepare(
-            `UPDATE user
-                SET auto_top_up_last_failure = ?,
-                    auto_top_up_last_failure_at = ?
-                WHERE id = ?`,
-        )
-        .bind(message, Date.now(), userId)
-        .run();
-}
-
 async function recordAutoTopUpFailureAndMaybeDisable(
     db: D1Database,
     userId: string,
-    message: string,
-    knownConsecutiveFailures?: number,
 ): Promise<void> {
-    await recordAutoTopUpFailure(db, userId, message);
-
-    const consecutiveFailures =
-        knownConsecutiveFailures ??
-        (await countConsecutiveAutoTopUpFailures(db, userId));
-    if (consecutiveFailures < AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES) return;
-
-    await disableAutoTopUp(
+    const consecutiveFailures = await countConsecutiveAutoTopUpFailures(
         db,
         userId,
-        `Auto top-up was disabled after ${AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES} consecutive failed charge attempts. Last error: ${message}`,
     );
+    if (consecutiveFailures < AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES) return;
+
+    await disableAutoTopUp(db, userId);
 }
 
-async function disableAutoTopUp(
-    db: D1Database,
-    userId: string,
-    reason: string,
-): Promise<void> {
+async function disableAutoTopUp(db: D1Database, userId: string): Promise<void> {
     await db
         .prepare(
             `UPDATE user
-                SET auto_top_up_enabled = 0,
-                    auto_top_up_last_failure = ?,
-                    auto_top_up_last_failure_at = ?
+                SET auto_top_up_enabled = 0
                 WHERE id = ?
                     AND auto_top_up_enabled = 1`,
         )
-        .bind(reason, Date.now(), userId)
+        .bind(userId)
         .run();
 }
 
@@ -989,27 +953,53 @@ function coerceTimestampMs(value: number | string | null): number | null {
     return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-async function getAutoTopUpCooldownState(
+function getAutoTopUpRetryMsRemaining(lastAttemptAt: number | null): number {
+    if (!lastAttemptAt) return 0;
+    return Math.max(0, lastAttemptAt + AUTO_TOP_UP_RETRY_AFTER_MS - Date.now());
+}
+
+async function claimAutoTopUpAttempt(
     db: D1Database,
-    user: UserStripeBillingRow,
-): Promise<{ msRemaining: number; consecutiveFailures: number }> {
-    if (!user.autoTopUpLastFailureAt) {
-        return { msRemaining: 0, consecutiveFailures: 0 };
-    }
-    const consecutiveFailures = await countConsecutiveAutoTopUpFailures(
-        db,
-        user.id,
-    );
-    const cooldownMs = Math.min(
-        AUTO_TOP_UP_MAX_FAILURE_COOLDOWN_MS,
-        AUTO_TOP_UP_BASE_FAILURE_COOLDOWN_MS *
-            2 ** Math.max(0, consecutiveFailures - 1),
-    );
-    const cooldownExpiresAt = user.autoTopUpLastFailureAt + cooldownMs;
-    return {
-        msRemaining: Math.max(0, cooldownExpiresAt - Date.now()),
-        consecutiveFailures,
-    };
+    userId: string,
+): Promise<boolean> {
+    const now = Date.now();
+    const retryCutoff = now - AUTO_TOP_UP_RETRY_AFTER_MS;
+    const claim = await db
+        .prepare(
+            `UPDATE user
+                SET auto_top_up_last_attempt_at = ?
+                WHERE id = ?
+                    AND auto_top_up_enabled = 1
+                    AND auto_top_up_amount_usd IS NOT NULL
+                    AND COALESCE(pack_balance, 0) <= ?
+                    AND (
+                        auto_top_up_last_attempt_at IS NULL
+                        OR auto_top_up_last_attempt_at <= ?
+                    )
+                RETURNING id`,
+        )
+        .bind(now, userId, AUTO_TOP_UP_THRESHOLD_POLLEN, retryCutoff)
+        .first<{ id: string }>();
+
+    return !!claim;
+}
+
+async function preserveAutoTopUpLastAttemptAt(
+    db: D1Database,
+    userId: string,
+    timestamp: number,
+): Promise<void> {
+    await db
+        .prepare(
+            `UPDATE user
+                SET auto_top_up_last_attempt_at = COALESCE(
+                    auto_top_up_last_attempt_at,
+                    ?
+                )
+                WHERE id = ?`,
+        )
+        .bind(timestamp, userId)
+        .run();
 }
 
 function createAutoTopUpIdempotencyKey(

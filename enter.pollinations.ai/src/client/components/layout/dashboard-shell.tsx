@@ -27,6 +27,7 @@ type DashboardShellProps = PropsWithChildren<{
     onPageChange: (page: DashboardPage) => void;
     onSignOut?: () => void;
     accountArea?: ReactNode;
+    walletArea?: ReactNode;
 }>;
 
 export const DashboardShell: FC<DashboardShellProps> = ({
@@ -37,6 +38,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     onPageChange,
     onSignOut,
     accountArea,
+    walletArea,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -107,6 +109,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             onPageChange={handlePageChange}
             onSignOut={onSignOut}
             accountArea={accountArea}
+            walletArea={walletArea}
         />
     );
 
@@ -210,6 +213,7 @@ type DashboardRailProps = {
     onPageChange: (page: DashboardPage) => void;
     onSignOut?: () => void;
     accountArea?: ReactNode;
+    walletArea?: ReactNode;
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
@@ -220,6 +224,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     onPageChange,
     onSignOut,
     accountArea,
+    walletArea,
 }) => {
     return (
         <aside
@@ -264,6 +269,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     </a>
                 </div>
             </nav>
+            {walletArea && <div className="mt-3 px-1">{walletArea}</div>}
             <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
                 {accountArea ??
                     (githubUsername && onSignOut ? (

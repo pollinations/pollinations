@@ -104,13 +104,14 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-                <div className="text-base font-bold text-amber-900">
-                    Balance
+            {totalToday > 0 && (
+                <div className="flex justify-end">
+                    <TodayPulse amount={totalToday} />
                 </div>
-                {totalToday > 0 && <TodayPulse amount={totalToday} />}
-            </div>
-            <div className="flex flex-col gap-3">
+            )}
+            <div
+                className={`grid gap-3 ${hideTierRow ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}
+            >
                 <WalletRow
                     emoji="🪷"
                     label="Paid"
@@ -143,6 +144,118 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </span>
             </div>
         </div>
+    );
+};
+
+type SidebarWalletProps = {
+    tierBalance: number;
+    packBalance: number;
+    tier?: string;
+    paidToday?: number;
+    tierToday?: number;
+    onClick?: () => void;
+};
+
+export const SidebarWallet: FC<SidebarWalletProps> = ({
+    tierBalance,
+    packBalance,
+    tier = "spore",
+    paidToday = 0,
+    tierToday = 0,
+    onClick,
+}) => {
+    const tierEmoji = getTierEmoji(tier);
+    const displayTierBalance = normalizeDisplayBalance(tierBalance);
+    const displayPaidBalance = normalizeDisplayBalance(packBalance);
+    const totalPollen = normalizeDisplayBalance(
+        displayTierBalance + displayPaidBalance,
+    );
+    const totalToday = normalizeDisplayBalance(paidToday + tierToday);
+    const hideTierRow = tier === "microbe" && displayTierBalance === 0;
+
+    const Row: FC<{
+        emoji: string;
+        label: string;
+        value: number;
+        earned: number;
+        rowClass: string;
+        labelClass: string;
+        tagClass: string;
+    }> = ({ emoji, label, value, earned, rowClass, labelClass, tagClass }) => (
+        <span
+            className={`flex items-center justify-between rounded-full px-2.5 py-1.5 ${rowClass}`}
+        >
+            <span className="flex items-center gap-1.5 min-w-0">
+                <span className="text-sm leading-none" aria-hidden="true">
+                    {emoji}
+                </span>
+                <span
+                    className={`text-[10px] font-bold uppercase tracking-wide ${labelClass}`}
+                >
+                    {label}
+                </span>
+                <span className="text-sm font-bold tabular-nums text-amber-950 truncate">
+                    {formatPollen(value)}
+                </span>
+            </span>
+            {earned > 0 && (
+                <span
+                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${tagClass}`}
+                >
+                    +{formatPollen(earned)}
+                </span>
+            )}
+        </span>
+    );
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="w-full rounded-2xl p-2 text-left transition-colors hover:bg-amber-100/40"
+        >
+            <div className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-amber-900">
+                    Wallet
+                </span>
+                <span className="flex items-baseline gap-2">
+                    {totalToday > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 tabular-nums">
+                            <span className="relative inline-flex h-1.5 w-1.5">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            </span>
+                            +{formatPollen(totalToday)}
+                        </span>
+                    )}
+                    <span className="text-base font-bold tabular-nums text-amber-950">
+                        {formatPollen(totalPollen)}
+                    </span>
+                </span>
+            </div>
+            <div className="flex flex-col gap-1">
+                <Row
+                    emoji="🪷"
+                    label="Paid"
+                    value={displayPaidBalance}
+                    earned={paidToday}
+                    rowClass="bg-amber-300"
+                    labelClass="text-amber-900"
+                    tagClass="bg-amber-50 text-emerald-800"
+                />
+                {!hideTierRow && (
+                    <Row
+                        emoji={tierEmoji}
+                        label="Tier"
+                        value={displayTierBalance}
+                        earned={tierToday}
+                        rowClass="bg-pink-200"
+                        labelClass="text-pink-900"
+                        tagClass="bg-pink-50 text-emerald-800"
+                    />
+                )}
+            </div>
+        </button>
     );
 };
 

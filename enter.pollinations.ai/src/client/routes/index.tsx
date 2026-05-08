@@ -10,6 +10,7 @@ import {
 import {
     BuyPollenPanel,
     PollenBalance,
+    SidebarWallet,
     TierPanel,
 } from "../components/balance";
 import { Button } from "../components/button.tsx";
@@ -295,6 +296,16 @@ function RouteComponent() {
             githubAvatarUrl={user?.image || ""}
             onPageChange={handlePageChange}
             onSignOut={handleSignOut}
+            walletArea={
+                <SidebarWallet
+                    tierBalance={tierBalance}
+                    packBalance={packBalance}
+                    tier={tierData?.active?.tier}
+                    paidToday={paidToday}
+                    tierToday={tierToday}
+                    onClick={() => handlePageChange("pollen")}
+                />
+            }
         >
             {activePage === "updates" && <UpdatesPage />}
             {activePage === "pollen" && (

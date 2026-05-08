@@ -33,6 +33,7 @@ const gaugeSegmentColors = {
 } as const;
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
+const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
@@ -223,6 +224,19 @@ export const BuyPollenPanel: FC = () => {
                                 className="w-full text-center sm:w-auto sm:text-left"
                             />
                         </div>
+                        <p className="text-[11px] leading-snug text-amber-950/45">
+                            Credits are instant, expire in 1 year, and follow
+                            our{" "}
+                            <a
+                                href={REFUND_POLICY_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                            >
+                                Refund Policy
+                            </a>
+                            .
+                        </p>
                     </div>
                 )}
             </div>

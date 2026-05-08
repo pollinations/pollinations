@@ -66,13 +66,10 @@ const WalletRow: FC<WalletRowProps> = ({
                 </span>
                 {earnedToday > 0 && (
                     <span
-                        className={`inline-flex items-baseline gap-1 text-sm font-bold tabular-nums ${tagClass}`}
+                        className={`inline-flex items-baseline gap-1 text-base sm:text-lg font-bold tabular-nums ${tagClass}`}
                     >
                         <span aria-hidden="true">▲</span>
                         {formatPollen(earnedToday)}
-                        <span className="text-xs font-medium opacity-70">
-                            7d
-                        </span>
                     </span>
                 )}
             </span>

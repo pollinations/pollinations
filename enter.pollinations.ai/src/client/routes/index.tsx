@@ -9,7 +9,6 @@ import {
     type CreateApiKeyResponse,
 } from "../components/api-keys";
 import {
-    AutoTopUpPanel,
     BuyPollenPanel,
     PollenBalance,
     TierPanel,
@@ -259,10 +258,7 @@ function RouteComponent() {
                         framed
                         id="buy-pollen"
                     >
-                        <BuyPollenPanel />
-                    </DashboardSection>
-                    <DashboardSection title="Auto top-up" theme="amber" framed>
-                        <AutoTopUpPanel initialBillingState={billingState} />
+                        <BuyPollenPanel initialBillingState={billingState} />
                     </DashboardSection>
                     {tierData && (
                         <DashboardSection title="Tier" theme="amber" framed>

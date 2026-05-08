@@ -1,24 +1,26 @@
-import { type FC, type ReactNode, useEffect, useState } from "react";
+import {
+    type FC,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useState,
+} from "react";
 import { apiClient } from "@/client/api.ts";
-import { POLLEN_PACKS, type PollenPack } from "@/pollen-packs.ts";
+import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
+import { Card } from "../ui/card.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Tag } from "../ui/tag.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
-import {
-    PollenPackBonusPill,
-    PollenPackReadout,
-    PollenPackSlider,
-} from "./pollen-pack-controls.tsx";
+import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type BillingState = {
     autoTopUp: {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
-        lastFailure: string | null;
-        lastFailureAt: string | null;
+        lastAttemptAt: string | null;
     };
     paymentMethod: {
         hasDefault: boolean;
@@ -44,9 +46,33 @@ type AutoTopUpPanelProps = {
 
 const AUTO_TOP_UP_PACK_MIN = 10;
 const AUTO_TOP_UP_PACK_MAX = 100;
-const DEFAULT_PACK_AMOUNT_USD = 20;
+const DEFAULT_PACK_AMOUNT_USD = 10;
 const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";
-const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
+const PENDING_ENABLE_STORAGE_KEY = "pollinations:autoTopUpPendingEnable";
+
+function readPendingEnable(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+        return (
+            window.sessionStorage.getItem(PENDING_ENABLE_STORAGE_KEY) === "1"
+        );
+    } catch {
+        return false;
+    }
+}
+
+function writePendingEnable(value: boolean): void {
+    if (typeof window === "undefined") return;
+    try {
+        if (value) {
+            window.sessionStorage.setItem(PENDING_ENABLE_STORAGE_KEY, "1");
+        } else {
+            window.sessionStorage.removeItem(PENDING_ENABLE_STORAGE_KEY);
+        }
+    } catch {
+        // ignore storage errors (private mode, quota, etc.)
+    }
+}
 const AUTO_TOP_UP_TOOLTIP =
     "Auto top-up charges your Stripe default payment method for the selected pollen pack when purchased pollen is at or below 5 pollen.";
 const AUTO_TOP_UP_PACKS = POLLEN_PACKS.filter(
@@ -62,6 +88,8 @@ type SetupReadiness = {
     isSaving: boolean;
 };
 
+type ToggleStatus = "off" | "pending" | "on";
+
 export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
 }) => {
@@ -72,6 +100,11 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const [isSaving, setIsSaving] = useState(false);
     const [isOpeningPortal, setIsOpeningPortal] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [pendingEnable, setPendingEnableState] = useState(readPendingEnable);
+    const setPendingEnable = useCallback((value: boolean) => {
+        writePendingEnable(value);
+        setPendingEnableState(value);
+    }, []);
 
     const paymentMethodReady = billingState?.paymentMethod.hasDefault ?? false;
     const billingDetailsReady = billingState?.billingDetailsComplete ?? false;
@@ -82,16 +115,19 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const hasUnsavedChanges =
         billingState !== null &&
         packAmountUsd !== billingState.autoTopUp.packAmountUsd;
-    const lastFailureTime = formatFailureTime(
-        billingState?.autoTopUp.lastFailureAt ?? null,
-    );
-
     const setup: SetupReadiness = {
         paymentMethodReady,
         billingDetailsReady,
         hasSelectedPack: Boolean(selectedPack),
         isSaving,
     };
+    const billingReady = canEnable(setup);
+    const isPending = pendingEnable && !isEnabled && !billingReady;
+    const toggleStatus: ToggleStatus = isEnabled
+        ? "on"
+        : isPending
+          ? "pending"
+          : "off";
 
     useEffect(() => {
         setBillingState(initialBillingState);
@@ -127,91 +163,138 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         }
     }
 
-    async function saveAutoTopUp(enabled: boolean): Promise<void> {
-        setIsSaving(true);
-        setError(null);
-        try {
-            const response = await apiClient.stripe["auto-top-up"].$patch({
-                json: { enabled, packAmountUsd },
-            });
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(
-                    extractErrorMessage(payload, "Failed to save auto top-up"),
+    const saveAutoTopUp = useCallback(
+        async (enabled: boolean): Promise<void> => {
+            setIsSaving(true);
+            setError(null);
+            try {
+                const response = await apiClient.stripe["auto-top-up"].$patch({
+                    json: { enabled, packAmountUsd },
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(
+                        extractErrorMessage(
+                            payload,
+                            "Failed to save auto top-up",
+                        ),
+                    );
+                }
+                const nextBillingState = payload as BillingState;
+                setBillingState(nextBillingState);
+                setPackAmountUsd(
+                    normalizePackAmount(
+                        nextBillingState.autoTopUp.packAmountUsd,
+                    ),
                 );
+            } catch (err) {
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : "Failed to save auto top-up",
+                );
+            } finally {
+                setIsSaving(false);
             }
-            const nextBillingState = payload as BillingState;
-            setBillingState(nextBillingState);
-            setPackAmountUsd(
-                normalizePackAmount(nextBillingState.autoTopUp.packAmountUsd),
-            );
-        } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : "Failed to save auto top-up",
-            );
-        } finally {
-            setIsSaving(false);
+        },
+        [packAmountUsd],
+    );
+
+    useEffect(() => {
+        if (pendingEnable && !isEnabled && billingReady && !isSaving) {
+            setPendingEnable(false);
+            void saveAutoTopUp(true);
         }
-    }
+    }, [
+        pendingEnable,
+        isEnabled,
+        billingReady,
+        isSaving,
+        saveAutoTopUp,
+        setPendingEnable,
+    ]);
+
+    const handleToggle = useCallback(
+        (next: boolean) => {
+            if (next) {
+                if (billingReady) {
+                    void saveAutoTopUp(true);
+                } else {
+                    setPendingEnable(true);
+                }
+            } else {
+                setPendingEnable(false);
+                if (isEnabled) void saveAutoTopUp(false);
+            }
+        },
+        [billingReady, isEnabled, saveAutoTopUp, setPendingEnable],
+    );
 
     return (
         <div className="space-y-4">
             <AutoTopUpToggle
-                isEnabled={isEnabled}
-                setup={setup}
-                onToggle={(enabled) => saveAutoTopUp(enabled)}
+                status={toggleStatus}
+                disabled={isSaving}
+                onToggle={handleToggle}
             />
 
-            <div className={cn(DIVIDER_CLASS, "grid gap-4")}>
-                <PollenPackSlider
-                    value={packAmountUsd}
-                    onChange={setPackAmountUsd}
-                    packs={AUTO_TOP_UP_PACKS}
-                    disabled={isSaving}
-                />
-                <AutoTopUpSaveChanges
-                    isEnabled={isEnabled}
-                    hasUnsavedChanges={hasUnsavedChanges}
-                    setup={setup}
-                    selectedPack={selectedPack}
-                    onSave={() => saveAutoTopUp(true)}
-                />
-                <p className="text-[11px] leading-snug text-amber-950/45">
-                    Credits are instant, expire in 1 year, and follow our{" "}
-                    <a
-                        href={REFUND_POLICY_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
-                    >
-                        Refund Policy
-                    </a>
-                    .
-                </p>
-            </div>
+            {toggleStatus === "pending" && (
+                <Card
+                    bg="bg-white/80"
+                    className="!border-transparent space-y-4"
+                >
+                    <BillingSetup
+                        paymentMethodReady={paymentMethodReady}
+                        paymentMethodValue={formatPaymentMethod(billingState)}
+                        billingDetailsReady={billingDetailsReady}
+                        billingDetailsValue={formatBillingDetails(billingState)}
+                    />
+                    <ManageBillingButton
+                        onClick={openBillingPortal}
+                        loading={isOpeningPortal}
+                    />
+                </Card>
+            )}
 
-            <div className={DIVIDER_CLASS}>
-                <BillingSetup
-                    paymentMethodReady={paymentMethodReady}
-                    paymentMethodValue={formatPaymentMethod(billingState)}
-                    billingDetailsReady={billingDetailsReady}
-                    billingDetailsValue={formatBillingDetails(billingState)}
-                    onAction={openBillingPortal}
-                    loading={isOpeningPortal}
-                />
-            </div>
+            {toggleStatus === "on" && (
+                <Card
+                    bg="bg-white/80"
+                    className="!border-transparent space-y-4"
+                >
+                    <div className="flex flex-col gap-4 pb-12 sm:flex-row sm:items-center">
+                        <div className="min-w-0 flex-1">
+                            <PollenPackSlider
+                                value={packAmountUsd}
+                                onChange={setPackAmountUsd}
+                                packs={AUTO_TOP_UP_PACKS}
+                                disabled={isSaving}
+                            />
+                        </div>
+                        <AutoTopUpSaveButton
+                            isEnabled={isEnabled}
+                            hasUnsavedChanges={hasUnsavedChanges}
+                            setup={setup}
+                            onSave={() => saveAutoTopUp(true)}
+                        />
+                    </div>
 
-            {billingState?.autoTopUp.lastFailure && (
-                <ErrorNotice>
-                    {billingState.autoTopUp.lastFailure}
-                    {lastFailureTime && (
-                        <span className="block pt-1 text-red-700/75">
-                            Last failed {lastFailureTime}
-                        </span>
-                    )}
-                </ErrorNotice>
+                    <div className={cn(DIVIDER_CLASS, "space-y-4")}>
+                        <BillingSetup
+                            paymentMethodReady={paymentMethodReady}
+                            paymentMethodValue={formatPaymentMethod(
+                                billingState,
+                            )}
+                            billingDetailsReady={billingDetailsReady}
+                            billingDetailsValue={formatBillingDetails(
+                                billingState,
+                            )}
+                        />
+                        <ManageBillingButton
+                            onClick={openBillingPortal}
+                            loading={isOpeningPortal}
+                        />
+                    </div>
+                </Card>
             )}
 
             {error && <ErrorNotice>{error}</ErrorNotice>}
@@ -219,52 +302,76 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     );
 };
 
+type ManageBillingButtonProps = {
+    onClick: () => void;
+    loading: boolean;
+};
+
+const ManageBillingButton: FC<ManageBillingButtonProps> = ({
+    onClick,
+    loading,
+}) => (
+    <Button
+        as="button"
+        type="button"
+        color="amber"
+        weight="light"
+        onClick={onClick}
+        disabled={loading}
+        className="btn-shimmer w-fit max-w-full min-w-0 gap-2 whitespace-nowrap border border-amber-300/70 text-center shadow-none"
+    >
+        <span>{loading ? "Opening Stripe..." : "Manage billing details"}</span>
+        {!loading && <ExternalLinkIcon />}
+    </Button>
+);
+
 type AutoTopUpToggleProps = {
-    isEnabled: boolean;
-    setup: SetupReadiness;
+    status: ToggleStatus;
+    disabled: boolean;
     onToggle: (enabled: boolean) => void;
 };
 
+const TOGGLE_STATUS_LABEL: Record<ToggleStatus, string> = {
+    off: "Off",
+    pending: "Active — add billing details to start charging",
+    on: "On",
+};
+
+const TOGGLE_TRACK_CLASS: Record<ToggleStatus, string> = {
+    off: "bg-amber-100 border-amber-300",
+    pending: "bg-amber-300 border-amber-400",
+    on: "bg-emerald-300 border-emerald-400",
+};
+
 const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
-    isEnabled,
-    setup,
+    status,
+    disabled,
     onToggle,
 }) => {
-    const switchDisabled = setup.isSaving || (!isEnabled && !canEnable(setup));
-    const disabledReason = isEnabled
-        ? null
-        : getDisabledReason(setup, "enabling auto top-up");
-
+    const isOn = status !== "off";
     return (
         <div className="flex min-w-0 items-center gap-3">
-            <DisabledControlTooltip
-                content={switchDisabled ? disabledReason : null}
-                className="shrink-0"
+            <button
+                type="button"
+                role="switch"
+                aria-checked={isOn}
+                aria-label={
+                    isOn ? "Turn off auto top-up" : "Enable auto top-up"
+                }
+                onClick={() => onToggle(!isOn)}
+                disabled={disabled}
+                className={cn(
+                    "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60",
+                    TOGGLE_TRACK_CLASS[status],
+                )}
             >
-                <button
-                    type="button"
-                    role="switch"
-                    aria-checked={isEnabled}
-                    aria-label={
-                        isEnabled
-                            ? "Turn off auto top-up"
-                            : "Enable auto top-up"
-                    }
-                    onClick={() => onToggle(!isEnabled)}
-                    disabled={switchDisabled}
+                <span
                     className={cn(
-                        "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border border-amber-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60",
-                        isEnabled ? "bg-amber-200" : "bg-amber-100",
+                        "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                        isOn ? "translate-x-6" : "translate-x-1",
                     )}
-                >
-                    <span
-                        className={cn(
-                            "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
-                            isEnabled ? "translate-x-6" : "translate-x-1",
-                        )}
-                    />
-                </button>
-            </DisabledControlTooltip>
+                />
+            </button>
             <div className="min-w-0">
                 <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
                     Auto top-up
@@ -274,27 +381,32 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
                         tone="amber"
                     />
                 </div>
-                <div className="text-xs font-medium text-amber-800/75">
-                    {isEnabled ? "On" : "Off"}
+                <div
+                    className={cn(
+                        "text-xs font-medium",
+                        status === "pending"
+                            ? "text-amber-700"
+                            : "text-amber-800/75",
+                    )}
+                >
+                    {TOGGLE_STATUS_LABEL[status]}
                 </div>
             </div>
         </div>
     );
 };
 
-type AutoTopUpSaveChangesProps = {
+type AutoTopUpSaveButtonProps = {
     isEnabled: boolean;
     hasUnsavedChanges: boolean;
     setup: SetupReadiness;
-    selectedPack?: PollenPack;
     onSave: () => void;
 };
 
-const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
+const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
     isEnabled,
     hasUnsavedChanges,
     setup,
-    selectedPack,
     onSave,
 }) => {
     const saveDisabled = !isEnabled || !canEnable(setup) || !hasUnsavedChanges;
@@ -305,39 +417,22 @@ const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
     });
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
-            <DisabledControlTooltip
-                content={saveDisabled ? disabledReason : null}
-                className="w-full sm:w-auto"
+        <DisabledControlTooltip
+            content={saveDisabled ? disabledReason : null}
+            className="w-full sm:w-auto sm:shrink-0"
+        >
+            <Button
+                as="button"
+                type="button"
+                color="amber"
+                weight="light"
+                onClick={onSave}
+                disabled={saveDisabled}
+                className="btn-shimmer w-full min-w-0 border border-amber-300/70 text-center shadow-none sm:w-28"
             >
-                <Button
-                    as="button"
-                    type="button"
-                    color="amber"
-                    weight="light"
-                    onClick={onSave}
-                    disabled={saveDisabled}
-                    className="btn-shimmer w-full min-w-0 border border-amber-300/70 text-center shadow-none sm:w-fit"
-                >
-                    <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
-                        <span>Save</span>
-                        {selectedPack && (
-                            <PollenPackReadout
-                                pack={selectedPack}
-                                showBonus={false}
-                                tone="button"
-                            />
-                        )}
-                    </span>
-                </Button>
-            </DisabledControlTooltip>
-            {selectedPack && (
-                <PollenPackBonusPill
-                    pack={selectedPack}
-                    className="w-full text-center sm:w-auto sm:text-left"
-                />
-            )}
-        </div>
+                Save
+            </Button>
+        </DisabledControlTooltip>
     );
 };
 
@@ -405,8 +500,6 @@ type BillingSetupProps = {
     paymentMethodValue: string;
     billingDetailsReady: boolean;
     billingDetailsValue: ReactNode;
-    onAction: () => void;
-    loading: boolean;
 };
 
 const BillingSetup: FC<BillingSetupProps> = ({
@@ -414,36 +507,18 @@ const BillingSetup: FC<BillingSetupProps> = ({
     paymentMethodValue,
     billingDetailsReady,
     billingDetailsValue,
-    onAction,
-    loading,
 }) => (
-    <div className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2">
-            <SetupSnippet
-                title="Billing details"
-                ready={billingDetailsReady}
-                value={billingDetailsValue}
-            />
-            <SetupSnippet
-                title="Payment method"
-                ready={paymentMethodReady}
-                value={paymentMethodValue}
-            />
-        </div>
-        <Button
-            as="button"
-            type="button"
-            color="amber"
-            weight="light"
-            onClick={onAction}
-            disabled={loading}
-            className="btn-shimmer w-fit max-w-full min-w-0 self-start gap-2 whitespace-nowrap border border-amber-300/70 text-center shadow-none"
-        >
-            <span>
-                {loading ? "Opening Stripe..." : "Manage billing details"}
-            </span>
-            {!loading && <ExternalLinkIcon />}
-        </Button>
+    <div className="grid gap-3 md:grid-cols-2">
+        <SetupSnippet
+            title="Billing address"
+            ready={billingDetailsReady}
+            value={billingDetailsValue}
+        />
+        <SetupSnippet
+            title="Payment method"
+            ready={paymentMethodReady}
+            value={paymentMethodValue}
+        />
     </div>
 );
 
@@ -559,17 +634,6 @@ function normalizePackAmount(value: number | null | undefined): number {
                 : closest,
         firstPack,
     ).amountUsd;
-}
-
-function formatFailureTime(value: string | null): string | null {
-    if (!value) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return null;
-
-    return date.toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-    });
 }
 
 function extractErrorMessage(payload: unknown, fallback: string): string {

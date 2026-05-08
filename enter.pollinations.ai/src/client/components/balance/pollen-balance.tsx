@@ -5,12 +5,9 @@ import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
 import { pillColors } from "../layout/dashboard-theme.ts";
 import { Tooltip } from "../ui/tooltip.tsx";
+import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-import {
-    PollenPackBonusPill,
-    PollenPackReadout,
-    PollenPackSlider,
-} from "./pollen-pack-controls.tsx";
+import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -38,6 +35,38 @@ const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
 }
+
+const ClockIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+    </svg>
+);
+
+const MailIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 7 9 7 9-7" />
+    </svg>
+);
 
 const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     percentage,
@@ -173,7 +202,13 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     );
 };
 
-export const BuyPollenPanel: FC = () => {
+type BuyPollenPanelProps = {
+    initialBillingState: BillingState | null;
+};
+
+export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
+    initialBillingState,
+}) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const [selectedPackAmount, setSelectedPackAmount] = useState(
         POLLEN_PACKS.find((pack) => pack.amountUsd === 5)?.amountUsd ??
@@ -196,77 +231,63 @@ export const BuyPollenPanel: FC = () => {
         <>
             <div className="space-y-4">
                 {selectedPack && (
-                    <div className="w-full space-y-3">
-                        <PollenPackSlider
-                            value={selectedPack.amountUsd}
-                            onChange={setSelectedPackAmount}
-                        />
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Button
-                                as="a"
-                                href={`/api/stripe/checkout/${selectedPack.amountUsd}`}
-                                color="amber"
-                                weight="light"
-                                title={`Buy $${selectedPack.amountUsd} pollen pack`}
-                                className="btn-shimmer w-full min-w-0 border border-amber-300/70 text-center shadow-none sm:w-fit"
-                            >
-                                <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
-                                    <span>Buy</span>
-                                    <PollenPackReadout
-                                        pack={selectedPack}
-                                        showBonus={false}
-                                        tone="button"
-                                    />
-                                </span>
-                            </Button>
-                            <PollenPackBonusPill
-                                pack={selectedPack}
-                                className="w-full text-center sm:w-auto sm:text-left"
+                    <div className="flex w-full flex-col gap-4 pb-12 sm:flex-row sm:items-center">
+                        <div className="min-w-0 flex-1">
+                            <PollenPackSlider
+                                value={selectedPack.amountUsd}
+                                onChange={setSelectedPackAmount}
                             />
                         </div>
-                        <p className="text-[11px] leading-snug text-amber-950/45">
-                            Credits are instant, expire in 1 year, and follow
-                            our{" "}
-                            <a
-                                href={REFUND_POLICY_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
-                            >
-                                Refund Policy
-                            </a>
-                            .
-                        </p>
+                        <Button
+                            as="a"
+                            href={`/api/stripe/checkout/${selectedPack.amountUsd}`}
+                            color="amber"
+                            weight="light"
+                            title={`Buy $${selectedPack.amountUsd} pollen pack`}
+                            className="btn-shimmer w-full min-w-0 border border-amber-300/70 text-center shadow-none sm:w-28 sm:shrink-0"
+                        >
+                            Buy
+                        </Button>
                     </div>
                 )}
             </div>
-            <div className="mt-5 space-y-3 border-t border-amber-300/70 pt-4 text-sm text-amber-900">
+            <div className="mt-5">
+                <AutoTopUpPanel initialBillingState={initialBillingState} />
+            </div>
+            <div className="mt-8 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
+                <p className="flex items-start gap-1.5">
+                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Credits are instant, expire in 1 year, and follow our{" "}
+                        <a
+                            href={REFUND_POLICY_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                        >
+                            Refund Policy
+                        </a>
+                        .
+                    </span>
+                </p>
+                <p className="flex items-start gap-1.5">
+                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Payment issue or missing pollen?{" "}
+                        <Tooltip
+                            content={emailCopied ? "Copied!" : "Click to copy"}
+                            onClick={copyEmail}
+                        >
+                            <span className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950">
+                                {emailCopied
+                                    ? "Copied!"
+                                    : "billing@pollinations.ai"}
+                            </span>
+                        </Tooltip>{" "}
+                        — we reply same day.
+                    </span>
+                </p>
                 <PaymentTrustBadge className="mt-0 pt-0" />
-                <p className="font-medium">
-                    💳 Want to pay with a different method?{" "}
-                    <a
-                        href="https://github.com/pollinations/pollinations/issues/4826"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium underline decoration-amber-400 underline-offset-2 hover:text-amber-700"
-                    >
-                        Vote for your preferred option
-                    </a>
-                </p>
-                <p className="font-medium">
-                    💬 Payment issue or missing pollen?{" "}
-                    <Tooltip
-                        content={emailCopied ? "Copied!" : "Click to copy"}
-                        onClick={copyEmail}
-                    >
-                        <span className="font-medium underline decoration-amber-400 underline-offset-2 hover:text-amber-700">
-                            {emailCopied
-                                ? "Copied!"
-                                : "billing@pollinations.ai"}
-                        </span>
-                    </Tooltip>{" "}
-                    — we reply same day.
-                </p>
             </div>
         </>
     );

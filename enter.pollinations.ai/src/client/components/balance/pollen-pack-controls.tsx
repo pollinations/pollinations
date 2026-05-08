@@ -41,8 +41,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
         lastIndex > 0 ? (selectedIndex / lastIndex) * 100 : 100;
 
     return (
-        <div className="space-y-3">
-            <div className="text-[15px] font-bold text-amber-950">{label}</div>
+        <div className="relative">
             <div className="flex h-8 items-center">
                 <input
                     type="range"
@@ -65,26 +64,59 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                     className="pollen-pack-slider"
                 />
             </div>
-            <div className="relative -mt-1 h-4 px-[11px] text-xs font-semibold text-amber-700/80 tabular-nums">
-                <div className="relative h-full">
-                    {packs.map((pack, index) => (
-                        <span
-                            key={pack.amountUsd}
-                            style={{
-                                left:
-                                    lastIndex > 0
-                                        ? `${(index / lastIndex) * 100}%`
-                                        : "0%",
-                            }}
-                            className={cn(
-                                "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
-                                pack.amountUsd === selectedPack?.amountUsd &&
-                                    "font-bold text-amber-900",
-                            )}
-                        >
-                            ${pack.amountUsd}
-                        </span>
-                    ))}
+            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-semibold text-amber-700/80 tabular-nums">
+                <div className="relative">
+                    {packs.map((pack, index) => {
+                        const isSelected =
+                            pack.amountUsd === selectedPack?.amountUsd;
+                        const isFirst = index === 0;
+                        const isLast = lastIndex > 0 && index === lastIndex;
+                        const bonusPercent = getPackBonusPercent(pack);
+                        const hasBonus = pack.bonusPollen > 0;
+                        const readoutPositionClass = isFirst
+                            ? "left-0"
+                            : isLast
+                              ? "right-0"
+                              : "left-1/2 -translate-x-1/2";
+                        return (
+                            <span
+                                key={pack.amountUsd}
+                                style={{
+                                    left:
+                                        lastIndex > 0
+                                            ? `${(index / lastIndex) * 100}%`
+                                            : "0%",
+                                }}
+                                className={cn(
+                                    "absolute top-0 -translate-x-1/2 whitespace-nowrap text-center",
+                                    isSelected && "font-bold text-amber-900",
+                                )}
+                            >
+                                <span className="relative inline-block">
+                                    ${pack.amountUsd}
+                                    {isSelected && (
+                                        <span
+                                            className={cn(
+                                                "absolute top-full mt-0.5 whitespace-nowrap font-medium text-amber-900",
+                                                readoutPositionClass,
+                                            )}
+                                        >
+                                            {formatPollenPackValue(
+                                                pack.pollenGrant,
+                                            )}{" "}
+                                            pollen
+                                            {hasBonus && (
+                                                <span className="text-amber-700">
+                                                    {" (+"}
+                                                    {bonusPercent}% free)
+                                                </span>
+                                            )}
+                                        </span>
+                                    )}
+                                </span>
+                            </span>
+                        );
+                    })}
                 </div>
             </div>
         </div>
@@ -160,11 +192,19 @@ export const PollenPackBonusPill: FC<PollenPackBonusPillProps> = ({
     className,
 }) => {
     const bonusPercent = getPackBonusPercent(pack);
-    if (bonusPercent <= 0) return null;
+    const hasBonus = pack.bonusPollen > 0;
 
     return (
-        <span className={cn("text-sm font-medium text-amber-700", className)}>
-            +{bonusPercent}% bonus
+        <span className={cn("text-sm font-medium text-amber-900", className)}>
+            <span className="font-bold">
+                {formatPollenPackValue(pack.pollenGrant)} pollen
+            </span>
+            {hasBonus && (
+                <span className="text-amber-700">
+                    {" (+"}
+                    {bonusPercent}% free)
+                </span>
+            )}
         </span>
     );
 };

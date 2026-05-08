@@ -35,25 +35,26 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
     return (
         <div
             className={cn(
-                "mt-2 flex w-full flex-wrap items-center gap-x-3 gap-y-2 pt-6",
+                "mt-2 flex w-full flex-wrap items-center gap-x-2 gap-y-1 pt-6 text-[13px] leading-snug text-amber-950/45",
                 className,
             )}
         >
-            <div className="flex flex-wrap items-center justify-start gap-2">
+            <span className="inline-flex items-center gap-1.5">
+                <LockIcon />
+                <span>Secure checkout powered by Stripe</span>
+            </span>
+            <span aria-hidden>—</span>
+            <span className="inline-flex flex-wrap items-center gap-1.5">
                 {paymentMethods.map((method) => (
                     <img
                         key={method.name}
                         src={method.src}
                         alt={method.name}
-                        className="h-6 w-auto opacity-70 transition-opacity hover:opacity-100"
+                        className="h-4 w-auto opacity-70 transition-opacity hover:opacity-100"
                         loading="lazy"
                     />
                 ))}
-            </div>
-            <div className="flex items-center gap-1.5 text-gray-400 text-xs">
-                <LockIcon />
-                <span>Secure checkout powered by Stripe</span>
-            </div>
+            </span>
         </div>
     );
 };

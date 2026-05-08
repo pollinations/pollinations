@@ -380,7 +380,7 @@ function generateLLMDoc(): string {
 
     lines.push("### GET /account/keys");
     lines.push(
-        "List all API keys for the current user. Requires secret key (sk_) with `account:keys` permission.",
+        "List all API keys and OAuth app clients for the current user. Requires secret key (sk_) with `account:keys` permission.",
     );
     lines.push("");
 
@@ -391,9 +391,11 @@ function generateLLMDoc(): string {
     lines.push("Body (JSON):");
     lines.push("- name (string, required): Display name");
     lines.push(
-        '- type ("secret"|"publishable", default "secret"): Key type (sk_ or pk_)',
+        '- type ("secret"|"publishable", default "secret"): `secret` creates an sk_ API key; `publishable` with app fields creates an app_ OAuth client',
     );
-    lines.push('- App keys: set type to "publishable" and pass redirectUris');
+    lines.push(
+        '- App clients: set type to "publishable" and pass redirectUris or earningsEnabled',
+    );
     lines.push("- expiresIn (int, optional): Seconds until expiry (max 365d)");
     lines.push(
         "- allowedModels (string[], optional): Restrict to specific models. null = all",
@@ -405,19 +407,19 @@ function generateLLMDoc(): string {
         '- accountPermissions (string[], optional): e.g. ["profile","usage"]. "keys" is auto-stripped',
     );
     lines.push(
-        "- redirectUris (string[], optional): OAuth redirect URIs for publishable app keys. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; query-bearing entries must match exactly. Loopback ports are port-agnostic.",
+        "- redirectUris (string[], optional): OAuth redirect URIs for app clients. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; query-bearing entries must match exactly. Loopback ports are port-agnostic.",
     );
     lines.push(
-        "- earningsEnabled (boolean, optional): Developer earnings for publishable app keys; true opts in",
+        "- earningsEnabled (boolean, optional): Developer earnings for app clients; true opts in",
     );
-    lines.push("Example app key body:");
+    lines.push("Example app client body:");
     lines.push("```json");
     lines.push(
         '{"name":"myapp","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}',
     );
     lines.push("```");
     lines.push(
-        "Returns full key value once: { id, key, name, type, prefix, start, expiresAt, permissions, pollenBudget }",
+        "Returns full key/client_id value once: { id, key, name, type, prefix, start, expiresAt, permissions, pollenBudget }",
     );
     lines.push("");
 

@@ -129,11 +129,48 @@ export const apikey = sqliteTable("apikey", {
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
   byopClientKeyId: text("byop_client_key_id"),
+  oauthClientId: text("oauth_client_id"),
 }, (table) => [
   index("idx_apikey_key").on(table.key),
   index('idx_apikey_expires_at').on(table.expiresAt),
   index("idx_apikey_user_id").on(table.userId),
   index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
+  index("idx_apikey_oauth_client_id").on(table.oauthClientId),
+]);
+
+export const oauthClient = sqliteTable("oauthClient", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull().unique(),
+  clientSecret: text("client_secret"),
+  disabled: integer("disabled", { mode: "boolean" }).default(false),
+  skipConsent: integer("skip_consent", { mode: "boolean" }).default(false),
+  enableEndSession: integer("enable_end_session", { mode: "boolean" }).default(false),
+  subjectType: text("subject_type"),
+  scopes: text("scopes"),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  referenceId: text("reference_id"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  name: text("name"),
+  uri: text("uri"),
+  icon: text("icon"),
+  contacts: text("contacts"),
+  tos: text("tos"),
+  policy: text("policy"),
+  softwareId: text("software_id"),
+  softwareVersion: text("software_version"),
+  softwareStatement: text("software_statement"),
+  redirectUris: text("redirect_uris").notNull(),
+  postLogoutRedirectUris: text("post_logout_redirect_uris"),
+  tokenEndpointAuthMethod: text("token_endpoint_auth_method").default("none"),
+  grantTypes: text("grant_types"),
+  responseTypes: text("response_types"),
+  public: integer("public", { mode: "boolean" }).default(true),
+  type: text("type"),
+  requirePKCE: integer("require_pkce", { mode: "boolean" }).default(true),
+  metadata: text("metadata"),
+}, (table) => [
+  index("idx_oauth_client_user_id").on(table.userId),
 ]);
 
 // Drizzle relations for query builder joins
@@ -146,6 +183,17 @@ export const userRelations = relations(user, ({ many }) => ({
 export const apikeyRelations = relations(apikey, ({ one }) => ({
   user: one(user, {
     fields: [apikey.userId],
+    references: [user.id],
+  }),
+  oauthClient: one(oauthClient, {
+    fields: [apikey.oauthClientId],
+    references: [oauthClient.id],
+  }),
+}));
+
+export const oauthClientRelations = relations(oauthClient, ({ one }) => ({
+  user: one(user, {
+    fields: [oauthClient.userId],
     references: [user.id],
   }),
 }));

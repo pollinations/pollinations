@@ -165,9 +165,16 @@ function RouteComponent() {
     }
 
     async function handleDeleteApiKey(id: string): Promise<void> {
-        const result = await authClient.apiKey.delete({ keyId: id });
-        if (result.error) {
-            console.error(result.error);
+        const response = await fetch(`/api/api-keys/${id}`, {
+            method: "DELETE",
+            credentials: "include",
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => null);
+            throw new Error(
+                (error as { message?: string } | null)?.message ||
+                    "Delete failed",
+            );
         }
         router.invalidate();
     }

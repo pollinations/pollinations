@@ -3,7 +3,6 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { apiKey } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { alias } from "drizzle-orm/sqlite-core";
 import * as schema from "../db/better-auth.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -16,9 +15,10 @@ export interface AuthenticatedApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
-    byopClientKeyId?: string | null;
-    byopClientName?: string | null;
-    byopClientUserId?: string | null;
+    oauthClientId?: string | null;
+    oauthClientClientId?: string | null;
+    oauthClientName?: string | null;
+    oauthClientUserId?: string | null;
     rawKey?: string;
 }
 
@@ -165,19 +165,19 @@ export async function authenticateApiKeyRequest(opts: {
 
     const db = drizzle(opts.env.DB, { schema });
     const userId = typeof key.userId === "string" ? key.userId : undefined;
-    const byopClientKey = alias(schema.apikey, "byop_client_key");
     const [apiKeyExtra, userData] = await Promise.all([
         db
             .select({
                 pollenBalance: schema.apikey.pollenBalance,
-                byopClientKeyId: schema.apikey.byopClientKeyId,
-                byopClientName: byopClientKey.name,
-                byopClientUserId: byopClientKey.userId,
+                oauthClientId: schema.apikey.oauthClientId,
+                oauthClientClientId: schema.oauthClient.clientId,
+                oauthClientName: schema.oauthClient.name,
+                oauthClientUserId: schema.oauthClient.userId,
             })
             .from(schema.apikey)
             .leftJoin(
-                byopClientKey,
-                eq(byopClientKey.id, schema.apikey.byopClientKeyId),
+                schema.oauthClient,
+                eq(schema.oauthClient.id, schema.apikey.oauthClientId),
             )
             .where(eq(schema.apikey.id, keyId))
             .get(),
@@ -202,9 +202,10 @@ export async function authenticateApiKeyRequest(opts: {
             permissions: normalizePermissions(key.permissions),
             metadata: normalizeMetadata(key.metadata),
             pollenBalance: apiKeyExtra?.pollenBalance ?? null,
-            byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
-            byopClientName: apiKeyExtra?.byopClientName ?? null,
-            byopClientUserId: apiKeyExtra?.byopClientUserId ?? null,
+            oauthClientId: apiKeyExtra?.oauthClientId ?? null,
+            oauthClientClientId: apiKeyExtra?.oauthClientClientId ?? null,
+            oauthClientName: apiKeyExtra?.oauthClientName ?? null,
+            oauthClientUserId: apiKeyExtra?.oauthClientUserId ?? null,
             rawKey: rawApiKey,
         },
         rawApiKey,

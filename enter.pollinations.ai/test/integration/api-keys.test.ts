@@ -51,7 +51,7 @@ describe("API Key Management", () => {
 
             expect(response.status).toBe(200);
             const created = await response.json();
-            expect(created.key.startsWith("pk_")).toBe(true);
+            expect(created.key.startsWith("app_")).toBe(true);
             expect(created.metadata).toMatchObject({
                 keyType: "publishable",
                 description: "created in one step",
@@ -146,9 +146,9 @@ describe("API Key Management", () => {
 
             expect(response.status).toBe(200);
             const created = await response.json();
-            expect(created.key.startsWith("pk_")).toBe(true);
+            expect(created.key.startsWith("app_")).toBe(true);
             expect(created.metadata.keyType).toBe("publishable");
-            expect(created.metadata.createdVia).toBe("dashboard");
+            expect(created.metadata.createdVia).toBeUndefined();
             expect(created.metadata.plaintextKey).toBe(created.key);
             expect(created.metadata.redirectUris).toEqual([
                 "https://legit.example/callback",
@@ -288,7 +288,7 @@ describe("API Key Management", () => {
             expect(matchingCreated.metadata.clientId).toBeUndefined();
             expect(matchingCreated.metadata.createdForApp).toBeUndefined();
             expect(matchingCreated.metadata.createdForUserId).toBeUndefined();
-            expect(matchingCreated.byopClientKeyId).toBe(appKey.id);
+            expect(matchingCreated.oauthClientId).toBe(appKey.id);
         });
 
         test("stores app attribution even when rewards are currently disabled", async ({
@@ -341,10 +341,10 @@ describe("API Key Management", () => {
             expect(response.status).toBe(200);
             const created = await response.json();
             expect(created.metadata.clientId).toBeUndefined();
-            expect(created.byopClientKeyId).toBe(appKey.id);
+            expect(created.oauthClientId).toBe(appKey.id);
         });
 
-        test("allows device-flow attribution without redirect_uri when client_id matches the device code", async ({
+        test("rejects device-flow attribution from public client_id", async ({
             sessionToken,
         }) => {
             const appResponse = await SELF.fetch(
@@ -403,14 +403,7 @@ describe("API Key Management", () => {
                 },
             );
 
-            expect(response.status).toBe(200);
-            const created = await response.json();
-            expect(created.metadata.createdVia).toBe("redirect-auth");
-            expect(created.metadata.deviceUserCode).toBe(userCode);
-            expect(created.metadata.clientId).toBeUndefined();
-            expect(created.metadata.createdForApp).toBeUndefined();
-            expect(created.metadata.createdForUserId).toBeUndefined();
-            expect(created.byopClientKeyId).toBe(appKey.id);
+            expect(response.status).toBe(400);
         });
 
         test("allows unbranded device-flow key creation without caller attribution", async ({
@@ -549,7 +542,7 @@ describe("API Key Management", () => {
             );
             expect(deviceStyleLookup.status).toBe(200);
             expect(await deviceStyleLookup.json()).toMatchObject({
-                found: true,
+                found: false,
             });
 
             const redirectLookup = await SELF.fetch(
@@ -558,7 +551,6 @@ describe("API Key Management", () => {
             expect(redirectLookup.status).toBe(200);
             expect(await redirectLookup.json()).toMatchObject({
                 found: false,
-                error: "redirect_uri_mismatch",
             });
         });
 
@@ -940,15 +932,13 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        redirectUris: ["https://freshness.example/callback"],
+                        description: "updated metadata",
                     }),
                 },
             );
             expect(metadataResponse.status).toBe(200);
             const updated = await metadataResponse.json();
-            expect(updated.metadata.redirectUris).toEqual([
-                "https://freshness.example/callback",
-            ]);
+            expect(updated.metadata.description).toBe("updated metadata");
 
             const listResponse = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
@@ -960,12 +950,45 @@ describe("API Key Management", () => {
             );
             expect(listResponse.status).toBe(200);
             const list = (await listResponse.json()) as {
-                data: { id: string; metadata?: { redirectUris?: string[] } }[];
+                data: { id: string; metadata?: { description?: string } }[];
             };
             const refreshed = list.data.find((k) => k.id === createdKey.id);
-            expect(refreshed?.metadata?.redirectUris).toEqual([
-                "https://freshness.example/callback",
-            ]);
+            expect(refreshed?.metadata?.description).toBe("updated metadata");
+        });
+
+        test("rejects app metadata updates on plain API key rows", async ({
+            auth,
+            sessionToken,
+        }) => {
+            const createResponse = await auth.apiKey.create({
+                name: "plain-key-app-metadata-reject",
+                fetchOptions: {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            });
+            const createdKey = createResponse.data;
+            expect(createdKey).toBeTruthy();
+            if (!createdKey) {
+                throw new Error("Failed to create API key");
+            }
+
+            const metadataResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        redirectUris: ["https://freshness.example/callback"],
+                    }),
+                },
+            );
+
+            expect(metadataResponse.status).toBe(400);
         });
 
         test("allows enabling rewards from app key metadata", async ({

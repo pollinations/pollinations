@@ -26,6 +26,7 @@ SCHEMA >
     `metadata` Nullable(String) `json:$.metadata`,
     `pollen_balance` Nullable(Float64) `json:$.pollen_balance`,
     `byop_client_key_id` Nullable(String) `json:$.byop_client_key_id`,
+    `oauth_client_id` Nullable(String) `json:$.oauth_client_id`,
     `synced_at` DateTime `json:$.synced_at`
 
 ENGINE "MergeTree"

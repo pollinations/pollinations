@@ -220,7 +220,9 @@ function AuthorizeComponent() {
                     })
                     .catch((e) => setError(e.message));
             }
-            // Fetch app attribution if device flow has an app_key
+            // Device clients are public, so this branding is informational,
+            // not proof of client identity. The minted key is not attributed
+            // to the app unless a future device proof is added.
             if (app_key) {
                 fetch(`/api/app-lookup?app_key=${encodeURIComponent(app_key)}`)
                     .then((r) => r.json())
@@ -327,8 +329,9 @@ function AuthorizeComponent() {
                 expiryDays: keyPermissions.permissions.expiryDays,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
-                    ...(app_key &&
-                        (!isDeviceMode || attribution?.found) && {
+                    ...(!isDeviceMode &&
+                        app_key &&
+                        attribution?.found && {
                             requestedClientId: app_key,
                         }),
                     ...(!isDeviceMode &&

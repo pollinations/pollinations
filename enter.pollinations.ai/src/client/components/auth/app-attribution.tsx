@@ -56,6 +56,12 @@ export function AppAttribution({
                     Code: {userCode}
                 </p>
             )}
+            {isDeviceMode && attribution?.appName && (
+                <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    Device apps use a public client ID. Only approve if you
+                    trust the device or CLI that showed this code.
+                </p>
+            )}
             <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mt-3">
                 To access your Pollinations account{" "}
                 <InfoTip

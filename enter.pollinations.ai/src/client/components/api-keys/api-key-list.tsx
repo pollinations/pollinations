@@ -257,8 +257,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
-                                    Turn on developer earnings. Users are billed
-                                    25% extra, credited to your wallet.{" "}
+                                    Turn on earnings to receive a share of
+                                    pollen users spend in your app.{" "}
                                     <a
                                         href={genDocsUrl(
                                             "#tag/bring-your-own-pollen",

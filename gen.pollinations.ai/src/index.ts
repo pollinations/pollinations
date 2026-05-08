@@ -66,6 +66,7 @@ function robotsTxt(): Response {
             "Disallow: /text/",
             "Disallow: /video/",
             "Disallow: /audio/",
+            "Disallow: /embeddings/",
             "Disallow: /v1/",
             "Disallow: /api/",
         ].join("\n"),

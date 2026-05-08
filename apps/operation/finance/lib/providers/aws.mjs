@@ -1,21 +1,29 @@
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { appDir } from "../io.mjs";
 
 /**
- * AWS provider — fetches MTD consumption from Cost Explorer via `aws ce`.
+ * AWS provider — fetches MTD consumption from Cost Explorer + reads a manual
+ * credit anchor from secrets/aws-credits.json to derive remaining balance.
  *
- * Returns { mtd_total_usd, mtd_credit_usd, mtd_cash_usd, records, as_of }.
+ * AWS exposes credits in the Billing Console UI but does NOT surface them via
+ * `aws ce get-cost-and-usage` (no `Credit` row in the RECORD_TYPE grouping
+ * even when credits are clearly absorbing usage). To work around this, the
+ * operator re-anchors the seed manually on a monthly cadence:
  *
- * Credit semantics:
- *   - `UnblendedCost`      = list price ("total consumed")
- *   - `NetUnblendedCost`   = after credits/discounts ("net cash cost")
- *   - `mtd_credit_usd`     = UnblendedCost - NetUnblendedCost  (what credits absorbed)
- *   - `mtd_cash_usd`       = NetUnblendedCost                   (what hits Wise)
+ *   1. Open https://console.aws.amazon.com/billing/home?region=us-east-1#/credits
+ *   2. Copy the "Total amount remaining" number into secrets/aws-credits.json
+ *   3. Bump as_of to today
  *
- * See .claude/skills/provider-billing/providers/aws.md for context. Our
- * account is a member under Automat-IT's payer; credit grants at the payer
- * level may not be visible here — if credits aren't decrementing, check with
- * Automat-IT.
+ * Between re-anchors we sum daily UnblendedCost since as_of and treat 100% of
+ * it as credit burn while the seed is positive (matches reality — credits
+ * absorb essentially all usage on this account).
+ *
+ * See .claude/skills/provider-billing/providers/aws.md for the deeper write-up.
  */
+
+const CREDITS_PATH = join(appDir(), "secrets", "aws-credits.json");
 
 function awsCmd(args) {
     return new Promise((resolve, reject) => {
@@ -49,58 +57,98 @@ function awsCmd(args) {
     });
 }
 
-/**
- * Fetch MTD usage for a given month. currentMonth is "YYYY-MM".
- * Cost Explorer `End` is exclusive, so we pass today + 1 day to include today.
- *
- * The second argument (pool) is accepted for signature consistency with
- * stateful wrappers like Runpod but is unused here.
- */
-export async function fetchMtd(currentMonth, _pool) {
-    const start = `${currentMonth}-01`;
-    const today = new Date();
-    const isSameMonth =
-        `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, "0")}` ===
-        currentMonth;
-    // End is exclusive; pass tomorrow so today's partial data is included.
-    let end;
-    if (isSameMonth) {
-        const tomorrow = new Date(today);
-        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-        end = `${tomorrow.getUTCFullYear()}-${String(tomorrow.getUTCMonth() + 1).padStart(2, "0")}-${String(tomorrow.getUTCDate()).padStart(2, "0")}`;
-    } else {
-        // Past month: end = first day of next month
-        const [y, m] = currentMonth.split("-").map(Number);
-        const next = new Date(Date.UTC(y, m, 1));
-        end = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-${String(next.getUTCDate()).padStart(2, "0")}`;
+async function loadCreditsAnchor() {
+    const raw = await readFile(CREDITS_PATH, "utf8");
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.balance_usd !== "number" || !parsed.as_of) {
+        throw new Error(
+            `${CREDITS_PATH} must contain { as_of: "YYYY-MM-DD", balance_usd: <number> }`,
+        );
     }
+    return parsed;
+}
 
+function isoDate(d) {
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Pure helper: derive balance + MTD split from the CE daily payload.
+ * Exported for unit testing; consumed by fetchMtd below.
+ */
+export function computeAwsBalance({ anchor, days, currentMonth }) {
+    const monthPrefix = `${currentMonth}-`;
+    let burnSinceAnchor = 0;
+    let mtdUnblended = 0;
+    for (const day of days) {
+        const amount = Number(day.Total?.UnblendedCost?.Amount ?? 0);
+        burnSinceAnchor += amount;
+        if (day.TimePeriod?.Start?.startsWith(monthPrefix)) {
+            mtdUnblended += amount;
+        }
+    }
+    const currentBalance = Math.max(
+        0,
+        Number((anchor.balance_usd - burnSinceAnchor).toFixed(2)),
+    );
+    const mtd_total_usd = Number(mtdUnblended.toFixed(2));
+    // While the credit seed is positive, treat 100% of usage as credit burn.
+    // After it exhausts, spend lands as cash (will hit Wise next month).
+    const mtd_credit_usd = currentBalance > 0 ? mtd_total_usd : 0;
+    const mtd_cash_usd = currentBalance > 0 ? 0 : mtd_total_usd;
+    return {
+        currentBalance,
+        mtd_total_usd,
+        mtd_credit_usd,
+        mtd_cash_usd,
+        records: days.length,
+    };
+}
+
+/**
+ * Fetch MTD usage and derive remaining credit balance.
+ *
+ * Mutates `pool.current_balance_usd` and returns `live_balance: true` so the
+ * orchestrator trusts the wrapper's number instead of recomputing from seed.
+ */
+export async function fetchMtd(currentMonth, pool) {
+    const anchor = await loadCreditsAnchor();
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const tomorrowIso = isoDate(tomorrow);
+
+    // Single CE call: daily granularity from anchor → tomorrow (inclusive of today's
+    // partial). Lets us derive both MTD (this month's days) and total burn since
+    // anchor in one $0.01 request.
     const data = await awsCmd([
         "ce",
         "get-cost-and-usage",
         "--time-period",
-        `Start=${start},End=${end}`,
+        `Start=${anchor.as_of},End=${tomorrowIso}`,
         "--granularity",
-        "MONTHLY",
+        "DAILY",
         "--metrics",
         "UnblendedCost",
-        "NetUnblendedCost",
     ]);
 
-    const results = data.ResultsByTime ?? [];
-    const total = results[0]?.Total ?? {};
-    const unblended = Number(total.UnblendedCost?.Amount ?? 0);
-    const net = Number(total.NetUnblendedCost?.Amount ?? 0);
+    const result = computeAwsBalance({
+        anchor,
+        days: data.ResultsByTime ?? [],
+        currentMonth,
+    });
 
-    const mtd_total_usd = Number(unblended.toFixed(2));
-    const mtd_cash_usd = Number(net.toFixed(2));
-    const mtd_credit_usd = Number((unblended - net).toFixed(2));
+    pool.current_balance_usd = result.currentBalance;
+    pool.seed_balance_usd = anchor.balance_usd;
+    pool.seed_as_of = anchor.as_of;
 
     return {
-        mtd_total_usd,
-        mtd_credit_usd,
-        mtd_cash_usd,
-        records: results.length,
-        as_of: new Date().toISOString().slice(0, 10),
+        mtd_total_usd: result.mtd_total_usd,
+        mtd_credit_usd: result.mtd_credit_usd,
+        mtd_cash_usd: result.mtd_cash_usd,
+        current_balance_usd: result.currentBalance,
+        records: result.records,
+        as_of: isoDate(today),
+        live_balance: true,
     };
 }

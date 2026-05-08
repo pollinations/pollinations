@@ -76,6 +76,9 @@ async function getSnapshotHash(request: Request): Promise<string> {
             // Unknown model — hash stays request-only
         }
         hash.update(`${JSON.stringify(body.messages)}`);
+        if (body.input) hash.update(`${JSON.stringify(body.input)}`);
+        if (body.dimensions) hash.update(`${body.dimensions}`);
+        if (body.task_type) hash.update(`${body.task_type}`);
     } catch (error) {
         log.warn("Failed to parse request body: {error}", { error });
     }

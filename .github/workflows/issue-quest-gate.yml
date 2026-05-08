@@ -2,7 +2,7 @@ name: Quest Issue Gate & Status
 
 on:
   issues:
-    types: [opened, labeled, assigned, unassigned]
+    types: [opened, labeled, assigned, unassigned, closed, reopened]
   workflow_dispatch:
     inputs:
       setup_status_field:
@@ -136,6 +136,33 @@ jobs:
             // so removing POLLEN-QUEST is a true no-op (the card stays as-is).
             if (!labels.includes('POLLEN-QUEST')) return;
 
+            // closed via PR merge → leave to quest-reward-payout.yml (it owns the post-merge
+            // lifecycle: Reward Ready → Paid Out). state_reason='completed' = merged closure.
+            if (action === 'closed' && issue.state_reason === 'completed') return;
+
+            // Resolve project item ID once (idempotent add).
+            const addQ = await github.graphql(`
+                mutation($p: ID!, $c: ID!) {
+                  addProjectV2ItemById(input: {projectId: $p, contentId: $c}) { item { id } }
+                }`, { p: QUEST_PROJECT_ID, c: issue.node_id });
+            const itemId = addQ.addProjectV2ItemById.item.id;
+
+            // closed (unmerged / not_planned / manual) → archive the card.
+            if (action === 'closed') {
+                await github.graphql(`
+                    mutation($p:ID!,$i:ID!) { archiveProjectV2Item(input:{projectId:$p,itemId:$i}) { item { id } } }
+                  `, { p: QUEST_PROJECT_ID, i: itemId });
+                core.info(`Archived #${issue.number} (closed without merge)`);
+                return;
+            }
+
+            // reopened → unarchive, then fall through to set Open / In Progress.
+            if (action === 'reopened') {
+                await github.graphql(`
+                    mutation($p:ID!,$i:ID!) { unarchiveProjectV2Item(input:{projectId:$p,itemId:$i}) { item { id } } }
+                  `, { p: QUEST_PROJECT_ID, i: itemId }).catch(e => core.warning(`Unarchive failed: ${e.message}`));
+            }
+
             let target = null;
             if (action === 'opened' || (action === 'labeled' && labelEvent === 'POLLEN-QUEST')) {
                 target = 'Open';
@@ -143,10 +170,11 @@ jobs:
                 target = 'In Progress';
             } else if (action === 'unassigned' && (issue.assignees || []).length === 0) {
                 target = 'Open';
+            } else if (action === 'reopened') {
+                target = (issue.assignees || []).length > 0 ? 'In Progress' : 'Open';
             }
             if (!target) return;
 
-            // Resolve Status field once, add item to project (idempotent), set status.
             const fieldQ = await github.graphql(`
                 query($id: ID!) {
                   node(id: $id) { ... on ProjectV2 {
@@ -161,12 +189,6 @@ jobs:
                 core.warning(`Quest Status option "${target}" not found. Run the workflow_dispatch with setup_status_field=true once to create the lifecycle options.`);
                 return;
             }
-
-            const addQ = await github.graphql(`
-                mutation($p: ID!, $c: ID!) {
-                  addProjectV2ItemById(input: {projectId: $p, contentId: $c}) { item { id } }
-                }`, { p: QUEST_PROJECT_ID, c: issue.node_id });
-            const itemId = addQ.addProjectV2ItemById.item.id;
 
             await github.graphql(`
                 mutation($p:ID!,$i:ID!,$f:ID!,$o:String!) {

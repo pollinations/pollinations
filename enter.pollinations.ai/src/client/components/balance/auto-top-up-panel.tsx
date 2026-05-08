@@ -46,6 +46,7 @@ const AUTO_TOP_UP_PACK_MIN = 10;
 const AUTO_TOP_UP_PACK_MAX = 100;
 const DEFAULT_PACK_AMOUNT_USD = 20;
 const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";
+const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 const AUTO_TOP_UP_TOOLTIP =
     "Auto top-up charges your Stripe default payment method for the selected pollen pack when purchased pollen is at or below 5 pollen.";
 const AUTO_TOP_UP_PACKS = POLLEN_PACKS.filter(
@@ -177,6 +178,18 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     selectedPack={selectedPack}
                     onSave={() => saveAutoTopUp(true)}
                 />
+                <p className="text-[11px] leading-snug text-amber-950/45">
+                    Credits are instant, expire in 1 year, and follow our{" "}
+                    <a
+                        href={REFUND_POLICY_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
+                    >
+                        Refund Policy
+                    </a>
+                    .
+                </p>
             </div>
 
             <div className={DIVIDER_CLASS}>

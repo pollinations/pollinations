@@ -645,6 +645,31 @@ function AuthorizeComponent() {
                                         </div>
                                     )}
                                 </li>
+                                {attribution?.earningsEnabled && (
+                                    <li className="flex items-start gap-2">
+                                        <span
+                                            className="w-4 shrink-0 text-amber-800"
+                                            aria-hidden="true"
+                                        >
+                                            &#x1F331;
+                                        </span>
+                                        <span>
+                                            {attribution.githubUsername ? (
+                                                <span className="font-semibold">
+                                                    @
+                                                    {attribution.githubUsername}
+                                                </span>
+                                            ) : (
+                                                "The developer"
+                                            )}{" "}
+                                            earns{" "}
+                                            <span className="font-semibold">
+                                                20%
+                                            </span>{" "}
+                                            of pollen you spend.
+                                        </span>
+                                    </li>
+                                )}
                             </ul>
                         </div>
 

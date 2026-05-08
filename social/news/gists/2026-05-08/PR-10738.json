@@ -1,0 +1,34 @@
+{
+  "pr_number": 10738,
+  "title": "copy: clarify developer earnings explainer",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10738",
+  "merged_at": "2026-05-08T12:56:43Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The buzz on balances",
+    "blurb": "We've polished up the dashboard copy so it's crystal clear how developer earnings work. Users pay a 25% markup, and the extra pollen goes straight to your balance!",
+    "summary": "Updated the developer dashboard UI to clarify how app earnings work, standardizing terminology and moving explanations inline.",
+    "impact": "Developers will see a clearer, inline explanation of the 25% markup system when configuring their app keys.",
+    "keywords": [
+      "dashboard",
+      "earnings",
+      "ui",
+      "copy",
+      "developers"
+    ],
+    "visual_concept": "The pollinations bee mascot organizing coins or pollen grains into a jar labeled 'Balance'. A retro computer screen showing a simple toggle switch. Cozy, warm, financial but cute.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, carefully organizing glowing pollen grains into a glass jar labeled 'BALANCE'. A retro computer monitor in the background shows a simple toggle switch. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10738.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, carefully organizing glowing pollen grains into a glass jar labeled 'BALANCE'. A retro computer monitor in the background shows a simple toggle switch. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-08T12:58:05.499783+00:00"
+}

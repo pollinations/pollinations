@@ -37,6 +37,18 @@ function cleanRedirectUris(uris: string[]): string[] {
     return uris.map((v) => v.trim()).filter((v) => v !== "");
 }
 
+function isPublishableKey(apiKey: ApiKey): boolean {
+    return apiKey.metadata?.keyType === "publishable";
+}
+
+function isAppKey(apiKey: ApiKey): boolean {
+    return (
+        isPublishableKey(apiKey) &&
+        (readInitialRedirectUris(apiKey.metadata).length > 0 ||
+            apiKey.metadata?.earningsEnabled === true)
+    );
+}
+
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
@@ -47,12 +59,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
-    const isPublishable = apiKey.metadata?.keyType === "publishable";
+    const isPublishable = isPublishableKey(apiKey);
+    const appKey = isAppKey(apiKey);
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
     const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
     const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
-    const isAppKey = isPublishable;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
     const [earningsEnabled, setEarningsEnabled] = useState(
@@ -97,8 +109,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     : null,
             });
 
-            // Save app settings for publishable keys
-            if (isPublishable) {
+            // Save app settings only for keys that belong in the App section.
+            if (appKey) {
                 const cleaned = cleanRedirectUris(redirectUris);
                 if (
                     sameRedirectUris(cleaned, initialRedirectUris) &&
@@ -154,12 +166,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 >
                     <div className="shrink-0 p-6 pb-4">
                         <Dialog.Title className="text-xl font-bold mb-4">
-                            {isAppKey ? "Edit App Key" : "Edit API Key"}
+                            {appKey ? "Edit App Key" : "Edit API Key"}
                         </Dialog.Title>
 
                         <div className="flex items-center gap-3">
                             <Tag color="blue">
-                                {isAppKey
+                                {appKey
                                     ? "🖥️ App"
                                     : isPublishable
                                       ? "🌐 Publishable"
@@ -220,7 +232,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 />
                             </Field.Root>
 
-                            {isPublishable && (
+                            {appKey && (
                                 <PublishableKeySettings
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
@@ -230,7 +242,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 />
                             )}
 
-                            {!isAppKey && (
+                            {!isPublishable && (
                                 <KeyPermissionsInputs
                                     value={keyPermissions}
                                     disabled={isSubmitting}

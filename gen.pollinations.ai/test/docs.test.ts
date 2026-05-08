@@ -122,6 +122,9 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await response.text();
+        expect(body).toContain("/v1/embeddings");
+        expect(body).toContain("openai-3-small");
     });
 
     it("serves markdown table overflow styles in the API reference", async () => {

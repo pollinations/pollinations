@@ -79,6 +79,12 @@ export const ModelRow: FC<ModelRowProps> = ({
             subEmojis: ["🖼️"],
             perToken: model.perToken,
         },
+        {
+            prices: [model.promptVideoPrice],
+            emoji: "🎬",
+            subEmojis: ["🎬"],
+            perToken: model.perToken,
+        },
     ]);
     const outputPriceBadges = groupPriceBadges([
         {

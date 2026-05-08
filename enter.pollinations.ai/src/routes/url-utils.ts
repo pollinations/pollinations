@@ -34,8 +34,11 @@ function safeParse(url: string): URL | null {
  * Match an incoming `redirect_uri` against a registered allowlist for a `pk_`.
  *
  * Comparison rules:
- * - Scheme + hostname + path + query are matched exactly (after lowercasing
- *   host).
+ * - Scheme + hostname + path are matched exactly (after lowercasing host).
+ * - Query strings are ignored: apps round-trip state (e.g. `?prompt=...`) and
+ *   the auth code/token rides the URL fragment, not the query. Pinning host
+ *   and path is what blocks confused-deputy attacks; matching the query adds
+ *   no security and breaks legitimate apps. Mirrors GitHub's behavior.
  * - For loopback entries (RFC 8252 §7.3): port is ignored — any port matches.
  *   This covers native/CLI apps that bind to ephemeral ports each run.
  * - For non-loopback entries: port must match (default ports normalized).
@@ -65,7 +68,6 @@ function matchesEntry(incoming: URL, entryUrl: string): boolean {
         return false;
     }
     if (incoming.pathname !== entry.pathname) return false;
-    if (incoming.search !== entry.search) return false;
     if (isLoopbackHostname(entry.hostname)) return true;
     return incoming.port === entry.port;
 }

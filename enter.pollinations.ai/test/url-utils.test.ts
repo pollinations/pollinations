@@ -37,20 +37,34 @@ describe("redirectUriMatchesAllowlist", () => {
         ).toBe(true);
     });
 
-    test("matches query strings exactly and rejects fragments", () => {
+    test("ignores query strings (host + path is what's pinned)", () => {
         expect(
             redirectUriMatchesAllowlist("https://app.com/cb?flow=byop", [
-                "https://app.com/cb?flow=byop",
+                "https://app.com/cb",
             ]),
         ).toBe(true);
         expect(
-            redirectUriMatchesAllowlist("https://app.com/cb?next=/admin", [
+            redirectUriMatchesAllowlist(
+                "https://app.com/cb?prompt=hi&model=x",
+                ["https://app.com/cb"],
+            ),
+        ).toBe(true);
+        expect(
+            redirectUriMatchesAllowlist("https://app.com/cb", [
+                "https://app.com/cb?env=prod",
+            ]),
+        ).toBe(true);
+    });
+
+    test("rejects fragments on either side", () => {
+        expect(
+            redirectUriMatchesAllowlist("https://app.com/cb#token", [
                 "https://app.com/cb",
             ]),
         ).toBe(false);
         expect(
-            redirectUriMatchesAllowlist("https://app.com/cb#token", [
-                "https://app.com/cb#token",
+            redirectUriMatchesAllowlist("https://app.com/cb", [
+                "https://app.com/cb#frag",
             ]),
         ).toBe(false);
     });

@@ -8,6 +8,7 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
+import { genDocsUrl } from "../../config.ts";
 import { Button } from "../button.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
@@ -47,6 +48,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         ? "publishable"
         : "secret";
     const [redirectUris, setRedirectUris] = useState<string[]>([]);
+    const [earningsEnabled, setEarningsEnabled] = useState(true);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -82,6 +84,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             .map((v) => v.trim())
                             .filter(Boolean),
                     }),
+                ...(isPublishable && { earningsEnabled }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -156,6 +159,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setError(null);
                     setName(generateFunName());
                     setRedirectUris([]);
+                    setEarningsEnabled(true);
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
                         month: "2-digit",
@@ -193,25 +197,39 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         <Dialog.Title className="text-lg font-semibold">
                             {simplified ? "Create App Key" : "Create API Key"}
                         </Dialog.Title>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <div className="mt-1 text-sm text-gray-500">
                             {simplified ? (
-                                <>
-                                    🪷 Register your app for{" "}
-                                    <a
-                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-700 underline hover:text-blue-900"
-                                    >
-                                        BYOP
-                                    </a>
-                                    <br />🪷 Let your users connect and use
-                                    their own pollen in your app.
-                                </>
+                                <ul className="list-disc space-y-1 pl-5">
+                                    <li>
+                                        For web apps, add the callback URL your
+                                        app will use after consent.
+                                    </li>
+                                    <li>
+                                        We return a scoped API key in the URL
+                                        fragment.
+                                    </li>
+                                    <li>
+                                        Use that key for API requests paid with
+                                        the user&apos;s Pollen.{" "}
+                                        <a
+                                            href={genDocsUrl(
+                                                "#tag/bring-your-own-pollen",
+                                            )}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-700 underline hover:text-blue-900"
+                                        >
+                                            Read the guide
+                                        </a>
+                                    </li>
+                                </ul>
                             ) : (
-                                "Access AI models for text, image, and audio generation."
+                                <p>
+                                    Access AI models for text, image, audio,
+                                    video, and embeddings.
+                                </p>
                             )}
-                        </p>
+                        </div>
                     </div>
 
                     <form
@@ -228,8 +246,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             )}
 
                             <hr className="border-gray-200" />
-                            <Field.Root className="flex items-center gap-3">
-                                <Field.Label className="text-sm font-semibold shrink-0">
+                            <Field.Root className="flex flex-col gap-2">
+                                <Field.Label className="text-sm font-semibold">
                                     {createdKey
                                         ? simplified
                                             ? "Your App Key"
@@ -241,7 +259,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     value={createdKey ? createdKey.key : name}
                                     onChange={(e) => setName(e.target.value)}
                                     className={cn(
-                                        "flex-1 px-3 py-2 border rounded-lg",
+                                        "w-full px-3 py-2 border rounded-lg",
                                         createdKey
                                             ? `${keyInputStyles.readOnlyInputClasses} font-mono text-xs`
                                             : keyInputStyles.editableInputClasses,
@@ -260,7 +278,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Publishable keys (<code>pk_</code>)
                                     deprecated – create via{" "}
                                     <a
-                                        href="https://gen.pollinations.ai/docs#tag/-account/POST/account/keys"
+                                        href={genDocsUrl(
+                                            "#tag/-account/POST/account/keys",
+                                        )}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 underline hover:text-blue-800"
@@ -296,6 +316,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
+                                    earningsEnabled={earningsEnabled}
+                                    onEarningsEnabledChange={setEarningsEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}

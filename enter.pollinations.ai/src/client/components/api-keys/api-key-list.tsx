@@ -1,6 +1,7 @@
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
+import { genDocsUrl } from "../../config.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { Card } from "../ui/card.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
@@ -13,6 +14,23 @@ import { KeyDisplay } from "./key-display.tsx";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
+
+function isPublishableKey(apiKey: ApiKey): boolean {
+    return apiKey.metadata?.keyType === "publishable";
+}
+
+function isAppKey(apiKey: ApiKey): boolean {
+    if (!isPublishableKey(apiKey)) return false;
+
+    const redirectUris = apiKey.metadata?.redirectUris;
+    const hasRedirectUris =
+        Array.isArray(redirectUris) &&
+        redirectUris.some(
+            (uri) => typeof uri === "string" && uri.trim().length > 0,
+        );
+
+    return hasRedirectUris || apiKey.metadata?.earningsEnabled === true;
+}
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
@@ -41,12 +59,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
     const sortedAppKeys = sortedKeys.filter(isAppKey);
 
-    function isAppKey(apiKey: ApiKey): boolean {
-        return apiKey.metadata?.keyType === "publishable";
-    }
-
     function renderKeyCard(apiKey: ApiKey) {
-        const isPublishable = apiKey.metadata?.keyType === "publishable";
+        const isPublishable = isPublishableKey(apiKey);
+        const isApp = isAppKey(apiKey);
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
@@ -55,7 +70,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             : [];
         const primaryRedirectUri = redirectUrisMeta[0] || "";
         const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
-        const isApp = isPublishable;
+        const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
 
         return (
             <Card
@@ -65,7 +80,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Tag color="blue" size="sm">
-                        {isPublishable ? "🖥️ App" : "🔒 Secret"}
+                        {isApp
+                            ? "🖥️ App"
+                            : isPublishable
+                              ? "🌐 Publishable"
+                              : "🔒 Secret"}
                     </Tag>
                     <span className="text-sm font-medium truncate">
                         {apiKey.name}
@@ -149,6 +168,18 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             )}
                         </span>
                     )}
+                    {isApp && (
+                        <span
+                            className={`rounded px-2 py-0.5 font-medium ${
+                                earningsEnabled
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-500"
+                            }`}
+                            title="Developer earnings"
+                        >
+                            Earnings {earningsEnabled ? "on" : "off"}
+                        </span>
+                    )}
                     {!isApp && (
                         <>
                             <LimitsBadge
@@ -222,22 +253,31 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Pollinations account and spend their own
                                     Pollen.
                                 </p>
-                                <a
-                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="mt-1 inline-flex items-center gap-1 font-medium text-blue-700 hover:text-blue-900"
-                                >
-                                    <span className="underline underline-offset-2">
-                                        Read the guide
+                                <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                                    <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                                        New!
                                     </span>
-                                    <span
-                                        aria-hidden="true"
-                                        className="no-underline"
+                                    Turn on earnings to receive a share of
+                                    pollen users spend in your app.{" "}
+                                    <a
+                                        href={genDocsUrl(
+                                            "#tag/bring-your-own-pollen",
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium text-blue-700 hover:text-blue-900"
                                     >
-                                        ↗
-                                    </span>
-                                </a>
+                                        <span className="underline underline-offset-2">
+                                            Read the guide
+                                        </span>
+                                        <span
+                                            aria-hidden="true"
+                                            className="no-underline ml-0.5"
+                                        >
+                                            ↗
+                                        </span>
+                                    </a>
+                                </p>
                             </div>
                             <ApiKeyDialog
                                 onSubmit={onCreate}

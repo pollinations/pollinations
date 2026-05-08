@@ -182,6 +182,7 @@ describe("gen worker routing", () => {
         "/text/models",
         "/image/models",
         "/audio/models",
+        "/embeddings/models",
     ] as const)("routes public model path %s through gen", async (path) => {
         const response = await fetchWorker(path, envWithEnter());
 
@@ -217,6 +218,9 @@ describe("gen worker routing", () => {
         const audioModel = models.data.find((model) =>
             model.supported_endpoints?.includes("/audio/{text}"),
         );
+        const embeddingModel = models.data.find((model) =>
+            model.supported_endpoints?.includes("/v1/embeddings"),
+        );
 
         expect(textModel).toMatchObject({
             id: expect.any(String),
@@ -226,6 +230,7 @@ describe("gen worker routing", () => {
         });
         expect(imageModel?.supported_endpoints).toContain("/image/{prompt}");
         expect(audioModel).toBeDefined();
+        expect(embeddingModel).toBeDefined();
     });
 
     it("adds CORS headers on public model responses", async () => {

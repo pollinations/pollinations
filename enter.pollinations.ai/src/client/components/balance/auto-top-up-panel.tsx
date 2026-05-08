@@ -304,12 +304,10 @@ const AutoTopUpSaveChanges: FC<AutoTopUpSaveChangesProps> = ({
                     weight="light"
                     onClick={onSave}
                     disabled={saveDisabled}
-                    className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-3 text-center text-sm shadow-none sm:w-fit"
+                    className="btn-shimmer w-full min-w-0 border border-amber-300/70 text-center shadow-none sm:w-fit"
                 >
                     <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
-                        <span className="text-base font-bold text-amber-950">
-                            Save
-                        </span>
+                        <span>Save</span>
                         {selectedPack && (
                             <PollenPackReadout
                                 pack={selectedPack}
@@ -426,7 +424,7 @@ const BillingSetup: FC<BillingSetupProps> = ({
             weight="light"
             onClick={onAction}
             disabled={loading}
-            className="btn-shimmer w-fit max-w-full min-w-0 self-start gap-2 whitespace-nowrap border border-amber-300/70 px-3 text-center text-xs shadow-none sm:text-sm"
+            className="btn-shimmer w-fit max-w-full min-w-0 self-start gap-2 whitespace-nowrap border border-amber-300/70 text-center shadow-none"
         >
             <span>
                 {loading ? "Opening Stripe..." : "Manage billing details"}

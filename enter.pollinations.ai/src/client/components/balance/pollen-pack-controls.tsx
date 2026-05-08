@@ -112,7 +112,12 @@ export const PollenPackReadout: FC<PollenPackReadoutProps> = ({
             )}
         >
             <span className="inline-flex items-baseline gap-1.5">
-                <span className="text-base font-bold text-amber-950">
+                <span
+                    className={cn(
+                        "text-amber-950",
+                        isButtonTone ? "" : "text-base font-bold",
+                    )}
+                >
                     ${pack.amountUsd}
                 </span>
                 <span
@@ -122,7 +127,12 @@ export const PollenPackReadout: FC<PollenPackReadoutProps> = ({
                 >
                     -&gt;
                 </span>
-                <span className="text-base font-bold text-amber-950">
+                <span
+                    className={cn(
+                        "text-amber-950",
+                        isButtonTone ? "" : "text-base font-bold",
+                    )}
+                >
                     {formatPollenPackValue(pack.pollenGrant)} pollen
                 </span>
             </span>

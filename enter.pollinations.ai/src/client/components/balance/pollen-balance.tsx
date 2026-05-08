@@ -207,12 +207,10 @@ export const BuyPollenPanel: FC = () => {
                                 color="amber"
                                 weight="light"
                                 title={`Buy $${selectedPack.amountUsd} pollen pack`}
-                                className="btn-shimmer w-full min-w-0 border border-amber-300/70 px-4 text-center text-sm shadow-none sm:w-fit"
+                                className="btn-shimmer w-full min-w-0 border border-amber-300/70 text-center shadow-none sm:w-fit"
                             >
                                 <span className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
-                                    <span className="text-base font-bold text-amber-950">
-                                        Buy
-                                    </span>
+                                    <span>Buy</span>
                                     <PollenPackReadout
                                         pack={selectedPack}
                                         showBonus={false}

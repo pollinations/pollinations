@@ -470,7 +470,9 @@ def main():
             log_error("Quest project not configured (CONFIG.projects.quest.id is empty); skipping route")
             return
 
-
+        # Re-fetch live issue state to avoid the race with issue-quest-gate.yml:
+        # a non-maintainer filing via the template gets POLLEN-QUEST stripped and
+        # the issue closed by the gate, but our event payload still shows the label.
         try:
             r = requests.get(
                 f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",

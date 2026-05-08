@@ -73,7 +73,7 @@ body:
     attributes:
       label: Reward
       description: Pollen credited on PR merge
-      placeholder: "e.g. 20 Pollen"
+      placeholder: "e.g. 20"
     validations:
       required: true
 

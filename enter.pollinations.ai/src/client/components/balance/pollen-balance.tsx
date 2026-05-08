@@ -43,23 +43,23 @@ const WalletRow: FC<WalletRowProps> = ({
 }) => (
     <Tooltip
         triggerAs="span"
-        className={`flex items-center gap-3 rounded-full px-5 py-3 cursor-default ${rowClass}`}
+        className={`flex flex-nowrap items-center gap-3 rounded-full px-5 py-3 cursor-default ${rowClass}`}
         content={
             <span className="block whitespace-pre-line leading-snug">
                 {tooltip}
             </span>
         }
     >
-        <span className="text-2xl" aria-hidden="true">
+        <span className="shrink-0 text-2xl leading-none" aria-hidden="true">
             {emoji}
         </span>
-        <span className="flex flex-col leading-tight">
+        <span className="flex min-w-0 flex-col leading-tight">
             <span
                 className={`text-[11px] font-bold uppercase tracking-wide ${labelClass}`}
             >
                 {label}
             </span>
-            <span className="flex items-baseline gap-2">
+            <span className="flex items-baseline gap-2 whitespace-nowrap">
                 <span className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-950">
                     {formatPollen(value)}
                 </span>

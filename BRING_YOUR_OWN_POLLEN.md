@@ -1,10 +1,10 @@
-# 🌼 Bring Your Own Pollen (BYOP)
+Bring Your Own Pollen lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
-Your users pay for their own AI usage. You pay $0.
+Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
 ## 🗝️ App Key
 
-An **App Key** (`pk_…`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
+An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
 To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → **Create New App Key**:
 
@@ -20,29 +20,19 @@ Once signed in, they review the requested access and confirm:
 
 <p align="left"><img src="https://media.pollinations.ai/a7e4a1e9c5f48b8d" alt="Authorize — signed in" width="420"></p>
 
-## 💰 Earnings
+## Developer Earnings
 
-Each App Key has a `Developer earnings` flag. When enabled, every request through the key bills the user +25% over model cost and credits the difference to your wallet.
+Developer earnings are opt-in per App Key. When enabled, users pay 25% over base rates. The markup credits to your balance.
 
-### How it's billed
-
-```
-Model cost:    1.00 pollen   (the request's billed cost)
-User billed:   1.25 pollen   (+25% over model cost)
-Your credit:   0.25 pollen   (= 20% of user spend)
+```text
+Base request cost: 1.00 pollen
+User pays:         1.25 pollen
+You receive:       0.25 pollen
 ```
 
-Earnings are credited as Pollen and spendable across the Pollinations API like any other balance.
+Credits land in the same balance type the user paid from: tier balance when the request used tier balance, paid balance when it used paid balance.
 
-### Where it lands
-
-The credit lands in the same bucket the user paid from — **tier balance** if the user paid from their tier, **paid balance** if they paid from theirs.
-
-### Toggle
-
-In the dashboard: open the App Key → flip the **Developer earnings** switch.
-
-Programmatically, set `earningsEnabled` when creating a publishable App Key with a secret key that has `account:keys` permission:
+Pass `earningsEnabled: true` when creating an App Key via the API, or toggle it later from the dashboard:
 
 ```bash
 curl -X POST https://gen.pollinations.ai/account/keys \
@@ -50,8 +40,6 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Content-Type: application/json' \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
-
-To change earnings on an existing App Key, use the dashboard.
 
 ## ⚙️ Web Apps (Redirect Flow)
 
@@ -80,7 +68,7 @@ https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id
 | `scope` | Account access (space or comma separated) | `usage keys` |
 | `models` | Restrict to specific models | `flux,openai,gptimage` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
-| `expiry` | Key lifetime in days (default: 30) | `7` |
+| `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
 Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for backwards compatibility.
 
@@ -144,7 +132,7 @@ curl -X POST https://enter.pollinations.ai/api/device/token \
 
 ## 👤 Who's Using This Key?
 
-Once you have a key, you can check who it belongs to:
+Once you have the user-authorized `sk_...` key, you can check who it belongs to:
 
 ```bash
 curl https://enter.pollinations.ai/api/device/userinfo \
@@ -152,10 +140,10 @@ curl https://enter.pollinations.ai/api/device/userinfo \
 # → { "sub": "user-id", "name": "Thomas", "preferred_username": "voodoohop", "email": "...", "picture": "..." }
 ```
 
-Standard OIDC userinfo shape — works with any `sk_` or `pk_` key.
+Standard OIDC userinfo shape.
 
 ---
 
-🕐 Keys expire in 30 days. Users can revoke anytime from the dashboard.
+🕐 User-authorized keys default to 7 days. Users can revoke anytime from the dashboard.
 
 [edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for the idea*

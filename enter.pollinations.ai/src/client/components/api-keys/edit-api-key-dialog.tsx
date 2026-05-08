@@ -218,15 +218,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         )}
 
                         <div className="space-y-4">
-                            <Field.Root className="flex items-center gap-3">
-                                <Field.Label className="text-sm font-semibold shrink-0">
+                            <Field.Root className="flex flex-col gap-2">
+                                <Field.Label className="text-sm font-semibold">
                                     Name
                                 </Field.Label>
                                 <Input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="flex-1 border-blue-200 bg-blue-50 focus-visible:border-blue-300 focus-visible:ring-blue-200"
+                                    className="w-full border-blue-200 bg-blue-50 focus-visible:border-blue-300 focus-visible:ring-blue-200"
                                     placeholder="Enter API key name"
                                     disabled={isSubmitting}
                                 />

@@ -43,35 +43,39 @@ const WalletRow: FC<WalletRowProps> = ({
 }) => (
     <Tooltip
         triggerAs="span"
-        className={`flex items-center justify-between rounded-full px-5 py-3 cursor-default ${rowClass}`}
+        className={`flex items-center gap-3 rounded-full px-5 py-3 cursor-default ${rowClass}`}
         content={
             <span className="block whitespace-pre-line leading-snug">
                 {tooltip}
             </span>
         }
     >
-        <span className="flex items-center gap-3">
-            <span className="text-2xl" aria-hidden="true">
-                {emoji}
+        <span className="text-2xl" aria-hidden="true">
+            {emoji}
+        </span>
+        <span className="flex flex-col leading-tight">
+            <span
+                className={`text-[11px] font-bold uppercase tracking-wide ${labelClass}`}
+            >
+                {label}
             </span>
-            <span className="flex flex-col leading-tight">
-                <span
-                    className={`text-[11px] font-bold uppercase tracking-wide ${labelClass}`}
-                >
-                    {label}
-                </span>
+            <span className="flex items-baseline gap-2">
                 <span className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-950">
                     {formatPollen(value)}
                 </span>
+                {earnedToday > 0 && (
+                    <span
+                        className={`inline-flex items-baseline gap-1 text-sm font-bold tabular-nums ${tagClass}`}
+                    >
+                        <span aria-hidden="true">▲</span>
+                        {formatPollen(earnedToday)}
+                        <span className="text-xs font-medium opacity-70">
+                            7d
+                        </span>
+                    </span>
+                )}
             </span>
         </span>
-        {earnedToday > 0 && (
-            <span
-                className={`rounded-full px-3 py-1 text-sm font-bold tabular-nums ${tagClass}`}
-            >
-                +{formatPollen(earnedToday)}
-            </span>
-        )}
     </Tooltip>
 );
 
@@ -120,7 +124,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     tooltip="💳 Paid balance — Pollen you bought, plus markup earnings from paid-side spend in your apps. Never expires."
                     rowClass="bg-amber-300"
                     labelClass="text-amber-900"
-                    tagClass="bg-amber-50 text-emerald-800"
+                    tagClass="text-emerald-800"
                 />
                 {!hideTierRow && (
                     <WalletRow
@@ -131,7 +135,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         tooltip={`${tierEmoji} Tier balance — your free hourly Pollen, plus markup earnings from tier-side spend in your apps.`}
                         rowClass="bg-pink-200"
                         labelClass="text-pink-900"
-                        tagClass="bg-pink-50 text-emerald-800"
+                        tagClass="text-emerald-800"
                     />
                 )}
             </div>
@@ -193,17 +197,18 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
             >
                 {label}
             </span>
-            {earned > 0 && (
-                <span
-                    className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${tagClass}`}
-                >
-                    +{formatPollen(earned)}
+            <span className="ml-auto flex items-baseline gap-1.5">
+                <span className="text-sm font-bold tabular-nums text-amber-950">
+                    {formatPollen(value)}
                 </span>
-            )}
-            <span
-                className={`${earned > 0 ? "" : "ml-auto"} text-sm font-bold tabular-nums text-amber-950`}
-            >
-                {formatPollen(value)}
+                {earned > 0 && (
+                    <span
+                        className={`inline-flex items-baseline gap-0.5 text-[10px] font-bold tabular-nums ${tagClass}`}
+                    >
+                        <span aria-hidden="true">▲</span>
+                        {formatPollen(earned)}
+                    </span>
+                )}
             </span>
         </span>
     );
@@ -241,7 +246,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     earned={paidWeek}
                     rowClass="bg-amber-300"
                     labelClass="text-amber-900"
-                    tagClass="bg-amber-50 text-emerald-800"
+                    tagClass="text-emerald-800"
                 />
                 {!hideTierRow && (
                     <Row
@@ -251,7 +256,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                         earned={tierWeek}
                         rowClass="bg-pink-200"
                         labelClass="text-pink-900"
-                        tagClass="bg-pink-50 text-emerald-800"
+                        tagClass="text-emerald-800"
                     />
                 )}
             </div>

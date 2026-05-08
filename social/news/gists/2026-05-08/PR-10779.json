@@ -1,0 +1,34 @@
+{
+  "pr_number": 10779,
+  "title": "fix(nova-reel): use FetchHttpHandler for Bedrock + S3 in Workers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10779",
+  "merged_at": "2026-05-08T14:31:16Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unjamming the projector",
+    "blurb": "Nova Reel video generation was tripping over some invisible wires in the cloud. We swapped out the faulty cables, and your AI videos are flowing smoothly again.",
+    "summary": "Resolved a compatibility issue with AWS Bedrock and Cloudflare Workers that was causing Nova Reel video generations to fail.",
+    "impact": "Video generation using the Nova Reel model is fully operational again, returning successful MP4s instead of server errors.",
+    "keywords": [
+      "nova-reel",
+      "video",
+      "bug-fix",
+      "aws-bedrock",
+      "cloudflare-workers"
+    ],
+    "visual_concept": "The PR fixes a broken video generation model (Nova Reel). Visuals should include a retro film projector or film reels being repaired. Polly the bee acts as the mechanic fixing the projector, while the Monitor Robot happily displays the resulting video.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny mechanic's cap, using a wrench to fix a glowing retro film projector. A chunky pixel robot with a CRT monitor head stands nearby, its screen happily displaying a playing video. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10779.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny mechanic's cap, using a wrench to fix a glowing retro film projector. A chunky pixel robot with a CRT monitor head stands nearby, its screen happily displaying a playing video. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-08T14:32:19.389362+00:00"
+}

@@ -1,0 +1,33 @@
+{
+  "pr_number": 10766,
+  "title": "docs: update README — 2026-05-08",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10766",
+  "merged_at": "2026-05-08T07:36:43Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Daily Paper Delivered",
+    "blurb": "Our trusty bot just updated the README with the latest community apps and news.",
+    "summary": "Automated daily update to the repository README to refresh the Latest News and Recent Apps sections.",
+    "impact": "Repository visitors will see the most up-to-date community contributions and project announcements.",
+    "keywords": [
+      "readme",
+      "news",
+      "automated",
+      "bot"
+    ],
+    "visual_concept": "The Monitor Robot acting as a paperboy, delivering a fresh newspaper to Polly the bee in front of a community bulletin board.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head handing a tiny pixelated newspaper to the cute bee mascot. They are standing in front of a wooden bulletin board. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10766.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head handing a tiny pixelated newspaper to the cute bee mascot. They are standing in front of a wooden bulletin board. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-08T07:37:43.058008+00:00"
+}

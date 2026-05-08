@@ -1,0 +1,34 @@
+{
+  "pr_number": 10792,
+  "title": "Add Toddler Read QR Card Generator to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10792",
+  "merged_at": "2026-05-08T20:07:08Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "QR codes for tiny humans",
+    "blurb": "Someone built a QR card generator for toddlers. Print physical cards, scan them with an app, and keep the tiny humans learning without handing them a glowing rectangle. Brilliant.",
+    "summary": "Added the Toddler Read QR Card Generator to the community showcase, an app that creates printable learning cards with QR codes for screen-free toddler interaction.",
+    "impact": "Parents and educators can now generate and print custom QR-enabled learning cards for toddlers.",
+    "keywords": [
+      "community",
+      "app",
+      "education",
+      "toddler",
+      "qr-codes"
+    ],
+    "visual_concept": "The PR is about toddler learning cards with QR codes. The scene should feature Polly the bee interacting with cute, chunky toddler flashcards that have pixelated QR codes on them, emphasizing a cozy, educational, and screen-free vibe.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a chunky flashcard with a pixelated QR code on it. A stack of colorful toddler learning cards sits on a wooden table next to a small potted code-plant. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10792.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a chunky flashcard with a pixelated QR code on it. A stack of colorful toddler learning cards sits on a wooden table next to a small potted code-plant. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-08T20:08:10.073724+00:00",
+  "app_name": "Toddler Read QR Card Generator",
+  "app_url": "https://toddler-read.netlify.app/"
+}

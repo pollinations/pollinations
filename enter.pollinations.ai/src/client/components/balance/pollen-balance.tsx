@@ -77,16 +77,6 @@ const WalletRow: FC<WalletRowProps> = ({
     </Tooltip>
 );
 
-const TodayPulse: FC<{ amount: number }> = ({ amount }) => (
-    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800 tabular-nums">
-        <span className="relative inline-flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-        </span>
-        + {formatPollen(amount)} this week
-    </span>
-);
-
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
@@ -106,11 +96,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
     return (
         <div className="flex flex-col gap-4">
-            {totalToday > 0 && (
-                <div className="flex justify-end">
-                    <TodayPulse amount={totalToday} />
-                </div>
-            )}
             <div
                 className={`grid gap-3 ${hideTierRow ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}
             >
@@ -137,12 +122,20 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     />
                 )}
             </div>
-            <div className="border-t border-dashed border-amber-300/70 pt-4 flex items-baseline justify-between">
+            <div className="border-t border-dashed border-amber-300/70 pt-4 flex items-baseline justify-between gap-3">
                 <span className="text-xs font-bold uppercase tracking-wide text-amber-900">
                     Total Pollen
                 </span>
-                <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950">
-                    {formatPollen(totalPollen)}
+                <span className="flex items-baseline gap-3 whitespace-nowrap">
+                    {totalToday > 0 && (
+                        <span className="inline-flex items-baseline gap-1 text-base sm:text-lg font-bold tabular-nums text-emerald-800">
+                            <span aria-hidden="true">▲</span>
+                            {formatPollen(totalToday)}
+                        </span>
+                    )}
+                    <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950">
+                        {formatPollen(totalPollen)}
+                    </span>
                 </span>
             </div>
         </div>
@@ -223,12 +216,9 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 </span>
                 <span className="flex items-baseline gap-2">
                     {totalToday > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 tabular-nums">
-                            <span className="relative inline-flex h-1.5 w-1.5">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            </span>
-                            +{formatPollen(totalToday)}
+                        <span className="inline-flex items-baseline gap-0.5 text-xs font-bold tabular-nums text-emerald-800">
+                            <span aria-hidden="true">▲</span>
+                            {formatPollen(totalToday)}
                         </span>
                     )}
                     <span className="text-base font-bold tabular-nums text-amber-950">

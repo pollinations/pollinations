@@ -9,8 +9,8 @@ import { auth } from "../middleware/auth.ts";
 import { balance } from "../middleware/balance.ts";
 
 type EarningsTodayRow = {
-    paid_today: number;
-    tier_today: number;
+    paid_week: number;
+    tier_week: number;
 };
 
 /**
@@ -86,8 +86,8 @@ export const customerRoutes = new Hono<Env>()
             };
             const row = body.data[0];
             return c.json({
-                paidToday: row?.paid_today ?? 0,
-                tierToday: row?.tier_today ?? 0,
+                paidWeek: row?.paid_week ?? 0,
+                tierWeek: row?.tier_week ?? 0,
             });
         },
     );

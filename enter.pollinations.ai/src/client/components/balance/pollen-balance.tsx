@@ -10,8 +10,8 @@ type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
     tier?: string;
-    paidToday?: number;
-    tierToday?: number;
+    paidWeek?: number;
+    tierWeek?: number;
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
@@ -81,7 +81,7 @@ const TodayPulse: FC<{ amount: number }> = ({ amount }) => (
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
         </span>
-        + {formatPollen(amount)} today
+        + {formatPollen(amount)} this week
     </span>
 );
 
@@ -89,8 +89,8 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
     tier = "spore",
-    paidToday = 0,
-    tierToday = 0,
+    paidWeek = 0,
+    tierWeek = 0,
 }) => {
     const tierEmoji = getTierEmoji(tier);
 
@@ -99,7 +99,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const totalPollen = normalizeDisplayBalance(
         displayTierBalance + displayPaidBalance,
     );
-    const totalToday = normalizeDisplayBalance(paidToday + tierToday);
+    const totalToday = normalizeDisplayBalance(paidWeek + tierWeek);
     const hideTierRow = tier === "microbe" && displayTierBalance === 0;
 
     return (
@@ -116,7 +116,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     emoji="🪷"
                     label="Paid"
                     value={displayPaidBalance}
-                    earnedToday={paidToday}
+                    earnedToday={paidWeek}
                     tooltip="💳 Paid balance — Pollen you bought, plus markup earnings from paid-side spend in your apps. Never expires."
                     rowClass="bg-amber-300"
                     labelClass="text-amber-900"
@@ -127,7 +127,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         emoji={tierEmoji}
                         label="Tier"
                         value={displayTierBalance}
-                        earnedToday={tierToday}
+                        earnedToday={tierWeek}
                         tooltip={`${tierEmoji} Tier balance — your free hourly Pollen, plus markup earnings from tier-side spend in your apps.`}
                         rowClass="bg-pink-200"
                         labelClass="text-pink-900"
@@ -151,8 +151,8 @@ type SidebarWalletProps = {
     tierBalance: number;
     packBalance: number;
     tier?: string;
-    paidToday?: number;
-    tierToday?: number;
+    paidWeek?: number;
+    tierWeek?: number;
     onClick?: () => void;
 };
 
@@ -160,8 +160,8 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
     packBalance,
     tier = "spore",
-    paidToday = 0,
-    tierToday = 0,
+    paidWeek = 0,
+    tierWeek = 0,
     onClick,
 }) => {
     const tierEmoji = getTierEmoji(tier);
@@ -170,7 +170,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
     const totalPollen = normalizeDisplayBalance(
         displayTierBalance + displayPaidBalance,
     );
-    const totalToday = normalizeDisplayBalance(paidToday + tierToday);
+    const totalToday = normalizeDisplayBalance(paidWeek + tierWeek);
     const hideTierRow = tier === "microbe" && displayTierBalance === 0;
 
     const Row: FC<{
@@ -183,28 +183,28 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
         tagClass: string;
     }> = ({ emoji, label, value, earned, rowClass, labelClass, tagClass }) => (
         <span
-            className={`flex items-center justify-between rounded-full px-2.5 py-1.5 ${rowClass}`}
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 ${rowClass}`}
         >
-            <span className="flex items-center gap-1.5 min-w-0">
-                <span className="text-sm leading-none" aria-hidden="true">
-                    {emoji}
-                </span>
-                <span
-                    className={`text-[10px] font-bold uppercase tracking-wide ${labelClass}`}
-                >
-                    {label}
-                </span>
-                <span className="text-sm font-bold tabular-nums text-amber-950 truncate">
-                    {formatPollen(value)}
-                </span>
+            <span className="text-sm leading-none" aria-hidden="true">
+                {emoji}
+            </span>
+            <span
+                className={`text-[10px] font-bold uppercase tracking-wide ${labelClass}`}
+            >
+                {label}
             </span>
             {earned > 0 && (
                 <span
-                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${tagClass}`}
+                    className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${tagClass}`}
                 >
                     +{formatPollen(earned)}
                 </span>
             )}
+            <span
+                className={`${earned > 0 ? "" : "ml-auto"} text-sm font-bold tabular-nums text-amber-950`}
+            >
+                {formatPollen(value)}
+            </span>
         </span>
     );
 
@@ -238,7 +238,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     emoji="🪷"
                     label="Paid"
                     value={displayPaidBalance}
-                    earned={paidToday}
+                    earned={paidWeek}
                     rowClass="bg-amber-300"
                     labelClass="text-amber-900"
                     tagClass="bg-amber-50 text-emerald-800"
@@ -248,7 +248,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                         emoji={tierEmoji}
                         label="Tier"
                         value={displayTierBalance}
-                        earned={tierToday}
+                        earned={tierWeek}
                         rowClass="bg-pink-200"
                         labelClass="text-pink-900"
                         tagClass="bg-pink-50 text-emerald-800"

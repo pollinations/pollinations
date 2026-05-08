@@ -112,8 +112,8 @@ export const Route = createFileRoute("/")({
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
-        const paidToday = earningsTodayResult?.paidToday ?? 0;
-        const tierToday = earningsTodayResult?.tierToday ?? 0;
+        const paidWeek = earningsTodayResult?.paidWeek ?? 0;
+        const tierWeek = earningsTodayResult?.tierWeek ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
@@ -125,8 +125,8 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
-            paidToday,
-            tierToday,
+            paidWeek,
+            tierWeek,
         };
     },
 });
@@ -140,8 +140,8 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
-        paidToday,
-        tierToday,
+        paidWeek,
+        tierWeek,
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -301,8 +301,8 @@ function RouteComponent() {
                     tierBalance={tierBalance}
                     packBalance={packBalance}
                     tier={tierData?.active?.tier}
-                    paidToday={paidToday}
-                    tierToday={tierToday}
+                    paidWeek={paidWeek}
+                    tierWeek={tierWeek}
                     onClick={() => handlePageChange("pollen")}
                 />
             }
@@ -315,8 +315,8 @@ function RouteComponent() {
                             tierBalance={tierBalance}
                             packBalance={packBalance}
                             tier={tierData?.active?.tier}
-                            paidToday={paidToday}
-                            tierToday={tierToday}
+                            paidWeek={paidWeek}
+                            tierWeek={tierWeek}
                         />
                     </DashboardSection>
                     <DashboardSection

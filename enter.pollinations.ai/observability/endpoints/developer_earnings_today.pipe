@@ -1,9 +1,9 @@
 DESCRIPTION >
-    Today's developer earnings (BYOP markup) split by which balance the
-    spending user paid from. `paid_today` aggregates earnings from events
+    Recent developer earnings (BYOP markup) split by which balance the
+    spending user paid from. `paid_week` aggregates earnings from events
     where the user was charged from their pack (paid) balance;
-    `tier_today` aggregates earnings from tier-side debits.
-    Window is the current UTC calendar day. Earnings for hard-deleted app
+    `tier_week` aggregates earnings from tier-side debits.
+    Window is the last 7 days (rolling). Earnings for hard-deleted app
     keys are excluded via inner join against the latest `d1_apikey` snapshot,
     matching the policy of `developer_earnings.pipe`.
 
@@ -20,13 +20,13 @@ NODE today
 SQL >
     %
     SELECT
-        sumIf(ge.total_price - ge.dev_price, ge.selected_meter_slug = 'v1:meter:pack') AS paid_today,
-        sumIf(ge.total_price - ge.dev_price, ge.selected_meter_slug = 'v1:meter:tier') AS tier_today
+        sumIf(ge.total_price - ge.dev_price, ge.selected_meter_slug = 'v1:meter:pack') AS paid_week,
+        sumIf(ge.total_price - ge.dev_price, ge.selected_meter_slug = 'v1:meter:tier') AS tier_week
     FROM generation_event ge
     INNER JOIN app_keys ak ON ge.api_key_client_id = ak.app_key_id
     WHERE ge.api_key_created_for_user_id = {{String(dev_user_id, '')}}
       AND ge.markup_rate > 0
       AND ge.total_price > ge.dev_price
-      AND ge.start_time >= toStartOfDay(now())
+      AND ge.start_time >= now() - INTERVAL 7 DAY
 
 TYPE endpoint

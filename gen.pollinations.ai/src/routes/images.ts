@@ -54,7 +54,6 @@ function imageResponse(
 async function requireAuthAndBalance(c: Context, checkBalance: CheckBalanceFn) {
     await c.var.auth.requireAuthorization();
     c.var.auth.requireModelAccess();
-    c.var.auth.requireKeyBudget();
     await checkBalance(c.var, c.env);
 }
 

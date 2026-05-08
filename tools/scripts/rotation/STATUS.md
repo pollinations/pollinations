@@ -91,6 +91,7 @@ Community-tier models in `text.ts` (provider `community`) have no key to rotate 
 | `rotate-genai-perplexity.sh` | yes | — |
 | `rotate-genai-fireworks.sh` | yes | — |
 | `rotate-genai-deepinfra.sh` | yes (pending first end-to-end run) | — |
+| `rotate-genai-openrouter.sh` | yes (pending first end-to-end run) | needs `OPENROUTER_MANAGEMENT_API_KEY` in rotation secrets or env |
 | `rotate-genai-aws.sh` | yes | — |
 | `rotate-genai-xai.sh` | yes | — |
 | `rotate-genai-elevenlabs.sh` | yes (first-run leaves personal key) | — |

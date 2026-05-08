@@ -1,4 +1,8 @@
 import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
+import {
+    DEFAULT_EMBEDDING_MODEL,
+    EMBEDDING_SERVICES,
+} from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { type ModelName, resolveModelName } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL, TEXT_SERVICES } from "@shared/registry/text.ts";
@@ -10,12 +14,14 @@ const SERVICES_BY_EVENT_TYPE = {
     "generate.text": TEXT_SERVICES,
     "generate.image": IMAGE_SERVICES,
     "generate.audio": AUDIO_SERVICES,
+    "generate.embedding": EMBEDDING_SERVICES,
 } as const satisfies Record<EventType, Record<string, unknown>>;
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
     "generate.text": "text",
     "generate.image": "image",
     "generate.audio": "audio",
+    "generate.embedding": "embeddings",
 };
 
 export type ModelVariables = {
@@ -94,7 +100,9 @@ export function resolveModel(
                 ? DEFAULT_TEXT_MODEL
                 : eventType === "generate.audio"
                   ? DEFAULT_AUDIO_MODEL
-                  : DEFAULT_IMAGE_MODEL);
+                  : eventType === "generate.embedding"
+                    ? DEFAULT_EMBEDDING_MODEL
+                    : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
 
         // Resolve alias to canonical model name
@@ -117,7 +125,12 @@ export function resolveModel(
         // as a 5xx upstream error.
         if (!(resolved in SERVICES_BY_EVENT_TYPE[eventType])) {
             const actualCategory = (
-                ["generate.text", "generate.image", "generate.audio"] as const
+                [
+                    "generate.text",
+                    "generate.image",
+                    "generate.audio",
+                    "generate.embedding",
+                ] as const
             ).find((et) => resolved in SERVICES_BY_EVENT_TYPE[et]);
             const actualLabel = actualCategory
                 ? ENDPOINT_LABEL[actualCategory]

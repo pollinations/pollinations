@@ -7,6 +7,7 @@ const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
 const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
 const AUTH_KEY = "catgpt_api_key";
+const APP_KEY = "pk_uWjreBEkxFAhjDHo";
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ export function getAuthorizeUrl() {
     const redirect = window.location.href.split("#")[0];
     return `${ENTER}/authorize?${new URLSearchParams({
         redirect_url: redirect,
+        app_key: APP_KEY,
         budget: "5",
         models: "gptimage,nanobanana,claude-fast",
         permissions: "profile,usage",

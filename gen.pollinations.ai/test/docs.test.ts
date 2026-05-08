@@ -102,6 +102,7 @@ describe("docs routes", () => {
             (tag) => tag.name === "🌸 Bring Your Own Pollen",
         );
         expect(byopTag?.description).toContain("Bring Your Own Pollen");
+        expect(byopTag?.description).not.toMatch(/^#\s/);
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "📦 Media Storage",
         );
@@ -121,5 +122,23 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await response.text();
+        expect(body).toContain("/v1/embeddings");
+        expect(body).toContain("openai-3-small");
+    });
+
+    it("serves markdown table overflow styles in the API reference", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        const html = await response.text();
+        expect(html).toContain(".scalar-app .markdown:has(table)");
+        expect(html).toContain("overflow-x: auto");
     });
 });

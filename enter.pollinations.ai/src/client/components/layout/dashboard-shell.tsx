@@ -9,6 +9,7 @@ import {
     useState,
 } from "react";
 import { cn } from "@/util.ts";
+import { genDocsUrl } from "../../config.ts";
 import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import {
     DASHBOARD_NAV_ITEMS,
@@ -241,7 +242,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 ))}
                 <div className="mt-2 border-t border-green-950/10 pt-3">
                     <a
-                        href="https://gen.pollinations.ai/docs"
+                        href={genDocsUrl()}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-[15px] font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"

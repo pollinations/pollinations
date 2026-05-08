@@ -1,0 +1,37 @@
+{
+  "pr_number": 10784,
+  "title": "Add pollimage to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10784",
+  "merged_at": "2026-05-08T16:19:28Z",
+  "labels": [
+    "IMAGE",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Command line canvas",
+    "blurb": "Meet PollImage, a slick new developer-focused CLI that lets you generate AI images straight from your terminal. Just type, hit enter, and watch the pixels bloom.",
+    "summary": "Added PollImage, a new community-built CLI tool for generating AI images directly from the terminal, to the apps showcase.",
+    "impact": "Developers can now generate images without ever leaving their command line workflow.",
+    "keywords": [
+      "cli",
+      "terminal",
+      "images",
+      "community",
+      "tools"
+    ],
+    "visual_concept": "A retro terminal setup where the Pollinations bee is acting as a hacker/developer. The focus is on the CLI aspect—generating images via text commands. The monitor should show an image materializing from code.",
+    "image_prompt": "A retro terminal setup where a beautiful pixel landscape blooms directly from command line text. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender gradient background. Polly the bee mascot wearing tiny hacker glasses and typing on a chunky retro keyboard with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'CLI'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10784.jpg",
+    "prompt": "A retro terminal setup where a beautiful pixel landscape blooms directly from command line text. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and lavender gradient background. Polly the bee mascot wearing tiny hacker glasses and typing on a chunky retro keyboard with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Text in pixel font: 'CLI'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-08T16:20:27.048041+00:00",
+  "app_name": "pollimage",
+  "app_url": "https://www.npmjs.com/package/pollimage"
+}

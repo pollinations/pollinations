@@ -1,5 +1,6 @@
 export { Chart } from "./chart";
 export { EarningsGraph } from "./earnings-graph";
+export { getEarningsEnabledApps } from "./earnings-visibility";
 export { MultiSelect } from "./multi-select";
 export { PeriodPicker } from "./period-picker";
 export { currentUsagePeriod } from "./period-utils";

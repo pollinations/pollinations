@@ -29,6 +29,7 @@ import { Pricing } from "../components/pricing";
 import {
     currentUsagePeriod,
     EarningsGraph,
+    getEarningsEnabledApps,
     PeriodPicker,
     UsageGraph,
     type UsagePeriodSelection,
@@ -168,16 +169,8 @@ function RouteComponent() {
         [apiKeys],
     );
 
-    const publishableApps = useMemo(
-        () =>
-            apiKeys
-                .filter(
-                    (k): k is typeof k & { name: string } =>
-                        !!k.name &&
-                        (k.metadata as { keyType?: string } | null)?.keyType ===
-                            "publishable",
-                )
-                .map((k) => ({ id: k.id, name: k.name })),
+    const earningsEnabledApps = useMemo(
+        () => getEarningsEnabledApps(apiKeys),
         [apiKeys],
     );
 
@@ -358,11 +351,13 @@ function RouteComponent() {
                             />
                         }
                     />
-                    <EarningsGraph
-                        period={activityPeriod}
-                        apps={publishableApps}
-                        theme={dashboardThemeByPage.usage}
-                    />
+                    {earningsEnabledApps.length > 0 && (
+                        <EarningsGraph
+                            period={activityPeriod}
+                            apps={earningsEnabledApps}
+                            theme={dashboardThemeByPage.usage}
+                        />
+                    )}
                 </div>
             )}
             {activePage === "keys" && (

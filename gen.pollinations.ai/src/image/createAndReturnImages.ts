@@ -178,6 +178,9 @@ export const callSelfHostedServer = async (
         // Always use max steps (4) - all requests go through enter.pollinations.ai
         const steps = 4;
         logOps("calculated_steps", steps);
+
+        prompt = sanitizeString(prompt);
+
         const body = {
             prompts: [prompt],
             width: safeParams.width,

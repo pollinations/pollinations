@@ -31,7 +31,7 @@ test.for(
     expect(sessionCookieResponse.status).toBe(200);
 });
 
-test("/balance should return all balance types and lastTierGrant", async ({
+test("/balance should return tier, pack, and lastTierGrant", async ({
     sessionToken,
     mocks,
 }) => {
@@ -61,6 +61,7 @@ test("/balance should return all balance types and lastTierGrant", async ({
         .update(userTable)
         .set({
             ...testBalances,
+            tier: "seed",
             lastTierGrant,
         })
         .where(eq(userTable.id, userId));
@@ -82,6 +83,53 @@ test("/balance should return all balance types and lastTierGrant", async ({
         packBalance: testBalances.packBalance,
         lastTierGrant,
     });
+});
+
+test("/balance should return raw tier and pack balances regardless of tier", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const db = drizzle(env.DB);
+
+    const sessionResponse = await SELF.fetch(
+        "http://localhost:3000/api/auth/get-session",
+        {
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    const session = await sessionResponse.json();
+    const userId = session.user.id;
+
+    const tiers = ["microbe", "spore", "seed", "flower", "nectar", "router"];
+
+    for (const tier of tiers) {
+        await db
+            .update(userTable)
+            .set({
+                tier,
+                tierBalance: 1,
+                packBalance: 3,
+                lastTierGrant: null,
+            })
+            .where(eq(userTable.id, userId));
+
+        const response = await SELF.fetch(`${base}/balance`, {
+            method: "GET",
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            tierBalance: 1,
+            packBalance: 3,
+            lastTierGrant: null,
+        });
+    }
 });
 
 test("/balance should return zero balances for new users", async ({

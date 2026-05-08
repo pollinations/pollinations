@@ -22,7 +22,6 @@ export type AuthVariables = {
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => AuthUser;
         requireModelAccess: () => void;
-        requireKeyBudget: () => void;
     };
 };
 
@@ -78,27 +77,12 @@ export const auth = () =>
             }
         }
 
-        function requireKeyBudget(): void {
-            if (!apiKey) return;
-
-            const { pollenBalance } = apiKey;
-            if (pollenBalance === null || pollenBalance === undefined) return;
-
-            if (pollenBalance <= 0) {
-                throw new HTTPException(402, {
-                    message:
-                        "API key budget exhausted. Please top up or create a new key.",
-                });
-            }
-        }
-
         c.set("auth", {
             user,
             apiKey,
             requireAuthorization,
             requireUser,
             requireModelAccess,
-            requireKeyBudget,
         });
 
         await next();

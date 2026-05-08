@@ -97,7 +97,7 @@ const TierScreen: FC<{
 
             <p className="text-sm text-gray-500">
                 Pollen refills every hour{" "}
-                <InfoTip text="If a request costs slightly more than estimated, your balance may go briefly negative — the next refill covers the difference automatically." />
+                <InfoTip text="If a request streams over its estimate, your tier balance can go negative. Hourly refills bring it back up one increment at a time, capped at your tier." />
             </p>
 
             <p className="text-sm">

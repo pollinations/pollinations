@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **709** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **710** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -818,7 +818,7 @@
 | [🛒 THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | [@web](https://github.com/web) |  | 🫧 |
 | [🛠️ SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 43 apps</summary>
+<details><summary>Show all 44 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -848,6 +848,7 @@
 | [🍳 MASala](75165772) | Multi-agent AI recipe generator that creates personalized meals from available ingredients | [@api](https://github.com/api) |  | 🫧 |
 | [🧬 Strain Navigator](https://www.strainnavigator.com/) | Open-source toolkit for growers, breeders, and seed banks | [@web](https://github.com/web) |  |  |
 | [🏋️ Goalani](https://goalani.com) | Voice-first AI fitness coach for workouts, food, and weight tracking | [@web](https://github.com/web) |  |  |
+| [🧾 Madlisten](https://madlisten.dk/) | Use Madlisten to browse and view recipes. | [@web](https://github.com/web) |  | 🫧 |
 | [🕹️ Pollinations AIGC Control Console](https://jfliu3265.github.io/pollinations-aigc-public/) | Manage AIGC workflows in Pollinations AIGC Control Console, a web-based dashboard powered by pollinations.ai, with a unified interface for multiple generative AI capabilities. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 Reporay](https://repo-ray.vercel.app) | Reporay is an AI-powered GitHub repository analyzer. Paste a GitHub URL to get insights into the technology stack, project architecture, and smart summaries. | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 Deals King & Radar Ai](https://deal.pm/en/extension) | Deals King & Radar Ai supports viewing deals and running radar AI functions. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |

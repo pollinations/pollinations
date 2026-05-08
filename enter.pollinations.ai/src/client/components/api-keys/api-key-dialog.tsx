@@ -246,8 +246,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             )}
 
                             <hr className="border-gray-200" />
-                            <Field.Root className="flex items-center gap-3">
-                                <Field.Label className="text-sm font-semibold shrink-0">
+                            <Field.Root className="flex flex-col gap-2">
+                                <Field.Label className="text-sm font-semibold">
                                     {createdKey
                                         ? simplified
                                             ? "Your App Key"
@@ -259,7 +259,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     value={createdKey ? createdKey.key : name}
                                     onChange={(e) => setName(e.target.value)}
                                     className={cn(
-                                        "flex-1 px-3 py-2 border rounded-lg",
+                                        "w-full px-3 py-2 border rounded-lg",
                                         createdKey
                                             ? `${keyInputStyles.readOnlyInputClasses} font-mono text-xs`
                                             : keyInputStyles.editableInputClasses,

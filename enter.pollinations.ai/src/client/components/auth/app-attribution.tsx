@@ -4,7 +4,6 @@ type Attribution = {
     appName?: string;
     githubUsername?: string;
     found?: boolean;
-    earningsEnabled?: boolean;
 };
 
 type AppAttributionProps = {
@@ -26,9 +25,6 @@ export function AppAttribution({
     const tipText = [
         "Same as copy-pasting an API key into their app.",
         "Only share with apps you trust.",
-        ...(attribution?.found && attribution.earningsEnabled
-            ? ["20% of what you spend in this app goes to the developer."]
-            : []),
     ]
         .map((line) => `- ${line}`)
         .join("\n");

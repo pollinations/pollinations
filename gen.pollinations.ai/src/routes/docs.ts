@@ -262,6 +262,24 @@ const LLM_BUTTON_HTML = `
 })();
 </script>`;
 
+const API_REFERENCE_CUSTOM_CSS = `
+.scalar-app .markdown:has(table) {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scalar-app .markdown:has(table) table {
+  min-width: 720px !important;
+}
+
+.scalar-app .markdown:has(table) table th,
+.scalar-app .markdown:has(table) table td {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+`;
+
 function generationDocumentation(): OpenApiSchema {
     return {
         servers: [{ url: "https://gen.pollinations.ai" }],
@@ -713,6 +731,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 pageTitle: "Pollinations API Reference",
                 title: "Pollinations API Reference",
                 theme: "saturn",
+                customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 sources: [
                     { url: "/docs/open-api/generate-schema", title: "API" },

@@ -1,9 +1,8 @@
-import { getTierColor, getTierEmoji } from "@shared/tier-config.ts";
+import { getTierEmoji } from "@shared/tier-config.ts";
 import { type FC, useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
-import { pillColors } from "../layout/dashboard-theme.ts";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
@@ -11,21 +10,9 @@ type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
     tier?: string;
+    paidToday?: number;
+    tierToday?: number;
 };
-
-type GaugeSegmentProps = {
-    percentage: number;
-    value: number;
-    label: string;
-    color: keyof typeof gaugeSegmentColors;
-    tooltipText: string;
-    position: "left" | "right";
-    offset?: number;
-};
-
-const gaugeSegmentColors = {
-    ...pillColors,
-} as const;
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
 
@@ -33,135 +20,127 @@ function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
 }
 
-const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
-    percentage,
-    value,
+type WalletRowProps = {
+    emoji: string;
+    label: string;
+    value: number;
+    earnedToday: number;
+    tooltip: string;
+    rowClass: string;
+    labelClass: string;
+    tagClass: string;
+};
+
+const WalletRow: FC<WalletRowProps> = ({
+    emoji,
     label,
-    color,
-    tooltipText,
-    position,
-    offset = 0,
-}) => {
-    const { bg: bgColor, text: textColor } = gaugeSegmentColors[color];
-
-    const style =
-        position === "left"
-            ? { left: 0, width: `${percentage}%` }
-            : { left: `${offset}%`, width: `${percentage}%` };
-
-    return (
-        <Tooltip
-            triggerAs="span"
-            className={`absolute inset-y-0 ${bgColor} cursor-default transition-all duration-500 ease-out`}
-            style={style}
-            content={
-                <span className="block whitespace-pre-line leading-snug">
-                    {tooltipText}
-                </span>
-            }
-        >
-            <span className="absolute inset-0 flex items-center justify-center gap-0.5 sm:gap-1">
+    value,
+    earnedToday,
+    tooltip,
+    rowClass,
+    labelClass,
+    tagClass,
+}) => (
+    <Tooltip
+        triggerAs="span"
+        className={`flex items-center justify-between rounded-full px-5 py-3 cursor-default ${rowClass}`}
+        content={
+            <span className="block whitespace-pre-line leading-snug">
+                {tooltip}
+            </span>
+        }
+    >
+        <span className="flex items-center gap-3">
+            <span className="text-2xl" aria-hidden="true">
+                {emoji}
+            </span>
+            <span className="flex flex-col leading-tight">
                 <span
-                    className={`${textColor} font-bold text-[11px] sm:text-sm whitespace-nowrap`}
+                    className={`text-[11px] font-bold uppercase tracking-wide ${labelClass}`}
                 >
-                    {label} {formatPollen(value)}
+                    {label}
+                </span>
+                <span className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-950">
+                    {formatPollen(value)}
                 </span>
             </span>
-        </Tooltip>
-    );
-};
+        </span>
+        {earnedToday > 0 && (
+            <span
+                className={`rounded-full px-3 py-1 text-sm font-bold tabular-nums ${tagClass}`}
+            >
+                +{formatPollen(earnedToday)}
+            </span>
+        )}
+    </Tooltip>
+);
+
+const TodayPulse: FC<{ amount: number }> = ({ amount }) => (
+    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800 tabular-nums">
+        <span className="relative inline-flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        </span>
+        + {formatPollen(amount)} today
+    </span>
+);
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
     tier = "spore",
+    paidToday = 0,
+    tierToday = 0,
 }) => {
     const tierEmoji = getTierEmoji(tier);
-    const tierColor = getTierColor(tier) as GaugeSegmentProps["color"];
 
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
     const totalPollen = normalizeDisplayBalance(
         displayTierBalance + displayPaidBalance,
     );
-    const tierAvailable = Math.max(0, displayTierBalance);
-    const paidAvailable = Math.max(0, displayPaidBalance);
-    const tierMagnitude = Math.abs(displayTierBalance);
-    const paidMagnitude = Math.abs(displayPaidBalance);
-
-    const gaugeHeightClass = "h-[30px] sm:h-[34px]";
-    const hideTierGaugeSegment = tier === "microbe" && displayTierBalance === 0;
-
-    // Each visible segment gets at least MIN_SEGMENT% so signed labels stay
-    // readable. Debt buckets are indicators; positive available balances get
-    // the surplus width so -1 debt does not look equivalent to +1 credit.
-    const showPaid = displayPaidBalance !== 0;
-    const showTier = !hideTierGaugeSegment && displayTierBalance !== 0;
-    const visibleCount = (showPaid ? 1 : 0) + (showTier ? 1 : 0);
-    const minSegment = visibleCount > 1 ? 28 : 20;
-
-    let paidPercentage = 0;
-    let freePercentage = 0;
-    const magnitudeTotal = tierMagnitude + paidMagnitude;
-    if (visibleCount === 0 || magnitudeTotal <= 0) {
-        paidPercentage = 50;
-        freePercentage = 50;
-    } else {
-        const surplus = 100 - minSegment * visibleCount;
-        const availableTotal = tierAvailable + paidAvailable;
-        const paidWeight =
-            availableTotal > 0
-                ? paidAvailable / availableTotal
-                : paidMagnitude / magnitudeTotal;
-        const tierWeight =
-            availableTotal > 0
-                ? tierAvailable / availableTotal
-                : tierMagnitude / magnitudeTotal;
-
-        if (showPaid) {
-            paidPercentage = minSegment + paidWeight * surplus;
-        }
-        if (showTier) freePercentage = minSegment + tierWeight * surplus;
-    }
+    const totalToday = normalizeDisplayBalance(paidToday + tierToday);
+    const hideTierRow = tier === "microbe" && displayTierBalance === 0;
 
     return (
-        <div className="flex flex-row justify-center text-center pb-1">
-            {/* Combined Pollen Gauge */}
-            <div className="flex flex-col items-center gap-4 w-full">
-                {/* Pollen amount above gauge */}
-                <span className="block text-4xl sm:text-5xl md:text-6xl font-bold text-amber-950 tabular-nums">
-                    {formatPollen(totalPollen)} pollen
-                </span>
-                {/* Gauge */}
-                <div className="w-full max-w-[540px]">
-                    <div
-                        className={`relative ${gaugeHeightClass} bg-gray-200 rounded-full overflow-hidden border-2 border-amber-300`}
-                    >
-                        {/* Paid Pollen - Soft purple for paid (pack) */}
-                        {paidPercentage > 0 && (
-                            <PollenGaugeSegment
-                                percentage={paidPercentage}
-                                value={displayPaidBalance}
-                                label="🪷"
-                                color="amber"
-                                tooltipText="💳 Paid balance — Pollen you bought, plus earnings from paid-side user spend in your apps. Never expires."
-                                position="left"
-                            />
-                        )}
-                        {/* Free Pollen - Soft teal for free */}
-                        {!hideTierGaugeSegment && freePercentage > 0 && (
-                            <PollenGaugeSegment
-                                percentage={freePercentage}
-                                value={displayTierBalance}
-                                label={tierEmoji}
-                                color={tierColor}
-                                tooltipText={`${tierEmoji} Tier balance — your free hourly Pollen, plus earnings from tier-side user spend in your apps.`}
-                                position="right"
-                                offset={paidPercentage}
-                            />
-                        )}
-                    </div>
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+                <div className="text-base font-bold text-amber-900">
+                    Balance
                 </div>
+                {totalToday > 0 && <TodayPulse amount={totalToday} />}
+            </div>
+            <div className="flex flex-col gap-3">
+                <WalletRow
+                    emoji="🪷"
+                    label="Paid"
+                    value={displayPaidBalance}
+                    earnedToday={paidToday}
+                    tooltip="💳 Paid balance — Pollen you bought, plus markup earnings from paid-side spend in your apps. Never expires."
+                    rowClass="bg-amber-300"
+                    labelClass="text-amber-900"
+                    tagClass="bg-amber-50 text-emerald-800"
+                />
+                {!hideTierRow && (
+                    <WalletRow
+                        emoji={tierEmoji}
+                        label="Tier"
+                        value={displayTierBalance}
+                        earnedToday={tierToday}
+                        tooltip={`${tierEmoji} Tier balance — your free hourly Pollen, plus markup earnings from tier-side spend in your apps.`}
+                        rowClass="bg-pink-200"
+                        labelClass="text-pink-900"
+                        tagClass="bg-pink-50 text-emerald-800"
+                    />
+                )}
+            </div>
+            <div className="border-t border-dashed border-amber-300/70 pt-4 flex items-baseline justify-between">
+                <span className="text-xs font-bold uppercase tracking-wide text-amber-900">
+                    Total Pollen
+                </span>
+                <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950">
+                    {formatPollen(totalPollen)}
+                </span>
             </div>
         </div>
     );

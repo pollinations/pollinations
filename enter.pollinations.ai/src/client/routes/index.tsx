@@ -87,24 +87,32 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [tierData, apiKeysResult, d1BalanceResult, profileResult] =
-            await Promise.all([
-                apiClient.tiers.view
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient["api-keys"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : { data: [] })),
-                apiClient.customer.balance
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                apiClient.account.profile
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-            ]);
+        const [
+            tierData,
+            apiKeysResult,
+            d1BalanceResult,
+            profileResult,
+            earningsTodayResult,
+        ] = await Promise.all([
+            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+            apiClient["api-keys"]
+                .$get()
+                .then((r) => (r.ok ? r.json() : { data: [] })),
+            apiClient.customer.balance
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            apiClient.account.profile
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+            apiClient.customer.balance.today
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
+        ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
+        const paidToday = earningsTodayResult?.paidToday ?? 0;
+        const tierToday = earningsTodayResult?.tierToday ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
@@ -116,6 +124,8 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
+            paidToday,
+            tierToday,
         };
     },
 });
@@ -129,6 +139,8 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
+        paidToday,
+        tierToday,
     } = Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -292,6 +304,8 @@ function RouteComponent() {
                             tierBalance={tierBalance}
                             packBalance={packBalance}
                             tier={tierData?.active?.tier}
+                            paidToday={paidToday}
+                            tierToday={tierToday}
                         />
                     </DashboardSection>
                     <DashboardSection

@@ -654,19 +654,11 @@ function AuthorizeComponent() {
                                             &#x1F331;
                                         </span>
                                         <span>
-                                            {attribution.githubUsername ? (
-                                                <span className="font-semibold">
-                                                    @
-                                                    {attribution.githubUsername}
-                                                </span>
-                                            ) : (
-                                                "The developer"
-                                            )}{" "}
-                                            earns{" "}
+                                            Earn{" "}
                                             <span className="font-semibold">
                                                 20%
                                             </span>{" "}
-                                            of pollen you spend.
+                                            of the pollen you spend in-app.
                                         </span>
                                     </li>
                                 )}

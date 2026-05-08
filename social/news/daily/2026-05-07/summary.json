@@ -1,0 +1,31 @@
+{
+  "date": "2026-05-07",
+  "period_start": "2026-05-07",
+  "period_end": "2026-05-07",
+  "title": "Vector embeddings hit the API",
+  "summary": "A heavy-hitting day bringing vector embeddings, Seedance 2.0 video generation, and a smoother way for app creators to earn pollen.\n\nWe shipped a dedicated /v1/embeddings endpoint to power your RAG, clustering, and semantic search pipelines. To keep the free tier running smoothly, requests without a specified model now automatically route to OpenAI's text-embedding-3-small.\n\nReplicate is now wired up as a provider, bringing the Seedance 2.0 video model to the API. You can now push prompts and images into 720p text-to-video, image-to-video, and frame interpolation pipelines.\n\nWe simplified the Bring Your Own Pollen (BYOP) margin billing system, making it much easier for app creators to earn pollen when users generate content through their apps. We also fixed a dashboard sorting quirk so standard API keys stay in their own lane instead of masquerading as App keys.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 10358,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10422,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10739,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10759,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10760,
+      "date": "2026-05-07"
+    }
+  ],
+  "generated_at": "2026-05-08T06:33:44.368779+00:00"
+}

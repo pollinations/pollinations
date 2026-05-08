@@ -3,7 +3,7 @@ import {
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
-import { apikey as apikeyTable } from "@shared/db/better-auth.ts";
+import { oauthClient as oauthClientTable } from "@shared/db/better-auth.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
@@ -127,7 +127,7 @@ export const track = (eventType: EventType) =>
         const apiKeyMetadata = c.var.auth.apiKey?.metadata as
             | Record<string, unknown>
             | undefined;
-        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
+        const oauthClientId = c.var.auth.apiKey?.oauthClientId;
         const userTracking: UserData = {
             userId: c.var.auth.user?.id,
             userTier: c.var.auth.user?.tier,
@@ -138,13 +138,14 @@ export const track = (eventType: EventType) =>
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
             apiKeyName: c.var.auth.apiKey?.name,
-            apiKeyCreatedVia: byopClientKeyId
+            apiKeyCreatedVia: oauthClientId
                 ? "redirect-auth"
                 : (apiKeyMetadata?.createdVia as string | undefined),
-            apiKeyClientId: byopClientKeyId ?? undefined,
-            apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
+            apiKeyClientId: c.var.auth.apiKey?.oauthClientClientId ?? undefined,
+            apiKeyCreatedForApp:
+                c.var.auth.apiKey?.oauthClientName ?? undefined,
             apiKeyCreatedForUserId:
-                c.var.auth.apiKey?.byopClientUserId ?? undefined,
+                c.var.auth.apiKey?.oauthClientUserId ?? undefined,
         } satisfies UserData;
 
         let responseOverride = null;
@@ -181,9 +182,9 @@ export const track = (eventType: EventType) =>
                 } satisfies BalanceData;
 
                 const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
-                const byopClientTracking = await resolveByopClientTracking(
+                const oauthClientTracking = await resolveOAuthClientTracking(
                     db,
-                    byopClientKeyId,
+                    oauthClientId,
                 );
 
                 // Deduct payer + credit dev before emitting the event so billing
@@ -203,7 +204,7 @@ export const track = (eventType: EventType) =>
                         userId: userTracking.userId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                        byopClientKeyId,
+                        oauthClientId,
                         modelResolved: c.var.model?.resolved,
                     });
                     markup = deduction.markup;
@@ -242,7 +243,7 @@ export const track = (eventType: EventType) =>
                     ipHash,
                     userTracking: {
                         ...userTracking,
-                        ...byopClientTracking,
+                        ...oauthClientTracking,
                     },
                     balanceTracking: committedBalanceTracking,
                     requestTracking,
@@ -871,26 +872,27 @@ type ErrorData = {
     // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
-async function resolveByopClientTracking(
+async function resolveOAuthClientTracking(
     db: ReturnType<typeof drizzle>,
-    byopClientKeyId: string | null | undefined,
+    oauthClientId: string | null | undefined,
 ): Promise<Partial<UserData>> {
-    if (!byopClientKeyId) return {};
+    if (!oauthClientId) return {};
 
-    const [clientKey] = await db
+    const [client] = await db
         .select({
-            id: apikeyTable.id,
-            name: apikeyTable.name,
-            userId: apikeyTable.userId,
+            id: oauthClientTable.id,
+            clientId: oauthClientTable.clientId,
+            name: oauthClientTable.name,
+            userId: oauthClientTable.userId,
         })
-        .from(apikeyTable)
-        .where(eq(apikeyTable.id, byopClientKeyId))
+        .from(oauthClientTable)
+        .where(eq(oauthClientTable.id, oauthClientId))
         .limit(1);
 
     return {
-        apiKeyClientId: clientKey?.id ?? byopClientKeyId,
-        apiKeyCreatedForApp: clientKey?.name ?? undefined,
-        apiKeyCreatedForUserId: clientKey?.userId ?? undefined,
+        apiKeyClientId: client?.clientId ?? oauthClientId,
+        apiKeyCreatedForApp: client?.name ?? undefined,
+        apiKeyCreatedForUserId: client?.userId ?? undefined,
     };
 }
 

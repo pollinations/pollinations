@@ -9,7 +9,7 @@ export interface ApiKey {
     permissions: Record<string, string[]> | null;
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
-    byopClientKeyId?: string | null;
+    oauthClientId?: string | null;
 }
 
 export interface ApiKeyUpdateParams {
@@ -39,9 +39,9 @@ export type CreateApiKey = {
     expiryDays?: number | null;
     /** Account permissions: ["profile", "usage", "keys"]. null = no permissions */
     accountPermissions?: string[] | null;
-    /** Allowed OAuth redirect URLs for publishable keys (RFC 8252 port-agnostic loopback) */
+    /** Allowed OAuth redirect URLs for app clients (RFC 8252 port-agnostic loopback) */
     redirectUris?: string[];
-    /** Enable BYOP developer earnings for publishable app keys */
+    /** Enable BYOP developer earnings for app clients */
     earningsEnabled?: boolean;
 };
 

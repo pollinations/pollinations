@@ -20,6 +20,7 @@ function isPublishableKey(apiKey: ApiKey): boolean {
 }
 
 function isAppKey(apiKey: ApiKey): boolean {
+    if (apiKey.metadata?.recordType === "oauth_client") return true;
     if (!isPublishableKey(apiKey)) return false;
 
     const redirectUris = apiKey.metadata?.redirectUris;

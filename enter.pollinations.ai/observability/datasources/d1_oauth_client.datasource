@@ -1,0 +1,40 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Daily snapshot of D1 oauthClient table (public OAuth app client metadata)
+
+SCHEMA >
+    `id` String `json:$.id`,
+    `client_id` String `json:$.client_id`,
+    `disabled` UInt8 `json:$.disabled` DEFAULT 0,
+    `skip_consent` UInt8 `json:$.skip_consent` DEFAULT 0,
+    `enable_end_session` UInt8 `json:$.enable_end_session` DEFAULT 0,
+    `subject_type` Nullable(String) `json:$.subject_type`,
+    `scopes` Nullable(String) `json:$.scopes`,
+    `user_id` Nullable(String) `json:$.user_id`,
+    `reference_id` Nullable(String) `json:$.reference_id`,
+    `created_at` Int64 `json:$.created_at`,
+    `updated_at` Int64 `json:$.updated_at`,
+    `name` Nullable(String) `json:$.name`,
+    `uri` Nullable(String) `json:$.uri`,
+    `icon` Nullable(String) `json:$.icon`,
+    `contacts` Nullable(String) `json:$.contacts`,
+    `tos` Nullable(String) `json:$.tos`,
+    `policy` Nullable(String) `json:$.policy`,
+    `software_id` Nullable(String) `json:$.software_id`,
+    `software_version` Nullable(String) `json:$.software_version`,
+    `software_statement` Nullable(String) `json:$.software_statement`,
+    `redirect_uris` String `json:$.redirect_uris`,
+    `post_logout_redirect_uris` Nullable(String) `json:$.post_logout_redirect_uris`,
+    `token_endpoint_auth_method` Nullable(String) `json:$.token_endpoint_auth_method`,
+    `grant_types` Nullable(String) `json:$.grant_types`,
+    `response_types` Nullable(String) `json:$.response_types`,
+    `public` UInt8 `json:$.public` DEFAULT 1,
+    `type` Nullable(String) `json:$.type`,
+    `require_pkce` UInt8 `json:$.require_pkce` DEFAULT 1,
+    `metadata` Nullable(String) `json:$.metadata`,
+    `synced_at` DateTime `json:$.synced_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(synced_at)"
+ENGINE_SORTING_KEY "id"

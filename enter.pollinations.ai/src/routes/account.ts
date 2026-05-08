@@ -1,6 +1,11 @@
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import {
+    normalizeOAuthClient,
+    oauthClientToListItem,
+} from "@shared/auth/oauth-client.ts";
+import {
     apikey as apikeyTable,
+    oauthClient as oauthClientTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import type { ApiKeyType } from "@shared/schemas/generation-event.ts";
@@ -107,7 +112,7 @@ const CreateKeySchema = z.object({
         .optional()
         .default("secret")
         .describe(
-            "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
+            "Key type: secret (sk_) or publishable. Publishable requests with redirectUris or earnings enabled create OAuth app clients.",
         ),
     expiresIn: z
         .number()
@@ -137,13 +142,13 @@ const CreateKeySchema = z.object({
         .array(z.string())
         .optional()
         .describe(
-            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
+            "Allowed OAuth redirect URIs for app clients. Required for OAuth app flows. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
         ),
     earningsEnabled: z
         .boolean()
         .optional()
         .describe(
-            "Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.",
+            "Enable developer earnings for app clients. Defaults to false; send true to opt in.",
         ),
 });
 
@@ -1055,30 +1060,40 @@ export const accountRoutes = new Hono<Env>()
                 .from(apikeyTable)
                 .where(eq(apikeyTable.userId, user.id))
                 .all();
+            const oauthClients = await db
+                .select()
+                .from(oauthClientTable)
+                .where(eq(oauthClientTable.userId, user.id))
+                .all();
 
             c.header("Cache-Control", "private, no-store, max-age=0");
             return c.json({
-                data: keys.map((key) => ({
-                    id: key.id,
-                    name: key.name,
-                    start: key.start,
-                    prefix: key.prefix,
-                    createdAt: key.createdAt,
-                    expiresAt: key.expiresAt,
-                    lastRequest: key.lastRequest,
-                    permissions: key.permissions
-                        ? (() => {
-                              try {
-                                  return JSON.parse(key.permissions);
-                              } catch {
-                                  return null;
-                              }
-                          })()
-                        : null,
-                    metadata: parseMetadata(key.metadata),
-                    pollenBalance: key.pollenBalance,
-                    enabled: key.enabled,
-                })),
+                data: [
+                    ...keys.map((key) => ({
+                        id: key.id,
+                        name: key.name,
+                        start: key.start,
+                        prefix: key.prefix,
+                        createdAt: key.createdAt,
+                        expiresAt: key.expiresAt,
+                        lastRequest: key.lastRequest,
+                        permissions: key.permissions
+                            ? (() => {
+                                  try {
+                                      return JSON.parse(key.permissions);
+                                  } catch {
+                                      return null;
+                                  }
+                              })()
+                            : null,
+                        metadata: parseMetadata(key.metadata),
+                        pollenBalance: key.pollenBalance,
+                        enabled: key.enabled,
+                    })),
+                    ...oauthClients.map((client) =>
+                        oauthClientToListItem(normalizeOAuthClient(client)),
+                    ),
+                ],
             });
         },
     )
@@ -1088,7 +1103,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
+                'Create a new API key or OAuth app client. To create an app client, use `type: "publishable"` with `redirectUris` or `earningsEnabled: true`. App clients receive app_ client IDs; migrated legacy apps keep their pk_ client IDs. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },
@@ -1171,6 +1186,26 @@ export const accountRoutes = new Hono<Env>()
             }
 
             const db = drizzle(c.env.DB);
+            const oauthClient = await db
+                .select()
+                .from(oauthClientTable)
+                .where(
+                    and(
+                        eq(oauthClientTable.id, id),
+                        eq(oauthClientTable.userId, user.id),
+                    ),
+                )
+                .get();
+            if (oauthClient) {
+                await db
+                    .delete(apikeyTable)
+                    .where(eq(apikeyTable.oauthClientId, id));
+                await db
+                    .delete(oauthClientTable)
+                    .where(eq(oauthClientTable.id, id));
+                return c.json({ success: true });
+            }
+
             const key = await db
                 .select()
                 .from(apikeyTable)

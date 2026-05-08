@@ -1,33 +1,34 @@
+import {
+    findOAuthClientByClientId,
+    type OAuthClientPublic,
+} from "@shared/auth/oauth-client.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
-import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { validator } from "../middleware/validator.ts";
-import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
 import { redirectUriMatchesAllowlist } from "./url-utils.ts";
 
 async function resolveAttribution(
     db: ReturnType<typeof drizzle<typeof schema>>,
-    keyRow: typeof schema.apikey.$inferSelect,
+    client: OAuthClientPublic,
 ) {
-    const meta = parseMetadata(keyRow.metadata);
     const user = await db.query.user.findFirst({
-        where: eq(schema.user.id, keyRow.userId),
+        where: eq(schema.user.id, client.userId ?? ""),
     });
-    const redirectUris = getRedirectUris(meta);
     return {
         found: true as const,
-        clientId: keyRow.id,
-        userId: keyRow.userId,
+        clientId: client.clientId,
+        oauthClientId: client.id,
+        userId: client.userId,
         userName: user?.name,
         githubUsername: user?.githubUsername || undefined,
-        appName: keyRow.name,
-        redirectUris,
-        earningsEnabled: meta.earningsEnabled === true,
+        appName: client.name,
+        redirectUris: client.redirectUris,
+        earningsEnabled: client.metadata.earningsEnabled === true,
     };
 }
 
@@ -42,14 +43,12 @@ async function resolveAttribution(
 const AppLookupQuerySchema = z.object({
     client_id: z
         .string()
-        .startsWith("pk_")
         .optional()
         .describe(
-            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username. Canonical OAuth name.",
+            "Your OAuth app client_id (app_... for new apps; legacy pk_... values remain valid after migration). When provided, the consent screen shows your app name and GitHub username.",
         ),
     app_key: z
         .string()
-        .startsWith("pk_")
         .optional()
         .describe(
             "Legacy alias for `client_id`. Accepted for backwards compatibility.",
@@ -83,32 +82,27 @@ export const appLookupRoutes = new Hono<Env>().get(
         }
 
         const db = drizzle(c.env.DB, { schema });
-        const auth = createAuth(c.env);
-        const result = await auth.api.verifyApiKey({
-            body: { key: resolvedAppKey },
-        });
-        if (result.valid && result.key) {
-            const keyRow = await db.query.apikey.findFirst({
-                where: eq(schema.apikey.id, result.key.id),
-            });
-            if (keyRow) {
-                // Bind client_id to redirect_uri before delivering attribution.
-                // Without this, a stolen client_id could be paired with any
-                // redirect: the consent screen would brand the legitimate app
-                // (confused-deputy) and the minted sk_ would land at the
-                // attacker's URL. RFC 6749 §3.1.2 / RFC 8252 §7.3.
-                if (redirectUri) {
-                    const meta = parseMetadata(keyRow.metadata);
-                    const allowlist = getRedirectUris(meta);
-                    if (!redirectUriMatchesAllowlist(redirectUri, allowlist)) {
-                        return c.json({
-                            found: false as const,
-                            error: "redirect_uri_mismatch" as const,
-                        });
-                    }
+        const client = await findOAuthClientByClientId(db, resolvedAppKey);
+        if (client) {
+            // Bind client_id to redirect_uri before delivering attribution.
+            // Without this, a stolen client_id could be paired with any
+            // redirect: the consent screen would brand the legitimate app
+            // (confused-deputy) and the minted sk_ would land at the
+            // attacker's URL. RFC 6749 §3.1.2 / RFC 8252 §7.3.
+            if (redirectUri) {
+                if (
+                    !redirectUriMatchesAllowlist(
+                        redirectUri,
+                        client.redirectUris,
+                    )
+                ) {
+                    return c.json({
+                        found: false as const,
+                        error: "redirect_uri_mismatch" as const,
+                    });
                 }
-                return c.json(await resolveAttribution(db, keyRow));
             }
+            return c.json(await resolveAttribution(db, client));
         }
 
         return c.json({ found: false });

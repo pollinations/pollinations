@@ -3,6 +3,14 @@ import {
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import {
+    deleteOwnedOAuthClientAndKeys,
+    findOwnedOAuthClient,
+    normalizeOAuthClient,
+    oauthClientKeyMetadata,
+    oauthClientToListItem,
+    updateOwnedOAuthClient,
+} from "@shared/auth/oauth-client.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -147,7 +155,9 @@ const CreateApiKeySchema = z.object({
         .enum(["secret", "publishable"])
         .optional()
         .default("secret")
-        .describe("Key type: secret (sk_) or publishable (pk_)"),
+        .describe(
+            "Key type: secret (sk_) or publishable. Publishable requests with app metadata create app_ OAuth clients.",
+        ),
     expiresIn: z
         .number()
         .int()
@@ -269,23 +279,59 @@ export const apiKeysRoutes = new Hono<Env>()
                 where: eq(schema.apikey.userId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
+            const oauthClients = await db.query.oauthClient.findMany({
+                where: eq(schema.oauthClient.userId, user.id),
+                orderBy: (oauthClient, { desc }) => [
+                    desc(oauthClient.createdAt),
+                ],
+            });
 
             return c.json({
-                data: keys.map((key) => ({
-                    id: key.id,
-                    name: key.name,
-                    start: key.start,
-                    createdAt: key.createdAt,
-                    lastRequest: key.lastRequest,
-                    expiresAt: key.expiresAt,
-                    permissions: key.permissions
-                        ? parsePermissions(key.permissions)
-                        : null,
-                    metadata: key.metadata ? parseMetadata(key.metadata) : null,
-                    pollenBalance: key.pollenBalance,
-                    byopClientKeyId: key.byopClientKeyId,
-                })),
+                data: [
+                    ...keys.map((key) => ({
+                        id: key.id,
+                        name: key.name,
+                        start: key.start,
+                        createdAt: key.createdAt,
+                        lastRequest: key.lastRequest,
+                        expiresAt: key.expiresAt,
+                        permissions: key.permissions
+                            ? parsePermissions(key.permissions)
+                            : null,
+                        metadata: key.metadata
+                            ? parseMetadata(key.metadata)
+                            : null,
+                        pollenBalance: key.pollenBalance,
+                        oauthClientId: key.oauthClientId,
+                    })),
+                    ...oauthClients.map((client) =>
+                        oauthClientToListItem(normalizeOAuthClient(client)),
+                    ),
+                ],
             });
+        },
+    )
+    .delete(
+        "/:id",
+        describeRoute({
+            tags: ["👤 Account"],
+            description: "Delete an API key or OAuth app client.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const db = drizzle(c.env.DB, { schema });
+
+            if (await deleteOwnedOAuthClientAndKeys(db, id, user.id)) {
+                return c.json({ success: true });
+            }
+
+            const existingKey = await requireOwnedKey(db, id, user.id);
+            await db
+                .delete(schema.apikey)
+                .where(eq(schema.apikey.id, existingKey.id));
+            return c.json({ success: true });
         },
     )
     /**
@@ -313,6 +359,23 @@ export const apiKeysRoutes = new Hono<Env>()
             } = c.req.valid("json");
 
             const db = drizzle(c.env.DB, { schema });
+            const oauthClient = await findOwnedOAuthClient(db, id, user.id);
+            if (oauthClient) {
+                const updated = await updateOwnedOAuthClient({
+                    db,
+                    id,
+                    userId: user.id,
+                    name,
+                });
+                return c.json({
+                    id: updated.id,
+                    name: updated.name,
+                    permissions: null,
+                    pollenBalance: null,
+                    expiresAt: null,
+                });
+            }
+
             const existingKey = await requireOwnedKey(db, id, user.id);
 
             const existingPermissions = existingKey.permissions
@@ -385,20 +448,36 @@ export const apiKeysRoutes = new Hono<Env>()
             const metadataUpdate = c.req.valid("json");
 
             const db = drizzle(c.env.DB, { schema });
-            const existingKey = await requireOwnedKey(db, id, user.id);
 
             if (metadataUpdate.redirectUris) {
                 for (const uri of metadataUpdate.redirectUris) {
                     validateRedirectUriFormat(uri);
                 }
             }
+            const oauthClient = await findOwnedOAuthClient(db, id, user.id);
+            if (oauthClient) {
+                const updated = await updateOwnedOAuthClient({
+                    db,
+                    id,
+                    userId: user.id,
+                    redirectUris: metadataUpdate.redirectUris,
+                    description: metadataUpdate.description,
+                    earningsEnabled: metadataUpdate.earningsEnabled,
+                });
+                return c.json({
+                    id,
+                    metadata: oauthClientKeyMetadata(updated),
+                });
+            }
+
+            const existingKey = await requireOwnedKey(db, id, user.id);
             if (
-                metadataUpdate.earningsEnabled !== undefined &&
-                existingKey.prefix !== "pk"
+                metadataUpdate.redirectUris !== undefined ||
+                metadataUpdate.earningsEnabled !== undefined
             ) {
                 throw new HTTPException(400, {
                     message:
-                        "BYOP earnings can only be enabled on publishable app keys",
+                        "App metadata can only be updated on OAuth app clients",
                 });
             }
             const metadata = await updateKeyMetadata(

@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
-import { and, eq, gt, isNull, or } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { apikey as apikeyTable } from "../db/better-auth.ts";
+import { oauthClient as oauthClientTable } from "../db/better-auth.ts";
 import type { ModelName } from "../registry/registry.ts";
 import { getModelDefinition } from "../registry/registry.ts";
 import {
@@ -27,7 +27,7 @@ interface DeductionParams {
     userId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
-    byopClientKeyId?: string | null;
+    oauthClientId?: string | null;
     modelResolved?: string;
 }
 
@@ -47,26 +47,27 @@ function parseMetadata(
 
 export async function resolveDevMarkup(
     db: DrizzleD1Database,
-    byopClientKeyId: string | null | undefined,
+    oauthClientId: string | null | undefined,
     baselinePrice: number,
     payerUserId: string | undefined,
 ): Promise<MarkupResolution | null> {
-    if (!byopClientKeyId || !payerUserId) return null;
+    if (!oauthClientId || !payerUserId) return null;
 
     const credit = computeDevCredit(baselinePrice);
     if (credit <= 0) return null;
 
     const [clientRow] = await db
-        .select({ userId: apikeyTable.userId, metadata: apikeyTable.metadata })
-        .from(apikeyTable)
+        .select({
+            userId: oauthClientTable.userId,
+            metadata: oauthClientTable.metadata,
+        })
+        .from(oauthClientTable)
         .where(
             and(
-                eq(apikeyTable.id, byopClientKeyId),
-                eq(apikeyTable.prefix, "pk"),
-                eq(apikeyTable.enabled, true),
+                eq(oauthClientTable.id, oauthClientId),
                 or(
-                    isNull(apikeyTable.expiresAt),
-                    gt(apikeyTable.expiresAt, new Date()),
+                    isNull(oauthClientTable.disabled),
+                    eq(oauthClientTable.disabled, false),
                 ),
             ),
         )
@@ -96,7 +97,7 @@ export async function handleBalanceDeduction(
         userId,
         apiKeyId,
         apiKeyPollenBalance,
-        byopClientKeyId,
+        oauthClientId,
         modelResolved,
     } = params;
 
@@ -106,7 +107,7 @@ export async function handleBalanceDeduction(
 
     const resolved = await resolveDevMarkup(
         db,
-        byopClientKeyId,
+        oauthClientId,
         totalPrice,
         userId,
     );

@@ -51,7 +51,7 @@ describe("Account Key Management API", () => {
 
             expect(response.status).toBe(200);
             const data = await response.json();
-            expect(data.key.startsWith("pk_")).toBe(true);
+            expect(data.key.startsWith("app_")).toBe(true);
             expect(data.type).toBe("publishable");
             expect(data.metadata.redirectUris).toEqual([
                 "https://cli.example/callback",
@@ -81,7 +81,7 @@ describe("Account Key Management API", () => {
 
             expect(response.status).toBe(200);
             const data = await response.json();
-            expect(data.key.startsWith("pk_")).toBe(true);
+            expect(data.key.startsWith("app_")).toBe(true);
             expect(data.type).toBe("publishable");
             expect(data.metadata.redirectUris).toEqual([
                 "https://cli-earnings.example/callback",

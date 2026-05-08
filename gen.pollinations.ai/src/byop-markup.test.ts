@@ -9,7 +9,7 @@ import {
     resolveDevMarkup,
 } from "@shared/billing/track-helpers.ts";
 import {
-    apikey as apikeyTable,
+    oauthClient as oauthClientTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { sql } from "drizzle-orm";
@@ -51,7 +51,7 @@ async function setupPayerAndDev({
     const suffix = crypto.randomUUID();
     const payerId = `payer-${suffix}`;
     const devId = `dev-${suffix}`;
-    const pkId = `pk_markup_${suffix}`;
+    const oauthClientId = `oauth_markup_${suffix}`;
 
     await db.insert(userTable).values([
         {
@@ -76,19 +76,24 @@ async function setupPayerAndDev({
         },
     ]);
 
-    await db.insert(apikeyTable).values({
-        id: pkId,
+    await db.insert(oauthClientTable).values({
+        id: oauthClientId,
+        clientId: `app_markup_${suffix}`,
         userId: devId,
         name: "markup-app",
-        prefix: "pk",
-        key: `hashed-${pkId}`,
-        enabled: true,
+        redirectUris: JSON.stringify(["https://markup.example/callback"]),
+        public: true,
+        tokenEndpointAuthMethod: "none",
+        grantTypes: JSON.stringify(["authorization_code"]),
+        responseTypes: JSON.stringify(["code"]),
+        requirePKCE: true,
+        disabled: false,
         metadata: JSON.stringify({ earningsEnabled: true }),
         createdAt: new Date(),
         updatedAt: new Date(),
     });
 
-    return { payerId, devId, pkId };
+    return { payerId, devId, oauthClientId };
 }
 
 describe("BYOP markup", () => {
@@ -99,30 +104,32 @@ describe("BYOP markup", () => {
     });
 
     it("resolves markup only for enabled publishable app keys with earnings enabled", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
+        const { payerId, devId, oauthClientId } = await setupPayerAndDev();
 
-        const resolved = await resolveDevMarkup(db, pkId, 4, payerId);
+        const resolved = await resolveDevMarkup(db, oauthClientId, 4, payerId);
         expect(resolved).toEqual({
             devUserId: devId,
             devCredit: 4 * MARKUP_PCT,
             markupRate: MARKUP_PCT,
         });
 
-        expect(await resolveDevMarkup(db, pkId, 4, devId)).toBeNull();
+        expect(await resolveDevMarkup(db, oauthClientId, 4, devId)).toBeNull();
 
         await db
-            .update(apikeyTable)
+            .update(oauthClientTable)
             .set({ metadata: JSON.stringify({ earningsEnabled: false }) })
-            .where(sql`${apikeyTable.id} = ${pkId}`);
-        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
+            .where(sql`${oauthClientTable.id} = ${oauthClientId}`);
+        expect(
+            await resolveDevMarkup(db, oauthClientId, 4, payerId),
+        ).toBeNull();
     });
 
     it("resolves markup for app owners on any tier", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev({
+        const { payerId, devId, oauthClientId } = await setupPayerAndDev({
             devTier: "spore",
         });
 
-        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toEqual({
+        expect(await resolveDevMarkup(db, oauthClientId, 4, payerId)).toEqual({
             devUserId: devId,
             devCredit: 4 * MARKUP_PCT,
             markupRate: MARKUP_PCT,
@@ -130,14 +137,14 @@ describe("BYOP markup", () => {
     });
 
     it("credits creator tier balance when payer spends tier balance", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
+        const { payerId, devId, oauthClientId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({
             db,
             isBilledUsage: true,
             totalPrice: 1,
             userId: payerId,
-            byopClientKeyId: pkId,
+            oauthClientId,
         });
 
         expect(markup?.devUserId).toBe(devId);
@@ -153,7 +160,7 @@ describe("BYOP markup", () => {
     });
 
     it("credits creator pack balance when payer spends pack balance", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
+        const { payerId, devId, oauthClientId } = await setupPayerAndDev();
         await db
             .update(userTable)
             .set({ tierBalance: 0.5, packBalance: 2 })
@@ -164,7 +171,7 @@ describe("BYOP markup", () => {
             isBilledUsage: true,
             totalPrice: 1,
             userId: payerId,
-            byopClientKeyId: pkId,
+            oauthClientId,
         });
 
         expect(markup?.devUserId).toBe(devId);
@@ -180,7 +187,7 @@ describe("BYOP markup", () => {
     });
 
     it("bills baseline plus markup without a payer-tier gate", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev({
+        const { payerId, devId, oauthClientId } = await setupPayerAndDev({
             payerTier: "flower",
         });
 
@@ -189,7 +196,7 @@ describe("BYOP markup", () => {
             isBilledUsage: true,
             totalPrice: 1,
             userId: payerId,
-            byopClientKeyId: pkId,
+            oauthClientId,
         });
 
         expect(markup?.devUserId).toBe(devId);
@@ -342,7 +349,7 @@ describe("BYOP markup", () => {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
-                    byopClientKeyId: "pk-test",
+                    oauthClientId: "oauth-test",
                     pollenBalance: 1.1,
                 },
             },
@@ -372,7 +379,7 @@ describe("BYOP markup", () => {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
-                    byopClientKeyId: "pk-test",
+                    oauthClientId: "oauth-test",
                     pollenBalance: 10,
                 },
             },
@@ -397,14 +404,14 @@ describe("BYOP markup", () => {
     });
 
     it("does not credit or deduct for unbilled requests", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
+        const { payerId, devId, oauthClientId } = await setupPayerAndDev();
 
         const { markup } = await handleBalanceDeduction({
             db,
             isBilledUsage: false,
             totalPrice: 1,
             userId: payerId,
-            byopClientKeyId: pkId,
+            oauthClientId,
         });
 
         expect(markup).toBeNull();
@@ -413,7 +420,7 @@ describe("BYOP markup", () => {
     });
 
     it("reverts dev credit when payer deduction fails", async () => {
-        const { devId, pkId } = await setupPayerAndDev();
+        const { devId, oauthClientId } = await setupPayerAndDev();
 
         await expect(
             handleBalanceDeduction({
@@ -421,7 +428,7 @@ describe("BYOP markup", () => {
                 isBilledUsage: true,
                 totalPrice: 1,
                 userId: "missing-payer-row",
-                byopClientKeyId: pkId,
+                oauthClientId,
             }),
         ).rejects.toThrow(/affected 0 rows/);
 

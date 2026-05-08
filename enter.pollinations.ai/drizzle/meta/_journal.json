@@ -169,6 +169,13 @@
       "when": 1778063629187,
       "tag": "0023_byop-backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1778247024982,
+      "tag": "0024_oauth-client-app-keys",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 /**
  * D1 → Tinybird sync.
  *
- * Snapshots the D1 auth tables (user, apikey, session, account) into Tinybird
+ * Snapshots the D1 auth tables (user, apikey, oauthClient, session, account) into Tinybird
  * datasources. Sensitive columns (tokens, keys, passwords, IPs) are excluded
  * at the SQL level — they never leave D1.
  *
@@ -37,8 +37,19 @@ const TABLES: TableConfig[] = [
                        last_refill_at, enabled, rate_limit_enabled, rate_limit_time_window,
                        rate_limit_max, request_count, remaining, last_request, expires_at,
                        created_at, updated_at, permissions, metadata, pollen_balance,
-                       byop_client_key_id
+                       byop_client_key_id, oauth_client_id
                 FROM apikey`,
+    },
+    {
+        datasource: "d1_oauth_client",
+        query: `SELECT id, client_id, disabled, skip_consent, enable_end_session,
+                       subject_type, scopes, user_id, reference_id, created_at,
+                       updated_at, name, uri, icon, contacts, tos, policy,
+                       software_id, software_version, software_statement,
+                       redirect_uris, post_logout_redirect_uris,
+                       token_endpoint_auth_method, grant_types, response_types,
+                       public, type, require_pkce, metadata
+                FROM oauthClient`,
     },
     {
         datasource: "d1_session",

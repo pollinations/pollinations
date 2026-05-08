@@ -1,5 +1,5 @@
 /**
- * Match an incoming `redirect_uri` against a registered allowlist for a `pk_`.
+ * Match an incoming `redirect_uri` against a registered OAuth client allowlist.
  *
  * Comparison rules:
  * - Scheme + hostname + path are matched exactly (after lowercasing host).

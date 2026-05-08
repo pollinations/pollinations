@@ -3,6 +3,11 @@ import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
+import {
+    createOAuthClientForUser,
+    findOAuthClientByClientId,
+    isOAuthClientMetadata,
+} from "./oauth-client.ts";
 import { redirectUriMatchesAllowlist } from "./redirect-uri.ts";
 
 export type ApiKeyType = "secret" | "publishable";
@@ -58,7 +63,7 @@ type CreateApiKeyAuthClient = {
 };
 
 type VerifiedClientAttribution = {
-    clientId: string;
+    oauthClientId: string;
 };
 
 export function validateRedirectUriFormat(redirectUri: string): void {
@@ -80,28 +85,6 @@ export function validateRedirectUriFormat(redirectUri: string): void {
             message: "Redirect URI must not include a fragment",
         });
     }
-}
-
-function parseMetadata(
-    raw: string | null | undefined,
-): Record<string, unknown> {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-            ? parsed
-            : {};
-    } catch {
-        return {};
-    }
-}
-
-function getRedirectUris(meta: Record<string, unknown>): string[] {
-    const list = meta.redirectUris;
-    if (Array.isArray(list)) {
-        return list.filter((v): v is string => typeof v === "string" && !!v);
-    }
-    return [];
 }
 
 function cleanRedirectUris(redirectUris: string[]): string[] {
@@ -140,7 +123,6 @@ function pickCallerMetadata(
 }
 
 async function validateClientRedirectBinding(
-    authClient: CreateApiKeyAuthClient,
     db: ReturnType<typeof drizzle<typeof schema>>,
     metadata: CallerMetadata | undefined,
 ): Promise<VerifiedClientAttribution | null> {
@@ -155,47 +137,26 @@ async function validateClientRedirectBinding(
         return null;
     }
 
-    if (!requestedClientId.startsWith("pk_")) {
+    if (typeof metadata.deviceUserCode === "string") {
+        throw new HTTPException(400, {
+            message: "client_id is not supported for device authorization",
+        });
+    }
+
+    if (
+        !requestedClientId.startsWith("app_") &&
+        !requestedClientId.startsWith("pk_")
+    ) {
         rejectInvalidClientId();
     }
 
-    const result = await authClient.api.verifyApiKey({
-        body: { key: requestedClientId },
-    });
-    if (!result.valid || !result.key?.id) {
-        rejectInvalidClientId();
-    }
-    const clientKeyId = result.key.id;
-
-    const clientKey = await db.query.apikey.findFirst({
-        where: eq(schema.apikey.id, clientKeyId),
-    });
-    if (!clientKey || clientKey.prefix !== "pk") {
+    const oauthClient = await findOAuthClientByClientId(db, requestedClientId);
+    if (!oauthClient?.userId) {
         rejectInvalidClientId();
     }
     const attribution = {
-        clientId: clientKey.id,
+        oauthClientId: oauthClient.id,
     };
-
-    if (typeof metadata.deviceUserCode === "string") {
-        const device = await db.query.deviceCode.findFirst({
-            where: eq(
-                schema.deviceCode.userCode,
-                metadata.deviceUserCode.toUpperCase(),
-            ),
-        });
-        if (
-            !device ||
-            device.status !== "pending" ||
-            device.expiresAt < new Date() ||
-            device.clientId !== requestedClientId
-        ) {
-            throw new HTTPException(400, {
-                message: "client_id mismatch",
-            });
-        }
-        return attribution;
-    }
 
     if (typeof metadata.redirectUri !== "string") {
         throw new HTTPException(400, {
@@ -204,8 +165,12 @@ async function validateClientRedirectBinding(
     }
     validateRedirectUriFormat(metadata.redirectUri);
 
-    const allowlist = getRedirectUris(parseMetadata(clientKey.metadata));
-    if (!redirectUriMatchesAllowlist(metadata.redirectUri, allowlist)) {
+    if (
+        !redirectUriMatchesAllowlist(
+            metadata.redirectUri,
+            oauthClient.redirectUris,
+        )
+    ) {
         throw new HTTPException(400, {
             message: "redirect_uri not in allowlist for this client_id",
         });
@@ -228,11 +193,7 @@ export async function createApiKeyForUser({
     defaultCreatedVia,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
-    const attribution = await validateClientRedirectBinding(
-        authClient,
-        db,
-        metadata,
-    );
+    const attribution = await validateClientRedirectBinding(db, metadata);
 
     const isPublishable = type === "publishable";
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
@@ -240,6 +201,17 @@ export async function createApiKeyForUser({
         for (const uri of callerMetadata.redirectUris as string[]) {
             validateRedirectUriFormat(uri);
         }
+    }
+
+    if (isPublishable && isOAuthClientMetadata(callerMetadata)) {
+        return createOAuthClientForUser({
+            dbBinding,
+            userId,
+            name,
+            redirectUris: callerMetadata.redirectUris as string[] | undefined,
+            description: callerMetadata.description as string | undefined,
+            earningsEnabled: callerMetadata.earningsEnabled === true,
+        });
     }
 
     const sanitizedAccountPerms =
@@ -289,7 +261,7 @@ export async function createApiKeyForUser({
     };
     if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
     if (!isPublishable && attribution) {
-        d1Updates.byopClientKeyId = attribution.clientId;
+        d1Updates.oauthClientId = attribution.oauthClientId;
     }
 
     await db
@@ -308,8 +280,8 @@ export async function createApiKeyForUser({
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: pollenBudget ?? null,
-        byopClientKeyId:
-            !isPublishable && attribution ? attribution.clientId : null,
+        oauthClientId:
+            !isPublishable && attribution ? attribution.oauthClientId : null,
         metadata: finalMetadata,
     };
 }

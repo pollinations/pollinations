@@ -231,20 +231,66 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo truncate -s 0 /var/log/syslog
 
 ---
 
+### 8. Error Event Pipe (Tinybird)
+
+Rolling 3-hour window of structured 5xx errors from enter.pollinations.ai. Complements black-box health probes by showing *which model + upstream* is actually failing under real traffic — catches cases where a health endpoint returns OK but real requests terminate.
+
+| Property | Value |
+|----------|-------|
+| **Pipe** | `recent_server_errors` |
+| **Endpoint** | `https://api.europe-west2.gcp.tinybird.co/v0/pipes/recent_server_errors.json` |
+| **Parameters** | `minutes` (default 180), `environment` (default `production`), `limit` (default 200) |
+| **Auth** | `TINYBIRD_READ_TOKEN` from SOPS |
+| **TTL** | 3h (rolling window, auto-expires) |
+
+**Query — errors grouped by upstream + model (last 30 min):**
+```bash
+TB_READ=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
+curl -s --max-time 10 "https://api.europe-west2.gcp.tinybird.co/v0/pipes/recent_server_errors.json?minutes=30&environment=production&limit=500&token=$TB_READ" \
+  | jq -r '.data
+      | group_by(.upstream_host + "|" + (.model_requested // "none"))
+      | map({key: ((.[0].upstream_host // "none") + " / " + (.[0].model_requested // "none")),
+             count: length,
+             statuses: [.[].status] | unique})
+      | sort_by(-.count) | .[]
+      | "\(.count)\t\(.key)\t\(.statuses | join(","))"'
+```
+
+Expected output (example — see "Procedure" for what to do with it):
+```
+23  ec2-54-147-14-220.compute-1.amazonaws.com / klein         500,502,520,524
+8   ec2-54-147-14-220.compute-1.amazonaws.com / gemini-fast   502,520,522
+```
+
+**Alert thresholds:**
+- `count > 5` in 30 min for a single (upstream, model) → jump to that service's health check + restart first
+- Dominant status `520/522/524` → Cloudflare-fronted upstream timing out, likely a single pod stuck
+- Dominant status `500` with body containing `terminated` / `Internal Server Error` → application-level failure on the upstream, check upstream logs
+- Multiple unrelated models failing on the same `upstream_host` → host-level problem (saturation, disk, OOM) — check load/memory on that host
+
+**Full-row detail for a specific failure:**
+```bash
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/recent_server_errors.json?minutes=30&environment=production&limit=10&token=$TB_READ" \
+  | jq '.data[] | select(.model_requested == "klein") | {ts: .timestamp, status, upstream_status, body: (.upstream_body | .[0:200]), tier: .user_tier}'
+```
+
+---
+
 ## Procedure
 
 When invoked, run checks in this order:
 
-1. **EC2 image registry** - curl register endpoint, check worker count and error rates
-2. **Flux/Z-Image RunPod** - verify 4 workers registered with 0% error rate
-3. **LTX-2 health** - curl health endpoint
-4. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
-5. **ACE-Step health** - curl health endpoint on port 8189
-6. **Klein health** - curl RunPod proxy health endpoint
-7. **Legacy image service** - check systemctl status on OVH
-8. **Sana worker** - curl health on GH200 port 8766
-9. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
-10. **Disk space** - check OVH disk usage
+1. **Error pipe sweep** - query `recent_server_errors` (last 30 min, grouped by upstream+model). If any (upstream, model) has >5 errors, note it and prioritize that service's deeper check below
+2. **EC2 image registry** - curl register endpoint, check worker count and error rates
+3. **Flux/Z-Image RunPod** - verify 4 workers registered with 0% error rate
+4. **LTX-2 health** - curl health endpoint
+5. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
+6. **ACE-Step health** - curl health endpoint on port 8189
+7. **Klein health** - curl RunPod proxy health endpoint
+8. **Legacy image service** - check systemctl status on OVH
+9. **Sana worker** - curl health on GH200 port 8766
+10. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
+11. **Disk space** - check OVH disk usage
 
 For each:
 - If healthy: report OK with latency
@@ -253,6 +299,7 @@ For each:
 ## Auth
 
 - **Test token**: Read from `enter.pollinations.ai/.testingtokens` (ENTER_API_TOKEN_REMOTE)
+- **Tinybird read token**: `TINYBIRD_READ_TOKEN` in SOPS (`enter.pollinations.ai/secrets/prod.vars.json`) — for querying `recent_server_errors` pipe
 - **SSH keys**: Stored in SOPS (`enter.pollinations.ai/secrets/prod.vars.json`):
   - `SSH_RUNPOD_FLUX_ZIMAGE` — RunPod Flux+Z-Image pod
   - `SSH_LAMBDA_SANA_LTX2_ACESTEP` — Lambda GH200 (LTX-2, ACE-Step, Sana)
@@ -267,6 +314,7 @@ Report a brief status table:
 ```
 | Service | Status | Latency | Notes |
 |---------|--------|---------|-------|
+| Error pipe (30m) | OK | 0.3s | top: klein=0, gemini-fast=0 |
 | EC2 registry | OK | 0.1s | 4 workers, 0% errors |
 | Flux RunPod (gpu0) | OK | 2.9s | hsl3ksl31lvrcc-8765 |
 | Flux RunPod (gpu1) | OK | 2.9s | hsl3ksl31lvrcc-8766 |

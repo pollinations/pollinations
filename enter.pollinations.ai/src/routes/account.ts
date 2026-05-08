@@ -106,7 +106,9 @@ const CreateKeySchema = z.object({
         .enum(["secret", "publishable"])
         .optional()
         .default("secret")
-        .describe("Key type: secret (sk_) or publishable (pk_)"),
+        .describe(
+            "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
+        ),
     expiresIn: z
         .number()
         .int()
@@ -135,7 +137,13 @@ const CreateKeySchema = z.object({
         .array(z.string())
         .optional()
         .describe(
-            "Allowed OAuth redirect URIs for publishable app keys. Loopback ports are matched port-agnostically.",
+            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
+        ),
+    earningsEnabled: z
+        .boolean()
+        .optional()
+        .describe(
+            "Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.",
         ),
 });
 
@@ -473,7 +481,9 @@ const dailyUsageRecordSchema = z.object({
     meter_source: z
         .string()
         .nullable()
-        .describe("Billing source ('tier', 'pack', 'crypto')"),
+        .describe(
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+        ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
 });
@@ -580,7 +590,7 @@ const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (combines tier, pack, and crypto balances)",
+            "Remaining pollen balance (sum of tier balance + paid balance)",
         ),
 });
 
@@ -600,7 +610,9 @@ const usageRecordSchema = z.object({
     meter_source: z
         .string()
         .nullable()
-        .describe("Billing source ('tier', 'pack', 'crypto')"),
+        .describe(
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+        ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
@@ -743,11 +755,7 @@ export const accountRoutes = new Hono<Env>()
             const tierBalance = users[0]?.tierBalance ?? 0;
             const packBalance = users[0]?.packBalance ?? 0;
 
-            // Clamp each bucket at 0 before summing — individual buckets can go negative
-            // from overage but shouldn't reduce the visible total
-            return c.json({
-                balance: Math.max(0, tierBalance) + Math.max(0, packBalance),
-            });
+            return c.json({ balance: tierBalance + packBalance });
         },
     )
     .get(
@@ -1080,7 +1088,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                "Create a new API key. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.",
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission and a secret key (sk_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },
@@ -1101,7 +1109,18 @@ export const accountRoutes = new Hono<Env>()
                 pollenBudget,
                 accountPermissions,
                 redirectUris,
+                earningsEnabled,
             } = c.req.valid("json");
+
+            const metadata =
+                type === "publishable"
+                    ? {
+                          ...(redirectUris?.length ? { redirectUris } : {}),
+                          ...(earningsEnabled !== undefined
+                              ? { earningsEnabled }
+                              : {}),
+                      }
+                    : undefined;
 
             const created = await createApiKeyForUser({
                 authClient: c.var.auth.client,
@@ -1113,10 +1132,7 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
-                metadata:
-                    type === "publishable" && redirectUris?.length
-                        ? { redirectUris }
-                        : undefined,
+                metadata,
                 allowAccountKeysPermission: false,
                 defaultCreatedVia: "api",
             });

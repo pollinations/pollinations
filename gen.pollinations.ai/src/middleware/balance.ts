@@ -99,7 +99,7 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         throw new HTTPException(402, {
             message:
                 message ||
-                "This model requires a paid balance. Tier balance cannot be used.",
+                "This model requires 💳 paid balance. 🌱 Tier balance cannot be used.",
         });
     };
 

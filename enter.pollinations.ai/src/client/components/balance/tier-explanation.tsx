@@ -69,8 +69,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
     return (
         <div>
             <p className="text-sm text-gray-900 leading-relaxed mb-3">
-                📈 <strong>Grow Your Tier:</strong> For developers building with
-                pollinations.ai. Level up to earn more pollen.
+                📈 Higher tier → bigger hourly refill on your tier balance.
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {/* Spore */}

@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
+import { redirectUriMatchesAllowlist } from "./redirect-uri.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
@@ -13,6 +14,7 @@ export type CallerMetadata = {
     deviceUserCode?: string;
     requestedClientId?: string;
     description?: string;
+    earningsEnabled?: boolean;
 };
 
 type CreateApiKeyForUserInput = {
@@ -114,72 +116,26 @@ function rejectInvalidClientId(): never {
     });
 }
 
-function redirectUriMatchesAllowlist(
-    uri: string,
-    allowlist: readonly string[] | null | undefined,
-): boolean {
-    if (!allowlist?.length) return false;
-    const incoming = safeParse(uri);
-    if (!incoming) return false;
-    return allowlist.some((entry) => matchesRedirectEntry(incoming, entry));
-}
-
-function matchesRedirectEntry(incoming: URL, entryUrl: string): boolean {
-    const entry = safeParse(entryUrl);
-    if (!entry) return false;
-    if (incoming.hash || entry.hash) return false;
-    if (incoming.protocol !== entry.protocol) return false;
-    if (
-        normalizeHostname(incoming.hostname) !==
-        normalizeHostname(entry.hostname)
-    ) {
-        return false;
-    }
-    if (incoming.pathname !== entry.pathname) return false;
-    if (incoming.search !== entry.search) return false;
-    if (isLoopbackHostname(entry.hostname)) return true;
-    return incoming.port === entry.port;
-}
-
-function safeParse(url: string): URL | null {
-    try {
-        return new URL(url);
-    } catch {
-        return null;
-    }
-}
-
-function normalizeHostname(hostname: string): string {
-    return hostname
-        .toLowerCase()
-        .replace(/^\[(.*)\]$/, "$1")
-        .replace(/\.$/, "");
-}
-
-function isLoopbackHostname(hostname: string): boolean {
-    const h = normalizeHostname(hostname);
-    if (h === "localhost" || h === "0.0.0.0" || h === "::1") return true;
-    if (/^127\.\d+\.\d+\.\d+$/.test(h)) return true;
-    return false;
-}
-
 // Caller-provided metadata is restricted to a typed allowlist. Server-controlled
 // fields like keyType / createdVia / plaintextKey / app attribution can never
 // be set or overridden by callers, even via /api/api-keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
+    isPublishable: boolean,
 ): Record<string, unknown> {
-    if (!metadata) return {};
     const out: Record<string, unknown> = {};
-    if (Array.isArray(metadata.redirectUris)) {
+    if (Array.isArray(metadata?.redirectUris)) {
         out.redirectUris = cleanRedirectUris(metadata.redirectUris);
     }
-    if (typeof metadata.redirectOrigin === "string")
+    if (typeof metadata?.redirectOrigin === "string")
         out.redirectOrigin = metadata.redirectOrigin;
-    if (typeof metadata.deviceUserCode === "string")
+    if (typeof metadata?.deviceUserCode === "string")
         out.deviceUserCode = metadata.deviceUserCode;
-    if (typeof metadata.description === "string")
+    if (typeof metadata?.description === "string")
         out.description = metadata.description;
+    if (isPublishable) {
+        out.earningsEnabled = metadata?.earningsEnabled === true;
+    }
     return out;
 }
 
@@ -278,7 +234,8 @@ export async function createApiKeyForUser({
         metadata,
     );
 
-    const callerMetadata = pickCallerMetadata(metadata);
+    const isPublishable = type === "publishable";
+    const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
             validateRedirectUriFormat(uri);
@@ -297,7 +254,6 @@ export async function createApiKeyForUser({
         permissions.account = safeAccountPerms;
     }
 
-    const isPublishable = type === "publishable";
     const prefix = isPublishable ? "pk" : "sk";
     const baseMetadata = {
         ...callerMetadata,

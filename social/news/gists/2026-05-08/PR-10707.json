@@ -1,0 +1,35 @@
+{
+  "pr_number": 10707,
+  "title": "feat: add gemma text model via DeepInfra",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10707",
+  "merged_at": "2026-05-08T11:12:25Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new gem in the garden",
+    "blurb": "We've added Google's Gemma 4 (26B) to our text generation lineup. It's multimodal, supports tools and reasoning, and is ready for our paid tier users to explore.",
+    "summary": "Added the Gemma 4 26B model to the text generation API via DeepInfra, featuring multimodal support, tool use, and reasoning capabilities.",
+    "impact": "Paid tier users can now access the `gemma` model for text and image-to-text generation with a massive 262k context window.",
+    "keywords": [
+      "gemma",
+      "models",
+      "text-generation",
+      "deepinfra",
+      "multimodal",
+      "api"
+    ],
+    "visual_concept": "Gemma translates perfectly to a literal gem or crystal. The scene should feature Polly the bee and the Monitor Robot discovering or polishing a glowing, chunky pixel-art gemstone in a cozy garden setting.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot polishing a glowing, chunky lime green (#ecf874) and pastel lavender gemstone in a digital garden. A cute chunky pixel robot with a CRT monitor head watches excitedly, its screen showing a text prompt. Soft pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10707.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot polishing a glowing, chunky lime green (#ecf874) and pastel lavender gemstone in a digital garden. A cute chunky pixel robot with a CRT monitor head watches excitedly, its screen showing a text prompt. Soft pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-08T11:13:39.648357+00:00"
+}

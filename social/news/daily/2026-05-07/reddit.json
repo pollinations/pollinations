@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-07",
+  "period_start": "2026-05-07",
+  "period_end": "2026-05-07",
+  "generated_at": "2026-05-08T06:33:44.368779+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-07/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped vector embeddings, Seedance 2.0, and cleaned up API keys",
+  "text": "Merged 5 PRs today across the infrastructure. A mix of new models and paying down dashboard tech debt.\n\nFirst, vector embeddings are now available through the API. We restacked the embeddings modality to make this work smoothly. Note that we had to mark Gemini embedding 2 as paid-only. Compute costs real money, and we have to draw the line somewhere to keep the free tier sustainable.\n\nSecond, we added Replicate as a provider to wire up the Seedance 2.0 video model. You can now hit the video generation endpoint and pass it through.\n\nOn the dashboard side, we cleaned up some clutter. API publishable keys were getting lost in the UI, so we pinned them strictly to the API section where they actually belong. We also simplified the BYOP (Bring Your Own Provider) margin billing logic. The old implementation was unnecessarily complex, so we flattened it out.\n\nCode is up on GitHub as always. Let us know if the embeddings endpoint behaves weirdly with edge-case inputs.\n\nRepo: https://github.com/pollinations/pollinations\nDocs: https://github.com/pollinations/pollinations/tree/master/docs"
+}

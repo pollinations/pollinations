@@ -4,10 +4,10 @@
  * Comparison rules:
  * - Scheme + hostname + path are matched exactly (after lowercasing host).
  * - Trailing slash on the path is insignificant: `/cb` and `/cb/` match.
- * - Query strings are ignored: apps round-trip state (e.g. `?prompt=...`) and
- *   the auth code/token rides the URL fragment, not the query. Pinning host
- *   and path is what blocks confused-deputy attacks; matching the query adds
- *   no security and breaks legitimate apps. Mirrors GitHub's behavior.
+ * - Query strings are ignored when the registered URI has no query: apps
+ *   round-trip state (e.g. `?prompt=...`) and the auth code/token rides the URL
+ *   fragment, not the query. If the registered URI includes a query, it must
+ *   match exactly so existing query-bound allowlist entries are not broadened.
  * - For loopback entries (RFC 8252 §7.3): port is ignored — any port matches.
  *   This covers native/CLI apps that bind to ephemeral ports each run.
  * - For non-loopback entries: port must match (default ports normalized).
@@ -73,6 +73,7 @@ function matchesEntry(incoming: URL, entryUrl: string): boolean {
     ) {
         return false;
     }
+    if (entry.search && incoming.search !== entry.search) return false;
     if (isLoopbackHostname(entry.hostname)) return true;
     return incoming.port === entry.port;
 }

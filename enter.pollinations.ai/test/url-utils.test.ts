@@ -49,11 +49,24 @@ describe("redirectUriMatchesAllowlist", () => {
                 ["https://app.com/cb"],
             ),
         ).toBe(true);
+    });
+
+    test("preserves query-bound allowlist entries", () => {
+        expect(
+            redirectUriMatchesAllowlist("https://app.com/cb?env=prod", [
+                "https://app.com/cb?env=prod",
+            ]),
+        ).toBe(true);
         expect(
             redirectUriMatchesAllowlist("https://app.com/cb", [
                 "https://app.com/cb?env=prod",
             ]),
-        ).toBe(true);
+        ).toBe(false);
+        expect(
+            redirectUriMatchesAllowlist("https://app.com/cb?env=dev", [
+                "https://app.com/cb?env=prod",
+            ]),
+        ).toBe(false);
     });
 
     test("treats trailing slash on path as insignificant", () => {

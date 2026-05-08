@@ -34,9 +34,7 @@ You receive:       0.25 pollen
 
 Credits land in the same balance type the user paid from: tier balance when the request used tier balance, paid balance when it used paid balance.
 
-Turn earnings on from the dashboard by opening the App Key and switching **Developer earnings** on.
-
-To enable earnings while creating a publishable App Key programmatically, call `/account/keys` with a secret key that has `account:keys` permission:
+Pass `earningsEnabled: true` when creating an App Key via the API, or toggle it later from the dashboard:
 
 ```bash
 curl -X POST https://gen.pollinations.ai/account/keys \
@@ -44,8 +42,6 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Content-Type: application/json' \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
-
-Use the dashboard to change earnings on an existing App Key.
 
 ## ⚙️ Web Apps (Redirect Flow)
 

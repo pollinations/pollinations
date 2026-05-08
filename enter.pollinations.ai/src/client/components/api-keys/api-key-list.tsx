@@ -239,8 +239,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
-                                    Users pay 25% over base rates. Markup
-                                    credits to your balance.{" "}
+                                    Turn on earnings to receive a share of
+                                    pollen users spend in your app.{" "}
                                     <a
                                         href="https://gen.pollinations.ai/docs#tag/bring-your-own-pollen"
                                         target="_blank"

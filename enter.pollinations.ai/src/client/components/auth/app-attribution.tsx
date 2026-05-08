@@ -74,7 +74,7 @@ export function AppAttribution({
                         size="sm"
                         className="bg-amber-900 text-yellow-200"
                     >
-                        The developer of this app earns 20%
+                        The developer of this app earns 20% of pollen spent
                     </Tag>
                 </div>
             )}

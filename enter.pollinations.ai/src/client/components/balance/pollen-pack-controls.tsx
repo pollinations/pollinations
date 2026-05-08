@@ -65,7 +65,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                     className="pollen-pack-slider"
                 />
             </div>
-            <div className="relative -mt-1 h-4 px-[11px] text-[10px] font-semibold text-amber-700/80 tabular-nums">
+            <div className="relative -mt-1 h-4 px-[11px] text-xs font-semibold text-amber-700/80 tabular-nums">
                 <div className="relative h-full">
                     {packs.map((pack, index) => (
                         <span

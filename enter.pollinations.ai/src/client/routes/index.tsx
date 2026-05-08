@@ -266,20 +266,6 @@ function RouteComponent() {
         anchor.remove();
     }
 
-    function downloadEarnings(): void {
-        const params = new URLSearchParams({
-            format: "csv",
-            granularity: activityPeriod.granularity,
-            period: activityPeriod.period,
-        });
-        const anchor = document.createElement("a");
-        anchor.href = `/api/account/earnings?${params.toString()}`;
-        anchor.rel = "noopener";
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-    }
-
     function handlePageChange(page: DashboardPage): void {
         setActivePage(page);
         try {
@@ -351,12 +337,6 @@ function RouteComponent() {
                         period={activityPeriod}
                         apps={publishableApps}
                         theme={dashboardThemeByPage.usage}
-                        action={
-                            <DownloadCsvButton
-                                theme={dashboardThemeByPage.usage}
-                                onClick={downloadEarnings}
-                            />
-                        }
                     />
                 </div>
             )}

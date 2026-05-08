@@ -1,6 +1,7 @@
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
+import { Button } from "../button.tsx";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
 import { Tag } from "../ui/tag.tsx";
@@ -13,7 +14,6 @@ type EarningsGraphProps = {
     period: UsagePeriodSelection;
     apps: Array<{ id: string; name: string }>;
     theme: DashboardTheme;
-    action?: ReactNode;
 };
 
 const PAID_BAR_COLOR = { base: "#fbcfe8", hover: "#f9a8d4" } as const;
@@ -22,7 +22,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     period,
     apps,
     theme,
-    action,
 }) => {
     const tokens = themeTokens[theme];
     const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
@@ -41,8 +40,56 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
 
     const showAppBreakdown = apps.length > 1;
 
+    function downloadEarnings(): void {
+        const params = new URLSearchParams({
+            format: "csv",
+            granularity: period.granularity,
+            period: period.period,
+        });
+        if (selectedAppKeyIds.length > 0) {
+            params.set("api_key_ids", selectedAppKeyIds.join(","));
+        }
+        const anchor = document.createElement("a");
+        anchor.href = `/api/account/earnings?${params.toString()}`;
+        anchor.rel = "noopener";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
     return (
-        <DashboardSection title="Earnings" theme={theme} framed action={action}>
+        <DashboardSection
+            title="Earnings"
+            theme={theme}
+            framed
+            action={
+                <Button
+                    as="button"
+                    color={theme}
+                    weight="light"
+                    onClick={downloadEarnings}
+                    className="flex items-center gap-1.5"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <title>Download</title>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download CSV
+                </Button>
+            }
+        >
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-end gap-4">
                     <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">

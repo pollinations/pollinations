@@ -25,6 +25,7 @@ interface ModelEntry {
 function classifyType(m: ModelEntry): string {
     const out = m.output_modalities ?? [];
     if (out.includes("video")) return "video";
+    if (out.includes("embedding")) return "embedding";
     if (out.includes("audio")) return "audio";
     if (out.includes("image")) return "image";
     if (out.includes("text")) return "text";
@@ -67,7 +68,11 @@ function buildRow(m: ModelEntry, mType: string, verbose: boolean) {
 
 export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
-    .option("--type <type>", "Filter: text, image, audio, video, all", "all")
+    .option(
+        "--type <type>",
+        "Filter: text, image, audio, video, embedding, all",
+        "all",
+    )
     .option("--verbose", "Show additional details (context length)")
     .option("--stats", "Show model health stats (err% column counts 5xx only)")
     .option("--window <minutes>", "Stats window in minutes", "60")
@@ -141,6 +146,12 @@ export const modelsCommand = new Command("models")
                 const audioModels = await gen<ModelEntry[]>("/audio/models");
                 for (const m of audioModels)
                     raw.push({ model: m, type: "audio" });
+            }
+            if (type === "all" || type === "embedding") {
+                const embeddingModels =
+                    await gen<ModelEntry[]>("/embeddings/models");
+                for (const m of embeddingModels)
+                    raw.push({ model: m, type: "embedding" });
             }
 
             if (getOutputMode() === "json") {

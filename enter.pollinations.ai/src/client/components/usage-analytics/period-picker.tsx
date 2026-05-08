@@ -1,7 +1,8 @@
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/util.ts";
-import { FilterButton } from "./filter-button.tsx";
+import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
+import { TabButton } from "../ui/tab-button.tsx";
 import {
     addUtcDays,
     formatPeriodLabel,
@@ -16,6 +17,7 @@ import type { PeriodGranularity, UsagePeriodSelection } from "./types.ts";
 type PeriodPickerProps = {
     value: UsagePeriodSelection;
     onChange: (value: UsagePeriodSelection) => void;
+    theme: DashboardTheme;
 };
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -72,7 +74,12 @@ function viewBounds(
     return { start, end: addUtcMonths(start, 1) };
 }
 
-export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
+export const PeriodPicker: FC<PeriodPickerProps> = ({
+    value,
+    onChange,
+    theme,
+}) => {
+    const tokens = themeTokens[theme];
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(() => periodDate(value));
     const ref = useRef<HTMLDivElement>(null);
@@ -142,17 +149,18 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
 
     return (
         <div ref={ref} className="relative flex flex-wrap items-center gap-2">
-            <div className="flex gap-1.5">
+            <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
                 {(["day", "week", "month"] as PeriodGranularity[]).map(
                     (granularity) => (
-                        <FilterButton
+                        <TabButton
                             key={granularity}
+                            theme={theme}
                             active={value.granularity === granularity}
                             onClick={() => setGranularity(granularity)}
                         >
                             {granularity[0].toUpperCase() +
                                 granularity.slice(1)}
-                        </FilterButton>
+                        </TabButton>
                     ),
                 )}
             </div>
@@ -163,9 +171,14 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                 aria-label={`Select usage period, current ${formatPeriodLabel(value)}`}
                 onClick={() => setOpen((isOpen) => !isOpen)}
                 className={cn(
-                    "inline-flex min-w-[150px] items-center justify-between gap-2 rounded-full border px-4 py-1.5 text-left text-xs font-medium",
-                    "border-amber-950 bg-white text-amber-950 transition-all duration-200 ease-out hover:bg-amber-50",
-                    open && "bg-amber-50 shadow-sm",
+                    "inline-flex min-h-8 min-w-[150px] items-center justify-between gap-2 rounded-full border px-3 py-1.5 text-left text-xs font-medium",
+                    tokens.border.idle,
+                    tokens.bg.idle,
+                    tokens.text.base,
+                    "transition-all duration-200 ease-out",
+                    tokens.bg.hover,
+                    open &&
+                        cn(tokens.bg.active, tokens.text.strong, "shadow-sm"),
                 )}
             >
                 <span>{formatPeriodLabel(value)}</span>
@@ -193,7 +206,10 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                 <div
                     role="dialog"
                     aria-label="Usage period picker"
-                    className="absolute left-0 top-full z-30 mt-2 w-[304px] rounded-xl border border-amber-950 bg-white p-3 shadow-lg transition-opacity duration-200 ease-out"
+                    className={cn(
+                        "absolute left-0 top-full z-30 mt-2 w-[304px] rounded-xl border bg-white p-3 shadow-lg transition-opacity duration-200 ease-out",
+                        tokens.border.idle,
+                    )}
                 >
                     <div className="mb-3 flex items-center justify-between">
                         <button
@@ -206,14 +222,21 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                             disabled={previousDisabled}
                             onClick={() => setViewDate(previousViewDate)}
                             className={cn(
-                                "rounded-full px-2 py-1 text-xs font-semibold text-amber-950 transition-colors hover:bg-amber-50",
+                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors",
+                                tokens.text.base,
+                                tokens.bg.soft,
                                 previousDisabled &&
                                     "cursor-not-allowed opacity-30 hover:bg-transparent",
                             )}
                         >
                             {"<"}
                         </button>
-                        <div className="text-sm font-bold text-amber-950">
+                        <div
+                            className={cn(
+                                "text-sm font-bold",
+                                tokens.text.base,
+                            )}
+                        >
                             {viewLabel}
                         </div>
                         <button
@@ -226,7 +249,9 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                             disabled={nextDisabled}
                             onClick={() => setViewDate(nextViewDate)}
                             className={cn(
-                                "rounded-full px-2 py-1 text-xs font-semibold text-amber-950 transition-colors hover:bg-amber-50",
+                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors",
+                                tokens.text.base,
+                                tokens.bg.soft,
                                 nextDisabled &&
                                     "cursor-not-allowed opacity-30 hover:bg-transparent",
                             )}
@@ -271,8 +296,14 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                                         className={cn(
                                             "rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150",
                                             selected
-                                                ? "bg-amber-950 text-amber-100"
-                                                : "text-gray-700 hover:bg-amber-50",
+                                                ? cn(
+                                                      tokens.bg.active,
+                                                      tokens.text.strong,
+                                                  )
+                                                : cn(
+                                                      "text-gray-700",
+                                                      tokens.bg.soft,
+                                                  ),
                                             !selectable &&
                                                 "cursor-not-allowed text-gray-300 hover:bg-transparent",
                                         )}
@@ -330,10 +361,16 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({ value, onChange }) => {
                                                 !inCurrentMonth &&
                                                     "text-gray-300",
                                                 sameUtcDay(date, today) &&
-                                                    "ring-1 ring-amber-950/40",
+                                                    cn("ring-1", tokens.ring),
                                                 selected
-                                                    ? "bg-amber-950 text-amber-100"
-                                                    : "text-gray-700 hover:bg-amber-50",
+                                                    ? cn(
+                                                          tokens.bg.active,
+                                                          tokens.text.strong,
+                                                      )
+                                                    : cn(
+                                                          "text-gray-700",
+                                                          tokens.bg.soft,
+                                                      ),
                                                 !selectable &&
                                                     "cursor-not-allowed text-gray-300 hover:bg-transparent",
                                             )}

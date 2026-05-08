@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ALL_MODELS } from "./constants";
+import { ALL_MODELS, type ModelModality } from "./constants";
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type {
     DailyUsageRecord,
@@ -20,6 +20,19 @@ type UsageDataResult = {
         totalPollen: number;
         tierPollen: number;
         paidPollen: number;
+        averagePollenPerRequest: number;
+        activeModelCount: number;
+        topModel: {
+            id: string;
+            label: string;
+            requests: number;
+            pollen: number;
+        } | null;
+        peakPeriod: {
+            label: string;
+            value: number;
+        } | null;
+        requestsByModality: Record<ModelModality, number>;
     };
     filteredData: DailyUsageRecord[];
 };
@@ -225,6 +238,68 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
             );
+        const modelTotals = new Map<
+            string,
+            { requests: number; pollen: number }
+        >();
+        for (const r of filtered) {
+            if (!r.model) continue;
+            const cur = modelTotals.get(r.model) || {
+                requests: 0,
+                pollen: 0,
+            };
+            cur.requests += r.requests || 0;
+            cur.pollen += r.cost_usd || 0;
+            modelTotals.set(r.model, cur);
+        }
+        const topModelEntry = Array.from(modelTotals.entries()).sort(
+            (left, right) => {
+                const leftValue =
+                    filters.metric === "requests"
+                        ? left[1].requests
+                        : left[1].pollen;
+                const rightValue =
+                    filters.metric === "requests"
+                        ? right[1].requests
+                        : right[1].pollen;
+                return rightValue - leftValue;
+            },
+        )[0];
+        const topModel = topModelEntry
+            ? (() => {
+                  const [id, modelStats] = topModelEntry;
+                  const registered = ALL_MODELS.find((m) => m.id === id);
+                  return {
+                      id,
+                      label: registered?.label || id,
+                      requests: modelStats.requests,
+                      pollen: modelStats.pollen,
+                  };
+              })()
+            : null;
+        const peakPeriod = sorted.reduce<{
+            label: string;
+            value: number;
+        } | null>((best, point) => {
+            if (point.value <= 0) return best;
+            if (!best || point.value > best.value) {
+                return { label: point.label, value: point.value };
+            }
+            return best;
+        }, null);
+
+        const requestsByModality: Record<ModelModality, number> = {
+            text: 0,
+            image: 0,
+            audio: 0,
+        };
+        for (const r of filtered) {
+            if (!r.model || !r.requests) continue;
+            const registered = ALL_MODELS.find((m) => m.id === r.model);
+            if (!registered) continue;
+            requestsByModality[registered.type] += r.requests;
+        }
+
         return {
             chartData: sorted,
             stats: {
@@ -232,6 +307,12 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 totalPollen,
                 tierPollen,
                 paidPollen,
+                averagePollenPerRequest:
+                    totalReq > 0 ? totalPollen / totalReq : 0,
+                activeModelCount: modelTotals.size,
+                topModel,
+                peakPeriod,
+                requestsByModality,
             },
             filteredData: filtered,
         };

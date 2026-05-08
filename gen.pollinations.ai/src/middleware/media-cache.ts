@@ -1,6 +1,6 @@
 /**
  * Generic media cache middleware for gen.pollinations.ai
- * Checks cache after auth/balance checks.
+ * Checks cache before auth/balance checks so cache hits can remain public.
  * Used for image, video, and audio GET endpoints.
  *
  * Currently uses IMAGE_BUCKET (R2) for all media types.
@@ -8,11 +8,12 @@
  * TODO: Rename to MEDIA_BUCKET when ready to consolidate.
  */
 
+import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import type { RequestIdVariables } from "hono/request-id";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
-    cacheResponse,
+    cacheMediaResponse,
     generateCacheKey,
     setHttpMetadataHeaders,
 } from "@/utils/media-cache.ts";
@@ -41,7 +42,10 @@ export function createMediaCache(config: MediaCacheConfig) {
             return next();
         }
 
-        const cacheKey = generateCacheKey(new URL(c.req.url));
+        const cacheKey = generateCacheKey(
+            new URL(c.req.url),
+            c.req.header(SAFETY_HEADER_NAME),
+        );
         log.debug("Cache key: {key}", { key: cacheKey });
 
         try {
@@ -52,6 +56,7 @@ export function createMediaCache(config: MediaCacheConfig) {
                     c,
                     cached.httpMetadata,
                     config.defaultContentType,
+                    cached.customMetadata,
                 );
                 c.header(
                     "Cache-Control",
@@ -78,13 +83,12 @@ export function createMediaCache(config: MediaCacheConfig) {
         );
         if (c.res?.ok && isMatchingContent && xCache !== "HIT") {
             log.debug("Caching response");
-            c.executionCtx.waitUntil(
-                cacheResponse(
-                    c.env.IMAGE_BUCKET,
-                    cacheKey,
-                    c,
-                    config.defaultContentType,
-                ),
+            cacheMediaResponse(
+                c.env.IMAGE_BUCKET,
+                cacheKey,
+                c,
+                config.defaultContentType,
+                c.res,
             );
         }
     });

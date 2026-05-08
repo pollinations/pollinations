@@ -76,7 +76,7 @@ async function loadProviderModule(providerName) {
 }
 
 async function main() {
-    // Provider/model API keys live in text.pollinations.ai/secrets/env.json
+    // Provider/model API keys live in gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json
     // (SOPS-encrypted, source of truth). Decrypt and merge into process.env
     // first; finance's local .env can still override anything finance-specific.
     await loadSharedModelSecrets();

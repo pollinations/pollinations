@@ -4,10 +4,9 @@ import {
 } from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
-import { Button } from "../button.tsx";
-import { Badge } from "../ui/badge.tsx";
+import { Tag } from "../ui/tag.tsx";
 
-import { calculateForBalance, calculatePerPollen } from "./calculations.ts";
+import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
     getModelCapabilityIcons,
@@ -27,11 +26,15 @@ import {
 import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
+export type SectionType = "image" | "video" | "audio" | "text" | "embedding";
+
 type UnifiedModelTableProps = {
     imageModels: ModelPrice[];
     videoModels: ModelPrice[];
     textModels: ModelPrice[];
     audioModels: ModelPrice[];
+    embeddingModels: ModelPrice[];
+    activeTab: SectionType;
     tierBalance?: number;
     packBalance?: number;
 };
@@ -63,7 +66,8 @@ const getInputSortValue = (modelName: string): number => {
         (p.promptCachedTokens ?? 0) +
         (p.promptAudioTokens ?? 0) +
         (p.promptAudioSeconds ?? 0) +
-        (p.promptImageTokens ?? 0);
+        (p.promptImageTokens ?? 0) +
+        (p.promptVideoTokens ?? 0);
     return sum > 0 ? sum : -1;
 };
 
@@ -116,19 +120,21 @@ const unitLabels: Record<string, string> = {
     image: "images",
     video: "videos",
     audio: "responses",
+    embedding: "embeddings",
 };
 
-const sectionLabels: Record<string, string> = {
+export const sectionLabels: Record<SectionType, string> = {
     image: "Image",
     video: "Video",
     audio: "Audio",
     text: "Text",
+    embedding: "Embedding",
 };
 
 // --- Tab content ---
 
 type TabContentProps = {
-    type: "text" | "image" | "video" | "audio";
+    type: SectionType;
     models: ModelPrice[];
     sortKey: SortKey;
     sortDir: SortDir;
@@ -238,15 +244,15 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
-
     const perPollen = calculatePerPollen(model);
-    const balanceRequests = isSignedIn
-        ? calculateForBalance(model, effectiveBalance)
-        : null;
-    const isDisabled = isSignedIn && balanceRequests === "0";
+    const isDisabled =
+        isSignedIn &&
+        !canAffordModel(
+            model,
+            tierBalance ?? 0,
+            packBalance ?? 0,
+            showPaidOnly,
+        );
 
     const copyModelName = async (e: MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
@@ -279,7 +285,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                     className="absolute inset-0 w-full rounded-xl cursor-pointer"
                     onClick={() => setExpanded(!expanded)}
                 />
-                <div className="relative z-10 pointer-events-none flex items-start justify-between gap-2 p-4">
+                <div className="relative z-10 pointer-events-none grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 p-4">
                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
                         <svg
                             className={cn(
@@ -292,7 +298,6 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                             strokeWidth={2}
                             aria-hidden="true"
                         >
-                            <title>Expand model details</title>
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -301,80 +306,58 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                         </svg>
                         <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2.5">
-                                <span className="inline-flex shrink-0 items-center gap-2 text-sm font-medium">
-                                    {brandLogoPath && (
-                                        <span
-                                            aria-hidden="true"
-                                            className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
-                                            style={{
-                                                maskImage: `url(${brandLogoPath})`,
-                                                WebkitMaskImage: `url(${brandLogoPath})`,
-                                                maskRepeat: "no-repeat",
-                                                WebkitMaskRepeat: "no-repeat",
-                                                maskPosition: "center",
-                                                WebkitMaskPosition: "center",
-                                                maskSize: "contain",
-                                                WebkitMaskSize: "contain",
-                                            }}
-                                        />
-                                    )}
-                                    <span>{publicModelName}</span>
+                                {brandLogoPath && (
+                                    <span
+                                        aria-hidden="true"
+                                        className="h-[1.35rem] w-[1.35rem] shrink-0 self-center bg-current opacity-55"
+                                        style={{
+                                            maskImage: `url(${brandLogoPath})`,
+                                            WebkitMaskImage: `url(${brandLogoPath})`,
+                                            maskRepeat: "no-repeat",
+                                            WebkitMaskRepeat: "no-repeat",
+                                            maskPosition: "center",
+                                            WebkitMaskPosition: "center",
+                                            maskSize: "contain",
+                                            WebkitMaskSize: "contain",
+                                        }}
+                                    />
+                                )}
+                                <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                                    {publicModelName}
                                 </span>
-                                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 content-center">
+                            </div>
+                            {(showNew ||
+                                showAlpha ||
+                                showPaidOnly ||
+                                modalityIcons.length > 0 ||
+                                capabilityIcons.length > 0) && (
+                                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+                                    <MobileMetadataBadges
+                                        modalityIcons={modalityIcons}
+                                        capabilityIcons={capabilityIcons}
+                                    />
                                     {showNew && (
-                                        <Badge color="green" size="sm">
+                                        <Tag color="green" size="sm">
                                             NEW
-                                        </Badge>
+                                        </Tag>
                                     )}
                                     {showAlpha && (
-                                        <Badge color="orange" size="sm">
+                                        <Tag color="orange" size="sm">
                                             ALPHA
-                                        </Badge>
+                                        </Tag>
                                     )}
                                     {showPaidOnly && (
-                                        <Badge color="purple" size="sm">
+                                        <Tag color="purple" size="sm">
                                             PAID
-                                        </Badge>
+                                        </Tag>
                                     )}
                                 </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={copyModelName}
-                                className={cn(
-                                    "pointer-events-auto mt-1 inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium leading-none text-gray-500 transition-colors",
-                                    copied
-                                        ? "text-teal-700"
-                                        : "hover:text-gray-700",
-                                )}
-                                aria-label={`Copy API model name ${model.name}`}
-                            >
-                                <span>{model.name}</span>
-                                {copied && (
-                                    <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
-                                        copied
-                                    </span>
-                                )}
-                            </button>
-                            {expanded &&
-                                (modalityIcons.length > 0 ||
-                                    capabilityIcons.length > 0) && (
-                                    <div className="mt-2">
-                                        <MobileMetadataBadges
-                                            modalityIcons={modalityIcons}
-                                            capabilityIcons={capabilityIcons}
-                                        />
-                                    </div>
-                                )}
+                            )}
                         </div>
                     </div>
-                    <span
-                        className={cn(
-                            "text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full shrink-0",
-                        )}
-                    >
+                    <Tag color="teal" className="justify-self-end">
                         {perPollen}
-                    </span>
+                    </Tag>
                 </div>
             </div>
 
@@ -382,6 +365,26 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
             {expanded && (
                 <div className="px-4 pb-4 pt-0">
                     <div className="flex min-w-0 flex-col gap-2 pl-6">
+                        <button
+                            type="button"
+                            onClick={copyModelName}
+                            className={cn(
+                                "inline-flex max-w-full cursor-pointer items-center gap-1.5 self-start text-xs font-medium leading-none text-gray-500 transition-colors",
+                                copied
+                                    ? "text-teal-700"
+                                    : "hover:text-gray-700",
+                            )}
+                            aria-label={`Copy API model name ${model.name}`}
+                        >
+                            <span className="min-w-0 truncate">
+                                {model.name}
+                            </span>
+                            {copied && (
+                                <span className="rounded-md bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+                                    copied
+                                </span>
+                            )}
+                        </button>
                         <MobilePriceGroup
                             label="In"
                             model={model}
@@ -438,6 +441,12 @@ const MobilePriceGroup: FC<MobilePriceGroupProps> = ({
                       prices: [model.promptImagePrice],
                       emoji: "🖼️",
                       subEmojis: ["🖼️"],
+                      perToken: model.perToken,
+                  },
+                  {
+                      prices: [model.promptVideoPrice],
+                      emoji: "🎬",
+                      subEmojis: ["🎬"],
                       perToken: model.perToken,
                   },
               ]
@@ -520,9 +529,9 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     }
 
     return (
-        <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
+        <>
             {modalityIcons.length > 0 && (
-                <Badge
+                <Tag
                     color="gray"
                     size="sm"
                     className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
@@ -530,10 +539,10 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     {modalityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}
-                </Badge>
+                </Tag>
             )}
             {capabilityIcons.length > 0 && (
-                <Badge
+                <Tag
                     color="gray"
                     size="sm"
                     className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
@@ -541,21 +550,21 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     {capabilityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}
-                </Badge>
+                </Tag>
             )}
-        </div>
+        </>
     );
 };
 
 // --- Main export ---
-
-type SectionType = "image" | "video" | "audio" | "text";
 
 export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     imageModels,
     videoModels,
     textModels,
     audioModels,
+    embeddingModels,
+    activeTab,
     tierBalance,
     packBalance,
 }) => {
@@ -566,9 +575,11 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
             ? [{ type: "audio" as const, models: audioModels }]
             : []),
         { type: "text", models: textModels },
+        ...(embeddingModels.length > 0
+            ? [{ type: "embedding" as const, models: embeddingModels }]
+            : []),
     ];
 
-    const [activeTab, setActiveTab] = useState<SectionType>("image");
     const [sortKey, setSortKey] = useState<SortKey>("perPollen");
     const [sortDir, setSortDir] = useState<SortDir>("desc");
     const activeSection = sections.find((s) => s.type === activeTab);
@@ -585,30 +596,9 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     const sortArrow = (key: SortKey) =>
         sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : null;
 
-    const tabButtons = sections.map((section) => (
-        <Button
-            key={section.type}
-            color="teal"
-            weight="light"
-            size="small"
-            className={cn(
-                "px-3",
-                activeTab === section.type
-                    ? "!bg-gray-900 !text-white hover:!bg-gray-800"
-                    : "!bg-white/80 text-gray-500",
-            )}
-            onClick={() => setActiveTab(section.type)}
-        >
-            <span className="font-bold">{sectionLabels[section.type]}</span>
-        </Button>
-    ));
-
     return (
         <div>
-            {/* Row 1: tab selectors on their own line */}
-            <div className="flex flex-wrap gap-1.5 pt-2 pb-5">{tabButtons}</div>
-
-            {/* Row 2: column headers (sortable) */}
+            {/* Column headers (sortable) */}
             <div className="flex items-center pb-2 pr-4 md:pr-8">
                 <button
                     type="button"
@@ -620,6 +610,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
                     </span>
                 </button>
                 <Tooltip
+                    triggerAs="span"
                     content={
                         <span className="block w-[220px] whitespace-normal leading-snug">
                             Based on average community usage. Actual costs vary

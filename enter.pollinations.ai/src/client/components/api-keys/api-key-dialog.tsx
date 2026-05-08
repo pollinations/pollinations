@@ -8,7 +8,9 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
+import { genDocsUrl } from "../../config.ts";
 import { Button } from "../button.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
@@ -17,8 +19,8 @@ type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onComplete: () => void;
     triggerLabel?: string;
-    triggerColor?: "blue" | "green" | "purple" | "amber";
-    /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only name + URL. */
+    triggerClassName?: string;
+    /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
     simplified?: boolean;
 };
 
@@ -26,7 +28,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
     triggerLabel = "Create new key",
-    triggerColor = "blue",
+    triggerClassName,
     simplified = false,
 }) => {
     function generateFunName(): string {
@@ -46,6 +48,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         ? "publishable"
         : "secret";
     const [redirectUris, setRedirectUris] = useState<string[]>([]);
+    const [earningsEnabled, setEarningsEnabled] = useState(true);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -81,6 +84,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             .map((v) => v.trim())
                             .filter(Boolean),
                     }),
+                ...(isPublishable && { earningsEnabled }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -113,26 +117,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         !simplified &&
         Array.isArray(allowedModels) &&
         allowedModels.length === 0;
-    const isMissingRedirectUris =
-        simplified && redirectUris.filter((v) => v.trim()).length === 0;
     const isCreateDisabled =
-        !createdKey &&
-        (!name.trim() ||
-            isSubmitting ||
-            noModelsSelected ||
-            isMissingRedirectUris);
-    const keyTypeStyles =
-        keyType === "publishable"
-            ? {
-                  editableInputClasses:
-                      "border-blue-300 focus:outline-none focus-visible:border-blue-500 focus-visible:ring-1 focus-visible:ring-blue-500/60",
-                  readOnlyInputClasses: "border-blue-300 bg-blue-100",
-              }
-            : {
-                  editableInputClasses:
-                      "border-violet-300 focus:outline-none focus-visible:border-violet-500 focus-visible:ring-1 focus-visible:ring-violet-500/60",
-                  readOnlyInputClasses: "border-violet-300 bg-violet-100",
-              };
+        !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
+    const keyInputStyles = {
+        editableInputClasses:
+            "border-blue-200 bg-blue-50 focus:outline-none focus-visible:border-blue-300 focus-visible:ring-1 focus-visible:ring-blue-200",
+        readOnlyInputClasses: "border-blue-200 bg-blue-50",
+    };
 
     function getButtonText(): string {
         if (copied) return "Copied! Closing...";
@@ -140,6 +131,23 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         if (isSubmitting) return "Creating...";
         return "Create";
     }
+
+    const createDisabledReason =
+        !createdKey && noModelsSelected
+            ? "Select at least one model"
+            : undefined;
+
+    const submitButton = (
+        <Button
+            type={createdKey ? "button" : "submit"}
+            onClick={createdKey ? handleCopyAndClose : undefined}
+            color="blue"
+            className="disabled:opacity-50"
+            disabled={isCreateDisabled}
+        >
+            {getButtonText()}
+        </Button>
+    );
 
     return (
         <Dialog.Root
@@ -151,6 +159,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     setError(null);
                     setName(generateFunName());
                     setRedirectUris([]);
+                    setEarningsEnabled(true);
                     const dateStr = new Date().toLocaleDateString("en-US", {
                         day: "2-digit",
                         month: "2-digit",
@@ -161,42 +170,66 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 setIsOpen(open);
             }}
         >
-            <Dialog.Trigger>
-                <Button as="div" color={triggerColor} weight="light">
+            <Dialog.Trigger
+                className={cn(
+                    "inline-flex shrink-0 self-start whitespace-nowrap",
+                    triggerClassName,
+                )}
+            >
+                <Button
+                    as="div"
+                    color="blue"
+                    weight="light"
+                    className="shrink-0 whitespace-nowrap"
+                >
                     {triggerLabel}
                 </Button>
             </Dialog.Trigger>
-            <Dialog.Backdrop className="fixed inset-0 z-[100] bg-green-950/50" />
+            <Dialog.Backdrop className="fixed inset-0 z-[100] bg-gray-950/50" />
             <Dialog.Positioner className="fixed inset-0 z-[110] flex h-dvh items-start justify-center overflow-hidden p-4">
                 <Dialog.Content
                     className={cn(
                         "my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border-4 shadow-lg",
-                        "bg-white border-green-950",
+                        "border-blue-300 bg-white",
                     )}
                 >
                     <div className="shrink-0 p-6 pb-4">
                         <Dialog.Title className="text-lg font-semibold">
                             {simplified ? "Create App Key" : "Create API Key"}
                         </Dialog.Title>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <div className="mt-1 text-sm text-gray-500">
                             {simplified ? (
-                                <>
-                                    🪷 Register your app for{" "}
-                                    <a
-                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-green-700 underline hover:text-green-900"
-                                    >
-                                        BYOP
-                                    </a>
-                                    <br />🪷 Let your users connect and use
-                                    their own pollen in your app.
-                                </>
+                                <ul className="list-disc space-y-1 pl-5">
+                                    <li>
+                                        For web apps, add the callback URL your
+                                        app will use after consent.
+                                    </li>
+                                    <li>
+                                        We return a scoped API key in the URL
+                                        fragment.
+                                    </li>
+                                    <li>
+                                        Use that key for API requests paid with
+                                        the user&apos;s Pollen.{" "}
+                                        <a
+                                            href={genDocsUrl(
+                                                "#tag/bring-your-own-pollen",
+                                            )}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-700 underline hover:text-blue-900"
+                                        >
+                                            Read the guide
+                                        </a>
+                                    </li>
+                                </ul>
                             ) : (
-                                "Access AI models for text, image, and audio generation."
+                                <p>
+                                    Access AI models for text, image, audio,
+                                    video, and embeddings.
+                                </p>
                             )}
-                        </p>
+                        </div>
                     </div>
 
                     <form
@@ -228,8 +261,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     className={cn(
                                         "flex-1 px-3 py-2 border rounded-lg",
                                         createdKey
-                                            ? `${keyTypeStyles.readOnlyInputClasses} font-mono text-xs`
-                                            : keyTypeStyles.editableInputClasses,
+                                            ? `${keyInputStyles.readOnlyInputClasses} font-mono text-xs`
+                                            : keyInputStyles.editableInputClasses,
                                     )}
                                     placeholder={
                                         createdKey ? "" : "Enter API key name"
@@ -245,7 +278,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Publishable keys (<code>pk_</code>)
                                     deprecated – create via{" "}
                                     <a
-                                        href="https://gen.pollinations.ai/docs#tag/-account/POST/account/keys"
+                                        href={genDocsUrl(
+                                            "#tag/-account/POST/account/keys",
+                                        )}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 underline hover:text-blue-800"
@@ -281,6 +316,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 <PublishableKeySettings
                                     redirectUris={redirectUris}
                                     onRedirectUrisChange={setRedirectUris}
+                                    earningsEnabled={earningsEnabled}
+                                    onEarningsEnabledChange={setEarningsEnabled}
                                     disabled={isSubmitting}
                                 />
                             )}
@@ -290,7 +327,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     value={keyPermissions}
                                     disabled={isSubmitting}
                                     inline
-                                    theme="violet"
                                 />
                             )}
                         </div>
@@ -299,7 +335,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             {!createdKey && (
                                 <Button
                                     type="button"
-                                    weight="outline"
+                                    color="red"
+                                    weight="light"
                                     onClick={() => setIsOpen(false)}
                                     className="disabled:opacity-50"
                                     disabled={isSubmitting}
@@ -307,30 +344,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     Cancel
                                 </Button>
                             )}
-                            <span
-                                title={
-                                    !createdKey
-                                        ? noModelsSelected
-                                            ? "Select at least one model"
-                                            : isMissingRedirectUris
-                                              ? "Add at least one redirect URI"
-                                              : undefined
-                                        : undefined
-                                }
-                            >
-                                <Button
-                                    type={createdKey ? "button" : "submit"}
-                                    onClick={
-                                        createdKey
-                                            ? handleCopyAndClose
-                                            : undefined
-                                    }
-                                    className="disabled:opacity-50"
-                                    disabled={isCreateDisabled}
+                            {createDisabledReason ? (
+                                <Tooltip
+                                    triggerAs="span"
+                                    content={createDisabledReason}
+                                    className="inline-flex"
                                 >
-                                    {getButtonText()}
-                                </Button>
-                            </span>
+                                    {submitButton}
+                                </Tooltip>
+                            ) : (
+                                submitButton
+                            )}
                         </div>
                     </form>
                 </Dialog.Content>

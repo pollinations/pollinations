@@ -24,7 +24,7 @@ runpodctl pod get <id>         # pod details
 
 ### Pod lqh6weiexk4sth — Klein 4B
 
-> Pod ID changes if recreated. Check `runpodctl pod list` and the `KLEIN_URL` env var (sops: `image.pollinations.ai/secrets/env.json`).
+> Pod ID changes if recreated. Check `runpodctl pod list` and the `KLEIN_URL` env var (sops: `gen.pollinations.ai/secrets/prod.vars.json`).
 
 - **GPU**: 1x RTX 3090 (24GB) | **Cost**: $0.22/hr (community cloud)
 - **SSH**: RunPod relay — interactive only: `ssh <pod-id>-<key-id>@ssh.runpod.io -i ~/.ssh/id_ed25519` (full command from dashboard "Connect" tab)
@@ -70,7 +70,7 @@ curl -s https://hsl3ksl31lvrcc-8765.proxy.runpod.net/generate -X POST \
 
 **Registry check (all workers):**
 ```bash
-curl -s http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register | python3 -m json.tool
+curl -s https://gen.pollinations.ai/register | python3 -m json.tool
 ```
 
 **Restart a worker:**
@@ -104,7 +104,6 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 - **Host**: `54.147.14.220`
 - **SSH**: `ssh -i ~/.ssh/enter-services-shared ubuntu@54.147.14.220`
 - **Image service**: port 16384
-- **Text service**: port 16385
 
 ### Staging
 
@@ -113,9 +112,9 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 
 ## Heartbeat Registration
 
-GPU workers send heartbeats to EC2 gateway:
-- **URL**: `http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register`
-- **Check registered**: `curl -s http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register`
+GPU workers send heartbeats to the gen worker registry:
+- **URL**: `https://gen.pollinations.ai/register`
+- **Check registered**: `curl -s https://gen.pollinations.ai/register`
 
 ## SSH Keys
 

@@ -4,10 +4,9 @@ import {
     type TierStatus,
 } from "@shared/tier-config.ts";
 import type { FC } from "react";
-import { Badge } from "../ui/badge.tsx";
 import { Card } from "../ui/card.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
-import { Panel } from "../ui/panel.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { TierExplanation } from "./tier-explanation";
 
 const APPEAL_URL =
@@ -51,12 +50,56 @@ const BetaNoticeText: FC = () => (
 // ─── Microbe: Account Under Review ──────────────────────────
 
 const MicrobeLimitedPanel: FC = () => (
-    <Panel color="gray">
+    <div className="flex flex-col gap-3">
+        <p className="text-sm text-gray-600 leading-relaxed">
+            We're verifying that your account belongs to a real person. This
+            usually takes a few days.
+        </p>
+        <p className="text-sm">
+            📧 Questions about your tier?{" "}
+            <a
+                href={APPEAL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-900 underline hover:text-gray-700 font-medium"
+            >
+                Contact us &rarr;
+            </a>
+        </p>
+        <BetaNoticeText />
+    </div>
+);
+
+// ─── Tier screen (spore + creator tiers) ─────────────────────
+
+const TierScreen: FC<{
+    tier: TierStatus;
+    active_tier_name: string;
+    pollen: number;
+}> = ({ tier, active_tier_name, pollen }) => {
+    const tierEmoji = getTierEmoji(tier);
+    const cardColor = getPanelColor(tier);
+
+    return (
         <div className="flex flex-col gap-3">
-            <p className="text-sm text-gray-600 leading-relaxed">
-                We're verifying that your account belongs to a real person. This
-                usually takes a few days.
+            <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-3xl font-bold text-gray-900">
+                    {tierEmoji} {active_tier_name}
+                </span>
+                <Tag
+                    color={getBadgeColor(tier)}
+                    size="lg"
+                    className="font-semibold"
+                >
+                    {pollen} pollen/hour
+                </Tag>
+            </div>
+
+            <p className="text-sm text-gray-500">
+                Pollen refills every hour{" "}
+                <InfoTip text="If a request streams over its estimate, your tier balance can go negative. Hourly refills bring it back up one increment at a time, capped at your tier." />
             </p>
+
             <p className="text-sm">
                 📧 Questions about your tier?{" "}
                 <a
@@ -68,62 +111,13 @@ const MicrobeLimitedPanel: FC = () => (
                     Contact us &rarr;
                 </a>
             </p>
+
+            <Card color={cardColor} className="!border-transparent">
+                <TierExplanation currentTier={tier} />
+            </Card>
+
             <BetaNoticeText />
         </div>
-    </Panel>
-);
-
-// ─── Tier screen (spore + creator tiers) ─────────────────────
-
-const TierScreen: FC<{
-    tier: TierStatus;
-    active_tier_name: string;
-    pollen: number;
-}> = ({ tier, active_tier_name, pollen }) => {
-    const tierEmoji = getTierEmoji(tier);
-    const panelColor = getPanelColor(tier);
-    const cardColor = panelColor;
-
-    return (
-        <Panel color={panelColor}>
-            <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-3xl font-bold text-gray-900">
-                        {tierEmoji} {active_tier_name}
-                    </span>
-                    <Badge
-                        color={getBadgeColor(tier)}
-                        size="lg"
-                        className="font-semibold"
-                    >
-                        {pollen} pollen/hour
-                    </Badge>
-                </div>
-
-                <p className="text-sm text-gray-500">
-                    Pollen refills every hour{" "}
-                    <InfoTip text="If a request costs slightly more than estimated, your balance may go briefly negative — the next refill covers the difference automatically." />
-                </p>
-
-                <p className="text-sm">
-                    📧 Questions about your tier?{" "}
-                    <a
-                        href={APPEAL_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-900 underline hover:text-gray-700 font-medium"
-                    >
-                        Contact us &rarr;
-                    </a>
-                </p>
-
-                <Card color={cardColor} className="!border-transparent">
-                    <TierExplanation currentTier={tier} />
-                </Card>
-
-                <BetaNoticeText />
-            </div>
-        </Panel>
     );
 };
 

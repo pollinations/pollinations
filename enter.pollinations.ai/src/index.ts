@@ -13,11 +13,11 @@ import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
+import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
-import { webhooksRoutes } from "./routes/webhooks.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
     return await createAuth(c.env, c.executionCtx).handler(c.req.raw);
@@ -32,7 +32,6 @@ export const api = new Hono<Env>()
     .route("/app-lookup", appLookupRoutes)
     .route("/account", accountRoutes)
     .route("/device", deviceRoutes)
-    .route("/webhooks", webhooksRoutes)
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
     .route("/model-stats", modelStatsRoutes);
@@ -50,7 +49,7 @@ function isApiDocsPath(path: string): boolean {
 function redirectLegacyDocs(c: Context<Env>): Response {
     const url = new URL(c.req.url);
     url.protocol = "https:";
-    url.hostname = "gen.pollinations.ai";
+    url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
     url.pathname = url.pathname.replace(/^\/api\/docs(?=\/|$)/, "/docs");
     url.pathname = stripTrailingSlash(url.pathname);
     return c.redirect(url.toString(), 301);
@@ -77,9 +76,21 @@ const app = new Hono<Env>()
             c.header("X-Robots-Tag", "noindex, nofollow");
         }
     })
+    .route("/api/docs", createDocsRoutes(api))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
     .all("/api/docs/*", redirectLegacyDocs)
+    .all("/api/generate/*", (c) => {
+        const url = new URL(c.req.url);
+        url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+        url.pathname = url.pathname.replace(/^\/api\/generate/, "");
+        c.header("Deprecation", "true");
+        c.header(
+            "Link",
+            '<https://gen.pollinations.ai>; rel="successor-version"',
+        );
+        return c.redirect(url.toString(), 308);
+    })
     .route("/api", api);
 
 app.notFound(async (c: Context<Env>) => {

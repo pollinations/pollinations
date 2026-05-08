@@ -15,17 +15,24 @@ const CONFIG_PATH = join(APP_DIR, "config.local.json");
 const VENDORS_PATH = join(APP_DIR, "secrets", "vendors.json");
 const INPUT_DIR = join(APP_DIR, "secrets", "input");
 const ENV_PATH = join(APP_DIR, "secrets", ".env");
-// Source-of-truth for provider/model API keys lives with the text service.
+// Source-of-truth for provider/model API keys lives with the gen worker.
 // Finance pulls from there so no key needs to be duplicated locally.
 const SHARED_MODEL_SECRETS_PATH = join(
     APP_DIR,
     "..",
     "..",
     "..",
-    "text.pollinations.ai",
+    "gen.pollinations.ai",
     "secrets",
-    "env.json",
+    "prod.vars.json",
 );
+const SHARED_MODEL_SECRET_EXCLUDE_KEYS = new Set([
+    // These are Bedrock runtime credentials for gen.pollinations.ai. Finance
+    // needs the local AWS CLI credential chain for Cost Explorer billing APIs.
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_SESSION_TOKEN",
+]);
 
 export function appDir() {
     return APP_DIR;
@@ -77,8 +84,17 @@ export async function copyIntoInput(sourcePath, destName) {
     return dest;
 }
 
+export function mergeSharedModelSecrets(data, target = process.env) {
+    for (const [key, value] of Object.entries(data)) {
+        if (typeof value !== "string") continue;
+        if (SHARED_MODEL_SECRET_EXCLUDE_KEYS.has(key)) continue;
+        if (target[key] === undefined) target[key] = value;
+    }
+    return target;
+}
+
 /**
- * Decrypt the text service's SOPS-encrypted env.json (the source of truth
+ * Decrypt the gen worker's SOPS-encrypted env.json (the source of truth
  * for provider/model API keys) and merge any keys not already set into the
  * given target. Used so we don't duplicate keys like DEEPINFRA_API_KEY,
  * ANTHROPIC_API_KEY, etc. into a separate finance .env file.
@@ -115,11 +131,7 @@ export async function loadSharedModelSecrets(target = process.env) {
         console.warn(`Shared model secrets is not valid JSON: ${e.message}`);
         return target;
     }
-    for (const [key, value] of Object.entries(data)) {
-        if (typeof value !== "string") continue;
-        if (target[key] === undefined) target[key] = value;
-    }
-    return target;
+    return mergeSharedModelSecrets(data, target);
 }
 
 /**

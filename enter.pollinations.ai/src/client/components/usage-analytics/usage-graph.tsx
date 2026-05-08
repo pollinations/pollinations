@@ -1,31 +1,30 @@
 import type { TierStatus } from "@shared/tier-config.ts";
 import { getTierColor, TIER_EMOJIS } from "@shared/tier-config.ts";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { Card } from "../ui/card.tsx";
-import { Panel } from "../ui/panel.tsx";
+import { cn } from "@/util.ts";
+import { DashboardSection } from "../layout/dashboard-section.tsx";
+import {
+    type DashboardTheme,
+    pillColors,
+    themeTokens,
+} from "../layout/dashboard-theme.ts";
+import { TabButton } from "../ui/tab-button.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
-import { FilterButton } from "./filter-button";
+import { MODALITY_META, type ModelModality } from "./constants";
 import { MultiSelect } from "./multi-select";
 import { PeriodPicker } from "./period-picker.tsx";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
-
-const TIER_PILL_CLASSES = {
-    gray: "bg-gray-200 text-gray-900",
-    blue: "bg-blue-200 text-blue-900",
-    green: "bg-green-200 text-green-900",
-    pink: "bg-pink-200 text-pink-900",
-    amber: "bg-amber-200 text-amber-900",
-    orange: "bg-orange-300 text-orange-950",
-    violet: "bg-violet-200 text-violet-950",
-} as const;
 
 type UsageGraphProps = {
     tier?: TierStatus;
     period: UsagePeriodSelection;
     onPeriodChange: (period: UsagePeriodSelection) => void;
     apiKeys: Array<{ id: string; name: string }>;
+    action?: ReactNode;
+    theme: DashboardTheme;
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
@@ -33,7 +32,10 @@ export const UsageGraph: FC<UsageGraphProps> = ({
     period,
     onPeriodChange,
     apiKeys,
+    action,
+    theme,
 }) => {
+    const tokens = themeTokens[theme];
     const [filters, setFilters] = useState<Omit<FilterState, "period">>({
         metric: "pollen",
         selectedKeyIds: [],
@@ -66,63 +68,39 @@ export const UsageGraph: FC<UsageGraphProps> = ({
     const tierEmoji =
         tier && tier !== "none" ? TIER_EMOJIS[tier] : TIER_EMOJIS.spore;
 
-    const tierColor =
-        TIER_PILL_CLASSES[
+    const tierPill =
+        pillColors[
             getTierColor(
                 (tier || "spore") as TierStatus,
-            ) as keyof typeof TIER_PILL_CLASSES
-        ] || TIER_PILL_CLASSES.blue;
+            ) as keyof typeof pillColors
+        ] ?? pillColors.blue;
 
     const showModelBreakdown =
         filters.selectedModels.length === 0 ||
         filters.selectedModels.length > 1;
 
     return (
-        <div className="flex flex-col gap-2">
-            <Panel color="amber">
-                {loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
-                            Fetching usage data…
-                        </p>
-                    </div>
-                )}
-                {error && !loading && (
-                    <Card
-                        color="red"
-                        bg="bg-red-50"
-                        className="flex items-center justify-center h-[180px] border-dashed"
-                    >
-                        <div className="text-center">
-                            <p className="text-sm text-red-500 font-medium">
-                                {error}
-                            </p>
-                            <button
-                                type="button"
-                                onClick={() => fetchUsage()}
-                                className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
-                            >
-                                Try again
-                            </button>
-                        </div>
-                    </Card>
-                )}
-                {!loading && !error && (
-                    <>
-                        {/* Filters Row 1: Period + Metric */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex flex-col gap-6">
+            <DashboardSection
+                title="Activity"
+                theme={theme}
+                framed
+                action={action}
+            >
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="flex flex-col gap-4">
                             <PeriodPicker
                                 value={period}
                                 onChange={onPeriodChange}
+                                theme={theme}
                             />
-                            <div className="flex gap-1.5 items-center">
-                                <span className="text-xs font-medium text-gray-500 mr-1">
-                                    Type
-                                </span>
+                            <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
                                 {(["requests", "pollen"] as Metric[]).map(
                                     (m) => (
-                                        <FilterButton
+                                        <TabButton
                                             key={m}
+                                            theme={theme}
                                             active={filters.metric === m}
                                             onClick={() =>
                                                 setFilters((f) => ({
@@ -134,14 +112,12 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                             {m === "requests"
                                                 ? "Request"
                                                 : "Pollen"}
-                                        </FilterButton>
+                                        </TabButton>
                                     ),
                                 )}
                             </div>
                         </div>
-
-                        {/* Filters Row 2: Dropdowns */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div className="flex flex-col items-stretch gap-2 [&>div]:justify-between [&_button]:min-w-[160px]">
                             <MultiSelect
                                 options={modelSelectOptions}
                                 selected={filters.selectedModels}
@@ -154,7 +130,9 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 placeholder="All"
                                 disabled={modelSelectOptions.length === 0}
                                 disabledText="None"
+                                align="end"
                                 label="Models"
+                                theme={theme}
                             />
                             <MultiSelect
                                 options={keySelectOptions}
@@ -170,61 +148,224 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 disabledText="None"
                                 align="end"
                                 label="API Keys"
+                                theme={theme}
                             />
                         </div>
+                    </div>
 
-                        {/* Chart */}
-                        <Card
-                            color="amber"
-                            bg="bg-white"
-                            className="relative mb-4"
-                        >
+                    <div className={cn("border-t pt-4", tokens.border.soft)}>
+                        {loading && (
+                            <div className="flex items-center justify-center h-[180px]">
+                                <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
+                                    Fetching usage data…
+                                </p>
+                            </div>
+                        )}
+                        {error && !loading && (
+                            <div className="flex items-center justify-center h-[180px]">
+                                <div className="text-center">
+                                    <p className="text-sm text-red-500 font-medium">
+                                        {error}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => fetchUsage()}
+                                        className="mt-2 text-xs text-red-600 hover:text-red-700 underline"
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {!loading && !error && (
                             <Chart
                                 data={chartData}
                                 metric={filters.metric}
                                 showModelBreakdown={showModelBreakdown}
                                 tier={tier}
                             />
-                        </Card>
+                        )}
+                    </div>
 
-                        {/* Stats */}
-                        <div className="space-y-1">
-                            <div>
-                                <span className="text-[10px] uppercase tracking-wide text-amber-500 font-bold">
-                                    Requests
-                                </span>
-                                <span className="ml-2 text-lg font-bold text-amber-950 tabular-nums">
-                                    {stats.totalRequests.toLocaleString()}
-                                </span>
+                    {!loading && !error && (
+                        <div
+                            className={cn(
+                                "flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x",
+                                tokens.border.soft,
+                                tokens.divide,
+                            )}
+                        >
+                            <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                                <UsageStatCard
+                                    label="Requests"
+                                    value={stats.totalRequests.toLocaleString()}
+                                    detail={
+                                        <ModalityPills
+                                            breakdown={stats.requestsByModality}
+                                            theme={theme}
+                                        />
+                                    }
+                                    theme={theme}
+                                />
                             </div>
-                            <div>
-                                <span className="text-[10px] uppercase tracking-wide text-amber-500 font-bold">
-                                    Pollen
-                                </span>
-                                <span className="ml-2 text-lg font-bold text-amber-950 tabular-nums">
-                                    {stats.totalPollen.toFixed(2)}
-                                </span>
-                                <span className="ml-2 inline-flex flex-wrap items-center gap-2 align-middle">
-                                    <span
-                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${tierColor}`}
-                                    >
-                                        {tierEmoji}{" "}
-                                        {stats.tierPollen.toFixed(2)}
-                                    </span>
-                                    <span className="inline-flex items-center rounded-full bg-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-900">
-                                        🪷 {stats.paidPollen.toFixed(2)}
-                                    </span>
-                                </span>
+                            <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                                <UsageStatCard
+                                    label="Pollen spent"
+                                    value={formatPollen(stats.totalPollen)}
+                                    detail={
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Tag
+                                                size="lg"
+                                                className={`font-semibold ${tierPill.bg} ${tierPill.text}`}
+                                            >
+                                                {tierEmoji}{" "}
+                                                {formatPollen(stats.tierPollen)}
+                                            </Tag>
+                                            <Tag
+                                                color="amber"
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                🪷{" "}
+                                                {formatPollen(stats.paidPollen)}
+                                            </Tag>
+                                        </div>
+                                    }
+                                    theme={theme}
+                                />
+                            </div>
+                            <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                                <UsageStatCard
+                                    label="Top model"
+                                    value={
+                                        <span className="text-xl leading-tight">
+                                            {stats.topModel?.label || "None"}
+                                        </span>
+                                    }
+                                    detail={
+                                        stats.topModel ? (
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Tag
+                                                    color={theme}
+                                                    size="lg"
+                                                    className={cn(
+                                                        "font-semibold",
+                                                        tokens.text.base,
+                                                    )}
+                                                    title={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
+                                                >
+                                                    <span aria-hidden="true">
+                                                        🔁
+                                                    </span>
+                                                    <span className="tabular-nums">
+                                                        {stats.topModel.requests.toLocaleString()}
+                                                    </span>
+                                                </Tag>
+                                                <Tag
+                                                    color="amber"
+                                                    size="lg"
+                                                    className="font-semibold"
+                                                    title={`${formatPollen(stats.topModel.pollen)} pollen`}
+                                                >
+                                                    <span aria-hidden="true">
+                                                        🪷
+                                                    </span>
+                                                    <span className="tabular-nums">
+                                                        {formatPollen(
+                                                            stats.topModel
+                                                                .pollen,
+                                                        )}
+                                                    </span>
+                                                </Tag>
+                                            </div>
+                                        ) : (
+                                            "No model usage yet"
+                                        )
+                                    }
+                                    theme={theme}
+                                />
                             </div>
                         </div>
+                    )}
+                </div>
+            </DashboardSection>
+            {!loading && !error && (
+                <p className="text-[10px] text-gray-400">
+                    Data refreshes every hour. Times shown in UTC.
+                </p>
+            )}
+        </div>
+    );
+};
 
-                        {/* Info */}
-                        <p className="text-[10px] text-gray-400 mt-4">
-                            Data refreshes every hour. Times shown in UTC.
-                        </p>
-                    </>
+const formatPollen = (value: number): string => {
+    if (value === 0) return "0";
+    if (Math.abs(value) < 0.01) return value.toPrecision(2);
+    return value.toFixed(2);
+};
+
+const UsageStatCard: FC<{
+    label: string;
+    value: ReactNode;
+    detail?: ReactNode;
+    theme: DashboardTheme;
+}> = ({ label, value, detail, theme }) => {
+    const tokens = themeTokens[theme];
+    return (
+        <div className="text-sm">
+            <div
+                className={cn(
+                    "text-[10px] uppercase tracking-wide font-bold",
+                    tokens.text.label,
                 )}
-            </Panel>
+            >
+                {label}
+            </div>
+            <div
+                className={cn(
+                    "mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums",
+                    tokens.text.strong,
+                )}
+            >
+                {value}
+            </div>
+            {detail && (
+                <div className={cn("mt-2 text-xs", tokens.text.muted)}>
+                    {detail}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const ModalityPills: FC<{
+    breakdown: Record<ModelModality, number>;
+    theme: DashboardTheme;
+}> = ({ breakdown, theme }) => {
+    const tokens = themeTokens[theme];
+    const entries = (Object.keys(MODALITY_META) as ModelModality[])
+        .map((modality) => ({ modality, count: breakdown[modality] }))
+        .filter(({ count }) => count > 0);
+    if (entries.length === 0) return null;
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            {entries.map(({ modality, count }) => {
+                const { emoji, label } = MODALITY_META[modality];
+                return (
+                    <Tag
+                        key={modality}
+                        color={theme}
+                        size="lg"
+                        className={cn("font-semibold", tokens.text.base)}
+                        title={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
+                    >
+                        <span aria-hidden="true">{emoji}</span>
+                        <span className="tabular-nums">
+                            {count.toLocaleString()}
+                        </span>
+                    </Tag>
+                );
+            })}
         </div>
     );
 };

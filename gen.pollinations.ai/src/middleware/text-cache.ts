@@ -1,7 +1,7 @@
 /**
  * Text cache middleware for gen.pollinations.ai
- * Implements cache lookup after access checks.
- * Adapted from text.pollinations.ai/cloudflare-cache
+ * Implements cache lookup before access checks.
+ * Adapted from gen.pollinations.ai/cloudflare-cache
  */
 
 import { createMiddleware } from "hono/factory";
@@ -20,7 +20,7 @@ type TextCacheEnv = {
 
 /**
  * Text cache middleware
- * - Checks cache after auth/balance checks
+ * - Checks cache before auth/balance checks so cache hits can remain public
  * - Returns immediately on cache HIT
  * - On MISS: continues to auth/rate limiting/origin
  * - After origin response: caches it (handles both streaming and non-streaming)

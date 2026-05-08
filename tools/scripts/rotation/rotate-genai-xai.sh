@@ -34,9 +34,14 @@ source "$SCRIPT_DIR/_pr-deploy.sh"
 source "$SCRIPT_DIR/_load-admin-secrets.sh"
 
 REPO="pollinations/pollinations"
-IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
+GEN_SOPS_FILES=(
+    "$REPO_ROOT/gen.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/prod.vars.json"
+)
+GEN_SOPS_READ="${GEN_SOPS_FILES[0]}"
 MGMT_API="https://management-api.x.ai"
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 HEALTH_MODEL="grok-imagine"  # routes via xAI
@@ -66,12 +71,14 @@ if [ -z "$XAI_MANAGEMENT_KEY" ] || [ -z "$XAI_TEAM_ID" ]; then
     exit 1
 fi
 
-if [ ! -f "$IMAGE_SOPS" ]; then
-    error "SOPS file not found: $IMAGE_SOPS"
-    exit 1
-fi
+for f in "${GEN_SOPS_FILES[@]}"; do
+    if [ ! -f "$f" ]; then
+        error "SOPS file not found: $f"
+        exit 1
+    fi
+done
 
-OLD_KEY=$(sops -d "$IMAGE_SOPS" | jq -r '.XAI_API_KEY')
+OLD_KEY=$(sops -d "$GEN_SOPS_READ" | jq -r '.XAI_API_KEY')
 if [ -z "$OLD_KEY" ] || [ "$OLD_KEY" = "null" ]; then
     error "Could not read XAI_API_KEY from SOPS."
     exit 1
@@ -131,7 +138,7 @@ if $DRY_RUN; then
     echo
     log "Plan:"
     echo "  1. Create new xAI key with cloned ACLs (old $OLD_KEY_ID stays valid)"
-    echo "  2. Update SOPS: image.pollinations.ai/env.json"
+    echo "  2. Update SOPS: gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json"
     echo "  3. Open PR: rotate/xai-<date> → main, auto-merge"
     echo "  4. Push main → production (admin)"
     echo "  5. Watch $DEPLOY_WORKFLOW"
@@ -177,8 +184,10 @@ log "New key: ${NEW_KEY:0:4}... (ID: $NEW_KEY_ID)"
 #######################################
 section "Updating SOPS"
 
-sops --set "[\"XAI_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$IMAGE_SOPS"
-log "  image.pollinations.ai/env.json updated"
+for f in "${GEN_SOPS_FILES[@]}"; do
+    sops --set "[\"XAI_API_KEY\"] $(printf '%s' "$NEW_KEY" | jq -Rs .)" "$f"
+    log "  $(basename "$f") updated"
+done
 
 #######################################
 # 3. PR + deploy
@@ -187,7 +196,7 @@ section "Opening PR and deploying"
 
 BRANCH="rotate/xai-$(date +%Y%m%d-%H%M%S)"
 git checkout -b "$BRANCH"
-git add "$IMAGE_SOPS"
+git add "${GEN_SOPS_FILES[@]}"
 git commit -m "rotate: xAI API key"
 
 open_pr_and_merge "$BRANCH" \
@@ -248,4 +257,4 @@ echo ""
 log "Old key: ${OLD_KEY:0:4}... (deleted, ID: $OLD_KEY_ID)"
 log "New key: ${NEW_KEY:0:4}... (ID: $NEW_KEY_ID)"
 echo ""
-log "SOPS + production + EC2 image service now using the new key."
+log "SOPS + production + gen image routes now using the new key."

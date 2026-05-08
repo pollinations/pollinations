@@ -112,7 +112,7 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo systemctl restart image-polli
 | **Provider** | RunPod (RTX 3090, community cloud) |
 | **SSH** | RunPod relay — interactive only: `ssh <pod-id>-<key-id>@ssh.runpod.io -i ~/.ssh/id_ed25519` (get full command from dashboard "Connect" tab) |
 | **Auth** | `x-backend-token` header with `PLN_GPU_TOKEN` |
-| **Config** | `KLEIN_URL` in `image.pollinations.ai/secrets/env.json` (sops); fallback in `image.pollinations.ai/src/models/fluxKleinModel.ts` |
+| **Config** | `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json` (sops); fallback in `image.pollinations.ai/src/models/fluxKleinModel.ts` |
 
 **Health check:**
 ```bash
@@ -131,9 +131,9 @@ Wait ~30s for model load, then re-check health.
 
 Symptom: dashboard banner "*This server has recently suffered a network outage*"; control plane reports RUNNING but HTTPS proxy / SSH / ICMP all unreachable. Restart/reset reschedules onto the same broken host. Recreate on a different host:
 
-1. `runpodctl pod create --name klein-worker-v2 --image runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404 --gpu-id "NVIDIA GeForce RTX 3090" --gpu-count 1 --container-disk-in-gb 20 --volume-in-gb 100 --volume-mount-path /workspace --ports "8000/http,22/tcp" --cloud-type COMMUNITY --env "$(jq -nc --arg t "$(sops -d image.pollinations.ai/secrets/env.json | jq -r .PLN_GPU_TOKEN)" '{PLN_GPU_TOKEN:$t}')"`
+1. `runpodctl pod create --name klein-worker-v2 --image runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404 --gpu-id "NVIDIA GeForce RTX 3090" --gpu-count 1 --container-disk-in-gb 20 --volume-in-gb 100 --volume-mount-path /workspace --ports "8000/http,22/tcp" --cloud-type COMMUNITY --env "$(jq -nc --arg t "$(sops -d gen.pollinations.ai/secrets/prod.vars.json | jq -r .PLN_GPU_TOKEN)" '{PLN_GPU_TOKEN:$t}')"`
 2. SSH via dashboard relay; install deps + drop in `image.pollinations.ai/klein-runpod/handler.py`; start with `nohup python3 -u /workspace/handler.py > /workspace/klein.log 2>&1 &`. Model download is ~24 GB (~5–10 min).
-3. Update `KLEIN_URL` in `image.pollinations.ai/secrets/env.json` (sops) and the hardcoded fallback in `fluxKleinModel.ts` to the new `<pod-id>-8000.proxy.runpod.net`. Deploy `.env` to EC2 image service and restart `image-pollinations.service`.
+3. Update `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json` (sops) and the hardcoded fallback in `fluxKleinModel.ts` to the new `<pod-id>-8000.proxy.runpod.net`. Deploy `.env` to EC2 image service and restart `image-pollinations.service`.
 4. Verify end-to-end via `gen.pollinations.ai/image/test?model=klein`, then delete the old pod.
 
 Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and `restart.sh` live on the pod volume only (not baked into a Docker image despite `image.pollinations.ai/klein-runpod/Dockerfile`). The pod volume is destroyed on terminate.

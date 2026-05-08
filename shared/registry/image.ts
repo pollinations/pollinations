@@ -205,6 +205,7 @@ export const IMAGE_SERVICES = {
         provider: "openai",
         brand: "OpenAI",
         category: "image",
+        paidOnly: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -316,6 +317,31 @@ export const IMAGE_SERVICES = {
             "Seedance Pro-Fast - BytePlus video generation (better prompt adherence)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
+    },
+    "seedance-2.0": {
+        aliases: ["seedance-2"],
+        modelId: "seedance-2.0",
+        provider: "replicate",
+        brand: "ByteDance",
+        category: "video",
+        paidOnly: true,
+        // non_video_in tier @ 720p; see provider-billing/providers/replicate.md
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.18,
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.27,
+            },
+        ],
+        description:
+            "Seedance 2.0 - ByteDance multimodal video gen via Replicate (720p, native audio)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
@@ -465,7 +491,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Grok Imagine - xAI official image generation",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-imagine-pro": {
@@ -489,7 +515,7 @@ export const IMAGE_SERVICES = {
         ],
         description:
             "Grok Imagine Pro - xAI official pro image generation (Aurora)",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
     "grok-video-pro": {
@@ -650,7 +676,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.08, // per sec
             },
         ],
-        description: "Nova Reel - Bedrock Video Generation (6-60s, 720p)",
+        description: "Nova Reel - Bedrock Video Generation (6-120s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

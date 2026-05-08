@@ -1,9 +1,9 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
-import { Badge } from "../ui/badge.tsx";
+import { Tag } from "../ui/tag.tsx";
 import {
-    calculateForBalance,
     calculatePerPollen,
+    canAffordModel,
     TOP_UP_TOOLTIP,
 } from "./calculations.ts";
 import {
@@ -45,15 +45,15 @@ export const ModelRow: FC<ModelRowProps> = ({
     const showAlpha = isAlpha(model.name);
 
     const isSignedIn = packBalance !== undefined;
-    const paidBalance = packBalance ?? 0;
-    const totalBalance = (tierBalance ?? 0) + paidBalance;
-    const effectiveBalance = showPaidOnly ? paidBalance : totalBalance;
-
     const genPerPollen = calculatePerPollen(model);
-    const balanceRequests = isSignedIn
-        ? calculateForBalance(model, effectiveBalance)
-        : null;
-    const isDisabled = isSignedIn && balanceRequests === "0";
+    const isDisabled =
+        isSignedIn &&
+        !canAffordModel(
+            model,
+            tierBalance ?? 0,
+            packBalance ?? 0,
+            showPaidOnly,
+        );
     const inputPriceBadges = groupPriceBadges([
         {
             prices: [model.promptTextPrice],
@@ -77,6 +77,12 @@ export const ModelRow: FC<ModelRowProps> = ({
             prices: [model.promptImagePrice],
             emoji: "🖼️",
             subEmojis: ["🖼️"],
+            perToken: model.perToken,
+        },
+        {
+            prices: [model.promptVideoPrice],
+            emoji: "🎬",
+            subEmojis: ["🎬"],
             perToken: model.perToken,
         },
     ]);
@@ -180,7 +186,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                     >
                         <span>{model.name}</span>
                         {copied && (
-                            <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+                            <span className="rounded-md bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
                                 copied
                             </span>
                         )}
@@ -193,7 +199,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             {modalityIcons.length > 0 && (
                                 <Tooltip content={modalityLabel}>
-                                    <Badge
+                                    <Tag
                                         color="gray"
                                         size="sm"
                                         className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
@@ -201,12 +207,12 @@ export const ModelRow: FC<ModelRowProps> = ({
                                         {modalityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
-                                    </Badge>
+                                    </Tag>
                                 </Tooltip>
                             )}
                             {capabilityIcons.length > 0 && (
                                 <Tooltip content={capabilityLabel}>
-                                    <Badge
+                                    <Tag
                                         color="gray"
                                         size="sm"
                                         className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
@@ -214,19 +220,19 @@ export const ModelRow: FC<ModelRowProps> = ({
                                         {capabilityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
-                                    </Badge>
+                                    </Tag>
                                 </Tooltip>
                             )}
                             {showNew && (
-                                <Badge color="green" size="sm">
+                                <Tag color="green" size="sm">
                                     NEW
-                                </Badge>
+                                </Tag>
                             )}
                             {showAlpha && (
                                 <Tooltip content="Alpha model — experimental, may be unstable">
-                                    <Badge color="orange" size="sm">
+                                    <Tag color="orange" size="sm">
                                         ALPHA
-                                    </Badge>
+                                    </Tag>
                                 </Tooltip>
                             )}
                             {showPaidOnly && (
@@ -234,12 +240,12 @@ export const ModelRow: FC<ModelRowProps> = ({
                                     content={
                                         isDisabled
                                             ? TOP_UP_TOOLTIP
-                                            : "This model uses purchased pollen only."
+                                            : "This model uses paid balance only."
                                     }
                                 >
-                                    <Badge color="purple" size="sm">
+                                    <Tag color="purple" size="sm">
                                         PAID
-                                    </Badge>
+                                    </Tag>
                                 </Tooltip>
                             )}
                         </div>
@@ -249,29 +255,7 @@ export const ModelRow: FC<ModelRowProps> = ({
 
             {/* Per pollen — fixed width */}
             <div className="w-[90px] text-center shrink-0">
-                {isSignedIn ? (
-                    <Tooltip
-                        content={
-                            <span className="text-xs">
-                                {isDisabled
-                                    ? TOP_UP_TOOLTIP
-                                    : `≈ ${balanceRequests} with current balance`}
-                            </span>
-                        }
-                    >
-                        <span
-                            className={cn(
-                                "inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full cursor-help",
-                            )}
-                        >
-                            {genPerPollen}
-                        </span>
-                    </Tooltip>
-                ) : (
-                    <span className="inline-block text-sm font-medium bg-teal-200 text-gray-900 px-2.5 py-0.5 rounded-full">
-                        {genPerPollen}
-                    </span>
-                )}
+                <Tag color="teal">{genPerPollen}</Tag>
             </div>
 
             {/* Input prices — fixed width */}

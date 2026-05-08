@@ -14,7 +14,7 @@
 # 5. Next rotation regenerates what was previously active.
 #
 # Resources managed:
-#   east   — AZURE_MYCELI_PROD_API_KEY         (text.pollinations.ai)
+#   east   — AZURE_MYCELI_PROD_API_KEY         (gen.pollinations.ai)
 #   sweden — AZURE_MYCELI_PROD_SWEDEN_API_KEY  (text + image)
 #   safety — AZURE_CONTENT_SAFETY_API_KEY       (image.pollinations.ai)
 
@@ -37,9 +37,13 @@ source "$SCRIPT_DIR/_log.sh"
 source "$SCRIPT_DIR/_pr-deploy.sh"
 
 REPO="pollinations/pollinations"
-IMAGE_SOPS="$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-TEXT_SOPS="$REPO_ROOT/text.pollinations.ai/secrets/env.json"
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+GEN_SOPS_FILES=(
+    "$REPO_ROOT/gen.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/prod.vars.json"
+)
+GEN_SOPS_READ="${GEN_SOPS_FILES[0]}"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 # Per-resource health check models (substring expected in .model)
@@ -69,20 +73,13 @@ find_resource_group() {
 # update SOPS. Echoes a line per action taken.
 rotate_resource() {
     local label=$1
-    local endpoint_key=$2
+    local resource_name=$2
     local api_key_name=$3
     local sops_source=$4
     shift 4
     local sops_targets=("$@")
 
     section "Resource: $label"
-
-    local endpoint
-    endpoint=$(sops -d "$sops_source" | jq -r ".$endpoint_key")
-    if [ -z "$endpoint" ] || [ "$endpoint" = "null" ]; then
-        error "Could not read $endpoint_key from SOPS."
-        return 1
-    fi
 
     local current_key
     current_key=$(sops -d "$sops_source" | jq -r ".$api_key_name")
@@ -91,15 +88,13 @@ rotate_resource() {
         return 1
     fi
 
-    local resource_name resource_group
-    resource_name=$(extract_resource_name "$endpoint")
+    local resource_group
     resource_group=$(find_resource_group "$resource_name") || return 1
     if [ -z "$resource_group" ]; then
         error "Resource $resource_name not visible in current az subscription ($(az account show --query id -o tsv 2>/dev/null || echo unknown))."
         error "If it lives elsewhere, run: az account set --subscription <id>"
         return 1
     fi
-    log "  endpoint: $endpoint"
     log "  resource: $resource_name (rg: $resource_group)"
 
     local keys_json
@@ -219,31 +214,36 @@ fi
 # Process resources
 #######################################
 
+# Resource names are hardcoded in gen worker source (createAndReturnImages.ts,
+# azureFluxKontextModel.ts, text/configs/modelConfigs.ts) — not in SOPS, so
+# the rotation script reads them from here.
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "east" ]; then
     rotate_resource \
         "Azure OpenAI East US (AZURE_MYCELI_PROD)" \
-        "AZURE_MYCELI_PROD_ENDPOINT" \
+        "myceli-prod-eastus2" \
         "AZURE_MYCELI_PROD_API_KEY" \
-        "$TEXT_SOPS" \
-        "$TEXT_SOPS"
+        "$GEN_SOPS_READ" \
+        "${GEN_SOPS_FILES[@]}"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "sweden" ]; then
     rotate_resource \
         "Azure OpenAI Sweden (AZURE_MYCELI_PROD_SWEDEN)" \
-        "AZURE_MYCELI_PROD_SWEDEN_ENDPOINT" \
+        "myceli-prod-swedencentral" \
         "AZURE_MYCELI_PROD_SWEDEN_API_KEY" \
-        "$TEXT_SOPS" \
-        "$TEXT_SOPS" "$IMAGE_SOPS"
+        "$GEN_SOPS_READ" \
+        "${GEN_SOPS_FILES[@]}"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "safety" ]; then
+    SAFETY_ENDPOINT=$(sops -d "$GEN_SOPS_READ" | jq -r '.AZURE_CONTENT_SAFETY_ENDPOINT')
+    SAFETY_RESOURCE=$(extract_resource_name "$SAFETY_ENDPOINT")
     rotate_resource \
         "Azure Content Safety" \
-        "AZURE_CONTENT_SAFETY_ENDPOINT" \
+        "$SAFETY_RESOURCE" \
         "AZURE_CONTENT_SAFETY_API_KEY" \
-        "$IMAGE_SOPS" \
-        "$IMAGE_SOPS"
+        "$GEN_SOPS_READ" \
+        "${GEN_SOPS_FILES[@]}"
 fi
 
 if $DRY_RUN; then
@@ -261,7 +261,7 @@ section "Opening PR and deploying"
 
 BRANCH="rotate/azure-$(date +%Y%m%d-%H%M%S)"
 git checkout -b "$BRANCH"
-git add "$TEXT_SOPS" "$IMAGE_SOPS"
+git add "${GEN_SOPS_FILES[@]}"
 git commit -m "rotate: Azure Cognitive Services keys ($TARGET)"
 
 open_pr_and_merge "$BRANCH" \
@@ -336,4 +336,4 @@ echo ""
 log "Resources rotated: $TARGET"
 log "Previously-active slot stays valid in Azure until next rotation replaces it."
 echo ""
-log "SOPS + production + EC2 services now using the freshly-regenerated slot."
+log "SOPS + production + gen worker now using the freshly-regenerated slot."

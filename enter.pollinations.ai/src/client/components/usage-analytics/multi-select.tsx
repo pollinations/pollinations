@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/util.ts";
 import { useAutoHideScrollbar } from "../../hooks/use-auto-hide-scrollbar.ts";
+import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
 
 type MultiSelectProps = {
     options: { value: string; label: string }[];
@@ -12,6 +13,7 @@ type MultiSelectProps = {
     disabledText?: string;
     align?: "start" | "end";
     label?: string;
+    theme: DashboardTheme;
 };
 
 export const MultiSelect: FC<MultiSelectProps> = ({
@@ -23,7 +25,9 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledText,
     align = "start",
     label,
+    theme,
 }) => {
+    const tokens = themeTokens[theme];
     const [open, setOpen] = useState(false);
     const [openDirection, setOpenDirection] = useState<"up" | "down">("up");
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
@@ -100,7 +104,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     return (
         <div ref={ref} className="relative group flex items-center gap-2">
             {label && (
-                <span className="text-xs font-medium text-gray-500">
+                <span className={cn("text-xs font-medium", tokens.text.muted)}>
                     {label}
                 </span>
             )}
@@ -109,23 +113,30 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 onClick={handleToggle}
                 disabled={disabled}
                 className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full",
-                    "border transition-all duration-200 min-w-[140px]",
+                    "inline-flex min-h-8 min-w-[140px] items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
                     disabled
-                        ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
+                        ? cn(
+                              "cursor-not-allowed opacity-60",
+                              tokens.border.subtle,
+                              tokens.bg.subtle,
+                          )
                         : open
-                          ? "bg-amber-950 border-amber-950"
-                          : "bg-gray-100 border-gray-100 hover:bg-gray-200",
+                          ? cn(tokens.border.idle, tokens.bg.active)
+                          : cn(
+                                tokens.border.idle,
+                                tokens.bg.idle,
+                                tokens.bg.hover,
+                            ),
                 )}
             >
                 <span
                     className={cn(
                         "truncate flex-1 text-left",
                         disabled
-                            ? "text-gray-400"
+                            ? tokens.text.softer
                             : open
-                              ? "text-amber-100"
-                              : "text-gray-600",
+                              ? tokens.text.strong
+                              : tokens.text.base,
                     )}
                 >
                     {displayText}
@@ -133,13 +144,15 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 <svg
                     className={cn(
                         "w-3 h-3 transition-transform",
-                        open ? "text-amber-100 rotate-180" : "text-gray-400",
+                        open
+                            ? cn("rotate-180", tokens.text.strong)
+                            : tokens.text.soft,
                     )}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    aria-hidden="true"
                 >
-                    <title>Toggle dropdown</title>
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -149,14 +162,15 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 </svg>
             </button>
             {disabled && (
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100]">
                     No items available
                 </span>
             )}
             {open && !disabled && (
                 <div
                     className={cn(
-                        "min-w-[320px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden",
+                        "min-w-[320px] overflow-hidden rounded-lg border bg-white shadow-lg z-50",
+                        tokens.border.idle,
                         !dropdownStyle.position && "absolute",
                         !dropdownStyle.position &&
                             (openDirection === "up"
@@ -169,7 +183,10 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 >
                     <div
                         ref={scrollAreaRef}
-                        className="max-h-64 overflow-y-auto overflow-x-hidden scrollbar-subtle scrollbar-theme-amber"
+                        className={cn(
+                            "max-h-64 overflow-y-auto overflow-x-hidden scrollbar-subtle",
+                            tokens.scrollbar,
+                        )}
                     >
                         <button
                             type="button"
@@ -177,16 +194,24 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                             className={cn(
                                 "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                 isAllSelected
-                                    ? "bg-amber-950 text-amber-100 font-medium"
-                                    : "text-gray-600 hover:bg-gray-100",
+                                    ? cn(
+                                          tokens.bg.active,
+                                          tokens.text.strong,
+                                          "font-medium",
+                                      )
+                                    : cn(tokens.text.base, tokens.bg.soft),
                             )}
                         >
                             <span
                                 className={cn(
                                     "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                     isAllSelected
-                                        ? "bg-amber-950 border-amber-950 text-amber-100"
-                                        : "border-gray-300",
+                                        ? cn(
+                                              tokens.bg.active,
+                                              tokens.border.idle,
+                                              tokens.text.strong,
+                                          )
+                                        : tokens.border.idle,
                                 )}
                             >
                                 {isAllSelected && "✓"}
@@ -203,16 +228,26 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                     className={cn(
                                         "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                         isChecked
-                                            ? "bg-amber-950 text-amber-100"
-                                            : "text-gray-600 hover:bg-gray-100",
+                                            ? cn(
+                                                  tokens.bg.active,
+                                                  tokens.text.strong,
+                                              )
+                                            : cn(
+                                                  tokens.text.base,
+                                                  tokens.bg.soft,
+                                              ),
                                     )}
                                 >
                                     <span
                                         className={cn(
                                             "w-4 h-4 rounded border flex items-center justify-center text-xs flex-shrink-0",
                                             isChecked
-                                                ? "bg-amber-950 border-amber-950 text-amber-100"
-                                                : "border-gray-300",
+                                                ? cn(
+                                                      tokens.bg.active,
+                                                      tokens.border.idle,
+                                                      tokens.text.strong,
+                                                  )
+                                                : tokens.border.idle,
                                         )}
                                     >
                                         {isChecked && "✓"}

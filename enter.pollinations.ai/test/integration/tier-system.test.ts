@@ -1,6 +1,11 @@
 import { createExecutionContext, env, SELF } from "cloudflare:test";
-import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
+import {
+    atomicDeductUserBalance,
+    getUserBalances,
+} from "@shared/billing/deduction.ts";
+import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
@@ -68,10 +73,10 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Single-bucket deduction: tier absorbs first 3 (0.4-3=-2.6), going negative;
-            // remaining [2,4,5,2,3,1]=17 deducted from pack (first positive bucket)
-            expect(afterUsage[0]?.tierBalance).toBeCloseTo(-2.6, 4);
-            expect(afterUsage[0]?.packBalance).toBe(33);
+            // Binary deduction: each charge is larger than tier, so pack pays
+            // the full 20 pollen and tier remains available for smaller calls.
+            expect(afterUsage[0]?.tierBalance).toBeCloseTo(0.4, 4);
+            expect(afterUsage[0]?.packBalance).toBeCloseTo(30, 4);
 
             // Trigger tier refill
             await triggerTierRefill();
@@ -87,9 +92,9 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            // Tier should be refilled (additive: MIN(-2.6 + 0.4, 0.4) = -2.2), pack unchanged
-            expect(afterRefill[0]?.tierBalance).toBeCloseTo(-2.2, 4);
-            expect(afterRefill[0]?.packBalance).toBe(33);
+            // Tier is already at its hourly floor and pack is unchanged.
+            expect(afterRefill[0]?.tierBalance).toBeCloseTo(0.4, 4);
+            expect(afterRefill[0]?.packBalance).toBeCloseTo(30, 4);
             expect(afterRefill[0]?.lastTierGrant).toBeGreaterThan(
                 Date.now() - 5000,
             );
@@ -149,84 +154,6 @@ describe("Tier System End-to-End", () => {
 
                 expect(result[0]?.tierBalance).toBe(user.expectedPollen);
             }
-        });
-    });
-
-    describe("Pack Purchase via Webhook", () => {
-        test("Polar webhook correctly updates pack balance", async ({
-            sessionToken,
-            mocks,
-        }) => {
-            await mocks.enable("polar", "tinybird");
-            const db = drizzle(env.DB);
-
-            // Get the authenticated user ID from session
-            const sessionResponse = await SELF.fetch(
-                "http://localhost:3000/api/auth/get-session",
-                {
-                    headers: {
-                        cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
-            );
-            const session = await sessionResponse.json();
-            const userId = session.user.id;
-
-            // Check initial balance
-            const initialBalance = await db
-                .select({ packBalance: userTable.packBalance })
-                .from(userTable)
-                .where(sql`${userTable.id} = ${userId}`)
-                .limit(1);
-
-            const startBalance = initialBalance[0]?.packBalance ?? 0;
-
-            // Simulate Polar webhook for pack purchase
-            const webhookPayload = {
-                type: "benefit_grant.created",
-                data: {
-                    id: "grant_123",
-                    orderId: "order_456", // Important: orderId indicates pack purchase
-                    customer: {
-                        id: "polar_customer_123",
-                        externalId: userId,
-                        email: "test@example.com",
-                    },
-                    benefit: {
-                        type: "meter_credit",
-                        properties: {
-                            units: 100, // 100 pollen pack
-                        },
-                    },
-                },
-            };
-
-            // Use test mode for webhook (bypasses complex signature validation)
-            const payload = JSON.stringify(webhookPayload);
-
-            // Send webhook with test header
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/webhooks/polar",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-test-webhook": "true", // Bypass signature validation in test
-                    },
-                    body: payload,
-                },
-            );
-
-            expect(response.status).toBe(200);
-
-            // Verify pack balance was updated
-            const updatedBalance = await db
-                .select({ packBalance: userTable.packBalance })
-                .from(userTable)
-                .where(sql`${userTable.id} = ${userId}`)
-                .limit(1);
-
-            expect(updatedBalance[0]?.packBalance).toBe(startBalance + 100);
         });
     });
 
@@ -332,7 +259,7 @@ describe("Tier System End-to-End", () => {
     });
 
     describe("Tier Migration Integrity", () => {
-        test("users migrated from Polar maintain their tier and get hourly refills", async () => {
+        test("users migrated from legacy tier state maintain their tier and get hourly refills", async () => {
             const db = drizzle(env.DB);
             const _executionContext = createExecutionContext();
 
@@ -396,7 +323,7 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = 'migrated-active'`)
                 .limit(1);
 
-            expect(activeUser[0]?.tierBalance).toBe(0.8); // Nectar tier (additive: MIN(15 + 0.8, 0.8) = 0.8, capped)
+            expect(activeUser[0]?.tierBalance).toBe(15); // Above tier floor, preserved
             expect(activeUser[0]?.packBalance).toBe(200); // Unchanged
 
             const depletedUser = await db
@@ -449,14 +376,14 @@ describe("Tier System End-to-End", () => {
             // Run hourly refill
             await triggerTierRefill();
 
-            // User should get flower tier amount (0.4), not seed (0.15)
+            // User keeps balance above the new flower tier floor.
             const result = await db
                 .select({ tierBalance: userTable.tierBalance })
                 .from(userTable)
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            expect(result[0]?.tierBalance).toBe(0.4);
+            expect(result[0]?.tierBalance).toBe(2);
         });
 
         test("tier balance is consumed before pack balance", async () => {
@@ -484,7 +411,7 @@ describe("Tier System End-to-End", () => {
                     },
                 });
 
-            // Use 30 pollen — tier is first positive bucket, full amount deducted there
+            // Use 30 pollen — tier cannot cover the full charge, so pack pays it.
             await atomicDeductUserBalance(db, userId, 30);
 
             const balance = await db
@@ -496,8 +423,54 @@ describe("Tier System End-to-End", () => {
                 .where(sql`${userTable.id} = ${userId}`)
                 .limit(1);
 
-            expect(balance[0]?.tierBalance).toBe(-29); // 1 - 30 (single bucket, goes negative)
-            expect(balance[0]?.packBalance).toBe(100); // Untouched
+            expect(balance[0]?.tierBalance).toBe(1);
+            expect(balance[0]?.packBalance).toBe(70);
+        });
+
+        test("regular Azure model puts overage on positive pack when tier cannot cover actual price", async () => {
+            const db = drizzle(env.DB);
+            const userId = `azure-depletion-${crypto.randomUUID()}`;
+            const modelResolved = "openai-fast";
+            const model = getModelDefinition(modelResolved);
+
+            expect(model.provider).toBe("azure");
+            expect(model.paidOnly).not.toBe(true);
+
+            await db.insert(userTable).values({
+                id: userId,
+                email: `${userId}@test.com`,
+                name: "Azure Depletion User",
+                tier: "spore",
+                tierBalance: 0.01,
+                packBalance: 0.01,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            const totalPrice = 0.025;
+
+            const deduct = () =>
+                handleBalanceDeduction({
+                    db,
+                    isBilledUsage: true,
+                    totalPrice,
+                    userId,
+                    modelResolved,
+                });
+
+            await deduct();
+            let balance = await getUserBalances(db, userId);
+            expect(balance.tierBalance).toBeCloseTo(0.01, 10);
+            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
+
+            await deduct();
+            balance = await getUserBalances(db, userId);
+            expect(balance.tierBalance).toBeCloseTo(-0.015, 10);
+            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
+
+            await deduct();
+            balance = await getUserBalances(db, userId);
+            expect(balance.tierBalance).toBeCloseTo(-0.04, 10);
+            expect(balance.packBalance).toBeCloseTo(-0.015, 10);
         });
     });
 });

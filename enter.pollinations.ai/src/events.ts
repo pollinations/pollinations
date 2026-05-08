@@ -147,13 +147,6 @@ async function retryWithBackoff(
     await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
-// Type for Polar event ingestion (used by test mocks)
-export type PolarEvent = {
-    external_customer_id: string;
-    name: string;
-    metadata: Record<string, unknown>;
-};
-
 export function flattenBalances(balances: Record<string, number> | null) {
     if (!balances) return {};
     return Object.fromEntries(

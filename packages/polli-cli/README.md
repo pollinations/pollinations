@@ -30,6 +30,7 @@ Every command is agent-friendly:
 ```bash
 npm install -g @pollinations_ai/cli     # installs the `polli` binary
 polli auth login                         # device-flow via enter.pollinations.ai
+printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
 Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai).
@@ -71,12 +72,15 @@ polli docs --open            # open in browser
 polli keys list
 polli keys create --name mybot --budget 100
 polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback
+polli keys create --name myapp --type publishable --redirect-uri https://myapp.com/callback --earnings
 polli keys revoke <id>
 
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 ```
+
+Publishable app keys default developer earnings off; pass `--earnings` to enable them.
 
 ## Links
 

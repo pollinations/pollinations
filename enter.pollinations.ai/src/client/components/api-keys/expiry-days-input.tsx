@@ -26,7 +26,7 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     onChange,
     disabled = false,
     inline = false,
-    theme = "green",
+    theme = "blue",
 }) => {
     const {
         input: { classes: inputClasses },

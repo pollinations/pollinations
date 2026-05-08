@@ -5,13 +5,23 @@
  */
 
 import type { Logger } from "@logtape/logtape";
+import { parseSafeFeatures } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { removeUnset } from "@/util.ts";
 
 const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
+const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+const CACHED_HEADER_PREFIXES = ["x-safety-"];
 
-export function generateCacheKey(url: URL): string {
+function hasActiveSafety(value: string | null | undefined): boolean {
+    return parseSafeFeatures(value).size > 0;
+}
+
+export function generateCacheKey(url: URL, safeHeader?: string | null): string {
     const normalizedUrl = new URL(url);
+    const hasQuerySafe = normalizedUrl.searchParams.has("safe");
+    const usesSafety = hasActiveSafety(normalizedUrl.searchParams.get("safe"));
+    const usesHeaderSafety = !hasQuerySafe && hasActiveSafety(safeHeader);
     const params = Array.from(normalizedUrl.searchParams.entries()).sort(
         ([keyA], [keyB]) => keyA.localeCompare(keyB),
     );
@@ -21,6 +31,12 @@ export function generateCacheKey(url: URL): string {
         if (!EXCLUDED_PARAMS.includes(key)) {
             normalizedUrl.searchParams.append(key, value);
         }
+    }
+    if (safeHeader !== undefined && safeHeader !== null && !hasQuerySafe) {
+        normalizedUrl.searchParams.append("__safe_header", safeHeader);
+    }
+    if (usesSafety || usesHeaderSafety) {
+        normalizedUrl.searchParams.append("__safety", SAFETY_CACHE_VERSION);
     }
 
     const fullPath = normalizedUrl.pathname + normalizedUrl.search;
@@ -45,6 +61,7 @@ export function setHttpMetadataHeaders(
     c: Context,
     httpMetadata: R2HTTPMetadata | undefined,
     defaultContentType: string,
+    customMetadata?: Record<string, string>,
 ) {
     if (httpMetadata) {
         for (const [key, value] of Object.entries(httpMetadata)) {
@@ -55,6 +72,29 @@ export function setHttpMetadataHeaders(
     } else {
         c.header("Content-Type", defaultContentType);
     }
+
+    for (const [key, value] of Object.entries(customMetadata ?? {})) {
+        if (key.startsWith("header_")) {
+            c.header(key.slice("header_".length), value);
+        }
+    }
+}
+
+function prepareCustomMetadata(response: Response): Record<string, string> {
+    const metadata: Record<string, string> = {
+        cachedAt: new Date().toISOString(),
+    };
+    for (const [name, value] of response.headers.entries()) {
+        const lowerName = name.toLowerCase();
+        if (
+            CACHED_HEADER_PREFIXES.some((prefix) =>
+                lowerName.startsWith(prefix),
+            )
+        ) {
+            metadata[`header_${lowerName}`] = value;
+        }
+    }
+    return metadata;
 }
 
 type MediaCacheEnv = {
@@ -65,26 +105,39 @@ type MediaCacheEnv = {
     };
 };
 
-export async function cacheResponse<TEnv extends MediaCacheEnv>(
+export function cacheMediaResponse<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
-): Promise<boolean> {
-    try {
-        const buffer = await c.res.clone().arrayBuffer();
-        await bucket.put(cacheKey, buffer, {
-            httpMetadata: removeUnset({
-                contentType:
-                    c.res.headers.get("content-type") || defaultContentType,
-            } as R2HTTPMetadata),
-            customMetadata: {
-                cachedAt: new Date().toISOString(),
-            },
-        });
-        return true;
-    } catch (error) {
-        c.get("log").error("Error caching response: {error}", { error });
-        return false;
-    }
+    response: Response,
+): void {
+    c.executionCtx.waitUntil(
+        response
+            .clone()
+            .arrayBuffer()
+            .then((body) => {
+                if (body.byteLength === 0) {
+                    c.get("log").warn(
+                        "Skipping empty media cache write for {cacheKey}",
+                        { cacheKey },
+                    );
+                    return null;
+                }
+
+                return bucket.put(cacheKey, body, {
+                    httpMetadata: removeUnset({
+                        contentType:
+                            response.headers.get("content-type") ||
+                            defaultContentType,
+                    } as R2HTTPMetadata),
+                    customMetadata: prepareCustomMetadata(response),
+                });
+            })
+            .catch((error) => {
+                c.get("log").error("Error caching response: {error}", {
+                    error,
+                });
+            }),
+    );
 }

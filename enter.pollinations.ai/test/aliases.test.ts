@@ -1,3 +1,4 @@
+import { AUDIO_SERVICES } from "@shared/registry/audio";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
@@ -28,6 +29,13 @@ test.for(
 test.for(
     serviceAliasTestCases(IMAGE_SERVICES),
 )("Image service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
+    serviceAliasTestCases(AUDIO_SERVICES),
+)("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
     expect(resolved).toBe(shouldResolveTo);
 });
@@ -91,6 +99,12 @@ test("model without explicit price falls back to cost for both values", () => {
     const price = calculatePrice("flux", usage);
 
     expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
+});
+
+test("GPT-5.5 requires paid balance", () => {
+    const definition = getModelDefinition("gpt-5.5");
+
+    expect(definition.paidOnly).toBe(true);
 });
 
 test("DeepSeek V4 models are paid-only and billed at provider cost", () => {

@@ -26,17 +26,21 @@ const genAliases = [
     "middleware/model.ts",
     "middleware/rate-limit-durable.ts",
     "middleware/rate-limit-edge.ts",
+    "middleware/safety.ts",
     "middleware/text-cache.ts",
     "middleware/track.ts",
     "middleware/validator.ts",
+    "schemas/embeddings.ts",
     "schemas/image.ts",
     "schemas/text.ts",
     "util",
     "util.ts",
     "utils/api-docs.ts",
+    "utils/bedrock-guardrail.ts",
     "utils/generation-access.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
+    "utils/safety-features.ts",
     "utils/text-cache.ts",
 ];
 
@@ -48,9 +52,24 @@ const baseConfig = defineConfig({
                 replacement: `${genSrc}${path}`,
             })),
             {
+                find: /^@\/embeddings\/(.*)$/,
+                replacement: `${genSrc}embeddings/$1`,
+            },
+            {
+                find: /^@\/text\/(.*)$/,
+                replacement: `${genSrc}text/$1`,
+            },
+            {
+                find: /^@\/image\/(.*)$/,
+                replacement: `${genSrc}image/$1`,
+            },
+            {
                 find: /^@shared\/(.*)$/,
                 replacement: `${sharedSrc}$1`,
             },
+            // piexif-ts package.json points "module"/"browser" at non-existent files;
+            // pin resolution to the published UMD bundle that actually ships.
+            { find: /^piexif-ts$/, replacement: "piexif-ts/dist/piexif.js" },
         ],
     },
 });
@@ -81,6 +100,8 @@ export default defineWorkersConfig(async ({ mode }) => {
                             TEST_MIGRATIONS: migrations,
                             TEST_VCR_MODE:
                                 env.TEST_VCR_MODE || "replay-or-record",
+                            BYTEDANCE_API_KEY:
+                                env.BYTEDANCE_API_KEY || "test-key",
                         },
                         serviceBindings: {
                             ENTER: async (request: Request) => {

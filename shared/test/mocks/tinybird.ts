@@ -5,8 +5,6 @@ import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
 type TinybirdGenerationEvent = Omit<
     SelectGenerationEvent,
     | "eventStatus"
-    | "polarDeliveryAttempts"
-    | "polarDeliveredAt"
     | "tinybirdDeliveryAttempts"
     | "tinybirdDeliveredAt"
     | "createdAt"

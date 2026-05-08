@@ -1,8 +1,11 @@
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
-import { cn } from "@/util.ts";
-import { Panel } from "../ui/panel.tsx";
+import { genDocsUrl } from "../../config.ts";
+import { DashboardSection } from "../layout/dashboard-section.tsx";
+import { Card } from "../ui/card.tsx";
+import { IconButton } from "../ui/icon-button.tsx";
+import { Tag } from "../ui/tag.tsx";
 import { AccountBadge } from "./account-badge.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { DeleteConfirmation } from "./delete-confirmation.tsx";
@@ -11,6 +14,23 @@ import { KeyDisplay } from "./key-display.tsx";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
+
+function isPublishableKey(apiKey: ApiKey): boolean {
+    return apiKey.metadata?.keyType === "publishable";
+}
+
+function isAppKey(apiKey: ApiKey): boolean {
+    if (!isPublishableKey(apiKey)) return false;
+
+    const redirectUris = apiKey.metadata?.redirectUris;
+    const hasRedirectUris =
+        Array.isArray(redirectUris) &&
+        redirectUris.some(
+            (uri) => typeof uri === "string" && uri.trim().length > 0,
+        );
+
+    return hasRedirectUris || apiKey.metadata?.earningsEnabled === true;
+}
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
@@ -36,250 +56,254 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
+    const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
+    const sortedAppKeys = sortedKeys.filter(isAppKey);
+
+    function renderKeyCard(apiKey: ApiKey) {
+        const isPublishable = isPublishableKey(apiKey);
+        const isApp = isAppKey(apiKey);
+        const plaintextKey = apiKey.metadata?.plaintextKey as
+            | string
+            | undefined;
+        const redirectUrisMeta = Array.isArray(apiKey.metadata?.redirectUris)
+            ? (apiKey.metadata?.redirectUris as string[])
+            : [];
+        const primaryRedirectUri = redirectUrisMeta[0] || "";
+        const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
+        const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
+
+        return (
+            <Card
+                key={apiKey.id}
+                color="blue"
+                className="!border-transparent transition-colors hover:bg-white/90"
+            >
+                <div className="flex items-center gap-2 mb-2">
+                    <Tag color="blue" size="sm">
+                        {isApp
+                            ? "🖥️ App"
+                            : isPublishable
+                              ? "🌐 Publishable"
+                              : "🔒 Secret"}
+                    </Tag>
+                    <span className="text-sm font-medium truncate">
+                        {apiKey.name}
+                    </span>
+                    <span className="flex-1" />
+                    {isPublishable && plaintextKey ? (
+                        <KeyDisplay
+                            fullKey={plaintextKey}
+                            start={apiKey.start ?? ""}
+                        />
+                    ) : (
+                        <span className="font-mono text-xs text-gray-500 shrink-0">
+                            {apiKey.start}...
+                        </span>
+                    )}
+                    <div className="flex gap-1 shrink-0 ml-2 items-center">
+                        <IconButton
+                            color="blue"
+                            title="Edit key"
+                            onClick={() => setEditingKey(apiKey)}
+                        >
+                            ✎
+                        </IconButton>
+                        <IconButton
+                            color="red"
+                            title="Delete key"
+                            onClick={() => setDeleteId(apiKey.id)}
+                            className="text-lg"
+                        >
+                            ×
+                        </IconButton>
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 text-xs">
+                    <span>
+                        <span className="text-gray-400">Created: </span>
+                        <span className="text-gray-500">
+                            {formatDistanceToNowStrict(apiKey.createdAt, {
+                                addSuffix: false,
+                                locale: shortLocale,
+                            })}
+                        </span>
+                    </span>
+                    <span>
+                        <span className="text-gray-400">Used: </span>
+                        <span className="text-gray-500">
+                            {apiKey.lastRequest
+                                ? formatDistanceToNowStrict(
+                                      new Date(apiKey.lastRequest),
+                                      {
+                                          addSuffix: false,
+                                          locale: shortLocale,
+                                      },
+                                  )
+                                : "never"}
+                        </span>
+                    </span>
+                    {isPublishable && primaryRedirectUri && (
+                        <span className="inline-flex min-w-0 items-center gap-1">
+                            <span className="text-gray-400">Redirect: </span>
+                            <a
+                                href={primaryRedirectUri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-blue-600"
+                            >
+                                {primaryRedirectUri.replace(/^https?:\/\//, "")}
+                            </a>
+                            {extraRedirectUriCount > 0 && (
+                                <span
+                                    className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700"
+                                    title={redirectUrisMeta
+                                        .slice(1)
+                                        .map((uri) =>
+                                            uri.replace(/^https?:\/\//, ""),
+                                        )
+                                        .join("\n")}
+                                >
+                                    +{extraRedirectUriCount}
+                                </span>
+                            )}
+                        </span>
+                    )}
+                    {isApp && (
+                        <span
+                            className={`rounded px-2 py-0.5 font-medium ${
+                                earningsEnabled
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-500"
+                            }`}
+                            title="Developer earnings"
+                        >
+                            Earnings {earningsEnabled ? "on" : "off"}
+                        </span>
+                    )}
+                    {!isApp && (
+                        <>
+                            <LimitsBadge
+                                expiresAt={
+                                    apiKey.expiresAt
+                                        ? new Date(apiKey.expiresAt)
+                                        : null
+                                }
+                                pollenBudget={apiKey.pollenBalance}
+                            />
+                            <span className="flex items-center gap-1">
+                                <span className="text-gray-400">
+                                    Permissions:
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <ModelsBadge
+                                        permissions={apiKey.permissions}
+                                    />
+                                    <AccountBadge
+                                        permissions={apiKey.permissions}
+                                    />
+                                </span>
+                            </span>
+                        </>
+                    )}
+                </div>
+            </Card>
+        );
+    }
 
     return (
         <>
-            <div className="flex flex-col gap-2">
-                <div className="flex flex-col sm:flex-row justify-between gap-3">
-                    <h2 className="font-bold flex-1">Keys</h2>
-                    <div className="flex gap-3">
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel="🖥️ + App Key"
-                            triggerColor="blue"
-                            simplified
-                        />
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel="🔑 + API Key"
-                            triggerColor="blue"
-                        />
-                    </div>
-                </div>
-                <Panel color="blue">
+            <div className="flex flex-col gap-6">
+                <DashboardSection title="API" theme="blue" framed>
                     <div className="flex flex-col gap-3">
-                        {!visibleKeys.length && (
-                            <div className="rounded-xl bg-white/80 p-6 text-center">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <p className="min-w-0 flex-1 text-sm text-gray-600">
+                                For your own backend, scripts, and CLIs — billed
+                                to your account.
+                            </p>
+                            <ApiKeyDialog
+                                onSubmit={onCreate}
+                                onComplete={() => {}}
+                                triggerLabel="🔑 + API Key"
+                            />
+                        </div>
+                        {!sortedApiKeys.length && (
+                            <Card
+                                color="blue"
+                                className="!border-transparent p-6 text-center"
+                            >
                                 <p className="text-2xl mb-2">🔑</p>
                                 <p className="font-semibold text-gray-900 text-lg mb-2">
-                                    Create your first key
-                                </p>
-                                <p className="text-sm text-gray-600 mb-1">
-                                    <strong>🔒 API Key</strong> — access models
-                                    with your pollen
+                                    Create your first API key
                                 </p>
                                 <p className="text-sm text-gray-600">
-                                    <strong>🖥️ App Key</strong> — users bring
-                                    their own pollen into your app
+                                    Use API keys for your own private
+                                    server-side integrations.
                                 </p>
-                            </div>
+                            </Card>
                         )}
-                        {visibleKeys.length > 0 && (
-                            <div className="rounded-xl bg-amber-50/80 p-4">
-                                <p className="font-semibold text-amber-900 mb-1">
-                                    🪷 Let your users bring their own Pollen
+                        {sortedApiKeys.map(renderKeyCard)}
+                    </div>
+                </DashboardSection>
+                <DashboardSection title="App" theme="blue" framed>
+                    <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 flex-1 text-sm text-gray-600">
+                                <p>
+                                    For apps where users sign in with their own
+                                    Pollinations account and spend their own
+                                    Pollen.
                                 </p>
-                                <p className="text-sm text-amber-800">
-                                    Register an <strong>App Key</strong> so
-                                    users can sign in with their own
-                                    Pollinations account — web apps, chatbots,
-                                    CLIs, anything. Track usage and activity in
-                                    your app.{" "}
+                                <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                                    <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                                        New!
+                                    </span>
+                                    Turn on developer earnings. Users are billed
+                                    25% extra, credited to your wallet.{" "}
                                     <a
-                                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                                        href={genDocsUrl(
+                                            "#tag/bring-your-own-pollen",
+                                        )}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-amber-700 hover:text-amber-900 underline underline-offset-2"
+                                        className="font-medium text-blue-700 hover:text-blue-900"
                                     >
-                                        Read the guide
+                                        <span className="underline underline-offset-2">
+                                            Read the guide
+                                        </span>
+                                        <span
+                                            aria-hidden="true"
+                                            className="no-underline ml-0.5"
+                                        >
+                                            ↗
+                                        </span>
                                     </a>
                                 </p>
                             </div>
+                            <ApiKeyDialog
+                                onSubmit={onCreate}
+                                onComplete={() => {}}
+                                triggerLabel="🖥️ + Add App"
+                                simplified
+                            />
+                        </div>
+                        {!sortedAppKeys.length && (
+                            <Card
+                                color="blue"
+                                className="!border-transparent p-6 text-center"
+                            >
+                                <p className="text-2xl mb-2">🖥️</p>
+                                <p className="font-semibold text-gray-900 text-lg mb-2">
+                                    Create your first app key
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    Use app keys when your users bring their own
+                                    Pollinations account.
+                                </p>
+                            </Card>
                         )}
-                        {sortedKeys.map((apiKey) => {
-                            const isPublishable =
-                                apiKey.metadata?.keyType === "publishable";
-                            const plaintextKey = apiKey.metadata
-                                ?.plaintextKey as string | undefined;
-                            const redirectUrisMeta = Array.isArray(
-                                apiKey.metadata?.redirectUris,
-                            )
-                                ? (apiKey.metadata?.redirectUris as string[])
-                                : [];
-                            const primaryRedirectUri =
-                                redirectUrisMeta[0] || "";
-                            const isAppKey =
-                                isPublishable && !!primaryRedirectUri;
-
-                            return (
-                                <div
-                                    key={apiKey.id}
-                                    className="bg-white/80 rounded-xl p-4 transition-colors hover:bg-white/90"
-                                >
-                                    {/* Row 1: Type, Name, Key, Actions */}
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span
-                                            className={cn(
-                                                "px-2 py-0.5 rounded text-xs font-medium shrink-0",
-                                                isPublishable
-                                                    ? primaryRedirectUri
-                                                        ? "bg-amber-100 text-amber-700"
-                                                        : "bg-blue-100 text-blue-700"
-                                                    : "bg-purple-100 text-purple-700",
-                                            )}
-                                        >
-                                            {isPublishable
-                                                ? primaryRedirectUri
-                                                    ? "🖥️ App"
-                                                    : "🌐 Publishable"
-                                                : "🔒 Secret"}
-                                        </span>
-                                        <span
-                                            className="text-sm font-medium truncate"
-                                            title={apiKey.name ?? undefined}
-                                        >
-                                            {apiKey.name}
-                                        </span>
-                                        <span className="flex-1" />
-                                        {isPublishable && plaintextKey ? (
-                                            <KeyDisplay
-                                                fullKey={plaintextKey}
-                                                start={apiKey.start ?? ""}
-                                            />
-                                        ) : (
-                                            <span className="font-mono text-xs text-gray-500 shrink-0">
-                                                {apiKey.start}...
-                                            </span>
-                                        )}
-                                        <div className="flex gap-1 shrink-0 ml-2 items-center">
-                                            <button
-                                                type="button"
-                                                className="w-6 h-6 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
-                                                onClick={() =>
-                                                    setEditingKey(apiKey)
-                                                }
-                                                title="Edit key"
-                                            >
-                                                ✎
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="w-6 h-6 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
-                                                onClick={() =>
-                                                    setDeleteId(apiKey.id)
-                                                }
-                                                title="Delete key"
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {/* Row 2: Stats and Permissions */}
-                                    <div className="flex flex-wrap items-center gap-4 text-xs">
-                                        <span title="Created">
-                                            <span className="text-gray-400">
-                                                Created:{" "}
-                                            </span>
-                                            <span className="text-gray-500">
-                                                {formatDistanceToNowStrict(
-                                                    apiKey.createdAt,
-                                                    {
-                                                        addSuffix: false,
-                                                        locale: shortLocale,
-                                                    },
-                                                )}
-                                            </span>
-                                        </span>
-                                        <span title="Last used">
-                                            <span className="text-gray-400">
-                                                Used:{" "}
-                                            </span>
-                                            <span className="text-gray-500">
-                                                {apiKey.lastRequest
-                                                    ? formatDistanceToNowStrict(
-                                                          new Date(
-                                                              apiKey.lastRequest,
-                                                          ),
-                                                          {
-                                                              addSuffix: false,
-                                                              locale: shortLocale,
-                                                          },
-                                                      )
-                                                    : "never"}
-                                            </span>
-                                        </span>
-                                        {isPublishable &&
-                                            primaryRedirectUri && (
-                                                <span
-                                                    title={primaryRedirectUri}
-                                                >
-                                                    <span className="text-gray-400">
-                                                        Redirect:{" "}
-                                                    </span>
-                                                    <a
-                                                        href={
-                                                            primaryRedirectUri
-                                                        }
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-blue-600 hover:underline truncate max-w-[200px] inline-block align-bottom"
-                                                    >
-                                                        {primaryRedirectUri.replace(
-                                                            /^https?:\/\//,
-                                                            "",
-                                                        )}
-                                                    </a>
-                                                </span>
-                                            )}
-                                        {!isAppKey && (
-                                            <>
-                                                <LimitsBadge
-                                                    expiresAt={
-                                                        apiKey.expiresAt
-                                                            ? new Date(
-                                                                  apiKey.expiresAt,
-                                                              )
-                                                            : null
-                                                    }
-                                                    pollenBudget={
-                                                        apiKey.pollenBalance
-                                                    }
-                                                />
-                                                <span className="flex items-center gap-1">
-                                                    <span className="text-gray-400">
-                                                        Permissions:
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <ModelsBadge
-                                                            permissions={
-                                                                apiKey.permissions
-                                                            }
-                                                        />
-                                                        <AccountBadge
-                                                            permissions={
-                                                                apiKey.permissions
-                                                            }
-                                                        />
-                                                    </span>
-                                                </span>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        {sortedAppKeys.map(renderKeyCard)}
                     </div>
-                    {apiKeys.some(
-                        (k) => k.metadata?.keyType === "publishable",
-                    ) && (
-                        <p className="text-sm font-medium text-gray-900 mt-3">
-                            ⚠️ <strong>Publishable keys</strong> are in beta —
-                            for production apps, use secret keys.
-                        </p>
-                    )}
-                </Panel>
+                </DashboardSection>
             </div>
             <DeleteConfirmation
                 deleteId={deleteId}

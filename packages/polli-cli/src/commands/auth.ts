@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { gen } from "../lib/api.js";
 import {
     clearCredentials,
@@ -13,6 +13,12 @@ import {
     printSuccess,
 } from "../lib/output.js";
 import { flavor } from "../lib/quotes.js";
+
+type LoginOptions = {
+    browser?: boolean;
+    token?: string;
+    withToken?: boolean;
+};
 
 interface ProfileResponse {
     githubUsername?: string | null;
@@ -75,6 +81,43 @@ function storeKey(key: string): void {
     saveCredentials({ apiKey: key, keyType });
 }
 
+function assertApiKey(key: string): string {
+    const trimmed = key.trim();
+    if (!trimmed.startsWith("pk_") && !trimmed.startsWith("sk_")) {
+        printError("Invalid key format. Must start with pk_ or sk_");
+        process.exit(1);
+    }
+    return trimmed;
+}
+
+async function readStdinToken(): Promise<string> {
+    if (process.stdin.isTTY) {
+        printError(
+            "--with-token expects a key on stdin, e.g. printf '%s' \"$KEY\" | polli auth login --with-token",
+        );
+        process.exit(1);
+    }
+
+    let text = "";
+    for await (const chunk of process.stdin) {
+        text += chunk;
+    }
+    return text.trim();
+}
+
+async function authenticateWithKey(key: string): Promise<void> {
+    storeKey(key);
+    printSuccess("Authenticated. Key stored.");
+
+    const label = await fetchProfileLabel(key);
+    if (label) {
+        printSuccess(label);
+    } else {
+        printInfo("Key stored but could not verify. It may still be valid.");
+    }
+    printInfo(flavor.login);
+}
+
 async function fetchProfileLabel(key: string): Promise<string | null> {
     const profile = await gen<ProfileResponse>("/account/profile", {
         apiKey: key,
@@ -85,28 +128,23 @@ async function fetchProfileLabel(key: string): Promise<string | null> {
 
 const login = new Command("login")
     .description("Authenticate with Pollinations")
-    .option("--token <key>", "API key (pk_ or sk_) for direct auth")
+    .addOption(
+        new Option(
+            "--token <key>",
+            "API key (pk_ or sk_) for direct auth",
+        ).hideHelp(),
+    )
+    .option("--with-token", "Read an existing API key from stdin")
     .option("--no-browser", "Print URL instead of opening browser")
-    .action(async (opts) => {
+    .action(async (opts: LoginOptions) => {
         if (opts.token) {
-            const key = opts.token as string;
-            if (!key.startsWith("pk_") && !key.startsWith("sk_")) {
-                printError("Invalid key format. Must start with pk_ or sk_");
-                process.exit(1);
-            }
+            await authenticateWithKey(assertApiKey(opts.token));
+            return;
+        }
 
-            storeKey(key);
-            printSuccess("Authenticated. Key stored.");
-
-            const label = await fetchProfileLabel(key);
-            if (label) {
-                printSuccess(label);
-            } else {
-                printInfo(
-                    "Key stored but could not verify. It may still be valid.",
-                );
-            }
-            printInfo(flavor.login);
+        if (opts.withToken) {
+            const key = assertApiKey(await readStdinToken());
+            await authenticateWithKey(key);
             return;
         }
 
@@ -116,14 +154,16 @@ const login = new Command("login")
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                client_id: "pk_NgBAArhUeGvSRFba",
+                client_id: "pk_VZF38YW4tQX36SEn",
                 scope: "generate keys usage",
             }),
         }).catch((err) => {
             printError(
                 `Failed to start device flow: ${err instanceof Error ? err.message : err}`,
             );
-            printInfo("Fallback: polli auth login --token <your-key>");
+            printInfo(
+                "Fallback: printf '%s' '<your-key>' | polli auth login --with-token",
+            );
             printInfo("Get your key at: https://enter.pollinations.ai");
             process.exit(1);
         });
@@ -140,17 +180,13 @@ const login = new Command("login")
         printInfo(`\nYour code: ${deviceResp.user_code}\n`);
 
         const url = deviceResp.verification_uri_complete;
+        printInfo(`Open this URL in your browser:\n  ${url}`);
+
         if (opts.browser !== false) {
             const open = (await import("open")).default;
-            await open(url).then(
-                () =>
-                    printInfo(
-                        "Browser opened. Sign in with GitHub and approve the code.",
-                    ),
-                () => printInfo(`Open this URL in your browser:\n  ${url}`),
+            await open(url).catch(() =>
+                printInfo("Could not open browser automatically."),
             );
-        } else {
-            printInfo(`Open this URL in your browser:\n  ${url}`);
         }
 
         printInfo("Waiting for approval...");

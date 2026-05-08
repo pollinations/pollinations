@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
+import { SafeSchema } from "./safety.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -126,6 +127,10 @@ const ChatCompletionRequestMessageContentPartSchema = z
             .passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
+
+export type MessageContentPart = z.infer<
+    typeof ChatCompletionRequestMessageContentPartSchema
+>;
 
 // Thinking (provider-specific; requires strict_openai_compliance=false)
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
@@ -317,13 +322,14 @@ export const CreateChatCompletionRequestSchema = z
             .optional(),
         stream: z.boolean().nullable().optional().default(false),
         stream_options: ChatCompletionStreamOptionsSchema,
+        safe: SafeSchema,
         thinking: ThinkingSchema,
         reasoning_effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
             .optional(),
         thinking_budget: z.number().int().min(0).optional(),
-        temperature: z.number().min(0).max(2).nullable().optional().default(1),
-        top_p: z.number().min(0).max(1).nullable().optional().default(1),
+        temperature: z.number().min(0).max(2).nullable().optional(),
+        top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
         parallel_tool_calls: z.boolean().optional().default(true),
@@ -408,21 +414,21 @@ export const CompletionUsageSchema = z
                     .number()
                     .int()
                     .nonnegative()
-                    .optional(),
-                audio_tokens: z.number().int().nonnegative().optional(),
-                reasoning_tokens: z.number().int().nonnegative().optional(),
+                    .nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                reasoning_tokens: z.number().int().nonnegative().nullish(),
                 rejected_prediction_tokens: z
                     .number()
                     .int()
                     .nonnegative()
-                    .optional(),
+                    .nullish(),
             })
             .nullish(),
         prompt_tokens: z.number().int().nonnegative(),
         prompt_tokens_details: z
             .object({
-                audio_tokens: z.number().int().nonnegative().optional(),
-                cached_tokens: z.number().int().nonnegative().optional(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                cached_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
         total_tokens: z.number().int().nonnegative(),
@@ -638,6 +644,7 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, nologo, enhance, safe, etc.
     .meta({ $id: "CreateImageRequest" });
@@ -684,6 +691,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        safe: SafeSchema,
     })
     .passthrough()
     .meta({ $id: "CreateImageEditRequest" });

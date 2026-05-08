@@ -5,7 +5,7 @@ const tagColors = {
     gray: "bg-gray-200 text-gray-900",
     green: "bg-green-200 text-gray-900",
     pink: "bg-pink-200 text-gray-900",
-    amber: "bg-amber-200 text-amber-950",
+    amber: "bg-amber-200 text-amber-900",
     orange: "bg-orange-300 text-orange-950",
     blue: "bg-blue-100 text-blue-700",
     purple: "bg-purple-200 text-gray-900",

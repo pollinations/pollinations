@@ -25,12 +25,14 @@ function createTestApp(consumePollen: (amount: number) => Promise<void>) {
                 throw new Error("user should not be required in this test");
             },
             requireModelAccess: () => {},
-            requireKeyBudget: () => {},
         });
         c.set("balance", {
             requirePositiveBalance: async () => {},
             requirePaidBalance: async () => {},
-            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            getBalance: async () => ({
+                tierBalance: 1,
+                packBalance: 0,
+            }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {

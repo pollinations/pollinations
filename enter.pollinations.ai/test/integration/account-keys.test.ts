@@ -30,7 +30,7 @@ describe("Account Key Management API", () => {
             expect(data.type).toBe("secret");
         });
 
-        test("should create a publishable app key with redirect URIs", async ({
+        test("should create a publishable app key with earnings off by default", async ({
             sessionToken,
         }) => {
             const response = await SELF.fetch(
@@ -56,6 +56,37 @@ describe("Account Key Management API", () => {
             expect(data.metadata.redirectUris).toEqual([
                 "https://cli.example/callback",
             ]);
+            expect(data.metadata.earningsEnabled).toBe(false);
+        });
+
+        test("should create a publishable app key with earnings enabled", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "test-pub-key-earnings",
+                        type: "publishable",
+                        redirectUris: ["https://cli-earnings.example/callback"],
+                        earningsEnabled: true,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.key.startsWith("pk_")).toBe(true);
+            expect(data.type).toBe("publishable");
+            expect(data.metadata.redirectUris).toEqual([
+                "https://cli-earnings.example/callback",
+            ]);
+            expect(data.metadata.earningsEnabled).toBe(true);
         });
 
         test("should create key with permissions and budget", async ({

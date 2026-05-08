@@ -17,11 +17,21 @@ type GaugeSegmentProps = {
     percentage: number;
     value: number;
     label: string;
-    color: keyof typeof pillColors;
+    color: keyof typeof gaugeSegmentColors;
     tooltipText: string;
     position: "left" | "right";
     offset?: number;
 };
+
+const gaugeSegmentColors = {
+    ...pillColors,
+} as const;
+
+const BALANCE_DISPLAY_EPSILON = 0.0001;
+
+function normalizeDisplayBalance(value: number): number {
+    return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
+}
 
 const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     percentage,
@@ -32,7 +42,7 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
     position,
     offset = 0,
 }) => {
-    const { bg: bgColor, text: textColor } = pillColors[color];
+    const { bg: bgColor, text: textColor } = gaugeSegmentColors[color];
 
     const style =
         position === "left"
@@ -50,9 +60,9 @@ const PollenGaugeSegment: FC<GaugeSegmentProps> = ({
                 </span>
             }
         >
-            <span className="absolute inset-0 flex items-center justify-center gap-1">
+            <span className="absolute inset-0 flex items-center justify-center gap-0.5 sm:gap-1">
                 <span
-                    className={`${textColor} font-bold text-sm whitespace-nowrap`}
+                    className={`${textColor} font-bold text-[11px] sm:text-sm whitespace-nowrap`}
                 >
                     {label} {formatPollen(value)}
                 </span>
@@ -69,35 +79,49 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const tierEmoji = getTierEmoji(tier);
     const tierColor = getTierColor(tier) as GaugeSegmentProps["color"];
 
-    // Clamp at 0 for display — individual buckets can go slightly negative from overage
-    const displayTier = Math.max(0, tierBalance);
-    const displayPaid = Math.max(0, packBalance);
-    const totalPollen = displayTier + displayPaid;
+    const displayTierBalance = normalizeDisplayBalance(tierBalance);
+    const displayPaidBalance = normalizeDisplayBalance(packBalance);
+    const totalPollen = normalizeDisplayBalance(
+        displayTierBalance + displayPaidBalance,
+    );
+    const tierAvailable = Math.max(0, displayTierBalance);
+    const paidAvailable = Math.max(0, displayPaidBalance);
+    const tierMagnitude = Math.abs(displayTierBalance);
+    const paidMagnitude = Math.abs(displayPaidBalance);
 
-    function calculatePercentage(value: number, total: number): number {
-        return total > 0 ? (value / total) * 100 : 0;
-    }
-
-    const rawPaidPercentage = calculatePercentage(displayPaid, totalPollen);
     const gaugeHeightClass = "h-[30px] sm:h-[34px]";
-    const hideTierGaugeSegment = tier === "microbe" && displayTier === 0;
+    const hideTierGaugeSegment = tier === "microbe" && displayTierBalance === 0;
 
-    // Ensure both segments are always visible (min width to fit labels)
-    const MIN_SEGMENT = 20;
-    let paidPercentage: number;
-    let freePercentage: number;
-    if (hideTierGaugeSegment) {
-        paidPercentage = displayPaid > 0 ? 100 : 0;
-        freePercentage = 0;
-    } else if (totalPollen > 0) {
-        paidPercentage = Math.max(
-            MIN_SEGMENT,
-            Math.min(100 - MIN_SEGMENT, rawPaidPercentage),
-        );
-        freePercentage = 100 - paidPercentage;
-    } else {
+    // Each visible segment gets at least MIN_SEGMENT% so signed labels stay
+    // readable. Debt buckets are indicators; positive available balances get
+    // the surplus width so -1 debt does not look equivalent to +1 credit.
+    const showPaid = displayPaidBalance !== 0;
+    const showTier = !hideTierGaugeSegment && displayTierBalance !== 0;
+    const visibleCount = (showPaid ? 1 : 0) + (showTier ? 1 : 0);
+    const minSegment = visibleCount > 1 ? 28 : 20;
+
+    let paidPercentage = 0;
+    let freePercentage = 0;
+    const magnitudeTotal = tierMagnitude + paidMagnitude;
+    if (visibleCount === 0 || magnitudeTotal <= 0) {
         paidPercentage = 50;
         freePercentage = 50;
+    } else {
+        const surplus = 100 - minSegment * visibleCount;
+        const availableTotal = tierAvailable + paidAvailable;
+        const paidWeight =
+            availableTotal > 0
+                ? paidAvailable / availableTotal
+                : paidMagnitude / magnitudeTotal;
+        const tierWeight =
+            availableTotal > 0
+                ? tierAvailable / availableTotal
+                : tierMagnitude / magnitudeTotal;
+
+        if (showPaid) {
+            paidPercentage = minSegment + paidWeight * surplus;
+        }
+        if (showTier) freePercentage = minSegment + tierWeight * surplus;
     }
 
     return (
@@ -117,10 +141,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         {paidPercentage > 0 && (
                             <PollenGaugeSegment
                                 percentage={paidPercentage}
-                                value={displayPaid}
+                                value={displayPaidBalance}
                                 label="🪷"
                                 color="amber"
-                                tooltipText={`🪷 Purchased: ${formatPollen(displayPaid)} pollen\nFrom packs you've bought\nRequired for 🪷 Paid Only models; used after tier grants for others`}
+                                tooltipText="💳 Paid balance — Pollen you bought, plus earnings from paid-side user spend in your apps. Never expires."
                                 position="left"
                             />
                         )}
@@ -128,10 +152,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         {!hideTierGaugeSegment && freePercentage > 0 && (
                             <PollenGaugeSegment
                                 percentage={freePercentage}
-                                value={displayTier}
+                                value={displayTierBalance}
                                 label={tierEmoji}
                                 color={tierColor}
-                                tooltipText={`${tierEmoji} Tier: ${formatPollen(displayTier)} pollen\nFree pollen from your tier, refills periodically\nUsed first, except for 🪷 Paid Only models`}
+                                tooltipText={`${tierEmoji} Tier balance — your free hourly Pollen, plus earnings from tier-side user spend in your apps.`}
                                 position="right"
                                 offset={paidPercentage}
                             />

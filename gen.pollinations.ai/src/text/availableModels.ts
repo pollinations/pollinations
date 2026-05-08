@@ -9,6 +9,7 @@ import { createSystemPromptTransform } from "./transforms/createSystemPromptTran
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
+import { stripCacheControl } from "./transforms/stripCacheControl.js";
 import type { TransformFn } from "./types.js";
 
 interface ModelDefinition {
@@ -57,10 +58,15 @@ const models: ModelDefinition[] = [
     {
         name: "mistral",
         config: portkeyConfig["mistral-small-2503"],
+        transform: stripCacheControl,
     },
     {
         name: "deepseek",
         config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash"],
+    },
+    {
+        name: "gemma",
+        config: portkeyConfig["google/gemma-4-26B-A4B-it"],
     },
     {
         name: "deepseek-pro",
@@ -154,10 +160,12 @@ const models: ModelDefinition[] = [
     {
         name: "kimi",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p5"],
+        transform: stripCacheControl,
     },
     {
         name: "kimi-k2.6",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
+        transform: stripCacheControl,
     },
     {
         name: "gemini-large",
@@ -180,6 +188,7 @@ const models: ModelDefinition[] = [
     {
         name: "glm",
         config: portkeyConfig["accounts/fireworks/models/glm-5p1"],
+        transform: stripCacheControl,
     },
     {
         name: "minimax",

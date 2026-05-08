@@ -29,7 +29,6 @@ export const test = base.extend<SharedFixtures>({
         const { key } = await createTestApiKey({
             name: "publishable-test-key",
             type: "publishable",
-            metadata: { createdForApp: "test" },
         });
         await use(key);
     },

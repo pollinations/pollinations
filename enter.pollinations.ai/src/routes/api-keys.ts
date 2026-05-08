@@ -198,6 +198,7 @@ const UrlWithSchemeSchema = z.string().refine(
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
     redirectUris: z.array(UrlWithSchemeSchema).optional(),
+    earningsEnabled: z.boolean().optional(),
 });
 
 /**
@@ -282,6 +283,7 @@ export const apiKeysRoutes = new Hono<Env>()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    byopClientKeyId: key.byopClientKeyId,
                 })),
             });
         },
@@ -390,7 +392,15 @@ export const apiKeysRoutes = new Hono<Env>()
                     validateRedirectUriFormat(uri);
                 }
             }
-
+            if (
+                metadataUpdate.earningsEnabled !== undefined &&
+                existingKey.prefix !== "pk"
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "BYOP earnings can only be enabled on publishable app keys",
+                });
+            }
             const metadata = await updateKeyMetadata(
                 db,
                 id,

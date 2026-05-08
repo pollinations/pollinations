@@ -91,8 +91,21 @@ export const ImageParamsSchema = z
         // Video-specific parameters - pass through to backend, let provider validate
         duration: z.coerce.number().optional(),
         fps: z.coerce.number().optional(),
-        aspectRatio: z.enum(["16:9", "9:16"]).optional(),
+        aspectRatio: z
+            .enum([
+                "16:9",
+                "4:3",
+                "1:1",
+                "3:4",
+                "9:16",
+                "21:9",
+                "9:21",
+                "adaptive",
+            ])
+            .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Last-frame image URL for video models that support first+last frame interpolation (Seedance 2.0)
+        last_frame_image: z.coerce.string().optional().catch(undefined),
     })
     .transform((data) => {
         // adjust width and height to fit the selected model

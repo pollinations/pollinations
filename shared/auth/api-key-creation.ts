@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
+import { redirectUriMatchesAllowlist } from "./redirect-uri.ts";
 
 export type ApiKeyType = "secret" | "publishable";
 
@@ -113,55 +114,6 @@ function rejectInvalidClientId(): never {
     throw new HTTPException(400, {
         message: "Invalid client_id",
     });
-}
-
-function redirectUriMatchesAllowlist(
-    uri: string,
-    allowlist: readonly string[] | null | undefined,
-): boolean {
-    if (!allowlist?.length) return false;
-    const incoming = safeParse(uri);
-    if (!incoming) return false;
-    return allowlist.some((entry) => matchesRedirectEntry(incoming, entry));
-}
-
-function matchesRedirectEntry(incoming: URL, entryUrl: string): boolean {
-    const entry = safeParse(entryUrl);
-    if (!entry) return false;
-    if (incoming.hash || entry.hash) return false;
-    if (incoming.protocol !== entry.protocol) return false;
-    if (
-        normalizeHostname(incoming.hostname) !==
-        normalizeHostname(entry.hostname)
-    ) {
-        return false;
-    }
-    if (incoming.pathname !== entry.pathname) return false;
-    if (incoming.search !== entry.search) return false;
-    if (isLoopbackHostname(entry.hostname)) return true;
-    return incoming.port === entry.port;
-}
-
-function safeParse(url: string): URL | null {
-    try {
-        return new URL(url);
-    } catch {
-        return null;
-    }
-}
-
-function normalizeHostname(hostname: string): string {
-    return hostname
-        .toLowerCase()
-        .replace(/^\[(.*)\]$/, "$1")
-        .replace(/\.$/, "");
-}
-
-function isLoopbackHostname(hostname: string): boolean {
-    const h = normalizeHostname(hostname);
-    if (h === "localhost" || h === "0.0.0.0" || h === "::1") return true;
-    if (/^127\.\d+\.\d+\.\d+$/.test(h)) return true;
-    return false;
 }
 
 // Caller-provided metadata is restricted to a typed allowlist. Server-controlled

@@ -54,13 +54,13 @@ const WalletRow: FC<WalletRowProps> = ({
         <span className="shrink-0 text-2xl leading-none" aria-hidden="true">
             {emoji}
         </span>
-        <span className="flex min-w-0 flex-col leading-tight">
+        <span className="flex min-w-0 flex-1 flex-col leading-tight">
             <span
                 className={`text-[11px] font-bold uppercase tracking-wide ${labelClass}`}
             >
                 {label}
             </span>
-            <span className="flex items-baseline gap-2 whitespace-nowrap">
+            <span className="flex items-baseline justify-between gap-2 whitespace-nowrap">
                 <span className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-950">
                     {formatPollen(value)}
                 </span>

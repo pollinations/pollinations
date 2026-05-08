@@ -1,0 +1,34 @@
+{
+  "pr_number": 10669,
+  "title": "fix(image): respect user-provided width/height by dropping gen-side pre-scaling",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10669",
+  "merged_at": "2026-05-08T10:07:38Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pixel perfect",
+    "blurb": "We fixed a sneaky bug that was silently upscaling smaller image requests behind the scenes. Now, when you ask for specific dimensions, you get exactly what you asked for—down to the last pixel.",
+    "summary": "Removed a legacy pre-scaling step in the image generation pipeline that was silently upscaling requests under 1 megapixel.",
+    "impact": "Image generation requests will now strictly respect the exact width and height parameters provided by the user.",
+    "keywords": [
+      "image-generation",
+      "api",
+      "dimensions",
+      "resolution",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot measuring a picture frame with a tape measure, emphasizing exact dimensions and precision.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, using a measuring tape to measure a perfectly sized glowing picture frame. A chunky Monitor Robot stands nearby giving a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'EXACT SIZE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10669.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, using a measuring tape to measure a perfectly sized glowing picture frame. A chunky Monitor Robot stands nearby giving a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Text in pixel font: 'EXACT SIZE'."
+  },
+  "generated_at": "2026-05-08T10:08:39.328984+00:00"
+}

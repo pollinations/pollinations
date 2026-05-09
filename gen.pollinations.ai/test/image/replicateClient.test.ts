@@ -207,7 +207,9 @@ describe("runReplicatePrediction", () => {
         vi.useRealTimers();
     });
 
-    it("throws ReplicateError with status on non-2xx response (401, 429, 5xx)", async () => {
+    it("throws ReplicateError without status on HTTP-level errors (handler defaults to 500)", async () => {
+        // 401 (bad token), 429 (our rate limit), 5xx (Replicate down) are all
+        // infra issues on our side, never user input — caller maps to 500.
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(JSON.stringify({ detail: "Invalid token" }), {
                 status: 401,
@@ -218,7 +220,7 @@ describe("runReplicatePrediction", () => {
             runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
         ).rejects.toMatchObject({
             name: "ReplicateError",
-            status: 401,
+            status: undefined,
         });
     });
 });

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10802,
+  "title": "Add Viatosis to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10802",
+  "merged_at": "2026-05-09T10:56:38Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The hive goes to med school",
+    "blurb": "Viatosis just landed in the community showcase. It's a medical e-learning platform using our image generation to illustrate complex anatomy and make studying a little less painful.",
+    "summary": "Added Viatosis, a specialized medical e-learning platform that leverages Pollinations for AI-generated illustrations, to the community apps showcase.",
+    "impact": "The community can now discover how Viatosis uses our image API to simplify complex medical concepts for students.",
+    "keywords": [
+      "community",
+      "showcase",
+      "education",
+      "medical",
+      "apps"
+    ],
+    "visual_concept": "Medical education theme. Polly the bee acting as a doctor/student, examining medical imagery. A retro monitor showing an anatomical heart or brain. Nomnom creature eating medical textbooks.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny doctor's head mirror, examining a glowing retro monitor that displays a pixelated anatomical heart. The round tan nomnom creature sits nearby happily eating a stack of thick medical textbooks. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-09/PR-10802.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny doctor's head mirror, examining a glowing retro monitor that displays a pixelated anatomical heart. The round tan nomnom creature sits nearby happily eating a stack of thick medical textbooks. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-09T10:57:38.133487+00:00",
+  "app_name": "Viatosis",
+  "app_url": "https://www.viatosis.tech"
+}

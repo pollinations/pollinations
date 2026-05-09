@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, memo } from 'react';
 import PropTypes from 'prop-types';
 import { useTutorial } from '../hooks/useTutorial';
-import './TutorialModal.css';
+import './styles/TutorialModal.css';
 
 const ANIMATION_TIMING = {
   TOOLTIP_MOVE: 400,

@@ -1,5 +1,5 @@
 import React from 'react';
-import './KeyboardShortcutsModal.css';
+import './styles/KeyboardShortcutsModal.css';
 
 const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
   const shortcuts = [
@@ -15,7 +15,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="themes-modal">
+    <div className="themes-modal keyboard-shortcuts-modal">
       <div className="themes-modal-overlay" onClick={onClose}></div>
       <div className="themes-modal-content">
         <div className="themes-modal-header">

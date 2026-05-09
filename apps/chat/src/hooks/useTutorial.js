@@ -86,6 +86,8 @@ export const useTutorial = (isOpen, onClose, customSteps = null) => {
   const animationFrameRef = useRef(null);
   const isMountedRef = useRef(true);
   const debounceRef = useRef(null);
+  const updatePositionsRef = useRef(null);
+  const lastAnimatedStepRef = useRef(0);
 
   const steps = useMemo(() => {
     return customSteps || DEFAULT_TUTORIAL_STEPS;
@@ -376,26 +378,32 @@ export const useTutorial = (isOpen, onClose, customSteps = null) => {
   }, [clearAllTimers]);
 
   useEffect(() => {
+    updatePositionsRef.current = updatePositions;
+  }, [updatePositions]);
+
+  useEffect(() => {
     if (isOpen) {
       setCurrentStep(0);
       setPreviousStep(0);
       setIsInitialized(false);
-      
+      lastAnimatedStepRef.current = 0;
+
       animationFrameRef.current = requestAnimationFrame(() => {
-        updatePositions(false);
+        updatePositionsRef.current?.(false);
         safeSetState(setIsInitialized, true);
       });
     } else {
       clearAllTimers();
       setIsInitialized(false);
     }
-  }, [isOpen, updatePositions, safeSetState, clearAllTimers]);
+  }, [isOpen, safeSetState, clearAllTimers]);
 
   useEffect(() => {
-    if (isOpen && isInitialized) {
-      updatePositions(true);
-    }
-  }, [currentStep, isOpen, isInitialized, updatePositions]);
+    if (!isOpen || !isInitialized) return;
+    if (lastAnimatedStepRef.current === currentStep) return;
+    lastAnimatedStepRef.current = currentStep;
+    updatePositionsRef.current?.(true);
+  }, [currentStep, isOpen, isInitialized]);
 
   useEffect(() => {
     if (!isOpen) return;

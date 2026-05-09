@@ -516,11 +516,13 @@ class PollyBot(commands.Bot):
         pollinations_client.register_tool_handler("web_scrape", web_scrape_handler)
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
-        # Register data visualization handler (always available)
-        from .services.charts import data_visualization
+        # Register render_visual handler (always available).
+        # Old tool name aliased for back-compat with cached AI sessions.
+        from .services.charts import data_visualization, render_visual
 
+        pollinations_client.register_tool_handler("render_visual", render_visual)
         pollinations_client.register_tool_handler("data_visualization", data_visualization)
-        logger.info("Registered data_visualization tool handler")
+        logger.info("Registered render_visual tool handler (data_visualization alias)")
 
         # Register discord_search handler (full guild search capabilities)
         from .services.discord_search import tool_discord_search
@@ -1365,25 +1367,34 @@ async def send_long_message(
     modified_text, tables = detect_and_parse_markdown_tables(text)
     table_images = []
 
+    def _restore_markdown_table(headers: list[str], rows: list[list[str]]) -> str:
+        out = "\n| " + " | ".join(str(h) for h in headers) + " |\n"
+        out += "|" + "---|" * len(headers) + "\n"
+        for r in rows:
+            out += "| " + " | ".join(str(c) for c in r) + " |\n"
+        return out
+
     for headers, rows, alignments in tables:
+        img_buffer = None
         try:
             img_buffer, links = await render_table_image(headers, rows, alignments)
-            if img_buffer:
-                file = discord.File(img_buffer, filename="table.png")
-                if not first_message_sent and reply_to:
-                    await reply_to.reply("**Table:**", file=file, mention_author=mention_author)
-                    first_message_sent = True
-                elif not first_message_sent:
-                    await channel.send("**Table:**", file=file)
-                    first_message_sent = True
-                else:
-                    await channel.send("**Table:**", file=file)
         except Exception as e:
             logger.error(f"Table rendering error: {e}")
-            # Fallback: send text
-            modified_text += "\n(Table rendering failed, showing as text)\n"
-            for row in rows:
-                modified_text += "| " + " | ".join(row) + " |\n"
+
+        if img_buffer:
+            file = discord.File(img_buffer, filename="table.png")
+            if not first_message_sent and reply_to:
+                await reply_to.reply("**Table:**", file=file, mention_author=mention_author)
+                first_message_sent = True
+            elif not first_message_sent:
+                await channel.send("**Table:**", file=file)
+                first_message_sent = True
+            else:
+                await channel.send("**Table:**", file=file)
+        else:
+            # Render failed (PIL unavailable or bad input) — restore the raw
+            # markdown table back into the text so users see something.
+            modified_text += _restore_markdown_table(headers, rows)
 
     # ==========================================================================
     # STEP 2: Process LaTeX and code blocks in remaining text

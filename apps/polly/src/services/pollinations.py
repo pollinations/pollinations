@@ -386,15 +386,27 @@ class PollinationsClient:
 
             # Add tool results
             for tool_call, result in zip(tool_calls, tool_results):
-                # Extract _image side-channel before serialization to AI
-                if isinstance(result, dict) and "_image" in result:
-                    image_data_url = result.pop("_image")
-                    all_content_blocks.append(
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": image_data_url},
-                        }
-                    )
+                # Extract image side-channels before serialization to AI.
+                # `_image` (str) and `_images` (list[str]) — both supported.
+                if isinstance(result, dict):
+                    if "_image" in result:
+                        image_data_url = result.pop("_image")
+                        if image_data_url:
+                            all_content_blocks.append(
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": image_data_url},
+                                }
+                            )
+                    if "_images" in result:
+                        for url in result.pop("_images") or []:
+                            if url:
+                                all_content_blocks.append(
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {"url": url},
+                                    }
+                                )
 
                 # Strip API prefix from tool name for consistency
                 tool_name = tool_call["function"]["name"]

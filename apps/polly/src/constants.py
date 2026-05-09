@@ -867,27 +867,80 @@ This tool is SLOW but POWERFUL - combines search, scrape, crawl, and code execut
 # DATA VISUALIZATION TOOL - Gemini native code_execution
 # =============================================================================
 
-DATA_VIZ_TOOL = {
+RENDER_VISUAL_TOOL = {
     "type": "function",
     "function": {
-        "name": "data_visualization",
-        "description": """Generate a visual image from data — charts, diagrams, infographics, dashboards, anything. Powered by Gemini AI.
+        "name": "render_visual",
+        "description": """Render a table or chart as an image and attach it to your reply. Use whenever you have structured data, comparisons, time series, distributions, or matrices to show — instead of writing a markdown table or describing the chart in text.
 
-Just pass whatever you want visualized as a string — raw text, bullet points, tables, JSON, anything. The more context the better. Example: "Video model costs for 5s videos: seedance-pro ~0.004 Pollen (cheapest), seedance ~0.007, ltx-2 0.05 (0.01/s with audio), wan 0.5, veo 0.75 (premium, Google)"
+Pick the right `type` for the data:
+- `table`        — structured rows of comparable items (model specs, pricing matrices, feature comparisons)
+- `bar`          — categorical counts or magnitudes (vertical bars)
+- `horizontal_bar` — same as bar but readable when category names are long
+- `line`         — time series or ordered sequences
+- `area`         — same as line but with the area below filled (cumulative feel)
+- `scatter`      — two numeric variables, look for correlation
+- `pie` / `donut` — proportions of a whole (≤8 slices for clarity)
+- `heatmap`      — matrix of values across two dimensions
+- `histogram`    — distribution of one variable
+- `free_form`    — anything outside the above (Sankey, custom diagrams, infographics) — pass a descriptive prompt as `data`
 
-IMPORTANT: The image is automatically attached to the message. Do NOT add image markdown links like ![...](...) in your text.""",
+Data shape:
+- For `table`:  `data = {"headers": ["A", "B"], "rows": [["1", "2"], ...]}`
+- For charts:   `data = {"labels": [...], "datasets": [{"label": "Series", "values": [n, n, ...]}]}`
+- For `heatmap`: `datasets` rows form the matrix; `labels` are column labels
+- For `free_form`: `data` is a descriptive string
+
+You can call render_visual multiple times in one turn; each call attaches one image (Discord caps at 10 per reply).
+
+IMPORTANT: The image is auto-attached. Do NOT include `![](...)` markdown image tags in your reply text. Cell text in tables supports inline markdown — `**bold**`, `*italic*`, `` `code` ``.""",
         "parameters": {
             "type": "object",
             "properties": {
-                "data": {
+                "type": {
                     "type": "string",
-                    "description": "The data to visualize — just pass whatever text/context you have",
+                    "enum": [
+                        "table",
+                        "bar",
+                        "horizontal_bar",
+                        "line",
+                        "area",
+                        "scatter",
+                        "pie",
+                        "donut",
+                        "heatmap",
+                        "histogram",
+                        "free_form",
+                    ],
+                    "description": "Visual type. Pick from the enum.",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Title shown above the visual. Keep under 60 chars.",
+                },
+                "data": {
+                    "description": "Structured data for tables/charts; or a string for free_form.",
+                },
+                "options": {
+                    "type": "object",
+                    "description": "Optional rendering hints.",
+                    "properties": {
+                        "x_label": {"type": "string"},
+                        "y_label": {"type": "string"},
+                        "caption": {"type": "string", "description": "Short note below the chart."},
+                        "sort": {"type": "boolean", "description": "Sort bars descending (single-series bar only)."},
+                        "stacked": {"type": "boolean", "description": "Stack series for bar charts."},
+                    },
                 },
             },
-            "required": ["data"],
+            "required": ["type", "title", "data"],
         },
     },
 }
+
+# Backward-compat alias — keep the old name pointing at the new schema so
+# any cached AI conversations or stale prompts that reference it still work.
+DATA_VIZ_TOOL = RENDER_VISUAL_TOOL
 
 
 def get_tools_with_embeddings(base_tools: list, embeddings_enabled: bool, doc_embeddings_enabled: bool = False) -> list:
@@ -1064,7 +1117,7 @@ API_EXCLUDED_TOOLS = {
     "unsubscribe_issue",
     "unsubscribe_all",
     "list_subscriptions",
-    "data_visualization",
+    "render_visual",
 }
 
 
@@ -1122,9 +1175,10 @@ TOOL_KEYWORDS = {
         r"extract\s+(from|data)|whats?\s+(on|at)\s+(this\s+)?(url|page|site|link))\b",
         re.IGNORECASE,
     ),
-    "data_visualization": re.compile(
+    "render_visual": re.compile(
         r"\b(charts?|graphs?|plots?|visualiz\w*|bar\s*chart|line\s*chart|pie\s*chart|"
-        r"donut|scatter|heatmap|radar|histogram|diagram|infographic|dashboard)\b",
+        r"donut|scatter|heatmap|radar|histogram|diagram|infographic|dashboard|tables?|"
+        r"comparison|matrix|distribut\w*)\b",
         re.IGNORECASE,
     ),
     # NOTE: web_search and code_search are NOT filtered by keywords
@@ -1220,7 +1274,7 @@ Use tools for everything else:
 {tools_section}
 
 ## Autonomy
-Use tools proactively — parallel when independent, sequential when chained. User mentions #123? Fetch it. Data to compare? Call `data_visualization` with it. Text file attached? Use `web_scrape(action="fetch_file")`.
+Use tools proactively — parallel when independent, sequential when chained. User mentions #123? Fetch it. Data to compare? Call `render_visual(type, data)` — pick `table` for structured rows, `bar`/`pie`/`line`/etc. for charts. Multiple visuals? Call render_visual multiple times in one turn (Discord caps at 10 attachments). Don't write markdown tables in your reply — render them. Text file attached? Use `web_scrape(action="fetch_file")`.
 
 ## Issue Rules
 - Ask before creating (unless explicitly requested). Use `find_similar` first to check duplicates.
@@ -1317,7 +1371,7 @@ API_TOOLS_SECTION = """- `github_overview` - Repo summary
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search
 - `discord_search` - Search Discord server
-- `data_visualization` - Generate visual images from data"""
+- `render_visual` - Render tables and charts as images (type: table/bar/pie/line/scatter/heatmap/etc.)"""
 
 # Keep TOOL_SYSTEM_PROMPT as backward-compatible alias (full Discord prompt)
 TOOL_SYSTEM_PROMPT = BASE_SYSTEM_PROMPT + DISCORD_PROMPT_ADDON
@@ -1333,7 +1387,7 @@ ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, mil
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
-- `data_visualization` - Generate visual images from data (pass rich contextual data for best results)"""
+- `render_visual` - Render tables and charts as images (type: table/bar/pie/line/scatter/heatmap/etc.) (pass rich contextual data for best results)"""
 
 # Tools section for NON-ADMIN users - read-only + create/comment
 # Tools section for COLLABORATOR users - read + issue management (matches git collaborator perms)
@@ -1347,7 +1401,7 @@ COLLABORATOR_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labe
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
-- `data_visualization` - Generate visual images from data (pass rich contextual data for best results)"""
+- `render_visual` - Render tables and charts as images (type: table/bar/pie/line/scatter/heatmap/etc.) (pass rich contextual data for best results)"""
 
 NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, milestones, projects)
 - `github_issue` - Issues: get, search, create, comment (read + create only)
@@ -1359,7 +1413,7 @@ NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels,
 - `code_search` - Semantic code search
 - `doc_search` - Documentation search (enter.pollinations.ai + OpenAPI schema)
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
-- `data_visualization` - Generate visual images from data (pass rich contextual data for best results)"""
+- `render_visual` - Render tables and charts as images (type: table/bar/pie/line/scatter/heatmap/etc.) (pass rich contextual data for best results)"""
 
 
 def get_tool_system_prompt(is_admin: bool = True, is_collaborator: bool = False, mode: str = "discord") -> str:

@@ -169,11 +169,12 @@ POLLINATIONS_TOKEN=your_pollinations_token
 python main.py
 ```
 
-### 4️⃣ Media Handlers (Tables, LaTeX, Code Rendering)
+### 4️⃣ Media Handlers (Tables, Charts, LaTeX, Code)
 
-Enabled by default — `pillow`, `pilmoji`, and `cairosvg` ship in `requirements.txt`:
+Enabled by default — all deps ship in `requirements.txt`, fonts vendored in `assets/fonts/`:
 
-- 📊 **Markdown Tables** → Rendered as PNG images
+- 📊 **Markdown Tables** → Rendered as PNG images with markdown-aware cells (bold/italic/code spans)
+- 📈 **Charts** → bar, line, pie, scatter, heatmap, histogram, etc. via the `render_visual` tool
 - ∑ **LaTeX Expressions** → Rendered as PNG images (inline `$...$` and display `$$...$$`)
 - 💻 **Code Blocks** → Smart splitting without breaking lines
 

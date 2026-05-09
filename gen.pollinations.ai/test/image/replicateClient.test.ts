@@ -105,6 +105,58 @@ describe("runReplicatePrediction", () => {
         ).rejects.toThrowError(ReplicateError);
     });
 
+    it.each([
+        [
+            "content filter rejection (E005)",
+            "ModelError: The input or output was flagged as sensitive. Please try again with different inputs. (E005)",
+        ],
+        [
+            "input validation error (e.g. expired image URL)",
+            "Input validation error: 403 Client Error: Forbidden for url: https://example.com/img.jpg",
+        ],
+    ])("classifies %s as 400 (user input error)", async (_, errorMessage) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_user_err",
+                    status: "failed",
+                    error: errorMessage,
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({
+                model: MODEL,
+                input: { prompt: "x" },
+            }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 400,
+        });
+    });
+
+    it("classifies generic prediction failures as 500 (upstream error)", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_upstream_err",
+                    status: "failed",
+                    error: "CUDA out of memory",
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 500,
+        });
+    });
+
     it("polls /predictions/{id} when initial response is processing", async () => {
         vi.useFakeTimers();
         const fetchSpy = vi.spyOn(globalThis, "fetch");
@@ -155,7 +207,9 @@ describe("runReplicatePrediction", () => {
         vi.useRealTimers();
     });
 
-    it("throws ReplicateError with status on non-2xx response (401, 429, 5xx)", async () => {
+    it("throws ReplicateError without status on HTTP-level errors (handler defaults to 500)", async () => {
+        // 401 (bad token), 429 (our rate limit), 5xx (Replicate down) are all
+        // infra issues on our side, never user input — caller maps to 500.
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(JSON.stringify({ detail: "Invalid token" }), {
                 status: 401,
@@ -166,7 +220,7 @@ describe("runReplicatePrediction", () => {
             runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
         ).rejects.toMatchObject({
             name: "ReplicateError",
-            status: 401,
+            status: undefined,
         });
     });
 });

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10801,
+  "title": "fix(seedance-2.0): map Replicate content-filter errors to 4xx",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10801",
+  "merged_at": "2026-05-09T08:50:07Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "It's not us, it's you (400)",
+    "blurb": "Seedance 2.0 was having a bit of an identity crisis, blaming our servers (500) when it was actually just grumpy about expired image URLs or content filters. We've taught it to properly hand out 400 errors so you know exactly what needs fixing.",
+    "summary": "Updated the Replicate client to correctly map Seedance 2.0 content filter flags and invalid input URLs to 400 Bad Request instead of 500 Internal Server Error.",
+    "impact": "Developers will now receive accurate 400-level status codes for client-side errors, making API integration and debugging much clearer.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "seedance-2.0",
+      "replicate",
+      "bug-fix"
+    ],
+    "visual_concept": "Polly the bee acting as a traffic cop or mail sorter, directing bad requests (expired links, blocked content) into a '400' bin instead of the '500' server fire bin. Nomnom creature eating the bad requests.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny postal worker hat, sorting glowing red envelopes into a wooden bin labeled '400' in pixel font. The round tan nomnom creature sits nearby happily eating an envelope. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-09/PR-10801.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny postal worker hat, sorting glowing red envelopes into a wooden bin labeled '400' in pixel font. The round tan nomnom creature sits nearby happily eating an envelope. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-09T08:51:02.164520+00:00"
+}

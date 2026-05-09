@@ -125,7 +125,7 @@ export async function callSeedanceV2API(
             logError("Replicate error:", err.message);
             throw new HttpError(
                 `Seedance 2.0 generation failed: ${err.message}`,
-                500,
+                err.status ?? 500,
             );
         }
         throw err;

@@ -89,9 +89,16 @@ export async function runReplicatePrediction<TInput, TOutput>(
     }
 
     if (prediction.status === "failed" || prediction.status === "canceled") {
-        throw new ReplicateError(
-            prediction.error || `Prediction ${prediction.status}`,
-        );
+        const message = prediction.error || `Prediction ${prediction.status}`;
+        // Replicate returns failures as HTTP 200 + error string with no
+        // structured code field (verified in API docs). Patterns observed
+        // in our prod logs: E005 + "flagged as sensitive" are Seedance's
+        // content filter; "Input validation error:" is Replicate's input
+        // URL fetcher. Default stays 500 so new failure modes stay loud.
+        const isUserInput =
+            /\bE005\b|flagged as sensitive/i.test(message) ||
+            /^Input validation error:/i.test(message);
+        throw new ReplicateError(message, isUserInput ? 400 : 500);
     }
     if (prediction.output === undefined || prediction.output === null) {
         throw new ReplicateError("Prediction succeeded but output is missing");
@@ -129,9 +136,11 @@ async function replicateFetch<T>(
 
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
+        // No status set — HTTP-level Replicate errors (401 bad token, 429
+        // our rate limit, 5xx Replicate down) are infra issues on our side,
+        // never user input. Caller defaults to 500.
         throw new ReplicateError(
             `Replicate ${args.method} ${args.url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
-            response.status,
         );
     }
     return (await response.json()) as T;

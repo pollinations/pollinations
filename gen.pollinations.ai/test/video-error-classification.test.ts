@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolveSeedanceV2AspectRatio } from "@/image/models/seedanceV2VideoModel.ts";
 import { classifyByteplusError } from "@/image/models/seedanceVideoModel.ts";
 import {
     classifyReplicateHttpStatus,
@@ -138,5 +139,29 @@ describe("classifyByteplusError", () => {
                 message: "output may contain sensitive information",
             }),
         ).toBe(400);
+    });
+});
+
+describe("resolveSeedanceV2AspectRatio", () => {
+    it("defaults to 16:9 when not provided", () => {
+        expect(resolveSeedanceV2AspectRatio(undefined)).toBe("16:9");
+    });
+
+    it.each([
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16",
+        "21:9",
+        "adaptive",
+    ] as const)("passes through supported ratio %s", (ratio) => {
+        expect(resolveSeedanceV2AspectRatio(ratio)).toBe(ratio);
+    });
+
+    it("rejects 9:21 (allowed by global schema, unsupported by Replicate Seedance 2.0)", () => {
+        expect(() => resolveSeedanceV2AspectRatio("9:21")).toThrow(
+            /not supported by Seedance 2\.0/,
+        );
     });
 });

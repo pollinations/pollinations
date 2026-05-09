@@ -16,10 +16,15 @@ describe("classifyReplicateHttpStatus", () => {
         expect(classifyReplicateHttpStatus(503)).toBe(502);
     });
 
-    it("maps infra-side 4xx to 502 (our config, not user input)", () => {
+    it("maps auth/lookup 4xx to 502 (our config, not user input)", () => {
         expect(classifyReplicateHttpStatus(401)).toBe(502);
         expect(classifyReplicateHttpStatus(403)).toBe(502);
-        expect(classifyReplicateHttpStatus(422)).toBe(502);
+        expect(classifyReplicateHttpStatus(404)).toBe(502);
+    });
+
+    it("passes through input-validation 4xx (400, 422) so users can fix requests", () => {
+        expect(classifyReplicateHttpStatus(400)).toBe(400);
+        expect(classifyReplicateHttpStatus(422)).toBe(422);
     });
 });
 

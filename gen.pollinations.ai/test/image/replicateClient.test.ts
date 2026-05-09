@@ -207,9 +207,7 @@ describe("runReplicatePrediction", () => {
         vi.useRealTimers();
     });
 
-    it("throws ReplicateError without status on HTTP-level errors (handler defaults to 500)", async () => {
-        // 401 (bad token), 429 (our rate limit), 5xx (Replicate down) are all
-        // infra issues on our side, never user input — caller maps to 500.
+    it("maps Replicate auth/infra HTTP errors to 502", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(JSON.stringify({ detail: "Invalid token" }), {
                 status: 401,
@@ -220,7 +218,38 @@ describe("runReplicatePrediction", () => {
             runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
         ).rejects.toMatchObject({
             name: "ReplicateError",
-            status: undefined,
+            status: 502,
+        });
+    });
+
+    it("passes through Replicate 422 input validation errors", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({ detail: "Invalid aspect_ratio: 9:21" }),
+                { status: 422 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 422,
+        });
+    });
+
+    it("passes through Replicate 429 rate-limit errors", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ detail: "Rate limited" }), {
+                status: 429,
+            }),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 429,
         });
     });
 });

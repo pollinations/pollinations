@@ -143,7 +143,13 @@ async function replicateFetch<T>(
 }
 
 export function classifyReplicateHttpStatus(httpStatus: number): number {
+    // 429 → 429 so clients can back off.
+    // 400/422 → pass through; Replicate uses these for input validation
+    // (bad model params, invalid image url, etc.) — surfacing them lets
+    // the user fix their request instead of seeing a generic 502.
+    // Other 4xx (401/403/404) and all 5xx → 502 (our config / upstream outage).
     if (httpStatus === 429) return 429;
+    if (httpStatus === 400 || httpStatus === 422) return httpStatus;
     return 502;
 }
 

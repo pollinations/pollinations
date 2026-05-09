@@ -1,0 +1,35 @@
+{
+  "pr_number": 10798,
+  "title": "Add Hyggshi OS Web Edition to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10798",
+  "merged_at": "2026-05-09T06:11:06Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Booting up Hyggshi OS",
+    "blurb": "Hyggshi OS Web Edition just landed in the community showcase! It's a cozy web-based OS simulator that uses our API to power its built-in AI chat.",
+    "summary": "Added Hyggshi OS Web Edition, a web-based OS simulator PWA, to the community app showcase.",
+    "impact": "Users can now explore a new community-built OS simulator that integrates Pollinations for built-in AI chat capabilities.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "os",
+      "pwa",
+      "chat"
+    ],
+    "visual_concept": "A retro computer monitor displaying a cozy operating system interface. The pollinations bee (Polly) interacting with the computer, wearing a tiny hacker beanie or holding a floppy disk.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hacker beanie, typing on a retro computer terminal that displays a colorful operating system interface. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-09/PR-10798.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny hacker beanie, typing on a retro computer terminal that displays a colorful operating system interface. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-09T06:12:07.996081+00:00",
+  "app_name": "Hyggshi OS Web Edition",
+  "app_url": "https://hyggshi-os-website.pages.dev/OSmain"
+}

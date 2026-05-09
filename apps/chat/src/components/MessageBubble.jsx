@@ -4,6 +4,7 @@ import MemoizedMessageContent from './MemoizedMessageContent';
 import ThinkingProcess from './ThinkingProcess';
 import TypewriterEffect from './TypewriterEffect';
 import MessageAttachments from './MessageAttachments';
+import './styles/BYOPModal.css';
 
 const MediaMeta = ({ label, value }) => value ? (
   <div className="media-meta-row">
@@ -122,7 +123,20 @@ const MessageBubble = ({
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              <span>{message.content}</span>
+              <div className="simple-error-body">
+                <span>{message.content}</span>
+                {(message.errorType === 'auth' || message.errorType === 'balance') && (
+                  <div className="message-byop-prompt">
+                    <button
+                      type="button"
+                      className="message-byop-btn"
+                      onClick={() => window.openBYOPModal && window.openBYOPModal()}
+                    >
+                      Use your own API key (BYOP)
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : message.isStreaming ? (
             <div className="message-content streaming-content">

@@ -1,0 +1,47 @@
+{
+  "date": "2026-05-08",
+  "period_start": "2026-05-08",
+  "period_end": "2026-05-08",
+  "title": "Gemma 4 26B joins the text API",
+  "summary": "Gemma 4 26B joins the text API, image dimensions get strict, and Nova Reel videos are back online.\n\nAdded Gemma 4 26B via DeepInfra. It comes with a massive 262k context window, multimodal support, and tool use. Send it a book, see what happens.\n\nImage generation now strictly respects your requested width and height—we ripped out a legacy pre-scaling step that was silently upscaling small requests. Also, Nova Reel video generation is back online after we resolved a compatibility spat between AWS Bedrock and Cloudflare Workers.\n\nOAuth redirects are now more forgiving of trailing slashes and query states. We also patched deny redirects to stay local on validation failure, and updated the dashboard to explain the developer markup system inline so you don't have to hunt through docs.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 10669,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10707,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10738,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10770,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10772,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10779,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10784,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10791,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10792,
+      "date": "2026-05-08"
+    }
+  ],
+  "generated_at": "2026-05-09T06:41:09.594479+00:00"
+}

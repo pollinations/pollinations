@@ -1,0 +1,35 @@
+{
+  "pr_number": 10796,
+  "title": "Add idol-interaction to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10796",
+  "merged_at": "2026-05-09T06:08:10Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Idol Interaction joins the hive",
+    "blurb": "A new community game just dropped! 'Idol Interaction' uses Pollinations models to let you scout characters, chat, complete tasks, and take photos.",
+    "summary": "Added 'idol-interaction' to the community games showcase, a new app that uses Pollinations models for character generation and chat.",
+    "impact": "Users can now discover and play a new community-built game where they scout, chat with, and photograph AI-generated characters.",
+    "keywords": [
+      "community",
+      "games",
+      "showcase",
+      "app",
+      "chat",
+      "generation"
+    ],
+    "visual_concept": "Polly the bee acting as a photographer or fan for a cute pixel-art idol character. Represents the 'idol-interaction' game where users scout and take photos of characters.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny photographer's hat, holding a small camera and taking a picture of a cute pixel-art pop idol character on a small wooden stage. Soft lime green (#ecf874) and pastel pink gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-09/PR-10796.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny photographer's hat, holding a small camera and taking a picture of a cute pixel-art pop idol character on a small wooden stage. Soft lime green (#ecf874) and pastel pink gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-09T06:09:04.703725+00:00",
+  "app_name": "idol-interaction",
+  "app_url": "https://spritenguyen.github.io/idol-interaction-game-2/"
+}

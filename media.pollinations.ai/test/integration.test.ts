@@ -324,19 +324,16 @@ describe("media.pollinations.ai", () => {
         );
         const upload = (await uploadRes.json()) as UploadResponse;
 
-        await SELF.fetch(
-            `https://media.pollinations.ai/${upload.id}/tags`,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${VALID_KEY}`,
-                },
-                body: JSON.stringify({
-                    public: ["landscape"],
-                }),
+        await SELF.fetch(`https://media.pollinations.ai/${upload.id}/tags`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${VALID_KEY}`,
             },
-        );
+            body: JSON.stringify({
+                public: ["landscape"],
+            }),
+        });
 
         // Browse without auth
         const browseRes = await SELF.fetch(
@@ -369,19 +366,16 @@ describe("media.pollinations.ai", () => {
         );
         const upload = (await uploadRes.json()) as UploadResponse;
 
-        await SELF.fetch(
-            `https://media.pollinations.ai/${upload.id}/tags`,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${VALID_KEY}`,
-                },
-                body: JSON.stringify({
-                    private: ["secret"],
-                }),
+        await SELF.fetch(`https://media.pollinations.ai/${upload.id}/tags`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${VALID_KEY}`,
             },
-        );
+            body: JSON.stringify({
+                private: ["secret"],
+            }),
+        });
 
         // Try to browse non-existent public tag
         const browseRes = await SELF.fetch(

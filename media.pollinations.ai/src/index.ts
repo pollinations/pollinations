@@ -327,7 +327,15 @@ api.post(
                     await c.env.DB.prepare(
                         `INSERT OR IGNORE INTO media_objects (hash, owner, content_type, size, created_at)
                          VALUES (?, ?, ?, ?, ?)`,
-                    ).bind(hash, authResult.name, contentType, fileBuffer.byteLength, now).run();
+                    )
+                        .bind(
+                            hash,
+                            authResult.name,
+                            contentType,
+                            fileBuffer.byteLength,
+                            now,
+                        )
+                        .run();
                 } catch (dbError) {
                     console.error("Database error during upload:", dbError);
                     // Don't fail upload if DB write fails - blob is safely in R2
@@ -598,9 +606,10 @@ api.get(
 
         const limitParam = c.req.query("limit");
         const parsedLimit = Number.parseInt(limitParam || "50", 10);
-        const limit = Number.isFinite(parsedLimit) && parsedLimit >= 1
-            ? Math.min(parsedLimit, 500)
-            : 50;
+        const limit =
+            Number.isFinite(parsedLimit) && parsedLimit >= 1
+                ? Math.min(parsedLimit, 500)
+                : 50;
         const cursor = c.req.query("cursor");
 
         try {
@@ -896,9 +905,10 @@ api.get(
 
         const limitParam = c.req.query("limit");
         const parsedLimit = Number.parseInt(limitParam || "50", 10);
-        const limit = Number.isFinite(parsedLimit) && parsedLimit >= 1
-            ? Math.min(parsedLimit, 500)
-            : 50;
+        const limit =
+            Number.isFinite(parsedLimit) && parsedLimit >= 1
+                ? Math.min(parsedLimit, 500)
+                : 50;
         const cursor = c.req.query("cursor");
 
         try {

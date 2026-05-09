@@ -660,6 +660,23 @@ function AuthorizeComponent() {
                                         </div>
                                     )}
                                 </li>
+                                {attribution?.earningsEnabled && (
+                                    <li className="flex items-start gap-2">
+                                        <span
+                                            className="w-4 shrink-0 text-amber-800"
+                                            aria-hidden="true"
+                                        >
+                                            &#x1F331;
+                                        </span>
+                                        <span>
+                                            Earn{" "}
+                                            <span className="font-semibold">
+                                                20%
+                                            </span>{" "}
+                                            of the pollen you spend in-app.
+                                        </span>
+                                    </li>
+                                )}
                             </ul>
                         </div>
 

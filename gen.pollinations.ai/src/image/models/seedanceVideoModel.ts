@@ -26,7 +26,7 @@ interface SeedanceTaskResponse {
     task_id?: string;
     status?: string;
     error?: {
-        code: string;
+        code: number | string;
         message: string;
     };
 }
@@ -38,7 +38,7 @@ interface SeedanceTaskResult {
         video_url?: string;
     };
     error?: {
-        code: string;
+        code: number | string;
         message: string;
     };
     usage?: {
@@ -211,6 +211,10 @@ async function generateSeedanceVideo(
 
     const generateEndpoint =
         "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks";
+    logOps(
+        `${config.displayName} request body:`,
+        JSON.stringify(requestBody, null, 2),
+    );
     const generateResponse = await fetchUpstream(generateEndpoint, {
         method: "POST",
         headers: {
@@ -400,8 +404,15 @@ async function pollSeedanceTask(
         if (status === "failed" || status === "error") {
             const errorMsg =
                 pollData.error?.message || "Video generation failed";
+            const errorCode = pollData.error?.code;
+            const httpStatus =
+                typeof errorCode === "number" &&
+                errorCode >= 400 &&
+                errorCode < 600
+                    ? errorCode
+                    : 500;
             logError("Seedance generation error:", pollData.error);
-            throw new HttpError(errorMsg, 500, undefined, pollUrl);
+            throw new HttpError(errorMsg, httpStatus, undefined, pollUrl);
         }
 
         // Status is still pending/queued/generating - wait and try again

@@ -121,8 +121,12 @@ export async function callSeedanceV2API(
             video_output_duration: actualDurationSeconds,
         });
     } catch (err) {
+        logError("Seedance 2.0 prediction call failed:", err);
         if (err instanceof ReplicateError) {
-            logError("Replicate error:", err.message);
+            logError("Replicate raw error details:", {
+                message: err.message,
+                status: err.status,
+            });
             throw new HttpError(
                 `Seedance 2.0 generation failed: ${err.message}`,
                 err.status ?? 500,

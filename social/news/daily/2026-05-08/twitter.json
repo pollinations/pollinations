@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-08",
+  "period_start": "2026-05-08",
+  "period_end": "2026-05-08",
+  "generated_at": "2026-05-09T06:41:09.594479+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-08/images/twitter.jpg"
+    }
+  ],
+  "text": "9 prs merged today. gemma 26b is now live on the text endpoint. the image api finally respects your exact width and height instead of quietly pre-scaling them (our bad). video generation in workers is fixed, plus 3 new community apps."
+}

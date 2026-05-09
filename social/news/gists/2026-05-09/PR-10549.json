@@ -1,0 +1,33 @@
+{
+  "pr_number": 10549,
+  "title": "security: restrict better-auth trustedOrigins to Pollinations domains",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10549",
+  "merged_at": "2026-05-09T09:00:32Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Locking the hive gates",
+    "blurb": "Tightened up our authentication origins to keep the hive extra secure. Just some routine maintenance to ensure your sessions stay safe and sound.",
+    "summary": "Restricted better-auth trusted origins to explicit Pollinations domains to enhance CSRF and redirect security.",
+    "impact": "Improves backend security by ensuring authentication requests only originate from trusted Pollinations domains.",
+    "keywords": [
+      "security",
+      "auth",
+      "infrastructure",
+      "better-auth"
+    ],
+    "visual_concept": "Polly the bee acting as a friendly security guard checking a list of approved visitors with the monitor robot at a garden gate.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, standing next to a chunky monitor robot holding a clipboard with a checklist. They are guarding a glowing lime green (#ecf874) garden gate. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-09/PR-10549.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, standing next to a chunky monitor robot holding a clipboard with a checklist. They are guarding a glowing lime green (#ecf874) garden gate. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-09T09:01:26.954106+00:00"
+}

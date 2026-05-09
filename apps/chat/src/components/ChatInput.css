@@ -115,7 +115,8 @@ body.light .drop-overlay { background: rgba(255,255,255,0.85); }
   gap: 0;
   border: 1px solid var(--input-border);
   border-radius: var(--radius-xl);
-  overflow: hidden;
+  /* overflow: visible so the model dropdown can extend above the card */
+  overflow: visible;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   background: var(--input-bg);
   box-shadow: var(--shadow-md);

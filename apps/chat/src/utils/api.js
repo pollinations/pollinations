@@ -1,6 +1,17 @@
 // Pollinations API utilities — updated to match gen.pollinations.ai spec
 const BASE_URL = 'https://gen.pollinations.ai';
-const API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || '';
+const ENV_API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || '';
+export const BYOP_STORAGE_KEY = 'pollinations_byop_api_key';
+
+const getApiToken = () => {
+  if (typeof window !== 'undefined') {
+    try {
+      const userKey = window.localStorage.getItem(BYOP_STORAGE_KEY);
+      if (userKey) return userKey;
+    } catch { /* ignore localStorage failures */ }
+  }
+  return ENV_API_TOKEN;
+};
 
 let textModels = [];
 let imageModels = [];
@@ -17,19 +28,45 @@ const getRealModelName = (modelId) => {
   return modelId;
 };
 
-// Parse the consistent error shape returned by the API
-const parseApiError = async (response) => {
-  try {
-    const body = await response.json();
-    const msg = body?.error?.message || body?.error?.code || response.statusText;
-    const code = response.status;
-    if (code === 401) return new Error('Invalid or missing API key (401)');
-    if (code === 402) return new Error('Insufficient pollen balance (402)');
-    if (code === 403) return new Error('API key lacks required permission (403)');
-    return new Error(`API error ${code}: ${msg}`);
-  } catch {
-    return new Error(`API error ${response.status}: ${response.statusText}`);
+// Map server response → sanitized client-facing error.
+// We intentionally do NOT surface raw server messages: the user sees a
+// short, friendly summary, and the UI uses `errorType` to decide how to
+// react (e.g. show the BYOP button on auth failures).
+const buildClientError = (code) => {
+  let errorType = 'unknown';
+  let message = 'Something went wrong. Please try again.';
+
+  if (code === 401) {
+    errorType = 'auth';
+    message = 'Authentication failed. Add your own API key to continue.';
+  } else if (code === 402) {
+    errorType = 'balance';
+    message = 'Out of Pollen credits. Top up or use your own API key.';
+  } else if (code === 403) {
+    errorType = 'permission';
+    message = 'This API key doesn\'t have access to that model.';
+  } else if (code === 429) {
+    errorType = 'rate_limit';
+    message = 'You\'re sending requests too quickly. Try again in a moment.';
+  } else if (code >= 500) {
+    errorType = 'server';
+    message = 'The service is temporarily unavailable. Please try again.';
+  } else if (code >= 400) {
+    errorType = 'client';
+    message = 'Request could not be completed.';
   }
+
+  const err = new Error(message);
+  err.code = code;
+  err.errorType = errorType;
+  return err;
+};
+
+const parseApiError = async (response) => {
+  // Drain the body so the connection isn't left open, but never reflect
+  // its contents back to the user.
+  try { await response.text(); } catch { /* ignore */ }
+  return buildClientError(response.status);
 };
 
 export const loadModels = async () => {
@@ -37,7 +74,8 @@ export const loadModels = async () => {
     return modelsCache;
   }
 
-  const headers = API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {};
+  const token = getApiToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   const [textRes, imageRes, audioRes] = await Promise.allSettled([
     fetch(`${BASE_URL}/v1/models`, { headers }),
@@ -258,7 +296,8 @@ export const sendMessage = async (messages, onChunk, onComplete, onError, modelI
     }
 
     const headers = { 'Content-Type': 'application/json' };
-    if (API_TOKEN) headers['Authorization'] = `Bearer ${API_TOKEN}`;
+    const token = getApiToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
       method: 'POST',
@@ -392,7 +431,8 @@ export const generateImage = async (prompt, options = {}) => {
     model, width, height, seed, enhance, nologo, nofeed, safe, quality,
   });
   const url = `${BASE_URL}/image/${encodeURIComponent(prompt)}?${params}`;
-  const headers = API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {};
+  const token = getApiToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const response = await fetch(url, { headers });
   if (!response.ok) throw await parseApiError(response);
 
@@ -416,7 +456,8 @@ export const generateVideo = async (prompt, options = {}) => {
   const params = new URLSearchParams({ model, seed, nologo, nofeed });
   // Correct endpoint: /video/{prompt}  (not /image/{prompt})
   const url = `${BASE_URL}/video/${encodeURIComponent(prompt)}?${params}`;
-  const headers = API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {};
+  const token = getApiToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const response = await fetch(url, { headers });
   if (!response.ok) throw await parseApiError(response);
 
@@ -438,7 +479,8 @@ export const generateAudio = async (text, options = {}) => {
 
   const params = new URLSearchParams({ voice, model });
   const url = `${BASE_URL}/audio/${encodeURIComponent(text)}?${params}`;
-  const headers = API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {};
+  const token = getApiToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const response = await fetch(url, { headers });
   if (!response.ok) throw await parseApiError(response);
 

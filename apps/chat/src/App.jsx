@@ -10,6 +10,7 @@ import ConfirmModal from './components/ConfirmModal';
 import SettingsPanel from './components/SettingsPanel';
 import TutorialModal from './components/TutorialModal';
 import GenerationOptionsModal from './components/GenerationOptionsModal';
+import BYOPModal from './components/BYOPModal';
 
 function App() {
   const {
@@ -34,6 +35,7 @@ function App() {
   const [selectedAudioModel,  setSelectedAudioModel]  = useState('openai-audio');
   const [theme, setTheme] = useState('dark');
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+  const [isBYOPModalOpen, setIsBYOPModalOpen] = useState(false);
 
   const [models,       setModels]       = useState({});
   const [imageModels,  setImageModels]  = useState({});
@@ -63,6 +65,13 @@ function App() {
   // Tutorial on first visit
   useEffect(() => {
     if (!localStorage.getItem('hasSeenTutorial')) setIsTutorialOpen(true);
+  }, []);
+
+  // Expose a global BYOP opener so MessageBubble (and any error UI)
+  // can trigger the modal without prop-drilling.
+  useEffect(() => {
+    window.openBYOPModal = () => setIsBYOPModalOpen(true);
+    return () => { delete window.openBYOPModal; };
   }, []);
 
   const handleCloseTutorial = useCallback(() => {
@@ -177,23 +186,32 @@ function App() {
       ? [{ role: 'system', content: sessionSettings.systemPrompt.trim() }, ...updatedChat.messages]
       : updatedChat.messages;
 
+    const applyError = (error) => {
+      if (error.message === 'User aborted') {
+        updateMessage(assistantId, { content: '**Message stopped by user**', isStreaming: false, isError: false });
+      } else {
+        updateMessage(assistantId, {
+          content: error.message,
+          isStreaming: false,
+          isError: true,
+          errorType: error.errorType || 'unknown',
+          errorCode: error.code || null,
+        });
+      }
+      setIsGenerating(false);
+    };
+
     try {
       await sendMessage(
         runtimeMessages,
         (_, fullContent) => updateMessage(assistantId, { content: fullContent, isStreaming: true }),
         (fullContent)    => { updateMessage(assistantId, { content: fullContent, isStreaming: false }); setIsGenerating(false); },
-        (error)          => {
-          const msg = error.message === 'User aborted' ? '**Message stopped by user**' : `Error: ${error.message}`;
-          updateMessage(assistantId, { content: msg, isStreaming: false, isError: error.message !== 'User aborted' });
-          setIsGenerating(false);
-        },
+        applyError,
         selectedModel,
         { maxTokens: sessionSettings.maxTokens, temperature: sessionSettings.temperature, topP: sessionSettings.topP },
       );
     } catch (error) {
-      const msg = error.message === 'User aborted' ? '**Message stopped by user**' : `Error: ${error.message}`;
-      updateMessage(assistantId, { content: msg, isStreaming: false, isError: error.message !== 'User aborted' });
-      setIsGenerating(false);
+      applyError(error);
     }
   }, [isGenerating, addMessage, updateMessage, selectedModel, sessionSettings]);
 
@@ -211,7 +229,13 @@ function App() {
       const img = await generateImage(prompt, { model: selectedImageModel, ...imageGenerationOptions });
       updateMessage(aid, { content: '', imageUrl: img.url, imagePrompt: img.prompt, imageModel: img.model, isStreaming: false });
     } catch (error) {
-      updateMessage(aid, { content: `Image generation failed: ${error.message}`, isStreaming: false, isError: true });
+      updateMessage(aid, {
+        content: error.message,
+        isStreaming: false,
+        isError: true,
+        errorType: error.errorType || 'unknown',
+        errorCode: error.code || null,
+      });
       if (window?.showToast) window.showToast('Image generation failed', 'error');
     }
     setIsGenerating(false);
@@ -229,7 +253,13 @@ function App() {
       const vid = await generateVideo(prompt, { model: selectedVideoModel, ...videoGenerationOptions });
       updateMessage(aid, { content: '', videoUrl: vid.url, videoPrompt: vid.prompt, videoModel: vid.model, isStreaming: false });
     } catch (error) {
-      updateMessage(aid, { content: `Video generation failed: ${error.message}`, isStreaming: false, isError: true });
+      updateMessage(aid, {
+        content: error.message,
+        isStreaming: false,
+        isError: true,
+        errorType: error.errorType || 'unknown',
+        errorCode: error.code || null,
+      });
       if (window?.showToast) window.showToast('Video generation failed', 'error');
     }
     setIsGenerating(false);
@@ -247,7 +277,13 @@ function App() {
       const aud = await generateAudio(text, { model: selectedAudioModel, ...options });
       updateMessage(aid, { content: '', audioUrl: aud.url, audioText: aud.text, audioVoice: aud.voice, audioModel: aud.model, isStreaming: false });
     } catch (error) {
-      updateMessage(aid, { content: `Audio generation failed: ${error.message}`, isStreaming: false, isError: true });
+      updateMessage(aid, {
+        content: error.message,
+        isStreaming: false,
+        isError: true,
+        errorType: error.errorType || 'unknown',
+        errorCode: error.code || null,
+      });
       if (window?.showToast) window.showToast('Audio generation failed', 'error');
     }
     setIsGenerating(false);
@@ -273,7 +309,17 @@ function App() {
         (_, full) => updateMessage(aid, { content: full, isStreaming: true }),
         (full)    => { updateMessage(aid, { content: full, isStreaming: false }); setIsGenerating(false); },
         (error)   => {
-          updateMessage(aid, { content: error.message === 'User aborted' ? '**Message stopped by user**' : `Error: ${error.message}`, isStreaming: false, isError: error.message !== 'User aborted' });
+          if (error.message === 'User aborted') {
+            updateMessage(aid, { content: '**Message stopped by user**', isStreaming: false, isError: false });
+          } else {
+            updateMessage(aid, {
+              content: error.message,
+              isStreaming: false,
+              isError: true,
+              errorType: error.errorType || 'unknown',
+              errorCode: error.code || null,
+            });
+          }
           setIsGenerating(false);
         },
         selectedModel,
@@ -334,6 +380,8 @@ function App() {
       </div>
 
       <KeyboardShortcutsModal isOpen={isShortcutsModalOpen} onClose={() => setIsShortcutsModalOpen(false)} />
+
+      <BYOPModal isOpen={isBYOPModalOpen} onClose={() => setIsBYOPModalOpen(false)} />
 
       <SettingsPanel
         isOpen={isSettingsPanelOpen}

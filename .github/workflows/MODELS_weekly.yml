@@ -1,0 +1,71 @@
+name: Models Weekly Report
+
+on:
+  schedule:
+    - cron: '0 14 * * 3'  # Wednesday 14:00 UTC
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Date to snapshot (YYYY-MM-DD). Defaults to today UTC.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Generate without committing or posting.'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  models-weekly:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Overlay news branch data
+        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests PyYAML
+
+      - name: Generate model-changes report
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
+          DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
+        run: python social/scripts/generate_models_news.py
+
+      - name: Refresh news overlay
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git fetch origin news
+          git checkout origin/news -- social/news/ || echo "Nothing on news yet"
+
+      - name: Publish to Discord
+        if: github.event.inputs.dry_run != 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
+          DISCORD_MODELS_WEBHOOK_URL: ${{ secrets.DISCORD_MODELS_WEBHOOK_URL }}
+        run: python social/scripts/publish_models_news.py

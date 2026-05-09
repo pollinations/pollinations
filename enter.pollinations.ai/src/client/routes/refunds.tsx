@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import refundsMarkdown from "../../../legal/REFUNDS_AND_CANCELLATIONS.md?raw";
-import { LegalPageLayout } from "../components/layout/legal-page-layout";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/refunds")({
-    component: RefundsComponent,
+    beforeLoad: () => {
+        throw redirect({ href: "https://pollinations.ai/refunds" });
+    },
+    component: RedirectComponent,
 });
 
-function RefundsComponent() {
-    return <LegalPageLayout markdown={refundsMarkdown} currentPage="refunds" />;
+function RedirectComponent() {
+    return null;
 }

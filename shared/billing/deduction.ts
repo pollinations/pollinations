@@ -1,38 +1,61 @@
 import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
+import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
+
+export type Bucket = BalanceBucket;
+
+const BUCKET_COLUMNS = {
+    tier: userTable.tierBalance,
+    pack: userTable.packBalance,
+} as const satisfies Record<Bucket, unknown>;
 
 /**
  * Atomically deducts pollen from user balance.
  *
- * If the user has no positive pack balance, always deducts from tier.
- * Tier resets hourly so going negative is fine — prevents spillover into pack.
- *
- * If the user has a positive pack balance, uses priority: tier → pack.
- * Lets users who purchased packs use them after tier runs out.
+ * Regular requests are binary: tier pays when it can cover the actual charge,
+ * pack pays when tier cannot cover and pack is positive, and regular overage
+ * falls back to tier when pack is empty.
+ * Paid-only requests always deduct from pack and never touch tier.
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
-): Promise<void> {
-    if (amount <= 0) return;
+    isPaidOnly = false,
+): Promise<{ ok: boolean; bucket: Bucket | null }> {
+    if (amount <= 0) return { ok: true, bucket: null };
 
-    await db.run(sql`
-		UPDATE ${userTable}
-		SET
-			tier_balance = CASE
-				WHEN COALESCE(pack_balance, 0) <= 0 THEN COALESCE(tier_balance, 0) - ${amount}
-				WHEN COALESCE(tier_balance, 0) > 0 THEN COALESCE(tier_balance, 0) - ${amount}
-				ELSE tier_balance
-			END,
-			pack_balance = CASE
-				WHEN COALESCE(pack_balance, 0) <= 0 THEN pack_balance
-				WHEN COALESCE(tier_balance, 0) <= 0 THEN COALESCE(pack_balance, 0) - ${amount}
-				ELSE pack_balance
-			END
-		WHERE id = ${userId}
-	`);
+    const row = await db.get<{ bucket: Bucket }>(sql`
+        WITH decision AS MATERIALIZED (
+            SELECT
+                id,
+                CASE
+                    WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
+                    WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
+                    WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'
+                    ELSE 'tier'
+                END AS bucket
+            FROM ${userTable}
+            WHERE id = ${userId}
+        )
+        UPDATE ${userTable}
+        SET
+            tier_balance = CASE
+                WHEN (SELECT bucket FROM decision) = 'tier'
+                    THEN COALESCE(tier_balance, 0) - ${amount}
+                ELSE tier_balance
+            END,
+            pack_balance = CASE
+                WHEN (SELECT bucket FROM decision) = 'pack'
+                    THEN COALESCE(pack_balance, 0) - ${amount}
+                ELSE pack_balance
+            END
+        WHERE id = (SELECT id FROM decision)
+        RETURNING (SELECT bucket FROM decision) AS bucket
+    `);
+
+    return { ok: !!row, bucket: row?.bucket ?? null };
 }
 
 /**
@@ -50,21 +73,54 @@ export async function atomicDeductApiKeyBalance(
     db: DrizzleD1Database,
     apiKeyId: string,
     amount: number,
-): Promise<void> {
-    if (amount <= 0) return;
+): Promise<{ ok: boolean }> {
+    if (amount <= 0) return { ok: true };
 
-    await db.run(sql`
-		UPDATE ${apiKeyTable}
-		SET pollen_balance = pollen_balance - ${amount}
-		WHERE id = ${apiKeyId}
-		AND pollen_balance IS NOT NULL
-	`);
+    const result = await db.run(sql`
+			UPDATE ${apiKeyTable}
+			SET pollen_balance = pollen_balance - ${amount}
+			WHERE id = ${apiKeyId}
+			AND pollen_balance IS NOT NULL
+		`);
+
+    return { ok: (result.meta.changes ?? 0) > 0 };
 }
 
-export type UserBalances = {
-    tierBalance: number;
-    packBalance: number;
-};
+export type { UserBalance };
+
+/**
+ * Atomically adjusts any user balance bucket by a positive or negative amount.
+ */
+export async function atomicAdjustUserBalance(
+    db: DrizzleD1Database,
+    userId: string,
+    bucket: Bucket,
+    amount: number,
+): Promise<{ ok: boolean; newBalance: number | null }> {
+    if (amount === 0) return { ok: true, newBalance: null };
+
+    const column = BUCKET_COLUMNS[bucket];
+    const rows = await db
+        .update(userTable)
+        .set({ [`${bucket}Balance`]: sql`COALESCE(${column}, 0) + ${amount}` })
+        .where(sql`${userTable.id} = ${userId}`)
+        .returning({ newBalance: column });
+
+    return {
+        ok: rows.length > 0,
+        newBalance: rows[0]?.newBalance ?? null,
+    };
+}
+
+export async function atomicCreditUserBalance(
+    db: DrizzleD1Database,
+    userId: string,
+    bucket: Bucket,
+    amount: number,
+): Promise<{ ok: boolean; newBalance: number | null }> {
+    if (amount <= 0) return { ok: true, newBalance: null };
+    return atomicAdjustUserBalance(db, userId, bucket, amount);
+}
 
 /**
  * Gets the current balances for a user.
@@ -77,7 +133,7 @@ export type UserBalances = {
 export async function getUserBalances(
     db: DrizzleD1Database,
     userId: string,
-): Promise<UserBalances> {
+): Promise<UserBalance> {
     const result = await db
         .select({
             tierBalance: userTable.tierBalance,
@@ -92,47 +148,4 @@ export async function getUserBalances(
         tierBalance: user?.tierBalance ?? 0,
         packBalance: user?.packBalance ?? 0,
     };
-}
-
-export type DeductionSource = {
-    fromTier: number;
-    fromPack: number;
-};
-
-/**
- * Identifies which single balance bucket a deduction comes from.
- * Matches the logic in atomicDeductUserBalance:
- * - If no positive pack balance → always tier
- * - Otherwise: tier → pack
- */
-export function identifyDeductionSource(
-    tierBalance: number,
-    packBalance: number,
-    amount: number,
-): DeductionSource {
-    if (packBalance <= 0) return { fromTier: amount, fromPack: 0 };
-    if (tierBalance > 0) return { fromTier: amount, fromPack: 0 };
-    return { fromTier: 0, fromPack: amount };
-}
-
-/**
- * Atomically deducts pollen from paid balance only (excluding tier_balance).
- *
- * @param db - Drizzle database instance
- * @param userId - User ID to deduct from
- * @param amount - Amount of pollen to deduct
- * @returns Promise that resolves when deduction is complete
- */
-export async function atomicDeductPaidBalance(
-    db: DrizzleD1Database,
-    userId: string,
-    amount: number,
-): Promise<void> {
-    if (amount <= 0) return;
-
-    await db.run(sql`
-		UPDATE ${userTable}
-		SET pack_balance = COALESCE(pack_balance, 0) - ${amount}
-		WHERE id = ${userId}
-	`);
 }

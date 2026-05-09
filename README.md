@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🖼️ LAHgen](https://image.khminds.com/) | LAHgen generates AI images from text prompts on https://image.khminds.com/. It produces unlimited images using AI models across different artistic styles. | [@web](https://github.com/web) |
-| [🖼️ YSOAI IMAGE GENERATOR](https://huggingface.co/spaces/yassinovich/YSOAI) | Generate images with YSOAI using pollinations.ai, for free and quickly. | [@web](https://github.com/web) |
-| [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |
-| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@web](https://github.com/web) |
-| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |
-| [🖼️ Frieze](128737) | Generate and display AI-generated banner images and slogans in your terminal using Frieze, a mostly silly shell tool. | [@cli](https://github.com/cli) |
-| [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@web](https://github.com/web) |
-| [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |
-| [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@web](https://github.com/web) |
-| [🧪 AI Models Laboratory](https://iamge-lab-website.vercel.app/) | AI Models Laboratory is a Next.js 15 and Three.js web app for real-time generative creation and archiving of high resolution digital artifacts. | [@web](https://github.com/web) |
+| [🤖 PolliGPT](https://polli-gpt.lovable.app/) | **PolliGPT** | [@solarnode-developement](https://github.com/solarnode-developement) |
+| [🖥️ Hyggshi OS Web Edition](https://hyggshi-os-website.pages.dev/OSmain) | Hyggshi OS Web Edition is a multi-featured web-based OS simulator (PWA) built on Cloudflare Pages. It integrates the Pollinations.ai API to power a built-in Chat AI app supporting text generation (Gem | [@HyggshiOSDeveloper](https://github.com/HyggshiOSDeveloper) |
+| [🎮 idol-interaction](https://spritenguyen.github.io/idol-interaction-game-2/) | idol-interaction uses models from pollinations.ai for interpolation/content generation. Enter keywords in the scout tab to find characters, then chat, complete tasks, or take photos. | [@spritenguyen](https://github.com/spritenguyen) |
+| [📱 Toddler Read QR Card Generator](https://toddler-read.netlify.app/) | Generate a collection of toddler cards with QR codes readable in a dedicated mobile app, designed for toddlers without screen interaction. | [@eddow](https://github.com/eddow) |
+| [🧾 Madlisten](https://madlisten.dk/) | Use Madlisten to browse and view recipes. | [@SamuelHauptmannvanDam](https://github.com/SamuelHauptmannvanDam) |
+| [🖼️ pollimage](https://www.npmjs.com/package/pollimage) | PollImage is a developer-focused CLI powered by Pollinations.AI that generates AI images directly from the terminal. | [@MINEOGO](https://github.com/MINEOGO) |
+| [🖼️ ZenWall AI](https://zenwall.netlify.app/) | ZenWall AI generates minimalist 9:16 vertical wallpapers in a web application. | [@Replikate648](https://github.com/Replikate648) |
+| [🧰 App forge](torrents.signalcity.tv) | App forge. | [@sourdiesel135](https://github.com/sourdiesel135) |
+| [📷 Photo Prompt](https://photoprompt.my.id/) | Photo Prompt generates images from detailed prompts using multi-model AI tools. It includes a library of ready-to-use prompts and creative workflows for photographers and designers. | [@thevoxer](https://github.com/thevoxer) |
+| [🤖 Pyanchor](https://pyanchor.pyan.kr) | **Pyanchor** is an open-source agent-agnostic AI live-edit sidecar for running web apps (Next.js / Vite / Astro). Add a one-line script to your page; an in-page overlay (Shadow DOM) lets you point at | [@ikellllllll](https://github.com/ikellllllll) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-04-27** – **📖 StoryForge** A new community app that generates illustrated, chapter-based short stories using the [Unified API](https://gen.pollinations.ai). [Try it](http://pollen-story-forge.vercel.app/) <!-- app -->
-- **2026-04-27** – **🖥️ Frieze** Because your terminal needs art too. A community-built shell tool for generating AI banners and slogans right in your CLI. [View repo](https://github.com/peterjaric/frieze) <!-- app -->
-- **2026-04-24** – **🎨 Thinking in three speeds** Image generation reasoning is no longer just on or off. You can now pass `fast`, `balanced`, or `pro` modes to the [Image API](https://gen.pollinations.ai/image/{prompt}) to dial in exactly how hard you want the models to think.
-- **2026-04-24** – **🧠 DeepSeek V4 arrives** DeepSeek V4 Flash and Pro are now live on the [Text API](https://gen.pollinations.ai/v1/chat/completions). Point your requests at the new models for heavy-duty reasoning and coding tasks.
-- **2026-04-24** – **🎵 Planting audio seeds** The [Audio API](https://gen.pollinations.ai/audio/{text}) now accepts a `seed` parameter. Lock in that perfect voice inflection or music track instead of rolling the dice on every request.
-- **2026-04-24** – **📊 Precise usage tracking** The [Dashboard](https://enter.pollinations.ai) now features a proper calendar picker. Filter your API usage and export CSVs by exact days, weeks, or months instead of vague rolling windows.
-- **2026-04-24** – **🌟 Time travel in the Greenhouse** TimeMachine Chat just landed in the community showcase, bringing a unified and secure chat interface for your tech essentials. [Try it](https://timemachinechat.com/) <!-- app -->
-- **2026-04-23** – **🤖 MCP Server v2.1.0** Your agents just got an upgrade. The [MCP package](https://www.npmjs.com/package/@pollinations_ai/mcp) now supports dynamic registries, unlocking 9 video models, 35+ voices, and direct Pollen balance checks.
-- **2026-04-22** – **🎨 gptimage-2 is Live** OpenAI's new `gptimage-2` model is now available on the [image generation API](https://gen.pollinations.ai/image/models). Generate fresh pixels with zero price markup.
-- **2026-04-21** – **🎵 Qwen3-TTS Audio Models** The hive learns to speak Qwen. Hit the [Audio API](https://gen.pollinations.ai/audio/{text}) with the new instruct variant to control emotion and style parameters.
+- **2026-05-08** – **🤖 Gemma 4 26B** The new 26B parameter Gemma model is now live on the text API. It brings multimodal support, tool use, and a 262k context window for when you really need to paste that entire codebase. [View models](https://gen.pollinations.ai/v1/models)
+- **2026-05-08** – **🚀 Command Line Canvas** Because leaving the terminal is overrated. Generate AI images directly from your command line with the new PollImage CLI tool. [Try it](https://www.npmjs.com/package/pollimage) <!-- app -->
+- **2026-05-08** – **🌟 Madlisten** The hive is cooking. A new community-built recipe browsing application joins the showcase. [Try it](https://madlisten.dk/) <!-- app -->
+- **2026-05-08** – **📱 QR Codes for Tiny Humans** Generate and print custom QR-enabled learning cards for screen-free toddler interaction. [Try it](https://toddler-read.netlify.app/) <!-- app -->
+- **2026-05-07** – **🧠 Text Embeddings API** You can now generate vector embeddings directly through the `/v1/embeddings` endpoint. Wire it up for semantic search or RAG without leaving the [Unified API](https://gen.pollinations.ai).
+- **2026-05-07** – **🎬 Seedance 2.0 Video Model** We wired up Replicate to bring you Seedance 2.0. Text-to-video, image-to-video, and frame interpolation are now live for your 720p generation needs.
+- **2026-05-07** – **🍯 Creator Rewards** App builders can now earn Pollen when users generate content through their apps. Opt-in via your API keys in the [Dashboard](https://enter.pollinations.ai) and watch the balance go up.
+- **2026-05-06** – **🔑 BYOP Attribution** Bring-your-own-keys tracking is now persistent. Your app actually gets credit for the generations it drives, which is helpful if you like accurate stats. [Check your dashboard](https://enter.pollinations.ai).
+- **2026-05-06** – **🌸 Showcase Pruning** We swept through the [community showcase](https://hello.pollinations.ai) to remove dead links and fix ownership credits. The garden is slightly more organized now.
+- **2026-05-05** – **🧰 Worl Tools** An offline-first desktop app packing over 20 utilities into one Swiss army knife. [Try it](https://worldtools-mu.vercel.app/) <!-- app -->
 ---
 
 ## 🌱 Introduction
@@ -301,7 +301,6 @@ graph LR
     GEN["gen.pollinations.ai"]:::cfWorker --> ENTER["enter.pollinations.ai Gateway"]:::cfWorker
 
     ENTER --> IMG["Image Service"]:::ec2
-    ENTER --> TXT["Text Service"]:::ec2
     ENTER --> AUD["Audio Service"]:::ec2
 
     IMG --> CF["Cloudflare Worker with R2 Cache"]:::cfWorkerLight
@@ -310,11 +309,10 @@ graph LR
 
     AUD --> EL["ElevenLabs TTS API"]:::provider
 
-    TXT --> C["text.pollinations.ai"]:::ec2
-    C --> SC["Scaleway API"]:::provider
-    C --> DS["Deepseek API"]:::provider
-    C --> G["Azure-hosted LLMs"]:::provider
-    C --> CFM["Cloudflare AI"]:::provider
+    GEN --> SC["Scaleway API"]:::provider
+    GEN --> DS["Deepseek API"]:::provider
+    GEN --> G["Azure-hosted LLMs"]:::provider
+    GEN --> CFM["Cloudflare AI"]:::provider
 
     style CLIENTS fill:none,stroke:#888,stroke-width:2px,stroke-dasharray: 5 5
 
@@ -377,7 +375,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 
-- [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
+- [`gen.pollinations.ai/`](./gen.pollinations.ai/): Cloudflare Worker for API routing, auth handoff, text generation, and caching.
 
 - [`packages/polli-cli/`](./packages/polli-cli/): The Pollinations CLI — for humans, AI agents, and everything in between.
 

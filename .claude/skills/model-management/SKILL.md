@@ -20,10 +20,9 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 
 | File | Purpose |
 |------|---------|
-| `text.pollinations.ai/.env` | API keys, endpoints |
-| `text.pollinations.ai/secrets/env.json` | Encrypted secrets (use sops) |
-| `text.pollinations.ai/configs/modelConfigs.ts` | Model routing config |
-| `text.pollinations.ai/availableModels.ts` | Service name → config mapping |
+| `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | Encrypted text+image provider keys (use sops) |
+| `gen.pollinations.ai/src/text/configs/modelConfigs.ts` | Model routing config |
+| `gen.pollinations.ai/src/text/availableModels.ts` | Service name → config mapping |
 | `shared/registry/text.ts` | **Pricing**, provider, aliases, description |
 
 ## Image/Video Models
@@ -31,7 +30,7 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 | File | Purpose |
 |------|---------|
 | `image.pollinations.ai/.env` | API keys, endpoints |
-| `image.pollinations.ai/secrets/env.json` | Encrypted secrets (use sops) |
+| `gen.pollinations.ai/secrets/prod.vars.json` | Encrypted secrets (use sops) |
 | `image.pollinations.ai/src/createAndReturnImages.ts` | Model handlers |
 | `shared/registry/image.ts` | **Pricing**, provider, aliases, description |
 
@@ -72,10 +71,10 @@ npx vitest run test/integration/text.test.ts --testNamePattern="<service-name> "
 
 ```bash
 # Decrypt, inspect keys
-sops --decrypt image.pollinations.ai/secrets/env.json | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin)]"
+sops --decrypt gen.pollinations.ai/secrets/prod.vars.json | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin)]"
 
 # Add/update a key
-sops set image.pollinations.ai/secrets/env.json '["KEY_NAME"]' '"value"'
+sops set gen.pollinations.ai/secrets/prod.vars.json '["KEY_NAME"]' '"value"'
 
 # Decrypt to .env (used before local dev/tests)
 npm run decrypt-vars   # from image.pollinations.ai/
@@ -92,7 +91,7 @@ npm run decrypt-vars   # from image.pollinations.ai/
 | `myceli-prod-eastus2` | East US 2 | `gptimage` (gpt-image-1-mini), `gptimage-large` (gpt-image-1.5) |
 | `myceli-prod-swedencentral` | Sweden Central | Flux Kontext, text models |
 
-Env var: `AZURE_MYCELI_PROD_EASTUS2_API_KEY` (in `image.pollinations.ai/secrets/env.json`)
+Env var: `AZURE_MYCELI_PROD_EASTUS2_API_KEY` (in `gen.pollinations.ai/secrets/prod.vars.json`)
 
 ## Login
 
@@ -111,7 +110,7 @@ Recovery steps:
 2. Create new resource: `az cognitiveservices account create --name myceli-prod-<region> --resource-group rg-myceli-prod --kind AIServices --sku S0 --location <region>`
 3. Deploy model: `az cognitiveservices account deployment create --name <resource> --resource-group rg-myceli-prod --deployment-name gpt-image-1-mini --model-name gpt-image-1-mini --model-version 2025-10-06 --model-format OpenAI --sku-capacity 60 --sku-name GlobalStandard`
 4. Get key: `az cognitiveservices account keys list --name <resource> --resource-group rg-myceli-prod --query 'key1' -o tsv`
-5. Add to SOPS: `sops set image.pollinations.ai/secrets/env.json '["AZURE_MYCELI_PROD_EASTUS2_API_KEY"]' '"<key>"'`
+5. Add to SOPS: `sops set gen.pollinations.ai/secrets/prod.vars.json '["AZURE_MYCELI_PROD_EASTUS2_API_KEY"]' '"<key>"'`
 6. Update endpoint URLs in `createAndReturnImages.ts` (`AZURE_GPTIMAGE_CONFIGS`)
 7. Delete broken deployments from old resource to free quota: `az cognitiveservices account deployment delete --name <old-resource> --resource-group rg-myceli-prod --deployment-name <deployment>`
 8. Test locally: `npm run dev` then `curl -H "x-enter-token: $PLN_ENTER_TOKEN" "http://localhost:16384/prompt/a+cat?model=gptimage"`

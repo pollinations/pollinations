@@ -184,16 +184,32 @@ export async function runTierRefill(
         .from(userTable)
         .where(sql`tier IS NOT NULL`);
 
-    // Add hourly pollen, capped at the tier max (negative balances recover gradually)
+    // Restore the free tier floor without clobbering BYOP rewards credited into
+    // tier_balance. Negative balances recover gradually through hourly refills.
     const hourlyResult = await db.run(sql`
         UPDATE user
         SET
             tier_balance = CASE tier
-                WHEN 'spore' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore})
-                WHEN 'seed' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed})
-                WHEN 'flower' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower})
-                WHEN 'nectar' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar})
-                WHEN 'router' THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router})
+                WHEN 'spore' THEN CASE
+                    WHEN COALESCE(tier_balance, 0) < 0 THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.spore}, ${TIER_POLLEN.spore})
+                    ELSE MAX(COALESCE(tier_balance, 0), ${TIER_POLLEN.spore})
+                END
+                WHEN 'seed' THEN CASE
+                    WHEN COALESCE(tier_balance, 0) < 0 THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.seed}, ${TIER_POLLEN.seed})
+                    ELSE MAX(COALESCE(tier_balance, 0), ${TIER_POLLEN.seed})
+                END
+                WHEN 'flower' THEN CASE
+                    WHEN COALESCE(tier_balance, 0) < 0 THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.flower}, ${TIER_POLLEN.flower})
+                    ELSE MAX(COALESCE(tier_balance, 0), ${TIER_POLLEN.flower})
+                END
+                WHEN 'nectar' THEN CASE
+                    WHEN COALESCE(tier_balance, 0) < 0 THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.nectar}, ${TIER_POLLEN.nectar})
+                    ELSE MAX(COALESCE(tier_balance, 0), ${TIER_POLLEN.nectar})
+                END
+                WHEN 'router' THEN CASE
+                    WHEN COALESCE(tier_balance, 0) < 0 THEN MIN(COALESCE(tier_balance, 0) + ${TIER_POLLEN.router}, ${TIER_POLLEN.router})
+                    ELSE MAX(COALESCE(tier_balance, 0), ${TIER_POLLEN.router})
+                END
                 ELSE tier_balance
             END,
             last_tier_grant = ${refillTimestamp}
@@ -259,7 +275,6 @@ export const adminRoutes = new Hono<Env>()
         throw new HTTPException(401, { message: "Unauthorized" });
     })
     .post("/update-tier", async (c) => {
-        // D1-only tier update - no Polar sync
         const body = await c.req.json<{ userId: string; tier: string }>();
 
         if (!body.userId) {

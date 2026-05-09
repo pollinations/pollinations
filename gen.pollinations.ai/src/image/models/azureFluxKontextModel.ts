@@ -1,0 +1,247 @@
+import debug from "debug";
+import type {
+    AuthResult,
+    ImageGenerationResult,
+} from "../createAndReturnImages.ts";
+import { getImageEnv } from "../env.ts";
+import { HttpError } from "../httpError.ts";
+import type { ImageParams } from "../params.ts";
+import { sanitizeString } from "../translateIfNecessary.ts";
+import {
+    analyzeImageSafety,
+    analyzeTextSafety,
+} from "../utils/azureContentSafety.ts";
+import {
+    logGptImageError,
+    logGptImagePrompt,
+} from "../utils/gptImageLogger.ts";
+import {
+    base64ToBuffer,
+    bufferToUint8Array,
+    downloadUserImage,
+} from "../utils/imageDownload.ts";
+
+const logError = debug("pollinations:error");
+const logCloudflare = debug("pollinations:cloudflare");
+
+function withTimeout<T>(
+    promise: Promise<T>,
+    ms: number,
+    label: string,
+): Promise<T> {
+    const timeout = new Promise<never>((_, reject) => {
+        setTimeout(
+            () => reject(new Error(`${label} timeout after ${ms / 1000}s`)),
+            ms,
+        );
+    });
+    return Promise.race([promise, timeout]);
+}
+
+/**
+ * Calls the Azure Flux Kontext API to generate or edit images
+ * Supports both text-to-image generation and image-to-image editing
+ * @param {string} prompt - The prompt for image generation or editing
+ * @param {Object} safeParams - The parameters for image generation or editing
+ * @param {Object} userInfo - Complete user authentication info object
+ * @returns {Promise<ImageGenerationResult>}
+ */
+export async function callAzureFluxKontext(
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> {
+    const apiKey = getImageEnv("AZURE_MYCELI_PROD_SWEDEN_API_KEY");
+    const baseUrl =
+        "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/FLUX.1-Kontext-pro";
+
+    if (!apiKey) {
+        throw new Error(
+            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
+        );
+    }
+
+    // Check if we need to use the edits endpoint instead of generations
+    const isEditMode = safeParams.image && safeParams.image.length > 0;
+
+    // Add the appropriate endpoint path and API version
+    let endpoint: string;
+    if (isEditMode) {
+        endpoint = `${baseUrl}/images/edits?api-version=2025-04-01-preview`;
+        logCloudflare("Using Azure Flux Kontext in edit mode");
+    } else {
+        endpoint = `${baseUrl}/images/generations?api-version=2025-04-01-preview`;
+        logCloudflare("Using Azure Flux Kontext in generation mode");
+    }
+
+    // Check prompt safety with Azure Content Safety (with 30s timeout)
+    logCloudflare("Checking prompt safety...");
+    const promptSafetyResult = await withTimeout(
+        analyzeTextSafety(prompt),
+        30000,
+        "Azure Content Safety check",
+    );
+
+    // Log the prompt with safety analysis results
+    await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
+
+    if (!promptSafetyResult.safe) {
+        const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+        logError("Azure Content Safety rejected prompt:", errorMessage);
+
+        const error = new HttpError(errorMessage, 400);
+        await logGptImageError(
+            prompt,
+            safeParams,
+            userInfo,
+            error,
+            promptSafetyResult,
+        );
+        throw error;
+    }
+
+    // Map safeParams to Azure API parameters
+    const size = `${safeParams.width}x${safeParams.height}`;
+
+    // Build request body for generation mode
+    const requestBody = {
+        prompt: sanitizeString(prompt),
+        size: size,
+        n: 1,
+        model: "flux.1-kontext-pro",
+    };
+
+    logCloudflare("Calling Azure Flux Kontext API with params:", requestBody);
+
+    let response = null;
+
+    if (isEditMode) {
+        // For edit mode, use FormData (multipart/form-data)
+        const formData = new FormData();
+
+        // Add the prompt
+        formData.append("prompt", sanitizeString(prompt));
+        formData.append("model", "flux.1-kontext-pro");
+
+        // Handle images based on their type
+        try {
+            // Convert to array if it's a string (backward compatible)
+            const imageUrls = Array.isArray(safeParams.image)
+                ? safeParams.image
+                : [safeParams.image];
+
+            if (imageUrls.length === 0) {
+                throw new HttpError(
+                    "Image URL is required for Flux Kontext edit mode but was not provided",
+                    400,
+                );
+            }
+
+            // Process the first image (Flux Kontext typically uses single image)
+            const imageUrl = imageUrls[0];
+            logCloudflare(`Fetching image from URL: ${imageUrl}`);
+
+            const { buffer, mimeType } = await downloadUserImage(imageUrl);
+
+            // Check safety of input image (with 30s timeout)
+            logCloudflare("Checking safety of input image");
+            const imageSafetyResult = await withTimeout(
+                analyzeImageSafety(buffer),
+                30000,
+                "Azure Image Safety check",
+            );
+
+            if (!imageSafetyResult.safe) {
+                const errorMessage = `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`;
+                const error = new Error(errorMessage);
+                await logGptImageError(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    error,
+                    imageSafetyResult,
+                );
+                throw error;
+            }
+
+            // Create a Blob and append to FormData
+            const extension = `.${mimeType.split("/")[1]}`;
+            const imageBlob = new Blob([bufferToUint8Array(buffer)], {
+                type: mimeType,
+            });
+            formData.append("image", imageBlob, `image${extension}`);
+        } catch (error) {
+            logError("Error processing image for editing:", error);
+            if (error instanceof HttpError) throw error;
+            throw new Error(`Failed to process image: ${error.message}`);
+        }
+
+        // Log the endpoint for debugging
+        logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
+
+        // Send the edit request
+        response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+            },
+            // biome-ignore lint: linter is confused here
+            body: formData as any,
+        });
+
+        logCloudflare(`Edit request response status: ${response.status}`);
+    } else {
+        // Standard JSON request for generation
+        response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        logCloudflare(`Generation request response status: ${response.status}`);
+    }
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new HttpError(errorText, response.status, undefined, endpoint);
+    }
+
+    const data = (await response.json()) as {
+        data?: Array<{
+            b64_json?: string;
+            content_filter_results?: {
+                sexual?: { filtered?: boolean };
+            };
+        }>;
+    };
+
+    if (!data.data || !data.data[0] || !data.data[0].b64_json) {
+        throw new HttpError(
+            "Invalid response from Azure Flux Kontext API",
+            500,
+            undefined,
+            endpoint,
+        );
+    }
+
+    // Convert base64 to buffer
+    const imageBuffer = base64ToBuffer(data.data[0].b64_json);
+
+    // Return result with content safety flags from Azure response
+    return {
+        buffer: imageBuffer,
+        isMature:
+            data.data[0].content_filter_results?.sexual?.filtered || false,
+        isChild: false, // Azure doesn't provide child detection
+        trackingData: {
+            actualModel: "kontext",
+            usage: {
+                completionImageTokens: 1,
+                totalTokenCount: 1,
+            },
+        },
+    };
+}

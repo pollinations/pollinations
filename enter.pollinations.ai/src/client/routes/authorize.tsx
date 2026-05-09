@@ -39,6 +39,7 @@ type Attribution = {
     githubUsername?: string;
     appName?: string;
     redirectUris?: string[];
+    earningsEnabled?: boolean;
 };
 
 function parseList(val: unknown): string[] | null {
@@ -144,6 +145,9 @@ function AuthorizeComponent() {
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
+    const [redirectValidationState, setRedirectValidationState] = useState<
+        "unchecked" | "valid" | "invalid"
+    >("unchecked");
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
@@ -177,10 +181,14 @@ function AuthorizeComponent() {
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) && !isAttributionPending;
+    const canRedirectOnDeny =
+        parsedRedirectUrl !== null &&
+        (!app_key || redirectValidationState === "valid");
 
     useScrollLock();
 
     useEffect(() => {
+        setRedirectValidationState("unchecked");
         if (isDeviceMode) {
             // device.tsx forwards the server-stored scope as `scope=` in the
             // URL, which flows into `urlScope` and preselects the
@@ -243,7 +251,10 @@ function AuthorizeComponent() {
 
             // Attribution is identified by client_id only. Without one, the
             // consent screen falls back to the hostname display.
-            if (!app_key) return;
+            if (!app_key) {
+                setRedirectValidationState("valid");
+                return;
+            }
 
             const lookupParams = new URLSearchParams({ client_id: app_key });
             if (!isDeviceMode && redirect_url) {
@@ -255,16 +266,21 @@ function AuthorizeComponent() {
                     const attr = data as Attribution;
                     setAttribution(attr);
                     if (attr.error === "redirect_uri_mismatch") {
+                        setRedirectValidationState("invalid");
                         setError(
                             "This redirect URL is not registered for this app. Authorization blocked.",
                         );
                     } else if (!attr.found) {
+                        setRedirectValidationState("invalid");
                         setError(
                             "This app key could not be verified. Authorization blocked.",
                         );
+                    } else {
+                        setRedirectValidationState("valid");
                     }
                 })
                 .catch(() => {
+                    setRedirectValidationState("invalid");
                     setError(
                         "Could not verify this app key. Authorization blocked.",
                     );
@@ -320,11 +336,6 @@ function AuthorizeComponent() {
                             redirectOrigin: parsedRedirectUrl.origin,
                             redirectUri: parsedRedirectUrl.href,
                         }),
-                    ...(attribution?.found && {
-                        clientId: attribution.clientId,
-                        createdForUserId: attribution.userId,
-                        createdForApp: attribution.appName,
-                    }),
                 },
                 permissions: {
                     allowedModels,
@@ -390,7 +401,7 @@ function AuthorizeComponent() {
                 // Best-effort deny
             }
             setDeviceOutcome("denied");
-        } else if (parsedRedirectUrl) {
+        } else if (canRedirectOnDeny && parsedRedirectUrl) {
             const url = new URL(parsedRedirectUrl.href);
             const hash = new URLSearchParams({ error: "access_denied" });
             if (state) hash.set("state", state);
@@ -428,7 +439,10 @@ function AuthorizeComponent() {
     if (!user) {
         const displayedError = error ?? signInError;
         return (
-            <AuthModal dialog={{ label: "Sign in to authorize" }}>
+            <AuthModal
+                dialog={{ label: "Sign in to authorize" }}
+                tone={displayedError ? "error" : undefined}
+            >
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {displayedError ? (
@@ -452,22 +466,25 @@ function AuthorizeComponent() {
                         <Button
                             as="button"
                             onClick={handleDeny}
-                            weight="outline"
-                            color="dark"
+                            weight="light"
+                            color="red"
                             disabled={isSigningIn}
                         >
                             Deny
                         </Button>
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn || !!error}
-                            color="dark"
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
+                        {!error && (
+                            <Button
+                                as="button"
+                                onClick={signIn}
+                                disabled={isSigningIn}
+                                color="amber"
+                                weight="light"
+                            >
+                                {isSigningIn
+                                    ? "Signing in..."
+                                    : "Continue with GitHub"}
+                            </Button>
+                        )}
                     </div>
                 </div>
             </AuthModal>
@@ -475,7 +492,14 @@ function AuthorizeComponent() {
     }
 
     return (
-        <AuthModal dialog={{ labelledBy: "authorize-dialog-title" }}>
+        <AuthModal
+            dialog={
+                error
+                    ? { label: "Authorization error" }
+                    : { labelledBy: "authorize-dialog-title" }
+            }
+            tone={error ? "error" : undefined}
+        >
             <AuthModalHeader>
                 <div className="flex items-center gap-3 min-w-0">
                     <a
@@ -555,8 +579,29 @@ function AuthorizeComponent() {
                                     "profile",
                                 ) && (
                                     <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-amber-800">
-                                            &#x2709;
+                                        <span
+                                            className="flex h-5 w-4 shrink-0 items-center justify-center text-amber-800"
+                                            aria-hidden="true"
+                                        >
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth={2.2}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                className="h-4 w-4"
+                                            >
+                                                <title>Email</title>
+                                                <rect
+                                                    width="18"
+                                                    height="14"
+                                                    x="3"
+                                                    y="5"
+                                                    rx="2"
+                                                />
+                                                <path d="m3 7 9 6 9-6" />
+                                            </svg>
                                         </span>
                                         <span>See your name and email.</span>
                                     </li>
@@ -615,6 +660,23 @@ function AuthorizeComponent() {
                                         </div>
                                     )}
                                 </li>
+                                {attribution?.earningsEnabled && (
+                                    <li className="flex items-start gap-2">
+                                        <span
+                                            className="w-4 shrink-0 text-amber-800"
+                                            aria-hidden="true"
+                                        >
+                                            &#x1F331;
+                                        </span>
+                                        <span>
+                                            Earn{" "}
+                                            <span className="font-semibold">
+                                                20%
+                                            </span>{" "}
+                                            of the pollen you spend in-app.
+                                        </span>
+                                    </li>
+                                )}
                             </ul>
                         </div>
 
@@ -675,7 +737,9 @@ function AuthorizeComponent() {
 
             <div className="flex items-center justify-between p-6 pt-4">
                 <a
-                    href="/terms"
+                    href="https://pollinations.ai/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-xs text-amber-800 hover:text-gray-900 hover:underline"
                 >
                     Terms & Conditions
@@ -684,20 +748,23 @@ function AuthorizeComponent() {
                     <Button
                         as="button"
                         onClick={handleDeny}
-                        weight="outline"
-                        color="dark"
+                        weight="light"
+                        color="red"
                         disabled={isAuthorizing}
                     >
                         Deny
                     </Button>
-                    <Button
-                        as="button"
-                        onClick={handleAuthorize}
-                        disabled={!canAuthorize || isAuthorizing || !!error}
-                        color="dark"
-                    >
-                        {isAuthorizing ? "Authorizing..." : "Authorize"}
-                    </Button>
+                    {!error && (
+                        <Button
+                            as="button"
+                            onClick={handleAuthorize}
+                            disabled={!canAuthorize || isAuthorizing}
+                            color="amber"
+                            weight="light"
+                        >
+                            {isAuthorizing ? "Authorizing..." : "Authorize"}
+                        </Button>
+                    )}
                 </div>
             </div>
         </AuthModal>

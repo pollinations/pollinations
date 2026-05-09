@@ -1,6 +1,6 @@
 export type ModelPrice = {
     name: string;
-    type: "text" | "image" | "video" | "audio";
+    type: "text" | "image" | "video" | "audio" | "embedding";
     perToken?: boolean;
     // Text pricing
     promptTextPrice?: string;
@@ -14,6 +14,7 @@ export type ModelPrice = {
     completionImagePrice?: string;
     perImagePrice?: string;
     // Video pricing
+    promptVideoPrice?: string;
     perSecondPrice?: string;
     perAudioSecondPrice?: string; // For video models with audio (e.g., wan)
     perTokenPrice?: string; // For token-based video models like seedance

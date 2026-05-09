@@ -1,7 +1,9 @@
-import { type Context, Hono } from "hono";
-import { proxy } from "hono/proxy";
+import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import { generateEmbeddings } from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
+import { handleImagePrompt, handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
@@ -21,9 +23,11 @@ import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getAudioModelsInfo,
+    getEmbeddingModelsInfo,
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
+import { getModelDefinition } from "@shared/registry/registry.ts";
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
@@ -33,20 +37,32 @@ import {
     CreateImageResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
+import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
+import { UpstreamError } from "@/error.ts";
+import {
+    applySafety,
+    applySafetyToChatRequest,
+    applySafetyToTexts,
+    withSafetyHeaders,
+} from "@/middleware/safety.ts";
 import { validator } from "@/middleware/validator.ts";
+import {
+    CreateEmbeddingRequestSchema,
+    CreateEmbeddingResponseSchema,
+} from "@/schemas/embeddings.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import {
+    handleChatCompletionLocal,
+    handleSimpleTextLocal,
+    handleTextContentLocal,
+} from "@/text/handler.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
-import {
-    generateAceStepMusic,
-    generateMusic,
-    generateSpeech,
-} from "./audio.ts";
+import { handleSimpleAudio } from "./audio.ts";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = Object.entries(IMAGE_SERVICES)
@@ -65,64 +81,43 @@ const videoModelNames = Object.entries(IMAGE_SERVICES)
     .join(", ");
 
 const factory = createFactory<Env>();
+const textBodyLimit = bodyLimit({
+    maxSize: 20 * 1024 * 1024,
+});
 
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
     resolveModel("generate.image"),
     track("generate.image"),
-    generationAccess,
     imageCache,
+    generationAccess,
     async (c) => {
-        const log = c.get("log").getChild("generate");
-
-        // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
-        const promptParam = c.req.param("prompt") || "";
-
-        log.debug("Extracted prompt param: {prompt}", {
-            prompt: promptParam,
-            length: promptParam.length,
-        });
-
-        const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
-        targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
-
-        log.debug("Proxying to: {url}", {
-            url: targetUrl.toString(),
-        });
-
-        const response = await proxy(targetUrl.toString(), {
-            method: c.req.method,
-            headers: proxyHeaders(c),
-            body: c.req.raw.body,
-        });
-
-        return ensureUpstreamOk(response, targetUrl);
+        const query = c.req.valid("query" as never) as { safe?: SafeValue };
+        const prompt = await applySafety(
+            c,
+            c.req.param("prompt") || "",
+            query.safe,
+        );
+        return withSafetyHeaders(c, await handleImagePrompt(c, prompt));
     },
 );
 
 // Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
+    textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
     resolveModel("generate.text"),
     track("generate.text"),
-    generationAccess,
     textCache,
+    generationAccess,
     async (c) => {
         // Use resolved model from middleware for the backend request
-        const requestBody: CreateChatCompletionRequest = {
+        const requestBody = await applySafetyToChatRequest(c, {
             ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
             model: c.var.model.resolved,
-        };
-
-        const textServiceUrl =
-            c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-        const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-        const rawResponse = await proxy(targetUrl, {
-            method: c.req.method,
-            headers: proxyHeaders(c),
-            body: JSON.stringify(requestBody),
         });
-        const response = await ensureUpstreamOk(rawResponse, targetUrl);
+
+        const response = await handleChatCompletionLocal(c, requestBody);
 
         // Validate streaming responses: if client requested stream but upstream
         // returned non-SSE, throw rather than forwarding broken data.
@@ -131,7 +126,7 @@ const chatCompletionHandlers = factory.createHandlers(
             if (!contentType.includes("text/event-stream")) {
                 throw new UpstreamError(502, {
                     message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                    requestUrl: targetUrl,
+                    requestUrl: new URL(c.req.url),
                     upstreamStatus: response.status,
                     responseBody: contentType,
                 });
@@ -150,12 +145,15 @@ const chatCompletionHandlers = factory.createHandlers(
                 contentFilterResultsToHeaders(parsedResponse);
         }
 
-        return new Response(response.body, {
-            headers: {
-                ...Object.fromEntries(response.headers),
-                ...contentFilterHeaders,
-            },
-        });
+        return withSafetyHeaders(
+            c,
+            new Response(response.body, {
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...contentFilterHeaders,
+                },
+            }),
+        );
     },
 );
 
@@ -193,6 +191,7 @@ export const proxyRoutes = new Hono<Env>()
     .use("/image/models", auth())
     .use("/text/models", auth())
     .use("/audio/models", auth())
+    .use("/embeddings/models", auth())
     .use("/models", auth())
     .get(
         "/v1/models",
@@ -200,7 +199,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models (text, image, audio) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, or `/audio/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
+                'Returns available models (text, image, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you\'re using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.',
             responses: {
                 200: {
                     description: "Success",
@@ -231,6 +230,11 @@ export const proxyRoutes = new Hono<Env>()
                 allowedModels,
                 paidBalance,
             );
+            const embeddingModels = filterModelsByPermissions(
+                getEmbeddingModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
             const now = Date.now();
 
             const toModelEntry = (
@@ -256,6 +260,7 @@ export const proxyRoutes = new Hono<Env>()
                     ...textModels.map((m) =>
                         toModelEntry(m, [
                             "/v1/chat/completions",
+                            "/text",
                             "/text/{prompt}",
                         ]),
                     ),
@@ -269,6 +274,9 @@ export const proxyRoutes = new Hono<Env>()
                     ...audioModels.map((m) =>
                         toModelEntry(m, ["/audio/{text}"]),
                     ),
+                    ...embeddingModels.map((m) =>
+                        toModelEntry(m, ["/v1/embeddings"]),
+                    ),
                 ],
             });
         },
@@ -277,9 +285,9 @@ export const proxyRoutes = new Hono<Env>()
         "/models",
         describeRoute({
             tags: ["🤖 Models"],
-            summary: "List Text Models",
+            summary: "List Models",
             description:
-                "Convenience alias for `/text/models`. Returns all available text generation models with pricing, capabilities, and metadata.",
+                "Returns all available text, image, video, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
             responses: {
                 200: {
                     description: "Success",
@@ -288,7 +296,7 @@ export const proxyRoutes = new Hono<Env>()
                             schema: resolver(
                                 z.array(z.any()).meta({
                                     description:
-                                        "List of text models with pricing and metadata",
+                                        "List of models with pricing and metadata",
                                 }),
                             ),
                         },
@@ -301,7 +309,12 @@ export const proxyRoutes = new Hono<Env>()
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const models = filterModelsByPermissions(
-                getTextModelsInfo(),
+                [
+                    ...getTextModelsInfo(),
+                    ...getImageModelsInfo(),
+                    ...getAudioModelsInfo(),
+                    ...getEmbeddingModelsInfo(),
+                ],
                 allowedModels,
                 paidBalance,
             );
@@ -420,6 +433,43 @@ export const proxyRoutes = new Hono<Env>()
             return c.json(models);
         },
     )
+    .get(
+        "/embeddings/models",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "List Embedding Models",
+            description:
+                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.any()).meta({
+                                    description:
+                                        "List of embedding models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(500),
+            },
+        }),
+        async (c) => {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            const models = filterModelsByPermissions(
+                getEmbeddingModelsInfo(),
+                allowedModels,
+                paidBalance,
+            );
+            return c.json(models);
+        },
+    )
+    .post("/register", handleRegisterServer)
+    .get("/register", handleRegisterServer)
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth())
     .use(frontendKeyRateLimit)
@@ -450,8 +500,101 @@ export const proxyRoutes = new Hono<Env>()
         }),
         ...chatCompletionHandlers,
     )
+    .post(
+        "/v1/embeddings",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "Create Embeddings",
+            description: [
+                "Generate vector embeddings with an OpenAI-compatible response format.",
+                "",
+                "**Models:** `gemini-2` supports text, image, audio, and video inputs. `openai-3-small` and `openai-3-large` are text-only models.",
+                "",
+                "**Input:** Pass a string, an array of up to 32 strings, or Gemini multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
+                "",
+                "**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.",
+                "",
+                "**Dimensions:** Defaults are model-specific. `gemini-2` and `openai-3-large` support up to 3072 dimensions; `openai-3-small` supports up to 1536.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateEmbeddingResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        textBodyLimit,
+        validator("json", CreateEmbeddingRequestSchema),
+        resolveModel("generate.embedding"),
+        track("generate.embedding"),
+        generationAccess,
+        async (c) => {
+            const requestBody = c.req.valid("json" as never) as z.infer<
+                typeof CreateEmbeddingRequestSchema
+            >;
+            const serviceDef = getModelDefinition(c.var.model.resolved);
+            return generateEmbeddings(
+                c.env,
+                { ...requestBody, model: serviceDef.modelId },
+                serviceDef,
+                c.var.model.resolved,
+            );
+        },
+    )
+    .post(
+        "/text",
+        describeRoute({
+            tags: ["✍️ Text Generation"],
+            summary: "Text Generation With Messages",
+            description: [
+                "Generate text from an OpenAI-style messages array and return the assistant content directly.",
+                "",
+                "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description:
+                        "Generated text response, audio bytes, JSON message object, or SSE when stream=true",
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        textBodyLimit,
+        validator("json", CreateChatCompletionRequestSchema),
+        resolveModel("generate.text"),
+        track("generate.text"),
+        textCache,
+        generationAccess,
+        async (c) => {
+            const requestBody = await applySafetyToChatRequest(c, {
+                ...(c.req.valid(
+                    "json" as never,
+                ) as CreateChatCompletionRequest),
+                model: c.var.model.resolved,
+            });
+
+            const response = await handleTextContentLocal(c, requestBody);
+            if (c.var.track.streamRequested) {
+                const contentType = response.headers.get("content-type") || "";
+                if (!contentType.includes("text/event-stream")) {
+                    throw new UpstreamError(502, {
+                        message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
+                        requestUrl: new URL(c.req.url),
+                        upstreamStatus: response.status,
+                        responseBody: contentType,
+                    });
+                }
+            }
+            return withSafetyHeaders(c, response);
+        },
+    )
     .get(
-        "/text/:prompt",
+        "/text/:prompt{[\\s\\S]+}",
         describeRoute({
             tags: ["✍️ Text Generation"],
             summary: "Simple Text Generation",
@@ -484,31 +627,35 @@ export const proxyRoutes = new Hono<Env>()
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
         track("generate.text"),
-        generationAccess,
         textCache,
+        generationAccess,
         async (c) => {
             // Use resolved model from middleware
             const model = c.var.model.resolved;
 
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            const prompt = c.req.param("prompt");
-            const targetUrl = proxyUrl(
+            const query = c.req.valid("query" as never) as {
+                safe?: SafeValue;
+                system?: string;
+            };
+            const textInputs =
+                typeof query.system === "string"
+                    ? [c.req.param("prompt"), query.system]
+                    : [c.req.param("prompt")];
+            const [prompt, system] = await applySafetyToTexts(
                 c,
-                `${textServiceUrl}/${encodeURIComponent(prompt)}`,
+                textInputs,
+                query.safe,
             );
-            // Add model param after proxyUrl() to ensure it's always present
-            targetUrl.searchParams.set("model", model);
 
-            const rawResponse = await fetch(targetUrl, {
-                method: "GET",
-                headers: proxyHeaders(c),
-            });
-            const response = await ensureUpstreamOk(rawResponse, targetUrl);
-
-            // Backend returns plain text for text models and raw audio for audio models
-            // No JSON parsing needed for GET endpoint - just pass through the response
-            return response;
+            return withSafetyHeaders(
+                c,
+                await handleSimpleTextLocal(
+                    c,
+                    prompt,
+                    model,
+                    system ? { system } : undefined,
+                ),
+            );
         },
     )
     .get(
@@ -655,7 +802,8 @@ export const proxyRoutes = new Hono<Env>()
                     .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
                     .default("mp3")
                     .meta({
-                        description: "Audio output format (TTS only)",
+                        description:
+                            "Audio output format (TTS only). Qwen TTS currently returns WAV regardless of this setting.",
                         example: "mp3",
                     }),
                 model: z.string().optional().meta({
@@ -686,6 +834,11 @@ export const proxyRoutes = new Hono<Env>()
                         "Style/genre tags for music generation (acestep only)",
                     example: "brazilian berimbau instrumental",
                 }),
+                instruct: z.string().optional().meta({
+                    description:
+                        "Emotion/style instruction (qwen-tts-instruct only)",
+                    example: "speak softly and warmly",
+                }),
                 seed: z.coerce
                     .number()
                     .int()
@@ -701,78 +854,14 @@ export const proxyRoutes = new Hono<Env>()
                     description:
                         "API key (alternative to Authorization header)",
                 }),
+                safe: SafeSchema,
             }),
         ),
         resolveModel("generate.audio"),
         track("generate.audio"),
-        generationAccess,
         audioCache,
-        async (c) => {
-            const log = c.get("log").getChild("generate");
-
-            const rawText = c.req.param("text");
-            let text: string;
-            try {
-                text = decodeURIComponent(rawText);
-            } catch {
-                throw new UpstreamError(400, {
-                    message:
-                        "Invalid percent-encoding in URL path. Make sure the text is properly URL-encoded (e.g. with encodeURIComponent), and that any literal '%' characters are written as '%25'.",
-                });
-            }
-            const apiKey = (c.env as unknown as { ELEVENLABS_API_KEY: string })
-                .ELEVENLABS_API_KEY;
-
-            if (c.var.model.resolved === "acestep") {
-                const { duration, style } = c.req.valid("query" as never) as {
-                    duration?: number;
-                    style?: string;
-                };
-                return generateAceStepMusic({
-                    prompt: text,
-                    style,
-                    durationSeconds: duration,
-                    serviceUrl: c.env.MUSIC_SERVICE_URL,
-                    serviceToken: c.env.PLN_GPU_TOKEN,
-                    log,
-                });
-            }
-
-            if (c.var.model.resolved === "elevenmusic") {
-                const { duration, instrumental, seed } = c.req.valid(
-                    "query" as never,
-                ) as {
-                    duration?: number;
-                    instrumental?: boolean;
-                    seed?: number;
-                };
-                return generateMusic({
-                    prompt: text,
-                    durationSeconds: duration,
-                    forceInstrumental: instrumental,
-                    seed: seed === -1 ? undefined : seed,
-                    apiKey,
-                    log,
-                });
-            }
-
-            const { voice, response_format, seed } = c.req.valid(
-                "query" as never,
-            ) as {
-                voice: string;
-                response_format: string;
-                seed?: number;
-            };
-
-            return generateSpeech({
-                text,
-                voice: voice || "alloy",
-                responseFormat: response_format || "mp3",
-                seed: seed === -1 ? undefined : seed,
-                apiKey,
-                log,
-            });
-        },
+        generationAccess,
+        handleSimpleAudio,
     )
     .post(
         "/v1/images/generations",
@@ -801,7 +890,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
-        handleImageGeneration(checkBalance, proxyHeaders),
+        handleImageGeneration(checkBalance),
     )
     .post(
         "/v1/images/edits",
@@ -830,54 +919,8 @@ export const proxyRoutes = new Hono<Env>()
         }),
         resolveModel("generate.image"),
         track("generate.image"),
-        handleImageEdit(checkBalance, proxyHeaders),
+        handleImageEdit(checkBalance),
     );
-
-function proxyHeaders(c: Context): Record<string, string> {
-    const clientIP = c.req.header("cf-connecting-ip") || "";
-    const clientHost = c.req.header("host") || "";
-    const userApiKey = c.var.auth?.apiKey?.rawKey || "";
-
-    // Copy headers excluding Authorization
-    const headers = { ...c.req.header() };
-    delete headers.authorization;
-    delete headers.Authorization;
-
-    return {
-        ...headers,
-        "x-request-id": c.get("requestId"),
-        "x-forwarded-host": clientHost,
-        "x-forwarded-for": clientIP,
-        "x-real-ip": clientIP,
-        "x-enter-token": c.env.PLN_ENTER_TOKEN,
-        "x-user-api-key": userApiKey, // For community model billing passthrough
-    };
-}
-
-function proxyUrl(c: Context, targetBaseUrl: string, targetPort = ""): URL {
-    const incomingUrl = new URL(c.req.url);
-    const targetUrl = new URL(targetBaseUrl);
-
-    if (targetPort) {
-        targetUrl.port = targetPort;
-    }
-
-    // Copy query parameters excluding 'key' (auth only)
-    const searchParams = new URLSearchParams(incomingUrl.search);
-    searchParams.delete("key");
-
-    // Replace model with resolved model (handles aliases)
-    if (c.var.model?.resolved && searchParams.has("model")) {
-        searchParams.set("model", c.var.model.resolved);
-    }
-
-    targetUrl.search = searchParams.toString();
-    return targetUrl;
-}
-
-function joinPaths(...paths: string[]): string {
-    return paths.join("/").replace(/\/+/g, "/").replace(/\/$/, "") || "/";
-}
 
 export function contentFilterResultsToHeaders(
     response: CreateChatCompletionResponse,

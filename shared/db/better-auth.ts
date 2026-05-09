@@ -128,10 +128,12 @@ export const apikey = sqliteTable("apikey", {
   permissions: text("permissions"),
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
+  byopClientKeyId: text("byop_client_key_id"),
 }, (table) => [
   index("idx_apikey_key").on(table.key),
   index('idx_apikey_expires_at').on(table.expiresAt),
   index("idx_apikey_user_id").on(table.userId),
+  index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
 ]);
 
 // Drizzle relations for query builder joins
@@ -175,4 +177,19 @@ export const deviceCode = sqliteTable("device_code", {
 }, (table) => [
   index("idx_device_code_device_code").on(table.deviceCode),
   index("idx_device_code_user_code").on(table.userCode),
+]);
+
+export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
+  sessionId: text("session_id").primaryKey(),
+  eventId: text("event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  pollenCredited: real("pollen_credited").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Rotate GCP service account key used by image and text EC2 services.
+# Rotate GCP service account key used by gen image and text providers.
 #
 # Usage: ./rotate-genai-gcp.sh [--execute]
 #
@@ -40,10 +40,11 @@ ROTATION_SECRETS="$SCRIPT_DIR/secrets.vars.json"
 ROTATOR_SA_EMAIL="key-rotator@stellar-verve-465920-b7.iam.gserviceaccount.com"
 
 SOPS_FILES=(
-    "$REPO_ROOT/image.pollinations.ai/secrets/env.json"
-    "$REPO_ROOT/text.pollinations.ai/secrets/env.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/dev.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/staging.vars.json"
+    "$REPO_ROOT/gen.pollinations.ai/secrets/prod.vars.json"
 )
-DEPLOY_WORKFLOW="deploy-enter-services.yml"
+DEPLOY_WORKFLOW="deploy-gen-cloudflare.yml"
 GEN_BASE="https://gen.pollinations.ai"
 TESTING_TOKENS_FILE="$REPO_ROOT/enter.pollinations.ai/.testingtokens"
 HEALTH_MODEL="gemini-large"
@@ -78,15 +79,17 @@ if ! command -v gcloud >/dev/null; then
     exit 1
 fi
 
-IMAGE_SOPS="${SOPS_FILES[0]}"
-if [ ! -f "$IMAGE_SOPS" ]; then
-    error "SOPS file not found: $IMAGE_SOPS"
-    exit 1
-fi
+SOPS_READ="${SOPS_FILES[0]}"
+for f in "${SOPS_FILES[@]}"; do
+    if [ ! -f "$f" ]; then
+        error "SOPS file not found: $f"
+        exit 1
+    fi
+done
 
-SA_EMAIL=$(sops -d "$IMAGE_SOPS" | jq -r '.GOOGLE_CLIENT_EMAIL')
-PROJECT_ID=$(sops -d "$IMAGE_SOPS" | jq -r '.GOOGLE_PROJECT_ID')
-OLD_KEY_ID=$(sops -d "$IMAGE_SOPS" | jq -r '.GOOGLE_PRIVATE_KEY_ID')
+SA_EMAIL=$(sops -d "$SOPS_READ" | jq -r '.GOOGLE_CLIENT_EMAIL')
+PROJECT_ID=$(sops -d "$SOPS_READ" | jq -r '.GOOGLE_PROJECT_ID')
+OLD_KEY_ID=$(sops -d "$SOPS_READ" | jq -r '.GOOGLE_PRIVATE_KEY_ID')
 
 if [ -z "$SA_EMAIL" ] || [ "$SA_EMAIL" = "null" ]; then
     error "Could not read GOOGLE_CLIENT_EMAIL from SOPS."
@@ -296,4 +299,4 @@ log "Old key: $OLD_KEY_ID (deleted)"
 log "New key: $NEW_KEY_ID"
 log "SA: $SA_EMAIL"
 echo ""
-log "SOPS + production + EC2 services now using the new key."
+log "SOPS + production + gen worker now using the new key."

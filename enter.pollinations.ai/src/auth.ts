@@ -107,7 +107,6 @@ export type User = Auth["$Infer"]["Session"]["user"];
 
 /**
  * Plugin to initialize tier balance for new users in D1.
- * This replaces the old Polar-based tier management.
  */
 function tierPlugin(
     env: Cloudflare.Env,

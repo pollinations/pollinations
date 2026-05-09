@@ -11,7 +11,6 @@
 - `/image/{prompt}` - Simple image generation
 
 ### ❌ DEPRECATED - Never Recommend:
-- `text.pollinations.ai` - LEGACY, redirect users to gen.pollinations.ai
 - `image.pollinations.ai` - LEGACY, redirect users to gen.pollinations.ai
 - `enter.pollinations.ai` - Auth gateway only, NOT for generation
 
@@ -60,8 +59,8 @@ Then run: `node pollinator-agent/project-list-scripts/generate-project-table.js 
 ## Repo Structure
 ```
 pollinations/
-├── image.pollinations.ai/     # Image backend (legacy)
-├── text.pollinations.ai/      # Text backend (legacy)
+├── gen.pollinations.ai/       # API gateway + text generation
+├── image.pollinations.ai/     # Image backend
 ├── pollinations.ai/           # React frontend
 ├── pollinations-react/        # React components
 ├── model-context-protocol/    # MCP server

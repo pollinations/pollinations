@@ -50,6 +50,10 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
         title: "Privacy \u2014 pollinations.ai",
         description: "Privacy policy for pollinations.ai",
     },
+    "/refunds": {
+        title: "Refunds \u2014 pollinations.ai",
+        description: "Refunds and cancellations policy for pollinations.ai",
+    },
 };
 
 const JSON_LD_HOME = JSON.stringify({

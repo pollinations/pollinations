@@ -56,7 +56,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                     ssr: {
                         enabled: true,
                         include: [
-                            "@polar-sh/sdk",
                             "better-auth",
                             "kysely",
                             "drizzle-orm",

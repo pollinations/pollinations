@@ -9,9 +9,12 @@ import {
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@shared/schemas/openai.ts";
+import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { ensureUpstreamOk, UpstreamError } from "@/error.ts";
+import { UpstreamError } from "@/error.ts";
+import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 
 // biome-ignore lint/suspicious/noExplicitAny: internal callback bridging typed proxy.ts and untyped Context.var
 type CheckBalanceFn = (vars: any, env: any) => Promise<void>;
@@ -51,42 +54,7 @@ function imageResponse(
 async function requireAuthAndBalance(c: Context, checkBalance: CheckBalanceFn) {
     await c.var.auth.requireAuthorization();
     c.var.auth.requireModelAccess();
-    c.var.auth.requireKeyBudget();
     await checkBalance(c.var, c.env);
-}
-
-/** Build image service URL with core params (kept in URL for caching/logging). */
-function buildImageServiceUrl(
-    baseUrl: string,
-    params: {
-        model: string;
-        width: number;
-        height: number;
-        quality: string;
-        seed: number;
-    },
-): URL {
-    const targetUrl = new URL(`${baseUrl}/prompt/`);
-    for (const [key, value] of Object.entries({ ...params, nofeed: "true" }))
-        targetUrl.searchParams.set(key, String(value));
-    return targetUrl;
-}
-
-/** POST to image service, throw on error. */
-async function postToImageService(
-    targetUrl: URL,
-    c: Context,
-    body: Record<string, unknown>,
-    proxyHeaders: (c: Context) => Record<string, string>,
-): Promise<Response> {
-    return ensureUpstreamOk(
-        await fetch(targetUrl.toString(), {
-            method: "POST",
-            headers: { ...proxyHeaders(c), "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        }),
-        targetUrl,
-    );
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
@@ -125,6 +93,7 @@ async function parseEditInput(c: Context): Promise<{
     size?: string;
     quality?: string;
     seed?: number;
+    safe?: SafeValue;
     extra: Record<string, unknown>;
 }> {
     const contentType = c.req.header("content-type") || "";
@@ -161,7 +130,12 @@ async function parseEditInput(c: Context): Promise<{
             imageUrls,
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
-            extra: {},
+            safe: formData.get("safe") as string | null,
+            extra: {
+                ...(formData.has("safe")
+                    ? { safe: formData.get("safe") as string }
+                    : {}),
+            },
         };
     }
 
@@ -194,16 +168,14 @@ async function parseEditInput(c: Context): Promise<{
         size: parsed.data.size,
         quality: parsed.data.quality,
         seed,
+        safe: body.safe as SafeValue,
         extra: passthrough,
     };
 }
 
 // --- Exported handlers ---
 
-export function handleImageGeneration(
-    checkBalance: CheckBalanceFn,
-    proxyHeaders: (c: Context) => Record<string, string>,
-) {
+export function handleImageGeneration(checkBalance: CheckBalanceFn) {
     return async (c: Context) => {
         await requireAuthAndBalance(c, checkBalance);
 
@@ -211,27 +183,25 @@ export function handleImageGeneration(
             Record<string, unknown>;
         const model = c.var.model.resolved;
         const resolved = resolveParams(body);
-
-        const targetUrl = buildImageServiceUrl(c.env.IMAGE_SERVICE_URL, {
-            model,
-            ...resolved,
-        });
-        const postBody = {
-            prompt: body.prompt,
-            ...collectPassthrough(body, "image"),
-        };
-
-        const response = await postToImageService(
-            targetUrl,
+        const safePrompt = await applySafety(
             c,
-            postBody,
-            proxyHeaders,
+            body.prompt,
+            body.safe as SafeValue,
         );
+
+        const response = await generateImageOrVideoResponse(c, safePrompt, {
+            ...body,
+            prompt: safePrompt,
+            ...collectPassthrough(body, "image"),
+            ...resolved,
+            model,
+            nofeed: true,
+        });
         c.var.track.overrideResponseTracking(response.clone());
 
         if (body.response_format === "url") {
             const imageUrl = new URL(
-                `https://gen.pollinations.ai/image/${encodeURIComponent(body.prompt)}`,
+                `https://gen.pollinations.ai/image/${encodeURIComponent(safePrompt)}`,
             );
             for (const [key, value] of Object.entries({
                 model,
@@ -239,42 +209,48 @@ export function handleImageGeneration(
                 nologo: "true",
             }))
                 imageUrl.searchParams.set(key, String(value));
+            const safeValue = normalizeSafeValue(body.safe as SafeValue);
+            if (safeValue) {
+                imageUrl.searchParams.set("safe", safeValue);
+            }
             await response.arrayBuffer();
-            return c.json(
-                imageResponse({ url: imageUrl.toString() }, body.prompt),
+            return withSafetyHeaders(
+                c,
+                c.json(imageResponse({ url: imageUrl.toString() }, safePrompt)),
             );
         }
 
         const base64 = arrayBufferToBase64(await response.arrayBuffer());
-        return c.json(imageResponse({ b64_json: base64 }, body.prompt));
+        return withSafetyHeaders(
+            c,
+            c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+        );
     };
 }
 
-export function handleImageEdit(
-    checkBalance: CheckBalanceFn,
-    proxyHeaders: (c: Context) => Record<string, string>,
-) {
+export function handleImageEdit(checkBalance: CheckBalanceFn) {
     return async (c: Context) => {
         await requireAuthAndBalance(c, checkBalance);
 
-        const { prompt, imageUrls, size, quality, seed, extra } =
+        const { prompt, imageUrls, size, quality, seed, safe, extra } =
             await parseEditInput(c);
+        const safePrompt = await applySafety(c, prompt, safe);
         const resolved = resolveParams({ size, quality, seed });
 
-        const targetUrl = buildImageServiceUrl(c.env.IMAGE_SERVICE_URL, {
-            model: c.var.model.resolved,
+        const response = await generateImageOrVideoResponse(c, safePrompt, {
+            prompt: safePrompt,
+            image: imageUrls,
+            ...extra,
             ...resolved,
+            model: c.var.model.resolved,
+            nofeed: true,
         });
-
-        const response = await postToImageService(
-            targetUrl,
-            c,
-            { prompt, image: imageUrls, ...extra },
-            proxyHeaders,
-        );
         c.var.track.overrideResponseTracking(response.clone());
 
         const base64 = arrayBufferToBase64(await response.arrayBuffer());
-        return c.json(imageResponse({ b64_json: base64 }, prompt));
+        return withSafetyHeaders(
+            c,
+            c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+        );
     };
 }

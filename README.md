@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖥️ Hyggshi OS Web Edition](https://hyggshi-os-website.pages.dev/OSmain) | Hyggshi OS Web Edition is a multi-featured web-based OS simulator (PWA) built on Cloudflare Pages. It integrates the Pollinations.ai API to power a built-in Chat AI app supporting text generation (Gem | [@web](https://github.com/web) |
 | [🎮 idol-interaction](https://spritenguyen.github.io/idol-interaction-game-2/) | idol-interaction uses models from pollinations.ai for interpolation/content generation. Enter keywords in the scout tab to find characters, then chat, complete tasks, or take photos. | [@web](https://github.com/web) |
 | [📱 Toddler Read QR Card Generator](https://toddler-read.netlify.app/) | Generate a collection of toddler cards with QR codes readable in a dedicated mobile app, designed for toddlers without screen interaction. | [@web](https://github.com/web) |
 | [🧾 Madlisten](https://madlisten.dk/) | Use Madlisten to browse and view recipes. | [@web](https://github.com/web) |
@@ -29,7 +30,6 @@
 | [📷 Photo Prompt](https://photoprompt.my.id/) | Photo Prompt generates images from detailed prompts using multi-model AI tools. It includes a library of ready-to-use prompts and creative workflows for photographers and designers. | [@web](https://github.com/web) |
 | [🤖 Pyanchor](https://pyanchor.pyan.kr) | **Pyanchor** is an open-source agent-agnostic AI live-edit sidecar for running web apps (Next.js / Vite / Astro). Add a one-line script to your page; an in-page overlay (Shadow DOM) lets you point at | [@web](https://github.com/web) |
 | [🛠️ Worl Tools](https://worldtools-mu.vercel.app/) | Worl Tools is an offline-first desktop app with a single interface for 20+ tools, including AI image editing, background removal, developer utilities, device testing, and media processing. | [@web](https://github.com/web) |
-| [🕹️ Pollinations AIGC Control Console](https://jfliu3265.github.io/pollinations-aigc-public/) | Manage AIGC workflows in Pollinations AIGC Control Console, a web-based dashboard powered by pollinations.ai, with a unified interface for multiple generative AI capabilities. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

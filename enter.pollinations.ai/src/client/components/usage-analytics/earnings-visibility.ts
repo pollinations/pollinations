@@ -15,15 +15,3 @@ export function getEarningsEnabledApps(apiKeys: ApiKey[]): EarningsApp[] {
         )
         .map((key) => ({ id: key.id, name: key.name }));
 }
-
-export function shouldShowEarningsGraph({
-    appCount,
-    totalPollen,
-    error,
-}: {
-    appCount: number;
-    totalPollen: number;
-    error: string | null;
-}): boolean {
-    return appCount > 0 && (totalPollen > 0 || error !== null);
-}

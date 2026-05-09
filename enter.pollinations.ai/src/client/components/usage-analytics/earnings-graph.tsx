@@ -6,7 +6,6 @@ import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
 import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
-import { shouldShowEarningsGraph } from "./earnings-visibility.ts";
 import { MultiSelect } from "./multi-select";
 import type { UsagePeriodSelection } from "./types";
 import { useEarningsData } from "./use-earnings-data";
@@ -40,16 +39,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     );
 
     const showAppBreakdown = apps.length > 1;
-
-    if (
-        !shouldShowEarningsGraph({
-            appCount: apps.length,
-            totalPollen: stats.totalPollen,
-            error,
-        })
-    ) {
-        return null;
-    }
 
     function downloadEarnings(): void {
         const params = new URLSearchParams({

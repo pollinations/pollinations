@@ -627,13 +627,20 @@ api.get(
             LEFT JOIN private_tags prt ON m.hash = prt.hash AND prt.owner = ?
             WHERE m.owner = ?`;
 
-            const params: (string | number)[] = [authResult.name, authResult.name];
+            const params: (string | number)[] = [
+                authResult.name,
+                authResult.name,
+            ];
 
             if (cursor) {
                 try {
                     const decoded = decodeCursor(cursor);
                     query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash < ?))`;
-                    params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
+                    params.push(
+                        decoded.createdAt,
+                        decoded.createdAt,
+                        decoded.hash,
+                    );
                 } catch {
                     return c.json({ error: "Invalid cursor format" }, 400);
                 }
@@ -658,7 +665,9 @@ api.get(
 
             if (result.results && result.results.length > 0) {
                 const hasMore = result.results.length > limit;
-                const rows = hasMore ? result.results.slice(0, limit) : result.results;
+                const rows = hasMore
+                    ? result.results.slice(0, limit)
+                    : result.results;
 
                 items = rows.map((row) => ({
                     id: row.hash,
@@ -765,7 +774,10 @@ api.put(
             (body.public !== undefined && !Array.isArray(body.public)) ||
             (body.private !== undefined && !Array.isArray(body.private))
         ) {
-            return c.json({ error: "'public' and 'private' must be arrays" }, 400);
+            return c.json(
+                { error: "'public' and 'private' must be arrays" },
+                400,
+            );
         }
 
         try {
@@ -792,7 +804,9 @@ api.put(
             }
             if (privateTags.length > MAX_PRIVATE_TAGS) {
                 return c.json(
-                    { error: `Too many private tags (max ${MAX_PRIVATE_TAGS})` },
+                    {
+                        error: `Too many private tags (max ${MAX_PRIVATE_TAGS})`,
+                    },
                     400,
                 );
             }
@@ -929,7 +943,11 @@ api.get(
                 try {
                     const decoded = decodeCursor(cursor);
                     query += ` AND (m.created_at < ? OR (m.created_at = ? AND m.hash < ?))`;
-                    params.push(decoded.createdAt, decoded.createdAt, decoded.hash);
+                    params.push(
+                        decoded.createdAt,
+                        decoded.createdAt,
+                        decoded.hash,
+                    );
                 } catch {
                     return c.json({ error: "Invalid cursor format" }, 400);
                 }
@@ -952,7 +970,9 @@ api.get(
 
             if (result.results && result.results.length > 0) {
                 const hasMore = result.results.length > limit;
-                const rows = hasMore ? result.results.slice(0, limit) : result.results;
+                const rows = hasMore
+                    ? result.results.slice(0, limit)
+                    : result.results;
 
                 items = rows.map((row) => ({
                     id: row.hash,

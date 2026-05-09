@@ -12,6 +12,7 @@ backoff==2.2.1
 bcrypt==5.0.0
 beautifulsoup4==4.14.3
 cachebox>=4.0.0
+cairosvg>=2.7.0
 certifi==2026.1.4
 chardet==5.2.0
 charset-normalizer==3.4.4
@@ -49,6 +50,7 @@ openai==2.16.0
 orjson>=3.10.0
 packaging==26.0
 pillow==12.1.0
+pilmoji>=2.0.0
 posthog==5.4.0
 propcache==0.4.1
 protobuf==6.33.5

@@ -16,15 +16,21 @@ python -m venv venv
 source venv/bin/activate
 ```
 
-2) Run the setup helper to download fonts and install Python dependencies:
+2) Install dependencies (media handlers are included in `requirements.txt`):
+
+```bash
+pip install -r requirements.txt
+```
+
+3) Optional — run the helper to download Noto Sans fonts for nicer table rendering:
 
 ```bash
 bash setup-media-handlers.sh
 ```
 
-- This places Noto Sans TTF variants in `assets/fonts/` and installs optional packages (`pillow`, `pilmoji`, `cairosvg`, `requests`).
+This places Noto Sans TTF variants in `assets/fonts/`. If the directory is missing, the handlers fall back to default system fonts.
 
-3) Start the bot/service in production mode:
+4) Start the bot/service in production mode:
 
 ```bash
 source venv/bin/activate

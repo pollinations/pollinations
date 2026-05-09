@@ -239,10 +239,6 @@ async function generateSeedanceVideo(
 
     const generateEndpoint =
         "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks";
-    logOps(
-        `${config.displayName} request body:`,
-        JSON.stringify(requestBody, null, 2),
-    );
     const generateResponse = await fetchUpstream(generateEndpoint, {
         method: "POST",
         headers: {

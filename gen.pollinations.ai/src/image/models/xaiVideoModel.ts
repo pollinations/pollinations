@@ -200,7 +200,7 @@ async function pollXaiVideoStatus(
         if (pollData.status === "failed") {
             throw new HttpError(
                 `xAI video generation failed: ${pollData.error ?? "unknown error"}`,
-                500,
+                502,
                 undefined,
                 pollUrl,
             );

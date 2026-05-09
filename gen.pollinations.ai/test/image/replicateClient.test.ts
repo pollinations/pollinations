@@ -137,6 +137,59 @@ describe("runReplicatePrediction", () => {
         });
     });
 
+    it("treats aborted predictions as terminal failures", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_aborted",
+                    status: "aborted",
+                    error: "Prediction aborted before starting",
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 500,
+        });
+    });
+
+    it("times out with 504 when prediction stays processing past poll budget", async () => {
+        vi.useFakeTimers();
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(
+                    JSON.stringify({
+                        id: "pred_stuck",
+                        status: "processing",
+                        urls: {
+                            get: "https://api.replicate.com/v1/predictions/pred_stuck",
+                        },
+                    }),
+                    { status: 201 },
+                ),
+        );
+
+        const promise = runReplicatePrediction({
+            model: MODEL,
+            input: { prompt: "x" },
+        });
+        // Attach rejection handler before advancing timers so the rejection
+        // is observed (avoids Vitest "unhandled rejection" complaint).
+        const assertion = expect(promise).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+        await vi.advanceTimersByTimeAsync(60 * 5_000 + 1_000);
+        await assertion;
+        // 1 POST + up to 60 GET polls
+        expect(fetchSpy.mock.calls.length).toBeLessThanOrEqual(61);
+        vi.useRealTimers();
+    });
+
     it("classifies generic prediction failures as 500 (upstream error)", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(

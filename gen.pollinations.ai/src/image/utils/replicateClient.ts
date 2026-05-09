@@ -14,6 +14,10 @@ import { sleep } from "../util.ts";
 const API_BASE = "https://api.replicate.com/v1";
 const PREFER_WAIT_SECONDS = 60;
 const POLL_INTERVAL_MS = 5000;
+// Cap total poll time so a stuck prediction surfaces as a controlled 504
+// instead of consuming Worker time until the runtime kills the request.
+// Seedance 2.0 typical wall time is 40-90s; 5min covers slow runs + queueing.
+const POLL_MAX_ATTEMPTS = 60;
 
 export class ReplicateError extends Error {
     constructor(
@@ -27,7 +31,13 @@ export class ReplicateError extends Error {
 
 interface ReplicatePrediction<TOutput> {
     id: string;
-    status: "starting" | "processing" | "succeeded" | "failed" | "canceled";
+    status:
+        | "starting"
+        | "processing"
+        | "succeeded"
+        | "failed"
+        | "canceled"
+        | "aborted";
     output?: TOutput;
     error?: string | null;
     urls?: { get?: string };
@@ -77,18 +87,30 @@ export async function runReplicatePrediction<TInput, TOutput>(
     const pollUrl =
         prediction.urls?.get || `${API_BASE}/predictions/${prediction.id}`;
 
+    let pollAttempts = 0;
     while (
         prediction.status === "starting" ||
         prediction.status === "processing"
     ) {
+        if (pollAttempts >= POLL_MAX_ATTEMPTS) {
+            throw new ReplicateError(
+                `Replicate prediction ${prediction.id} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s (status=${prediction.status})`,
+                504,
+            );
+        }
         await sleep(POLL_INTERVAL_MS);
         prediction = await replicateFetch<ReplicatePrediction<TOutput>>(token, {
             method: "GET",
             url: pollUrl,
         });
+        pollAttempts++;
     }
 
-    if (prediction.status === "failed" || prediction.status === "canceled") {
+    if (
+        prediction.status === "failed" ||
+        prediction.status === "canceled" ||
+        prediction.status === "aborted"
+    ) {
         const message = prediction.error || `Prediction ${prediction.status}`;
         throw new ReplicateError(
             message,

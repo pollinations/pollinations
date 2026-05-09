@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **712** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **713** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -456,6 +456,7 @@
 | [💬 Pal Chat](https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone) | Unifies multiple LLMs in an iOS chat interface with support for Pollinations models and image generation. | [@ios](https://github.com/ios) |  |  |
 | [💬 Pollinations Chat](https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4) | Free, unlimited Pollinations chat for text and image generation. | [@web](https://github.com/web) |  |  |
 | [🤖 PolliGPT](https://polli-gpt.lovable.app/) | **PolliGPT** | [@web](https://github.com/web) |  | 🫧 |
+| [🖥️ Hyggshi OS Web Edition](https://hyggshi-os-website.pages.dev/OSmain) | Hyggshi OS Web Edition is a multi-featured web-based OS simulator (PWA) built on Cloudflare Pages. It integrates the Pollinations.ai API to power a built-in Chat AI app supporting text generation (Gem | [@web](https://github.com/web) |  | 🫧 |
 | [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |  | 🫧 |
 | [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |  | 🫧 |
 | [🌤️ Ciel AI](https://ciel-ai-v1.netlify.app) | Ciel AI is a mobile-first AI assistant powered entirely by Pollinations.ai, integrating Pollinations in three major ways. | [@web](https://github.com/web) |  | 🫧 |
@@ -495,7 +496,7 @@
 | [🎭 GEEMS](https://geems.web.app) | AI interactive fiction platform with LLM game master, 7 game modes, and psychological profiling. | [@web](https://github.com/web) |  | 🫧 |
 | [🐉 polli-dungeon](https://polli-game.netlify.app/) | Add AI-driven NPC behavior, encounter generation, and narrative assistance to Dungeons & Dragons sessions. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 55 apps</summary>
+<details><summary>Show all 56 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -538,6 +539,7 @@
 | [🎭 Jenny AI](https://jenny-two.vercel.app/) | Chatbot + character creator with TTS/STT, image gen, and vision features | [@web](https://github.com/web) |  |  |
 | [🔥 RoastMaster AI](https://roastmaster-ai.vercel.app/) | AI roast generator for playful, creative insults and banter | [@web](https://github.com/web) |  |  |
 | [🎮 roastmyselfie.app](https://storyai-wizard.vercel.app) | Analyzes a selfie to generate a humorous roast and personality-style commentary based on the image. | [@web](https://github.com/web) |  |  |
+| [🎮 idol-interaction](https://spritenguyen.github.io/idol-interaction-game-2/) | idol-interaction uses models from pollinations.ai for interpolation/content generation. Enter keywords in the scout tab to find characters, then chat, complete tasks, or take photos. | [@web](https://github.com/web) |  | 🫧 |
 | [🏃‍♂️ Neon Runner](https://neon-runnerai.netlify.app/) | Neon Runner AI is a high-speed procedural infinite runner set in a 90s retro-anime aesthetic. It changes the environment based on player performance and progression using real-time Generative AI. | [@web](https://github.com/web) |  | 🫧 |
 | [🎲 AI Dungeon Master](197366900) | AI-run text RPG that improvises stories, quests, and character dialogue | [@api](https://github.com/api) |  |  |
 | [🛗 Sirius Cybernetics Elevator Challenge](https://sirius-cybernetics-elevator-challenge.pollinations.ai) | Quirky elevator game with real-time AI-generated encounters and replies | [@web](https://github.com/web) |  |  |

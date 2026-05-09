@@ -21,6 +21,8 @@
 | Name | Description | Author |
 |------|-------------|--------|
 | [🤖 PolliGPT](https://polli-gpt.lovable.app/) | **PolliGPT** | [@web](https://github.com/web) |
+| [🖥️ Hyggshi OS Web Edition](https://hyggshi-os-website.pages.dev/OSmain) | Hyggshi OS Web Edition is a multi-featured web-based OS simulator (PWA) built on Cloudflare Pages. It integrates the Pollinations.ai API to power a built-in Chat AI app supporting text generation (Gem | [@web](https://github.com/web) |
+| [🎮 idol-interaction](https://spritenguyen.github.io/idol-interaction-game-2/) | idol-interaction uses models from pollinations.ai for interpolation/content generation. Enter keywords in the scout tab to find characters, then chat, complete tasks, or take photos. | [@web](https://github.com/web) |
 | [📱 Toddler Read QR Card Generator](https://toddler-read.netlify.app/) | Generate a collection of toddler cards with QR codes readable in a dedicated mobile app, designed for toddlers without screen interaction. | [@web](https://github.com/web) |
 | [🧾 Madlisten](https://madlisten.dk/) | Use Madlisten to browse and view recipes. | [@web](https://github.com/web) |
 | [🖼️ pollimage](https://www.npmjs.com/package/pollimage) | PollImage is a developer-focused CLI powered by Pollinations.AI that generates AI images directly from the terminal. | [@cli](https://github.com/cli) |

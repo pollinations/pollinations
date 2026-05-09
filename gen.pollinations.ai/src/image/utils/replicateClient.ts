@@ -136,12 +136,18 @@ async function replicateFetch<T>(
 
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
-        // No status set — HTTP-level Replicate errors (401 bad token, 429
-        // our rate limit, 5xx Replicate down) are infra issues on our side,
-        // never user input. Caller defaults to 500.
+        // 429 passes through so clients can back off. Everything else upstream
+        // (auth, validation of our request, Replicate outages) maps to 502 —
+        // the failure is on our side of the boundary, not the user's input.
         throw new ReplicateError(
             `Replicate ${args.method} ${args.url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
+            classifyReplicateHttpStatus(response.status),
         );
     }
     return (await response.json()) as T;
+}
+
+export function classifyReplicateHttpStatus(httpStatus: number): number {
+    if (httpStatus === 429) return 429;
+    return 502;
 }

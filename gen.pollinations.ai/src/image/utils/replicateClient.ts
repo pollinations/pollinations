@@ -89,9 +89,8 @@ export async function runReplicatePrediction<TInput, TOutput>(
     }
 
     if (prediction.status === "failed" || prediction.status === "canceled") {
-        throw new ReplicateError(
-            prediction.error || `Prediction ${prediction.status}`,
-        );
+        const message = prediction.error || `Prediction ${prediction.status}`;
+        throw new ReplicateError(message, classifyPredictionError(message));
     }
     if (prediction.output === undefined || prediction.output === null) {
         throw new ReplicateError("Prediction succeeded but output is missing");
@@ -104,6 +103,18 @@ export async function runReplicatePrediction<TInput, TOutput>(
         videoOutputDurationSeconds:
             prediction.metrics?.video_output_duration_seconds,
     };
+}
+
+// Replicate prediction failures are returned with HTTP 200 and an error
+// string. Default to 500 (upstream/model failure) and only opt explicit
+// user-input patterns up to 400 — this keeps unfamiliar failures loud in
+// monitoring instead of silently classified as client errors.
+function classifyPredictionError(message: string): number {
+    const isUserInputError =
+        /\bE005\b/.test(message) ||
+        /flagged as sensitive/i.test(message) ||
+        /^Input validation error:/i.test(message);
+    return isUserInputError ? 400 : 500;
 }
 
 async function replicateFetch<T>(

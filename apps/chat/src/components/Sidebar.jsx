@@ -1,6 +1,6 @@
 import React, { useState, memo, useCallback, useRef, useEffect } from 'react';
 import ConfirmModal from './ConfirmModal';
-import './Sidebar.css';
+import './styles/Sidebar.css';
 
 const formatRelativeTime = (timestamp) => {
   if (!timestamp) return '';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './GenerationOptionsModal.css';
+import './styles/GenerationOptionsModal.css';
 
 const GenerationOptionsModal = ({ isOpen, onClose, mode, onGenerate }) => {
   // Image generation defaults

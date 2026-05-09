@@ -1,5 +1,5 @@
 import React from 'react';
-import './ShortcutsModal.css';
+import './styles/ShortcutsModal.css';
 
 const ShortcutsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

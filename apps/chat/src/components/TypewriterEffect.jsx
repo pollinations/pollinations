@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { formatStreamingMessage } from '../utils/markdown';
 import { useTypewriter } from '../hooks/useTypewriter';
-import './TypewriterEffect.css';
+import './styles/TypewriterEffect.css';
 
 const TypewriterEffect = ({ content, isStreaming, onComplete }) => {
   const { displayedContent, isTyping } = useTypewriter(content, isStreaming, 10, onComplete);

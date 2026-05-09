@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './CanvasCodeGenerator.css';
+import './styles/CanvasCodeGenerator.css';
 
 const CanvasCodeGenerator = ({ onCodeGenerated, onClose }) => {
   const canvasRef = useRef(null);

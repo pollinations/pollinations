@@ -58,7 +58,7 @@ const md = new MarkdownIt({
                '</code></pre>';
       } catch (__) {}
     }
-    return '<pre class="code-block"><code class="hljs">' + escapeHtml(str) + '</code></pre>';
+    return `<pre class="code-block"><code class="hljs">${escapeHtml(str)}</code></pre>`;
   }
 }).use(markdownitHighlightjs);
 
@@ -102,8 +102,7 @@ export const formatMessage = (content) => {
     
     const chartRegex = /__CHART__(.*?)__CHART__/g;
     const charts = [];
-    let match;
-    while ((match = chartRegex.exec(textContent)) !== null) {
+    for (const match of textContent.matchAll(chartRegex)) {
       try {
         charts.push(JSON.parse(match[1]));
       } catch (e) {

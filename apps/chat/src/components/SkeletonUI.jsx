@@ -1,5 +1,5 @@
 import React from 'react';
-import './SkeletonUI.css';
+import './styles/SkeletonUI.css';
 
 const SkeletonMessage = ({ isUser = false }) => {
   return (

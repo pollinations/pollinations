@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './ThinkingProcess.css';
+import './styles/ThinkingProcess.css';
 
 const ThinkingProcess = ({ isThinking, content }) => {
   const [elapsed, setElapsed] = useState(0);

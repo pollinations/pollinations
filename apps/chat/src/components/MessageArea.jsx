@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import ThinkingProcess from './ThinkingProcess';
 import MessageBubble from './MessageBubble';
-import './MessageArea.css';
+import './styles/MessageArea.css';
 
 const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => {
   const messagesEndRef = useRef(null);

@@ -45,7 +45,12 @@ const BYOPModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="themes-modal byop-modal">
-      <div className="themes-modal-overlay" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Close"
+        className="themes-modal-overlay"
+        onClick={onClose}
+      />
       <div className="themes-modal-content">
         <div className="themes-modal-header">
           <h2>Bring Your Own Pollen Key</h2>

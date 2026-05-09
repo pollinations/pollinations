@@ -181,9 +181,7 @@ const extractBase64FromDataUrl = (dataUrl) => {
   return { base64: dataUrl, mimeType: null };
 };
 
-export const formatMessagesForAPI = (messages, modelId) => {
-  const currentModel = getCurrentModelInfo(modelId);
-  const supportsVision = currentModel?.supportsVision;
+export const formatMessagesForAPI = (messages, _modelId) => {
   return messages.map(msg => {
     const parts = [];
     const textContent = typeof msg.content === 'string' ? msg.content : '';

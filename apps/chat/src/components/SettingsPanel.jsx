@@ -1,5 +1,5 @@
 import React from 'react';
-import './SettingsPanel.css';
+import './styles/SettingsPanel.css';
 
 const SettingsPanel = ({ isOpen, settings, onChange, onClose }) => {
   if (!isOpen) return null;

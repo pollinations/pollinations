@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSpeech } from '../hooks/useSpeech';
-import './ChatInput.css';
+import './styles/ChatInput.css';
 
 const MODES = [
   { id: 'chat',    label: 'Chat',    icon: '💬' },

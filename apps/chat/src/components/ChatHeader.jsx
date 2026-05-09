@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import './ChatHeader.css';
+import './styles/ChatHeader.css';
 
 const ChatHeader = ({
   onMenuToggle,

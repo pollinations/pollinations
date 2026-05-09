@@ -2,7 +2,7 @@ import React, { memo, useMemo } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { FixedSizeList as List } from 'react-window/dist/react-window.cjs';
 import { formatMessage } from '../utils/markdown';
-import './VirtualizedMessageList.css';
+import './styles/VirtualizedMessageList.css';
 
 const MessageRow = memo(({ data, index, style }) => {
   const message = data.messages[index];

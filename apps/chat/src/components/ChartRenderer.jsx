@@ -12,7 +12,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Line, Bar, Pie, Scatter } from 'react-chartjs-2';
-import './ChartRenderer.css';
+import './styles/ChartRenderer.css';
 
 // Register Chart.js components
 ChartJS.register(

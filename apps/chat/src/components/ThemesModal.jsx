@@ -1,5 +1,5 @@
 import React from 'react';
-import './ThemesModal.css';
+import './styles/ThemesModal.css';
 
 const ThemesModal = ({ isOpen, onClose, onAccentChange }) => {
   const ACCENT_COLORS = [

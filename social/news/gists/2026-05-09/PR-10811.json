@@ -1,0 +1,36 @@
+{
+  "pr_number": 10811,
+  "title": "fix(gen): surface upstream error codes instead of generic 500s",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/10811",
+  "merged_at": "2026-05-09T20:07:08Z",
+  "labels": [
+    "VIDEO",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more mystery 500s",
+    "blurb": "We taught our video API to stop panicking and actually tell you what went wrong. You'll now get proper status codes instead of generic 500s.",
+    "summary": "Video model handlers now properly surface upstream HTTP error codes instead of masking all failures as generic 500 errors.",
+    "impact": "Developers can now programmatically distinguish between content policy rejections, rate limits, and provider outages.",
+    "keywords": [
+      "api",
+      "video",
+      "error-handling",
+      "dx",
+      "bug-fix"
+    ],
+    "visual_concept": "The Robot and the Bee organizing error codes. The Robot is looking at a screen, and the Bee is sorting distinct error blocks (400, 429) instead of a giant generic 500 block.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a magnifying glass over a glowing server log, while the cute bee mascot organizes colorful blocks labeled '400', '429', and '502'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-09/PR-10811.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a magnifying glass over a glowing server log, while the cute bee mascot organizes colorful blocks labeled '400', '429', and '502'. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-09T20:08:09.236975+00:00"
+}

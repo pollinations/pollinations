@@ -1,0 +1,36 @@
+{
+  "pr_number": 10812,
+  "title": "fix(gen): use ImageUrl struct for xAI video I2V requests",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/10812",
+  "merged_at": "2026-05-10T17:01:38Z",
+  "labels": [
+    "VIDEO",
+    "API",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "xAI Video: Now with 100% more structs",
+    "blurb": "Fixed a tiny hiccup where xAI video generation was getting confused by our image URLs. Image-to-video is back to running smoothly!",
+    "summary": "Fixed a bug in the xAI video model integration where image-to-video requests were failing with a 422 error due to an incorrect payload structure.",
+    "impact": "Users can once again successfully generate videos from images using the xAI model without encountering API rejections.",
+    "keywords": [
+      "video",
+      "xai",
+      "bugfix",
+      "api",
+      "image-to-video"
+    ],
+    "visual_concept": "The PR is about fixing a structural issue (wrapping a string in a struct/box) for video generation. Polly the Bee putting a picture (image URL) into a neat little box (struct) and handing it to the Monitor Robot (video generator) who is now happy.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot carefully placing a tiny pixelated photograph into a neat little lime green (#ecf874) box, handing it to a chunky monitor-head robot who looks thrilled. A retro film projector sits in the background. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10812.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot carefully placing a tiny pixelated photograph into a neat little lime green (#ecf874) box, handing it to a chunky monitor-head robot who looks thrilled. A retro film projector sits in the background. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-10T17:02:47.213373+00:00"
+}

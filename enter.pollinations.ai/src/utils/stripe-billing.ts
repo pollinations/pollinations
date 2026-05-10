@@ -8,8 +8,13 @@ const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_PURPOSE = "pollinations_purpose";
 const AUTO_TOP_UP_PURPOSE = "auto_top_up";
 const AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
-const AUTO_TOP_UP_RETRY_AFTER_MS = 60 * 60 * 1000;
-const AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES = 3;
+const AUTO_TOP_UP_BACKOFF_MS = [
+    60 * 60 * 1000, // 1h after 1st consecutive failure
+    4 * 60 * 60 * 1000, // 4h after 2nd
+    24 * 60 * 60 * 1000, // 24h after 3rd
+];
+const AUTO_TOP_UP_MIN_BACKOFF_MS = AUTO_TOP_UP_BACKOFF_MS[0];
+const AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES = AUTO_TOP_UP_BACKOFF_MS.length + 1;
 const AUTO_TOP_UP_ATTEMPT_STATUS_FAILED = "failed";
 const AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION = "requires_action";
 const BILLING_PORTAL_CONFIGURATION_METADATA_KEY = "pollinations_portal";
@@ -399,8 +404,13 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "paid balance above threshold" };
     }
 
+    const consecutiveFailures = await countConsecutiveAutoTopUpFailures(
+        env.DB,
+        userId,
+    );
     const retryMsRemaining = getAutoTopUpRetryMsRemaining(
         user.autoTopUpLastAttemptAt,
+        consecutiveFailures,
     );
     if (retryMsRemaining > 0) {
         return {
@@ -546,7 +556,7 @@ export async function processDueAutoTopUps(
     )
         .bind(
             AUTO_TOP_UP_THRESHOLD_POLLEN,
-            Date.now() - AUTO_TOP_UP_RETRY_AFTER_MS,
+            Date.now() - AUTO_TOP_UP_MIN_BACKOFF_MS,
             limit,
         )
         .all<{ id: string }>();
@@ -994,9 +1004,22 @@ function coerceTimestampMs(value: number | string | null): number | null {
     return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-function getAutoTopUpRetryMsRemaining(lastAttemptAt: number | null): number {
+function getAutoTopUpBackoffMs(consecutiveFailures: number): number {
+    if (consecutiveFailures <= 0) return AUTO_TOP_UP_MIN_BACKOFF_MS;
+    const idx = Math.min(
+        consecutiveFailures - 1,
+        AUTO_TOP_UP_BACKOFF_MS.length - 1,
+    );
+    return AUTO_TOP_UP_BACKOFF_MS[idx];
+}
+
+function getAutoTopUpRetryMsRemaining(
+    lastAttemptAt: number | null,
+    consecutiveFailures: number,
+): number {
     if (!lastAttemptAt) return 0;
-    return Math.max(0, lastAttemptAt + AUTO_TOP_UP_RETRY_AFTER_MS - Date.now());
+    const backoff = getAutoTopUpBackoffMs(consecutiveFailures);
+    return Math.max(0, lastAttemptAt + backoff - Date.now());
 }
 
 async function claimAutoTopUpAttempt(
@@ -1004,7 +1027,7 @@ async function claimAutoTopUpAttempt(
     userId: string,
 ): Promise<boolean> {
     const now = Date.now();
-    const retryCutoff = now - AUTO_TOP_UP_RETRY_AFTER_MS;
+    const retryCutoff = now - AUTO_TOP_UP_MIN_BACKOFF_MS;
     const claim = await db
         .prepare(
             `UPDATE user

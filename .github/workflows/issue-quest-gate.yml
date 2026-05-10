@@ -181,45 +181,63 @@ jobs:
             const issue = context.payload.issue;
             const labels = (issue.labels || []).map(l => typeof l === 'string' ? l : l.name);
             const labelEvent = context.payload.label?.name;
+            const ORG_MAINTAINERS = ['voodoohop', 'ElliotEtag', 'Circuit-Overtime', 'Itachi-1824'];
+            async function isMaintainer(actor) {
+                if (ORG_MAINTAINERS.map(m => m.toLowerCase()).includes(actor.toLowerCase())) return true;
+                try {
+                    const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                        owner: context.repo.owner, repo: context.repo.repo, username: actor,
+                    });
+                    const role = data.role_name ?? data.permission ?? 'none';
+                    return role === 'admin' || role === 'maintain';
+                } catch (e) {
+                    if (e.status === 404) return false;
+                    throw e;
+                }
+            }
 
-            // ── Gate non-maintainers ──────────────────────────────────────
             const isQuestEvent =
                 (action === 'opened'  && labels.includes('POLLEN-QUEST')) ||
                 (action === 'labeled' && labelEvent === 'POLLEN-QUEST');
 
             if (isQuestEvent) {
                 const actor = action === 'opened' ? issue.user.login : context.payload.sender.login;
-                let role = 'none';
-                try {
-                    const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
-                        owner: context.repo.owner, repo: context.repo.repo, username: actor,
-                    });
-                    role = data.role_name ?? data.permission ?? 'none';
-                } catch (e) { if (e.status !== 404) throw e; }
-
-                if (role !== 'admin' && role !== 'maintain') {
+                if (!(await isMaintainer(actor))) {
                     await github.rest.issues.removeLabel({
                         owner: context.repo.owner, repo: context.repo.repo,
                         issue_number: issue.number, name: 'POLLEN-QUEST',
                     }).catch(e => { if (e.status !== 404) throw e; });
 
-                    await github.rest.issues.createComment({
-                        owner: context.repo.owner, repo: context.repo.repo, issue_number: issue.number,
-                        body: [
-                            `Hi @${actor} — thanks for the contribution!`,
-                            ``,
-                            `The **Community Quest** template is reserved for Pollinations maintainers, since quests carry a Pollen reward paid on PR merge. I've removed the **POLLEN-QUEST** label and closed this issue.`,
-                            ``,
-                            `If you'd like to **propose** a quest, please open a blank issue describing the work and tag any of the [Pollinations org members](https://github.com/orgs/pollinations/people) — a maintainer can review and convert it into an official quest if it's a good fit.`,
-                            ``,
-                            `To **take on** an existing quest, browse them here: https://github.com/pollinations/pollinations/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
-                        ].join('\n'),
-                    });
-
-                    await github.rest.issues.update({
-                        owner: context.repo.owner, repo: context.repo.repo,
-                        issue_number: issue.number, state: 'closed', state_reason: 'not_planned',
-                    });
+                    if (action === 'opened') {
+                        // Filed via the quest template by a non-maintainer → close with explanation.
+                        await github.rest.issues.createComment({
+                            owner: context.repo.owner, repo: context.repo.repo, issue_number: issue.number,
+                            body: [
+                                `Hi @${actor} — thanks for the contribution!`,
+                                ``,
+                                `The **Community Quest** template is reserved for Pollinations maintainers, since quests carry a Pollen reward paid on PR merge. I've removed the **POLLEN-QUEST** label and closed this issue.`,
+                                ``,
+                                `If you'd like to **propose** a quest, please open a blank issue describing the work and tag any of the [Pollinations org members](https://github.com/orgs/pollinations/people) — a maintainer can review and convert it into an official quest if it's a good fit.`,
+                                ``,
+                                `To **take on** an existing quest, browse them here: https://github.com/pollinations/pollinations/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
+                            ].join('\n'),
+                        });
+                        await github.rest.issues.update({
+                            owner: context.repo.owner, repo: context.repo.repo,
+                            issue_number: issue.number, state: 'closed', state_reason: 'not_planned',
+                        });
+                    } else {
+                        // POLLEN-QUEST applied to an existing issue by a non-maintainer →
+                        // strip the label only, leave the issue open as a regular request.
+                        await github.rest.issues.createComment({
+                            owner: context.repo.owner, repo: context.repo.repo, issue_number: issue.number,
+                            body: [
+                                `Hi @${actor} — only Pollinations maintainers can apply the **POLLEN-QUEST** label, since quests carry a Pollen reward on PR merge. I've removed the label, but the issue stays open as a regular request.`,
+                                ``,
+                                `If you think this should be a quest, tag any of the [Pollinations org members](https://github.com/orgs/pollinations/people) and they can review.`,
+                            ].join('\n'),
+                        });
+                    }
                     return;
                 }
             }

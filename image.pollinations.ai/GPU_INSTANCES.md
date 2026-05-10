@@ -99,11 +99,7 @@ screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nu
 
 ## Provider: EC2 (AWS)
 
-### Production — enter services
-
-- **Host**: `54.147.14.220`
-- **SSH**: `ssh -i ~/.ssh/enter-services-shared ubuntu@54.147.14.220`
-- **Image service**: port 16384
+The legacy `image-pollinations.service` (port 16384) and `text-pollinations.service` (port 16385) on the `enter-services` EC2 box are decommissioned — image and text generation now run inside the `gen.pollinations.ai` Cloudflare Worker. The host still runs Discord bots; SSH config alias is `enter-services`.
 
 ### Staging
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10848,
+  "title": "Add https://basic-pollinations-imagen.vercel.app/ to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10848",
+  "merged_at": "2026-05-10T19:08:52Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh in the Greenhouse",
+    "blurb": "A new community app just sprouted! Check out this clean, basic image generator powered by Pollinations.",
+    "summary": "Added a new community-built basic image generation app to the Pollinations ecosystem.",
+    "impact": "Users can now explore and use a straightforward web interface for generating images with their Pollinations API key.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "greenhouse",
+      "showcase"
+    ],
+    "visual_concept": "The Pollinations bee (Polly) watering a new little seedling in a greenhouse. The seedling has a tiny picture frame growing out of it, representing the new image generation app. Cozy, warm, nurturing.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, watering a glowing seedling in a lime green (#ecf874) flower pot. The seedling is sprouting a tiny picture frame showing a landscape. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10848.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's hat, watering a glowing seedling in a lime green (#ecf874) flower pot. The seedling is sprouting a tiny picture frame showing a landscape. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-10T19:09:51.530398+00:00",
+  "app_name": "https://basic-pollinations-imagen.vercel.app/",
+  "app_url": "https://basic-pollinations-imagen.vercel.app/"
+}

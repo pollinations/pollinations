@@ -1,0 +1,37 @@
+{
+  "pr_number": 10850,
+  "title": "Add Opticode to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10850",
+  "merged_at": "2026-05-10T19:13:38Z",
+  "labels": [
+    "WEB",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pair programming in the greenhouse",
+    "blurb": "OptiCode just sprouted in the community showcase. It's an AI-powered collaborative coding platform for real-time pair programming, because sometimes you need a second pair of eyes (or compound eyes) on your code.",
+    "summary": "Added OptiCode, an AI-powered collaborative coding platform, to the community apps showcase.",
+    "impact": "Developers can now discover OptiCode in the greenhouse to practice real-time pair programming and level up their skills.",
+    "keywords": [
+      "community",
+      "showcase",
+      "opticode",
+      "education",
+      "coding"
+    ],
+    "visual_concept": "OptiCode is about collaborative coding and learning. Visual: The pollinations bee (Polly) and the Monitor Robot sitting together at a retro computer terminal, pair programming. Code sprouting from a lime green pot nearby. Cozy greenhouse vibes.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot sitting together at a retro computer terminal, happily pair programming. A small code-plant sprouts from a lime green (#ecf874) flower pot on the desk. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10850.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot sitting together at a retro computer terminal, happily pair programming. A small code-plant sprouts from a lime green (#ecf874) flower pot on the desk. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-10T19:14:29.090970+00:00",
+  "app_name": "Opticode",
+  "app_url": "https://www.opticode.tech/"
+}

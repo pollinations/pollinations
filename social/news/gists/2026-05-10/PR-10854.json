@@ -1,0 +1,34 @@
+{
+  "pr_number": 10854,
+  "title": "Add Quent to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10854",
+  "merged_at": "2026-05-10T19:22:03Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Stonks, but make it AI",
+    "blurb": "Quent just landed in the Greenhouse. It uses AI agents to automate trading and analyze indicators, because staring at charts all day is for humans.",
+    "summary": "Added Quent, an AI-powered automated trading and indicator analysis tool, to the community app showcase.",
+    "impact": "The community can now explore how to use AI agents for financial strategies and trading automation via the Greenhouse.",
+    "keywords": [
+      "community",
+      "app",
+      "trading",
+      "agents",
+      "finance"
+    ],
+    "visual_concept": "Trading and finance theme. Polly the bee acting as a trader, looking at upward trending charts. Monitor robot as an AI agent assisting with the trades. Coins, charts, retro terminals.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny business tie, looking at a retro computer monitor showing upward trending stock charts and green pixel coins. A chunky monitor robot stands nearby holding a tiny briefcase. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10854.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny business tie, looking at a retro computer monitor showing upward trending stock charts and green pixel coins. A chunky monitor robot stands nearby holding a tiny briefcase. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T19:23:11.549220+00:00",
+  "app_name": "Quent",
+  "app_url": "https://quent.kro.kr/"
+}

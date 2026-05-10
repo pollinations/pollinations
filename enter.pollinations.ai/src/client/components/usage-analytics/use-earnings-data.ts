@@ -78,6 +78,7 @@ export function useEarningsData(
         setPerApp([]);
         setGlobalSummary(null);
 
+        // REMOVE BEFORE MERGE — design-only mock short-circuit (see lib/mock-earnings.ts).
         const mockScenario = getMockEarningsScenario();
         if (mockScenario) {
             const mock = getMockEarningsResponse(mockScenario, {

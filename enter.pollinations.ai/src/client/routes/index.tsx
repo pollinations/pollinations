@@ -120,6 +120,7 @@ export const Route = createFileRoute("/")({
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
+        // REMOVE BEFORE MERGE — design-only mock override (see lib/mock-earnings.ts).
         const mockScenario = getMockEarningsScenario();
         const mockToday = mockScenario
             ? getMockTodayEarnings(mockScenario)

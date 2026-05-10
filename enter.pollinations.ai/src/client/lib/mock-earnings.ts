@@ -1,3 +1,9 @@
+// REMOVE BEFORE MERGE — design-only mock for the wallet + earnings dashboard.
+// Activated via `?mockEarnings=<scenario>` (gated on `import.meta.env.DEV` so it
+// can't reach prod), wired in:
+//   - src/client/routes/index.tsx (loader: paidWeek/tierWeek override)
+//   - src/client/components/usage-analytics/use-earnings-data.ts (fetch short-circuit)
+// Strip those call sites and delete this file once the design loop is finished.
 import type {
     DeveloperEarningsRow,
     EarningsFilterState,

@@ -137,6 +137,59 @@ describe("runReplicatePrediction", () => {
         });
     });
 
+    it("treats aborted predictions as terminal failures", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: "pred_aborted",
+                    status: "aborted",
+                    error: "Prediction aborted before starting",
+                }),
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 500,
+        });
+    });
+
+    it("times out with 504 when prediction stays processing past poll budget", async () => {
+        vi.useFakeTimers();
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(
+                    JSON.stringify({
+                        id: "pred_stuck",
+                        status: "processing",
+                        urls: {
+                            get: "https://api.replicate.com/v1/predictions/pred_stuck",
+                        },
+                    }),
+                    { status: 201 },
+                ),
+        );
+
+        const promise = runReplicatePrediction({
+            model: MODEL,
+            input: { prompt: "x" },
+        });
+        // Attach rejection handler before advancing timers so the rejection
+        // is observed (avoids Vitest "unhandled rejection" complaint).
+        const assertion = expect(promise).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+        await vi.advanceTimersByTimeAsync(60 * 5_000 + 1_000);
+        await assertion;
+        // 1 POST + up to 60 GET polls
+        expect(fetchSpy.mock.calls.length).toBeLessThanOrEqual(61);
+        vi.useRealTimers();
+    });
+
     it("classifies generic prediction failures as 500 (upstream error)", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
@@ -207,9 +260,7 @@ describe("runReplicatePrediction", () => {
         vi.useRealTimers();
     });
 
-    it("throws ReplicateError without status on HTTP-level errors (handler defaults to 500)", async () => {
-        // 401 (bad token), 429 (our rate limit), 5xx (Replicate down) are all
-        // infra issues on our side, never user input — caller maps to 500.
+    it("maps Replicate auth/infra HTTP errors to 502", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(JSON.stringify({ detail: "Invalid token" }), {
                 status: 401,
@@ -220,7 +271,38 @@ describe("runReplicatePrediction", () => {
             runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
         ).rejects.toMatchObject({
             name: "ReplicateError",
-            status: undefined,
+            status: 502,
+        });
+    });
+
+    it("passes through Replicate 422 input validation errors", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({ detail: "Invalid aspect_ratio: 9:21" }),
+                { status: 422 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 422,
+        });
+    });
+
+    it("passes through Replicate 429 rate-limit errors", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ detail: "Rate limited" }), {
+                status: 429,
+            }),
+        );
+
+        await expect(
+            runReplicatePrediction({ model: MODEL, input: { prompt: "x" } }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 429,
         });
     });
 });

@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ https://basic-pollinations-imagen.vercel.app/](https://basic-pollinations-imagen.vercel.app/) | Generate pollination images with https://basic-pollinations-imagen.vercel.app/. Log in to https://enter.pollinations.ai/ for an API key, enter it, then generate images. | [@web](https://github.com/web) |
 | [🪄 MageAI Generator](https://mageai-gen.vercel.app/) | Create images and videos using Pollinations AI with MageAI Generator. | [@web](https://github.com/web) |
 | [🧑‍💻 CHAT](https://zedex-ide.onrender.com/) | Edita texto para desenvolvedores usando IA via API da POLLINATIONS no app CHAT. | [@web](https://github.com/web) |
 | [🧩 OMNI](136345527) | Run the OMNI command-line interface (CLI). | [@cli](https://github.com/cli) |

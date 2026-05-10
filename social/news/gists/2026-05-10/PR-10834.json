@@ -1,0 +1,37 @@
+{
+  "pr_number": 10834,
+  "title": "Add OMNI to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10834",
+  "merged_at": "2026-05-10T15:14:02Z",
+  "labels": [
+    "API",
+    ".REQUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Terminal velocity in the greenhouse",
+    "blurb": "OMNI has been added to the community greenhouse. It's a CLI tool, because sometimes you just want to type things into a void and get magic back.",
+    "summary": "Added the OMNI command-line interface to the community apps showcase and greenhouse directory.",
+    "impact": "Users can now discover and explore the OMNI CLI tool directly from the Pollinations app directory.",
+    "keywords": [
+      "community",
+      "app",
+      "cli",
+      "omni",
+      "showcase"
+    ],
+    "visual_concept": "OMNI is a CLI tool, and it was added to the 'GREENHOUSE'. Visual metaphor: a retro computer terminal sprouting like a plant in a cozy digital greenhouse. Polly the bee acting as a gardener.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's straw hat, watering a glowing retro computer terminal that is sprouting like a plant from a lime green (#ecf874) flower pot inside a digital greenhouse. Soft pastel lavender and mint gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10834.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny gardener's straw hat, watering a glowing retro computer terminal that is sprouting like a plant from a lime green (#ecf874) flower pot inside a digital greenhouse. Soft pastel lavender and mint gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-10T15:14:55.438935+00:00",
+  "app_name": "OMNI",
+  "app_url": "https://github.com/San4ous2/Omni"
+}

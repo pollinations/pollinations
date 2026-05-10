@@ -1,3 +1,6 @@
+const { spawnSync } = require("node:child_process");
+const path = require("node:path");
+
 const RECEIPT_MARKER = "<!-- QUEST_PAYOUT_DATA:v1 -->";
 
 function repo(context) {
@@ -296,9 +299,78 @@ async function markPaidOutAndComment(args) {
     }
 }
 
+function runCommand(command, args, options = {}) {
+    const result = spawnSync(command, args, {
+        encoding: "utf8",
+        stdio: "inherit",
+        ...options,
+    });
+    if (result.status !== 0) {
+        throw new Error(`${command} ${args.join(" ")} failed`);
+    }
+}
+
+function runGrant(enterDir, payout) {
+    console.log(
+        `→ granting ${payout.amount} Pollen to @${payout.recipient} (${payout.role}) for #${payout.issue}`,
+    );
+    const result = spawnSync(
+        "npx",
+        [
+            "tsx",
+            "src/tier-progression/shared/quest-grant-pollen.ts",
+            "grant",
+            "--githubUsername",
+            payout.recipient,
+            "--amount",
+            String(payout.amount),
+            "--questIssue",
+            String(payout.issue),
+            "--prNumber",
+            String(process.env.PR_NUMBER),
+            "--role",
+            payout.role,
+            "--env",
+            "production",
+        ],
+        {
+            cwd: enterDir,
+            encoding: "utf8",
+        },
+    );
+
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+
+    const statusByCode = {
+        0: "granted",
+        2: "not_found",
+        3: "duplicate",
+    };
+
+    return {
+        issue: payout.issue,
+        user: payout.recipient,
+        amount: payout.amount,
+        role: payout.role,
+        status: statusByCode[result.status] || "error",
+    };
+}
+
+async function runPollenGrants({ core }) {
+    const payouts = parseJsonEnv("PAYOUTS", []);
+    const enterDir = path.join(process.cwd(), "enter.pollinations.ai");
+    runCommand("npm", ["install"], { cwd: enterDir });
+    core.setOutput(
+        "results",
+        JSON.stringify(payouts.map((payout) => runGrant(enterDir, payout))),
+    );
+}
+
 module.exports = {
     computePayouts,
     markPaidOutAndComment,
     resolveLinkedQuests,
+    runPollenGrants,
     setQuestStatus,
 };

@@ -15,11 +15,20 @@ on:
         type: boolean
         default: false
 
+# Live runs (cron + non-dry workflow_dispatch) serialize on one group and
+# never cancel each other — cancelling between Discord post and the snapshot
+# commit would leave the baseline old and re-announce the same changes next
+# run. A manual dry-run gets its own per-run group so it can't queue behind
+# or interfere with a live run.
+concurrency:
+  group: models-weekly-${{ github.event.inputs.dry_run == 'true' && format('dry-{0}', github.run_id) || 'live' }}
+  cancel-in-progress: false
+
 jobs:
   models-weekly:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    # No `permissions:` block — the default GITHUB_TOKEN is unused. All writes
+    # to the news branch go through the POLLY_BOT App token created below.
 
     steps:
       - name: Generate Pollinations AI Token
@@ -43,7 +52,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests PyYAML
+        run: pip install requests
 
       - name: Generate model-changes report
         env:
@@ -57,9 +66,9 @@ jobs:
 
       - name: Refresh news overlay
         if: github.event.inputs.dry_run != 'true'
-        run: |
-          git fetch origin news
-          git checkout origin/news -- social/news/ || echo "Nothing on news yet"
+        # On a true first run the news branch may not exist yet — chain with
+        # `||` so the step succeeds and the publisher can create it.
+        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "Nothing on news yet"
 
       - name: Publish to Discord
         if: github.event.inputs.dry_run != 'true'

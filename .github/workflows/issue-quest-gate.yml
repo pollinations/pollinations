@@ -22,7 +22,7 @@ env:
       "In Progress": "Assignee is working on it",
       "In Review": "Linked PR is open",
       "Reward Ready": "PR merged, payout pending D1 grant",
-      "Paid Out": "Pollen credited to author and assignee"
+      "Paid Out": "Pollen credited to the quest assignee"
     }
   QUEST_TYPE_DESCRIPTIONS: |
     {

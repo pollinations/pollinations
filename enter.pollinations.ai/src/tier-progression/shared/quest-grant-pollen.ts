@@ -54,9 +54,7 @@ const grantCommand = command({
             .desc("Immutable numeric GitHub user ID of the recipient"),
         githubUsername: string()
             .required()
-            .desc(
-                "GitHub username (for logging and payout_key — not used for D1 lookup)",
-            ),
+            .desc("GitHub username (for logging, not used for D1 lookup)"),
         amount: number()
             .required()
             .desc("Pollen amount to add (positive number)"),
@@ -90,7 +88,7 @@ const grantCommand = command({
         }
 
         // Idempotency key uses the immutable github_id, not the mutable username.
-        const payoutKey = `quest:${questIssue}:pr:${prNumber}:gh:${githubId}`;
+        const payoutKey = `quest:${questIssue}:pr:${prNumber}:gh:${githubId}:role:assignee`;
         const sql = `
             BEGIN;
             INSERT INTO quest_payout_credits (

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10846,
+  "title": "Add CHAT to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10846",
+  "merged_at": "2026-05-10T18:28:16Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Text editing, now with more AI",
+    "blurb": "A new community app called CHAT just landed in the greenhouse. It's a text editor for developers powered by our API, ready to help you write.",
+    "summary": "Added the CHAT application, an AI-powered text editor for developers, to the community greenhouse.",
+    "impact": "Users can now discover and explore the CHAT app in the community showcase.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "chat",
+      "developer-tools"
+    ],
+    "visual_concept": "The PR adds a new community app to the 'greenhouse'. The app is a text editor for developers. Visuals should feature Polly the bee in a digital greenhouse, tending to a new 'code-plant' next to a retro terminal displaying a chat/text interface.",
+    "image_prompt": "Cozy pixel art scene inside a glowing digital greenhouse where the cute bee mascot is watering a new code-plant sprouting from a lime green (#ecf874) pot. A retro computer monitor nearby displays a chat interface with chunky text. Soft pastel gradient background with warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10846.jpg",
+    "prompt": "Cozy pixel art scene inside a glowing digital greenhouse where the cute bee mascot is watering a new code-plant sprouting from a lime green (#ecf874) pot. A retro computer monitor nearby displays a chat interface with chunky text. Soft pastel gradient background with warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-10T18:29:16.166231+00:00",
+  "app_name": "CHAT",
+  "app_url": "https://zedex-ide.onrender.com/"
+}

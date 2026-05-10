@@ -28,6 +28,7 @@ type ChartProps = {
     showModelBreakdown: boolean;
     tier?: TierStatus;
     paidBarColor?: { base: string; hover: string };
+    tierBarColor?: { base: string; hover: string };
 };
 
 export const Chart: FC<ChartProps> = ({
@@ -36,6 +37,7 @@ export const Chart: FC<ChartProps> = ({
     showModelBreakdown,
     tier,
     paidBarColor,
+    tierBarColor: tierBarColorProp,
 }) => {
     const paidBar = paidBarColor?.base ?? CHART_COLORS.paidBar;
     const paidBarHover = paidBarColor?.hover ?? CHART_COLORS.paidBarHover;
@@ -44,6 +46,7 @@ export const Chart: FC<ChartProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(600);
     const tierBarColor =
+        tierBarColorProp ??
         TIER_BAR_COLORS[
             getTierColor(tier || "spore") as keyof typeof TIER_BAR_COLORS
         ];
@@ -64,13 +67,21 @@ export const Chart: FC<ChartProps> = ({
         return () => cancelAnimationFrame(animationId);
     }, []);
 
-    // Responsive
+    // Responsive — track both window resize and container resize. Window-only
+    // listening misses cases where the container reflows (e.g. content above
+    // loads in and pushes/squeezes this chart) without the window changing size.
     useEffect(() => {
-        const update = () =>
-            containerRef.current && setWidth(containerRef.current.offsetWidth);
+        const node = containerRef.current;
+        if (!node) return;
+        const update = () => setWidth(node.offsetWidth);
         update();
         window.addEventListener("resize", update);
-        return () => window.removeEventListener("resize", update);
+        const ro = new ResizeObserver(update);
+        ro.observe(node);
+        return () => {
+            window.removeEventListener("resize", update);
+            ro.disconnect();
+        };
     }, []);
 
     const height = 180;

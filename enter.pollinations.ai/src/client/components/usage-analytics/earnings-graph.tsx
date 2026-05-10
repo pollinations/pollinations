@@ -16,7 +16,7 @@ type EarningsGraphProps = {
     theme: DashboardTheme;
 };
 
-const PAID_BAR_COLOR = { base: "#fbcfe8", hover: "#f9a8d4" } as const;
+import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({
     period,
@@ -136,7 +136,8 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             data={chartData}
                             metric="pollen"
                             showModelBreakdown={showAppBreakdown}
-                            paidBarColor={PAID_BAR_COLOR}
+                            paidBarColor={PAID_COLOR}
+                            tierBarColor={TIER_COLOR}
                         />
                     )}
                 </div>
@@ -154,24 +155,29 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             label="Pollen earned"
                             value={formatPollen(stats.totalPollen)}
                             detail={
-                                stats.averageMarkupRate > 0 ? (
-                                    <Tag
-                                        color={theme}
-                                        size="lg"
-                                        className={cn(
-                                            "font-semibold",
-                                            tokens.text.base,
-                                        )}
-                                        title="Weighted average markup applied across served requests"
-                                    >
-                                        <span aria-hidden="true">📈</span>
-                                        <span className="tabular-nums">
-                                            {formatPercent(
-                                                stats.averageMarkupRate,
-                                            )}
-                                        </span>{" "}
-                                        avg markup
-                                    </Tag>
+                                stats.totalPollen > 0 ? (
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Tag
+                                            size="lg"
+                                            className="font-semibold bg-[#E08A52] text-amber-950"
+                                            title={`${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
+                                        >
+                                            💳{" "}
+                                            <span className="tabular-nums">
+                                                {formatPollen(stats.totalPaid)}
+                                            </span>
+                                        </Tag>
+                                        <Tag
+                                            size="lg"
+                                            className="font-semibold bg-[#FCD34D] text-amber-950"
+                                            title={`${formatPollen(stats.totalTier)} pollen from tier-side spend`}
+                                        >
+                                            🌱{" "}
+                                            <span className="tabular-nums">
+                                                {formatPollen(stats.totalTier)}
+                                            </span>
+                                        </Tag>
+                                    </div>
                                 ) : null
                             }
                         />
@@ -205,40 +211,37 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             detail={
                                 stats.topApp ? (
                                     <div className="flex flex-wrap items-center gap-2">
+                                        {stats.topApp.uniqueUsers > 0 && (
+                                            <Tag
+                                                size="lg"
+                                                className="font-semibold bg-rose-200 text-rose-900"
+                                                title={`${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
+                                            >
+                                                <span className="tabular-nums">
+                                                    {stats.topApp.uniqueUsers.toLocaleString()}
+                                                </span>
+                                                <span className="font-medium opacity-70">
+                                                    {stats.topApp
+                                                        .uniqueUsers === 1
+                                                        ? "user"
+                                                        : "users"}
+                                                </span>
+                                            </Tag>
+                                        )}
                                         <Tag
-                                            color={theme}
                                             size="lg"
-                                            className={cn(
-                                                "font-semibold",
-                                                tokens.text.base,
-                                            )}
+                                            className="font-semibold bg-rose-200 text-rose-900"
                                             title={`${formatPollen(stats.topApp.pollen)} pollen earned`}
                                         >
-                                            <span aria-hidden="true">🪷</span>
                                             <span className="tabular-nums">
                                                 {formatPollen(
                                                     stats.topApp.pollen,
                                                 )}
                                             </span>
+                                            <span className="font-medium opacity-70">
+                                                pollen
+                                            </span>
                                         </Tag>
-                                        {stats.topApp.uniqueUsers > 0 && (
-                                            <Tag
-                                                color={theme}
-                                                size="lg"
-                                                className={cn(
-                                                    "font-semibold",
-                                                    tokens.text.base,
-                                                )}
-                                                title={`${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
-                                            >
-                                                <span aria-hidden="true">
-                                                    👥
-                                                </span>
-                                                <span className="tabular-nums">
-                                                    {stats.topApp.uniqueUsers.toLocaleString()}
-                                                </span>
-                                            </Tag>
-                                        )}
                                     </div>
                                 ) : (
                                     "No earnings yet"
@@ -256,11 +259,6 @@ const formatPollen = (value: number): string => {
     if (value === 0) return "0";
     if (Math.abs(value) < 0.01) return value.toPrecision(2);
     return value.toFixed(2);
-};
-
-const formatPercent = (value: number): string => {
-    const pct = value * 100;
-    return Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(1)}%`;
 };
 
 const EarningsStatCard: FC<{

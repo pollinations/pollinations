@@ -232,11 +232,11 @@ const DashboardRail: FC<DashboardRailProps> = ({
             className="flex h-full min-h-0 flex-col gap-1 px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-green-950/10"
             aria-label="Dashboard navigation"
         >
-            <div className="hidden flex-col gap-2 pb-4 pl-1 md:flex">
+            <div className="hidden flex-col gap-2 border-b border-green-950/10 pb-4 pl-1 md:flex">
                 <Brand imageClassName="h-6" />
                 <BrandSocialChips />
             </div>
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-1 pt-3">
                 {navItems.map((item) => (
                     <NavButton
                         key={item.id}
@@ -270,8 +270,8 @@ const DashboardRail: FC<DashboardRailProps> = ({
                     </a>
                 </div>
             </nav>
-            {walletArea && <div className="mt-3 px-1">{walletArea}</div>}
             <div className="mt-auto flex flex-col gap-2 border-t border-green-950/10 pt-4">
+                {walletArea && <div className="px-1">{walletArea}</div>}
                 {accountArea ??
                     (githubUsername && onSignOut ? (
                         <User

@@ -22,7 +22,7 @@ Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolv
 
 There are **three ways**:
 
-1. 💳 **Buy** — Purchase Pollen packs with a credit card. Lands in your **paid balance** and *never expires*. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
+1. 💳 **Buy** — Purchase Pollen packs with a credit card. Lands in your **paid balance**; expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
 2. 🌱 **Tier grants** — Free Pollen that refills every hour into your **tier balance**. Contribute to unlock bigger hourly grants.
 3. 🌻 **Dev earnings** — Turn on Developer earnings for an App Key. Each request through your app is billed +25% over model cost (= 20% of user spend) — credited to your wallet. Earnings drip into your tier or paid balance, mirroring whichever the user paid from.
 
@@ -59,7 +59,7 @@ Registration gives you **instant access** to the Pollinations API. Create API ke
 You get **one central wallet** for all your applications:
 
 - **🌱 Tier balance** — free hourly grant plus earnings.
-- **💳 Paid balance** — purchased Pollen plus earnings. Never expires.
+- **💳 Paid balance** — purchased Pollen plus earnings. Expires after 12 months of account inactivity.
 
 **One bucket per request — no partial spend across buckets.**
 

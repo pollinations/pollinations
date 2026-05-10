@@ -1,10 +1,13 @@
-import { getTierEmoji } from "@shared/tier-config.ts";
 import { type FC, useState } from "react";
+import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
+
+const PAID_BAR = PAID_COLOR.bgClass;
+const TIER_BAR = TIER_COLOR.bgClass;
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -20,61 +23,33 @@ function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
 }
 
-type WalletRowProps = {
+const TooltipList: FC<{
+    title: string;
     emoji: string;
-    label: string;
-    value: number;
-    earnedToday: number;
-    tooltip: string;
-    rowClass: string;
-    labelClass: string;
-    tagClass: string;
-};
-
-const WalletRow: FC<WalletRowProps> = ({
-    emoji,
-    label,
-    value,
-    earnedToday,
-    tooltip,
-    rowClass,
-    labelClass,
-    tagClass,
-}) => (
-    <Tooltip
-        triggerAs="span"
-        displayContents
-        className={`flex flex-nowrap items-center gap-3 rounded-full px-5 py-3 cursor-default ${rowClass}`}
-        content={
-            <span className="block whitespace-pre-line leading-snug">
-                {tooltip}
-            </span>
-        }
-    >
-        <span className="shrink-0 text-2xl leading-none" aria-hidden="true">
-            {emoji}
+    items: string[];
+    earned?: number;
+}> = ({ title, emoji, items, earned }) => (
+    <span className="block leading-snug">
+        <span className="block font-semibold text-gray-900">
+            {title} <span aria-hidden="true">{emoji}</span>
         </span>
-        <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span
-                className={`text-[11px] font-bold uppercase tracking-wide ${labelClass}`}
-            >
-                {label}
-            </span>
-            <span className="flex items-baseline justify-between gap-2 whitespace-nowrap">
-                <span className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-950">
-                    {formatPollen(value)}
+        <ul className="mt-1.5 space-y-1 text-gray-700">
+            {items.map((item) => (
+                <li key={item} className="flex gap-1.5">
+                    <span aria-hidden="true">•</span>
+                    <span>{item}</span>
+                </li>
+            ))}
+        </ul>
+        {earned !== undefined && earned > 0 && (
+            <span className="mt-2 block border-t border-gray-200 pt-1.5 text-green-700 font-semibold">
+                +{formatPollen(earned, 2)}{" "}
+                <span className="font-medium text-gray-600">
+                    earned past 7d
                 </span>
-                {earnedToday > 0 && (
-                    <span
-                        className={`inline-flex items-baseline gap-1 text-base sm:text-lg font-bold tabular-nums ${tagClass}`}
-                    >
-                        <span aria-hidden="true">▲</span>
-                        {formatPollen(earnedToday)}
-                    </span>
-                )}
             </span>
-        </span>
-    </Tooltip>
+        )}
+    </span>
 );
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
@@ -84,62 +59,178 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     paidWeek = 0,
     tierWeek = 0,
 }) => {
-    const tierEmoji = getTierEmoji(tier);
-
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
     const totalPollen = normalizeDisplayBalance(
         displayTierBalance + displayPaidBalance,
     );
-    const totalToday = normalizeDisplayBalance(paidWeek + tierWeek);
-    const hideTierRow = tier === "microbe" && displayTierBalance === 0;
+    const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
+    const hideTierColumn = tier === "microbe" && displayTierBalance === 0;
+
+    const totalForBar =
+        Math.abs(displayPaidBalance) + Math.abs(displayTierBalance);
+    const paidPct =
+        totalForBar > 0
+            ? (Math.abs(displayPaidBalance) / totalForBar) * 100
+            : hideTierColumn
+              ? 100
+              : 50;
+    const tierPct = 100 - paidPct;
 
     return (
-        <div className="flex flex-col gap-4">
-            <div
-                className={`grid gap-3 ${hideTierRow ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}
-            >
-                <WalletRow
-                    emoji="🪷"
-                    label="Paid"
-                    value={displayPaidBalance}
-                    earnedToday={paidWeek}
-                    tooltip="💳 Paid balance — Pollen you bought, plus markup earnings from paid-side spend in your apps. Never expires."
-                    rowClass="bg-amber-300"
-                    labelClass="text-amber-900"
-                    tagClass="text-emerald-800"
+        <div className="flex flex-col gap-5">
+            {/* Headline: Total label + earnings */}
+            <div className="flex items-baseline justify-between gap-3">
+                <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
+                    Total balance
+                </span>
+                {totalWeek > 0 && (
+                    <Tooltip
+                        triggerAs="span"
+                        displayContents
+                        className="flex flex-col items-end leading-tight cursor-default"
+                        content="Earnings past 7 days"
+                    >
+                        <span className="text-base font-bold tabular-nums text-green-700">
+                            +{formatPollen(totalWeek, 2)}
+                        </span>
+                        <span className="text-xs font-medium text-amber-800/70">
+                            past 7d
+                        </span>
+                    </Tooltip>
+                )}
+            </div>
+
+            {/* Hero number */}
+            <div className="flex items-baseline gap-2">
+                <span className="text-4xl sm:text-5xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
+                    {formatPollen(totalPollen)}
+                </span>
+                <span className="text-base font-bold text-amber-900">
+                    pollen
+                </span>
+            </div>
+
+            {/* Composition bar */}
+            <div className="h-2.5 rounded-full bg-amber-100 overflow-hidden flex">
+                <span
+                    className={PAID_BAR}
+                    style={{ width: `${paidPct}%` }}
+                    aria-hidden="true"
                 />
-                {!hideTierRow && (
-                    <WalletRow
-                        emoji={tierEmoji}
-                        label="Tier"
-                        value={displayTierBalance}
-                        earnedToday={tierWeek}
-                        tooltip={`${tierEmoji} Tier balance — your free hourly Pollen, plus markup earnings from tier-side spend in your apps.`}
-                        rowClass="bg-pink-200"
-                        labelClass="text-pink-900"
-                        tagClass="text-emerald-800"
+                {!hideTierColumn && (
+                    <span
+                        className={TIER_BAR}
+                        style={{ width: `${tierPct}%` }}
+                        aria-hidden="true"
                     />
                 )}
             </div>
-            <div className="border-t border-dashed border-amber-300/70 pt-4 flex items-baseline justify-between gap-3">
-                <span className="text-xs font-bold uppercase tracking-wide text-amber-900">
-                    Total Pollen
-                </span>
-                <span className="flex flex-col items-end gap-1 whitespace-nowrap">
-                    <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none">
-                        {formatPollen(totalPollen)}
+
+            {/* Legend */}
+            <div
+                className={
+                    hideTierColumn
+                        ? "grid grid-cols-1 gap-4"
+                        : "grid grid-cols-2 gap-4"
+                }
+            >
+                <Tooltip
+                    triggerAs="span"
+                    displayContents
+                    className="flex flex-col gap-1.5 cursor-default"
+                    content={
+                        <TooltipList
+                            title="Paid balance"
+                            emoji="💳"
+                            items={[
+                                "Pollen you bought",
+                                "Earnings from paid-side spend in your apps",
+                                "Used for paid-only models, or when Tier can't cover",
+                            ]}
+                            earned={paidWeek}
+                        />
+                    }
+                >
+                    <span className="flex items-center gap-2">
+                        <span
+                            className={`h-2 w-2 rounded-full ${PAID_BAR}`}
+                            aria-hidden="true"
+                        />
+                        <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
+                            Paid
+                        </span>
                     </span>
-                    {totalToday > 0 && (
-                        <span className="inline-flex items-baseline gap-1 text-base sm:text-lg font-bold tabular-nums text-emerald-800">
-                            <span aria-hidden="true">▲</span>
-                            {formatPollen(totalToday)}
-                            <span className="text-xs font-medium opacity-70">
-                                7d
+                    <span className="flex items-baseline gap-2">
+                        <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
+                            {formatPollen(displayPaidBalance)}
+                        </span>
+                        {paidWeek > 0 && (
+                            <span className="ml-auto text-base font-bold tabular-nums text-green-700">
+                                +{formatPollen(paidWeek, 2)}
+                            </span>
+                        )}
+                    </span>
+                </Tooltip>
+                {!hideTierColumn && (
+                    <Tooltip
+                        triggerAs="span"
+                        displayContents
+                        className="flex flex-col gap-1.5 cursor-default"
+                        content={
+                            <TooltipList
+                                title="Tier balance"
+                                emoji="🌱"
+                                items={[
+                                    "Free Pollen that refills hourly",
+                                    "Earnings from tier-side spend in your apps",
+                                    "Used first for regular models, when it can cover",
+                                ]}
+                                earned={tierWeek}
+                            />
+                        }
+                    >
+                        <span className="flex items-center gap-2">
+                            <span
+                                className={`h-2 w-2 rounded-full ${TIER_BAR}`}
+                                aria-hidden="true"
+                            />
+                            <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
+                                Tier
                             </span>
                         </span>
-                    )}
-                </span>
+                        <span className="flex items-baseline gap-2">
+                            <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
+                                {formatPollen(displayTierBalance)}
+                            </span>
+                            {tierWeek > 0 && (
+                                <span className="ml-auto text-base font-bold tabular-nums text-green-700">
+                                    +{formatPollen(tierWeek, 2)}
+                                </span>
+                            )}
+                        </span>
+                    </Tooltip>
+                )}
+            </div>
+
+            {/* Learn more */}
+            <div className="pt-3 flex justify-start">
+                <button
+                    type="button"
+                    onClick={() => {
+                        const slug = "how-does-my-pollen-wallet-work";
+                        if (window.location.hash === `#${slug}`) {
+                            window.dispatchEvent(
+                                new HashChangeEvent("hashchange"),
+                            );
+                        } else {
+                            window.location.hash = slug;
+                        }
+                    }}
+                    className="text-xs text-amber-700/80 hover:text-amber-900 underline decoration-amber-400/60 underline-offset-2"
+                >
+                    Learn more about your balance →
+                </button>
             </div>
         </div>
     );
@@ -157,101 +248,30 @@ type SidebarWalletProps = {
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
     packBalance,
-    tier = "spore",
     paidWeek = 0,
     tierWeek = 0,
-    onClick,
 }) => {
-    const tierEmoji = getTierEmoji(tier);
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
     const totalPollen = normalizeDisplayBalance(
         displayTierBalance + displayPaidBalance,
     );
-    const totalToday = normalizeDisplayBalance(paidWeek + tierWeek);
-    const hideTierRow = tier === "microbe" && displayTierBalance === 0;
-
-    const Row: FC<{
-        emoji: string;
-        label: string;
-        value: number;
-        earned: number;
-        rowClass: string;
-        labelClass: string;
-        tagClass: string;
-    }> = ({ emoji, label, value, earned, rowClass, labelClass, tagClass }) => (
-        <span
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 ${rowClass}`}
-        >
-            <span className="text-sm leading-none" aria-hidden="true">
-                {emoji}
-            </span>
-            <span
-                className={`text-[10px] font-bold uppercase tracking-wide ${labelClass}`}
-            >
-                {label}
-            </span>
-            <span className="ml-auto flex items-baseline gap-1.5">
-                <span className="text-sm font-bold tabular-nums text-amber-950">
-                    {formatPollen(value)}
-                </span>
-                {earned > 0 && (
-                    <span
-                        className={`inline-flex items-baseline gap-0.5 text-[10px] font-bold tabular-nums ${tagClass}`}
-                    >
-                        <span aria-hidden="true">▲</span>
-                        {formatPollen(earned)}
-                    </span>
-                )}
-            </span>
-        </span>
-    );
+    const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
 
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            className="w-full rounded-2xl p-2 text-left transition-colors hover:bg-amber-100/40"
-        >
-            <div className="flex items-baseline justify-between gap-2 px-1 pb-1.5">
-                <span className="text-[11px] font-bold uppercase tracking-wide text-amber-900">
-                    Wallet
+        <div className="px-3 py-1 flex items-baseline justify-between gap-2 whitespace-nowrap">
+            <span className="flex items-baseline gap-1.5">
+                <span className="text-base font-bold tabular-nums text-amber-950 leading-none">
+                    {formatPollen(totalPollen)}
                 </span>
-                <span className="flex items-baseline gap-2">
-                    {totalToday > 0 && (
-                        <span className="inline-flex items-baseline gap-0.5 text-xs font-bold tabular-nums text-emerald-800">
-                            <span aria-hidden="true">▲</span>
-                            {formatPollen(totalToday)}
-                        </span>
-                    )}
-                    <span className="text-base font-bold tabular-nums text-amber-950">
-                        {formatPollen(totalPollen)}
-                    </span>
+                <span className="text-xs font-bold text-amber-900">pollen</span>
+            </span>
+            {totalWeek > 0 && (
+                <span className="text-xs font-bold tabular-nums text-green-700">
+                    +{formatPollen(totalWeek, 2)}
                 </span>
-            </div>
-            <div className="flex flex-col gap-1">
-                <Row
-                    emoji="🪷"
-                    label="Paid"
-                    value={displayPaidBalance}
-                    earned={paidWeek}
-                    rowClass="bg-amber-300"
-                    labelClass="text-amber-900"
-                    tagClass="text-emerald-800"
-                />
-                {!hideTierRow && (
-                    <Row
-                        emoji={tierEmoji}
-                        label="Tier"
-                        value={displayTierBalance}
-                        earned={tierWeek}
-                        rowClass="bg-pink-200"
-                        labelClass="text-pink-900"
-                        tagClass="text-emerald-800"
-                    />
-                )}
-            </div>
-        </button>
+            )}
+        </div>
     );
 };
 

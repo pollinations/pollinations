@@ -35,6 +35,10 @@ import {
     type UsagePeriodSelection,
 } from "../components/usage-analytics";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import {
+    getMockEarningsScenario,
+    getMockTodayEarnings,
+} from "../lib/mock-earnings.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
@@ -81,6 +85,9 @@ function pageFromHash(hash: string): DashboardPage {
     if (page === "buy-pollen") return "pollen";
     if (page === "pricing") return "models";
     if (page === "earnings") return "usage";
+    // Kebab-case slugs are FAQ anchors — route to updates and let the
+    // FAQ component scroll/expand the matching question.
+    if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "updates";
     return "pollen";
 }
 
@@ -113,8 +120,14 @@ export const Route = createFileRoute("/")({
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
-        const paidWeek = earningsTodayResult?.paidWeek ?? 0;
-        const tierWeek = earningsTodayResult?.tierWeek ?? 0;
+        const mockScenario = getMockEarningsScenario();
+        const mockToday = mockScenario
+            ? getMockTodayEarnings(mockScenario)
+            : null;
+        const paidWeek =
+            mockToday?.paidWeek ?? earningsTodayResult?.paidWeek ?? 0;
+        const tierWeek =
+            mockToday?.tierWeek ?? earningsTodayResult?.tierWeek ?? 0;
         // Prefer D1 — session (KV-cached) may hold a stale username after relog.
         const githubUsername =
             profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
@@ -296,14 +309,13 @@ function RouteComponent() {
                     tier={tierData?.active?.tier}
                     paidWeek={paidWeek}
                     tierWeek={tierWeek}
-                    onClick={() => handlePageChange("pollen")}
                 />
             }
         >
             {activePage === "updates" && <UpdatesPage />}
             {activePage === "pollen" && (
                 <div className="flex flex-col gap-6">
-                    <DashboardSection title="Balance" theme="amber" framed>
+                    <DashboardSection title="Wallet" theme="amber" framed>
                         <PollenBalance
                             tierBalance={tierBalance}
                             packBalance={packBalance}
@@ -313,7 +325,7 @@ function RouteComponent() {
                         />
                     </DashboardSection>
                     <DashboardSection
-                        title="Buy Pollen"
+                        title="Top-up"
                         theme="amber"
                         framed
                         id="buy-pollen"

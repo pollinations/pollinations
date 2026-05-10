@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    getMockEarningsResponse,
+    getMockEarningsScenario,
+} from "../../lib/mock-earnings.ts";
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
 
@@ -8,6 +12,10 @@ export type DeveloperEarningsRow = {
     app_name: string;
     requests: number;
     pollen_earned: number;
+    /** Earnings from paid-balance spend. Optional — pipe may not yet split. */
+    paid_earned?: number;
+    /** Earnings from tier-balance spend. Optional — pipe may not yet split. */
+    tier_earned?: number;
     markup_rate: number;
     unique_users: number;
 };
@@ -22,6 +30,8 @@ type TopApp = {
     label: string;
     requests: number;
     pollen: number;
+    paidPollen: number;
+    tierPollen: number;
     uniqueUsers: number;
 };
 
@@ -32,6 +42,8 @@ type EarningsDataResult = {
     chartData: DataPoint[];
     stats: {
         totalPollen: number;
+        totalPaid: number;
+        totalTier: number;
         averageMarkupRate: number;
         activeUsers: number;
         appCount: number;
@@ -53,6 +65,7 @@ export function useEarningsData(
     const inFlightRef = useRef<AbortController | null>(null);
 
     const selectedAppKeyIdsKey = filters.selectedAppKeyIds.join(",");
+    const { granularity, period } = filters.period;
 
     const fetchEarnings = useCallback(() => {
         inFlightRef.current?.abort();
@@ -64,9 +77,25 @@ export function useEarningsData(
         setDailyEarnings([]);
         setPerApp([]);
         setGlobalSummary(null);
+
+        const mockScenario = getMockEarningsScenario();
+        if (mockScenario) {
+            const mock = getMockEarningsResponse(mockScenario, {
+                period: { granularity, period },
+                selectedAppKeyIds: selectedAppKeyIdsKey
+                    ? selectedAppKeyIdsKey.split(",")
+                    : [],
+            });
+            setDailyEarnings(mock.daily);
+            setPerApp(mock.perApp);
+            setGlobalSummary(mock.global);
+            setLoading(false);
+            return;
+        }
+
         const params = new URLSearchParams({
-            granularity: filters.period.granularity,
-            period: filters.period.period,
+            granularity,
+            period,
         });
         if (selectedAppKeyIdsKey) {
             params.set("api_key_ids", selectedAppKeyIdsKey);
@@ -104,11 +133,7 @@ export function useEarningsData(
                 if (controller.signal.aborted) return;
                 setLoading(false);
             });
-    }, [
-        filters.period.granularity,
-        filters.period.period,
-        selectedAppKeyIdsKey,
-    ]);
+    }, [granularity, period, selectedAppKeyIdsKey]);
 
     useEffect(() => {
         fetchEarnings();
@@ -121,6 +146,8 @@ export function useEarningsData(
         type DayBucket = {
             requests: number;
             pollen: number;
+            paid: number;
+            tier: number;
             byApp: Map<
                 string,
                 { label: string; requests: number; pollen: number }
@@ -133,10 +160,15 @@ export function useEarningsData(
             const cur = buckets.get(dateKey) || {
                 requests: 0,
                 pollen: 0,
+                paid: 0,
+                tier: 0,
                 byApp: new Map(),
             };
             cur.requests += r.requests;
             cur.pollen += r.pollen_earned;
+            // If pipe doesn't yet split, fall back to all-paid.
+            cur.paid += r.paid_earned ?? r.pollen_earned;
+            cur.tier += r.tier_earned ?? 0;
 
             const appData = cur.byApp.get(r.app_key_id) || {
                 label: r.app_name,
@@ -160,6 +192,8 @@ export function useEarningsData(
             const d = buckets.get(bucketKey) || {
                 requests: 0,
                 pollen: 0,
+                paid: 0,
+                tier: 0,
                 byApp: new Map<
                     string,
                     { label: string; requests: number; pollen: number }
@@ -200,8 +234,8 @@ export function useEarningsData(
                     }),
                 }),
                 value: d.pollen,
-                tierValue: 0,
-                paidValue: d.pollen,
+                tierValue: d.tier,
+                paidValue: d.paid,
                 timestamp: date,
                 modelBreakdown: appBreakdown,
             };
@@ -210,6 +244,9 @@ export function useEarningsData(
 
     const stats = useMemo(() => {
         const totalPollen = globalSummary?.pollen_earned ?? 0;
+        const totalPaid =
+            globalSummary?.paid_earned ?? globalSummary?.pollen_earned ?? 0;
+        const totalTier = globalSummary?.tier_earned ?? 0;
         const averageMarkupRate = globalSummary?.markup_rate ?? 0;
         const activeUsers = globalSummary?.unique_users ?? 0;
         const appCount = perApp.length;
@@ -223,12 +260,16 @@ export function useEarningsData(
                   label: topAppRow.app_name,
                   requests: topAppRow.requests,
                   pollen: topAppRow.pollen_earned,
+                  paidPollen: topAppRow.paid_earned ?? topAppRow.pollen_earned,
+                  tierPollen: topAppRow.tier_earned ?? 0,
                   uniqueUsers: topAppRow.unique_users,
               }
             : null;
 
         return {
             totalPollen,
+            totalPaid,
+            totalTier,
             averageMarkupRate,
             activeUsers,
             appCount,

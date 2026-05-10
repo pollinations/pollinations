@@ -1,17 +1,12 @@
-export function formatPollen(value: number): string {
+export function formatPollen(value: number, decimals = 4): string {
     if (value === 0) return "0";
 
-    // Keep small deltas and near-integer fractional balances visible while still
-    // trimming routine trailing zeros.
     const abs = Math.abs(value);
     if (abs < 0.0001) return value.toPrecision(2);
 
-    const decimals = abs < 1 ? 4 : 2;
-    const rounded = Number(value.toFixed(decimals));
-    const displayValue =
-        abs < 1 && Math.abs(rounded) >= 1
-            ? Math.trunc(value * 10 ** decimals) / 10 ** decimals
-            : rounded;
-    const trimmed = displayValue.toString();
+    // Truncate (don't round) to `decimals`; Number().toString() drops trailing zeros.
+    const factor = 10 ** decimals;
+    const truncated = Math.trunc(value * factor) / factor;
+    const trimmed = truncated.toString();
     return trimmed === "0" ? value.toPrecision(2) : trimmed;
 }

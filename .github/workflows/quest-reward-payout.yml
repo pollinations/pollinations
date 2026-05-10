@@ -25,44 +25,16 @@ jobs:
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
           owner: pollinations
 
+      - uses: actions/checkout@v4
+
       - name: Resolve linked quests
         id: linked
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            const pr = context.payload.pull_request;
-            const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
-            const nums = [...new Set([...(pr.body || '').matchAll(closePattern)].map(m => Number(m[1])))];
-
-            const quests = [];
-            for (const n of nums) {
-                let issue;
-                try { issue = (await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: n })).data; }
-                catch { continue; }
-                const labels = (issue.labels || []).map(l => typeof l === 'string' ? l : l.name);
-                if (!labels.includes('POLLEN-QUEST')) continue;
-                quests.push({
-                    number: n,
-                    node_id: issue.node_id,
-                    author: issue.user?.login,
-                    assignees: (issue.assignees || []).map(a => a.login),
-                    body: issue.body || '',
-                });
-            }
-            if (quests.length > 1) {
-                const list = quests.map(q => `#${q.number}`).join(', ');
-                await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: pr.number,
-                    body: `Quest payout skipped: a PR must close exactly one POLLEN-QUEST issue, but this PR references ${list}.`,
-                });
-                core.setFailed(`Expected exactly one linked POLLEN-QUEST issue, found ${quests.length}: ${list}`);
-                return;
-            }
-            core.setOutput('quests', JSON.stringify(quests));
-            core.info(`Linked POLLEN-QUEST issues: ${quests.map(q => '#' + q.number).join(', ') || '(none)'}`);
+            const { resolveLinkedQuests } = require('./.github/scripts/quest-reward-payout.js');
+            await resolveLinkedQuests({ github, context, core });
 
       - name: Set quest status (In Review / Reward Ready)
         if: steps.linked.outputs.quests != '' && steps.linked.outputs.quests != '[]' && (github.event.action != 'closed' || github.event.pull_request.merged == true)
@@ -73,94 +45,21 @@ jobs:
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            const PROJECT_ID = process.env.PROJECT_ID;
-            const quests = JSON.parse(process.env.QUESTS);
-            const target = (context.payload.action === 'closed' && context.payload.pull_request.merged) ? 'Reward Ready' : 'In Review';
-
-            const fieldQ = await github.graphql(`
-              query($id: ID!) { node(id: $id) { ... on ProjectV2 {
-                field(name: "Status") { ... on ProjectV2SingleSelectField { id options { id name } } }
-              }}}`, { id: PROJECT_ID });
-            const field = fieldQ.node.field;
-            const opt = field.options.find(o => o.name === target);
-            if (!opt) { core.warning(`Status option "${target}" missing — run issue-quest-gate.yml setup once.`); return; }
-
-            for (const q of quests) {
-                const add = await github.graphql(`
-                  mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}`,
-                  { p: PROJECT_ID, c: q.node_id });
-                await github.graphql(`
-                  mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}){projectV2Item{id}}}`,
-                  { p: PROJECT_ID, i: add.addProjectV2ItemById.item.id, f: field.id, o: opt.id });
-                core.info(`#${q.number} → ${target}`);
-            }
+            const { setQuestStatus } = require('./.github/scripts/quest-reward-payout.js');
+            await setQuestStatus({ github, context, core });
 
       - name: Compute payouts
         if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.linked.outputs.quests != '' && steps.linked.outputs.quests != '[]'
         id: resolve
         uses: actions/github-script@v7
         env:
-          AUTHOR_CUT_PERCENT: ${{ vars.QUEST_AUTHOR_CUT_PERCENT || '15' }}
           QUESTS: ${{ steps.linked.outputs.quests }}
           PAYOUT_FALLBACK: ${{ env.QUEST_PAYOUT_FALLBACK }}
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            const cut = Number(process.env.AUTHOR_CUT_PERCENT);
-            if (!Number.isFinite(cut) || cut < 0 || cut > 100) {
-                core.setFailed(`QUEST_AUTHOR_CUT_PERCENT must be 0–100, got: ${process.env.AUTHOR_CUT_PERCENT}`);
-                return;
-            }
-            const quests = JSON.parse(process.env.QUESTS);
-            const parseReward = (body) => {
-                const m = body.match(/###\s*Reward\s*\n+\s*([0-9]+(?:\.[0-9]+)?)/i);
-                return m ? Number(m[1]) : null;
-            };
-
-            const payouts = [];
-            const flags = [];
-            for (const q of quests) {
-                const reward = parseReward(q.body);
-                const missing = [];
-                if (!q.author) missing.push('issue author');
-                if (q.assignees.length === 0) missing.push('assignee');
-                if (q.assignees.length > 1) missing.push(`single assignee (found ${q.assignees.length})`);
-                if (reward === null || !Number.isFinite(reward) || reward <= 0) missing.push('valid reward amount in issue body');
-
-                if (missing.length) { flags.push({ ...q, reward, reason: missing.join(', ') }); continue; }
-
-                const assignee = q.assignees[0];
-                if (assignee === q.author) {
-                    payouts.push({ issue: q.number, recipient: q.author, amount: reward, role: 'author+assignee' });
-                } else {
-                    const authorCut = Math.round(reward * cut) / 100;
-                    const assigneeCut = Math.round((reward - authorCut) * 100) / 100;
-                    payouts.push({ issue: q.number, recipient: q.author, amount: authorCut, role: 'author' });
-                    payouts.push({ issue: q.number, recipient: assignee, amount: assigneeCut, role: 'assignee' });
-                }
-            }
-
-            for (const f of flags) {
-                await github.rest.issues.createComment({
-                    owner: context.repo.owner, repo: context.repo.repo, issue_number: f.number,
-                    body: [
-                        `@${process.env.PAYOUT_FALLBACK} — quest payout could not be auto-processed.`,
-                        ``,
-                        `**Missing:** ${f.reason}`,
-                        `- author: ${f.author ?? '(none)'}`,
-                        `- assignees: ${f.assignees.length ? f.assignees.join(', ') : '(none)'}`,
-                        `- parsed reward: ${f.reward ?? '(unparsed)'}`,
-                        ``,
-                        `Triggered by merge of #${context.payload.pull_request.number}. Please review and back-fill manually.`,
-                    ].join('\n'),
-                });
-            }
-
-            core.setOutput('payouts', JSON.stringify(payouts));
-            core.setOutput('cut_percent', String(cut));
-
-      - uses: actions/checkout@v4
-        if: steps.resolve.outputs.payouts != '' && steps.resolve.outputs.payouts != '[]'
+            const { computePayouts } = require('./.github/scripts/quest-reward-payout.js');
+            await computePayouts({ github, context, core });
 
       - name: Grant Pollen via D1
         if: steps.resolve.outputs.payouts != '' && steps.resolve.outputs.payouts != '[]'
@@ -170,41 +69,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PAYOUTS: ${{ steps.resolve.outputs.payouts }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          set -e
-          cd enter.pollinations.ai
-          npm install
-
-          RESULTS="[]"
-          for row in $(echo "$PAYOUTS" | jq -c '.[]'); do
-              ISSUE=$(echo "$row" | jq -r '.issue')
-              USER=$(echo "$row" | jq -r '.recipient')
-              AMOUNT=$(echo "$row" | jq -r '.amount')
-              ROLE=$(echo "$row" | jq -r '.role')
-              echo "→ granting $AMOUNT Pollen to @$USER ($ROLE) for #$ISSUE"
-              set +e
-              OUT=$(npx tsx src/tier-progression/shared/quest-grant-pollen.ts grant \
-                  --githubUsername "$USER" --amount "$AMOUNT" \
-                  --questIssue "$ISSUE" --prNumber "$PR_NUMBER" --role "$ROLE" \
-                  --env production 2>&1)
-              RC=$?
-              set -e
-              echo "$OUT"
-
-              case "$RC" in
-                0) STATUS="granted" ;;
-                2) STATUS="not_found" ;;
-                3) STATUS="duplicate" ;;
-                *) STATUS="error" ;;
-              esac
-
-              RESULTS=$(echo "$RESULTS" | jq -c \
-                  --argjson issue "$ISSUE" --arg user "$USER" \
-                  --argjson amount "$AMOUNT" --arg role "$ROLE" --arg status "$STATUS" \
-                  '. + [{issue:$issue, user:$user, amount:$amount, role:$role, status:$status}]')
-          done
-
-          echo "results=$RESULTS" >> "$GITHUB_OUTPUT"
+        run: bash .github/scripts/quest-run-pollen-grants.sh
 
       - name: Mark Paid Out and comment summary
         if: steps.grant.outputs.results
@@ -212,108 +77,10 @@ jobs:
         env:
           RESULTS: ${{ steps.grant.outputs.results }}
           QUESTS: ${{ steps.linked.outputs.quests }}
-          CUT_PERCENT: ${{ steps.resolve.outputs.cut_percent }}
           PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
           PAYOUT_FALLBACK: ${{ env.QUEST_PAYOUT_FALLBACK }}
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            const PROJECT_ID = process.env.PROJECT_ID;
-            const results = JSON.parse(process.env.RESULTS);
-            const quests = JSON.parse(process.env.QUESTS);
-            const cutPct = process.env.CUT_PERCENT;
-            const marker = '<!-- QUEST_PAYOUT_DATA:v1 -->';
-
-            const byIssue = {};
-            for (const r of results) (byIssue[r.issue] ||= []).push(r);
-
-            async function findReceiptComment(issueNum) {
-                const comments = await github.paginate(github.rest.issues.listComments, {
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issueNum,
-                    per_page: 100,
-                });
-                return comments.reverse().find(c => c.user?.type === 'Bot' && c.body?.includes(marker));
-            }
-
-            const fieldQ = await github.graphql(`
-              query($id: ID!) { node(id: $id) { ... on ProjectV2 {
-                field(name: "Status") { ... on ProjectV2SingleSelectField { id options { id name } } }
-              }}}`, { id: PROJECT_ID });
-            const field = fieldQ.node.field;
-            const paidOpt = field.options.find(o => o.name === 'Paid Out');
-
-            for (const [issueNum, rows] of Object.entries(byIssue)) {
-                const granted = rows.filter(r => r.status === 'granted');
-                const duplicate = rows.filter(r => r.status === 'duplicate');
-                const notFound = rows.filter(r => r.status === 'not_found');
-                const errored  = rows.filter(r => r.status === 'error');
-                const allOk = rows.every(r => r.status === 'granted' || r.status === 'duplicate');
-
-                const receipt = {
-                    status: allOk ? 'paid_out' : 'manual_review',
-                    quest_issue: Number(issueNum),
-                    pr: context.payload.pull_request.number,
-                    paid_at: allOk ? new Date().toISOString() : null,
-                    processed_at: new Date().toISOString(),
-                    author_cut_percent: Number(cutPct),
-                    recipients: rows.map(r => ({
-                        github: r.user,
-                        role: r.role,
-                        amount: r.amount,
-                        status: r.status,
-                    })),
-                };
-
-                const lines = [
-                    marker,
-                    '```json',
-                    JSON.stringify(receipt, null, 2),
-                    '```',
-                    ``,
-                    allOk ? `### 🌸 Quest reward paid out` : `### ⚠️ Quest reward needs review`,
-                    ``,
-                ];
-                for (const r of granted) lines.push(`- **${r.amount}** Pollen → @${r.user} (${r.role})`);
-                for (const r of duplicate) lines.push(`- **${r.amount}** Pollen → @${r.user} (${r.role}) already credited`);
-                if (notFound.length) {
-                    lines.push(``, `@${process.env.PAYOUT_FALLBACK} — these recipients are not registered at enter.pollinations.ai, please back-fill manually:`);
-                    for (const r of notFound) lines.push(`- @${r.user} (${r.role}): ${r.amount} Pollen`);
-                }
-                if (errored.length) {
-                    lines.push(``, `@${process.env.PAYOUT_FALLBACK} — D1 grant failed for:`);
-                    for (const r of errored) lines.push(`- @${r.user} (${r.role}): ${r.amount} Pollen`);
-                }
-                lines.push(``, `Author cut: ${cutPct}% (set via repo variable \`QUEST_AUTHOR_CUT_PERCENT\`).`);
-
-                const body = lines.join('\n');
-                const existingReceipt = await findReceiptComment(Number(issueNum));
-                if (existingReceipt) {
-                    await github.rest.issues.updateComment({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        comment_id: existingReceipt.id,
-                        body,
-                    });
-                } else {
-                    await github.rest.issues.createComment({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: Number(issueNum), body,
-                    });
-                }
-
-                if (allOk && paidOpt) {
-                    const quest = quests.find(q => q.number === Number(issueNum));
-                    if (quest) {
-                        const add = await github.graphql(`
-                          mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}`,
-                          { p: PROJECT_ID, c: quest.node_id });
-                        await github.graphql(`
-                          mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}){projectV2Item{id}}}`,
-                          { p: PROJECT_ID, i: add.addProjectV2ItemById.item.id, f: field.id, o: paidOpt.id });
-                        core.info(`#${issueNum} → Paid Out`);
-                    }
-                }
-            }
+            const { markPaidOutAndComment } = require('./.github/scripts/quest-reward-payout.js');
+            await markPaidOutAndComment({ github, context, core });

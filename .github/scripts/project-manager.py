@@ -495,11 +495,8 @@ def main():
         else:
             log_error("Failed to add POLLEN-QUEST issue to Quest project")
 
-        classification = classify_with_ai(is_internal=True)
-        labels = normalize_labels("dev", classification.get("labels", []))
-        if labels:
-            log_debug(f"Applying quest labels: {labels}")
-            add_labels(labels)
+        log_debug("Applying deterministic quest label: DEV-QUEST")
+        add_labels(["DEV-QUEST"])
         return
 
     if "NEWS" in existing_labels:

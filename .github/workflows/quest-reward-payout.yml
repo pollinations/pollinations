@@ -50,6 +50,17 @@ jobs:
                     body: issue.body || '',
                 });
             }
+            if (quests.length > 1) {
+                const list = quests.map(q => `#${q.number}`).join(', ');
+                await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    body: `Quest payout skipped: a PR must close exactly one POLLEN-QUEST issue, but this PR references ${list}.`,
+                });
+                core.setFailed(`Expected exactly one linked POLLEN-QUEST issue, found ${quests.length}: ${list}`);
+                return;
+            }
             core.setOutput('quests', JSON.stringify(quests));
             core.info(`Linked POLLEN-QUEST issues: ${quests.map(q => '#' + q.number).join(', ') || '(none)'}`);
 
@@ -158,6 +169,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PAYOUTS: ${{ steps.resolve.outputs.payouts }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -e
           cd enter.pollinations.ai
@@ -172,14 +184,19 @@ jobs:
               echo "→ granting $AMOUNT Pollen to @$USER ($ROLE) for #$ISSUE"
               set +e
               OUT=$(npx tsx src/tier-progression/shared/quest-grant-pollen.ts grant \
-                  --githubUsername "$USER" --amount "$AMOUNT" --env production 2>&1)
+                  --githubUsername "$USER" --amount "$AMOUNT" \
+                  --questIssue "$ISSUE" --prNumber "$PR_NUMBER" --role "$ROLE" \
+                  --env production 2>&1)
               RC=$?
               set -e
               echo "$OUT"
 
-              STATUS="error"
-              [ $RC -eq 0 ] && STATUS="granted"
-              [ $RC -eq 2 ] && STATUS="not_found"
+              case "$RC" in
+                0) STATUS="granted" ;;
+                2) STATUS="not_found" ;;
+                3) STATUS="duplicate" ;;
+                *) STATUS="error" ;;
+              esac
 
               RESULTS=$(echo "$RESULTS" | jq -c \
                   --argjson issue "$ISSUE" --arg user "$USER" \
@@ -205,9 +222,20 @@ jobs:
             const results = JSON.parse(process.env.RESULTS);
             const quests = JSON.parse(process.env.QUESTS);
             const cutPct = process.env.CUT_PERCENT;
+            const marker = '<!-- QUEST_PAYOUT_DATA:v1 -->';
 
             const byIssue = {};
             for (const r of results) (byIssue[r.issue] ||= []).push(r);
+
+            async function findReceiptComment(issueNum) {
+                const comments = await github.paginate(github.rest.issues.listComments, {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNum,
+                    per_page: 100,
+                });
+                return comments.reverse().find(c => c.user?.type === 'Bot' && c.body?.includes(marker));
+            }
 
             const fieldQ = await github.graphql(`
               query($id: ID!) { node(id: $id) { ... on ProjectV2 {
@@ -218,11 +246,37 @@ jobs:
 
             for (const [issueNum, rows] of Object.entries(byIssue)) {
                 const granted = rows.filter(r => r.status === 'granted');
+                const duplicate = rows.filter(r => r.status === 'duplicate');
                 const notFound = rows.filter(r => r.status === 'not_found');
                 const errored  = rows.filter(r => r.status === 'error');
+                const allOk = rows.every(r => r.status === 'granted' || r.status === 'duplicate');
 
-                const lines = [`### 🌸 Quest reward paid out`, ``];
+                const receipt = {
+                    status: allOk ? 'paid_out' : 'manual_review',
+                    quest_issue: Number(issueNum),
+                    pr: context.payload.pull_request.number,
+                    paid_at: allOk ? new Date().toISOString() : null,
+                    processed_at: new Date().toISOString(),
+                    author_cut_percent: Number(cutPct),
+                    recipients: rows.map(r => ({
+                        github: r.user,
+                        role: r.role,
+                        amount: r.amount,
+                        status: r.status,
+                    })),
+                };
+
+                const lines = [
+                    marker,
+                    '```json',
+                    JSON.stringify(receipt, null, 2),
+                    '```',
+                    ``,
+                    allOk ? `### 🌸 Quest reward paid out` : `### ⚠️ Quest reward needs review`,
+                    ``,
+                ];
                 for (const r of granted) lines.push(`- **${r.amount}** Pollen → @${r.user} (${r.role})`);
+                for (const r of duplicate) lines.push(`- **${r.amount}** Pollen → @${r.user} (${r.role}) already credited`);
                 if (notFound.length) {
                     lines.push(``, `@${process.env.PAYOUT_FALLBACK} — these recipients are not registered at enter.pollinations.ai, please back-fill manually:`);
                     for (const r of notFound) lines.push(`- @${r.user} (${r.role}): ${r.amount} Pollen`);
@@ -233,12 +287,23 @@ jobs:
                 }
                 lines.push(``, `Author cut: ${cutPct}% (set via repo variable \`QUEST_AUTHOR_CUT_PERCENT\`).`);
 
-                await github.rest.issues.createComment({
-                    owner: context.repo.owner, repo: context.repo.repo,
-                    issue_number: Number(issueNum), body: lines.join('\n'),
-                });
+                const body = lines.join('\n');
+                const existingReceipt = await findReceiptComment(Number(issueNum));
+                if (existingReceipt) {
+                    await github.rest.issues.updateComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        comment_id: existingReceipt.id,
+                        body,
+                    });
+                } else {
+                    await github.rest.issues.createComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: Number(issueNum), body,
+                    });
+                }
 
-                const allOk = rows.every(r => r.status === 'granted');
                 if (allOk && paidOpt) {
                     const quest = quests.find(q => q.number === Number(issueNum));
                     if (quest) {

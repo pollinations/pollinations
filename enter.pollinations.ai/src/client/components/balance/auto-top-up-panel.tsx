@@ -51,7 +51,7 @@ type AutoTopUpPanelProps = {
     initialBillingState: BillingState | null;
 };
 
-const AUTO_TOP_UP_PACK_MIN = 10;
+const AUTO_TOP_UP_PACK_MIN = 5;
 const AUTO_TOP_UP_PACK_MAX = 100;
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";

@@ -1,8 +1,6 @@
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 
-const RECEIPT_MARKER = "<!-- QUEST_PAYOUT_DATA:v1 -->";
-
 function repo(context) {
     return {
         owner: context.repo.owner,
@@ -17,7 +15,8 @@ function parseJsonEnv(name) {
 
 async function resolveLinkedQuest({ github, context, core }) {
     const pr = context.payload.pull_request;
-    const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
+    // GitHub closing keywords: close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved.
+    const closePattern = /(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s+#(\d+)/gi;
     const issueNumbers = [
         ...new Set(
             [...(pr.body || "").matchAll(closePattern)].map((m) =>
@@ -104,92 +103,26 @@ async function computePayout({ github, context, core }) {
     );
 }
 
-async function findReceiptComment({ github, context }, issueNumber) {
-    const comments = await github.paginate(github.rest.issues.listComments, {
-        ...repo(context),
-        issue_number: issueNumber,
-        per_page: 100,
-    });
-    return comments
-        .reverse()
-        .find(
-            (comment) =>
-                comment.user?.type === "Bot" &&
-                comment.body?.includes(RECEIPT_MARKER),
-        );
-}
-
-function buildReceiptBody(context, quest, result) {
-    const paid = result.status === "granted" || result.status === "duplicate";
-    const receipt = {
-        status: paid ? "paid_out" : "manual_review",
-        quest_issue: quest.number,
-        pr: context.payload.pull_request.number,
-        recipient: result.user,
-        amount: result.amount,
-        result: result.status,
-        processed_at: new Date().toISOString(),
-    };
-
-    const lines = [
-        RECEIPT_MARKER,
-        "```json",
-        JSON.stringify(receipt, null, 2),
-        "```",
-        "",
-        paid
-            ? "### 🌸 Quest reward paid out"
-            : "### ⚠️ Quest reward needs review",
-        "",
-    ];
-
+function buildReceiptBody(result) {
     if (result.status === "granted") {
-        lines.push(`- **${result.amount}** Pollen → @${result.user}`);
-    } else if (result.status === "duplicate") {
-        lines.push(
-            `- **${result.amount}** Pollen → @${result.user} already credited`,
-        );
-    } else if (result.status === "not_found") {
-        lines.push(
-            `@${process.env.PAYOUT_FALLBACK} — @${result.user} is not registered at enter.pollinations.ai; please back-fill ${result.amount} Pollen manually.`,
-        );
-    } else {
-        lines.push(
-            `@${process.env.PAYOUT_FALLBACK} — D1 grant failed for @${result.user}: ${result.amount} Pollen`,
-        );
+        return `### 🌸 Quest reward paid out\n\n- **${result.amount}** Pollen → @${result.user}`;
     }
-
-    return lines.join("\n");
+    if (result.status === "not_found") {
+        return `### ⚠️ Quest reward needs review\n\n@${process.env.PAYOUT_FALLBACK} — @${result.user} is not registered at enter.pollinations.ai; please back-fill ${result.amount} Pollen manually.`;
+    }
+    return `### ⚠️ Quest reward needs review\n\n@${process.env.PAYOUT_FALLBACK} — D1 grant failed for @${result.user}: ${result.amount} Pollen`;
 }
 
-async function upsertReceiptComment(args, issueNumber, body) {
-    const existing = await findReceiptComment(args, issueNumber);
-    if (existing) {
-        await args.github.rest.issues.updateComment({
-            ...repo(args.context),
-            comment_id: existing.id,
-            body,
-        });
-        return;
-    }
-
-    await args.github.rest.issues.createComment({
-        ...repo(args.context),
-        issue_number: issueNumber,
-        body,
-    });
-}
-
-async function markPaidOutAndComment(args) {
+async function postReceipt({ github, context }) {
     const quest = parseJsonEnv("QUEST");
     const result = parseJsonEnv("RESULT");
     if (!quest || !result) return;
 
-    await upsertReceiptComment(
-        args,
-        quest.number,
-        buildReceiptBody(args.context, quest, result),
-    );
+    await github.rest.issues.createComment({
+        ...repo(context),
+        issue_number: quest.number,
+        body: buildReceiptBody(result),
+    });
 }
 
 function runGrant(enterDir, payout) {
@@ -224,17 +157,16 @@ function runGrant(enterDir, payout) {
     if (result.stdout) process.stdout.write(result.stdout);
     if (result.stderr) process.stderr.write(result.stderr);
 
-    const statusByCode = {
-        0: "granted",
-        2: "not_found",
-        3: "duplicate",
-    };
-
     return {
         issue: payout.issue,
         user: payout.recipient,
         amount: payout.amount,
-        status: statusByCode[result.status] || "error",
+        status:
+            result.status === 0
+                ? "granted"
+                : result.status === 2
+                  ? "not_found"
+                  : "failed",
     };
 }
 
@@ -256,7 +188,7 @@ async function runPollenGrant({ core }) {
 
 module.exports = {
     computePayout,
-    markPaidOutAndComment,
+    postReceipt,
     resolveLinkedQuest,
     runPollenGrant,
 };

@@ -73,5 +73,5 @@ jobs:
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            const { markPaidOutAndComment } = require('./.github/scripts/quest-reward-payout.js');
-            await markPaidOutAndComment({ github, context, core });
+            const { postReceipt } = require('./.github/scripts/quest-reward-payout.js');
+            await postReceipt({ github, context, core });

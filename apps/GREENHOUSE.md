@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **716** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **717** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -697,7 +697,7 @@
 | [🌱 Pollinations Seed Plan Qualification](https://app-j.pl/Pollinations/) | Analyze a public GitHub user profile with Pollinations Seed Plan Qualification to calculate points per the Pollinations Seed Plan scoring system and display the score and breakdown. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 NEURGenerator for ESP32-S3](113021062) | Uses Pollinations.aihttpspollinations.ai API on ESP32-S3 with PSRAM and WDT support in NEURGenerator for ESP32-S3. | [@library](https://github.com/library) |  | 🫧 |
 
-<details><summary>Show all 113 apps</summary>
+<details><summary>Show all 114 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -787,6 +787,7 @@
 | [🖼️ Quicker Pollinations AI](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) | Provides faster access to Pollinations AI features and quick image and media generation workflows. | [@web](https://github.com/web) |  |  |
 | [🛠 Herramientas IA ️](https://proyectodescartes.org/descartescms/herramientas-ia) | Publishes tools built with Pollinations.AI and the DescartesJS editor and links other community-created utilities. | [@web](https://github.com/web) |  |  |
 | [🎨 Pollinations.ai Model Comparison](https://endemicmedia.github.io/FLARE/llm-comparison-tool/) | Compares outputs from multiple LLMs via a GitHub Pages tool with prompt input, selectable timeouts, and submit/cancel controls. | [@web](https://github.com/web) |  |  |
+| [🧩 vox.riko](https://ganya002.github.io/vox.riko/) | Render the HTML head and body, including an h1 element containing vox.riko, based on the htmlhead/headbodyh1vox.riko/h1 snippet. | [@web](https://github.com/web) |  | 🫧 |
 | [🤖 Pyanchor](https://pyanchor.pyan.kr) | **Pyanchor** is an open-source agent-agnostic AI live-edit sidecar for running web apps (Next.js / Vite / Astro). Add a one-line script to your page; an in-page overlay (Shadow DOM) lets you point at | [@web](https://github.com/web) |  | 🫧 |
 | [🛠️ Worl Tools](https://worldtools-mu.vercel.app/) | Worl Tools is an offline-first desktop app with a single interface for 20+ tools, including AI image editing, background removal, developer utilities, device testing, and media processing. | [@web](https://github.com/web) |  | 🫧 |
 | [🧰 App forge](torrents.signalcity.tv) | App forge. | [@web](https://github.com/web) |  | 🫧 |

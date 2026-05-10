@@ -16,8 +16,6 @@ function sqlString(value: string): string {
 }
 
 function queryD1(env: Environment, sql: string): string {
-    const envArgs =
-        env === "production" ? ["--env", "production"] : ["--env", "staging"];
     return execFileSync(
         "npx",
         [
@@ -26,7 +24,8 @@ function queryD1(env: Environment, sql: string): string {
             "execute",
             "DB",
             "--remote",
-            ...envArgs,
+            "--env",
+            env,
             "--command",
             sql,
             "--json",
@@ -69,11 +68,8 @@ const grantCommand = command({
         env: string().enum("staging", "production").default("production"),
     },
     handler: async (opts) => {
+        const { amount, questIssue, prNumber, role } = opts;
         const env = opts.env as Environment;
-        const amount = opts.amount;
-        const questIssue = opts.questIssue;
-        const prNumber = opts.prNumber;
-        const role = opts.role;
 
         const MAX_AMOUNT = 10000;
         if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_AMOUNT) {
@@ -82,7 +78,6 @@ const grantCommand = command({
             );
             process.exit(1);
         }
-        const safeAmount = Number(amount.toFixed(2));
         const safeGithubUsername = sanitizeGitHubUsername(opts.githubUsername);
 
         const user = getUser(env, safeGithubUsername);
@@ -92,7 +87,6 @@ const grantCommand = command({
         }
 
         const payoutKey = `quest:${questIssue}:pr:${prNumber}:user:${safeGithubUsername.toLowerCase()}:role:${role}`;
-        const createdAt = Date.now();
         const sql = `
             BEGIN;
             INSERT INTO quest_payout_credits (
@@ -111,11 +105,11 @@ const grantCommand = command({
                 ${sqlString(role)},
                 ${sqlString(user.github_username)},
                 ${sqlString(user.id)},
-                ${safeAmount},
-                ${createdAt}
+                ${amount},
+                ${Date.now()}
             );
             UPDATE user
-            SET pack_balance = COALESCE(pack_balance, 0) + ${safeAmount}
+            SET pack_balance = COALESCE(pack_balance, 0) + ${amount}
             WHERE id = ${sqlString(user.id)};
             COMMIT;
         `;
@@ -123,11 +117,8 @@ const grantCommand = command({
         try {
             queryD1(env, sql);
         } catch (error) {
-            const output = [
-                error instanceof Error ? error.message : String(error),
-                String((error as { stderr?: Buffer | string }).stderr ?? ""),
-            ].join("\n");
-            if (output.includes("UNIQUE constraint failed")) {
+            const text = `${(error as { stderr?: unknown }).stderr ?? ""}\n${error instanceof Error ? error.message : error}`;
+            if (text.includes("UNIQUE constraint failed")) {
                 console.log(`DUPLICATE payout_key=${payoutKey}`);
                 process.exit(3);
             }
@@ -136,7 +127,7 @@ const grantCommand = command({
 
         const previous = user.pack_balance ?? 0;
         console.log(
-            `GRANTED payout_key=${payoutKey} user_id=${user.id} github_username=${user.github_username} previous=${previous} added=${safeAmount} new=${previous + safeAmount}`,
+            `GRANTED payout_key=${payoutKey} user_id=${user.id} github_username=${user.github_username} previous=${previous} added=${amount} new=${previous + amount}`,
         );
     },
 });

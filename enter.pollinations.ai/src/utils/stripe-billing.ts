@@ -441,6 +441,7 @@ export async function processAutoTopUpForUser(
         };
     }
 
+    let createdInvoiceId: string | null = null;
     try {
         const stripe = createStripeClient(env);
         const customerId = await getOrCreateStripeCustomerId(env, userId);
@@ -498,6 +499,7 @@ export async function processAutoTopUpForUser(
             { idempotencyKey: `${idempotencyKey}:item` },
         );
 
+        createdInvoiceId = invoice.id;
         await ensureAutoTopUpAttempt(env.DB, {
             invoiceId: invoice.id,
             userId,
@@ -533,6 +535,12 @@ export async function processAutoTopUpForUser(
         const message =
             error instanceof Error ? error.message : "Auto top-up failed.";
         await failPendingAutoTopUpAttempts(env.DB, userId, message);
+        // Stripe does not always fire payment_failed for SCA-blocked off-session
+        // invoices (they sit in requires_action waiting for user action that
+        // will not come). Void here so the customer portal stays clean.
+        if (createdInvoiceId) {
+            await voidAutoTopUpInvoice(env, createdInvoiceId);
+        }
         await recordAutoTopUpFailureAndMaybeDisable(env.DB, userId);
         return { status: "failed", reason: message };
     }

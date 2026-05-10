@@ -371,7 +371,7 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
 
 - **`redirectUris`**
 
-  `array` — Allowed OAuth redirect URIs for publishable app keys. Loopback ports are matched port-agnostically.
+  `array` — Allowed OAuth redirect URIs for publishable app keys. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; query-bearing entries must match exactly. Loopback ports are port-agnostic.
 
   **Items:**
 

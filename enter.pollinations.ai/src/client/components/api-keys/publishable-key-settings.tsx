@@ -2,7 +2,6 @@ import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
-import { InfoTip } from "../ui/info-tip.tsx";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];
@@ -49,11 +48,6 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         Redirect URIs
                     </Field.Label>
                 </div>
-                {redirectUris.length === 0 && (
-                    <p className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-3 py-2 text-sm text-gray-500">
-                        No redirect URIs
-                    </p>
-                )}
                 {redirectUris.map((uri, index) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
@@ -87,7 +81,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         onClick={add}
                         disabled={disabled}
                     >
-                        + Add redirect URI
+                        + Add
                     </Button>
                 </div>
             </Field.Root>
@@ -113,20 +107,12 @@ const DeveloperEarningsSwitch: FC<DeveloperEarningsSwitchProps> = ({
     disabled = false,
     onToggle,
 }) => (
-    <div className="flex w-fit min-w-0 items-center gap-3">
+    <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
-            <div className="flex min-w-0 items-center text-sm font-semibold">
-                Developer earnings
-                <InfoTip
-                    text="Turn on developer earnings. Users are billed 25% extra, credited to your wallet."
-                    label="Developer earnings information"
-                    tone="blue"
-                    placement="top"
-                />
-            </div>
-            <div className="text-xs font-medium text-blue-800/75">
-                {enabled ? "On" : "Off"}
-            </div>
+            <div className="text-sm font-semibold">Developer earnings</div>
+            <p className="mt-0.5 text-xs text-blue-800/75">
+                Users pay 25% over base rates. Markup credits to your balance.
+            </p>
         </div>
         <button
             type="button"

@@ -562,7 +562,7 @@ describe("API Key Management", () => {
             });
         });
 
-        test("matches app lookup redirect_uri exactly", async ({
+        test("ignores query string differences but rejects path mismatches", async ({
             sessionToken,
         }) => {
             const appResponse = await SELF.fetch(
@@ -577,9 +577,7 @@ describe("API Key Management", () => {
                         name: "query-bound-app",
                         type: "publishable",
                         metadata: {
-                            redirectUris: [
-                                "https://app.example/callback?flow=byop",
-                            ],
+                            redirectUris: ["https://app.example/callback"],
                         },
                     }),
                 },
@@ -587,20 +585,99 @@ describe("API Key Management", () => {
             expect(appResponse.status).toBe(200);
             const appKey = await appResponse.json();
 
-            const matching = await SELF.fetch(
-                `http://localhost:3000/api/app-lookup?client_id=${encodeURIComponent(appKey.key)}&redirect_uri=${encodeURIComponent("https://app.example/callback?flow=byop")}`,
+            // Extra query params on the incoming URL are allowed — apps
+            // round-trip state (e.g. ?prompt=, ?next=) through the redirect.
+            const withQuery = await SELF.fetch(
+                `http://localhost:3000/api/app-lookup?client_id=${encodeURIComponent(appKey.key)}&redirect_uri=${encodeURIComponent("https://app.example/callback?prompt=hi&model=x")}`,
             );
-            expect(matching.status).toBe(200);
-            expect(await matching.json()).toMatchObject({ found: true });
+            expect(withQuery.status).toBe(200);
+            expect(await withQuery.json()).toMatchObject({ found: true });
 
-            const mismatch = await SELF.fetch(
-                `http://localhost:3000/api/app-lookup?client_id=${encodeURIComponent(appKey.key)}&redirect_uri=${encodeURIComponent("https://app.example/callback")}`,
+            // Trailing slash on path is also insignificant.
+            const trailingSlash = await SELF.fetch(
+                `http://localhost:3000/api/app-lookup?client_id=${encodeURIComponent(appKey.key)}&redirect_uri=${encodeURIComponent("https://app.example/callback/")}`,
             );
-            expect(mismatch.status).toBe(200);
-            expect(await mismatch.json()).toMatchObject({
+            expect(trailingSlash.status).toBe(200);
+            expect(await trailingSlash.json()).toMatchObject({ found: true });
+
+            // But a different path still mismatches.
+            const wrongPath = await SELF.fetch(
+                `http://localhost:3000/api/app-lookup?client_id=${encodeURIComponent(appKey.key)}&redirect_uri=${encodeURIComponent("https://app.example/other")}`,
+            );
+            expect(wrongPath.status).toBe(200);
+            expect(await wrongPath.json()).toMatchObject({
                 found: false,
                 error: "redirect_uri_mismatch",
             });
+        });
+
+        test("createApiKey enforces same flexible redirect_uri rules", async ({
+            sessionToken,
+        }) => {
+            // Mint a publishable key with one registered URI.
+            const appResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "minting-app",
+                        type: "publishable",
+                        metadata: {
+                            redirectUris: ["https://mint.example/cb"],
+                        },
+                    }),
+                },
+            );
+            expect(appResponse.status).toBe(200);
+            const appKey = await appResponse.json();
+
+            // sk_ minting must accept query + trailing slash on the redirect
+            // (matches what /authorize forwards from a browser address bar).
+            const mint = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "minted-sk",
+                        type: "secret",
+                        metadata: {
+                            requestedClientId: appKey.key,
+                            redirectUri:
+                                "https://mint.example/cb/?prompt=hi&model=x",
+                        },
+                    }),
+                },
+            );
+            expect(mint.status).toBe(200);
+
+            // But mismatching host still fails.
+            const evil = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "evil-sk",
+                        type: "secret",
+                        metadata: {
+                            requestedClientId: appKey.key,
+                            redirectUri: "https://attacker.example/cb",
+                        },
+                    }),
+                },
+            );
+            expect(evil.status).toBe(400);
         });
     });
 

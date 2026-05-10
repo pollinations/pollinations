@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **725** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **727** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -276,7 +276,7 @@
 | [🤔 The Shape of Meaning](https://signals.pinecone.website/) | Generate personalized philosophical analysis with The Shape of Meaning by answering questions about how you experience meaning, handle uncertainty, and navigate paradox. | [@web](https://github.com/web) |  | 🫧 |
 | [📚 NovelCraft AI](https://mrlearner1606.github.io/novelcraftai/) | Write novels in your browser using NovelCraft AI; it runs entirely on your device with no account, no installation, and no server. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 77 apps</summary>
+<details><summary>Show all 78 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -338,6 +338,7 @@
 | [✍️ Storyframe Studio](https://storyframe-studio.web.app) | Storyframe Studio is an open-source AI creative workspace that uses the Pollinations API for text and image generation. | [@web](https://github.com/web) |  | 🫧 |
 | [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@web](https://github.com/web) |  | 🫧 |
 | [📚 StoryForge](http://pollen-story-forge.vercel.app/) | StoryForge is a client-side web app that turns ideas into chapter-based short stories with AI cover art, using the Pollinations API and BYOP model. Built with Vanilla JS and CSS. | [@web](https://github.com/web) |  | 🫧 |
+| [🌙 睡前小故事 / Bedtime Stories](https://222.5918918.xyz/) | 睡前小故事 / Bedtime Stories。提供睡前故事内容给用户阅读。 | [@web](https://github.com/web) |  | 🫧 |
 | [🧠 Scene2Text](https://scene2text.static.jp/) | Scene2Text describes what it is. | [@web](https://github.com/web) |  | 🫧 |
 | [📝 What If? Scenario Explorer](https://whatif.pythonanywhere.com) | Explore interactive speculative storytelling scenarios with What If? Scenario Explorer. Use it to create and navigate what-if narratives. | [@web](https://github.com/web) |  | 🫧 |
 | [🏛️ The Institute of Everything](https://rizperdana.github.io/institute-ai/) | Generate a complete fake museum exhibit from any concept, absurd, niche, or mundane, presented with straight-faced academic seriousness using The Institute of Everything. | [@web](https://github.com/web) |  | 🫧 |

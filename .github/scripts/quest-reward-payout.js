@@ -10,9 +10,9 @@ function repo(context) {
     };
 }
 
-function parseJsonEnv(name, fallback = null) {
+function parseJsonEnv(name) {
     const value = process.env[name];
-    return value ? JSON.parse(value) : fallback;
+    return value ? JSON.parse(value) : null;
 }
 
 async function getStatusField(github, projectId) {
@@ -51,10 +51,10 @@ async function setIssueStatus({ github, core }, projectId, issue, target) {
     core.info(`#${issue.number} → ${target}`);
 }
 
-async function resolveLinkedQuests({ github, context, core }) {
+async function resolveLinkedQuest({ github, context, core }) {
     const pr = context.payload.pull_request;
     const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
-    const nums = [
+    const issueNumbers = [
         ...new Set(
             [...(pr.body || "").matchAll(closePattern)].map((m) =>
                 Number(m[1]),
@@ -63,25 +63,26 @@ async function resolveLinkedQuests({ github, context, core }) {
     ];
 
     const quests = [];
-    for (const n of nums) {
+    for (const issueNumber of issueNumbers) {
         let issue;
         try {
             issue = (
                 await github.rest.issues.get({
                     ...repo(context),
-                    issue_number: n,
+                    issue_number: issueNumber,
                 })
             ).data;
         } catch {
             continue;
         }
 
-        const labels = (issue.labels || []).map((l) =>
-            typeof l === "string" ? l : l.name,
+        const labels = (issue.labels || []).map((label) =>
+            typeof label === "string" ? label : label.name,
         );
         if (!labels.includes("POLLEN-QUEST")) continue;
+
         quests.push({
-            number: n,
+            number: issueNumber,
             node_id: issue.node_id,
             assignees: (issue.assignees || []).map((a) => a.login),
             body: issue.body || "",
@@ -89,7 +90,7 @@ async function resolveLinkedQuests({ github, context, core }) {
     }
 
     if (quests.length > 1) {
-        const list = quests.map((q) => `#${q.number}`).join(", ");
+        const list = quests.map((quest) => `#${quest.number}`).join(", ");
         await github.rest.issues.createComment({
             ...repo(context),
             issue_number: pr.number,
@@ -101,25 +102,23 @@ async function resolveLinkedQuests({ github, context, core }) {
         return;
     }
 
-    core.setOutput("quests", JSON.stringify(quests));
+    const quest = quests[0] || null;
+    core.setOutput("quest", quest ? JSON.stringify(quest) : "");
     core.info(
-        `Linked POLLEN-QUEST issues: ${
-            quests.map((q) => `#${q.number}`).join(", ") || "(none)"
-        }`,
+        `Linked POLLEN-QUEST issue: ${quest ? `#${quest.number}` : "(none)"}`,
     );
 }
 
 async function setQuestStatus(args) {
-    const quests = parseJsonEnv("QUESTS", []);
+    const quest = parseJsonEnv("QUEST");
+    if (!quest) return;
+
     const target =
         args.context.payload.action === "closed" &&
         args.context.payload.pull_request.merged
             ? "Reward Ready"
             : "In Review";
-
-    for (const quest of quests) {
-        await setIssueStatus(args, process.env.PROJECT_ID, quest, target);
-    }
+    await setIssueStatus(args, process.env.PROJECT_ID, quest, target);
 }
 
 function parseReward(body) {
@@ -127,52 +126,46 @@ function parseReward(body) {
     return match ? Number(match[1]) : null;
 }
 
-async function computePayouts({ github, context, core }) {
-    const quests = parseJsonEnv("QUESTS", []);
-    const payouts = [];
-    const flags = [];
+async function computePayout({ github, context, core }) {
+    const quest = parseJsonEnv("QUEST");
+    if (!quest) return;
 
-    for (const quest of quests) {
-        const reward = parseReward(quest.body);
-        const missing = [];
-        if (quest.assignees.length === 0) missing.push("assignee");
-        if (quest.assignees.length > 1) {
-            missing.push(`single assignee (found ${quest.assignees.length})`);
-        }
-        if (reward === null || !Number.isFinite(reward) || reward <= 0) {
-            missing.push("valid reward amount in issue body");
-        }
-
-        if (missing.length) {
-            flags.push({ ...quest, reward, reason: missing.join(", ") });
-            continue;
-        }
-
-        payouts.push({
-            issue: quest.number,
-            recipient: quest.assignees[0],
-            amount: reward,
-            role: "assignee",
-        });
+    const reward = parseReward(quest.body);
+    const missing = [];
+    if (quest.assignees.length === 0) missing.push("assignee");
+    if (quest.assignees.length > 1) {
+        missing.push(`single assignee (found ${quest.assignees.length})`);
+    }
+    if (reward === null || !Number.isFinite(reward) || reward <= 0) {
+        missing.push("valid reward amount in issue body");
     }
 
-    for (const flag of flags) {
+    if (missing.length) {
         await github.rest.issues.createComment({
             ...repo(context),
-            issue_number: flag.number,
+            issue_number: quest.number,
             body: [
                 `@${process.env.PAYOUT_FALLBACK} — quest payout could not be auto-processed.`,
                 "",
-                `**Missing:** ${flag.reason}`,
-                `- assignees: ${flag.assignees.length ? flag.assignees.join(", ") : "(none)"}`,
-                `- parsed reward: ${flag.reward ?? "(unparsed)"}`,
+                `**Missing:** ${missing.join(", ")}`,
+                `- assignees: ${quest.assignees.length ? quest.assignees.join(", ") : "(none)"}`,
+                `- parsed reward: ${reward ?? "(unparsed)"}`,
                 "",
                 `Triggered by merge of #${context.payload.pull_request.number}. Please review and back-fill manually.`,
             ].join("\n"),
         });
+        return;
     }
 
-    core.setOutput("payouts", JSON.stringify(payouts));
+    core.setOutput(
+        "payout",
+        JSON.stringify({
+            issue: quest.number,
+            recipient: quest.assignees[0],
+            amount: reward,
+            role: "assignee",
+        }),
+    );
 }
 
 async function findReceiptComment({ github, context }, issueNumber) {
@@ -184,72 +177,61 @@ async function findReceiptComment({ github, context }, issueNumber) {
     return comments
         .reverse()
         .find(
-            (c) => c.user?.type === "Bot" && c.body?.includes(RECEIPT_MARKER),
+            (comment) =>
+                comment.user?.type === "Bot" &&
+                comment.body?.includes(RECEIPT_MARKER),
         );
 }
 
-function buildReceipt(context, issueNumber, rows) {
-    const allOk = rows.every(
-        (r) => r.status === "granted" || r.status === "duplicate",
-    );
+function buildReceipt(context, quest, result) {
+    const paid = result.status === "granted" || result.status === "duplicate";
     return {
-        status: allOk ? "paid_out" : "manual_review",
-        quest_issue: Number(issueNumber),
+        status: paid ? "paid_out" : "manual_review",
+        quest_issue: quest.number,
         pr: context.payload.pull_request.number,
-        paid_at: allOk ? new Date().toISOString() : null,
+        paid_at: paid ? new Date().toISOString() : null,
         processed_at: new Date().toISOString(),
-        recipients: rows.map((r) => ({
-            github: r.user,
-            role: r.role,
-            amount: r.amount,
-            status: r.status,
-        })),
+        recipients: [
+            {
+                github: result.user,
+                role: result.role,
+                amount: result.amount,
+                status: result.status,
+            },
+        ],
     };
 }
 
-function buildReceiptBody(receipt, rows) {
-    const granted = rows.filter((r) => r.status === "granted");
-    const duplicate = rows.filter((r) => r.status === "duplicate");
-    const notFound = rows.filter((r) => r.status === "not_found");
-    const errored = rows.filter((r) => r.status === "error");
-    const allOk = receipt.status === "paid_out";
-
+function buildReceiptBody(receipt, result) {
+    const paid = receipt.status === "paid_out";
     const lines = [
         RECEIPT_MARKER,
         "```json",
         JSON.stringify(receipt, null, 2),
         "```",
         "",
-        allOk
+        paid
             ? "### 🌸 Quest reward paid out"
             : "### ⚠️ Quest reward needs review",
         "",
     ];
-    for (const r of granted) {
-        lines.push(`- **${r.amount}** Pollen → @${r.user} (${r.role})`);
-    }
-    for (const r of duplicate) {
+
+    if (result.status === "granted") {
         lines.push(
-            `- **${r.amount}** Pollen → @${r.user} (${r.role}) already credited`,
+            `- **${result.amount}** Pollen → @${result.user} (${result.role})`,
         );
-    }
-    if (notFound.length) {
+    } else if (result.status === "duplicate") {
         lines.push(
-            "",
-            `@${process.env.PAYOUT_FALLBACK} — these recipients are not registered at enter.pollinations.ai, please back-fill manually:`,
+            `- **${result.amount}** Pollen → @${result.user} (${result.role}) already credited`,
         );
-        for (const r of notFound) {
-            lines.push(`- @${r.user} (${r.role}): ${r.amount} Pollen`);
-        }
-    }
-    if (errored.length) {
+    } else if (result.status === "not_found") {
         lines.push(
-            "",
-            `@${process.env.PAYOUT_FALLBACK} — D1 grant failed for:`,
+            `@${process.env.PAYOUT_FALLBACK} — @${result.user} is not registered at enter.pollinations.ai; please back-fill ${result.amount} Pollen manually.`,
         );
-        for (const r of errored) {
-            lines.push(`- @${r.user} (${r.role}): ${r.amount} Pollen`);
-        }
+    } else {
+        lines.push(
+            `@${process.env.PAYOUT_FALLBACK} — D1 grant failed for @${result.user} (${result.role}): ${result.amount} Pollen`,
+        );
     }
 
     return lines.join("\n");
@@ -274,28 +256,19 @@ async function upsertReceiptComment(args, issueNumber, body) {
 }
 
 async function markPaidOutAndComment(args) {
-    const results = parseJsonEnv("RESULTS", []);
-    const quests = parseJsonEnv("QUESTS", []);
-    const projectId = process.env.PROJECT_ID;
-    const byIssue = {};
-    for (const result of results) {
-        byIssue[result.issue] ||= [];
-        byIssue[result.issue].push(result);
-    }
+    const quest = parseJsonEnv("QUEST");
+    const result = parseJsonEnv("RESULT");
+    if (!quest || !result) return;
 
-    for (const [issueNumber, rows] of Object.entries(byIssue)) {
-        const receipt = buildReceipt(args.context, issueNumber, rows);
-        await upsertReceiptComment(
-            args,
-            Number(issueNumber),
-            buildReceiptBody(receipt, rows),
-        );
+    const receipt = buildReceipt(args.context, quest, result);
+    await upsertReceiptComment(
+        args,
+        quest.number,
+        buildReceiptBody(receipt, result),
+    );
 
-        if (receipt.status !== "paid_out") continue;
-        const quest = quests.find((q) => q.number === Number(issueNumber));
-        if (!quest) continue;
-
-        await setIssueStatus(args, projectId, quest, "Paid Out");
+    if (receipt.status === "paid_out") {
+        await setIssueStatus(args, process.env.PROJECT_ID, quest, "Paid Out");
     }
 }
 
@@ -357,20 +330,19 @@ function runGrant(enterDir, payout) {
     };
 }
 
-async function runPollenGrants({ core }) {
-    const payouts = parseJsonEnv("PAYOUTS", []);
+async function runPollenGrant({ core }) {
+    const payout = parseJsonEnv("PAYOUT");
+    if (!payout) return;
+
     const enterDir = path.join(process.cwd(), "enter.pollinations.ai");
     runCommand("npm", ["install"], { cwd: enterDir });
-    core.setOutput(
-        "results",
-        JSON.stringify(payouts.map((payout) => runGrant(enterDir, payout))),
-    );
+    core.setOutput("result", JSON.stringify(runGrant(enterDir, payout)));
 }
 
 module.exports = {
-    computePayouts,
+    computePayout,
     markPaidOutAndComment,
-    resolveLinkedQuests,
-    runPollenGrants,
+    resolveLinkedQuest,
+    runPollenGrant,
     setQuestStatus,
 };

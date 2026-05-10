@@ -1,0 +1,34 @@
+{
+  "pr_number": 10847,
+  "title": "Add MageAI Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10847",
+  "merged_at": "2026-05-10T19:07:15Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A touch of magic",
+    "blurb": "A new community app has sprouted! MageAI Generator is now live in the greenhouse, letting you conjure up images and videos with Pollinations AI.",
+    "summary": "Added MageAI Generator to the community app showcase, providing a new interface for creating images and videos.",
+    "impact": "Users can now discover and use MageAI Generator directly from our community directory.",
+    "keywords": [
+      "community",
+      "app",
+      "mageai",
+      "generator",
+      "showcase"
+    ],
+    "visual_concept": "MageAI implies magic and wizardry. Depict Polly the bee as a tiny wizard (with a hat and wand) conjuring images out of a glowing crystal ball or spellbook, representing the new MageAI Generator app.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny purple wizard hat, waving a glowing wand over a magical crystal ball that displays a tiny pixelated landscape. Soft lime green (#ecf874) and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10847.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny purple wizard hat, waving a glowing wand over a magical crystal ball that displays a tiny pixelated landscape. Soft lime green (#ecf874) and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T19:08:06.664297+00:00",
+  "app_name": "MageAI Generator",
+  "app_url": "https://mageai-gen.vercel.app/"
+}

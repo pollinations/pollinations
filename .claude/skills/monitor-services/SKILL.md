@@ -167,9 +167,9 @@ Expected: HTTP 200
 
 **Registry check (all image workers at once):**
 ```bash
-curl -s --connect-timeout 5 --max-time 10 http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/register
+curl -s --connect-timeout 5 --max-time 10 https://gen.pollinations.ai/register
 ```
-Expected: 4 workers with 0% error rate, all `hsl3ksl31lvrcc-*.proxy.runpod.net`
+Expected: 4 workers with 0% error rate, all `hsl3ksl31lvrcc-*.proxy.runpod.net`. The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL); workers heartbeat to `gen.pollinations.ai/register`.
 
 **Restart a worker:**
 ```bash
@@ -235,7 +235,7 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo truncate -s 0 /var/log/syslog
 
 When invoked, run checks in this order:
 
-1. **EC2 image registry** - curl register endpoint, check worker count and error rates
+1. **gen.pollinations.ai registry** - `curl https://gen.pollinations.ai/register` (KV-backed), check worker count and error rates
 2. **Flux/Z-Image RunPod** - verify 4 workers registered with 0% error rate
 3. **LTX-2 health** - curl health endpoint
 4. **LTX-2 e2e** - if healthy, test through gen.pollinations.ai (use test token from `.testingtokens`)
@@ -267,7 +267,7 @@ Report a brief status table:
 ```
 | Service | Status | Latency | Notes |
 |---------|--------|---------|-------|
-| EC2 registry | OK | 0.1s | 4 workers, 0% errors |
+| gen registry | OK | 0.1s | 4 workers, 0% errors |
 | Flux RunPod (gpu0) | OK | 2.9s | hsl3ksl31lvrcc-8765 |
 | Flux RunPod (gpu1) | OK | 2.9s | hsl3ksl31lvrcc-8766 |
 | Z-Image RunPod (gpu2) | OK | 1.5s | hsl3ksl31lvrcc-8767 |

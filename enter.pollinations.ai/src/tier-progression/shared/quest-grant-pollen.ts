@@ -3,14 +3,6 @@ import { command, number, run, string } from "@drizzle-team/brocli";
 
 type Environment = "staging" | "production";
 
-function sanitizeGitHubUsername(username: string): string {
-    const sanitized = username.replace(/[^a-zA-Z0-9-]/g, "");
-    if (sanitized.length === 0 || sanitized.length > 39) {
-        throw new Error(`Invalid GitHub username: "${username}"`);
-    }
-    return sanitized;
-}
-
 function sqlString(value: string): string {
     return `'${value.replaceAll("'", "''")}'`;
 }
@@ -40,12 +32,13 @@ function queryD1(env: Environment, sql: string): string {
 
 interface D1User {
     id: string;
+    github_id: number | null;
     github_username: string;
     pack_balance: number | null;
 }
 
-function getUser(env: Environment, safeGithubUsername: string): D1User | null {
-    const sql = `SELECT id, github_username, pack_balance FROM user WHERE LOWER(github_username) = LOWER(${sqlString(safeGithubUsername)}) LIMIT 1;`;
+function getUserByGithubId(env: Environment, githubId: number): D1User | null {
+    const sql = `SELECT id, github_id, github_username, pack_balance FROM user WHERE github_id = ${githubId} LIMIT 1;`;
     const raw = queryD1(env, sql);
     const parsed = JSON.parse(raw);
     const results = parsed[0]?.results || parsed.results || [];
@@ -56,9 +49,14 @@ const grantCommand = command({
     name: "grant",
     desc: "Add Pollen to a user's pack_balance once for a quest payout",
     options: {
+        githubId: number()
+            .required()
+            .desc("Immutable numeric GitHub user ID of the recipient"),
         githubUsername: string()
             .required()
-            .desc("GitHub username of the recipient"),
+            .desc(
+                "GitHub username (for logging and payout_key — not used for D1 lookup)",
+            ),
         amount: number()
             .required()
             .desc("Pollen amount to add (positive number)"),
@@ -68,7 +66,7 @@ const grantCommand = command({
         env: string().enum("staging", "production").default("production"),
     },
     handler: async (opts) => {
-        const { amount, questIssue, prNumber, role } = opts;
+        const { amount, questIssue, prNumber, role, githubId } = opts;
         const env = opts.env as Environment;
 
         const MAX_AMOUNT = 10000;
@@ -78,15 +76,22 @@ const grantCommand = command({
             );
             process.exit(1);
         }
-        const safeGithubUsername = sanitizeGitHubUsername(opts.githubUsername);
-
-        const user = getUser(env, safeGithubUsername);
+        if (!Number.isInteger(githubId) || githubId <= 0) {
+            console.error(
+                `❌ githubId must be a positive integer, got: ${githubId}`,
+            );
+            process.exit(1);
+        }
+        const user = getUserByGithubId(env, githubId);
         if (!user) {
-            console.log(`NOT_FOUND github_username=${opts.githubUsername}`);
+            console.log(
+                `NOT_FOUND github_id=${githubId} github_username=${opts.githubUsername}`,
+            );
             process.exit(2);
         }
 
-        const payoutKey = `quest:${questIssue}:pr:${prNumber}:user:${safeGithubUsername.toLowerCase()}:role:${role}`;
+        // Idempotency key uses the immutable github_id, not the mutable username.
+        const payoutKey = `quest:${questIssue}:pr:${prNumber}:gh:${githubId}:role:${role}`;
         const sql = `
             BEGIN;
             INSERT INTO quest_payout_credits (

@@ -297,6 +297,40 @@ jobs:
                 });
             }
 
+            // POLLEN-QUEST takes priority over Dev/Support/News/Tier.
+            // If the issue was already routed into one of those projects (e.g. it
+            // was an open Dev issue later promoted via the POLLEN-QUEST label),
+            // remove those cards so the issue lives in the Quest project only.
+            const OTHER_PROJECT_IDS = new Set([
+                'PVT_kwDOBS76fs4AwCAM',  // Dev
+                'PVT_kwDOBS76fs4BLr1H',  // Support
+                'PVT_kwDOBS76fs4BLtD8',  // News
+                'PVT_kwDOBS76fs4BLtE_',  // Tier
+            ]);
+            try {
+                const pi = await github.graphql(`
+                    query($id: ID!) {
+                      node(id: $id) {
+                        ... on Issue {
+                          projectItems(first: 30) {
+                            nodes { id project { id } }
+                          }
+                        }
+                      }
+                    }`, { id: issue.node_id });
+                const items = pi.node?.projectItems?.nodes ?? [];
+                for (const it of items) {
+                    if (it.project?.id && OTHER_PROJECT_IDS.has(it.project.id)) {
+                        await github.graphql(`
+                            mutation($p:ID!,$i:ID!){deleteProjectV2Item(input:{projectId:$p,itemId:$i}){deletedItemId}}`,
+                            { p: it.project.id, i: it.id });
+                        core.info(`Purged #${issue.number} from project ${it.project.id}`);
+                    }
+                }
+            } catch (e) {
+                core.warning(`Project purge failed for #${issue.number}: ${e.message}`);
+            }
+
             // Resolve project item ID once (idempotent add).
             const addQ = await github.graphql(`
                 mutation($p: ID!, $c: ID!) {

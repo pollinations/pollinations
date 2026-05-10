@@ -84,7 +84,10 @@ async function resolveLinkedQuest({ github, context, core }) {
         quests.push({
             number: issueNumber,
             node_id: issue.node_id,
-            assignees: (issue.assignees || []).map((a) => a.login),
+            assignees: (issue.assignees || []).map((a) => ({
+                login: a.login,
+                id: a.id,
+            })),
             body: issue.body || "",
         });
     }
@@ -148,7 +151,7 @@ async function computePayout({ github, context, core }) {
                 `@${process.env.PAYOUT_FALLBACK} — quest payout could not be auto-processed.`,
                 "",
                 `**Missing:** ${missing.join(", ")}`,
-                `- assignees: ${quest.assignees.length ? quest.assignees.join(", ") : "(none)"}`,
+                `- assignees: ${quest.assignees.length ? quest.assignees.map((a) => a.login).join(", ") : "(none)"}`,
                 `- parsed reward: ${reward ?? "(unparsed)"}`,
                 "",
                 `Triggered by merge of #${context.payload.pull_request.number}. Please review and back-fill manually.`,
@@ -157,11 +160,13 @@ async function computePayout({ github, context, core }) {
         return;
     }
 
+    const assignee = quest.assignees[0];
     core.setOutput(
         "payout",
         JSON.stringify({
             issue: quest.number,
-            recipient: quest.assignees[0],
+            recipient: assignee.login,
+            recipientId: assignee.id,
             amount: reward,
             role: "assignee",
         }),
@@ -282,6 +287,8 @@ function runGrant(enterDir, payout) {
             "tsx",
             "src/tier-progression/shared/quest-grant-pollen.ts",
             "grant",
+            "--githubId",
+            String(payout.recipientId),
             "--githubUsername",
             payout.recipient,
             "--amount",

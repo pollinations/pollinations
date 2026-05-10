@@ -1,0 +1,33 @@
+{
+  "pr_number": 10826,
+  "title": "fix: catgpt selfie reference URL",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10826",
+  "merged_at": "2026-05-10T16:35:27Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "CatGPT gets its selfie back",
+    "blurb": "We fixed a missing image link that was causing CatGPT's avatar comics to fail. The feline selfies are back online, complete with a shiny new backup!",
+    "summary": "Updated the reference URL for CatGPT's selfie placeholder and added a durable backup image to fix failing avatar comic generations.",
+    "impact": "CatGPT users will once again see properly generated avatar comics instead of broken images.",
+    "keywords": [
+      "catgpt",
+      "bug-fix",
+      "images",
+      "avatars"
+    ],
+    "visual_concept": "CatGPT taking a selfie. A cute pixel art cat holding up a phone or camera, with Polly the bee helping out by posing in the background or holding a tiny picture frame.",
+    "image_prompt": "Cozy pixel art scene of a cute cat taking a selfie with a smartphone, while the bee mascot hovers nearby posing for the photo. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10826.jpg",
+    "prompt": "Cozy pixel art scene of a cute cat taking a selfie with a smartphone, while the bee mascot hovers nearby posing for the photo. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T16:36:20.024888+00:00"
+}

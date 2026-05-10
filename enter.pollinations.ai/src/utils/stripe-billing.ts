@@ -71,12 +71,19 @@ export type AutoTopUpInput = {
     packAmountUsd: number;
 };
 
+export type AutoTopUpIssue = {
+    kind: "failed" | "requires_action";
+    reason: string;
+    occurredAt: string;
+};
+
 export type BillingOverview = {
     autoTopUp: {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
         lastAttemptAt: string | null;
+        lastIssue: AutoTopUpIssue | null;
     };
     paymentMethod: {
         hasDefault: boolean;
@@ -155,6 +162,8 @@ export async function getBillingOverview(
         autoTopUpEnabled = false;
     }
 
+    const lastIssue = await getLastAutoTopUpIssue(env.DB, userId);
+
     return {
         autoTopUp: {
             enabled: autoTopUpEnabled,
@@ -164,6 +173,7 @@ export async function getBillingOverview(
             lastAttemptAt: user.autoTopUpLastAttemptAt
                 ? new Date(user.autoTopUpLastAttemptAt).toISOString()
                 : null,
+            lastIssue,
         },
         paymentMethod: paymentMethod
             ? {
@@ -872,6 +882,37 @@ async function ensureAutoTopUpAttempt(
             now,
         )
         .run();
+}
+
+async function getLastAutoTopUpIssue(
+    db: D1Database,
+    userId: string,
+): Promise<AutoTopUpIssue | null> {
+    const row = await db
+        .prepare(
+            `SELECT status, failure_reason, completed_at, created_at
+                FROM stripe_auto_top_up_attempt
+                WHERE user_id = ?
+                ORDER BY COALESCE(completed_at, created_at) DESC
+                LIMIT 1`,
+        )
+        .bind(userId)
+        .first<{
+            status: string;
+            failure_reason: string | null;
+            completed_at: number | null;
+            created_at: number;
+        }>();
+    if (!row) return null;
+    if (row.status !== "failed" && row.status !== "requires_action") {
+        return null;
+    }
+    const occurredAtMs = row.completed_at ?? row.created_at;
+    return {
+        kind: row.status,
+        reason: row.failure_reason ?? "Auto top-up could not be completed.",
+        occurredAt: new Date(occurredAtMs).toISOString(),
+    };
 }
 
 async function recordAutoTopUpFailureAndMaybeDisable(

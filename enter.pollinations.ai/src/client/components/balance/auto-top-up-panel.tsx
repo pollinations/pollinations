@@ -15,12 +15,19 @@ import { Tag } from "../ui/tag.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
+export type AutoTopUpIssue = {
+    kind: "failed" | "requires_action";
+    reason: string;
+    occurredAt: string;
+};
+
 export type BillingState = {
     autoTopUp: {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
         lastAttemptAt: string | null;
+        lastIssue: AutoTopUpIssue | null;
     };
     paymentMethod: {
         hasDefault: boolean;
@@ -230,6 +237,11 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         [billingReady, isEnabled, saveAutoTopUp, setPendingEnable],
     );
 
+    const lastIssue = billingState?.autoTopUp.lastIssue ?? null;
+    const issueNotice = lastIssue ? (
+        <AutoTopUpIssueNotice issue={lastIssue} />
+    ) : null;
+
     return (
         <div className="space-y-4">
             <AutoTopUpToggle
@@ -253,6 +265,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         onClick={openBillingPortal}
                         loading={isOpeningPortal}
                     />
+                    {issueNotice}
                 </Card>
             )}
 
@@ -293,6 +306,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                             onClick={openBillingPortal}
                             loading={isOpeningPortal}
                         />
+                        {issueNotice}
                     </div>
                 </Card>
             )}
@@ -552,6 +566,50 @@ const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
         {children}
     </div>
 );
+
+type AutoTopUpIssueNoticeProps = {
+    issue: AutoTopUpIssue;
+};
+
+const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
+    const isAuth = issue.kind === "requires_action";
+    const title = isAuth
+        ? "Authentication required for auto top-up"
+        : "Last auto top-up charge failed";
+    const body = isAuth
+        ? "Your bank asked you to confirm the last charge. Update your payment method or buy a pack manually to refresh authorization."
+        : "We couldn't charge your default payment method. Update it to keep auto top-up working.";
+    const occurredLabel = formatRelativeTime(issue.occurredAt);
+    return (
+        <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-xs text-red-700/90"
+        >
+            <div className="font-semibold">⚠ {title}</div>
+            <div className="mt-0.5">{body}</div>
+            {occurredLabel && (
+                <div className="mt-1 text-[11px] text-red-700/70">
+                    Last attempt: {occurredLabel}
+                </div>
+            )}
+        </div>
+    );
+};
+
+function formatRelativeTime(iso: string): string | null {
+    const ts = Date.parse(iso);
+    if (Number.isNaN(ts)) return null;
+    const diffSeconds = Math.max(0, Math.round((Date.now() - ts) / 1000));
+    if (diffSeconds < 60) return "moments ago";
+    const diffMinutes = Math.round(diffSeconds / 60);
+    if (diffMinutes < 60)
+        return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+    const diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 24)
+        return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    const diffDays = Math.round(diffHours / 24);
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
 
 const ExternalLinkIcon: FC = () => (
     <svg

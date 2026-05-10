@@ -1,0 +1,34 @@
+{
+  "pr_number": 10819,
+  "title": "Add vox.riko to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10819",
+  "merged_at": "2026-05-10T08:36:35Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New sprout in the Greenhouse",
+    "blurb": "Another beautiful app blooms in our community greenhouse! Check out vox.riko, the latest addition to our growing ecosystem of community-built tools.",
+    "summary": "Added the community-built app vox.riko to the Pollinations app showcase and greenhouse directories.",
+    "impact": "Users can now discover and explore vox.riko alongside other community creations in the app directory.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "greenhouse",
+      "vox.riko"
+    ],
+    "visual_concept": "The PR adds a new app to the 'Greenhouse' (our community app directory). The visual should feature Polly the bee acting as a gardener in a literal greenhouse, tending to a new digital plant that represents the new app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, watering a glowing code-plant in a lush digital greenhouse. A small wooden sign next to the plant reads 'vox.riko' in pixel font. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10819.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, watering a glowing code-plant in a lush digital greenhouse. A small wooden sign next to the plant reads 'vox.riko' in pixel font. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T08:37:31.488923+00:00",
+  "app_name": "vox.riko",
+  "app_url": "https://ganya002.github.io/vox.riko/"
+}

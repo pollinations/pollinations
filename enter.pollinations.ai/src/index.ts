@@ -17,6 +17,7 @@ import { createDocsRoutes } from "./routes/docs.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
+import { supportRoutes } from "./routes/support.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
@@ -34,6 +35,7 @@ export const api = new Hono<Env>()
     .route("/device", deviceRoutes)
     .route("/webhooks", stripeWebhooksRoutes)
     .route("/admin", adminRoutes)
+    .route("/support", supportRoutes)
     .route("/model-stats", modelStatsRoutes);
 
 export type ApiRoutes = typeof api;

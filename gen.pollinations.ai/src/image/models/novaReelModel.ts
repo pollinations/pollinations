@@ -149,10 +149,12 @@ export async function callNovaReelAPI(
         StartAsyncInvokeCommand,
         GetAsyncInvokeCommand,
     } = await import("@aws-sdk/client-bedrock-runtime");
+    const { FetchHttpHandler } = await import("@smithy/fetch-http-handler");
 
     const bedrockClient = new BedrockRuntimeClient({
         region,
         credentials: { accessKeyId, secretAccessKey },
+        requestHandler: new FetchHttpHandler(),
     });
 
     // Build request body
@@ -348,6 +350,7 @@ async function downloadFromS3(
     secretAccessKey: string,
 ): Promise<Buffer> {
     const { S3Client, GetObjectCommand } = await import("@aws-sdk/client-s3");
+    const { FetchHttpHandler } = await import("@smithy/fetch-http-handler");
 
     // Parse s3://bucket/key format
     const match = s3Uri.match(/^s3:\/\/([^/]+)\/(.+)$/);
@@ -363,6 +366,7 @@ async function downloadFromS3(
     const s3Client = new S3Client({
         region,
         credentials: { accessKeyId, secretAccessKey },
+        requestHandler: new FetchHttpHandler(),
     });
 
     const getCommand = new GetObjectCommand({ Bucket: bucket, Key: key });

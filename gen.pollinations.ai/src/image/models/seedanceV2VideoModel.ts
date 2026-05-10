@@ -24,11 +24,38 @@ const logError = debug("pollinations:seedance2:error");
 const MODEL = "bytedance/seedance-2.0";
 const TRACKING_LABEL = "seedance-2.0";
 
+// Replicate's Seedance 2.0 accepts a narrower set than our shared aspectRatio
+// enum (which also allows 9:21). Validate at the boundary so users get a clear
+// 400 instead of a Replicate 422 round-trip.
+const SEEDANCE_V2_ASPECT_RATIOS = [
+    "16:9",
+    "4:3",
+    "1:1",
+    "3:4",
+    "9:16",
+    "21:9",
+    "adaptive",
+] as const;
+type SeedanceV2AspectRatio = (typeof SEEDANCE_V2_ASPECT_RATIOS)[number];
+
+export function resolveSeedanceV2AspectRatio(
+    requested: ImageParams["aspectRatio"] | undefined,
+): SeedanceV2AspectRatio {
+    if (!requested) return "16:9";
+    if ((SEEDANCE_V2_ASPECT_RATIOS as readonly string[]).includes(requested)) {
+        return requested as SeedanceV2AspectRatio;
+    }
+    throw new HttpError(
+        `aspectRatio "${requested}" is not supported by Seedance 2.0. Supported: ${SEEDANCE_V2_ASPECT_RATIOS.join(", ")}.`,
+        400,
+    );
+}
+
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
     resolution: "720p";
-    aspect_ratio: NonNullable<ImageParams["aspectRatio"]>;
+    aspect_ratio: SeedanceV2AspectRatio;
     generate_audio: boolean;
     seed?: number;
     image?: string;
@@ -76,7 +103,7 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution: "720p",
-        aspect_ratio: safeParams.aspectRatio ?? "16:9",
+        aspect_ratio: resolveSeedanceV2AspectRatio(safeParams.aspectRatio),
         generate_audio: safeParams.audio,
     };
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
@@ -121,11 +148,15 @@ export async function callSeedanceV2API(
             video_output_duration: actualDurationSeconds,
         });
     } catch (err) {
+        logError("Seedance 2.0 prediction call failed:", err);
         if (err instanceof ReplicateError) {
-            logError("Replicate error:", err.message);
+            logError("Replicate raw error details:", {
+                message: err.message,
+                status: err.status,
+            });
             throw new HttpError(
                 `Seedance 2.0 generation failed: ${err.message}`,
-                500,
+                err.status ?? 500,
             );
         }
         throw err;

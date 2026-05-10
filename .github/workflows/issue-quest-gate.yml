@@ -22,11 +22,17 @@ env:
   QUEST_PROJECT_ID: PVT_kwDOBS76fs4BW8uW
   QUEST_STATUS_DESCRIPTIONS: |
     {
-      "Open": "Quest filed, awaiting a dev to claim it",
+      "Todo": "Quest filed, awaiting a dev to claim it",
       "In Progress": "Assignee is working on it",
       "In Review": "Linked PR is open",
       "Reward Ready": "PR merged, payout pending D1 grant",
       "Paid Out": "Pollen credited to author and assignee"
+    }
+  QUEST_TYPE_DESCRIPTIONS: |
+    {
+      "Bug": "Fix for broken behavior (DEV-BUG)",
+      "Feature": "New functionality or enhancement (DEV-FEATURE)",
+      "Task": "Docs / infra / chores / research (other DEV-*)"
     }
 
 jobs:

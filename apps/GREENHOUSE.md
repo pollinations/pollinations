@@ -369,7 +369,7 @@
 | [💬 Phicasso Chat](https://chat.phicasso.ai/) | Runs fully in the browser with no accounts or server-side storage; Phicasso Chat keeps conversations on the user's device and uses Pollinatio. | [@web](https://github.com/web) |  | 🫧 |
 | [🚀 HyperRush AI](https://hyperrushnet.github.io/hrn-ai/) | Produces short-form videos and social clips from scripts, images, and audio; HyperRush AI automates editing, captioning, aspect-ratio conversion, and export. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 122 apps</summary>
+<details><summary>Show all 123 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -469,6 +469,7 @@
 | [⏳ TimeMachine Chat](https://timemachinechat.com/) | TimeMachine Chat provides a chat interface for tech essentials, with safety and security features. It consolidates those essentials into one app experience. | [@web](https://github.com/web) |  | 🫧 |
 | [🌤️ Ciel AI](https://ciel-ai-v1.netlify.app) | Ciel AI is a mobile-first AI assistant powered entirely by Pollinations.ai, integrating Pollinations in three major ways. | [@web](https://github.com/web) |  | 🫧 |
 | [🦖 Oráculo de la Era Salvaje · IA Bestias y Monstruos](https://dragonprimordial12-netizen.github.io/DragonP_Oraculo_de_la_Era_Salvaje/) | Chat con IA épico del juego Bestias y Monstruos en Roblox. Los jugadores pueden preguntar sobre bestias, jefes, estrategias y lore del mundo salvaje. Usa la API de texto de Pollinations con el modelo | [@roblox](https://github.com/roblox) |  | 🫧 |
+| [🤖 AI Chat](86715962) | AI Chat is an Android conversational app that provides free access to 16+ AI models via the Pollinations.ai API. | [@android](https://github.com/android) |  | 🫧 |
 | [🎨 SILENOS](https://www.silenos.es) | AI creative production suite with art studios, storytelling, music, and multi-modal generation. | [@web](https://github.com/web) |  |  |
 | [💬 AI Studio](https://ai-studio.puter.site) | Chat and audio AI interface with text-to-speech and conversation features. | [@web](https://github.com/web) |  |  |
 | [🖼️ Pollix AI](http://t.me/pollixrobot) | Pollix AI is your multilingual AI assistant for fast replies, image understandin... | [@telegram](https://github.com/telegram) |  |  |

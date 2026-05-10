@@ -40,9 +40,10 @@
             "!**/worker-bindins.d.ts",
             "!**/better-auth.ts",
             "!**/routeTree.gen.ts",
-            // exclude CSS and YML files - Biome doesn't support Tailwind v4 syntax
+            // exclude CSS and YML fand .md files - Biome doesn't support Tailwind v4 syntax
             "!**/*.css",
-            "!**/*.yml"
+            "!**/*.yml",
+            "!**/*.md"
         ]
     },
     "overrides": [

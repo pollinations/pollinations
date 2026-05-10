@@ -82,6 +82,82 @@ jobs:
           QUEST_PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
           QUEST_STATUS_DESCRIPTIONS: ${{ env.QUEST_STATUS_DESCRIPTIONS }}
 
+  backfill:
+    if: github.event_name == 'workflow_dispatch' && inputs.backfill_existing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Polly Bot token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+      - uses: actions/github-script@v7
+        env:
+          QUEST_PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const QUEST_PROJECT_ID = process.env.QUEST_PROJECT_ID;
+
+            const fieldQ = await github.graphql(`
+              query($id: ID!) {
+                node(id: $id) { ... on ProjectV2 {
+                  field(name: "Status") { ... on ProjectV2SingleSelectField {
+                    id options { id name }
+                  }}
+                }}
+              }`, { id: QUEST_PROJECT_ID });
+            const field = fieldQ.node.field;
+            const optionId = (name) => field.options.find(o => o.name === name)?.id;
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner: context.repo.owner, repo: context.repo.repo,
+                state: 'all', labels: 'POLLEN-QUEST', per_page: 100,
+            });
+
+            let added = 0, archived = 0, skipped = 0;
+            for (const issue of issues) {
+                if (issue.pull_request) { skipped++; continue; }
+
+                const add = await github.graphql(`
+                  mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}`,
+                  { p: QUEST_PROJECT_ID, c: issue.node_id });
+                const itemId = add.addProjectV2ItemById.item.id;
+
+                if (issue.state === 'closed' && issue.state_reason !== 'completed') {
+                    await github.graphql(`
+                      mutation($p:ID!,$i:ID!){archiveProjectV2Item(input:{projectId:$p,itemId:$i}){item{id}}}`,
+                      { p: QUEST_PROJECT_ID, i: itemId });
+                    archived++;
+                    continue;
+                }
+
+                let status;
+                if (issue.state === 'closed' && issue.state_reason === 'completed') {
+                    status = 'Reward Ready';
+                } else if ((issue.assignees || []).length > 0) {
+                    status = 'In Progress';
+                } else {
+                    status = 'Open';
+                }
+
+                const oid = optionId(status);
+                if (!oid) {
+                    core.warning(`#${issue.number}: status "${status}" not in field — run setup_status_field=true first`);
+                    continue;
+                }
+
+                await github.graphql(`
+                  mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}){projectV2Item{id}}}`,
+                  { p: QUEST_PROJECT_ID, i: itemId, f: field.id, o: oid });
+                core.info(`#${issue.number} → ${status}`);
+                added++;
+            }
+
+            core.notice(`Backfill done: ${added} carded, ${archived} archived, ${skipped} skipped`);
+
   triage:
     if: github.event_name == 'issues'
     runs-on: ubuntu-latest

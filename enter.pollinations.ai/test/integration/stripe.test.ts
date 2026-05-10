@@ -511,7 +511,7 @@ test("PATCH /api/stripe/auto-top-up uses fixed threshold and rejects invalid pac
         },
         body: JSON.stringify({
             enabled: false,
-            packAmountUsd: 5,
+            packAmountUsd: 7,
         }),
     });
 
@@ -1022,6 +1022,7 @@ test("POST /api/webhooks/stripe disables auto top-up after repeated failed invoi
         "in_failed_repeat_1",
         "in_failed_repeat_2",
         "in_failed_repeat_3",
+        "in_failed_repeat_4",
     ]) {
         const response = await postSignedStripeWebhook(
             createAutoTopUpInvoiceEvent(

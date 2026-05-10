@@ -9,6 +9,10 @@ on:
         description: "One-shot: ensure Quest project Status field has the quest-lifecycle options"
         type: boolean
         default: false
+      backfill_existing:
+        description: "One-shot: add every existing POLLEN-QUEST issue to the Quest project at the right status"
+        type: boolean
+        default: false
 
 permissions:
   issues: write
@@ -16,7 +20,14 @@ permissions:
 
 env:
   QUEST_PROJECT_ID: PVT_kwDOBS76fs4BW8uW
-  QUEST_STATUSES: '["Open","In Progress","In Review","Reward Ready","Paid Out"]'
+  QUEST_STATUS_DESCRIPTIONS: |
+    {
+      "Open": "Quest filed, awaiting a dev to claim it",
+      "In Progress": "Assignee is working on it",
+      "In Review": "Linked PR is open",
+      "Reward Ready": "PR merged, payout pending D1 grant",
+      "Paid Out": "Pollen credited to author and assignee"
+    }
 
 jobs:
   setup:
@@ -35,13 +46,14 @@ jobs:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const QUEST_PROJECT_ID = process.env.QUEST_PROJECT_ID;
-            const wanted = JSON.parse(process.env.QUEST_STATUSES);
+            const descriptions = JSON.parse(process.env.QUEST_STATUS_DESCRIPTIONS);
+            const wanted = Object.keys(descriptions);
 
             const r = await github.graphql(`
               query($id: ID!) {
                 node(id: $id) { ... on ProjectV2 {
                   field(name: "Status") { ... on ProjectV2SingleSelectField {
-                    id options { id name color }
+                    id options { id name color description }
                   }}
                 }}
               }`, { id: QUEST_PROJECT_ID });
@@ -50,7 +62,12 @@ jobs:
             const existing = new Map(field.options.map(o => [o.name, o]));
             const merged = wanted.map(name => {
                 const e = existing.get(name);
-                return e ? { id: e.id, name, color: e.color } : { name, color: 'GRAY' };
+                return {
+                    ...(e ? { id: e.id } : {}),
+                    name,
+                    color: e?.color ?? 'GRAY',
+                    description: descriptions[name],
+                };
             });
 
             await github.graphql(`
@@ -63,7 +80,7 @@ jobs:
             core.notice(`Quest Status field set to: ${wanted.join(', ')}`);
         env:
           QUEST_PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
-          QUEST_STATUSES: ${{ env.QUEST_STATUSES }}
+          QUEST_STATUS_DESCRIPTIONS: ${{ env.QUEST_STATUS_DESCRIPTIONS }}
 
   triage:
     if: github.event_name == 'issues'

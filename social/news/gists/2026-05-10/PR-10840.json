@@ -1,0 +1,34 @@
+{
+  "pr_number": 10840,
+  "title": "docs: drop EC2 image/text refs after gen.pollinations.ai cutover",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10840",
+  "merged_at": "2026-05-10T16:32:30Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the hive",
+    "blurb": "We've updated our internal docs and AI dev skills to reflect the big move to Cloudflare Workers. Sweeping away the old EC2 cobwebs!",
+    "summary": "Updated internal documentation and Claude Code skills to reflect the migration of image and text generation from legacy EC2 services to the new Cloudflare Worker.",
+    "impact": "Developers and AI agents will now use the correct Cloudflare endpoints and debugging tools instead of stale EC2 references.",
+    "keywords": [
+      "docs",
+      "infrastructure",
+      "cloudflare",
+      "ec2",
+      "cleanup"
+    ],
+    "visual_concept": "Polly the bee cleaning up old server boxes while the Nomnom creature eats deprecated documentation and old scripts.",
+    "image_prompt": "Cozy pixel art scene of the round nomnom creature happily eating a stack of old dusty server manuals, while the cute bee mascot sweeps the floor with a tiny broom. A glowing modern server rack sits in the background. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10840.jpg",
+    "prompt": "Cozy pixel art scene of the round nomnom creature happily eating a stack of old dusty server manuals, while the cute bee mascot sweeps the floor with a tiny broom. A glowing modern server rack sits in the background. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like A Short Hike."
+  },
+  "generated_at": "2026-05-10T16:33:25.501080+00:00"
+}

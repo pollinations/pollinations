@@ -24,7 +24,7 @@ async function getProjectFields(github, projectId) {
         }}}`,
         { id: projectId },
     );
-    return result.node.fields.nodes.filter((f) => f && f.id);
+    return result.node.fields.nodes.filter((f) => f?.id);
 }
 
 async function setIssueStatus({ github, core }, projectId, issue, target) {

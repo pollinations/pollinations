@@ -1,0 +1,35 @@
+{
+  "pr_number": 10787,
+  "title": "Updated chat.pollinations UX and UI",
+  "author": "CloudCompile",
+  "url": "https://github.com/pollinations/pollinations/pull/10787",
+  "merged_at": "2026-05-10T13:04:58Z",
+  "labels": [
+    "WEB",
+    ".BUG"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys to the hive",
+    "blurb": "We've given the chat interface a fresh coat of paint and smoothed out the rough edges. Plus, you can now bring your own Pollen key to keep the conversation flowing when you need more juice.",
+    "summary": "The chat app received a comprehensive UI/UX update, featuring a new 'Bring Your Own Pollen' (BYOP) modal for custom API keys, friendlier error messages, and layout fixes for mobile viewports.",
+    "impact": "Users will enjoy a smoother, glitch-free chat experience and can now easily plug in their own API keys to bypass free tier limits.",
+    "keywords": [
+      "chat",
+      "ui",
+      "byop",
+      "api-keys",
+      "ux"
+    ],
+    "visual_concept": "Polly the bee holding a shiny golden key (representing the BYOP API key) next to a retro computer monitor displaying clean chat bubbles. The monitor robot is happy to receive the key.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, handing a shiny golden key to a cute chunky robot with a CRT monitor head. The monitor displays clean, colorful chat bubbles. Soft lime green (#ecf874) and warm peach gradient background. Large visible pixels, lo-fi 8-bit aesthetic, Stardew Valley vibes, warm lighting, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10787.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tool belt, handing a shiny golden key to a cute chunky robot with a CRT monitor head. The monitor displays clean, colorful chat bubbles. Soft lime green (#ecf874) and warm peach gradient background. Large visible pixels, lo-fi 8-bit aesthetic, Stardew Valley vibes, warm lighting, emotionally warm."
+  },
+  "generated_at": "2026-05-10T13:05:58.719222+00:00"
+}

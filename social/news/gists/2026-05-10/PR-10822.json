@@ -1,0 +1,34 @@
+{
+  "pr_number": 10822,
+  "title": "Add scene.riko to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10822",
+  "merged_at": "2026-05-10T09:20:31Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New sprout in the greenhouse",
+    "blurb": "Another beautiful app joins the Pollinations ecosystem! We've just added scene.riko to our community greenhouse.",
+    "summary": "Added the community-built app scene.riko to the Pollinations app showcase and greenhouse directories.",
+    "impact": "Users can now discover and explore scene.riko directly from the Pollinations community directory.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "greenhouse",
+      "scene.riko"
+    ],
+    "visual_concept": "The PR is about adding a new app to the 'Greenhouse' (community showcase). The visual should feature Polly the bee in a literal greenhouse, watering a new digital plant or looking at a new glowing sprout representing the new app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, watering a glowing new code-plant in a lush digital greenhouse. A small wooden sign next to the plant reads 'scene.riko' in pixel font. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10822.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny gardener's apron, watering a glowing new code-plant in a lush digital greenhouse. A small wooden sign next to the plant reads 'scene.riko' in pixel font. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T09:21:24.768588+00:00",
+  "app_name": "scene.riko",
+  "app_url": "https://ganya002.github.io/scene.riko/"
+}

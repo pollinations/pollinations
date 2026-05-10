@@ -1,0 +1,33 @@
+{
+  "pr_number": 10841,
+  "title": "fix(secrets): refresh TINYBIRD_INGEST_TOKEN in dev sops secrets",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10841",
+  "merged_at": "2026-05-10T17:08:17Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Feeding the Tinybird",
+    "blurb": "Refreshed our internal development tokens so our local environments can properly track usage events again. Just keeping the gears turning behind the scenes!",
+    "summary": "Updated the Tinybird ingest token in development secrets to resolve 403 authentication errors during local testing.",
+    "impact": "Local development environments can now successfully log usage events without hitting invalid token errors.",
+    "keywords": [
+      "secrets",
+      "tinybird",
+      "dev-infra",
+      "tokens"
+    ],
+    "visual_concept": "The pollinations bee mascot feeding a glowing token to a tiny bird (representing Tinybird analytics) inside a cozy garden shed (representing local dev).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot feeding a glowing golden token to a tiny blue bird inside a cozy garden shed. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10841.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot feeding a glowing golden token to a tiny blue bird inside a cozy garden shed. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T17:09:12.502632+00:00"
+}

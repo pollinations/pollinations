@@ -15,6 +15,12 @@ on:
         type: boolean
         default: false
 
+# Lock the default GITHUB_TOKEN to read-only — all writes to the news branch
+# go through the POLLY_BOT App token created in the first step, which is
+# scoped via the App's installation permissions, not this block.
+permissions:
+  contents: read
+
 # Live runs (cron + non-dry workflow_dispatch) serialize on one group and
 # never cancel each other — cancelling between Discord post and the snapshot
 # commit would leave the baseline old and re-announce the same changes next
@@ -27,8 +33,6 @@ concurrency:
 jobs:
   models-weekly:
     runs-on: ubuntu-latest
-    # No `permissions:` block — the default GITHUB_TOKEN is unused. All writes
-    # to the news branch go through the POLLY_BOT App token created below.
 
     steps:
       - name: Generate Pollinations AI Token

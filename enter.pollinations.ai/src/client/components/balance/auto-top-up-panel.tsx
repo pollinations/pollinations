@@ -80,8 +80,28 @@ function writePendingEnable(value: boolean): void {
         // ignore storage errors (private mode, quota, etc.)
     }
 }
-const AUTO_TOP_UP_TOOLTIP =
-    "Auto top-up charges your Stripe default payment method for the selected pollen pack when purchased pollen is at or below 5 pollen.";
+const AUTO_TOP_UP_TOOLTIP_CONTENT = (
+    <div className="space-y-2">
+        <div>
+            <strong>Auto top-up</strong> keeps your{" "}
+            <strong>paid balance</strong> topped up automatically.
+        </div>
+        <ul className="list-disc space-y-1 pl-4">
+            <li>
+                Triggers when your <strong>paid balance</strong> drops to{" "}
+                <strong>5 pollen or below</strong>
+            </li>
+            <li>
+                Charges your <strong>default Stripe card</strong> for the pack
+                size you select
+            </li>
+            <li>
+                Only your <strong>paid balance</strong> counts — tier pollen is
+                not considered
+            </li>
+        </ul>
+    </div>
+);
 const AUTO_TOP_UP_PACKS = POLLEN_PACKS.filter(
     (pack) =>
         pack.amountUsd >= AUTO_TOP_UP_PACK_MIN &&
@@ -390,7 +410,7 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
                 <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
                     Auto top-up
                     <InfoTip
-                        text={AUTO_TOP_UP_TOOLTIP}
+                        content={AUTO_TOP_UP_TOOLTIP_CONTENT}
                         label="Auto top-up information"
                         tone="amber"
                     />

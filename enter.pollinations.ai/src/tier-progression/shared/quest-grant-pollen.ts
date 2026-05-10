@@ -3,14 +3,6 @@ import { command, number, run, string } from "@drizzle-team/brocli";
 
 type Environment = "staging" | "production";
 
-function sanitizeGitHubUsername(username: string): string {
-    const sanitized = username.replace(/[^a-zA-Z0-9-]/g, "");
-    if (sanitized.length === 0 || sanitized.length > 39) {
-        throw new Error(`Invalid GitHub username: "${username}"`);
-    }
-    return sanitized;
-}
-
 function sqlString(value: string): string {
     return `'${value.replaceAll("'", "''")}'`;
 }
@@ -89,8 +81,6 @@ const grantCommand = command({
             console.error(`❌ githubId must be a positive integer, got: ${githubId}`);
             process.exit(1);
         }
-        const safeGithubUsername = sanitizeGitHubUsername(opts.githubUsername);
-
         const user = getUserByGithubId(env, githubId);
         if (!user) {
             console.log(`NOT_FOUND github_id=${githubId} github_username=${opts.githubUsername}`);

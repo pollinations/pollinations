@@ -90,14 +90,13 @@ CONFIG = {
             "internal_only": False,
         },
         "tier": {
-            "id": "PVT_kwDOBS76fs4BLtE_",  
+            "id": "PVT_kwDOBS76fs4BLtE_",
             "name": "Tier",
             "internal_only": False,
         },
     },
     "org_members": [
         "voodoohop",
-        "eulervoid",
         "ElliotEtag",
         "Circuit-Overtime",
         "Itachi-1824"
@@ -105,9 +104,8 @@ CONFIG = {
     "discord_uid_to_github": {
         "304378879705874432": "voodoohop",
         "884468469452656732": "ElliotEtag",
-        "1085433243102347354": "eulervoid",
-        "859708931478388767": "Itachi-1824",
         "738661669332320287": "Circuit-Overtime",
+        "859708931478388767": "Itachi-1824",
     },
 }
 
@@ -460,7 +458,10 @@ def main():
         else:
             log_error("Tier project not configured")
             return
-    
+    if "POLLEN-QUEST" in existing_labels:
+        log_debug("Found POLLEN-QUEST label; issue-quest-gate.yml owns quest routing")
+        return
+
     if "NEWS" in existing_labels:
         log_debug("Found NEWS label, routing to News project (skipping AI)")
         project = CONFIG["projects"].get("news")

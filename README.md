@@ -21,6 +21,7 @@
 | Name | Description | Author |
 |------|-------------|--------|
 | [🤖 AI Chat](86715962) | AI Chat is an Android conversational app that provides free access to 16+ AI models via the Pollinations.ai API. | [@android](https://github.com/android) |
+| [💬 Compliment Generator](https://www.craygen.com/compliments/) | Upload an image to Compliment Generator to receive free compliments in various styles. | [@web](https://github.com/web) |
 | [🦖 Oráculo de la Era Salvaje · IA Bestias y Monstruos](https://dragonprimordial12-netizen.github.io/DragonP_Oraculo_de_la_Era_Salvaje/) | Chat con IA épico del juego Bestias y Monstruos en Roblox. Los jugadores pueden preguntar sobre bestias, jefes, estrategias y lore del mundo salvaje. Usa la API de texto de Pollinations con el modelo | [@roblox](https://github.com/roblox) |
 | [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menyediakan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@web](https://github.com/web) |
 | [📈 Quent](https://quent.kro.kr/) | Automate trading and indicator analysis with Quent using AI agent-based strategies. | [@web](https://github.com/web) |

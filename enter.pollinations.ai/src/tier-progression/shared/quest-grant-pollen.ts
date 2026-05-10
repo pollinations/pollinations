@@ -37,10 +37,7 @@ interface D1User {
     pack_balance: number | null;
 }
 
-function getUserByGithubId(
-    env: Environment,
-    githubId: number,
-): D1User | null {
+function getUserByGithubId(env: Environment, githubId: number): D1User | null {
     const sql = `SELECT id, github_id, github_username, pack_balance FROM user WHERE github_id = ${githubId} LIMIT 1;`;
     const raw = queryD1(env, sql);
     const parsed = JSON.parse(raw);
@@ -57,7 +54,9 @@ const grantCommand = command({
             .desc("Immutable numeric GitHub user ID of the recipient"),
         githubUsername: string()
             .required()
-            .desc("GitHub username (for logging and payout_key — not used for D1 lookup)"),
+            .desc(
+                "GitHub username (for logging and payout_key — not used for D1 lookup)",
+            ),
         amount: number()
             .required()
             .desc("Pollen amount to add (positive number)"),
@@ -78,12 +77,16 @@ const grantCommand = command({
             process.exit(1);
         }
         if (!Number.isInteger(githubId) || githubId <= 0) {
-            console.error(`❌ githubId must be a positive integer, got: ${githubId}`);
+            console.error(
+                `❌ githubId must be a positive integer, got: ${githubId}`,
+            );
             process.exit(1);
         }
         const user = getUserByGithubId(env, githubId);
         if (!user) {
-            console.log(`NOT_FOUND github_id=${githubId} github_username=${opts.githubUsername}`);
+            console.log(
+                `NOT_FOUND github_id=${githubId} github_username=${opts.githubUsername}`,
+            );
             process.exit(2);
         }
 

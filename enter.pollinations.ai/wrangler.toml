@@ -143,9 +143,9 @@ POLLEN_REFILL_PER_HOUR = 1
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
-# Stripe Payment Method Configurations (live) — replace with live-mode PMC IDs before going live
-STRIPE_AUTO_TOP_UP_PMC_ID = ""
-STRIPE_BUY_POLLEN_PMC_ID = ""
+# Stripe Payment Method Configurations (live)
+STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
+STRIPE_BUY_POLLEN_PMC_ID = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 
 [env.staging]
 

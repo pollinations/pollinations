@@ -1,0 +1,34 @@
+{
+  "pr_number": 10715,
+  "title": "feat: add community quest issue template and related workflows",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10715",
+  "merged_at": "2026-05-10T14:45:01Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive posts bounties",
+    "blurb": "We've added an automated Community Quest system. Pick up a quest, write some code, and the robots will automatically wire Pollen credits to your account when it merges.",
+    "summary": "Added a complete automated workflow for Community Quests, handling everything from issue templates and status tracking to idempotent Pollen payouts.",
+    "impact": "Contributors can now claim bountied issues and automatically receive Pollen credits when their pull requests are merged.",
+    "keywords": [
+      "quests",
+      "bounties",
+      "pollen",
+      "automation",
+      "community"
+    ],
+    "visual_concept": "Polly the bee as an adventurer looking at an RPG-style quest board. The board has glowing lime green bounty scrolls pinned to it. The Nomnom creature is eating a completed quest paper.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny adventurer's hat, looking at a wooden quest board covered in glowing lime green (#ecf874) bounty scrolls. The round tan Nomnom creature sits nearby, happily eating a completed quest paper. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, wholesome RPG vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10715.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny adventurer's hat, looking at a wooden quest board covered in glowing lime green (#ecf874) bounty scrolls. The round tan Nomnom creature sits nearby, happily eating a completed quest paper. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, wholesome RPG vibes."
+  },
+  "generated_at": "2026-05-10T14:46:01.820176+00:00"
+}

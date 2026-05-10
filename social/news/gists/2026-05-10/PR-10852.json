@@ -1,0 +1,34 @@
+{
+  "pr_number": 10852,
+  "title": "Add Primbon Jawa & Kalender Pasaran Jawa to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10852",
+  "merged_at": "2026-05-10T19:24:02Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new sprout: Primbon Jawa",
+    "blurb": "The greenhouse just got a touch of traditional Javanese wisdom! A new community app brings modern Javanese calendars, Weton calculations, and script conversions to the hive.",
+    "summary": "Added 'Primbon Jawa & Kalender Pasaran Jawa' to the community showcase, featuring Javanese calendar calculations and script conversions.",
+    "impact": "Users can now explore traditional Javanese forecasting and calendar systems built by the community.",
+    "keywords": [
+      "community",
+      "app",
+      "showcase",
+      "calendar",
+      "javanese"
+    ],
+    "visual_concept": "A digital greenhouse setting representing the community showcase. The bee mascot interacting with a traditional calendar or scroll, blending ancient Javanese wisdom (stars, moons, script) with modern code-plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot in a glowing digital greenhouse, reading a traditional scroll with glowing symbols. Small code-plants sprout from lime green (#ecf874) flower pots around her, with soft pastel glowing stars and moons floating in the air. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10852.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot in a glowing digital greenhouse, reading a traditional scroll with glowing symbols. Small code-plants sprout from lime green (#ecf874) flower pots around her, with soft pastel glowing stars and moons floating in the air. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-05-10T19:24:59.906316+00:00",
+  "app_name": "Primbon Jawa & Kalender Pasaran Jawa",
+  "app_url": "https://jawidigital.my.id"
+}

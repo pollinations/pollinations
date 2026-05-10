@@ -294,7 +294,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     bg="bg-white/80"
                     className="!border-transparent space-y-4"
                 >
-                    <div className="flex flex-col items-center gap-4 pb-2 sm:flex-row sm:items-center sm:gap-4 sm:pb-12">
+                    <div className="flex flex-col items-start gap-4 pb-2 sm:flex-row sm:items-center sm:gap-4 sm:pb-12">
                         <div className="w-full min-w-0 flex-1 pb-10 sm:pb-0">
                             <PollenPackSlider
                                 value={packAmountUsd}
@@ -462,7 +462,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 weight="light"
                 onClick={onSave}
                 disabled={saveDisabled}
-                className="btn-shimmer w-28 min-w-0 border border-amber-300/70 text-center shadow-none"
+                className="btn-shimmer w-28 min-w-0 self-start border border-amber-300/70 text-center shadow-none sm:self-center"
             >
                 Save
             </Button>

@@ -96,8 +96,7 @@ const grantCommand = command({
                 role,
                 github_username,
                 user_id,
-                pollen_credited,
-                created_at
+                pollen_credited
             ) VALUES (
                 ${sqlString(payoutKey)},
                 ${questIssue},
@@ -105,8 +104,7 @@ const grantCommand = command({
                 ${sqlString(role)},
                 ${sqlString(user.github_username)},
                 ${sqlString(user.id)},
-                ${amount},
-                ${Date.now()}
+                ${amount}
             );
             UPDATE user
             SET pack_balance = COALESCE(pack_balance, 0) + ${amount}

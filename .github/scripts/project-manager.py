@@ -94,11 +94,6 @@ CONFIG = {
             "name": "Tier",
             "internal_only": False,
         },
-        "quest": {
-            "id": "PVT_kwDOBS76fs4BW8uW",
-            "name": "Quest",
-            "internal_only": False,
-        },
     },
     "org_members": [
         "voodoohop",
@@ -464,39 +459,7 @@ def main():
             log_error("Tier project not configured")
             return
     if "POLLEN-QUEST" in existing_labels:
-        log_debug("Found POLLEN-QUEST label, routing to Quest project (skipping auto-assign)")
-        project = CONFIG["projects"].get("quest")
-        if not project or not project.get("id"):
-            log_error("Quest project not configured (CONFIG.projects.quest.id is empty); skipping route")
-            return
-
-        # Re-fetch live issue state to avoid the race with issue-quest-gate.yml:
-        # a non-maintainer filing via the template gets POLLEN-QUEST stripped and
-        # the issue closed by the gate, but our event payload still shows the label.
-        try:
-            r = requests.get(
-                f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
-                headers=GITHUB_HEADERS,
-                timeout=10,
-            )
-            if r.status_code == 200:
-                live = r.json()
-                live_labels = [l.get("name", "").upper() for l in live.get("labels", [])]
-                if "POLLEN-QUEST" not in live_labels or live.get("state") == "closed":
-                    log_debug("POLLEN-QUEST no longer present or issue closed; skipping Quest route")
-                    return
-        except requests.RequestException as e:
-            log_error(f"Live label re-fetch failed: {e}; skipping Quest route to be safe")
-            return
-
-        item_id = add_to_project(project["id"])
-        if item_id:
-            log_debug("Added to Quest project successfully")
-        else:
-            log_error("Failed to add POLLEN-QUEST issue to Quest project")
-
-        log_debug("Applying deterministic quest label: DEV-QUEST")
-        add_labels(["DEV-QUEST"])
+        log_debug("Found POLLEN-QUEST label; issue-quest-gate.yml owns quest routing")
         return
 
     if "NEWS" in existing_labels:

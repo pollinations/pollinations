@@ -140,6 +140,13 @@ jobs:
             // lifecycle: Reward Ready → Paid Out). state_reason='completed' = merged closure.
             if (action === 'closed' && issue.state_reason === 'completed') return;
 
+            if (!labels.includes('DEV-QUEST')) {
+                await github.rest.issues.addLabels({
+                    owner: context.repo.owner, repo: context.repo.repo,
+                    issue_number: issue.number, labels: ['DEV-QUEST'],
+                });
+            }
+
             // Resolve project item ID once (idempotent add).
             const addQ = await github.graphql(`
                 mutation($p: ID!, $c: ID!) {

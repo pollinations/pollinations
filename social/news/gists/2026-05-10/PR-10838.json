@@ -1,0 +1,34 @@
+{
+  "pr_number": 10838,
+  "title": "(patch): Migrate the quest payout transaction based on the GITHUB ID of the user (assignee / creator) ",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10838",
+  "merged_at": "2026-05-10T16:05:43Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Bulletproof Quest Rewards",
+    "blurb": "Fixed a sneaky bug where changing your GitHub username mid-quest could mess up your Pollen reward. We now track payouts by your immutable GitHub ID, so your credits always find their way home.",
+    "summary": "Migrated the quest payout transaction system to use immutable GitHub IDs instead of usernames for database lookups and idempotency keys.",
+    "impact": "Contributors will reliably receive their Pollen rewards for completing quests, even if they change their GitHub username before the payout is processed.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "github",
+      "rewards",
+      "bugfix"
+    ],
+    "visual_concept": "Polly the bee stamping a shiny Pollen coin with an ID badge, representing the shift to immutable GitHub IDs for reliable quest payouts.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot stamping a shiny golden Pollen coin with a sturdy ID badge. A retro computer monitor in the background shows a green checkmark. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10838.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot stamping a shiny golden Pollen coin with a sturdy ID badge. A retro computer monitor in the background shows a green checkmark. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T16:06:38.811360+00:00"
+}

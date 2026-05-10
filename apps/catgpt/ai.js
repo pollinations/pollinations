@@ -5,7 +5,7 @@ const ENTER = "https://enter.pollinations.ai";
 const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
-const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
+const SELFIE_CATGPT = "https://media.pollinations.ai/19e7ed24c0579ca1";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
 

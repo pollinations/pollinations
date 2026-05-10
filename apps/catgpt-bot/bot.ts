@@ -19,7 +19,7 @@ const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
-const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
+const SELFIE_CATGPT = "https://media.pollinations.ai/19e7ed24c0579ca1";
 const MODEL = "nanobanana";
 
 function log(...args: any[]) {

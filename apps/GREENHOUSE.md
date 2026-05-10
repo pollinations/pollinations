@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **733** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **734** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -40,7 +40,7 @@
 | [🔬 SciVis AI](https://s971153.github.io/scivis-ai/) | Generate sci-fi style science illustrations with SciVis AI by entering any science topic; uses Pollinations Image API (flux model) and supports 6 visual styles and 3 aspect ratios. | [@web](https://github.com/web) |  | 🫧 |
 | [🔬 labol lens](https://labol-lens.streamlit.app/) | Implements labol-lens in labol lens. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 174 apps</summary>
+<details><summary>Show all 175 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -65,6 +65,7 @@
 | [🖼️ Emoji Comes to Life](https://emojis-come-to-life.vivornal.workers.dev/) | Convert emoji sequences into AI-generated scene images with Emoji Comes to Life using Pollinations Gemini - Flux for prompt - image generation. | [@web](https://github.com/web) |  | 🫧 |
 | [🏷️ Metadatagenerator](https://metadatagenerator.online/) | Generate metadata and prompts for microstock marketplace with Metadatagenerator. | [@web](https://github.com/web) |  | 🫧 |
 | [👁️ AI Vision](89507317) | Analyze images with AI Vision using multiple AI models via the Pollinations.ai API. | [@android](https://github.com/android) |  | 🫧 |
+| [🎨 AI Art Gallery](https://juanrivera126.github.io/Gallery-Pollinations/) | AI Art Gallery uses Galera Pollinations to generate images from text prompts, create image variations, and download generated artwork. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Splash Tool](https://n8n-image-generator.vercel.app) | Convert screenshots into editable layers with Splash Tool, extracting assets, colors, and layout details for design workflows. | [@web](https://github.com/web) |  | 🫧 |
 | [🎨 Chroma AI wallpaper app](https://chroma.lazyshrey.in/) | Generate unique wallpapers with Chroma AI wallpaper app using natural language prompts; built with React Native and Expo. | [@android](https://github.com/android) |  | 🫧 |
 | [🖼️ AI Image Gallery](19907086) | Browse and organize images with AI Image Gallery, add tags, filter and preview metadata, and group images into collections for easy retrieval. | [@web](https://github.com/web) |  | 🫧 |
@@ -834,17 +835,18 @@
 | [🏪 Website Studio](https://website-studio.onrender.com/) | **Website Studio** is a comprehensive resource and review platform designed to help local business owners—primarily across the USA—find the absolute best website building platforms for their specific | [@web](https://github.com/web) |  | 🫧 |
 | [🧮 excelformula.pro](https://excelformula.pro/) | Generate Excel formulas from natural language or sample data using excelformula.pro, returning ready-to-use formulas with cell references and brief explanations. | [@web](https://github.com/web) |  | 🫧 |
 | [💡 IdeaPulley](https://ideapulley.indevs.in) | Generate, validate, and evolve ideas with IdeaPulley using AI-driven multi-agent reasoning systems to support individuals and teams. | [@web](https://github.com/web) |  | 🫧 |
+| [⛪ The Stream Church Webapp](https://thestreamchurch.org/) | Stream services and manage live events with The Stream Church Webapp, using Pollinations.ais API for asset generation and rapid web project deployment. | [@web](https://github.com/web) |  | 🫧 |
 | [🏃 Spix - Personal Fitness Companion](85549951) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@android](https://github.com/android) |  | 🫧 |
 | [🧰 ALL in One AI Tools](https://tools.zero2launch.io/) | Manage content, media, tasks, and workflows using ALL in One AI Tools for content creation, automation, and work management. | [@web](https://github.com/web) |  | 🫧 |
 | [⚖️ AutoTutela](https://angelromero.co/autotutela) | AI legal assistant that drafts Acciones de Tutela for Colombian citizens. | [@web](https://github.com/web) |  | 🫧 |
 | [🧾 Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | [@web](https://github.com/web) |  | 🫧 |
 | [🛒 THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | [@web](https://github.com/web) |  | 🫧 |
-| [🛠️ SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 45 apps</summary>
+<details><summary>Show all 46 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🛠️ SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | [@web](https://github.com/web) |  | 🫧 |
 | [💼 FeedHire](https://feedhire.me/) | AI job aggregator that filters postings from Telegram, Reddit and other sources | [@web](https://github.com/web) |  | 🫧 |
 | [🍳 PantrySage](https://pantrysage.app) | AI-powered meal planning app with recipe generator and pantry management. | [@web](https://github.com/web) |  | 🫧 |
 | [🛍️ SnapSell](202450182) | Generate AI-powered product listings for Facebook, Shopify, eBay, and more. | [@api](https://github.com/api) |  | 🫧 |

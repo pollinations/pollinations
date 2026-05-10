@@ -21,6 +21,8 @@
 | Name | Description | Author |
 |------|-------------|--------|
 | [👻 The room](https://theroom-8mc4.vercel.app/) | Triggers a ghost jumpscare in The room. | [@web](https://github.com/web) |
+| [⛪ The Stream Church Webapp](https://thestreamchurch.org/) | Stream services and manage live events with The Stream Church Webapp, using Pollinations.ais API for asset generation and rapid web project deployment. | [@web](https://github.com/web) |
+| [🎨 AI Art Gallery](https://juanrivera126.github.io/Gallery-Pollinations/) | AI Art Gallery uses Galera Pollinations to generate images from text prompts, create image variations, and download generated artwork. | [@web](https://github.com/web) |
 | [🏗️ anyproject (beta)](https://alkonsafe.ct.ws/anyproject/beta) | anyproject is a platform where people can play and share ai generated sites with each other! it uses pollinations in the backend with node.js's native fetch() to gen.pollinations.ai where the ai retur | [@web](https://github.com/web) |
 | [🤖 AI Chat](86715962) | AI Chat is an Android conversational app that provides free access to 16+ AI models via the Pollinations.ai API. | [@android](https://github.com/android) |
 | [💬 Compliment Generator](https://www.craygen.com/compliments/) | Upload an image to Compliment Generator to receive free compliments in various styles. | [@web](https://github.com/web) |

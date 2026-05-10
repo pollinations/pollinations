@@ -1,0 +1,34 @@
+{
+  "pr_number": 10849,
+  "title": "Add Basic Pollinations Image Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10849",
+  "merged_at": "2026-05-10T19:11:16Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "New sprout in the greenhouse",
+    "blurb": "Another app takes root in the greenhouse. The Basic Pollinations Image Generator is now listed, proving once again that giving people free API access leads to cool things.",
+    "summary": "Added the Basic Pollinations Image Generator to the community apps showcase.",
+    "impact": "The community directory grows by one, giving users another way to generate images using the Pollinations API.",
+    "keywords": [
+      "community",
+      "app",
+      "image-generation",
+      "showcase",
+      "greenhouse"
+    ],
+    "visual_concept": "The PR adds an app to the 'Greenhouse' directory. Visuals should feature Polly the bee in a cozy greenhouse setting, tending to a plant that is growing a picture frame or image, representing the new image generator app.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, watering a glowing code-plant inside a warm glass greenhouse. The plant is blooming into a beautiful framed picture. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10849.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, watering a glowing code-plant inside a warm glass greenhouse. The plant is blooming into a beautiful framed picture. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T19:12:16.235669+00:00",
+  "app_name": "Basic Pollinations Image Generator",
+  "app_url": "https://github.com/sarjanamalas/basic-pollinations-imagen"
+}

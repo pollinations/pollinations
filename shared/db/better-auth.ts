@@ -193,3 +193,21 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
 }, (table) => [
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
+
+export const questPayoutCredits = sqliteTable("quest_payout_credits", {
+  payoutKey: text("payout_key").primaryKey(),
+  questIssueNumber: integer("quest_issue_number").notNull(),
+  prNumber: integer("pr_number").notNull(),
+  role: text("role").notNull(),
+  githubUsername: text("github_username").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  pollenCredited: real("pollen_credited").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_quest_payout_credits_user_id").on(table.userId),
+  index("idx_quest_payout_credits_quest_issue").on(table.questIssueNumber),
+]);

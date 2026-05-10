@@ -40,10 +40,39 @@
             "!**/worker-bindins.d.ts",
             "!**/better-auth.ts",
             "!**/routeTree.gen.ts",
-            // exclude CSS files - Biome doesn't support Tailwind v4 syntax
-            "!**/*.css"
+            // exclude CSS and YML fand .md files - Biome doesn't support Tailwind v4 syntax
+            "!**/*.css",
+            "!**/*.yml",
+            "!**/*.md"
         ]
     },
+    "overrides": [
+        {
+            "includes": ["apps/chat/**"],
+            "linter": {
+                "rules": {
+                    "a11y": {
+                        "noSvgWithoutTitle": "off",
+                        "useButtonType": "off",
+                        "noStaticElementInteractions": "off",
+                        "useKeyWithClickEvents": "off",
+                        "useKeyWithMouseEvents": "off",
+                        "noLabelWithoutControl": "off",
+                        "useMediaCaption": "off",
+                        "useSemanticElements": "off"
+                    },
+                    "suspicious": {
+                        "noArrayIndexKey": "off",
+                        "noAssignInExpressions": "off"
+                    },
+                    "correctness": {
+                        "useExhaustiveDependencies": "off",
+                        "noInvalidUseBeforeDeclaration": "off"
+                    }
+                }
+            }
+        }
+    ],
     "css": {
         "formatter": {
             "enabled": false

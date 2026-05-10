@@ -272,17 +272,6 @@ async function markPaidOutAndComment(args) {
     }
 }
 
-function runCommand(command, args, options = {}) {
-    const result = spawnSync(command, args, {
-        encoding: "utf8",
-        stdio: "inherit",
-        ...options,
-    });
-    if (result.status !== 0) {
-        throw new Error(`${command} ${args.join(" ")} failed`);
-    }
-}
-
 function runGrant(enterDir, payout) {
     console.log(
         `→ granting ${payout.amount} Pollen to @${payout.recipient} (${payout.role}) for #${payout.issue}`,
@@ -335,7 +324,14 @@ async function runPollenGrant({ core }) {
     if (!payout) return;
 
     const enterDir = path.join(process.cwd(), "enter.pollinations.ai");
-    runCommand("npm", ["install"], { cwd: enterDir });
+    const install = spawnSync("npm", ["install"], {
+        cwd: enterDir,
+        encoding: "utf8",
+        stdio: "inherit",
+    });
+    if (install.status !== 0) {
+        throw new Error("npm install failed");
+    }
     core.setOutput("result", JSON.stringify(runGrant(enterDir, payout)));
 }
 

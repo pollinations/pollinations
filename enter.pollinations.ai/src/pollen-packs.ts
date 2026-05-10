@@ -19,12 +19,12 @@ const BASE_POLLEN_PACKS: ReadonlyArray<{
     amountUsd: number;
     bonusPollen: number;
 }> = [
-    { amountUsd: 2, bonusPollen: 0 },
-    { amountUsd: 5, bonusPollen: 0.5 },
-    { amountUsd: 10, bonusPollen: 2 },
-    { amountUsd: 20, bonusPollen: 6 },
-    { amountUsd: 50, bonusPollen: 20 },
-    { amountUsd: 100, bonusPollen: 50 },
+    { amountUsd: 2, bonusPollen: 0.5 },
+    { amountUsd: 5, bonusPollen: 2 },
+    { amountUsd: 10, bonusPollen: 5 },
+    { amountUsd: 20, bonusPollen: 10 },
+    { amountUsd: 50, bonusPollen: 30 },
+    { amountUsd: 100, bonusPollen: 100 },
 ];
 
 const PACK_AMOUNT_SET = new Set<PollenPackAmount>(

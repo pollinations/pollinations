@@ -116,7 +116,7 @@ test("GET /api/stripe/products returns pack list", async () => {
     expect(data.packs).toHaveLength(6);
     expect(data.packs.map((p) => p.amount)).toEqual([2, 5, 10, 20, 50, 100]);
     expect(data.packs.map((p) => p.pollenGrant)).toEqual([
-        2, 5.5, 12, 26, 70, 150,
+        2.5, 7, 15, 30, 80, 200,
     ]);
 });
 

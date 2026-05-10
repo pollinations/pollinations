@@ -127,16 +127,20 @@ jobs:
           script: |
             const QUEST_PROJECT_ID = process.env.QUEST_PROJECT_ID;
 
-            const fieldQ = await github.graphql(`
+            const fieldsQ = await github.graphql(`
               query($id: ID!) {
                 node(id: $id) { ... on ProjectV2 {
-                  field(name: "Status") { ... on ProjectV2SingleSelectField {
-                    id options { id name }
+                  fields(first: 50) { nodes {
+                    ... on ProjectV2SingleSelectField {
+                      id name options { id name }
+                    }
                   }}
                 }}
               }`, { id: QUEST_PROJECT_ID });
-            const field = fieldQ.node.field;
-            const optionId = (name) => field.options.find(o => o.name === name)?.id;
+            const allFields = fieldsQ.node.fields.nodes.filter(f => f && f.id);
+            const statusField = allFields.find(f => f.name === 'Status');
+            const typeField   = allFields.find(f => f.name === 'Type');
+            const optionId = (field, name) => field?.options.find(o => o.name === name)?.id;
 
             const issues = await github.paginate(github.rest.issues.listForRepo, {
                 owner: context.repo.owner, repo: context.repo.repo,
@@ -166,19 +170,28 @@ jobs:
                 } else if ((issue.assignees || []).length > 0) {
                     status = 'In Progress';
                 } else {
-                    status = 'Open';
+                    status = 'Todo';
                 }
 
-                const oid = optionId(status);
-                if (!oid) {
-                    core.warning(`#${issue.number}: status "${status}" not in field — run setup_status_field=true first`);
-                    continue;
+                const issueLabels = (issue.labels || []).map(l => typeof l === 'string' ? l : l.name);
+                const questType = issueLabels.includes('DEV-BUG') ? 'Bug'
+                    : issueLabels.includes('DEV-FEATURE') ? 'Feature'
+                    : 'Task';
+
+                async function setField(field, optionName) {
+                    const oid = optionId(field, optionName);
+                    if (!field || !oid) {
+                        core.warning(`#${issue.number}: option "${optionName}" not found — run setup_status_field=true first`);
+                        return;
+                    }
+                    await github.graphql(`
+                      mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}){projectV2Item{id}}}`,
+                      { p: QUEST_PROJECT_ID, i: itemId, f: field.id, o: oid });
                 }
 
-                await github.graphql(`
-                  mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}){projectV2Item{id}}}`,
-                  { p: QUEST_PROJECT_ID, i: itemId, f: field.id, o: oid });
-                core.info(`#${issue.number} → ${status}`);
+                await setField(statusField, status);
+                await setField(typeField, questType);
+                core.info(`#${issue.number} → Status=${status}, Type=${questType}`);
                 added++;
             }
 
@@ -309,34 +322,53 @@ jobs:
 
             let target = null;
             if (action === 'opened' || (action === 'labeled' && labelEvent === 'POLLEN-QUEST')) {
-                target = 'Open';
+                target = 'Todo';
             } else if (action === 'assigned') {
                 target = 'In Progress';
             } else if (action === 'unassigned' && (issue.assignees || []).length === 0) {
-                target = 'Open';
+                target = 'Todo';
             } else if (action === 'reopened') {
-                target = (issue.assignees || []).length > 0 ? 'In Progress' : 'Open';
+                target = (issue.assignees || []).length > 0 ? 'In Progress' : 'Todo';
             }
             if (!target) return;
 
-            const fieldQ = await github.graphql(`
+            // Resolve Status + Type fields together.
+            const fieldsQ = await github.graphql(`
                 query($id: ID!) {
                   node(id: $id) { ... on ProjectV2 {
-                    field(name: "Status") { ... on ProjectV2SingleSelectField {
-                      id options { id name }
+                    fields(first: 50) { nodes {
+                      ... on ProjectV2SingleSelectField {
+                        id name options { id name }
+                      }
                     }}
                   }}
                 }`, { id: QUEST_PROJECT_ID });
-            const field = fieldQ.node.field;
-            const opt = field.options.find(o => o.name === target);
-            if (!opt) {
-                core.warning(`Quest Status option "${target}" not found. Run the workflow_dispatch with setup_status_field=true once to create the lifecycle options.`);
-                return;
+            const allFields = fieldsQ.node.fields.nodes.filter(f => f && f.id);
+            const statusField = allFields.find(f => f.name === 'Status');
+            const typeField   = allFields.find(f => f.name === 'Type');
+
+            async function setSingleSelect(field, optionName) {
+                if (!field) {
+                    core.warning(`Field missing — run workflow_dispatch with setup_status_field=true once.`);
+                    return;
+                }
+                const opt = field.options.find(o => o.name === optionName);
+                if (!opt) {
+                    core.warning(`Option "${optionName}" not found in field "${field.name}".`);
+                    return;
+                }
+                await github.graphql(`
+                    mutation($p:ID!,$i:ID!,$f:ID!,$o:String!) {
+                      updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}) { projectV2Item { id } }
+                    }`, { p: QUEST_PROJECT_ID, i: itemId, f: field.id, o: opt.id });
             }
 
-            await github.graphql(`
-                mutation($p:ID!,$i:ID!,$f:ID!,$o:String!) {
-                  updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}) { projectV2Item { id } }
-                }`, { p: QUEST_PROJECT_ID, i: itemId, f: field.id, o: opt.id });
+            await setSingleSelect(statusField, target);
 
-            core.info(`Set #${issue.number} → ${target}`);
+            // Type auto-population from DEV-* labels.
+            const questType = labels.includes('DEV-BUG') ? 'Bug'
+                : labels.includes('DEV-FEATURE') ? 'Feature'
+                : 'Task';
+            await setSingleSelect(typeField, questType);
+
+            core.info(`Set #${issue.number} → Status=${target}, Type=${questType}`);

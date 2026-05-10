@@ -248,6 +248,7 @@ type SidebarWalletProps = {
 export const SidebarWallet: FC<SidebarWalletProps> = ({
     tierBalance,
     packBalance,
+    tier = "spore",
     paidWeek = 0,
     tierWeek = 0,
 }) => {
@@ -257,20 +258,49 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
         displayTierBalance + displayPaidBalance,
     );
     const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
+    const hideTierSegment = tier === "microbe" && displayTierBalance === 0;
+
+    const totalForBar =
+        Math.abs(displayPaidBalance) + Math.abs(displayTierBalance);
+    const paidPct =
+        totalForBar > 0
+            ? (Math.abs(displayPaidBalance) / totalForBar) * 100
+            : hideTierSegment
+              ? 100
+              : 50;
+    const tierPct = 100 - paidPct;
 
     return (
-        <div className="px-3 py-1 flex items-baseline justify-between gap-2 whitespace-nowrap">
-            <span className="flex items-baseline gap-1.5">
-                <span className="text-base font-bold tabular-nums text-amber-950 leading-none">
-                    {formatPollen(totalPollen)}
+        <div className="px-3 py-1 flex flex-col gap-1.5">
+            <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
+                <span className="flex items-baseline gap-1.5">
+                    <span className="text-base font-bold tabular-nums text-amber-950 leading-none">
+                        {formatPollen(totalPollen)}
+                    </span>
+                    <span className="text-xs font-bold text-amber-900">
+                        pollen
+                    </span>
                 </span>
-                <span className="text-xs font-bold text-amber-900">pollen</span>
-            </span>
-            {totalWeek > 0 && (
-                <span className="text-xs font-bold tabular-nums text-green-700">
-                    +{formatPollen(totalWeek, 2)}
-                </span>
-            )}
+                {totalWeek > 0 && (
+                    <span className="text-xs font-bold tabular-nums text-green-700">
+                        +{formatPollen(totalWeek, 2)}
+                    </span>
+                )}
+            </div>
+            <div className="h-1 rounded-full bg-amber-100 overflow-hidden flex">
+                <span
+                    className={PAID_BAR}
+                    style={{ width: `${paidPct}%` }}
+                    aria-hidden="true"
+                />
+                {!hideTierSegment && (
+                    <span
+                        className={TIER_BAR}
+                        style={{ width: `${tierPct}%` }}
+                        aria-hidden="true"
+                    />
+                )}
+            </div>
         </div>
     );
 };

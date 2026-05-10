@@ -197,13 +197,6 @@ jobs:
             // lifecycle: Reward Ready → Paid Out). state_reason='completed' = merged closure.
             if (action === 'closed' && issue.state_reason === 'completed') return;
 
-            if (!labels.includes('DEV-QUEST')) {
-                await github.rest.issues.addLabels({
-                    owner: context.repo.owner, repo: context.repo.repo,
-                    issue_number: issue.number, labels: ['DEV-QUEST'],
-                });
-            }
-
             // POLLEN-QUEST takes priority over Dev/Support/News/Tier.
             // If the issue was already routed into one of those projects (e.g. it
             // was an open Dev issue later promoted via the POLLEN-QUEST label),

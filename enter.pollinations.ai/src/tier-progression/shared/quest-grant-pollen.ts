@@ -62,11 +62,10 @@ const grantCommand = command({
             .desc("Pollen amount to add (positive number)"),
         questIssue: number().required().desc("Quest issue number"),
         prNumber: number().required().desc("Merged PR number"),
-        role: string().required().desc("Payout role"),
         env: string().enum("staging", "production").default("production"),
     },
     handler: async (opts) => {
-        const { amount, questIssue, prNumber, role, githubId } = opts;
+        const { amount, questIssue, prNumber, githubId } = opts;
         const env = opts.env as Environment;
 
         const MAX_AMOUNT = 10000;
@@ -91,7 +90,7 @@ const grantCommand = command({
         }
 
         // Idempotency key uses the immutable github_id, not the mutable username.
-        const payoutKey = `quest:${questIssue}:pr:${prNumber}:gh:${githubId}:role:${role}`;
+        const payoutKey = `quest:${questIssue}:pr:${prNumber}:gh:${githubId}`;
         const sql = `
             BEGIN;
             INSERT INTO quest_payout_credits (
@@ -106,7 +105,7 @@ const grantCommand = command({
                 ${sqlString(payoutKey)},
                 ${questIssue},
                 ${prNumber},
-                ${sqlString(role)},
+                'assignee',
                 ${sqlString(user.github_username)},
                 ${sqlString(user.id)},
                 ${amount}

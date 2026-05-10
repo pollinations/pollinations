@@ -15,19 +15,22 @@ function parseJsonEnv(name) {
     return value ? JSON.parse(value) : null;
 }
 
-async function getStatusField(github, projectId) {
+async function getProjectFields(github, projectId) {
     const result = await github.graphql(
         `query($id: ID!) { node(id: $id) { ... on ProjectV2 {
-            field(name: "Status") { ... on ProjectV2SingleSelectField { id options { id name } } }
+            fields(first: 50) { nodes {
+                ... on ProjectV2SingleSelectField { id name options { id name } }
+            }}
         }}}`,
         { id: projectId },
     );
-    return result.node.field;
+    return result.node.fields.nodes.filter((f) => f && f.id);
 }
 
 async function setIssueStatus({ github, core }, projectId, issue, target) {
-    const field = await getStatusField(github, projectId);
-    const option = field.options.find((o) => o.name === target);
+    const fields = await getProjectFields(github, projectId);
+    const field = fields.find((f) => f.name === "Status");
+    const option = field?.options.find((o) => o.name === target);
     if (!option) {
         core.warning(
             `Status option "${target}" missing — run issue-quest-gate.yml setup once.`,
@@ -62,7 +65,6 @@ async function resolveLinkedQuest({ github, context, core }) {
         ),
     ];
 
-    const quests = [];
     for (const issueNumber of issueNumbers) {
         let issue;
         try {
@@ -81,35 +83,21 @@ async function resolveLinkedQuest({ github, context, core }) {
         );
         if (!labels.includes("POLLEN-QUEST")) continue;
 
-        quests.push({
+        const quest = {
             number: issueNumber,
             node_id: issue.node_id,
-            assignees: (issue.assignees || []).map((a) => ({
-                login: a.login,
-                id: a.id,
-            })),
+            assignee: issue.assignees?.[0]
+                ? { login: issue.assignees[0].login, id: issue.assignees[0].id }
+                : null,
             body: issue.body || "",
-        });
-    }
-
-    if (quests.length > 1) {
-        const list = quests.map((quest) => `#${quest.number}`).join(", ");
-        await github.rest.issues.createComment({
-            ...repo(context),
-            issue_number: pr.number,
-            body: `Quest payout skipped: a PR must close exactly one POLLEN-QUEST issue, but this PR references ${list}.`,
-        });
-        core.setFailed(
-            `Expected exactly one linked POLLEN-QUEST issue, found ${quests.length}: ${list}`,
-        );
+        };
+        core.setOutput("quest", JSON.stringify(quest));
+        core.info(`Linked POLLEN-QUEST issue: #${issueNumber}`);
         return;
     }
 
-    const quest = quests[0] || null;
-    core.setOutput("quest", quest ? JSON.stringify(quest) : "");
-    core.info(
-        `Linked POLLEN-QUEST issue: ${quest ? `#${quest.number}` : "(none)"}`,
-    );
+    core.setOutput("quest", "");
+    core.info("Linked POLLEN-QUEST issue: (none)");
 }
 
 async function setQuestStatus(args) {
@@ -135,10 +123,7 @@ async function computePayout({ github, context, core }) {
 
     const reward = parseReward(quest.body);
     const missing = [];
-    if (quest.assignees.length === 0) missing.push("assignee");
-    if (quest.assignees.length > 1) {
-        missing.push(`single assignee (found ${quest.assignees.length})`);
-    }
+    if (!quest.assignee) missing.push("assignee");
     if (reward === null || !Number.isFinite(reward) || reward <= 0) {
         missing.push("valid reward amount in issue body");
     }
@@ -151,7 +136,7 @@ async function computePayout({ github, context, core }) {
                 `@${process.env.PAYOUT_FALLBACK} — quest payout could not be auto-processed.`,
                 "",
                 `**Missing:** ${missing.join(", ")}`,
-                `- assignees: ${quest.assignees.length ? quest.assignees.map((a) => a.login).join(", ") : "(none)"}`,
+                `- assignee: ${quest.assignee?.login ?? "(none)"}`,
                 `- parsed reward: ${reward ?? "(unparsed)"}`,
                 "",
                 `Triggered by merge of #${context.payload.pull_request.number}. Please review and back-fill manually.`,
@@ -160,15 +145,13 @@ async function computePayout({ github, context, core }) {
         return;
     }
 
-    const assignee = quest.assignees[0];
     core.setOutput(
         "payout",
         JSON.stringify({
             issue: quest.number,
-            recipient: assignee.login,
-            recipientId: assignee.id,
+            recipient: quest.assignee.login,
+            recipientId: quest.assignee.id,
             amount: reward,
-            role: "assignee",
         }),
     );
 }
@@ -188,27 +171,18 @@ async function findReceiptComment({ github, context }, issueNumber) {
         );
 }
 
-function buildReceipt(context, quest, result) {
+function buildReceiptBody(context, quest, result) {
     const paid = result.status === "granted" || result.status === "duplicate";
-    return {
+    const receipt = {
         status: paid ? "paid_out" : "manual_review",
         quest_issue: quest.number,
         pr: context.payload.pull_request.number,
-        paid_at: paid ? new Date().toISOString() : null,
+        recipient: result.user,
+        amount: result.amount,
+        result: result.status,
         processed_at: new Date().toISOString(),
-        recipients: [
-            {
-                github: result.user,
-                role: result.role,
-                amount: result.amount,
-                status: result.status,
-            },
-        ],
     };
-}
 
-function buildReceiptBody(receipt, result) {
-    const paid = receipt.status === "paid_out";
     const lines = [
         RECEIPT_MARKER,
         "```json",
@@ -222,12 +196,10 @@ function buildReceiptBody(receipt, result) {
     ];
 
     if (result.status === "granted") {
-        lines.push(
-            `- **${result.amount}** Pollen → @${result.user} (${result.role})`,
-        );
+        lines.push(`- **${result.amount}** Pollen → @${result.user}`);
     } else if (result.status === "duplicate") {
         lines.push(
-            `- **${result.amount}** Pollen → @${result.user} (${result.role}) already credited`,
+            `- **${result.amount}** Pollen → @${result.user} already credited`,
         );
     } else if (result.status === "not_found") {
         lines.push(
@@ -235,11 +207,11 @@ function buildReceiptBody(receipt, result) {
         );
     } else {
         lines.push(
-            `@${process.env.PAYOUT_FALLBACK} — D1 grant failed for @${result.user} (${result.role}): ${result.amount} Pollen`,
+            `@${process.env.PAYOUT_FALLBACK} — D1 grant failed for @${result.user}: ${result.amount} Pollen`,
         );
     }
 
-    return lines.join("\n");
+    return { body: lines.join("\n"), paid };
 }
 
 async function upsertReceiptComment(args, issueNumber, body) {
@@ -265,21 +237,17 @@ async function markPaidOutAndComment(args) {
     const result = parseJsonEnv("RESULT");
     if (!quest || !result) return;
 
-    const receipt = buildReceipt(args.context, quest, result);
-    await upsertReceiptComment(
-        args,
-        quest.number,
-        buildReceiptBody(receipt, result),
-    );
+    const { body, paid } = buildReceiptBody(args.context, quest, result);
+    await upsertReceiptComment(args, quest.number, body);
 
-    if (receipt.status === "paid_out") {
+    if (paid) {
         await setIssueStatus(args, process.env.PROJECT_ID, quest, "Paid Out");
     }
 }
 
 function runGrant(enterDir, payout) {
     console.log(
-        `→ granting ${payout.amount} Pollen to @${payout.recipient} (${payout.role}) for #${payout.issue}`,
+        `→ granting ${payout.amount} Pollen to @${payout.recipient} for #${payout.issue}`,
     );
     const result = spawnSync(
         "npx",
@@ -297,8 +265,6 @@ function runGrant(enterDir, payout) {
             String(payout.issue),
             "--prNumber",
             String(process.env.PR_NUMBER),
-            "--role",
-            payout.role,
             "--env",
             "production",
         ],
@@ -321,7 +287,6 @@ function runGrant(enterDir, payout) {
         issue: payout.issue,
         user: payout.recipient,
         amount: payout.amount,
-        role: payout.role,
         status: statusByCode[result.status] || "error",
     };
 }

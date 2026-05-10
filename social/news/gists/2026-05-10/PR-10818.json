@@ -1,0 +1,34 @@
+{
+  "pr_number": 10818,
+  "title": "Add EaglePollen Video to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10818",
+  "merged_at": "2026-05-10T08:28:18Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "EaglePollen takes flight",
+    "blurb": "A new community app just landed in the greenhouse! EaglePollen Video automates your TikTok video creation using the power of the hive.",
+    "summary": "Added EaglePollen Video, a new community application that automates TikTok video generation, to the project showcase.",
+    "impact": "Users can now discover and use EaglePollen Video to easily generate automated video content for TikTok.",
+    "keywords": [
+      "community",
+      "app",
+      "video",
+      "tiktok",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee acting as a film director alongside a friendly eagle character, representing the EaglePollen Video app. They are creating mobile/TikTok videos together.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny director's beret, filming a vertical video on a smartphone with a small, friendly pixel eagle. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10818.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny director's beret, filming a vertical video on a smartphone with a small, friendly pixel eagle. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-10T08:29:06.054904+00:00",
+  "app_name": "EaglePollen Video",
+  "app_url": "https://eagle.nomadedark.com.br/"
+}

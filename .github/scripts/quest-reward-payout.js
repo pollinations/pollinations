@@ -15,45 +15,6 @@ function parseJsonEnv(name) {
     return value ? JSON.parse(value) : null;
 }
 
-async function getProjectFields(github, projectId) {
-    const result = await github.graphql(
-        `query($id: ID!) { node(id: $id) { ... on ProjectV2 {
-            fields(first: 50) { nodes {
-                ... on ProjectV2SingleSelectField { id name options { id name } }
-            }}
-        }}}`,
-        { id: projectId },
-    );
-    return result.node.fields.nodes.filter((f) => f?.id);
-}
-
-async function setIssueStatus({ github, core }, projectId, issue, target) {
-    const fields = await getProjectFields(github, projectId);
-    const field = fields.find((f) => f.name === "Status");
-    const option = field?.options.find((o) => o.name === target);
-    if (!option) {
-        core.warning(
-            `Status option "${target}" missing — run issue-quest-gate.yml setup once.`,
-        );
-        return;
-    }
-
-    const add = await github.graphql(
-        `mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}`,
-        { p: projectId, c: issue.node_id },
-    );
-    await github.graphql(
-        `mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}){projectV2Item{id}}}`,
-        {
-            p: projectId,
-            i: add.addProjectV2ItemById.item.id,
-            f: field.id,
-            o: option.id,
-        },
-    );
-    core.info(`#${issue.number} → ${target}`);
-}
-
 async function resolveLinkedQuest({ github, context, core }) {
     const pr = context.payload.pull_request;
     const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
@@ -85,7 +46,6 @@ async function resolveLinkedQuest({ github, context, core }) {
 
         const quest = {
             number: issueNumber,
-            node_id: issue.node_id,
             assignee: issue.assignees?.[0]
                 ? { login: issue.assignees[0].login, id: issue.assignees[0].id }
                 : null,
@@ -98,18 +58,6 @@ async function resolveLinkedQuest({ github, context, core }) {
 
     core.setOutput("quest", "");
     core.info("Linked POLLEN-QUEST issue: (none)");
-}
-
-async function setQuestStatus(args) {
-    const quest = parseJsonEnv("QUEST");
-    if (!quest) return;
-
-    const target =
-        args.context.payload.action === "closed" &&
-        args.context.payload.pull_request.merged
-            ? "Reward Ready"
-            : "In Review";
-    await setIssueStatus(args, process.env.PROJECT_ID, quest, target);
 }
 
 function parseReward(body) {
@@ -211,7 +159,7 @@ function buildReceiptBody(context, quest, result) {
         );
     }
 
-    return { body: lines.join("\n"), paid };
+    return lines.join("\n");
 }
 
 async function upsertReceiptComment(args, issueNumber, body) {
@@ -237,12 +185,11 @@ async function markPaidOutAndComment(args) {
     const result = parseJsonEnv("RESULT");
     if (!quest || !result) return;
 
-    const { body, paid } = buildReceiptBody(args.context, quest, result);
-    await upsertReceiptComment(args, quest.number, body);
-
-    if (paid) {
-        await setIssueStatus(args, process.env.PROJECT_ID, quest, "Paid Out");
-    }
+    await upsertReceiptComment(
+        args,
+        quest.number,
+        buildReceiptBody(args.context, quest, result),
+    );
 }
 
 function runGrant(enterDir, payout) {
@@ -312,5 +259,4 @@ module.exports = {
     markPaidOutAndComment,
     resolveLinkedQuest,
     runPollenGrant,
-    setQuestStatus,
 };

@@ -2,7 +2,7 @@ name: Quest Reward Payout
 
 on:
   pull_request_target:
-    types: [opened, reopened, ready_for_review, closed]
+    types: [closed]
 
 permissions:
   issues: write
@@ -10,11 +10,11 @@ permissions:
   contents: read
 
 env:
-  QUEST_PROJECT_ID: PVT_kwDOBS76fs4BW8uW
   QUEST_PAYOUT_FALLBACK: ${{ vars.QUEST_PAYOUT_FALLBACK || 'Circuit-Overtime' }}
 
 jobs:
   payout:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Generate Polly Bot token
@@ -36,20 +36,8 @@ jobs:
             const { resolveLinkedQuest } = require('./.github/scripts/quest-reward-payout.js');
             await resolveLinkedQuest({ github, context, core });
 
-      - name: Set quest status (In Review / Reward Ready)
-        if: steps.linked.outputs.quest != '' && (github.event.action != 'closed' || github.event.pull_request.merged == true)
-        uses: actions/github-script@v7
-        env:
-          QUEST: ${{ steps.linked.outputs.quest }}
-          PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
-        with:
-          github-token: ${{ steps.token.outputs.token }}
-          script: |
-            const { setQuestStatus } = require('./.github/scripts/quest-reward-payout.js');
-            await setQuestStatus({ github, context, core });
-
       - name: Compute payout
-        if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.linked.outputs.quest != ''
+        if: steps.linked.outputs.quest != ''
         id: resolve
         uses: actions/github-script@v7
         env:
@@ -75,13 +63,12 @@ jobs:
             const { runPollenGrant } = require('./.github/scripts/quest-reward-payout.js');
             await runPollenGrant({ core });
 
-      - name: Mark Paid Out and comment summary
+      - name: Comment payout receipt
         if: steps.grant.outputs.result != ''
         uses: actions/github-script@v7
         env:
           RESULT: ${{ steps.grant.outputs.result }}
           QUEST: ${{ steps.linked.outputs.quest }}
-          PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
           PAYOUT_FALLBACK: ${{ env.QUEST_PAYOUT_FALLBACK }}
         with:
           github-token: ${{ steps.token.outputs.token }}

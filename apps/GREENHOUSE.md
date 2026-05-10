@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **727** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **728** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -835,7 +835,7 @@
 | [🛒 THISX](https://www.thisx.ai/en) | AI platform for e-commerce: store fixes and Meta AI-driven ads. | [@web](https://github.com/web) |  | 🫧 |
 | [🛠️ SimpleTools](https://simpletools.lol/) | Utilities: automatic citation generator, AI humanizer, and scrambler. | [@web](https://github.com/web) |  | 🫧 |
 
-<details><summary>Show all 44 apps</summary>
+<details><summary>Show all 45 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -871,6 +871,7 @@
 | [🧠 Deals King & Radar Ai](https://deal.pm/en/extension) | Deals King & Radar Ai supports viewing deals and running radar AI functions. | [@browser-ext](https://github.com/browser-ext) |  | 🫧 |
 | [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@web](https://github.com/web) |  | 🫧 |
 | [🎬 kre8.info](https://kre8.info) | Helps you create end to end shorts and faceless videos in under 10 min using one prompt. | [@web](https://github.com/web) |  | 🫧 |
+| [📈 Quent](https://quent.kro.kr/) | Automate trading and indicator analysis with Quent using AI agent-based strategies. | [@web](https://github.com/web) |  | 🫧 |
 | [📦 Product Packaging Designer](148776148) | Design custom product packaging with AI assistance. Uses Pollinations image gene... | [@api](https://github.com/api) |  |  |
 | [🥗 FoodAnaly](https://foodanaly.vercel.app/) | Analyze ingredients, nutrition, safety, and health impacts of food. | [@web](https://github.com/web) |  |  |
 

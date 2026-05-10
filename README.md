@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📈 Quent](https://quent.kro.kr/) | Automate trading and indicator analysis with Quent using AI agent-based strategies. | [@web](https://github.com/web) |
 | [🌙 睡前小故事 / Bedtime Stories](https://222.5918918.xyz/) | 睡前小故事 / Bedtime Stories。提供睡前故事内容给用户阅读。 | [@web](https://github.com/web) |
 | [💻 Opticode](https://www.opticode.tech/) | OptiCode is an AI-powered collaborative coding platform designed to help programmers learn and improve their coding skills. It provides a real-time pair programming environment where a mentor and ment | [@web](https://github.com/web) |
 | [🖼️ Basic Pollinations Image Generator](77425955) | Generate images with Basic Pollinations Image Generator. Log in at https://enter.pollinations.ai/ to get an API key, then enter it in the app to start generating. | [@web](https://github.com/web) |
@@ -29,7 +30,6 @@
 | [🧩 OMNI](136345527) | Run the OMNI command-line interface (CLI). | [@cli](https://github.com/cli) |
 | [🎵 ivLyrics](25863234) | Displays lyrics in Spicetify and adds pronunciation notation and translations for various languages using the AI API with ivLyrics. | [@desktop](https://github.com/desktop) |
 | [🎬 scene.riko](https://ganya002.github.io/scene.riko/) | Render the HTML structure for scene.riko using an htmlhead and headbodyh1scene.riko/h1 markup layout. | [@web](https://github.com/web) |
-| [🖼️ Générateur d'images IA](https://novapeda.eu/generateur-image.php) | Générateur d'images IA illustrates image generation in AI trainings and formations using the smallest available models. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

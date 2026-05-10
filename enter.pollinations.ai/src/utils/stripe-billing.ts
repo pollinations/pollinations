@@ -662,6 +662,7 @@ export async function markAutoTopUpInvoiceFailed(
 
     if (!attempt) return;
 
+    await voidAutoTopUpInvoice(env, invoice.id);
     await preserveAutoTopUpLastAttemptAt(env.DB, userId, now);
     await recordAutoTopUpFailureAndMaybeDisable(env.DB, userId);
 }
@@ -718,6 +719,7 @@ export async function markAutoTopUpInvoiceRequiresAction(
 
     if (!attempt) return;
 
+    await voidAutoTopUpInvoice(env, invoice.id);
     // requires_action leaves the attempt timestamp in place so the next retry
     // waits for the normal auto top-up attempt window. It does not count toward
     // the consecutive-failure disable threshold.
@@ -892,6 +894,24 @@ async function ensureAutoTopUpAttempt(
             now,
         )
         .run();
+}
+
+async function voidAutoTopUpInvoice(
+    env: CloudflareBindings,
+    invoiceId: string,
+): Promise<void> {
+    try {
+        const stripe = createStripeClient(env);
+        await stripe.invoices.voidInvoice(invoiceId);
+    } catch (error) {
+        // Voiding can fail if the invoice is already void/paid or if a
+        // concurrent webhook handled it. Failing to void should not block the
+        // failure-handling path that already updated our internal attempt row.
+        console.warn(
+            `[auto-top-up] failed to void invoice ${invoiceId}:`,
+            error instanceof Error ? error.message : String(error),
+        );
+    }
 }
 
 async function getLastAutoTopUpIssue(

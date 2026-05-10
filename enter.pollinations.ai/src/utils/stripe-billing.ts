@@ -28,7 +28,7 @@ const BILLING_PORTAL_CUSTOMER_UPDATES = [
     "tax_id",
 ] satisfies Stripe.BillingPortal.ConfigurationCreateParams.Features.CustomerUpdate.AllowedUpdate[];
 
-export const AUTO_TOP_UP_PACK_AMOUNTS = [10, 20, 50, 100] as const;
+export const AUTO_TOP_UP_PACK_AMOUNTS = [5, 10, 20, 50, 100] as const;
 export const DEFAULT_AUTO_TOP_UP_AMOUNT_USD = 20;
 
 type UserStripeBillingDbRow = {

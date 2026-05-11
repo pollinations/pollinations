@@ -3,7 +3,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
-import { R2_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
@@ -160,7 +160,7 @@ describe("media cache", () => {
         expect(cachedNoAuth.response.status).toBe(200);
         expect(cachedNoAuth.response.headers.get("X-Cache")).toBe("HIT");
         expect(cachedNoAuth.response.headers.get("Cache-Control")).toBe(
-            R2_CACHE_CONTROL,
+            IMMUTABLE_CACHE_CONTROL,
         );
         expect(media.originHits).toBe(1);
 

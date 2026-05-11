@@ -5,7 +5,7 @@
  */
 
 import type { Logger } from "@logtape/logtape";
-import { R2_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
@@ -171,8 +171,8 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
             "X-Cache-Date",
             metadata.cachedAt || cachedObject.uploaded.toISOString(),
         );
-        // Same request = same response (deterministic). Cache TTL aligned with R2 retention.
-        headers.set("Cache-Control", R2_CACHE_CONTROL);
+        // Browser cache: immutable since same request = same response
+        headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
         // Create response from cached object
         return new Response(cachedObject.body, {

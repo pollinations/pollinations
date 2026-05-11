@@ -1,4 +1,4 @@
-import { R2_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
     getModelDefinition,
     type ModelName,
@@ -146,7 +146,7 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
 
 function sendTextContentResponse(completion: ChatCompletion): Response {
     const headers = usageHeaders(completion);
-    headers.set("Cache-Control", R2_CACHE_CONTROL);
+    headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
         throw new UpstreamError(502, {

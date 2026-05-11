@@ -94,7 +94,7 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 
 **Errors:**
 - `400` - No file provided, empty file, or invalid JSON/base64
-- `413` - File too large (max 10MB)
+- `413` - File too large (max 50MB)
 
 ### `GET /:hash`
 
@@ -102,11 +102,11 @@ Retrieve a media file by its hash.
 
 **Response:**
 - Binary file with correct `Content-Type`
-- `Cache-Control: public, max-age=2592000`
+- `Cache-Control: public, max-age=31536000, immutable`
 
 **Headers:**
 - `Content-Type` - MIME type
-- `Cache-Control` - `public, max-age=2592000`
+- `Cache-Control` - `public, max-age=31536000, immutable`
 - `X-Content-Hash` - 16-char hex content hash
 - `X-Content-Size` - File size in bytes
 
@@ -166,7 +166,7 @@ npm run deploy:production
 
 ## 📊 Limits
 
-- **Max file size:** 10MB
+- **Max file size:** 50MB
 - **Storage:** Cloudflare R2
 - **Default retention:** 30 days (re-uploading the same file resets the timer)
 
@@ -175,7 +175,7 @@ npm run deploy:production
 Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as the key:
 - **Deduplication:** Uploading the same file twice returns the same URL
 - **Immutable:** Once uploaded, content cannot change (hash = content)
-- **Cacheable:** Files are cached for 30 days without the `immutable` directive
+- **Cacheable:** Files are served with `Cache-Control: public, max-age=31536000, immutable` — content-addressed URLs are safe to cache forever because the URL → bytes mapping is fixed
 - **Collision resistance:** Birthday-paradox collision expected around ~4 billion files
 
 ## 📌 Retention Policy

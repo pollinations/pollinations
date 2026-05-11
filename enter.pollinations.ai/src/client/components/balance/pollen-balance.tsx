@@ -79,7 +79,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const tierPct = 100 - paidPct;
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
             {/* Headline: Total label + earnings */}
             <div className="flex items-baseline justify-between gap-3">
                 <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
@@ -225,7 +225,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     }}
                     className="text-xs text-amber-700/80 hover:text-amber-900 underline decoration-amber-400/60 underline-offset-2"
                 >
-                    Learn more about your balance →
+                    Learn more →
                 </button>
             </div>
         </div>

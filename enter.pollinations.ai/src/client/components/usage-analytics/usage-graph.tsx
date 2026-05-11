@@ -2,6 +2,7 @@ import type { TierStatus } from "@shared/tier-config.ts";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
+import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { cn } from "@/util.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
@@ -252,12 +253,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
             </div>
         </DashboardSection>
     );
-};
-
-const formatPollen = (value: number): string => {
-    if (value === 0) return "0";
-    if (Math.abs(value) < 0.01) return value.toPrecision(2);
-    return value.toFixed(2);
 };
 
 const UsageStatCard: FC<{

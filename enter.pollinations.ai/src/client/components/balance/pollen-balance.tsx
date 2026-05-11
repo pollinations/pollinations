@@ -43,7 +43,7 @@ const TooltipList: FC<{
         </ul>
         {earned !== undefined && earned > 0 && (
             <span className="mt-2 block border-t border-gray-200 pt-1.5 text-green-700 font-semibold">
-                +{formatPollen(earned, 2)}{" "}
+                +{formatPollen(earned)}{" "}
                 <span className="font-medium text-gray-600">
                     earned past 7d
                 </span>
@@ -92,7 +92,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         content="Earnings past 7 days"
                     >
                         <span className="text-base font-bold tabular-nums text-green-700">
-                            +{formatPollen(totalWeek, 2)}
+                            +{formatPollen(totalWeek)}
                         </span>
                         <span className="text-xs font-medium text-amber-800/70">
                             past 7d
@@ -138,7 +138,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 <Tooltip
                     triggerAs="span"
                     displayContents
-                    className="flex flex-col gap-1.5 cursor-default"
+                    className="flex flex-col gap-1.5 items-center sm:items-stretch cursor-default"
                     content={
                         <TooltipList
                             title="Paid balance"
@@ -161,13 +161,13 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             Paid
                         </span>
                     </span>
-                    <span className="flex items-baseline gap-2">
+                    <span className="flex flex-col items-center gap-1 sm:flex-row sm:items-baseline sm:gap-2">
                         <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
                             {formatPollen(displayPaidBalance)}
                         </span>
                         {paidWeek > 0 && (
-                            <span className="ml-auto text-base font-bold tabular-nums text-green-700">
-                                +{formatPollen(paidWeek, 2)}
+                            <span className="text-base font-bold tabular-nums text-green-700 sm:ml-auto">
+                                +{formatPollen(paidWeek)}
                             </span>
                         )}
                     </span>
@@ -176,7 +176,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     <Tooltip
                         triggerAs="span"
                         displayContents
-                        className="flex flex-col gap-1.5 cursor-default"
+                        className="flex flex-col gap-1.5 items-center sm:items-stretch cursor-default"
                         content={
                             <TooltipList
                                 title="Tier balance"
@@ -199,13 +199,13 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 Tier
                             </span>
                         </span>
-                        <span className="flex items-baseline gap-2">
+                        <span className="flex flex-col items-center gap-1 sm:flex-row sm:items-baseline sm:gap-2">
                             <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
                                 {formatPollen(displayTierBalance)}
                             </span>
                             {tierWeek > 0 && (
-                                <span className="ml-auto text-base font-bold tabular-nums text-green-700">
-                                    +{formatPollen(tierWeek, 2)}
+                                <span className="text-base font-bold tabular-nums text-green-700 sm:ml-auto">
+                                    +{formatPollen(tierWeek)}
                                 </span>
                             )}
                         </span>
@@ -283,7 +283,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 </span>
                 {totalWeek > 0 && (
                     <span className="text-xs font-bold tabular-nums text-green-700">
-                        +{formatPollen(totalWeek, 2)}
+                        +{formatPollen(totalWeek)}
                     </span>
                 )}
             </div>

@@ -1,5 +1,6 @@
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
+import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
@@ -253,12 +254,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             </div>
         </DashboardSection>
     );
-};
-
-const formatPollen = (value: number): string => {
-    if (value === 0) return "0";
-    if (Math.abs(value) < 0.01) return value.toPrecision(2);
-    return value.toFixed(2);
 };
 
 const EarningsStatCard: FC<{

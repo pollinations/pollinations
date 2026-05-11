@@ -1,5 +1,5 @@
 // REMOVE BEFORE MERGE — design-only mock for the wallet + earnings dashboard.
-// Activated via `?mockEarnings=<scenario>` (gated on `import.meta.env.DEV` so it
+// Activated via `?mockEarnings=<scenario>` (gated to dev + staging builds so it
 // can't reach prod), wired in:
 //   - src/client/routes/index.tsx (loader: paidWeek/tierWeek override)
 //   - src/client/components/usage-analytics/use-earnings-data.ts (fetch short-circuit)
@@ -25,7 +25,7 @@ const SCENARIOS: ReadonlySet<MockEarningsScenario> = new Set([
 ]);
 
 export function getMockEarningsScenario(): MockEarningsScenario | null {
-    if (!import.meta.env.DEV) return null;
+    if (!import.meta.env.DEV && import.meta.env.MODE !== "staging") return null;
     if (typeof window === "undefined") return null;
     const raw = new URLSearchParams(window.location.search).get("mockEarnings");
     if (!raw) return null;

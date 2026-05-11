@@ -1,0 +1,408 @@
+name: Quest Issue Gate & Status
+
+on:
+  issues:
+    types: [opened, labeled, assigned, unassigned, closed, reopened]
+  workflow_dispatch:
+    inputs:
+      setup_status_field:
+        description: "One-shot: ensure Quest project Status field has the quest-lifecycle options"
+        type: boolean
+        default: false
+      backfill_existing:
+        description: "One-shot: add every existing POLLEN-QUEST issue to the Quest project at the right status"
+        type: boolean
+        default: false
+
+permissions:
+  issues: write
+  contents: read
+
+env:
+  QUEST_PROJECT_ID: PVT_kwDOBS76fs4BW8uW
+  QUEST_STATUS_DESCRIPTIONS: |
+    {
+      "Todo": "Quest filed, awaiting a dev to claim it",
+      "In Progress": "Assignee is working on it",
+      "In Review": "Linked PR is open",
+      "Reward Ready": "PR merged, payout pending D1 grant",
+      "Paid Out": "Pollen credited to author and assignee"
+    }
+  QUEST_TYPE_DESCRIPTIONS: |
+    {
+      "Bug": "Fix for broken behavior (DEV-BUG)",
+      "Feature": "New functionality or enhancement (DEV-FEATURE)",
+      "Task": "Docs / infra / chores / research (other DEV-*)"
+    }
+
+jobs:
+  setup:
+    if: github.event_name == 'workflow_dispatch' && inputs.setup_status_field
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Polly Bot token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const QUEST_PROJECT_ID = process.env.QUEST_PROJECT_ID;
+            const statusDescs = JSON.parse(process.env.QUEST_STATUS_DESCRIPTIONS);
+            const typeDescs   = JSON.parse(process.env.QUEST_TYPE_DESCRIPTIONS);
+
+            const r = await github.graphql(`
+              query($id: ID!) {
+                node(id: $id) { ... on ProjectV2 {
+                  fields(first: 50) { nodes {
+                    ... on ProjectV2SingleSelectField {
+                      id name options { id name color description }
+                    }
+                  }}
+                }}
+              }`, { id: QUEST_PROJECT_ID });
+            const fields = r.node.fields.nodes.filter(f => f && f.id);
+
+            async function ensureField(fieldName, descMap) {
+                const wanted = Object.keys(descMap);
+                const existing = fields.find(f => f.name === fieldName);
+
+                if (existing) {
+                    const existingOpts = new Map(existing.options.map(o => [o.name, o]));
+                    const merged = wanted.map(name => {
+                        const e = existingOpts.get(name);
+                        return {
+                            ...(e ? { id: e.id } : {}),
+                            name,
+                            color: e?.color ?? 'GRAY',
+                            description: descMap[name],
+                        };
+                    });
+                    await github.graphql(`
+                      mutation($id: ID!, $opts: [ProjectV2SingleSelectFieldOptionInput!]!) {
+                        updateProjectV2Field(input: { fieldId: $id, singleSelectOptions: $opts }) {
+                          projectV2Field { ... on ProjectV2SingleSelectField { options { id name } } }
+                        }
+                      }`, { id: existing.id, opts: merged });
+                    core.notice(`${fieldName} field updated: ${wanted.join(', ')}`);
+                } else {
+                    const opts = wanted.map(name => ({ name, color: 'GRAY', description: descMap[name] }));
+                    await github.graphql(`
+                      mutation($pid: ID!, $name: String!, $opts: [ProjectV2SingleSelectFieldOptionInput!]!) {
+                        createProjectV2Field(input: { projectId: $pid, dataType: SINGLE_SELECT, name: $name, singleSelectOptions: $opts }) {
+                          projectV2Field { ... on ProjectV2SingleSelectField { id name } }
+                        }
+                      }`, { pid: QUEST_PROJECT_ID, name: fieldName, opts });
+                    core.notice(`${fieldName} field created: ${wanted.join(', ')}`);
+                }
+            }
+
+            await ensureField("Status", statusDescs);
+            await ensureField("Type", typeDescs);
+        env:
+          QUEST_PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
+          QUEST_STATUS_DESCRIPTIONS: ${{ env.QUEST_STATUS_DESCRIPTIONS }}
+          QUEST_TYPE_DESCRIPTIONS: ${{ env.QUEST_TYPE_DESCRIPTIONS }}
+
+  backfill:
+    if: github.event_name == 'workflow_dispatch' && inputs.backfill_existing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Polly Bot token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+      - uses: actions/github-script@v7
+        env:
+          QUEST_PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const QUEST_PROJECT_ID = process.env.QUEST_PROJECT_ID;
+
+            const fieldsQ = await github.graphql(`
+              query($id: ID!) {
+                node(id: $id) { ... on ProjectV2 {
+                  fields(first: 50) { nodes {
+                    ... on ProjectV2SingleSelectField {
+                      id name options { id name }
+                    }
+                  }}
+                }}
+              }`, { id: QUEST_PROJECT_ID });
+            const allFields = fieldsQ.node.fields.nodes.filter(f => f && f.id);
+            const statusField = allFields.find(f => f.name === 'Status');
+            const typeField   = allFields.find(f => f.name === 'Type');
+            const optionId = (field, name) => field?.options.find(o => o.name === name)?.id;
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner: context.repo.owner, repo: context.repo.repo,
+                state: 'all', labels: 'POLLEN-QUEST', per_page: 100,
+            });
+
+            let added = 0, archived = 0, skipped = 0;
+            for (const issue of issues) {
+                if (issue.pull_request) { skipped++; continue; }
+
+                const add = await github.graphql(`
+                  mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}`,
+                  { p: QUEST_PROJECT_ID, c: issue.node_id });
+                const itemId = add.addProjectV2ItemById.item.id;
+
+                if (issue.state === 'closed' && issue.state_reason !== 'completed') {
+                    await github.graphql(`
+                      mutation($p:ID!,$i:ID!){archiveProjectV2Item(input:{projectId:$p,itemId:$i}){item{id}}}`,
+                      { p: QUEST_PROJECT_ID, i: itemId });
+                    archived++;
+                    continue;
+                }
+
+                let status;
+                if (issue.state === 'closed' && issue.state_reason === 'completed') {
+                    status = 'Reward Ready';
+                } else if ((issue.assignees || []).length > 0) {
+                    status = 'In Progress';
+                } else {
+                    status = 'Todo';
+                }
+
+                const issueLabels = (issue.labels || []).map(l => typeof l === 'string' ? l : l.name);
+                const questType = issueLabels.includes('DEV-BUG') ? 'Bug'
+                    : issueLabels.includes('DEV-FEATURE') ? 'Feature'
+                    : 'Task';
+
+                async function setField(field, optionName) {
+                    const oid = optionId(field, optionName);
+                    if (!field || !oid) {
+                        core.warning(`#${issue.number}: option "${optionName}" not found — run setup_status_field=true first`);
+                        return;
+                    }
+                    await github.graphql(`
+                      mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}){projectV2Item{id}}}`,
+                      { p: QUEST_PROJECT_ID, i: itemId, f: field.id, o: oid });
+                }
+
+                await setField(statusField, status);
+                await setField(typeField, questType);
+                core.info(`#${issue.number} → Status=${status}, Type=${questType}`);
+                added++;
+            }
+
+            core.notice(`Backfill done: ${added} carded, ${archived} archived, ${skipped} skipped`);
+
+  triage:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Polly Bot token
+        id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
+      - uses: actions/github-script@v7
+        env:
+          QUEST_PROJECT_ID: ${{ env.QUEST_PROJECT_ID }}
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const QUEST_PROJECT_ID = process.env.QUEST_PROJECT_ID;
+            const action = context.payload.action;
+            const issue = context.payload.issue;
+            const labels = (issue.labels || []).map(l => typeof l === 'string' ? l : l.name);
+            const labelEvent = context.payload.label?.name;
+            const ORG_MAINTAINERS = ['voodoohop', 'ElliotEtag', 'Circuit-Overtime', 'Itachi-1824'];
+            async function isMaintainer(actor) {
+                if (ORG_MAINTAINERS.map(m => m.toLowerCase()).includes(actor.toLowerCase())) return true;
+                try {
+                    const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                        owner: context.repo.owner, repo: context.repo.repo, username: actor,
+                    });
+                    const role = data.role_name ?? data.permission ?? 'none';
+                    return role === 'admin' || role === 'maintain';
+                } catch (e) {
+                    if (e.status === 404) return false;
+                    throw e;
+                }
+            }
+
+            const isQuestEvent =
+                (action === 'opened'  && labels.includes('POLLEN-QUEST')) ||
+                (action === 'labeled' && labelEvent === 'POLLEN-QUEST');
+
+            if (isQuestEvent) {
+                const actor = action === 'opened' ? issue.user.login : context.payload.sender.login;
+                if (!(await isMaintainer(actor))) {
+                    await github.rest.issues.removeLabel({
+                        owner: context.repo.owner, repo: context.repo.repo,
+                        issue_number: issue.number, name: 'POLLEN-QUEST',
+                    }).catch(e => { if (e.status !== 404) throw e; });
+
+                    if (action === 'opened') {
+                        // Filed via the quest template by a non-maintainer → close with explanation.
+                        await github.rest.issues.createComment({
+                            owner: context.repo.owner, repo: context.repo.repo, issue_number: issue.number,
+                            body: [
+                                `Hi @${actor} — thanks for the contribution!`,
+                                ``,
+                                `The **Community Quest** template is reserved for Pollinations maintainers, since quests carry a Pollen reward paid on PR merge. I've removed the **POLLEN-QUEST** label and closed this issue.`,
+                                ``,
+                                `If you'd like to **propose** a quest, please open a blank issue describing the work and tag any of the [Pollinations org members](https://github.com/orgs/pollinations/people) — a maintainer can review and convert it into an official quest if it's a good fit.`,
+                                ``,
+                                `To **take on** an existing quest, browse them here: https://github.com/pollinations/pollinations/issues?q=is%3Aissue+is%3Aopen+label%3APOLLEN-QUEST`,
+                            ].join('\n'),
+                        });
+                        await github.rest.issues.update({
+                            owner: context.repo.owner, repo: context.repo.repo,
+                            issue_number: issue.number, state: 'closed', state_reason: 'not_planned',
+                        });
+                    } else {
+                        // POLLEN-QUEST applied to an existing issue by a non-maintainer →
+                        // strip the label only, leave the issue open as a regular request.
+                        await github.rest.issues.createComment({
+                            owner: context.repo.owner, repo: context.repo.repo, issue_number: issue.number,
+                            body: [
+                                `Hi @${actor} — only Pollinations maintainers can apply the **POLLEN-QUEST** label, since quests carry a Pollen reward on PR merge. I've removed the label, but the issue stays open as a regular request.`,
+                                ``,
+                                `If you think this should be a quest, tag any of the [Pollinations org members](https://github.com/orgs/pollinations/people) and they can review.`,
+                            ].join('\n'),
+                        });
+                    }
+                    return;
+                }
+            }
+
+            // ── Status transitions (POLLEN-QUEST issues only) ─────────────
+            // Note: `unlabeled` is intentionally absent from the workflow trigger,
+            // so removing POLLEN-QUEST is a true no-op (the card stays as-is).
+            if (!labels.includes('POLLEN-QUEST')) return;
+
+            // closed via PR merge → leave to quest-reward-payout.yml (it owns the post-merge
+            // lifecycle: Reward Ready → Paid Out). state_reason='completed' = merged closure.
+            if (action === 'closed' && issue.state_reason === 'completed') return;
+
+            if (!labels.includes('DEV-QUEST')) {
+                await github.rest.issues.addLabels({
+                    owner: context.repo.owner, repo: context.repo.repo,
+                    issue_number: issue.number, labels: ['DEV-QUEST'],
+                });
+            }
+
+            // POLLEN-QUEST takes priority over Dev/Support/News/Tier.
+            // If the issue was already routed into one of those projects (e.g. it
+            // was an open Dev issue later promoted via the POLLEN-QUEST label),
+            // remove those cards so the issue lives in the Quest project only.
+            const OTHER_PROJECT_IDS = new Set([
+                'PVT_kwDOBS76fs4AwCAM',  // Dev
+                'PVT_kwDOBS76fs4BLr1H',  // Support
+                'PVT_kwDOBS76fs4BLtD8',  // News
+                'PVT_kwDOBS76fs4BLtE_',  // Tier
+            ]);
+            try {
+                const pi = await github.graphql(`
+                    query($id: ID!) {
+                      node(id: $id) {
+                        ... on Issue {
+                          projectItems(first: 30) {
+                            nodes { id project { id } }
+                          }
+                        }
+                      }
+                    }`, { id: issue.node_id });
+                const items = pi.node?.projectItems?.nodes ?? [];
+                for (const it of items) {
+                    if (it.project?.id && OTHER_PROJECT_IDS.has(it.project.id)) {
+                        await github.graphql(`
+                            mutation($p:ID!,$i:ID!){deleteProjectV2Item(input:{projectId:$p,itemId:$i}){deletedItemId}}`,
+                            { p: it.project.id, i: it.id });
+                        core.info(`Purged #${issue.number} from project ${it.project.id}`);
+                    }
+                }
+            } catch (e) {
+                core.warning(`Project purge failed for #${issue.number}: ${e.message}`);
+            }
+
+            // Resolve project item ID once (idempotent add).
+            const addQ = await github.graphql(`
+                mutation($p: ID!, $c: ID!) {
+                  addProjectV2ItemById(input: {projectId: $p, contentId: $c}) { item { id } }
+                }`, { p: QUEST_PROJECT_ID, c: issue.node_id });
+            const itemId = addQ.addProjectV2ItemById.item.id;
+
+            // closed (unmerged / not_planned / manual) → archive the card.
+            if (action === 'closed') {
+                await github.graphql(`
+                    mutation($p:ID!,$i:ID!) { archiveProjectV2Item(input:{projectId:$p,itemId:$i}) { item { id } } }
+                  `, { p: QUEST_PROJECT_ID, i: itemId });
+                core.info(`Archived #${issue.number} (closed without merge)`);
+                return;
+            }
+
+            // reopened → unarchive, then fall through to set Open / In Progress.
+            if (action === 'reopened') {
+                await github.graphql(`
+                    mutation($p:ID!,$i:ID!) { unarchiveProjectV2Item(input:{projectId:$p,itemId:$i}) { item { id } } }
+                  `, { p: QUEST_PROJECT_ID, i: itemId }).catch(e => core.warning(`Unarchive failed: ${e.message}`));
+            }
+
+            let target = null;
+            if (action === 'opened' || (action === 'labeled' && labelEvent === 'POLLEN-QUEST')) {
+                target = 'Todo';
+            } else if (action === 'assigned') {
+                target = 'In Progress';
+            } else if (action === 'unassigned' && (issue.assignees || []).length === 0) {
+                target = 'Todo';
+            } else if (action === 'reopened') {
+                target = (issue.assignees || []).length > 0 ? 'In Progress' : 'Todo';
+            }
+            if (!target) return;
+
+            // Resolve Status + Type fields together.
+            const fieldsQ = await github.graphql(`
+                query($id: ID!) {
+                  node(id: $id) { ... on ProjectV2 {
+                    fields(first: 50) { nodes {
+                      ... on ProjectV2SingleSelectField {
+                        id name options { id name }
+                      }
+                    }}
+                  }}
+                }`, { id: QUEST_PROJECT_ID });
+            const allFields = fieldsQ.node.fields.nodes.filter(f => f && f.id);
+            const statusField = allFields.find(f => f.name === 'Status');
+            const typeField   = allFields.find(f => f.name === 'Type');
+
+            async function setSingleSelect(field, optionName) {
+                if (!field) {
+                    core.warning(`Field missing — run workflow_dispatch with setup_status_field=true once.`);
+                    return;
+                }
+                const opt = field.options.find(o => o.name === optionName);
+                if (!opt) {
+                    core.warning(`Option "${optionName}" not found in field "${field.name}".`);
+                    return;
+                }
+                await github.graphql(`
+                    mutation($p:ID!,$i:ID!,$f:ID!,$o:String!) {
+                      updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}}) { projectV2Item { id } }
+                    }`, { p: QUEST_PROJECT_ID, i: itemId, f: field.id, o: opt.id });
+            }
+
+            await setSingleSelect(statusField, target);
+
+            // Type auto-population from DEV-* labels.
+            const questType = labels.includes('DEV-BUG') ? 'Bug'
+                : labels.includes('DEV-FEATURE') ? 'Feature'
+                : 'Task';
+            await setSingleSelect(typeField, questType);
+
+            core.info(`Set #${issue.number} → Status=${target}, Type=${questType}`);

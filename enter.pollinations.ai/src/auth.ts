@@ -57,7 +57,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                   }
                 : undefined,
         },
-        trustedOrigins: ["*"],
+
+        trustedOrigins: [
+            "https://pollinations.ai",
+            "https://*.pollinations.ai",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ],
         user: {
             additionalFields: {
                 githubId: {

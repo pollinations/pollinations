@@ -405,7 +405,7 @@ function generateLLMDoc(): string {
         '- accountPermissions (string[], optional): e.g. ["profile","usage"]. "keys" is auto-stripped',
     );
     lines.push(
-        "- redirectUris (string[], optional): OAuth redirect URIs for publishable app keys",
+        "- redirectUris (string[], optional): OAuth redirect URIs for publishable app keys. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; query-bearing entries must match exactly. Loopback ports are port-agnostic.",
     );
     lines.push(
         "- earningsEnabled (boolean, optional): Developer earnings for publishable app keys; true opts in",

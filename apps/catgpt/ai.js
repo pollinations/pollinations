@@ -5,8 +5,9 @@ const ENTER = "https://enter.pollinations.ai";
 const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
-const SELFIE_CATGPT = "https://media.pollinations.ai/a84b58d293d69f35";
+const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
 const AUTH_KEY = "catgpt_api_key";
+const APP_KEY = "pk_uWjreBEkxFAhjDHo";
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ export function getAuthorizeUrl() {
     const redirect = window.location.href.split("#")[0];
     return `${ENTER}/authorize?${new URLSearchParams({
         redirect_url: redirect,
+        app_key: APP_KEY,
         budget: "5",
         models: "gptimage,nanobanana,claude-fast",
         permissions: "profile,usage",
@@ -104,7 +106,7 @@ export function createImageGenerationPrompt(
 ) {
     const base = `CatGPT webcomic, white background, thick black marker strokes. White cat with black patches. Handwritten text. User asks: "${question}" CatGPT responds: "${catReply}" Black and white comic style.`;
     return hasUploadedImage
-        ? `${base} Replace the human on the left with a character based on the uploaded image. If it's a person, draw a caricature maintaining their appearance. If it's a logo, mascot, or other image, incorporate it as the human character's identity.`
+        ? `${base} Replace the human on the left with a quick rough sketch caricature of the uploaded image, drawn in the SAME loose hand-drawn black marker style as the cat — simple outlines only, NO shading, NO color, NO photorealism, NO detailed rendering, just a wobbly sketch with the same line weight and amateur charm as the rest of the comic. If it's a logo, mascot, or other non-person image, sketch it in the same crude marker style.`
         : `${base} Human with bob hair.`;
 }
 

@@ -24,7 +24,6 @@ Classify this GitHub issue/PR. Return JSON only.
 
 - `DEV-BUG`: Something broken in our infrastructure/services
 - `DEV-FEATURE`: New functionality or enhancement
-- `DEV-QUEST`: Research, investigation, or exploration task
 - `DEV-TRACKING`: Meta issue tracking multiple items or milestones
 - `DEV-DOCS`: Documentation work - dev docs, API docs, READMEs, guides
 - `DEV-INFRA`: Infrastructure - CI/CD, deployments, DevOps, monitoring, secrets
@@ -66,7 +65,7 @@ No labels needed.
 
 For `news`: set priority to `null`
 
-**Note for dev:** DEV-TRACKING, DEV-QUEST, DEV-VOTING issues can have priority `null` as they are meta/tracking items.
+**Note for dev:** DEV-TRACKING and DEV-VOTING issues can have priority `null` as they are meta/tracking items.
 
 ## Rules
 

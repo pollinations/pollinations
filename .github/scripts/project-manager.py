@@ -145,7 +145,7 @@ def read_prompt_file() -> str:
 
 
 VALID_LABELS = {
-    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE"},
+    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE"},
     "support": {
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
@@ -154,7 +154,7 @@ VALID_LABELS = {
 }
 
 PROTECTED_LABELS = {
-    "dev": {"DEV-TRACKING", "DEV-VOTING", "DEV-QUEST"},
+    "dev": {"DEV-TRACKING", "DEV-VOTING"},
 }
 
 

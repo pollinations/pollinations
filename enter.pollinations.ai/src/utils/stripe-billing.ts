@@ -8,8 +8,7 @@ const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_PURPOSE = "pollinations_purpose";
 const AUTO_TOP_UP_PURPOSE = "auto_top_up";
 const AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
-// Stripe Smart Retries owns the per-failure retry schedule (configured in
-// Dashboard → Settings → Billing → Invoices). This claim window only
+// Manual invoice payment owns the single charge attempt. This claim window
 // coalesces racing live triggers so we don't create two parallel invoices for
 // the same user before the active-attempt row exists.
 const AUTO_TOP_UP_CLAIM_WINDOW_MS = 60 * 1000;
@@ -453,17 +452,14 @@ export async function processAutoTopUpForUser(
             packAmount: String(pack.amountUsd),
         };
 
-        // auto_advance: true hands the invoice to Stripe Smart Retries.
-        // Stripe finalizes + attempts payment immediately, then retries on
-        // soft declines per the dashboard policy (default: 8 attempts /
-        // 14 days). Success/failure arrives via the invoice.* webhooks;
-        // we don't need to poll or pay() ourselves.
+        // auto_advance: false keeps collection explicit: one manual pay()
+        // attempt, then webhooks own successful crediting.
         const invoice = await stripe.invoices.create(
             {
                 customer: customerId,
                 currency: "usd",
                 collection_method: "charge_automatically",
-                auto_advance: true,
+                auto_advance: false,
                 automatic_tax: { enabled: true },
                 default_payment_method: paymentMethod.id,
                 description: pack.checkoutName,
@@ -495,13 +491,18 @@ export async function processAutoTopUpForUser(
             status: "pending",
         });
 
-        await stripe.invoices.finalizeInvoice(
+        const finalized = await stripe.invoices.finalizeInvoice(
             invoice.id,
             {},
             { idempotencyKey: `${idempotencyKey}:finalize` },
         );
+        const paid = await stripe.invoices.pay(
+            finalized.id,
+            {},
+            { idempotencyKey: `${idempotencyKey}:pay` },
+        );
 
-        return { status: "created", invoiceId: invoice.id };
+        return { status: "created", invoiceId: paid.id };
     } catch (error) {
         const message =
             error instanceof Error ? error.message : "Auto top-up failed.";
@@ -509,6 +510,7 @@ export async function processAutoTopUpForUser(
         if (createdInvoiceId) {
             await voidAutoTopUpInvoice(env, createdInvoiceId);
         }
+        await disableAutoTopUp(env.DB, userId);
         return { status: "failed", reason: message };
     }
 }
@@ -574,7 +576,6 @@ export async function markAutoTopUpInvoiceFailed(
     env: CloudflareBindings,
     invoice: Stripe.Invoice,
     reason: string,
-    options: { terminal: boolean } = { terminal: true },
 ): Promise<void> {
     const metadata = invoice.metadata ?? {};
     if (metadata[METADATA_PURPOSE] !== AUTO_TOP_UP_PURPOSE) return;
@@ -594,18 +595,6 @@ export async function markAutoTopUpInvoiceFailed(
     });
 
     const now = Date.now();
-    if (!options.terminal) {
-        await env.DB.prepare(
-            `UPDATE stripe_auto_top_up_attempt
-                SET failure_reason = ?,
-                    updated_at = ?
-                WHERE stripe_invoice_id = ? AND status = 'pending'`,
-        )
-            .bind(reason, now, invoice.id)
-            .run();
-        return;
-    }
-
     const attempt = await env.DB.prepare(
         `UPDATE stripe_auto_top_up_attempt
             SET status = ?,
@@ -944,8 +933,8 @@ function coerceTimestampMs(value: number | string | null): number | null {
 
 // Coalesces racing triggers (e.g. two live triggers fired within a few
 // seconds of each other) by atomically advancing auto_top_up_last_attempt_at.
-// Only one caller wins per AUTO_TOP_UP_CLAIM_WINDOW_MS. Stripe Smart Retries
-// owns the actual retry schedule after Stripe accepts the invoice.
+// Only one caller wins per AUTO_TOP_UP_CLAIM_WINDOW_MS. After Stripe accepts
+// the invoice, the active attempt row blocks duplicates until a terminal event.
 async function claimAutoTopUpAttempt(
     db: D1Database,
     userId: string,

@@ -459,24 +459,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
             case "invoice.payment_failed": {
                 const invoice = event.data.object as Stripe.Invoice;
-                const hasScheduledRetry =
-                    typeof invoice.next_payment_attempt === "number";
                 await markAutoTopUpInvoiceFailed(
                     c.env,
                     invoice,
                     "Stripe could not charge the default payment method.",
-                    { terminal: !hasScheduledRetry },
-                );
-                break;
-            }
-
-            case "invoice.marked_uncollectible": {
-                const invoice = event.data.object as Stripe.Invoice;
-                await markAutoTopUpInvoiceFailed(
-                    c.env,
-                    invoice,
-                    "Stripe could not collect payment for this auto top-up invoice.",
-                    { terminal: true },
                 );
                 break;
             }

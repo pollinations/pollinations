@@ -32,7 +32,7 @@ We may review refund requests for unused paid balance in these cases:
 - We fail to provision paid Pollen after payment.
 - A material, documented technical fault prevents any meaningful use within a reasonable start period, and you contact us promptly before substantial use.
 
-Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be manually reviewed and reversed or adjusted after refund notification. Developer earnings may also be manually reviewed and reversed or adjusted for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
+Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be reversed or adjusted. See Terms §6 for developer-earnings reversibility.
 
 ## 4) EU/EEA Consumer Withdrawal
 

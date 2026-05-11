@@ -19,7 +19,7 @@ Email: hi@myceli.ai
 
 ## 1) Accounts, Keys & App Access
 
-Provide accurate registration/billing details and keep credentials secure. Secret API keys (`sk_`) are for server-side use. Publishable App Keys (`pk_`) identify apps on Pollinations consent screens and may be used in client-side authorization flows.
+Provide accurate registration/billing details and keep credentials secure. Secret API keys are for server-side use. Publishable App Keys identify apps on Pollinations consent screens and may be used in client-side authorization flows.
 
 When you authorize an app, you allow that app to use your Pollinations account through the approved API key, scopes, model restrictions, expiry, and Pollen spending cap. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
 
@@ -64,15 +64,15 @@ Fees are per plan/order/invoice; currency is by default USD.
 
 **Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (tier and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
 
-**Request billing.** Pollen is consumed when API requests run. Regular models use tier balance first when it can cover the request; otherwise paid balance may be used. Paid-only models use paid balance only. We may refuse a request when no allowed balance can cover the pre-flight estimate. Final usage can exceed estimates and make the selected balance negative. Tier debt recovers through future tier refills; paid-balance debt clears through future top-ups or future paid-balance developer earnings.
+**Request billing.** Pollen is consumed when API requests run. Regular models draw from tier balance first; paid-only models draw from paid balance only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance may briefly go negative and clears from future refills or top-ups.
 
-**Developer earnings.** App developers may turn on developer earnings for a Publishable App Key. When developer earnings are enabled on a Publishable App Key, authorized app requests may include a 25% markup over model cost. From the user's perspective, this means 20% of total spend on that request goes to the app developer. We show the app share before authorization.
+**Developer earnings.** App developers may enable developer earnings on their Publishable App Keys, in which case authorized requests include a markup that goes to the developer. The current rate and the user's share are shown before authorization.
 
-Developer earnings are credited as Pollen to the developer wallet and land in the same balance type the user paid from: tier spend credits tier balance, and paid spend credits paid balance. Developer earnings are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may manually review and reverse or adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
+Developer earnings are credited as Pollen to the developer wallet in the same balance type the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
 **Taxes.** Prices include applicable VAT or similar transaction taxes where required. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 
-**Payments.** Payments are processed by Stripe Payments Europe, Limited. Card details are handled by Stripe and never reach our servers. Stripe sends purchase invoices by email.
+**Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 
 **No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through future tier refills or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative paid balance is covered.
 
@@ -121,7 +121,7 @@ When we process personal data on your behalf, you are the **controller** and we 
 
 - **Payments / Merchant of Record** (also delivers purchase invoices by email on our behalf)
 - **CDN/WAF & edge routing**
-- **Cloud infrastructure & storage (EU-first)**
+- **Cloud infrastructure & storage**
 - **Analytics / data pipeline**
 - **Model / inference compute providers** (for text/image/video generation)
 

@@ -14,9 +14,9 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
 * **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, tier balance, paid balance, grants, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
-* **Prompts/outputs (commercial & demos):** processed transiently/in-memory to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily in R2 for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
+* **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
 * **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub username (if you contribute or identify an app); email if you contact us.
-* **Internal analytics datasource:** to support product analytics, billing attribution, abuse prevention, and developer-earnings reporting, we replicate selected fields from our auth and billing tables (user, API key, session, OAuth account, and Stripe event records) into an internal analytics datasource. Replicated fields include account identifiers, email, name, GitHub identity (where linked), tier and balance attributes, API key metadata (name, prefix, usage counters), session metadata (user agent, expiry), and Stripe event payloads (including customer email). We do not replicate passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses from these tables.
+* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, tier and balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes.
 * **Telemetry:** aggregated counters and performance metrics.
 * **Support:** emails, tickets, in-app chats.
 
@@ -26,7 +26,7 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 * **Run API keys, app authorization, wallet, and developer-earnings features** (contract; legitimate interests).
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
-* **Analytics & product research** using aggregated/pseudonymised metrics and the internal analytics datasource described in §2 (legitimate interests).
+* **Analytics & product research** using aggregated/pseudonymised metrics and the analytics processing described in §2 (legitimate interests).
 * **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We do not currently send email directly. If we introduce direct email in the future, transactional messages will be limited to verification, billing, security, and service notices, and any marketing email will only be sent where permitted (consent) and will include an unsubscribe link and `List-Unsubscribe` header.
 
 ## 4) Authorized Apps
@@ -63,8 +63,8 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 * **Account, billing, wallet, and tax records:** account term + 7 years (accounting/tax/legal proof).
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
-* **Generated response caches (text, image, audio, video):** typically up to 30 days in R2 and in downstream public/browser caches.
-* **Uploaded media files (media.pollinations.ai):** typically up to 30 days in R2 from upload; re-uploading the same file resets the timer.
+* **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.
+* **Uploaded media files (media.pollinations.ai):** typically up to 30 days from upload; re-uploading the same file resets the timer.
 * **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
 * **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.
 * **Backups:** encrypted, rolling 30-90 days.
@@ -79,7 +79,7 @@ You can complain to your local authority or the Estonian Data Protection Inspect
 
 ## 11) Security
 
-TLS in transit; encryption at rest where stored; key management; least-privilege admin access controls; audit logs; vulnerability management; incident response.
+We apply industry-standard administrative, technical, and physical safeguards, including encryption in transit, encryption at rest where applicable, access controls, and incident response.
 
 ## 12) Children
 

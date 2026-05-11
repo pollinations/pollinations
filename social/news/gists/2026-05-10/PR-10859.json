@@ -1,0 +1,34 @@
+{
+  "pr_number": 10859,
+  "title": "Add The Stream Church Webapp to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10859",
+  "merged_at": "2026-05-10T19:40:47Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Divine streams in the greenhouse",
+    "blurb": "The Stream Church Webapp just sprouted in our community greenhouse. Turns out our API is pretty handy for generating assets for live event streaming.",
+    "summary": "Added The Stream Church Webapp to the community showcase, highlighting its use of the Pollinations API for asset generation and rapid deployment.",
+    "impact": "The community can now explore a new real-world example of using our infrastructure for live event management and web asset creation.",
+    "keywords": [
+      "community",
+      "showcase",
+      "app",
+      "streaming",
+      "events"
+    ],
+    "visual_concept": "The PR adds a streaming app to the community greenhouse. Visuals should combine the 'greenhouse' (community apps) metaphor with 'streaming' (retro TV/monitor). The bee mascot interacting with a glowing screen amidst plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot inside a lush greenhouse filled with blooming code-plants. The bee is wearing tiny headphones and watching a retro CRT monitor that is streaming a video, glowing with soft light. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10859.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot inside a lush greenhouse filled with blooming code-plants. The bee is wearing tiny headphones and watching a retro CRT monitor that is streaming a video, glowing with soft light. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-11T13:12:56.977034+00:00",
+  "app_name": "The Stream Church Webapp",
+  "app_url": "https://thestreamchurch.org/"
+}

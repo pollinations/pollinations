@@ -1,0 +1,34 @@
+{
+  "pr_number": 10860,
+  "title": "Add AI Art Gallery to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10860",
+  "merged_at": "2026-05-10T19:39:05Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new wing in the gallery",
+    "blurb": "The community just shipped a beautiful new AI Art Gallery powered by Pollinations. Generate, remix, and download your digital masterpieces in one cozy spot.",
+    "summary": "Added the community-built AI Art Gallery to the Pollinations app showcase.",
+    "impact": "Users can now discover and explore a new community tool dedicated to generating, varying, and downloading AI artwork.",
+    "keywords": [
+      "community",
+      "app",
+      "gallery",
+      "image-generation",
+      "showcase"
+    ],
+    "visual_concept": "An art gallery setting. Polly the Bee acting as an artist or curator, wearing a tiny painter's beret. The Monitor Robot admiring the framed pixel art on the wall.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, hanging a glowing framed picture in a digital art gallery. A chunky pixel robot with a CRT monitor head looks at the art happily. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10860.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny painter's beret, hanging a glowing framed picture in a digital art gallery. A chunky pixel robot with a CRT monitor head looks at the art happily. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-11T13:12:56.703320+00:00",
+  "app_name": "AI Art Gallery",
+  "app_url": "https://juanrivera126.github.io/Gallery-Pollinations/"
+}

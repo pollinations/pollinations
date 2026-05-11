@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@hono/standard-validator": "^0.2.2",
-    "drizzle-orm": "^0.44.7",
     "hono": "^4.6.0",
     "hono-openapi": "^1.2.0",
     "zod": "^3.25.76",
@@ -24,6 +23,7 @@
     "@cloudflare/vitest-pool-workers": "^0.10.10",
     "@cloudflare/workers-types": "^4.20260111.0",
     "drizzle-kit": "^0.31.7",
+    "drizzle-orm": "^0.44.7",
     "typescript": "^5.6.0",
     "vitest": "^3.2.4",
     "wrangler": "^4.58.0"

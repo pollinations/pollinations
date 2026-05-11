@@ -2,9 +2,6 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { describeRoute, openAPIRouteHandler, resolver } from "hono-openapi";
 import { z } from "zod";
-import { drizzle } from "drizzle-orm/d1";
-import { eq, and } from "drizzle-orm";
-import * as schema from "../drizzle/schema";
 
 const DOMAIN = "media.pollinations.ai";
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
@@ -271,24 +268,25 @@ api.post(
         },
       });
 
-      // Insert into media_objects table if not already present
-      const db = drizzle(c.env.DB, { schema });
+      // Index in media_objects; ignore conflicts (re-upload of same hash).
+      // Don't fail the upload if the DB write fails — blob is safely in R2.
       try {
-        const now = new Date().toISOString();
-        await db
-          .insert(schema.mediaObjects)
-          .values({
+        await c.env.DB
+          .prepare(
+            `INSERT OR IGNORE INTO media_objects
+               (hash, owner, content_type, size, created_at)
+             VALUES (?, ?, ?, ?, ?)`,
+          )
+          .bind(
             hash,
-            owner: authResult.name || "",
+            authResult.name || "",
             contentType,
-            size: fileBuffer.byteLength,
-            createdAt: now,
-          })
-          .onConflictDoNothing()
+            fileBuffer.byteLength,
+            new Date().toISOString(),
+          )
           .run();
       } catch (dbError) {
         console.error("Database error during upload:", dbError);
-        // Don't fail upload if DB write fails - blob is safely in R2
       }
 
       console.log(
@@ -563,8 +561,6 @@ api.get(
     const cursor = c.req.query("cursor");
 
     try {
-      const db = drizzle(c.env.DB);
-
       let query = `SELECT m.* FROM media_objects m WHERE m.owner = ?`;
       const params: (string | number)[] = [authResult.name || ""];
 
@@ -580,7 +576,7 @@ api.get(
       query += ` ORDER BY m.created_at DESC, m.hash DESC LIMIT ?`;
       params.push(limit + 1);
 
-      const result = await db.prepare(query).bind(...params).all<{
+      const result = await c.env.DB.prepare(query).bind(...params).all<{
         hash: string;
         content_type: string;
         size: number;
@@ -603,14 +599,14 @@ api.get(
         if (hashes.length > 0) {
           const placeholders = hashes.map(() => "?").join(",");
 
-          const publicTagResult = await db
+          const publicTagResult = await c.env.DB
             .prepare(
               `SELECT hash, tag FROM public_tags WHERE hash IN (${placeholders})`,
             )
             .bind(...hashes)
             .all<{ hash: string; tag: string }>();
 
-          const privateTagResult = await db
+          const privateTagResult = await c.env.DB
             .prepare(
               `SELECT hash, tag FROM private_tags WHERE hash IN (${placeholders}) AND owner = ?`,
             )
@@ -752,14 +748,11 @@ api.put(
         );
       }
 
-      const db = drizzle(c.env.DB, { schema });
-
       // Verify ownership
-      const media = await db
-        .select()
-        .from(schema.mediaObjects)
-        .where(eq(schema.mediaObjects.hash, hash))
-        .get();
+      const media = await c.env.DB
+        .prepare("SELECT owner FROM media_objects WHERE hash = ?")
+        .bind(hash)
+        .first<{ owner: string }>();
 
       if (!media) {
         return c.json({ error: "Media not found" }, 404);
@@ -769,57 +762,36 @@ api.put(
         return c.json({ error: "Not the file owner" }, 403);
       }
 
-      // Clear existing tags and insert new ones atomically
-      await db
-        .delete(schema.publicTags)
-        .where(eq(schema.publicTags.hash, hash))
-        .run();
-      await db
-        .delete(schema.privateTags)
-        .where(
-          and(
-            eq(schema.privateTags.hash, hash),
-            eq(schema.privateTags.owner, authResult.name),
-          ),
-        )
-        .run();
+      // Atomic replace: delete + insert all tags in a single D1 batch.
+      // D1's batch() executes statements in an implicit transaction, so
+      // a partial failure rolls back the entire tag update.
+      const statements: D1PreparedStatement[] = [
+        c.env.DB
+          .prepare("DELETE FROM public_tags WHERE hash = ?")
+          .bind(hash),
+        c.env.DB
+          .prepare("DELETE FROM private_tags WHERE hash = ? AND owner = ?")
+          .bind(hash, authResult.name),
+      ];
 
-      // Use batch for atomic insert of new tags
-      if (publicTags.length > 0 || privateTags.length > 0) {
-        const insertStatements = [
-          ...publicTags.map((tag) => ({
-            hash,
-            tag,
-          })),
-          ...privateTags.map((tag) => ({
-            hash,
-            owner: authResult.name,
-            tag,
-          })),
-        ];
-
-        // Batch public tag inserts
-        if (publicTags.length > 0) {
-          await db
-            .insert(schema.publicTags)
-            .values(publicTags.map((tag) => ({ hash, tag })))
-            .run();
-        }
-
-        // Batch private tag inserts
-        if (privateTags.length > 0) {
-          await db
-            .insert(schema.privateTags)
-            .values(
-              privateTags.map((tag) => ({
-                hash,
-                owner: authResult.name,
-                tag,
-              })),
-            )
-            .run();
-        }
+      for (const tag of publicTags) {
+        statements.push(
+          c.env.DB
+            .prepare("INSERT INTO public_tags (hash, tag) VALUES (?, ?)")
+            .bind(hash, tag),
+        );
       }
+      for (const tag of privateTags) {
+        statements.push(
+          c.env.DB
+            .prepare(
+              "INSERT INTO private_tags (hash, owner, tag) VALUES (?, ?, ?)",
+            )
+            .bind(hash, authResult.name, tag),
+        );
+      }
+
+      await c.env.DB.batch(statements);
 
       return c.json({
         id: hash,
@@ -893,8 +865,6 @@ api.get(
     const cursor = c.req.query("cursor");
 
     try {
-      const db = drizzle(c.env.DB);
-
       let query = `SELECT DISTINCT m.hash, m.content_type, m.size, m.created_at
         FROM media_objects m
         INNER JOIN public_tags pt ON m.hash = pt.hash
@@ -914,7 +884,7 @@ api.get(
       query += ` ORDER BY m.created_at DESC, m.hash DESC LIMIT ?`;
       params.push(limit + 1);
 
-      const result = await db.prepare(query).bind(...params).all<{
+      const result = await c.env.DB.prepare(query).bind(...params).all<{
         hash: string;
         content_type: string;
         size: number;

@@ -3,6 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2025-11-12"
 compatibility_flags = ["nodejs_compat"]
 
+# ⚠️ BEFORE DEPLOYING: replace the `database_id` placeholders below with real
+# UUIDs from `wrangler d1 create media-dev` and `wrangler d1 create media-prod
+# --remote`. Migrations in `drizzle/` are applied automatically by Wrangler.
+
 # Local development server
 [env.development]
 name = "pollinations-media-dev"

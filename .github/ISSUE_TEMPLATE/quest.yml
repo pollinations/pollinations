@@ -1,6 +1,6 @@
 name: Community Quest
 description: Propose a community quest — earn Pollen by shipping a self-contained piece of work
-title: "[QUEST] "
+title: "[🎯 QUEST] "
 body:
   - type: markdown
     attributes:

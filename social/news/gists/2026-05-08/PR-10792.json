@@ -11,24 +11,24 @@
     "publish_tier": "daily",
     "importance": "minor",
     "headline": "QR codes for tiny humans",
-    "blurb": "Someone built a QR card generator for toddlers. Print physical cards, scan them with an app, and keep the tiny humans learning without handing them a glowing rectangle. Brilliant.",
-    "summary": "Added the Toddler Read QR Card Generator to the community showcase, an app that creates printable learning cards with QR codes for screen-free toddler interaction.",
-    "impact": "Parents and educators can now generate and print custom QR-enabled learning cards for toddlers.",
+    "blurb": "The hive is growing! We just added the Toddler Read QR Card Generator to our community showcase, making it easy to create screen-free learning cards for the little ones.",
+    "summary": "Added the Toddler Read QR Card Generator to the community apps showcase under the learning category.",
+    "impact": "Users can now discover and use a new tool to generate printable, QR-enabled learning cards designed for screen-free toddler interaction.",
     "keywords": [
       "community",
       "app",
       "education",
-      "toddler",
+      "toddlers",
       "qr-codes"
     ],
-    "visual_concept": "The PR is about toddler learning cards with QR codes. The scene should feature Polly the bee interacting with cute, chunky toddler flashcards that have pixelated QR codes on them, emphasizing a cozy, educational, and screen-free vibe.",
-    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a chunky flashcard with a pixelated QR code on it. A stack of colorful toddler learning cards sits on a wooden table next to a small potted code-plant. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "A cute pixel art scene focusing on early childhood education and QR codes. The pollinations bee mascot scanning a chunky pixel QR code on a baby flashcard.",
+    "image_prompt": "Cozy pixel art scene of a cute bee mascot with a yellow body, dark brown stripes, pink blush marks, and tiny translucent wings scanning a chunky pixelated QR code on a large baby flashcard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-08/PR-10792.jpg",
-    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a chunky flashcard with a pixelated QR code on it. A stack of colorful toddler learning cards sits on a wooden table next to a small potted code-plant. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of a cute bee mascot with a yellow body, dark brown stripes, pink blush marks, and tiny translucent wings scanning a chunky pixelated QR code on a large baby flashcard. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-05-08T20:08:10.073724+00:00",
+  "generated_at": "2026-05-11T13:16:44.273138+00:00",
   "app_name": "Toddler Read QR Card Generator",
   "app_url": "https://toddler-read.netlify.app/"
 }

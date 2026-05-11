@@ -1,0 +1,34 @@
+{
+  "pr_number": 10855,
+  "title": "Add Compliment Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10855",
+  "merged_at": "2026-05-10T19:30:13Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Sweet words for sweet pixels",
+    "blurb": "A new community app just landed in the greenhouse! Upload an image to the Compliment Generator and let the AI shower your pixels with praise.",
+    "summary": "Added the Compliment Generator app to the community showcase, allowing users to upload images and receive AI-generated compliments in various styles.",
+    "impact": "Users can now discover and use a fun new community-built tool that analyzes images and generates uplifting, stylized compliments.",
+    "keywords": [
+      "community",
+      "app",
+      "image",
+      "compliments",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot interacting. The robot is looking at an image and generating pixel hearts and happy speech bubbles. Represents the 'Compliment Generator' analyzing an image and giving praise.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot showing a picture to a chunky robot with a CRT monitor head. The robot's screen displays a big happy face and pixel hearts, generating sweet compliments. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and uplifting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10855.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot showing a picture to a chunky robot with a CRT monitor head. The robot's screen displays a big happy face and pixel hearts, generating sweet compliments. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and uplifting."
+  },
+  "generated_at": "2026-05-11T13:12:46.802751+00:00",
+  "app_name": "Compliment Generator",
+  "app_url": "https://www.craygen.com/compliments/"
+}

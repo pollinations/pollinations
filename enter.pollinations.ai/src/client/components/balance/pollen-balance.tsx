@@ -162,7 +162,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 Tier
                             </span>
                             <InfoTip
-                                tone="yellow"
+                                tone="amber"
                                 label="About tier balance"
                                 text={
                                     <TooltipList

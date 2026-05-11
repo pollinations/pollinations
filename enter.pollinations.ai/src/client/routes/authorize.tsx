@@ -145,6 +145,9 @@ function AuthorizeComponent() {
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
+    const [redirectValidationState, setRedirectValidationState] = useState<
+        "unchecked" | "valid" | "invalid"
+    >("unchecked");
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
@@ -178,10 +181,14 @@ function AuthorizeComponent() {
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
         (isDeviceMode || parsedRedirectUrl !== null) && !isAttributionPending;
+    const canRedirectOnDeny =
+        parsedRedirectUrl !== null &&
+        (!app_key || redirectValidationState === "valid");
 
     useScrollLock();
 
     useEffect(() => {
+        setRedirectValidationState("unchecked");
         if (isDeviceMode) {
             // device.tsx forwards the server-stored scope as `scope=` in the
             // URL, which flows into `urlScope` and preselects the
@@ -244,7 +251,10 @@ function AuthorizeComponent() {
 
             // Attribution is identified by client_id only. Without one, the
             // consent screen falls back to the hostname display.
-            if (!app_key) return;
+            if (!app_key) {
+                setRedirectValidationState("valid");
+                return;
+            }
 
             const lookupParams = new URLSearchParams({ client_id: app_key });
             if (!isDeviceMode && redirect_url) {
@@ -256,16 +266,21 @@ function AuthorizeComponent() {
                     const attr = data as Attribution;
                     setAttribution(attr);
                     if (attr.error === "redirect_uri_mismatch") {
+                        setRedirectValidationState("invalid");
                         setError(
                             "This redirect URL is not registered for this app. Authorization blocked.",
                         );
                     } else if (!attr.found) {
+                        setRedirectValidationState("invalid");
                         setError(
                             "This app key could not be verified. Authorization blocked.",
                         );
+                    } else {
+                        setRedirectValidationState("valid");
                     }
                 })
                 .catch(() => {
+                    setRedirectValidationState("invalid");
                     setError(
                         "Could not verify this app key. Authorization blocked.",
                     );
@@ -386,7 +401,7 @@ function AuthorizeComponent() {
                 // Best-effort deny
             }
             setDeviceOutcome("denied");
-        } else if (parsedRedirectUrl) {
+        } else if (canRedirectOnDeny && parsedRedirectUrl) {
             const url = new URL(parsedRedirectUrl.href);
             const hash = new URLSearchParams({ error: "access_denied" });
             if (state) hash.set("state", state);
@@ -645,6 +660,23 @@ function AuthorizeComponent() {
                                         </div>
                                     )}
                                 </li>
+                                {attribution?.earningsEnabled && (
+                                    <li className="flex items-start gap-2">
+                                        <span
+                                            className="w-4 shrink-0 text-amber-800"
+                                            aria-hidden="true"
+                                        >
+                                            &#x1F331;
+                                        </span>
+                                        <span>
+                                            Earn{" "}
+                                            <span className="font-semibold">
+                                                20%
+                                            </span>{" "}
+                                            of the pollen you spend in-app.
+                                        </span>
+                                    </li>
+                                )}
                             </ul>
                         </div>
 

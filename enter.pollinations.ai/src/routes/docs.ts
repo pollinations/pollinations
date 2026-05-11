@@ -405,7 +405,7 @@ function generateLLMDoc(): string {
         '- accountPermissions (string[], optional): e.g. ["profile","usage"]. "keys" is auto-stripped',
     );
     lines.push(
-        "- redirectUris (string[], optional): OAuth redirect URIs for publishable app keys",
+        "- redirectUris (string[], optional): OAuth redirect URIs for publishable app keys. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; query-bearing entries must match exactly. Loopback ports are port-agnostic.",
     );
     lines.push(
         "- earningsEnabled (boolean, optional): Developer earnings for publishable app keys; true opts in",
@@ -443,7 +443,7 @@ function generateLLMDoc(): string {
         "Content-addressed file storage. Upload requires API key; retrieval is public.",
     );
     lines.push(
-        "Max file size: 10 MB. Files expire after 14 days; re-uploading resets the TTL.",
+        "Max file size: 50 MB. Files are retained for 30 days; re-uploading resets the timer.",
     );
     lines.push("");
 

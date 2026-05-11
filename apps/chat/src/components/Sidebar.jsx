@@ -1,22 +1,36 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ConfirmModal from "./ConfirmModal";
-import "./Sidebar.css";
+import "./styles/Sidebar.css";
+
+const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return "";
+    const now = Date.now();
+    const diff = now - new Date(timestamp).getTime();
+    const min = Math.floor(diff / 60000);
+    const hr = Math.floor(diff / 3600000);
+    const day = Math.floor(diff / 86400000);
+    if (min < 1) return "just now";
+    if (min < 60) return `${min}m ago`;
+    if (hr < 24) return `${hr}h ago`;
+    if (day < 7) return `${day}d ago`;
+    return new Date(timestamp).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+    });
+};
 
 const Sidebar = memo(
     ({
-        chats,
+        chats = [],
         activeChatId,
         onChatSelect,
         onNewChat,
         onDeleteChat,
         onThemeToggle,
+        theme = "dark",
         onOpenSettings,
-        isLoggedIn,
-        apiKey,
-        pollenBalance,
-        isLoadingBalance,
-        onLogin,
-        onLogout,
+        onExportChat,
+        onClearAll,
     }) => {
         const [isExpanded, setIsExpanded] = useState(false);
         const [confirmModal, setConfirmModal] = useState({
@@ -28,17 +42,30 @@ const Sidebar = memo(
         });
         const sidebarRef = useRef(null);
 
-        // Mobile blur effect when sidebar is expanded
         useEffect(() => {
-            if (typeof window === "undefined") return;
+            const handleClickOutside = (e) => {
+                if (
+                    isExpanded &&
+                    sidebarRef.current &&
+                    !sidebarRef.current.contains(e.target)
+                ) {
+                    setIsExpanded(false);
+                }
+            };
+            if (isExpanded)
+                document.addEventListener("mousedown", handleClickOutside);
+            return () =>
+                document.removeEventListener("mousedown", handleClickOutside);
+        }, [isExpanded]);
+
+        useEffect(() => {
             if (isExpanded && window.innerWidth <= 768) {
                 document.body.classList.add("sidebar-expanded-mobile");
             } else {
                 document.body.classList.remove("sidebar-expanded-mobile");
             }
-            return () => {
+            return () =>
                 document.body.classList.remove("sidebar-expanded-mobile");
-            };
         }, [isExpanded]);
 
         const handleDeleteChat = useCallback(
@@ -47,8 +74,7 @@ const Sidebar = memo(
                 setConfirmModal({
                     isOpen: true,
                     title: "Delete Chat",
-                    message:
-                        "Are you sure you want to delete this chat? This action cannot be undone.",
+                    message: "Delete this chat? This action cannot be undone.",
                     onConfirm: () => onDeleteChat(chatId),
                     isDangerous: true,
                 });
@@ -57,63 +83,99 @@ const Sidebar = memo(
         );
 
         const handleSettingsOpen = useCallback(() => {
-            if (onOpenSettings) {
-                onOpenSettings();
-            }
+            onOpenSettings?.();
+            setIsExpanded(false);
         }, [onOpenSettings]);
+
+        const isDark = theme === "dark";
+
+        const _NavBtn = ({ onClick, title, icon, label }) => (
+            <button
+                className="sidebar-nav-btn"
+                onClick={onClick}
+                title={title}
+                type="button"
+            >
+                {icon}
+                {isExpanded && <span>{label}</span>}
+            </button>
+        );
 
         return (
             <>
+                {isExpanded && (
+                    <div
+                        className="sidebar-overlay"
+                        onClick={() => setIsExpanded(false)}
+                    />
+                )}
                 <aside
                     ref={sidebarRef}
                     className={`sidebar ${isExpanded ? "expanded" : ""}`}
+                    onMouseEnter={() => {
+                        if (
+                            window.matchMedia("(hover: hover)").matches &&
+                            !isExpanded
+                        )
+                            setIsExpanded(true);
+                    }}
                 >
+                    {/* Header */}
                     <div className="sidebar-header">
                         {isExpanded ? (
                             <>
-                                <div className="sidebar-logo-full">
-                                    <img
-                                        src="/logo-text.svg"
-                                        alt="pollinations.ai"
-                                    />
+                                <div className="sidebar-logo">
+                                    <div className="sidebar-logo-dot" />
+                                    <span className="sidebar-logo-text">
+                                        Pollinations
+                                    </span>
                                 </div>
-
                                 <button
-                                    type="button"
-                                    className="sidebar-toggle-btn"
+                                    className="sidebar-icon-btn sidebar-toggle-icon"
                                     onClick={() => setIsExpanded(false)}
-                                    title="Close sidebar"
+                                    title="Collapse sidebar"
+                                    aria-label="Collapse sidebar"
+                                    aria-expanded="true"
                                 >
                                     <svg
-                                        aria-hidden="true"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
                                         strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
                                     >
-                                        <polyline points="15 18 9 12 15 6" />
+                                        <rect
+                                            x="3"
+                                            y="3"
+                                            width="18"
+                                            height="18"
+                                            rx="2"
+                                        />
+                                        <path d="M9 3v18" />
                                     </svg>
                                 </button>
                             </>
                         ) : (
                             <button
-                                type="button"
                                 className="sidebar-icon-btn sidebar-toggle-icon"
                                 onClick={() => setIsExpanded(true)}
-                                title="Open sidebar"
+                                title="Expand sidebar"
+                                aria-label="Expand sidebar"
+                                aria-expanded="false"
                             >
                                 <svg
-                                    aria-hidden="true"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
                                     strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
                                 >
-                                    <polyline points="9 18 15 12 9 6" />
+                                    <rect
+                                        x="3"
+                                        y="3"
+                                        width="18"
+                                        height="18"
+                                        rx="2"
+                                    />
+                                    <path d="M9 3v18" />
                                 </svg>
                             </button>
                         )}
@@ -121,15 +183,16 @@ const Sidebar = memo(
 
                     {isExpanded ? (
                         <div className="sidebar-scrollable">
-                            <div className="sidebar-content">
+                            {/* Actions */}
+                            <div className="sidebar-actions">
                                 <button
-                                    type="button"
-                                    className="sidebar-btn"
+                                    className="sidebar-new-chat-btn"
                                     onClick={onNewChat}
-                                    title="New chat"
+                                    title="Start a new chat"
+                                    aria-label="Start a new chat"
+                                    type="button"
                                 >
                                     <svg
-                                        aria-hidden="true"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
@@ -140,176 +203,180 @@ const Sidebar = memo(
                                     <span>New Chat</span>
                                 </button>
 
-                                <button
-                                    type="button"
-                                    className="sidebar-btn"
-                                    onClick={onThemeToggle}
-                                    title="Toggle theme"
-                                >
-                                    <svg
-                                        aria-hidden="true"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
+                                <div className="sidebar-icon-row">
+                                    <button
+                                        className="sidebar-icon-btn sm"
+                                        onClick={onThemeToggle}
+                                        title={
+                                            isDark
+                                                ? "Switch to light mode"
+                                                : "Switch to dark mode"
+                                        }
+                                        aria-label={
+                                            isDark
+                                                ? "Switch to light mode"
+                                                : "Switch to dark mode"
+                                        }
                                     >
-                                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                                    </svg>
-                                    <span>Toggle Theme</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className="sidebar-btn"
-                                    onClick={handleSettingsOpen}
-                                    title="Open settings"
-                                >
-                                    <svg
-                                        aria-hidden="true"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                    >
-                                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                                        <circle cx="12" cy="12" r="3" />
-                                    </svg>
-                                    <span>Settings</span>
-                                </button>
-
-                                {/* BYOP Auth Section */}
-                                <div className="sidebar-auth-section">
-                                    {isLoggedIn ? (
-                                        <>
-                                            <div className="sidebar-auth-info">
-                                                <div className="sidebar-auth-label">
-                                                    🌸 Your Pollen
-                                                    {pollenBalance !== null &&
-                                                        !isLoadingBalance &&
-                                                        typeof pollenBalance.totalBalance ===
-                                                            "number" && (
-                                                            <span className="sidebar-auth-balance">
-                                                                {pollenBalance.totalBalance.toFixed(
-                                                                    2,
-                                                                )}
-                                                            </span>
-                                                        )}
-                                                    {isLoadingBalance && (
-                                                        <span className="sidebar-auth-balance-loading">
-                                                            ...
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="sidebar-auth-key">
-                                                    {apiKey.slice(0, 14)}...
-                                                </div>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="sidebar-btn sidebar-btn-secondary"
-                                                onClick={onLogout}
-                                                title="Disconnect your pollinations.ai account"
-                                            >
-                                                <svg
-                                                    aria-hidden="true"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                >
-                                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                                                    <polyline points="16 17 21 12 16 7" />
-                                                    <line
-                                                        x1="21"
-                                                        y1="12"
-                                                        x2="9"
-                                                        y2="12"
-                                                    />
-                                                </svg>
-                                                <span>Disconnect account</span>
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            className="sidebar-btn sidebar-btn-primary"
-                                            onClick={onLogin}
-                                            title="Connect your pollinations.ai account"
-                                        >
+                                        {isDark ? (
                                             <svg
-                                                aria-hidden="true"
                                                 viewBox="0 0 24 24"
                                                 fill="none"
                                                 stroke="currentColor"
                                                 strokeWidth="2"
                                             >
-                                                <circle
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                />
-                                                <path d="M12 16v-4M12 8h.01" />
+                                                <circle cx="12" cy="12" r="5" />
+                                                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                                             </svg>
-                                            <span>
-                                                Connect your pollinations.ai
-                                                account
-                                            </span>
+                                        ) : (
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                            >
+                                                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                    <button
+                                        className="sidebar-icon-btn sm"
+                                        onClick={handleSettingsOpen}
+                                        title="Open settings"
+                                        aria-label="Open settings"
+                                    >
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                        >
+                                            <path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.38a2 2 0 00-.73-2.73l-.15-.1a2 2 0 01-1-1.72v-.51a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    </button>
+                                    {onExportChat && (
+                                        <button
+                                            className="sidebar-icon-btn sm"
+                                            onClick={() => {
+                                                onExportChat();
+                                                setIsExpanded(false);
+                                            }}
+                                            title="Export chat"
+                                            aria-label="Export chat"
+                                        >
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                            >
+                                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                            </svg>
                                         </button>
                                     )}
                                 </div>
                             </div>
 
+                            {/* Chat list */}
                             <div className="chat-list">
-                                <h3 className="sidebar-section-title">Chats</h3>
-                                {chats.map((chat) => (
-                                    <div
-                                        key={chat.id}
-                                        className={`chat-item ${chat.id === activeChatId ? "active" : ""}`}
-                                    >
-                                        <button
-                                            type="button"
-                                            className="chat-item-select"
-                                            onClick={() =>
-                                                onChatSelect(chat.id)
-                                            }
-                                        >
-                                            <span className="chat-item-title truncate">
-                                                {chat.title}
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="chat-item-delete"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteChat(chat.id, e);
-                                            }}
-                                            aria-label="Delete chat"
-                                        >
-                                            <svg
-                                                aria-hidden="true"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
+                                {chats.length > 0 && (
+                                    <div className="chat-list-header">
+                                        <span className="sidebar-section-title">
+                                            Chats
+                                        </span>
+                                        {onClearAll && (
+                                            <button
+                                                className="chat-list-clear-btn"
+                                                onClick={() => {
+                                                    onClearAll();
+                                                }}
+                                                title="Clear all chats"
                                             >
-                                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                                            </svg>
-                                        </button>
+                                                Clear all
+                                            </button>
+                                        )}
                                     </div>
-                                ))}
+                                )}
+                                {chats.length === 0 && (
+                                    <div className="chat-list-empty">
+                                        No chats yet
+                                    </div>
+                                )}
+                                {chats.map((chat) => {
+                                    const lastMsg =
+                                        chat.messages?.[
+                                            chat.messages.length - 1
+                                        ];
+                                    const ts =
+                                        lastMsg?.timestamp || chat.createdAt;
+                                    const isActive = chat.id === activeChatId;
+                                    return (
+                                        <div
+                                            key={chat.id}
+                                            className={`chat-item ${isActive ? "active" : ""}`}
+                                            onClick={() => {
+                                                onChatSelect(chat.id);
+                                                setIsExpanded(false);
+                                            }}
+                                            role="button"
+                                            tabIndex={0}
+                                            aria-current={
+                                                isActive ? "page" : undefined
+                                            }
+                                            onKeyDown={(e) => {
+                                                if (
+                                                    e.key === "Enter" ||
+                                                    e.key === " "
+                                                ) {
+                                                    e.preventDefault();
+                                                    onChatSelect(chat.id);
+                                                    setIsExpanded(false);
+                                                }
+                                            }}
+                                        >
+                                            <div className="chat-item-body">
+                                                <div className="chat-item-title truncate">
+                                                    {chat.title || "New Chat"}
+                                                </div>
+                                                {ts && (
+                                                    <div className="chat-item-time">
+                                                        {formatRelativeTime(ts)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button
+                                                className="chat-item-delete"
+                                                onClick={(e) =>
+                                                    handleDeleteChat(chat.id, e)
+                                                }
+                                                aria-label="Delete chat"
+                                            >
+                                                <svg
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                >
+                                                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     ) : (
+                        /* Collapsed narrow actions */
                         <div className="sidebar-narrow-actions">
                             <button
-                                type="button"
                                 className="sidebar-icon-btn"
                                 onClick={onNewChat}
-                                title="New chat"
+                                title="Start a new chat"
+                                aria-label="Start a new chat"
+                                type="button"
                             >
                                 <svg
-                                    aria-hidden="true"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
@@ -319,35 +386,55 @@ const Sidebar = memo(
                                 </svg>
                             </button>
                             <button
-                                type="button"
                                 className="sidebar-icon-btn"
                                 onClick={onThemeToggle}
-                                title="Toggle theme"
+                                title={
+                                    isDark
+                                        ? "Switch to light mode"
+                                        : "Switch to dark mode"
+                                }
+                                aria-label={
+                                    isDark
+                                        ? "Switch to light mode"
+                                        : "Switch to dark mode"
+                                }
+                                type="button"
                             >
-                                <svg
-                                    aria-hidden="true"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                >
-                                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                                </svg>
+                                {isDark ? (
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <circle cx="12" cy="12" r="5" />
+                                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                                    </svg>
+                                ) : (
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                                    </svg>
+                                )}
                             </button>
                             <button
-                                type="button"
                                 className="sidebar-icon-btn"
                                 onClick={handleSettingsOpen}
                                 title="Open settings"
+                                aria-label="Open settings"
+                                type="button"
                             >
                                 <svg
-                                    aria-hidden="true"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
                                     strokeWidth="2"
                                 >
-                                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                                    <path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.38a2 2 0 00-.73-2.73l-.15-.1a2 2 0 01-1-1.72v-.51a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z" />
                                     <circle cx="12" cy="12" r="3" />
                                 </svg>
                             </button>
@@ -358,7 +445,7 @@ const Sidebar = memo(
                 <ConfirmModal
                     isOpen={confirmModal.isOpen}
                     onClose={() =>
-                        setConfirmModal({ ...confirmModal, isOpen: false })
+                        setConfirmModal((p) => ({ ...p, isOpen: false }))
                     }
                     onConfirm={confirmModal.onConfirm}
                     title={confirmModal.title}

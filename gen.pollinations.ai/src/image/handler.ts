@@ -1,3 +1,4 @@
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -57,6 +58,7 @@ const IMAGE_ENV_KEYS = [
     "OPENAI_API_KEY",
     "PLN_GPU_TOKEN",
     "PRUNA_API_KEY",
+    "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 
@@ -148,7 +150,7 @@ function mediaHeaders(
 ): Headers {
     const headers = new Headers({
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": IMMUTABLE_CACHE_CONTROL,
     });
     const extension = contentType.includes("video")
         ? "mp4"

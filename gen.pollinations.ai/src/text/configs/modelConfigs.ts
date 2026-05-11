@@ -101,6 +101,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "deepseek-ai/DeepSeek-V4-Flash",
         }),
 
+    // -- DeepInfra (Gemma) ----------------------------------------------------
+    "google/gemma-4-26B-A4B-it": () =>
+        createDeepInfraModelConfig({
+            model: "google/gemma-4-26B-A4B-it",
+        }),
+
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
     "accounts/fireworks/models/deepseek-v4-pro": () =>
         createFireworksModelConfig({

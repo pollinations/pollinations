@@ -1,0 +1,34 @@
+{
+  "pr_number": 10803,
+  "title": "feat: weekly model-changes report -> news branch + Discord",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/10803",
+  "merged_at": "2026-05-10T20:17:14Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Weekly Model Rollcall",
+    "blurb": "Added an automated weekly report to track new and updated models across the platform, keeping our Discord community in the loop.",
+    "summary": "Implemented a weekly cron job that snapshots model endpoints, diffs changes, and posts an AI-generated summary to Discord.",
+    "impact": "The community will now receive automated weekly updates on Discord about any new, updated, or removed models.",
+    "keywords": [
+      "automation",
+      "discord",
+      "models",
+      "cron",
+      "news"
+    ],
+    "visual_concept": "Polly the bee acting as a reporter or taking attendance of various models, holding a clipboard. A robot companion helping out.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny press hat and holding a clipboard, taking attendance of glowing model orbs on a shelf. A chunky robot with a CRT monitor head stands nearby holding a camera. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10803.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny press hat and holding a clipboard, taking attendance of glowing model orbs on a shelf. A chunky robot with a CRT monitor head stands nearby holding a camera. Soft lime green (#ecf874) and pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-11T13:13:05.484320+00:00"
+}

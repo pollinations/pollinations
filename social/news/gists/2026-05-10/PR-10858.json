@@ -1,0 +1,33 @@
+{
+  "pr_number": 10858,
+  "title": "Add The room to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10858",
+  "merged_at": "2026-05-10T19:59:10Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A ghost in the greenhouse",
+    "blurb": "Someone built a game called 'The room' and added it to the community showcase. It features a ghost jumpscare, so consider yourself warned. We love it.",
+    "summary": "Added the community-created game 'The room' to the pollinations.ai app showcase.",
+    "impact": "Users can now discover and play 'The room' from the community games list.",
+    "keywords": [
+      "community",
+      "games",
+      "showcase",
+      "the-room"
+    ],
+    "visual_concept": "Polly the bee encountering a cute pixel ghost in a cozy, slightly spooky room. Represents the new 'The room' game and its ghost jumpscare.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, looking surprised as a friendly, translucent pixel ghost pops out of a retro computer monitor. Soft lime green (#ecf874) and dark purple (#110518) gradient background with warm, cozy lighting. Chunky retro sprites, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10858.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, looking surprised as a friendly, translucent pixel ghost pops out of a retro computer monitor. Soft lime green (#ecf874) and dark purple (#110518) gradient background with warm, cozy lighting. Chunky retro sprites, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-11T13:12:57.918825+00:00",
+  "app_name": "The room",
+  "app_url": "https://theroom-8mc4.vercel.app/"
+}

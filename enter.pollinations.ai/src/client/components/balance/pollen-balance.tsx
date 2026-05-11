@@ -244,7 +244,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             color="amber"
                             weight="light"
                             title={`Buy $${selectedPack.amountUsd} pollen pack`}
-                            className="btn-shimmer w-28 min-w-0 self-start border border-amber-300/70 text-center shadow-none sm:shrink-0 sm:self-center"
+                            className="btn-shimmer w-28 min-w-0 self-end border border-amber-300/70 text-center shadow-none sm:shrink-0 sm:self-center"
                         >
                             Buy
                         </Button>

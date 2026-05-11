@@ -453,7 +453,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
     return (
         <DisabledControlTooltip
             content={saveDisabled ? disabledReason : null}
-            className="sm:shrink-0"
+            className="self-end sm:shrink-0 sm:self-center"
         >
             <Button
                 as="button"
@@ -462,7 +462,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 weight="light"
                 onClick={onSave}
                 disabled={saveDisabled}
-                className="btn-shimmer w-28 min-w-0 self-start border border-amber-300/70 text-center shadow-none sm:self-center"
+                className="btn-shimmer w-28 min-w-0 self-end border border-amber-300/70 text-center shadow-none sm:self-center"
             >
                 Save
             </Button>

@@ -87,6 +87,7 @@ type StripePortalConfiguration = {
         };
         payment_method_update: {
             enabled: boolean;
+            payment_method_configuration?: string | null;
         };
     };
 };
@@ -336,7 +337,7 @@ export function mockCustomer(
         name: "Test User",
         business_name: null,
         metadata: {},
-        address: { country: "US" },
+        address: { country: "US", postal_code: "94105" },
         invoice_settings: { default_payment_method: null },
         deleted: false,
     };
@@ -485,6 +486,12 @@ function parsePortalConfigurationFeatures(
                 ) ??
                 previous?.payment_method_update.enabled ??
                 false,
+            payment_method_configuration:
+                form.get(
+                    "features[payment_method_update][payment_method_configuration]",
+                ) ??
+                previous?.payment_method_update.payment_method_configuration ??
+                null,
         },
     };
 }

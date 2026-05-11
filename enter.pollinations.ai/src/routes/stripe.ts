@@ -11,7 +11,6 @@ import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
-    type BillingPortalFlow,
     createBillingPortalSession,
     getBillingOverview,
     getOrCreateStripeCustomerId,
@@ -176,18 +175,9 @@ export const stripeRoutes = new Hono<Env>()
      */
     .post("/billing/portal", async (c) => {
         const user = await requireSessionUser(c);
-        const body = (await c.req.json().catch(() => ({}))) as {
-            flow?: BillingPortalFlow;
-        };
 
         try {
-            const session = await createBillingPortalSession(
-                c.env,
-                user.id,
-                body.flow === "payment_method_update"
-                    ? "payment_method_update"
-                    : "default",
-            );
+            const session = await createBillingPortalSession(c.env, user.id);
 
             if (!session.url) {
                 return c.json(
@@ -243,9 +233,13 @@ export const stripeRoutes = new Hono<Env>()
 
         const body = (await c.req.json().catch(() => ({}))) as {
             userId?: string;
+            environment?: string;
         };
         if (!body.userId) {
             return c.json({ error: "Missing userId" }, 400);
+        }
+        if (body.environment !== c.env.ENVIRONMENT) {
+            return c.json({ error: "Environment mismatch" }, 401);
         }
 
         return c.json(await processAutoTopUpForUser(c.env, body.userId));

@@ -48,32 +48,39 @@ export type BillingState = {
 
 type AutoTopUpPanelProps = {
     initialBillingState: BillingState | null;
+    userId: string;
 };
 
 const AUTO_TOP_UP_PACK_MIN = 5;
 const AUTO_TOP_UP_PACK_MAX = 100;
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";
-const PENDING_ENABLE_STORAGE_KEY = "pollinations:autoTopUpPendingEnable";
+const PENDING_ENABLE_STORAGE_KEY_PREFIX = "pollinations:autoTopUpPendingEnable";
 
-function readPendingEnable(): boolean {
+function pendingEnableStorageKey(userId: string): string {
+    return `${PENDING_ENABLE_STORAGE_KEY_PREFIX}:${userId}`;
+}
+
+function readPendingEnable(userId: string): boolean {
     if (typeof window === "undefined") return false;
     try {
         return (
-            window.sessionStorage.getItem(PENDING_ENABLE_STORAGE_KEY) === "1"
+            window.sessionStorage.getItem(pendingEnableStorageKey(userId)) ===
+            "1"
         );
     } catch {
         return false;
     }
 }
 
-function writePendingEnable(value: boolean): void {
+function writePendingEnable(userId: string, value: boolean): void {
     if (typeof window === "undefined") return;
     try {
+        const key = pendingEnableStorageKey(userId);
         if (value) {
-            window.sessionStorage.setItem(PENDING_ENABLE_STORAGE_KEY, "1");
+            window.sessionStorage.setItem(key, "1");
         } else {
-            window.sessionStorage.removeItem(PENDING_ENABLE_STORAGE_KEY);
+            window.sessionStorage.removeItem(key);
         }
     } catch {
         // ignore storage errors (private mode, quota, etc.)
@@ -118,6 +125,7 @@ type ToggleStatus = "off" | "pending" | "on";
 
 export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
+    userId,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
     const [packAmountUsd, setPackAmountUsd] = useState(
@@ -126,11 +134,16 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const [isSaving, setIsSaving] = useState(false);
     const [isOpeningPortal, setIsOpeningPortal] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [pendingEnable, setPendingEnableState] = useState(readPendingEnable);
-    const setPendingEnable = useCallback((value: boolean) => {
-        writePendingEnable(value);
-        setPendingEnableState(value);
-    }, []);
+    const [pendingEnable, setPendingEnableState] = useState(() =>
+        readPendingEnable(userId),
+    );
+    const setPendingEnable = useCallback(
+        (value: boolean) => {
+            writePendingEnable(userId, value);
+            setPendingEnableState(value);
+        },
+        [userId],
+    );
 
     const paymentMethodReady = billingState?.paymentMethod.hasDefault ?? false;
     const billingDetailsReady = billingState?.billingDetailsComplete ?? false;
@@ -160,14 +173,15 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         setPackAmountUsd(
             normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
         );
-    }, [initialBillingState]);
+        setPendingEnableState(readPendingEnable(userId));
+    }, [initialBillingState, userId]);
 
     async function openBillingPortal(): Promise<void> {
         setIsOpeningPortal(true);
         setError(null);
         try {
             const response = await apiClient.stripe.billing.portal.$post({
-                json: { flow: "default" },
+                json: {},
             });
             const payload = (await response.json().catch(() => ({}))) as {
                 url?: unknown;
@@ -268,6 +282,8 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 disabled={isSaving}
                 onToggle={handleToggle}
             />
+
+            {toggleStatus === "off" && issueNotice}
 
             {toggleStatus === "pending" && (
                 <Card
@@ -599,6 +615,7 @@ const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
         ? "Your bank asked you to confirm the last charge. Update your payment method or buy a pack manually to refresh authorization."
         : "We couldn't charge your default payment method. Update it to keep auto top-up working.";
     const occurredLabel = formatRelativeTime(issue.occurredAt);
+    const actionUrl = isAuth ? extractHostedInvoiceUrl(issue.reason) : null;
     return (
         <div
             role="alert"
@@ -606,6 +623,16 @@ const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
         >
             <div className="font-semibold">⚠ {title}</div>
             <div className="mt-0.5">{body}</div>
+            {actionUrl && (
+                <a
+                    href={actionUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block font-semibold underline decoration-red-700/30 underline-offset-2"
+                >
+                    Complete payment in Stripe
+                </a>
+            )}
             {occurredLabel && (
                 <div className="mt-1 text-[11px] text-red-700/70">
                     Last attempt: {occurredLabel}
@@ -614,6 +641,16 @@ const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
         </div>
     );
 };
+
+function extractHostedInvoiceUrl(reason: string): string | null {
+    const match = reason.match(/https:\/\/invoice\.stripe\.com\/\S+/);
+    if (!match) return null;
+    try {
+        return new URL(match[0]).toString();
+    } catch {
+        return null;
+    }
+}
 
 function formatRelativeTime(iso: string): string | null {
     const ts = Date.parse(iso);

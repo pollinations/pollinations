@@ -281,6 +281,15 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             return c.json({ error: "Invalid signature" }, 400);
         }
 
+        if (event.livemode !== (c.env.STRIPE_MODE === "live")) {
+            console.error("Stripe webhook mode mismatch:", {
+                eventId: event.id,
+                livemode: event.livemode,
+                stripeMode: c.env.STRIPE_MODE,
+            });
+            return c.json({ error: "Stripe mode mismatch" }, 400);
+        }
+
         console.log(`Stripe webhook received: ${event.type} (${event.id})`);
 
         // Handle the event
@@ -470,6 +479,17 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "invoice.payment_action_required": {
                 const invoice = event.data.object as Stripe.Invoice;
                 await markAutoTopUpInvoiceRequiresAction(c.env, invoice);
+                break;
+            }
+
+            case "invoice.voided":
+            case "invoice.marked_uncollectible": {
+                const invoice = event.data.object as Stripe.Invoice;
+                await markAutoTopUpInvoiceFailed(
+                    c.env,
+                    invoice,
+                    "Stripe invoice can no longer be collected.",
+                );
                 break;
             }
 

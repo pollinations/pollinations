@@ -204,10 +204,12 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
 
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
+    userId: string;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
+    userId,
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const [selectedPackAmount, setSelectedPackAmount] = useState(
@@ -252,13 +254,16 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 )}
             </div>
             <div className="mt-5">
-                <AutoTopUpPanel initialBillingState={initialBillingState} />
+                <AutoTopUpPanel
+                    initialBillingState={initialBillingState}
+                    userId={userId}
+                />
             </div>
             <div className="mt-8 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Credits are instant, expire in 1 year, and follow our{" "}
+                        Credits are instant, never expire, and follow our{" "}
                         <a
                             href={REFUND_POLICY_URL}
                             target="_blank"

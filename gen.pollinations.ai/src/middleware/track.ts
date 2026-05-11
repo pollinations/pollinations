@@ -1,5 +1,4 @@
 import { getLogger } from "@logtape/logtape";
-import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
@@ -200,6 +199,7 @@ export const track = (eventType: EventType) =>
                 let payerBucket: Awaited<
                     ReturnType<typeof handleBalanceDeduction>
                 >["payerBucket"] = null;
+                let shouldRunAutoTopUp = false;
                 try {
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
@@ -213,12 +213,14 @@ export const track = (eventType: EventType) =>
                     });
                     markup = deduction.markup;
                     payerBucket = deduction.payerBucket;
+                    const totalPrice = responseTracking.price?.totalPrice ?? 0;
                     if (
-                        responseTracking.isBilledUsage &&
+                        totalPrice > 0 &&
+                        payerBucket === "pack" &&
                         userTracking.userId &&
-                        (await shouldTriggerAutoTopUp(db, userTracking.userId))
+                        (await isAutoTopUpConfigured(db, userTracking.userId))
                     ) {
-                        await triggerAutoTopUp(c.env, userTracking.userId, log);
+                        shouldRunAutoTopUp = true;
                     }
                 } catch (error) {
                     log.error(
@@ -287,11 +289,15 @@ export const track = (eventType: EventType) =>
                     c.env.TINYBIRD_INGEST_TOKEN,
                     log,
                 );
+
+                if (shouldRunAutoTopUp && userTracking.userId) {
+                    await triggerAutoTopUp(c.env, userTracking.userId, log);
+                }
             })(),
         );
     });
 
-async function shouldTriggerAutoTopUp(
+async function isAutoTopUpConfigured(
     db: DrizzleD1Database,
     userId: string,
 ): Promise<boolean> {
@@ -299,7 +305,6 @@ async function shouldTriggerAutoTopUp(
         .select({
             enabled: userTable.autoTopUpEnabled,
             amountUsd: userTable.autoTopUpAmountUsd,
-            packBalance: userTable.packBalance,
         })
         .from(userTable)
         .where(eq(userTable.id, userId))
@@ -309,7 +314,7 @@ async function shouldTriggerAutoTopUp(
         return false;
     }
 
-    return (user.packBalance ?? 0) <= AUTO_TOP_UP_THRESHOLD_POLLEN;
+    return true;
 }
 
 async function triggerAutoTopUp(
@@ -326,7 +331,10 @@ async function triggerAutoTopUp(
                     "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ userId }),
+                body: JSON.stringify({
+                    userId,
+                    environment: env.ENVIRONMENT,
+                }),
             },
         );
 

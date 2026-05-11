@@ -7,10 +7,8 @@ const CUSTOMER_CREATE_IDEMPOTENCY_VERSION = "v1";
 const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_PURPOSE = "pollinations_purpose";
 const AUTO_TOP_UP_PURPOSE = "auto_top_up";
-// Local claim TTL for coalescing racing live triggers before the
-// active-attempt row exists. The claim timestamp also seeds Stripe
-// idempotency keys.
-const AUTO_TOP_UP_CLAIM_TTL_MS = 5 * 60 * 1000;
+const AUTO_TOP_UP_CLAIM_TTL_MS = 60 * 60 * 1000;
+const AUTO_TOP_UP_REQUIRES_ACTION_TTL_MS = 24 * 60 * 60 * 1000;
 const AUTO_TOP_UP_ATTEMPT_STATUS_FAILED = "failed";
 const AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION = "requires_action";
 const BILLING_PORTAL_CONFIGURATION_METADATA_KEY = "pollinations_portal";
@@ -24,8 +22,7 @@ const BILLING_PORTAL_CUSTOMER_UPDATES = [
     "tax_id",
 ] satisfies Stripe.BillingPortal.ConfigurationCreateParams.Features.CustomerUpdate.AllowedUpdate[];
 
-export const AUTO_TOP_UP_PACK_AMOUNTS = [5, 10, 20, 50, 100] as const;
-export const DEFAULT_AUTO_TOP_UP_AMOUNT_USD = 20;
+const DEFAULT_AUTO_TOP_UP_AMOUNT_USD = 20;
 
 type UserStripeBillingDbRow = {
     id: string;
@@ -33,7 +30,7 @@ type UserStripeBillingDbRow = {
     email: string;
     packBalance: number | null;
     stripeCustomerId: string | null;
-    autoTopUpEnabled: number | boolean | null;
+    autoTopUpEnabled: number | null;
     autoTopUpAmountUsd: number | null;
 };
 
@@ -52,20 +49,7 @@ type PendingAutoTopUpAttempt = {
     stripeInvoiceId: string;
 };
 
-type AutoTopUpAttemptCreditRow = {
-    id: string;
-    userId: string;
-    pollenGrant: number;
-};
-
-type AutoTopUpAttemptStatusRow = {
-    id: string;
-    status: string;
-};
-
-export type BillingPortalFlow = "default" | "payment_method_update";
-
-export type AutoTopUpInput = {
+type AutoTopUpInput = {
     enabled: boolean;
     packAmountUsd: number;
 };
@@ -151,7 +135,7 @@ export async function getBillingOverview(
         ? await getDefaultCardPaymentMethod(stripe, customer)
         : null;
     const billingDetailsComplete = customer
-        ? isBillingDetailsComplete(customer)
+        ? isBillingDetailsComplete(customer, paymentMethod)
         : false;
     let autoTopUpEnabled = user.autoTopUpEnabled;
     if (autoTopUpEnabled && (!paymentMethod || !billingDetailsComplete)) {
@@ -186,7 +170,6 @@ export async function getBillingOverview(
 export async function createBillingPortalSession(
     env: CloudflareBindings,
     userId: string,
-    flow: BillingPortalFlow = "default",
 ): Promise<Stripe.BillingPortal.Session> {
     const stripe = createStripeClient(env);
     const customer = await getOrCreateStripeCustomerId(env, userId);
@@ -201,15 +184,6 @@ export async function createBillingPortalSession(
         customer,
         configuration,
         return_url: returnUrl,
-        ...(flow === "payment_method_update" && {
-            flow_data: {
-                type: "payment_method_update" as const,
-                after_completion: {
-                    type: "redirect" as const,
-                    redirect: { return_url: returnUrl },
-                },
-            },
-        }),
     });
 }
 
@@ -327,12 +301,16 @@ export async function updateAutoTopUpSettings(
     | { ok: true; overview: BillingOverview }
     | { ok: false; status: 400; error: string }
 > {
-    const validationError = validateAutoTopUpInput(input);
-    if (validationError) {
-        return { ok: false, status: 400, error: validationError };
+    const pack = getPollenPack(String(input.packAmountUsd));
+    if (!pack) {
+        return {
+            ok: false,
+            status: 400,
+            error: "Invalid auto top-up pack amount.",
+        };
     }
 
-    const packAmountUsd = input.packAmountUsd;
+    const packAmountUsd = pack.amountUsd;
 
     if (input.enabled) {
         const stripe = createStripeClient(env);
@@ -351,7 +329,7 @@ export async function updateAutoTopUpSettings(
             };
         }
 
-        if (!isBillingDetailsComplete(customer)) {
+        if (!isBillingDetailsComplete(customer, paymentMethod)) {
             return {
                 ok: false,
                 status: 400,
@@ -363,8 +341,7 @@ export async function updateAutoTopUpSettings(
     await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = ?,
-                auto_top_up_amount_usd = ?,
-                auto_top_up_claimed_at = NULL
+                auto_top_up_amount_usd = ?
             WHERE id = ?`,
     )
         .bind(input.enabled ? 1 : 0, packAmountUsd, userId)
@@ -397,6 +374,18 @@ export async function processAutoTopUpForUser(
     if (!pack) {
         await disableAutoTopUp(env.DB, userId);
         return { status: "failed", reason: "invalid pack amount" };
+    }
+
+    const expiredRequiresActionAttempt = await expireStaleRequiresActionAttempt(
+        env.DB,
+        userId,
+    );
+    if (expiredRequiresActionAttempt) {
+        await disableAutoTopUp(env.DB, userId);
+        return {
+            status: "skipped",
+            reason: `previous auto top-up authentication expired (${expiredRequiresActionAttempt})`,
+        };
     }
 
     const pendingAttempt = await findPendingAutoTopUpAttempt(env.DB, userId);
@@ -433,7 +422,7 @@ export async function processAutoTopUpForUser(
             };
         }
 
-        if (!isBillingDetailsComplete(customer)) {
+        if (!isBillingDetailsComplete(customer, paymentMethod)) {
             await disableAutoTopUp(env.DB, userId);
             return { status: "skipped", reason: "missing billing details" };
         }
@@ -507,7 +496,9 @@ export async function processAutoTopUpForUser(
         if (createdInvoiceId) {
             await voidAutoTopUpInvoice(env, createdInvoiceId);
         }
-        await disableAutoTopUp(env.DB, userId);
+        if (shouldDisableAutoTopUpAfterFailure(error)) {
+            await disableAutoTopUp(env.DB, userId);
+        }
         return { status: "failed", reason: message };
     }
 }
@@ -541,32 +532,45 @@ export async function creditAutoTopUpInvoice(
     });
 
     const now = Date.now();
-    const attempt = await env.DB.prepare(
-        `UPDATE stripe_auto_top_up_attempt
-            SET status = 'paid',
-                failure_reason = NULL,
-                completed_at = ?,
-                updated_at = ?
-            WHERE stripe_invoice_id = ? AND status <> 'paid'
-            RETURNING id, user_id AS userId, pollen_grant AS pollenGrant`,
-    )
-        .bind(now, now, invoice.id)
-        .first<AutoTopUpAttemptCreditRow>();
+    const [userUpdate, attemptUpdate] = await env.DB.batch([
+        env.DB.prepare(
+            `UPDATE user
+                SET pack_balance = COALESCE(pack_balance, 0) + ?,
+                    auto_top_up_claimed_at = NULL
+                WHERE id = ?
+                    AND EXISTS (
+                        SELECT 1
+                        FROM stripe_auto_top_up_attempt
+                        WHERE stripe_invoice_id = ?
+                            AND user_id = ?
+                            AND status <> 'paid'
+                    )`,
+        ).bind(pack.pollenGrant, userId, invoice.id, userId),
+        env.DB.prepare(
+            `UPDATE stripe_auto_top_up_attempt
+                SET status = 'paid',
+                    failure_reason = NULL,
+                    completed_at = ?,
+                    updated_at = ?
+                WHERE stripe_invoice_id = ?
+                    AND user_id = ?
+                    AND status <> 'paid'`,
+        ).bind(now, now, invoice.id, userId),
+    ]);
 
-    if (!attempt) {
+    const userChanges = userUpdate.meta.changes ?? 0;
+    const attemptChanges = attemptUpdate.meta.changes ?? 0;
+    if (userChanges === 0 && attemptChanges === 0) {
         return { credited: false, reason: "invoice already credited" };
     }
 
-    await env.DB.prepare(
-        `UPDATE user
-            SET pack_balance = COALESCE(pack_balance, 0) + ?,
-                auto_top_up_claimed_at = NULL
-            WHERE id = ?`,
-    )
-        .bind(attempt.pollenGrant, attempt.userId)
-        .run();
+    if (userChanges !== 1 || attemptChanges !== 1) {
+        throw new Error(
+            `Auto top-up credit update was inconsistent for invoice ${invoice.id}`,
+        );
+    }
 
-    return { credited: true, pollenCredited: attempt.pollenGrant };
+    return { credited: true, pollenCredited: pack.pollenGrant };
 }
 
 export async function markAutoTopUpInvoiceFailed(
@@ -610,7 +614,7 @@ export async function markAutoTopUpInvoiceFailed(
             invoice.id,
             AUTO_TOP_UP_ATTEMPT_STATUS_FAILED,
         )
-        .first<AutoTopUpAttemptStatusRow>();
+        .first<{ id: string }>();
 
     if (!attempt) return;
 
@@ -664,7 +668,7 @@ export async function markAutoTopUpInvoiceRequiresAction(
             invoice.id,
             AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION,
         )
-        .first<AutoTopUpAttemptStatusRow>();
+        .first<{ id: string }>();
 
     if (!attempt) return;
 }
@@ -695,8 +699,7 @@ async function getUserStripeBillingRow(
 
     return {
         ...user,
-        autoTopUpEnabled:
-            user.autoTopUpEnabled === true || user.autoTopUpEnabled === 1,
+        autoTopUpEnabled: user.autoTopUpEnabled === 1,
     };
 }
 
@@ -729,11 +732,29 @@ async function getDefaultCardPaymentMethod(
     return paymentMethod;
 }
 
-function isBillingDetailsComplete(customer: Stripe.Customer): boolean {
-    return (
-        !!(customer.business_name || customer.name) &&
-        !!customer.address?.country
-    );
+function isBillingDetailsComplete(
+    customer: Stripe.Customer,
+    paymentMethod: Stripe.PaymentMethod | null,
+): boolean {
+    const details = getBillingDetailsSummary(customer, paymentMethod);
+    return !!details?.name && isTaxLocationComplete(details);
+}
+
+function isTaxLocationComplete(
+    details: NonNullable<BillingOverview["billingDetails"]>,
+): boolean {
+    const country = details.country?.toUpperCase();
+    if (!country) return false;
+
+    if (country === "US") {
+        return !!details.postalCode;
+    }
+
+    if (country === "CA" || country === "IN") {
+        return !!(details.postalCode || details.state);
+    }
+
+    return true;
 }
 
 function getBillingDetailsSummary(
@@ -771,33 +792,65 @@ function firstString(
     return values.find((value) => typeof value === "string" && value) ?? null;
 }
 
-function validateAutoTopUpInput(input: AutoTopUpInput): string | null {
-    if (
-        !(AUTO_TOP_UP_PACK_AMOUNTS as readonly number[]).includes(
-            input.packAmountUsd,
-        )
-    ) {
-        return "Invalid auto top-up pack amount.";
-    }
-    return null;
-}
-
 async function findPendingAutoTopUpAttempt(
     db: D1Database,
     userId: string,
 ): Promise<PendingAutoTopUpAttempt | null> {
+    const requiresActionCutoff =
+        Date.now() - AUTO_TOP_UP_REQUIRES_ACTION_TTL_MS;
     return (
         (await db
             .prepare(
                 `SELECT id, stripe_invoice_id AS stripeInvoiceId
                     FROM stripe_auto_top_up_attempt
                     WHERE user_id = ?
-                        AND status IN ('pending', ?)
+                        AND (
+                            status = 'pending'
+                            OR (status = ? AND updated_at > ?)
+                        )
                     ORDER BY created_at DESC
                     LIMIT 1`,
             )
-            .bind(userId, AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION)
+            .bind(
+                userId,
+                AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION,
+                requiresActionCutoff,
+            )
             .first<PendingAutoTopUpAttempt>()) ?? null
+    );
+}
+
+async function expireStaleRequiresActionAttempt(
+    db: D1Database,
+    userId: string,
+): Promise<string | null> {
+    const now = Date.now();
+    const requiresActionCutoff = now - AUTO_TOP_UP_REQUIRES_ACTION_TTL_MS;
+    return (
+        (
+            await db
+                .prepare(
+                    `UPDATE stripe_auto_top_up_attempt
+                    SET status = ?,
+                        failure_reason = ?,
+                        updated_at = ?,
+                        completed_at = ?
+                    WHERE user_id = ?
+                        AND status = ?
+                        AND updated_at <= ?
+                    RETURNING id, stripe_invoice_id AS stripeInvoiceId`,
+                )
+                .bind(
+                    AUTO_TOP_UP_ATTEMPT_STATUS_FAILED,
+                    "Auto top-up payment authentication expired.",
+                    now,
+                    now,
+                    userId,
+                    AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION,
+                    requiresActionCutoff,
+                )
+                .first<{ stripeInvoiceId: string }>()
+        )?.stripeInvoiceId ?? null
     );
 }
 
@@ -919,9 +972,6 @@ async function failPendingAutoTopUpAttempts(
         .run();
 }
 
-// Coalesces racing live triggers by atomically claiming the user before Stripe
-// sees any requests. The returned timestamp also seeds Stripe idempotency keys,
-// so one local claim maps to one invoice/item/finalize/pay sequence.
 async function claimAutoTopUpAttempt(
     db: D1Database,
     userId: string,
@@ -961,4 +1011,13 @@ function getBillingReturnUrl(env: CloudflareBindings): string {
     const url = new URL(baseUrl);
     url.searchParams.set("stripe_billing_return", "true");
     return url.toString();
+}
+
+function shouldDisableAutoTopUpAfterFailure(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false;
+    const stripeType = (error as { type?: unknown }).type;
+    return (
+        stripeType === "StripeCardError" ||
+        stripeType === "StripeInvalidRequestError"
+    );
 }

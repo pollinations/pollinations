@@ -255,6 +255,10 @@
     @apply cursor-not-allowed opacity-60;
 }
 
+.pollen-pack-slider:focus-visible {
+    @apply ring-2 ring-amber-500 ring-offset-2 ring-offset-white;
+}
+
 .pollen-pack-slider::-webkit-slider-runnable-track {
     @apply h-2 rounded-full bg-transparent;
 }

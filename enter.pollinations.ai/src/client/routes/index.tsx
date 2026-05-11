@@ -258,7 +258,10 @@ function RouteComponent() {
                         framed
                         id="buy-pollen"
                     >
-                        <BuyPollenPanel initialBillingState={billingState} />
+                        <BuyPollenPanel
+                            initialBillingState={billingState}
+                            userId={user.id}
+                        />
                     </DashboardSection>
                     {tierData && (
                         <DashboardSection title="Tier" theme="amber" framed>

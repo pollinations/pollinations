@@ -22,7 +22,7 @@ Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolv
 
 There are **three ways**:
 
-1. 💳 **Buy** — Purchase Pollen packs with a credit card. Lands in your **paid balance**; expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
+1. 💳 **Buy** — Purchase Pollen packs with a credit card. Lands in your **paid balance**; from 2026-06-01, expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
 2. 🌱 **Tier grants** — Free Pollen that refills every hour into your **tier balance**. Contribute to unlock bigger hourly grants.
 3. 🌻 **Dev earnings** — Turn on Developer earnings for an App Key. Each request through your app is billed +25% over model cost (= 20% of user spend) — credited to your wallet. Earnings drip into your tier or paid balance, mirroring whichever the user paid from.
 
@@ -61,7 +61,7 @@ One central wallet across all your apps, split into two balances:
 - **🌱 Tier balance** — hourly grants (only while below your tier's free amount) + tier-side earnings (user spending in your apps).
 - **💳 Paid balance** — purchased Pollen + paid-side earnings (user spending in your apps).
 
-Wallet expires after 12 months of account inactivity.
+From **2026-06-01**, your wallet expires after 12 months of account inactivity. Existing balances start the clock on that date, so everyone gets a full 12-month window from the effective date. Signing in, making API requests, or buying Pollen counts as activity.
 
 **Each request pays from a single balance — no partial spend across the two.**
 

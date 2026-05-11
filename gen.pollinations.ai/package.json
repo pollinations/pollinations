@@ -10,6 +10,7 @@
         "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
         "deploy:staging": "npm run build:staging && wrangler deploy --env staging",
         "deploy:production": "npm run build:production && wrangler deploy --env production",
+        "apply-lifecycle:production": "wrangler r2 bucket lifecycle set pollinations-images --file r2-lifecycle.json --force && wrangler r2 bucket lifecycle set pollinations-text-enter --file r2-lifecycle.json --force",
         "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'node scripts/push-generation-secrets.mjs {} staging'",
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'node scripts/push-generation-secrets.mjs {} production'",
         "test": "vitest run",

@@ -459,7 +459,7 @@ def main():
             log_error("Tier project not configured")
             return
     if "POLLEN-QUEST" in existing_labels:
-        log_debug("Found POLLEN-QUEST label; issue-quest-gate.yml owns quest routing")
+        log_debug("Found POLLEN-QUEST label; Quest project auto-add owns quest routing")
         return
 
     if "NEWS" in existing_labels:

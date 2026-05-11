@@ -10,26 +10,26 @@
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "minor",
-    "headline": "The Oracle of the Wild Era",
-    "blurb": "A new community app has sprouted! The 'Oráculo de la Era Salvaje' brings epic AI lore, boss strategies, and beastly knowledge for the Roblox game Bestias y Monstruos.",
-    "summary": "Added 'Oráculo de la Era Salvaje', a community-built AI chat app for the Roblox game Bestias y Monstruos, to the Pollinations app showcase.",
-    "impact": "Users can now explore an epic AI oracle to learn about beasts, bosses, strategies, and lore from the wild world.",
+    "headline": "Beasts, Bosses, and Bees",
+    "blurb": "The community just dropped 'Oráculo de la Era Salvaje' into the greenhouse. It's an AI oracle for the Roblox game Bestias y Monstruos, ready to dispense lore and boss strategies.",
+    "summary": "Added 'Oráculo de la Era Salvaje', a community-built AI companion for the Roblox game Bestias y Monstruos, to the app showcase.",
+    "impact": "Roblox players can now consult a dedicated AI oracle for game lore and boss strategies, powered by our text API.",
     "keywords": [
       "community",
       "app",
       "roblox",
       "gaming",
       "chat",
-      "lore"
+      "showcase"
     ],
-    "visual_concept": "A mystical oracle theme mixed with friendly monsters. Polly the bee acting as a wizard or adventurer, consulting a glowing crystal or ancient tome with a friendly pixel monster.",
-    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, consulting a glowing mystical crystal ball alongside a friendly, chunky pixel monster. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "visual_concept": "The PR is about a Roblox game companion app called 'Oracle of the Wild Era' focusing on beasts and monsters. Polly the bee interacting with a glowing oracle crystal or a friendly mythical beast in a wild, lush setting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny wizard hat, consulting a glowing magical crystal ball resting on a mossy stone. A friendly, chunky pixel-art mythical beast peeks out from lush green foliage in the background. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
   "image": {
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-10/PR-10853.jpg",
-    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny wizard hat, consulting a glowing mystical crystal ball alongside a friendly, chunky pixel monster. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny wizard hat, consulting a glowing magical crystal ball resting on a mossy stone. A friendly, chunky pixel-art mythical beast peeks out from lush green foliage in the background. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-05-10T19:27:28.739742+00:00",
+  "generated_at": "2026-05-11T13:14:14.883390+00:00",
   "app_name": "Oráculo de la Era Salvaje · IA Bestias y Monstruos",
   "app_url": "https://dragonprimordial12-netizen.github.io/DragonP_Oraculo_de_la_Era_Salvaje/"
 }

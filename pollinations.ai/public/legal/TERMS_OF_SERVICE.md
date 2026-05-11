@@ -1,6 +1,8 @@
 # Terms of Service
 
-**Updated: 2026-05-07**
+**Updated: 2026-05-11**
+
+_2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
 ## What Myceli.AI Is
 
@@ -60,7 +62,7 @@ Fees are per plan/order/invoice; currency is by default USD.
 - **Tier balance:** free Pollen grants and developer earnings. Tier balance refills according to your tier and can be capped by tier rules.
 - **Paid balance:** purchased Pollen and developer earnings credited from paid-balance usage. Paid balance does not automatically refill.
 
-**Wallet inactivity.** If your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (tier and paid balance) will expire. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
+**Wallet inactivity.** Effective **2026-06-01**, if your account remains inactive for 12 consecutive months, any remaining Pollen in your wallet (tier and paid balance) will expire. For balances held before that date, the inactivity clock starts on 2026-06-01, so every existing user gets a full 12-month window from the effective date. Signing in, making API requests, or purchasing Pollen counts as activity and resets the inactivity clock.
 
 **Request billing.** Pollen is consumed when API requests run. Regular models use tier balance first when it can cover the request; otherwise paid balance may be used. Paid-only models use paid balance only. We may refuse a request when no allowed balance can cover the pre-flight estimate. Final usage can exceed estimates and make the selected balance negative. Tier debt recovers through future tier refills; paid-balance debt clears through future top-ups or future paid-balance developer earnings.
 

@@ -68,70 +68,17 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
     const hideTierColumn = tier === "microbe" && displayTierBalance === 0;
 
-    const totalForBar =
-        Math.abs(displayPaidBalance) + Math.abs(displayTierBalance);
-    const paidPct =
-        totalForBar > 0
-            ? (Math.abs(displayPaidBalance) / totalForBar) * 100
-            : hideTierColumn
-              ? 100
-              : 50;
-    const tierPct = 100 - paidPct;
-
     return (
-        <div className="flex flex-col gap-2">
-            {/* Headline: Total label + earnings */}
-            <div className="flex items-baseline justify-between gap-3">
-                <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
-                    Total balance
-                </span>
-                {totalWeek > 0 && (
-                    <span className="flex flex-col items-end leading-tight">
-                        <span className="text-base font-bold tabular-nums text-green-700">
-                            +{formatPollen(totalWeek)}
-                        </span>
-                        <span className="text-xs font-medium text-amber-800/70">
-                            earned past 7d
-                        </span>
-                    </span>
-                )}
-            </div>
-
-            {/* Hero number */}
-            <div className="flex items-baseline gap-2">
-                <span className="text-4xl sm:text-5xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
-                    {formatPollen(totalPollen)}
-                </span>
-                <span className="text-base font-bold text-amber-900">
-                    pollen
-                </span>
-            </div>
-
-            {/* Composition bar */}
-            <div className="h-2.5 rounded-full bg-amber-100 overflow-hidden flex">
-                <span
-                    className={PAID_BAR}
-                    style={{ width: `${paidPct}%` }}
-                    aria-hidden="true"
-                />
-                {!hideTierColumn && (
-                    <span
-                        className={TIER_BAR}
-                        style={{ width: `${tierPct}%` }}
-                        aria-hidden="true"
-                    />
-                )}
-            </div>
-
-            {/* Legend */}
+        <div className="flex flex-col gap-3">
+            {/* Twin headline numbers: Paid + Tier as tinted cards */}
             <div
                 className={
                     hideTierColumn
-                        ? "grid grid-cols-1 gap-4"
-                        : "grid grid-cols-2 gap-4"
+                        ? "grid grid-cols-1 gap-3"
+                        : "grid grid-cols-2 gap-3"
                 }
             >
-                <div className="flex flex-col gap-1.5 items-center">
+                <div className="rounded-xl bg-[#E08A52]/10 p-4">
                     <span className="flex items-center gap-2">
                         <span
                             className={`h-2 w-2 rounded-full ${PAID_BAR}`}
@@ -157,19 +104,20 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             }
                         />
                     </span>
-                    <span className="flex flex-col items-center gap-1 sm:flex-row sm:items-baseline sm:gap-2">
-                        <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
-                            {formatPollen(displayPaidBalance)}
-                        </span>
-                        {paidWeek > 0 && (
-                            <span className="text-base font-bold tabular-nums text-green-700">
-                                +{formatPollen(paidWeek)}
+                    <div className="mt-1 text-4xl sm:text-5xl font-bold tabular-nums leading-none tracking-tight text-[#7C3F1E]">
+                        {formatPollen(displayPaidBalance)}
+                    </div>
+                    {paidWeek > 0 && (
+                        <div className="mt-1.5 text-sm font-bold tabular-nums text-green-700">
+                            +{formatPollen(paidWeek)}{" "}
+                            <span className="font-medium text-amber-800/70">
+                                / 7d
                             </span>
-                        )}
-                    </span>
+                        </div>
+                    )}
                 </div>
                 {!hideTierColumn && (
-                    <div className="flex flex-col gap-1.5 items-center">
+                    <div className="rounded-xl bg-[#FCD34D]/30 p-4">
                         <span className="flex items-center gap-2">
                             <span
                                 className={`h-2 w-2 rounded-full ${TIER_BAR}`}
@@ -195,18 +143,44 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 }
                             />
                         </span>
-                        <span className="flex flex-col items-center gap-1 sm:flex-row sm:items-baseline sm:gap-2">
-                            <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
-                                {formatPollen(displayTierBalance)}
-                            </span>
-                            {tierWeek > 0 && (
-                                <span className="text-base font-bold tabular-nums text-green-700">
-                                    +{formatPollen(tierWeek)}
+                        <div className="mt-1 text-4xl sm:text-5xl font-bold tabular-nums leading-none tracking-tight text-[#7A5807]">
+                            {formatPollen(displayTierBalance)}
+                        </div>
+                        {tierWeek > 0 && (
+                            <div className="mt-1.5 text-sm font-bold tabular-nums text-green-700">
+                                +{formatPollen(tierWeek)}{" "}
+                                <span className="font-medium text-amber-800/70">
+                                    / 7d
                                 </span>
-                            )}
-                        </span>
+                            </div>
+                        )}
                     </div>
                 )}
+            </div>
+
+            {/* Total + 7d earnings below */}
+            <div className="flex items-start justify-between gap-3 border-t border-amber-300/40 pt-3">
+                <span className="text-sm font-bold uppercase tracking-wide text-amber-900 pt-1">
+                    Total
+                </span>
+                <div className="flex flex-col items-end leading-tight">
+                    <span className="flex items-baseline gap-1.5">
+                        <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-amber-950">
+                            {formatPollen(totalPollen)}
+                        </span>
+                        <span className="text-xs font-bold text-amber-900">
+                            pollen
+                        </span>
+                    </span>
+                    {totalWeek > 0 && (
+                        <span className="mt-1 text-sm font-bold tabular-nums text-green-700">
+                            +{formatPollen(totalWeek)}{" "}
+                            <span className="font-medium text-amber-800/70">
+                                / 7d
+                            </span>
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Learn more */}
@@ -250,58 +224,50 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 }) => {
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
-    const totalPollen = normalizeDisplayBalance(
-        displayTierBalance + displayPaidBalance,
-    );
-    const totalWeek = normalizeDisplayBalance(paidWeek + tierWeek);
     const hideTierSegment = tier === "microbe" && displayTierBalance === 0;
 
-    const totalForBar =
-        Math.abs(displayPaidBalance) + Math.abs(displayTierBalance);
-    const paidPct =
-        totalForBar > 0
-            ? (Math.abs(displayPaidBalance) / totalForBar) * 100
-            : hideTierSegment
-              ? 100
-              : 50;
-    const tierPct = 100 - paidPct;
-
     return (
-        <div className="px-3 py-1 flex flex-col gap-1.5">
-            <div className="flex items-end justify-between gap-2 whitespace-nowrap">
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-base font-bold tabular-nums text-amber-950 leading-none">
-                        {formatPollen(totalPollen)}
-                    </span>
-                    <span className="text-xs font-bold text-amber-900">
-                        pollen
-                    </span>
-                </span>
-                {totalWeek > 0 && (
-                    <span className="flex flex-col items-end leading-tight">
-                        <span className="text-xs font-bold tabular-nums text-green-700">
-                            +{formatPollen(totalWeek)}
-                        </span>
-                        <span className="text-[10px] font-medium text-amber-800/70">
-                            earned past 7d
-                        </span>
-                    </span>
-                )}
-            </div>
-            <div className="h-1 rounded-full bg-amber-100 overflow-hidden flex">
-                <span
-                    className={PAID_BAR}
-                    style={{ width: `${paidPct}%` }}
-                    aria-hidden="true"
-                />
-                {!hideTierSegment && (
+        <div className="px-3 py-1 flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                     <span
-                        className={TIER_BAR}
-                        style={{ width: `${tierPct}%` }}
+                        className={`h-2 w-2 rounded-full ${PAID_BAR}`}
                         aria-hidden="true"
                     />
-                )}
+                    Paid
+                </span>
+                <span className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-bold tabular-nums text-amber-950 leading-none">
+                        {formatPollen(displayPaidBalance)}
+                    </span>
+                    {paidWeek > 0 && (
+                        <span className="text-[10px] font-bold tabular-nums text-green-700">
+                            +{formatPollen(paidWeek)}
+                        </span>
+                    )}
+                </span>
             </div>
+            {!hideTierSegment && (
+                <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                        <span
+                            className={`h-2 w-2 rounded-full ${TIER_BAR}`}
+                            aria-hidden="true"
+                        />
+                        Tier
+                    </span>
+                    <span className="flex items-baseline gap-1.5">
+                        <span className="text-sm font-bold tabular-nums text-amber-950 leading-none">
+                            {formatPollen(displayTierBalance)}
+                        </span>
+                        {tierWeek > 0 && (
+                            <span className="text-[10px] font-bold tabular-nums text-green-700">
+                                +{formatPollen(tierWeek)}
+                            </span>
+                        )}
+                    </span>
+                </div>
+            )}
         </div>
     );
 };

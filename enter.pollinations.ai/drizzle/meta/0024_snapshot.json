@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "4c2ba126-4185-4a55-8727-255fdbf6543d",
+  "id": "e840594c-2b59-41a3-af5d-036b585ff578",
   "prevId": "0df2b212-b504-4a26-b01f-9c3fe22343f5",
   "tables": {
     "account": {
@@ -442,6 +442,102 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "quest_payout_credits": {
+      "name": "quest_payout_credits",
+      "columns": {
+        "payout_key": {
+          "name": "payout_key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "quest_issue_number": {
+          "name": "quest_issue_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pr_number": {
+          "name": "pr_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "github_username": {
+          "name": "github_username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pollen_credited": {
+          "name": "pollen_credited",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
+        }
+      },
+      "indexes": {
+        "idx_quest_payout_credits_user_id": {
+          "name": "idx_quest_payout_credits_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "idx_quest_payout_credits_quest_issue": {
+          "name": "idx_quest_payout_credits_quest_issue",
+          "columns": [
+            "quest_issue_number"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "quest_payout_credits_user_id_user_id_fk": {
+          "name": "quest_payout_credits_user_id_user_id_fk",
+          "tableFrom": "quest_payout_credits",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "session": {
       "name": "session",
       "columns": {
@@ -530,124 +626,6 @@
         "session_user_id_user_id_fk": {
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "stripe_auto_top_up_attempt": {
-      "name": "stripe_auto_top_up_attempt",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "stripe_invoice_id": {
-          "name": "stripe_invoice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "amount_usd": {
-          "name": "amount_usd",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "pollen_grant": {
-          "name": "pollen_grant",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "failure_reason": {
-          "name": "failure_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "stripe_auto_top_up_attempt_stripe_invoice_id_unique": {
-          "name": "stripe_auto_top_up_attempt_stripe_invoice_id_unique",
-          "columns": [
-            "stripe_invoice_id"
-          ],
-          "isUnique": true
-        },
-        "idx_stripe_auto_top_up_attempt_user_id": {
-          "name": "idx_stripe_auto_top_up_attempt_user_id",
-          "columns": [
-            "user_id"
-          ],
-          "isUnique": false
-        },
-        "idx_stripe_auto_top_up_attempt_status": {
-          "name": "idx_stripe_auto_top_up_attempt_status",
-          "columns": [
-            "status"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "stripe_auto_top_up_attempt_user_id_user_id_fk": {
-          "name": "stripe_auto_top_up_attempt_user_id_user_id_fk",
-          "tableFrom": "stripe_auto_top_up_attempt",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -864,35 +842,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "stripe_customer_id": {
-          "name": "stripe_customer_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "auto_top_up_enabled": {
-          "name": "auto_top_up_enabled",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "auto_top_up_amount_usd": {
-          "name": "auto_top_up_amount_usd",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "auto_top_up_claimed_at": {
-          "name": "auto_top_up_claimed_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {
@@ -903,24 +852,10 @@
           ],
           "isUnique": true
         },
-        "user_stripe_customer_id_unique": {
-          "name": "user_stripe_customer_id_unique",
-          "columns": [
-            "stripe_customer_id"
-          ],
-          "isUnique": true
-        },
         "idx_user_email": {
           "name": "idx_user_email",
           "columns": [
             "email"
-          ],
-          "isUnique": false
-        },
-        "idx_user_auto_top_up_enabled": {
-          "name": "idx_user_auto_top_up_enabled",
-          "columns": [
-            "auto_top_up_enabled"
           ],
           "isUnique": false
         }

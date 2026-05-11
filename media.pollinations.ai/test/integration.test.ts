@@ -92,7 +92,9 @@ describe("media.pollinations.ai", () => {
         );
         expect(getRes.status).toBe(200);
         expect(getRes.headers.get("content-type")).toBe("image/png");
-        expect(getRes.headers.get("cache-control")).toContain("immutable");
+        expect(getRes.headers.get("cache-control")).toBe(
+            "public, max-age=31536000, immutable",
+        );
         expect(getRes.headers.get("content-disposition")).toContain("test.png");
         const body = new Uint8Array(await getRes.arrayBuffer());
         expect(body.length).toBe(TINY_PNG.length);

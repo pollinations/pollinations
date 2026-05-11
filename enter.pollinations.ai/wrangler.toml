@@ -90,7 +90,7 @@ POLLEN_REFILL_PER_HOUR = 1
 [env.production]
 
 [env.production.triggers]
-crons = ["0 * * * *"]
+crons = ["*/15 * * * *"]
 
 [env.production.observability]
 enabled = true
@@ -150,7 +150,7 @@ STRIPE_BUY_POLLEN_PMC_ID = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 [env.staging]
 
 [env.staging.triggers]
-crons = ["0 * * * *"]
+crons = ["*/15 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.pollinations.ai"

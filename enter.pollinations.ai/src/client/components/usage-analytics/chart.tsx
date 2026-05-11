@@ -1,6 +1,7 @@
 import { getTierColor, type TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { formatPollen } from "@/client/lib/format-pollen.ts";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
@@ -27,6 +28,8 @@ type ChartProps = {
     metric: Metric;
     showModelBreakdown: boolean;
     tier?: TierStatus;
+    paidBarColor?: { base: string; hover: string };
+    tierBarColor?: { base: string; hover: string };
 };
 
 export const Chart: FC<ChartProps> = ({
@@ -34,12 +37,17 @@ export const Chart: FC<ChartProps> = ({
     metric,
     showModelBreakdown,
     tier,
+    paidBarColor,
+    tierBarColor: tierBarColorProp,
 }) => {
+    const paidBar = paidBarColor?.base ?? CHART_COLORS.paidBar;
+    const paidBarHover = paidBarColor?.hover ?? CHART_COLORS.paidBarHover;
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(600);
     const tierBarColor =
+        tierBarColorProp ??
         TIER_BAR_COLORS[
             getTierColor(tier || "spore") as keyof typeof TIER_BAR_COLORS
         ];
@@ -60,13 +68,21 @@ export const Chart: FC<ChartProps> = ({
         return () => cancelAnimationFrame(animationId);
     }, []);
 
-    // Responsive
+    // Responsive — track both window resize and container resize. Window-only
+    // listening misses cases where the container reflows (e.g. content above
+    // loads in and pushes/squeezes this chart) without the window changing size.
     useEffect(() => {
-        const update = () =>
-            containerRef.current && setWidth(containerRef.current.offsetWidth);
+        const node = containerRef.current;
+        if (!node) return;
+        const update = () => setWidth(node.offsetWidth);
         update();
         window.addEventListener("resize", update);
-        return () => window.removeEventListener("resize", update);
+        const ro = new ResizeObserver(update);
+        ro.observe(node);
+        return () => {
+            window.removeEventListener("resize", update);
+            ro.disconnect();
+        };
     }, []);
 
     const height = 180;
@@ -153,21 +169,14 @@ export const Chart: FC<ChartProps> = ({
         return Number.isInteger(v) ? v.toString() : Number(v).toString();
     };
 
-    const formatPollenAxisVal = (v: number) => {
-        if (Math.abs(v) >= 1e3) return formatCompactVal(v);
-        if (Number.isInteger(v)) return v.toString();
-        const decimals = Math.abs(v) < 1 ? 4 : 2;
-        const formatted = Number(v.toFixed(decimals)).toString();
-        return formatted === "0" ? v.toExponential(1) : formatted;
-    };
-
     const formatVal = (v: number) => {
-        if (metric === "pollen") return formatPollenAxisVal(v);
+        if (metric === "pollen") return formatPollen(v);
         if (Math.abs(v) >= 1e3) return formatCompactVal(v);
         return Math.round(v).toString();
     };
 
     const formatTooltipVal = (v: number) => {
+        if (metric === "pollen") return formatPollen(v);
         if (Number.isInteger(v)) {
             return v.toLocaleString();
         }
@@ -306,8 +315,8 @@ export const Chart: FC<ChartProps> = ({
                                 style={{
                                     fill:
                                         hovered === idx
-                                            ? CHART_COLORS.paidBarHover
-                                            : CHART_COLORS.paidBar,
+                                            ? paidBarHover
+                                            : paidBar,
                                     transition: "fill 0.15s ease-out",
                                 }}
                             />

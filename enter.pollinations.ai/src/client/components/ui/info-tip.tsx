@@ -1,9 +1,9 @@
-import { type FC, useId, useState } from "react";
+import { type FC, type ReactNode, useId, useState } from "react";
 
 type InfoTipProps = {
-    text: string;
+    text: ReactNode;
     label?: string;
-    tone?: "pink" | "amber" | "blue" | "violet";
+    tone?: "pink" | "amber" | "yellow" | "blue" | "violet";
     placement?: "top" | "bottom";
     icon?: "i" | "!";
 };
@@ -16,6 +16,10 @@ const TONES = {
     amber: {
         badge: "bg-amber-200 border-amber-400 text-amber-800 hover:bg-amber-300 hover:border-amber-500",
         popup: "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300",
+    },
+    yellow: {
+        badge: "bg-yellow-100 border-yellow-300 text-yellow-700 hover:bg-yellow-200 hover:border-yellow-400",
+        popup: "bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200",
     },
     blue: {
         badge: "bg-blue-100 border-blue-300 text-blue-600 hover:bg-blue-200 hover:border-blue-400",
@@ -69,7 +73,7 @@ export const InfoTip: FC<InfoTipProps> = ({
             <span
                 id={tooltipId}
                 role="tooltip"
-                className={`${show ? "visible" : "invisible"} absolute right-0 sm:left-0 sm:right-auto ${placementClasses} z-50 w-[200px] whitespace-pre-line rounded-lg border px-3 py-2 text-left text-xs font-normal text-gray-800 shadow-lg pointer-events-none sm:w-[280px] ${classes.popup}`}
+                className={`${show ? "visible" : "invisible"} absolute left-1/2 -translate-x-1/2 ${placementClasses} z-50 w-[200px] whitespace-pre-line rounded-lg border px-3 py-2 text-left text-xs font-normal text-gray-800 shadow-lg pointer-events-none sm:w-[280px] ${classes.popup}`}
             >
                 {text}
             </span>

@@ -16,6 +16,12 @@ type TooltipProps = {
     onClick?: () => void;
     style?: CSSProperties;
     triggerAs?: "button" | "span";
+    /**
+     * When true, the inner cursor wrapper uses display:contents so the
+     * trigger's flex/grid layout applies directly to the caller's children
+     * without an inline wrapper in the way.
+     */
+    displayContents?: boolean;
 };
 
 export const Tooltip: FC<TooltipProps> = ({
@@ -26,6 +32,7 @@ export const Tooltip: FC<TooltipProps> = ({
     onClick,
     style,
     triggerAs = "button",
+    displayContents = false,
 }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
@@ -46,9 +53,13 @@ export const Tooltip: FC<TooltipProps> = ({
         className,
     );
 
+    const cursorClass = displayContents
+        ? "contents"
+        : "md:cursor-default cursor-pointer";
+
     const contentNode = (
         <>
-            <span className="md:cursor-default cursor-pointer">{children}</span>
+            <span className={cursorClass}>{children}</span>
             <span
                 style={{
                     top: tooltipPosition.top,
@@ -56,7 +67,7 @@ export const Tooltip: FC<TooltipProps> = ({
                 }}
                 className={`${
                     showTooltip ? "visible opacity-100" : "invisible opacity-0"
-                } hidden md:block fixed px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200 z-50 pointer-events-none transition-opacity min-w-max`}
+                } hidden md:block fixed px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200 z-50 pointer-events-none transition-opacity max-w-xs leading-snug`}
             >
                 {content}
             </span>

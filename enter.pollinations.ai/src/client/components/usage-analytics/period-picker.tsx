@@ -157,6 +157,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                             theme={theme}
                             active={value.granularity === granularity}
                             onClick={() => setGranularity(granularity)}
+                            className="px-4 pt-1.5 pb-2 text-base leading-normal min-h-0"
                         >
                             {granularity[0].toUpperCase() +
                                 granularity.slice(1)}
@@ -171,7 +172,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                 aria-label={`Select usage period, current ${formatPeriodLabel(value)}`}
                 onClick={() => setOpen((isOpen) => !isOpen)}
                 className={cn(
-                    "inline-flex min-h-8 min-w-[150px] items-center justify-between gap-2 rounded-full border px-3 py-1.5 text-left text-xs font-medium",
+                    "inline-flex min-w-[150px] items-center justify-between gap-2 rounded-full border px-4 pt-1.5 pb-2 text-left text-base font-medium leading-normal",
                     tokens.border.idle,
                     tokens.bg.idle,
                     tokens.text.base,

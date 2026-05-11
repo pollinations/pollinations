@@ -1,0 +1,101 @@
+DESCRIPTION >
+    Developer earnings (BYOP markup) for a dev — returns daily/hourly buckets,
+    per-app rollups, and one global rollup in a single response.
+    Daily rows have a non-empty `date`; rollup rows have empty `date`.
+    Within rollups, the global row has empty `app_key_id`.
+    Earnings per event = total_price - dev_price (the dev's markup take).
+    Attribution uses the immutable `api_key_created_for_user_id` recorded on
+    each event. Names come from a left join against the latest `d1_apikey`
+    snapshot; events from deleted/unsynced apps fall back to `app_key_id`.
+    Use 'since' and 'until' for date range filtering.
+    Use 'grain=hour' to group daily buckets by hour; defaults to daily.
+    Use 'api_key_ids' (comma-separated) to filter to specific BYOP apps.
+
+TOKEN tinybird_read READ
+
+NODE app_labels
+SQL >
+    %
+    SELECT
+        id AS app_key_id,
+        coalesce(nullIf(name, ''), id) AS app_name
+    FROM d1_apikey
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_apikey)
+
+NODE dev_events
+SQL >
+    %
+    SELECT
+        ge.api_key_client_id AS app_key_id,
+        ge.user_id AS user_id,
+        ge.start_time AS start_time,
+        ge.total_price - ge.dev_price AS earned,
+        ge.markup_rate AS markup_rate,
+        coalesce(nullIf(al.app_name, ''), ge.api_key_client_id) AS app_name
+    FROM generation_event ge
+    LEFT JOIN app_labels al ON ge.api_key_client_id = al.app_key_id
+    WHERE ge.api_key_created_for_user_id = {{String(dev_user_id, '')}}
+      AND ge.markup_rate > 0
+      AND ge.total_price > ge.dev_price
+    {% if defined(since) %}
+    AND ge.start_time >= {{DateTime(since)}}
+    {% end %}
+    {% if defined(until) %}
+    AND ge.start_time < {{DateTime(until)}}
+    {% end %}
+    {% if defined(api_key_ids) %}
+    AND ge.api_key_client_id IN {{Array(api_key_ids, 'String')}}
+    {% end %}
+
+NODE daily_buckets
+SQL >
+    %
+    SELECT
+        if(
+            {{String(grain, 'day')}} = 'hour',
+            formatDateTime(toStartOfHour(start_time), '%F %T'),
+            formatDateTime(toStartOfDay(start_time), '%F')
+        ) AS date,
+        app_key_id,
+        any(app_name) AS app_name,
+        count() AS requests,
+        sum(earned) AS pollen_earned,
+        avg(markup_rate) AS markup_rate,
+        toUInt64(0) AS unique_users
+    FROM dev_events
+    GROUP BY date, app_key_id
+
+NODE per_app_rollup
+SQL >
+    SELECT
+        '' AS date,
+        app_key_id,
+        any(app_name) AS app_name,
+        count() AS requests,
+        sum(earned) AS pollen_earned,
+        avg(markup_rate) AS markup_rate,
+        uniq(user_id) AS unique_users
+    FROM dev_events
+    GROUP BY app_key_id
+
+NODE global_rollup
+SQL >
+    SELECT
+        '' AS date,
+        '' AS app_key_id,
+        '' AS app_name,
+        count() AS requests,
+        sum(earned) AS pollen_earned,
+        if(count() = 0, toFloat64(0), avg(markup_rate)) AS markup_rate,
+        uniq(user_id) AS unique_users
+    FROM dev_events
+
+NODE developer_earnings_node
+SQL >
+    SELECT * FROM daily_buckets
+    UNION ALL
+    SELECT * FROM per_app_rollup
+    UNION ALL
+    SELECT * FROM global_rollup
+
+TYPE endpoint

@@ -44,7 +44,7 @@ type UsageDebugBindings = CloudflareBindings & {
     USAGE_DEBUG_USER_ID?: string;
 };
 
-function resolveUsageTargetUserId(
+export function resolveUsageTargetUserId(
     env: CloudflareBindings,
     currentUserId: string,
     apiKey?: {
@@ -520,6 +520,52 @@ function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
     return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
 }
 
+type DeveloperEarningsRow = {
+    date: string;
+    app_key_id: string;
+    app_name: string;
+    requests: number;
+    pollen_earned: number;
+    markup_rate: number;
+    unique_users: number;
+};
+
+const developerEarningsRowSchema = z.object({
+    date: z
+        .string()
+        .describe(
+            "Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows",
+        ),
+    app_key_id: z
+        .string()
+        .describe("BYOP app key id; empty string on the global rollup row"),
+    app_name: z.string().describe("App display name"),
+    requests: z.number().describe("Number of billed requests"),
+    pollen_earned: z.number().describe("Pollen earned (markup take)"),
+    markup_rate: z.number().describe("Average markup rate applied"),
+    unique_users: z
+        .number()
+        .describe(
+            "Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').",
+        ),
+});
+
+const developerEarningsResponseSchema = z.object({
+    daily: z
+        .array(developerEarningsRowSchema)
+        .describe("Per-(date, app) buckets for the period"),
+    perApp: z
+        .array(developerEarningsRowSchema)
+        .describe("Per-app rollups for the period"),
+    global: developerEarningsRowSchema
+        .nullable()
+        .describe("Global rollup across all apps for the period"),
+});
+
+function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
+    return `${escapeCSV(row.date)},${escapeCSV(row.app_key_id)},${escapeCSV(row.app_name)},${row.requests},${row.pollen_earned},${row.markup_rate}`;
+}
+
 async function fetchDetailedUsagePage(
     origin: string,
     token: string,
@@ -943,9 +989,12 @@ export const accountRoutes = new Hono<Env>()
                 let cached = false;
 
                 try {
-                    const cachedData = await kv.get(cacheKey, "json");
+                    const cachedData = await kv.get<DailyUsageRecord[]>(
+                        cacheKey,
+                        "json",
+                    );
                     if (cachedData) {
-                        usage = cachedData as DailyUsageRecord[];
+                        usage = cachedData;
                         cached = true;
                     }
                 } catch (err) {
@@ -1016,6 +1065,164 @@ export const accountRoutes = new Hono<Env>()
             } catch (error) {
                 log.error("Error fetching daily usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
+            }
+        },
+    )
+    .get(
+        "/earnings",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Developer Earnings",
+            description:
+                "Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Earnings = total_price − dev_price. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description: "Combined earnings buckets and rollups",
+                    content: {
+                        "application/json": {
+                            schema: resolver(developerEarningsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", usageDailyQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("earnings");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view earnings",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            if (apiKey && !apiKey.permissions?.account?.includes("usage")) {
+                throw new HTTPException(403, {
+                    message: "API key does not have 'account:usage' permission",
+                });
+            }
+
+            const {
+                format,
+                days,
+                granularity,
+                period,
+                api_key_ids: apiKeyIds,
+            } = c.req.valid("query");
+            const grain = granularity === "day" ? "hour" : "day";
+            const { userId: devUserId, overridden: devUserOverridden } =
+                resolveUsageTargetUserId(c.env, user.id, apiKey);
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
+            const kv = c.env.KV;
+            const cacheKeyPrefix = devUserOverridden
+                ? `earnings:debug:${devUserId}`
+                : `earnings:${devUserId}`;
+            const periodCacheKey =
+                granularity && period ? `${granularity}:${period}` : `${days}d`;
+            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
+            const filenamePeriod = usageWindowFilenamePart(days, {
+                granularity,
+                period,
+            });
+            const window = formatUsageWindow(
+                resolveUsageWindow(days, { granularity, period }),
+            );
+
+            type EarningsPayload = {
+                daily: DeveloperEarningsRow[];
+                perApp: DeveloperEarningsRow[];
+                global: DeveloperEarningsRow | null;
+            };
+
+            try {
+                let payload: EarningsPayload | null = null;
+                let cached = false;
+
+                try {
+                    const cachedData = await kv.get<EarningsPayload>(
+                        cacheKey,
+                        "json",
+                    );
+                    if (cachedData) {
+                        payload = cachedData;
+                        cached = true;
+                    }
+                } catch (err) {
+                    log.trace("KV get error: {err}", { err });
+                }
+
+                if (!payload) {
+                    const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
+                        tinybirdOrigin,
+                        "/v0/pipes/developer_earnings.json",
+                        tinybirdToken,
+                        {
+                            dev_user_id: devUserId,
+                            since: window.since,
+                            until: window.until,
+                            grain,
+                            api_key_ids:
+                                apiKeyIds.length > 0
+                                    ? apiKeyIds.join(",")
+                                    : undefined,
+                        },
+                    );
+                    const daily = rows.filter((r) => r.date !== "");
+                    const rollups = rows.filter((r) => r.date === "");
+                    const perApp = [...rollups]
+                        .filter((r) => r.app_key_id !== "")
+                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
+                    const global =
+                        rollups.find((r) => r.app_key_id === "") ?? null;
+                    payload = { daily, perApp, global };
+
+                    try {
+                        await kv.put(cacheKey, JSON.stringify(payload), {
+                            expirationTtl: CACHE_TTL,
+                        });
+                    } catch (err) {
+                        log.trace("KV put error: {err}", { err });
+                    }
+                }
+
+                log.debug(
+                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} appCount={appCount} cached={cached}",
+                    {
+                        requesterUserId: user.id,
+                        devUserId,
+                        override: devUserOverridden,
+                        days,
+                        dailyCount: payload.daily.length,
+                        appCount: payload.perApp.length,
+                        cached,
+                    },
+                );
+
+                if (format === "csv") {
+                    const header =
+                        "date,app_key_id,app_name,requests,pollen_earned,markup_rate";
+                    const rows = payload.daily.map(dailyEarningsRowToCsvRow);
+                    const csv = [header, ...rows].join("\n");
+
+                    return new Response(csv, {
+                        headers: {
+                            "Content-Type": "text/csv",
+                            "Content-Disposition": `attachment; filename="pollinations-earnings-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                        },
+                    });
+                }
+
+                return c.json(payload);
+            } catch (error) {
+                log.error("Error fetching earnings: {error}", { error });
+                return c.json({ error: "Failed to fetch earnings data" }, 500);
             }
         },
     )

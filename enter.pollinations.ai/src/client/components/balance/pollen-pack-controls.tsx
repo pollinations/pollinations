@@ -108,7 +108,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                             {hasBonus && (
                                                 <span className="text-amber-700">
                                                     {" (+"}
-                                                    {bonusPercent}% free)
+                                                    {bonusPercent}% bonus)
                                                 </span>
                                             )}
                                         </span>
@@ -202,7 +202,7 @@ export const PollenPackBonusPill: FC<PollenPackBonusPillProps> = ({
             {hasBonus && (
                 <span className="text-amber-700">
                     {" (+"}
-                    {bonusPercent}% free)
+                    {bonusPercent}% bonus)
                 </span>
             )}
         </span>

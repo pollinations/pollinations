@@ -545,6 +545,38 @@ export async function processAutoTopUpForUser(
             { idempotencyKey: `${idempotencyKey}:pay` },
         );
 
+        // Credit synchronously now that Stripe has confirmed the charge.
+        // Webhook (`invoice.paid` / `invoice.payment_succeeded`) is the safety
+        // net: it short-circuits on attempt.status === 'paid' so it can never
+        // double-credit. Isolated try/catch so an inline-credit failure does
+        // NOT trigger the outer Stripe-error catch (which would void an
+        // already-charged invoice and lose the user's money).
+        try {
+            const creditResult = await creditAutoTopUpInvoice(env, paid);
+            if (!creditResult.credited) {
+                console.warn(
+                    "[auto-top-up] inline credit skipped; webhook will retry",
+                    {
+                        invoiceId: paid.id,
+                        attemptId,
+                        reason: creditResult.reason,
+                    },
+                );
+            }
+        } catch (creditError) {
+            console.error(
+                "[auto-top-up] inline credit threw; webhook will recover",
+                {
+                    invoiceId: paid.id,
+                    attemptId,
+                    error:
+                        creditError instanceof Error
+                            ? creditError.message
+                            : String(creditError),
+                },
+            );
+        }
+
         return { status: "created", invoiceId: paid.id };
     } catch (error) {
         const message =

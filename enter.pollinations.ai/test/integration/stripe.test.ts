@@ -909,6 +909,8 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
     expect(data.status).toBe("created");
     expect(data.invoiceId).toBe("in_mock_1");
 
+    // Inline credit: pollen lands the moment Stripe confirms the charge,
+    // before the webhook arrives. pack: 1 + 15 (pollen grant for $10) = 16.
     const updatedUser = await env.DB.prepare(
         `SELECT pack_balance AS packBalance,
             auto_top_up_claimed_at AS autoTopUpClaimedAt
@@ -920,8 +922,18 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
             packBalance: number | null;
             autoTopUpClaimedAt: number | null;
         }>();
-    expect(updatedUser?.packBalance).toBe(1);
-    expect(updatedUser?.autoTopUpClaimedAt).toBeTypeOf("number");
+    expect(updatedUser?.packBalance).toBe(16);
+    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
+
+    const attempt = await env.DB.prepare(
+        `SELECT status, completed_at AS completedAt
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind("in_mock_1")
+        .first<{ status: string; completedAt: number | null }>();
+    expect(attempt?.status).toBe("paid");
+    expect(attempt?.completedAt).toBeTypeOf("number");
 
     const invoiceRequest = mocks.stripe.state.requests.find(
         (request) => request.path === "/v1/invoices",
@@ -938,6 +950,72 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
         "auto_top_up",
     );
     expect(payRequest).toBeDefined();
+});
+
+test("POST /api/stripe/auto-top-up/trigger followed by webhook does not double-credit", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_inline_then_webhook");
+    customer.invoice_settings.default_payment_method = "pm_card";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_card", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+        })
+        .where(eq(userTable.id, user.id));
+
+    const triggerResponse = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+    expect(triggerResponse.status).toBe(200);
+
+    // Inline credit already landed.
+    const afterInline = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ packBalance: number | null }>();
+    expect(afterInline?.packBalance).toBe(16);
+
+    // Late webhook delivery for the same invoice — must short-circuit and
+    // leave the balance unchanged.
+    const webhookResponse = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent("invoice.paid", "in_mock_1", user.id),
+    );
+    expect(webhookResponse.status).toBe(200);
+
+    const afterWebhook = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ packBalance: number | null }>();
+    expect(afterWebhook?.packBalance).toBe(16);
 });
 
 test("POST /api/stripe/auto-top-up/trigger disables auto top-up when setup is incomplete", async ({

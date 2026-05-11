@@ -1,0 +1,34 @@
+{
+  "pr_number": 10872,
+  "title": "project-manager: one SERVICE label on support issues",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10872",
+  "merged_at": "2026-05-11T13:29:42Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Taming the label printer",
+    "blurb": "Our AI project manager was getting a little too enthusiastic with the label maker. We've tweaked its instructions so support issues now get exactly one service label, keeping our boards clean and tidy.",
+    "summary": "Updated the AI project manager prompt and normalization script to ensure support issues receive exactly one SERVICE label.",
+    "impact": "Internal support boards will be less noisy and easier to filter, as issues will no longer be tagged with multiple conflicting service labels.",
+    "keywords": [
+      "github",
+      "automation",
+      "labels",
+      "triage",
+      "project-manager"
+    ],
+    "visual_concept": "The AI project manager (represented by the Monitor Robot) holding a label maker, carefully applying a single label to a folder, while Polly the Bee helps organize a neat stack of single-labeled folders.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a label maker, carefully placing a single neat label on a folder. The cute bee mascot hovers nearby holding a clipboard, giving a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-11/PR-10872.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a label maker, carefully placing a single neat label on a folder. The cute bee mascot hovers nearby holding a clipboard, giving a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-11T13:30:41.500119+00:00"
+}

@@ -18,7 +18,8 @@ bucket_name = "pollinations-media-dev"
 binding = "DB"
 database_name = "media-dev"
 # TODO: Replace with actual D1 UUID from `wrangler d1 create media-dev`
-database_id = "media-dev"
+database_id = "TODO-REPLACE-WITH-UUID-FROM-wrangler-d1-create"
+migrations_dir = "drizzle"
 
 # Production environment
 [env.production]
@@ -40,7 +41,8 @@ bucket_name = "pollinations-media"
 binding = "DB"
 database_name = "media-prod"
 # TODO: Replace with actual D1 UUID from `wrangler d1 create media-prod --remote`
-database_id = "media-prod"
+database_id = "TODO-REPLACE-WITH-UUID-FROM-wrangler-d1-create"
+migrations_dir = "drizzle"
 
 [vars]
 MAX_FILE_SIZE = "52428800"  # 50MB in bytes

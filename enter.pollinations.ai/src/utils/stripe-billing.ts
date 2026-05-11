@@ -8,13 +8,11 @@ const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_PURPOSE = "pollinations_purpose";
 const AUTO_TOP_UP_PURPOSE = "auto_top_up";
 const AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
-const AUTO_TOP_UP_BACKOFF_MS = [
-    60 * 60 * 1000, // 1h after 1st consecutive failure
-    4 * 60 * 60 * 1000, // 4h after 2nd
-    24 * 60 * 60 * 1000, // 24h after 3rd
-];
-const AUTO_TOP_UP_MIN_BACKOFF_MS = AUTO_TOP_UP_BACKOFF_MS[0];
-const AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES = AUTO_TOP_UP_BACKOFF_MS.length + 1;
+// Stripe Smart Retries owns the per-failure retry schedule (configured in
+// Dashboard → Settings → Billing → Invoices). This claim window only
+// coalesces racing live triggers so we don't create two parallel invoices for
+// the same user before the active-attempt row exists.
+const AUTO_TOP_UP_CLAIM_WINDOW_MS = 60 * 1000;
 const AUTO_TOP_UP_ATTEMPT_STATUS_FAILED = "failed";
 const AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION = "requires_action";
 const BILLING_PORTAL_CONFIGURATION_METADATA_KEY = "pollinations_portal";
@@ -111,7 +109,6 @@ export type BillingOverview = {
 type AutoTopUpProcessResult =
     | { status: "skipped"; reason: string }
     | { status: "created"; invoiceId: string }
-    | { status: "credited"; invoiceId: string; pollenCredited: number }
     | { status: "failed"; reason: string };
 
 export async function getOrCreateStripeCustomerId(
@@ -404,21 +401,6 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "paid balance above threshold" };
     }
 
-    const consecutiveFailures = await countConsecutiveAutoTopUpFailures(
-        env.DB,
-        userId,
-    );
-    const retryMsRemaining = getAutoTopUpRetryMsRemaining(
-        user.autoTopUpLastAttemptAt,
-        consecutiveFailures,
-    );
-    if (retryMsRemaining > 0) {
-        return {
-            status: "skipped",
-            reason: `auto top-up attempt cooldown (${Math.ceil(retryMsRemaining / 60_000)}m remaining)`,
-        };
-    }
-
     const pack = getPollenPack(String(amountUsd));
     if (!pack) {
         await disableAutoTopUp(env.DB, userId);
@@ -471,12 +453,17 @@ export async function processAutoTopUpForUser(
             packAmount: String(pack.amountUsd),
         };
 
+        // auto_advance: true hands the invoice to Stripe Smart Retries.
+        // Stripe finalizes + attempts payment immediately, then retries on
+        // soft declines per the dashboard policy (default: 8 attempts /
+        // 14 days). Success/failure arrives via the invoice.* webhooks;
+        // we don't need to poll or pay() ourselves.
         const invoice = await stripe.invoices.create(
             {
                 customer: customerId,
                 currency: "usd",
                 collection_method: "charge_automatically",
-                auto_advance: false,
+                auto_advance: true,
                 automatic_tax: { enabled: true },
                 default_payment_method: paymentMethod.id,
                 description: pack.checkoutName,
@@ -484,6 +471,7 @@ export async function processAutoTopUpForUser(
             },
             { idempotencyKey: `${idempotencyKey}:invoice` },
         );
+        createdInvoiceId = invoice.id;
 
         await stripe.invoiceItems.create(
             {
@@ -499,7 +487,6 @@ export async function processAutoTopUpForUser(
             { idempotencyKey: `${idempotencyKey}:item` },
         );
 
-        createdInvoiceId = invoice.id;
         await ensureAutoTopUpAttempt(env.DB, {
             invoiceId: invoice.id,
             userId,
@@ -508,72 +495,22 @@ export async function processAutoTopUpForUser(
             status: "pending",
         });
 
-        const finalized = await stripe.invoices.finalizeInvoice(
+        await stripe.invoices.finalizeInvoice(
             invoice.id,
             {},
             { idempotencyKey: `${idempotencyKey}:finalize` },
         );
-        const paid = await stripe.invoices.pay(
-            finalized.id,
-            {},
-            { idempotencyKey: `${idempotencyKey}:pay` },
-        );
 
-        if (paid.status === "paid") {
-            const credit = await creditAutoTopUpInvoice(env, paid);
-            if (credit.credited) {
-                return {
-                    status: "credited",
-                    invoiceId: paid.id,
-                    pollenCredited: credit.pollenCredited,
-                };
-            }
-        }
-
-        return { status: "created", invoiceId: paid.id };
+        return { status: "created", invoiceId: invoice.id };
     } catch (error) {
         const message =
             error instanceof Error ? error.message : "Auto top-up failed.";
         await failPendingAutoTopUpAttempts(env.DB, userId, message);
-        // Stripe does not always fire payment_failed for SCA-blocked off-session
-        // invoices (they sit in requires_action waiting for user action that
-        // will not come). Void here so the customer portal stays clean.
         if (createdInvoiceId) {
             await voidAutoTopUpInvoice(env, createdInvoiceId);
         }
-        await recordAutoTopUpFailureAndMaybeDisable(env.DB, userId);
         return { status: "failed", reason: message };
     }
-}
-
-export async function processDueAutoTopUps(
-    env: CloudflareBindings,
-    limit = 50,
-): Promise<AutoTopUpProcessResult[]> {
-    const { results: users } = await env.DB.prepare(
-        `SELECT id
-            FROM user
-            WHERE auto_top_up_enabled = 1
-                AND auto_top_up_amount_usd IS NOT NULL
-                AND COALESCE(pack_balance, 0) <= ?
-                AND (
-                    auto_top_up_last_attempt_at IS NULL
-                    OR auto_top_up_last_attempt_at <= ?
-                )
-            LIMIT ?`,
-    )
-        .bind(
-            AUTO_TOP_UP_THRESHOLD_POLLEN,
-            Date.now() - AUTO_TOP_UP_MIN_BACKOFF_MS,
-            limit,
-        )
-        .all<{ id: string }>();
-
-    const results: AutoTopUpProcessResult[] = [];
-    for (const user of users ?? []) {
-        results.push(await processAutoTopUpForUser(env, user.id));
-    }
-    return results;
 }
 
 export async function creditAutoTopUpInvoice(
@@ -637,6 +574,7 @@ export async function markAutoTopUpInvoiceFailed(
     env: CloudflareBindings,
     invoice: Stripe.Invoice,
     reason: string,
+    options: { terminal: boolean } = { terminal: true },
 ): Promise<void> {
     const metadata = invoice.metadata ?? {};
     if (metadata[METADATA_PURPOSE] !== AUTO_TOP_UP_PURPOSE) return;
@@ -656,23 +594,41 @@ export async function markAutoTopUpInvoiceFailed(
     });
 
     const now = Date.now();
+    if (!options.terminal) {
+        await env.DB.prepare(
+            `UPDATE stripe_auto_top_up_attempt
+                SET failure_reason = ?,
+                    updated_at = ?
+                WHERE stripe_invoice_id = ? AND status = 'pending'`,
+        )
+            .bind(reason, now, invoice.id)
+            .run();
+        return;
+    }
+
     const attempt = await env.DB.prepare(
         `UPDATE stripe_auto_top_up_attempt
             SET status = ?,
                 failure_reason = ?,
                 updated_at = ?,
                 completed_at = ?
-            WHERE stripe_invoice_id = ? AND status <> 'paid'
+            WHERE stripe_invoice_id = ?
+                AND status NOT IN ('paid', ?)
             RETURNING id, status`,
     )
-        .bind(AUTO_TOP_UP_ATTEMPT_STATUS_FAILED, reason, now, now, invoice.id)
+        .bind(
+            AUTO_TOP_UP_ATTEMPT_STATUS_FAILED,
+            reason,
+            now,
+            now,
+            invoice.id,
+            AUTO_TOP_UP_ATTEMPT_STATUS_FAILED,
+        )
         .first<AutoTopUpAttemptStatusRow>();
 
     if (!attempt) return;
 
-    await voidAutoTopUpInvoice(env, invoice.id);
-    await preserveAutoTopUpLastAttemptAt(env.DB, userId, now);
-    await recordAutoTopUpFailureAndMaybeDisable(env.DB, userId);
+    await disableAutoTopUp(env.DB, userId);
 }
 
 export async function markAutoTopUpInvoiceRequiresAction(
@@ -710,7 +666,7 @@ export async function markAutoTopUpInvoiceRequiresAction(
             SET status = ?,
                 failure_reason = ?,
                 updated_at = ?,
-                completed_at = ?
+                completed_at = NULL
             WHERE stripe_invoice_id = ?
                 AND status NOT IN ('paid', ?)
             RETURNING id, status`,
@@ -719,19 +675,12 @@ export async function markAutoTopUpInvoiceRequiresAction(
             AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION,
             reason,
             now,
-            now,
             invoice.id,
             AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION,
         )
         .first<AutoTopUpAttemptStatusRow>();
 
     if (!attempt) return;
-
-    await voidAutoTopUpInvoice(env, invoice.id);
-    // requires_action leaves the attempt timestamp in place so the next retry
-    // waits for the normal auto top-up attempt window. It does not count toward
-    // the consecutive-failure disable threshold.
-    await preserveAutoTopUpLastAttemptAt(env.DB, userId, now);
 }
 
 async function getUserStripeBillingRow(
@@ -858,11 +807,12 @@ async function findPendingAutoTopUpAttempt(
             .prepare(
                 `SELECT id, stripe_invoice_id AS stripeInvoiceId
                     FROM stripe_auto_top_up_attempt
-                    WHERE user_id = ? AND status = 'pending'
+                    WHERE user_id = ?
+                        AND status IN ('pending', ?)
                     ORDER BY created_at DESC
                     LIMIT 1`,
             )
-            .bind(userId)
+            .bind(userId, AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION)
             .first<PendingAutoTopUpAttempt>()) ?? null
     );
 }
@@ -928,10 +878,10 @@ async function getLastAutoTopUpIssue(
 ): Promise<AutoTopUpIssue | null> {
     const row = await db
         .prepare(
-            `SELECT status, failure_reason, completed_at, created_at
+            `SELECT status, failure_reason, completed_at, updated_at, created_at
                 FROM stripe_auto_top_up_attempt
                 WHERE user_id = ?
-                ORDER BY COALESCE(completed_at, created_at) DESC
+                ORDER BY COALESCE(completed_at, updated_at, created_at) DESC
                 LIMIT 1`,
         )
         .bind(userId)
@@ -939,31 +889,19 @@ async function getLastAutoTopUpIssue(
             status: string;
             failure_reason: string | null;
             completed_at: number | null;
+            updated_at: number | null;
             created_at: number;
         }>();
     if (!row) return null;
     if (row.status !== "failed" && row.status !== "requires_action") {
         return null;
     }
-    const occurredAtMs = row.completed_at ?? row.created_at;
+    const occurredAtMs = row.completed_at ?? row.updated_at ?? row.created_at;
     return {
         kind: row.status,
         reason: row.failure_reason ?? "Auto top-up could not be completed.",
         occurredAt: new Date(occurredAtMs).toISOString(),
     };
-}
-
-async function recordAutoTopUpFailureAndMaybeDisable(
-    db: D1Database,
-    userId: string,
-): Promise<void> {
-    const consecutiveFailures = await countConsecutiveAutoTopUpFailures(
-        db,
-        userId,
-    );
-    if (consecutiveFailures < AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES) return;
-
-    await disableAutoTopUp(db, userId);
 }
 
 async function disableAutoTopUp(db: D1Database, userId: string): Promise<void> {
@@ -976,34 +914,6 @@ async function disableAutoTopUp(db: D1Database, userId: string): Promise<void> {
         )
         .bind(userId)
         .run();
-}
-
-async function countConsecutiveAutoTopUpFailures(
-    db: D1Database,
-    userId: string,
-): Promise<number> {
-    // Pending attempts have completed_at = NULL. SQLite sorts NULLs first
-    // ascending and last descending, so with `completed_at DESC` they fall to
-    // the bottom of the window and never preempt a real terminal status. The
-    // streak breaks on any non-'failed' row ('paid', 'requires_action',
-    // 'pending'), so SCA prompts and successes both reset the counter.
-    const { results } = await db
-        .prepare(
-            `SELECT id, status
-                FROM stripe_auto_top_up_attempt
-                WHERE user_id = ?
-                ORDER BY completed_at DESC, created_at DESC
-                LIMIT ?`,
-        )
-        .bind(userId, AUTO_TOP_UP_MAX_CONSECUTIVE_FAILURES)
-        .all<AutoTopUpAttemptStatusRow>();
-
-    let consecutiveFailures = 0;
-    for (const attempt of results ?? []) {
-        if (attempt.status !== AUTO_TOP_UP_ATTEMPT_STATUS_FAILED) break;
-        consecutiveFailures += 1;
-    }
-    return consecutiveFailures;
 }
 
 async function failPendingAutoTopUpAttempts(
@@ -1032,30 +942,16 @@ function coerceTimestampMs(value: number | string | null): number | null {
     return Number.isFinite(timestamp) ? timestamp : null;
 }
 
-function getAutoTopUpBackoffMs(consecutiveFailures: number): number {
-    if (consecutiveFailures <= 0) return AUTO_TOP_UP_MIN_BACKOFF_MS;
-    const idx = Math.min(
-        consecutiveFailures - 1,
-        AUTO_TOP_UP_BACKOFF_MS.length - 1,
-    );
-    return AUTO_TOP_UP_BACKOFF_MS[idx];
-}
-
-function getAutoTopUpRetryMsRemaining(
-    lastAttemptAt: number | null,
-    consecutiveFailures: number,
-): number {
-    if (!lastAttemptAt) return 0;
-    const backoff = getAutoTopUpBackoffMs(consecutiveFailures);
-    return Math.max(0, lastAttemptAt + backoff - Date.now());
-}
-
+// Coalesces racing triggers (e.g. two live triggers fired within a few
+// seconds of each other) by atomically advancing auto_top_up_last_attempt_at.
+// Only one caller wins per AUTO_TOP_UP_CLAIM_WINDOW_MS. Stripe Smart Retries
+// owns the actual retry schedule after Stripe accepts the invoice.
 async function claimAutoTopUpAttempt(
     db: D1Database,
     userId: string,
 ): Promise<boolean> {
     const now = Date.now();
-    const retryCutoff = now - AUTO_TOP_UP_MIN_BACKOFF_MS;
+    const claimCutoff = now - AUTO_TOP_UP_CLAIM_WINDOW_MS;
     const claim = await db
         .prepare(
             `UPDATE user
@@ -1070,28 +966,10 @@ async function claimAutoTopUpAttempt(
                     )
                 RETURNING id`,
         )
-        .bind(now, userId, AUTO_TOP_UP_THRESHOLD_POLLEN, retryCutoff)
+        .bind(now, userId, AUTO_TOP_UP_THRESHOLD_POLLEN, claimCutoff)
         .first<{ id: string }>();
 
     return !!claim;
-}
-
-async function preserveAutoTopUpLastAttemptAt(
-    db: D1Database,
-    userId: string,
-    timestamp: number,
-): Promise<void> {
-    await db
-        .prepare(
-            `UPDATE user
-                SET auto_top_up_last_attempt_at = COALESCE(
-                    auto_top_up_last_attempt_at,
-                    ?
-                )
-                WHERE id = ?`,
-        )
-        .bind(timestamp, userId)
-        .run();
 }
 
 function createAutoTopUpIdempotencyKey(

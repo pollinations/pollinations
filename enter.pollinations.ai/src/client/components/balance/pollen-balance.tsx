@@ -3,6 +3,7 @@ import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
+import { InfoTip } from "../ui/info-tip.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 
@@ -85,19 +86,14 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     Total balance
                 </span>
                 {totalWeek > 0 && (
-                    <Tooltip
-                        triggerAs="span"
-                        displayContents
-                        className="flex flex-col items-end leading-tight cursor-default"
-                        content="Earnings past 7 days"
-                    >
+                    <span className="flex flex-col items-end leading-tight">
                         <span className="text-base font-bold tabular-nums text-green-700">
                             +{formatPollen(totalWeek)}
                         </span>
                         <span className="text-xs font-medium text-amber-800/70">
-                            past 7d
+                            earned past 7d
                         </span>
-                    </Tooltip>
+                    </span>
                 )}
             </div>
 
@@ -135,23 +131,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         : "grid grid-cols-2 gap-4"
                 }
             >
-                <Tooltip
-                    triggerAs="span"
-                    displayContents
-                    className="flex flex-col gap-1.5 items-center sm:items-stretch cursor-default"
-                    content={
-                        <TooltipList
-                            title="Paid balance"
-                            emoji="💳"
-                            items={[
-                                "Pollen you bought",
-                                "Earnings from paid-side spend in your apps",
-                                "Used for paid-only models, or when Tier can't cover",
-                            ]}
-                            earned={paidWeek}
-                        />
-                    }
-                >
+                <div className="flex flex-col gap-1.5 items-center">
                     <span className="flex items-center gap-2">
                         <span
                             className={`h-2 w-2 rounded-full ${PAID_BAR}`}
@@ -160,36 +140,36 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
                             Paid
                         </span>
+                        <InfoTip
+                            tone="amber"
+                            label="About paid balance"
+                            text={
+                                <TooltipList
+                                    title="Paid balance"
+                                    emoji="💳"
+                                    items={[
+                                        "Pollen you bought",
+                                        "Earnings from paid-side spend in your apps",
+                                        "Used for paid-only models, or when Tier can't cover",
+                                    ]}
+                                    earned={paidWeek}
+                                />
+                            }
+                        />
                     </span>
                     <span className="flex flex-col items-center gap-1 sm:flex-row sm:items-baseline sm:gap-2">
                         <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
                             {formatPollen(displayPaidBalance)}
                         </span>
                         {paidWeek > 0 && (
-                            <span className="text-base font-bold tabular-nums text-green-700 sm:ml-auto">
+                            <span className="text-base font-bold tabular-nums text-green-700">
                                 +{formatPollen(paidWeek)}
                             </span>
                         )}
                     </span>
-                </Tooltip>
+                </div>
                 {!hideTierColumn && (
-                    <Tooltip
-                        triggerAs="span"
-                        displayContents
-                        className="flex flex-col gap-1.5 items-center sm:items-stretch cursor-default"
-                        content={
-                            <TooltipList
-                                title="Tier balance"
-                                emoji="🌱"
-                                items={[
-                                    "Free Pollen that refills hourly",
-                                    "Earnings from tier-side spend in your apps",
-                                    "Used first for regular models, when it can cover",
-                                ]}
-                                earned={tierWeek}
-                            />
-                        }
-                    >
+                    <div className="flex flex-col gap-1.5 items-center">
                         <span className="flex items-center gap-2">
                             <span
                                 className={`h-2 w-2 rounded-full ${TIER_BAR}`}
@@ -198,18 +178,34 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
                                 Tier
                             </span>
+                            <InfoTip
+                                tone="yellow"
+                                label="About tier balance"
+                                text={
+                                    <TooltipList
+                                        title="Tier balance"
+                                        emoji="🌱"
+                                        items={[
+                                            "Free Pollen that refills hourly",
+                                            "Earnings from tier-side spend in your apps",
+                                            "Used first for regular models, when it can cover",
+                                        ]}
+                                        earned={tierWeek}
+                                    />
+                                }
+                            />
                         </span>
                         <span className="flex flex-col items-center gap-1 sm:flex-row sm:items-baseline sm:gap-2">
                             <span className="text-3xl sm:text-4xl font-bold tabular-nums text-amber-950 leading-none tracking-tight">
                                 {formatPollen(displayTierBalance)}
                             </span>
                             {tierWeek > 0 && (
-                                <span className="text-base font-bold tabular-nums text-green-700 sm:ml-auto">
+                                <span className="text-base font-bold tabular-nums text-green-700">
                                     +{formatPollen(tierWeek)}
                                 </span>
                             )}
                         </span>
-                    </Tooltip>
+                    </div>
                 )}
             </div>
 
@@ -272,7 +268,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
     return (
         <div className="px-3 py-1 flex flex-col gap-1.5">
-            <div className="flex items-baseline justify-between gap-2 whitespace-nowrap">
+            <div className="flex items-end justify-between gap-2 whitespace-nowrap">
                 <span className="flex items-baseline gap-1.5">
                     <span className="text-base font-bold tabular-nums text-amber-950 leading-none">
                         {formatPollen(totalPollen)}
@@ -282,8 +278,13 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                     </span>
                 </span>
                 {totalWeek > 0 && (
-                    <span className="text-xs font-bold tabular-nums text-green-700">
-                        +{formatPollen(totalWeek)}
+                    <span className="flex flex-col items-end leading-tight">
+                        <span className="text-xs font-bold tabular-nums text-green-700">
+                            +{formatPollen(totalWeek)}
+                        </span>
+                        <span className="text-[10px] font-medium text-amber-800/70">
+                            earned past 7d
+                        </span>
                     </span>
                 )}
             </div>

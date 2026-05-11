@@ -44,7 +44,7 @@ type UsageDebugBindings = CloudflareBindings & {
     USAGE_DEBUG_USER_ID?: string;
 };
 
-function resolveUsageTargetUserId(
+export function resolveUsageTargetUserId(
     env: CloudflareBindings,
     currentUserId: string,
     apiKey?: {

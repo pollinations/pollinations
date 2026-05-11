@@ -1,7 +1,7 @@
 import { type FC, useState } from "react";
 import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
-import { formatPollenPackValue, POLLEN_PACKS } from "@/pollen-packs.ts";
+import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
@@ -307,7 +307,7 @@ export const BuyPollenPanel: FC = () => {
                             </span>
                             <span className="mx-2 text-amber-400">/</span>
                             <span className="font-medium text-amber-900">
-                                🪷 {formatPollenPackValue(pack.pollenGrant)}
+                                🪷 {formatPollen(pack.pollenGrant)}
                             </span>
                         </Button>
                     ))}

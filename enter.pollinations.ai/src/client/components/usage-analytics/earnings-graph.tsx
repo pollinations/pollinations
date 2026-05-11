@@ -39,7 +39,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         },
     );
 
-    const showAppBreakdown = apps.length > 1;
+    const showAppBreakdown = apps.length > 0;
 
     function downloadEarnings(): void {
         const params = new URLSearchParams({

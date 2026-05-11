@@ -1,6 +1,7 @@
 import { getTierColor, type TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { formatPollen } from "@/client/lib/format-pollen.ts";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
@@ -168,21 +169,14 @@ export const Chart: FC<ChartProps> = ({
         return Number.isInteger(v) ? v.toString() : Number(v).toString();
     };
 
-    const formatPollenAxisVal = (v: number) => {
-        if (Math.abs(v) >= 1e3) return formatCompactVal(v);
-        if (Number.isInteger(v)) return v.toString();
-        const decimals = Math.abs(v) < 1 ? 4 : 2;
-        const formatted = Number(v.toFixed(decimals)).toString();
-        return formatted === "0" ? v.toExponential(1) : formatted;
-    };
-
     const formatVal = (v: number) => {
-        if (metric === "pollen") return formatPollenAxisVal(v);
+        if (metric === "pollen") return formatPollen(v);
         if (Math.abs(v) >= 1e3) return formatCompactVal(v);
         return Math.round(v).toString();
     };
 
     const formatTooltipVal = (v: number) => {
+        if (metric === "pollen") return formatPollen(v);
         if (Number.isInteger(v)) {
             return v.toLocaleString();
         }

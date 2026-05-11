@@ -7,6 +7,7 @@ import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { balance } from "../middleware/balance.ts";
+import { resolveUsageTargetUserId } from "./account.ts";
 
 type EarningsTodayRow = {
     paid_week: number;
@@ -65,11 +66,16 @@ export const customerRoutes = new Hono<Env>()
                     message: "Tinybird read token is not configured",
                 });
             }
+            const { userId: devUserId } = resolveUsageTargetUserId(
+                c.env,
+                user.id,
+                c.var.auth.apiKey,
+            );
             const url = new URL(
                 "/v0/pipes/developer_earnings_today.json",
                 new URL(c.env.TINYBIRD_INGEST_URL).origin,
             );
-            url.searchParams.set("dev_user_id", user.id);
+            url.searchParams.set("dev_user_id", devUserId);
             const response = await fetch(url.toString(), {
                 headers: {
                     Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,

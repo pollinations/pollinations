@@ -1,5 +1,6 @@
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
+import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { cn } from "@/util.ts";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
@@ -76,7 +77,5 @@ function formatBudget(pollenBudget: number | null | undefined): string {
     if (pollenBudget === 0) return "0";
     if (pollenBudget < 0) return "empty";
 
-    return Number.isInteger(pollenBudget)
-        ? `${pollenBudget}p`
-        : `${pollenBudget.toFixed(2)}p`;
+    return `${formatPollen(pollenBudget)}p`;
 }

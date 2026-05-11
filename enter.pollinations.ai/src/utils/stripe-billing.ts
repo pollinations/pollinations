@@ -7,11 +7,10 @@ const CUSTOMER_CREATE_IDEMPOTENCY_VERSION = "v1";
 const METADATA_USER_ID = "pollinations_user_id";
 const METADATA_PURPOSE = "pollinations_purpose";
 const AUTO_TOP_UP_PURPOSE = "auto_top_up";
-const AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
-// Manual invoice payment owns the single charge attempt. This claim window
-// coalesces racing live triggers so we don't create two parallel invoices for
-// the same user before the active-attempt row exists.
-const AUTO_TOP_UP_CLAIM_WINDOW_MS = 60 * 1000;
+// Local claim TTL for coalescing racing live triggers before the
+// active-attempt row exists. The claim timestamp also seeds Stripe
+// idempotency keys.
+const AUTO_TOP_UP_CLAIM_TTL_MS = 5 * 60 * 1000;
 const AUTO_TOP_UP_ATTEMPT_STATUS_FAILED = "failed";
 const AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION = "requires_action";
 const BILLING_PORTAL_CONFIGURATION_METADATA_KEY = "pollinations_portal";
@@ -36,7 +35,6 @@ type UserStripeBillingDbRow = {
     stripeCustomerId: string | null;
     autoTopUpEnabled: number | boolean | null;
     autoTopUpAmountUsd: number | null;
-    autoTopUpLastAttemptAt: number | string | null;
 };
 
 type UserStripeBillingRow = {
@@ -47,7 +45,6 @@ type UserStripeBillingRow = {
     stripeCustomerId: string | null;
     autoTopUpEnabled: boolean;
     autoTopUpAmountUsd: number | null;
-    autoTopUpLastAttemptAt: number | null;
 };
 
 type PendingAutoTopUpAttempt = {
@@ -84,7 +81,6 @@ export type BillingOverview = {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
-        lastAttemptAt: string | null;
         lastIssue: AutoTopUpIssue | null;
     };
     paymentMethod: {
@@ -171,9 +167,6 @@ export async function getBillingOverview(
             thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,
             packAmountUsd:
                 user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD,
-            lastAttemptAt: user.autoTopUpLastAttemptAt
-                ? new Date(user.autoTopUpLastAttemptAt).toISOString()
-                : null,
             lastIssue,
         },
         paymentMethod: paymentMethod
@@ -371,7 +364,7 @@ export async function updateAutoTopUpSettings(
         `UPDATE user
             SET auto_top_up_enabled = ?,
                 auto_top_up_amount_usd = ?,
-                auto_top_up_last_attempt_at = NULL
+                auto_top_up_claimed_at = NULL
             WHERE id = ?`,
     )
         .bind(input.enabled ? 1 : 0, packAmountUsd, userId)
@@ -414,8 +407,8 @@ export async function processAutoTopUpForUser(
         };
     }
 
-    const claimed = await claimAutoTopUpAttempt(env.DB, userId);
-    if (!claimed) {
+    const claimedAt = await claimAutoTopUpAttempt(env.DB, userId);
+    if (!claimedAt) {
         return {
             status: "skipped",
             reason: "auto top-up already attempted recently",
@@ -445,7 +438,11 @@ export async function processAutoTopUpForUser(
             return { status: "skipped", reason: "missing billing details" };
         }
 
-        const idempotencyKey = createAutoTopUpIdempotencyKey(userId, amountUsd);
+        const idempotencyKey = createAutoTopUpIdempotencyKey(
+            userId,
+            amountUsd,
+            claimedAt,
+        );
         const metadata = {
             [METADATA_USER_ID]: userId,
             [METADATA_PURPOSE]: AUTO_TOP_UP_PURPOSE,
@@ -563,7 +560,7 @@ export async function creditAutoTopUpInvoice(
     await env.DB.prepare(
         `UPDATE user
             SET pack_balance = COALESCE(pack_balance, 0) + ?,
-                auto_top_up_last_attempt_at = NULL
+                auto_top_up_claimed_at = NULL
             WHERE id = ?`,
     )
         .bind(attempt.pollenGrant, attempt.userId)
@@ -684,8 +681,7 @@ async function getUserStripeBillingRow(
                 pack_balance AS packBalance,
                 stripe_customer_id AS stripeCustomerId,
                 auto_top_up_enabled AS autoTopUpEnabled,
-                auto_top_up_amount_usd AS autoTopUpAmountUsd,
-                auto_top_up_last_attempt_at AS autoTopUpLastAttemptAt
+                auto_top_up_amount_usd AS autoTopUpAmountUsd
             FROM user
             WHERE id = ?
             LIMIT 1`,
@@ -701,7 +697,6 @@ async function getUserStripeBillingRow(
         ...user,
         autoTopUpEnabled:
             user.autoTopUpEnabled === true || user.autoTopUpEnabled === 1,
-        autoTopUpLastAttemptAt: coerceTimestampMs(user.autoTopUpLastAttemptAt),
     };
 }
 
@@ -924,49 +919,41 @@ async function failPendingAutoTopUpAttempts(
         .run();
 }
 
-function coerceTimestampMs(value: number | string | null): number | null {
-    if (value == null) return null;
-
-    const timestamp = Number(value);
-    return Number.isFinite(timestamp) ? timestamp : null;
-}
-
-// Coalesces racing triggers (e.g. two live triggers fired within a few
-// seconds of each other) by atomically advancing auto_top_up_last_attempt_at.
-// Only one caller wins per AUTO_TOP_UP_CLAIM_WINDOW_MS. After Stripe accepts
-// the invoice, the active attempt row blocks duplicates until a terminal event.
+// Coalesces racing live triggers by atomically claiming the user before Stripe
+// sees any requests. The returned timestamp also seeds Stripe idempotency keys,
+// so one local claim maps to one invoice/item/finalize/pay sequence.
 async function claimAutoTopUpAttempt(
     db: D1Database,
     userId: string,
-): Promise<boolean> {
+): Promise<number | null> {
     const now = Date.now();
-    const claimCutoff = now - AUTO_TOP_UP_CLAIM_WINDOW_MS;
+    const claimCutoff = now - AUTO_TOP_UP_CLAIM_TTL_MS;
     const claim = await db
         .prepare(
             `UPDATE user
-                SET auto_top_up_last_attempt_at = ?
+                SET auto_top_up_claimed_at = ?
                 WHERE id = ?
                     AND auto_top_up_enabled = 1
                     AND auto_top_up_amount_usd IS NOT NULL
                     AND COALESCE(pack_balance, 0) <= ?
                     AND (
-                        auto_top_up_last_attempt_at IS NULL
-                        OR auto_top_up_last_attempt_at <= ?
+                        auto_top_up_claimed_at IS NULL
+                        OR auto_top_up_claimed_at <= ?
                     )
                 RETURNING id`,
         )
         .bind(now, userId, AUTO_TOP_UP_THRESHOLD_POLLEN, claimCutoff)
         .first<{ id: string }>();
 
-    return !!claim;
+    return claim ? now : null;
 }
 
 function createAutoTopUpIdempotencyKey(
     userId: string,
     amountUsd: number,
+    claimedAt: number,
 ): string {
-    const bucket = Math.floor(Date.now() / AUTO_TOP_UP_IDEMPOTENCY_WINDOW_MS);
-    return `pollinations:${userId}:auto-top-up:${amountUsd}:${bucket}`;
+    return `pollinations:${userId}:auto-top-up:${amountUsd}:${claimedAt}`;
 }
 
 function getBillingReturnUrl(env: CloudflareBindings): string {

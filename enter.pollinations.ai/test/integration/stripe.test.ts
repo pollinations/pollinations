@@ -670,17 +670,17 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
 
     const updatedUser = await env.DB.prepare(
         `SELECT pack_balance AS packBalance,
-            auto_top_up_last_attempt_at AS autoTopUpLastAttemptAt
+            auto_top_up_claimed_at AS autoTopUpClaimedAt
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             packBalance: number | null;
-            autoTopUpLastAttemptAt: number | null;
+            autoTopUpClaimedAt: number | null;
         }>();
     expect(updatedUser?.packBalance).toBe(1);
-    expect(updatedUser?.autoTopUpLastAttemptAt).toBeTypeOf("number");
+    expect(updatedUser?.autoTopUpClaimedAt).toBeTypeOf("number");
 
     const invoiceRequest = mocks.stripe.state.requests.find(
         (request) => request.path === "/v1/invoices",
@@ -690,6 +690,9 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
     );
     expect(invoiceRequest?.body.customer).toBe(customer.id);
     expect(invoiceRequest?.body.auto_advance).toBe("false");
+    expect(invoiceRequest?.idempotencyKey).toBe(
+        `pollinations:${user.id}:auto-top-up:10:${updatedUser?.autoTopUpClaimedAt}:invoice`,
+    );
     expect(invoiceRequest?.body["metadata[pollinations_purpose]"]).toBe(
         "auto_top_up",
     );
@@ -780,7 +783,7 @@ test("POST /api/stripe/auto-top-up/trigger skips during claim window", async ({
                 stripe_customer_id = ?,
                 auto_top_up_enabled = 1,
                 auto_top_up_amount_usd = 10,
-                auto_top_up_last_attempt_at = ?
+                auto_top_up_claimed_at = ?
             WHERE id = ?`,
     )
         .bind(customer.id, Date.now(), user.id)
@@ -880,14 +883,14 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
 
     const updatedUser = await env.DB.prepare(
         `SELECT pack_balance AS packBalance,
-            auto_top_up_last_attempt_at AS autoTopUpLastAttemptAt
+            auto_top_up_claimed_at AS autoTopUpClaimedAt
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             packBalance: number | null;
-            autoTopUpLastAttemptAt: number | null;
+            autoTopUpClaimedAt: number | null;
         }>();
     const attempt = await env.DB.prepare(
         `SELECT status, failure_reason AS failureReason
@@ -898,7 +901,7 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
         .first<{ status: string; failureReason: string | null }>();
 
     expect(updatedUser?.packBalance).toBe(16);
-    expect(updatedUser?.autoTopUpLastAttemptAt).toBeNull();
+    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -938,14 +941,14 @@ test("POST /api/webhooks/stripe keeps auto top-up enabled after SCA prompt", asy
 
     const updatedUser = await env.DB.prepare(
         `SELECT auto_top_up_enabled AS autoTopUpEnabled,
-            auto_top_up_last_attempt_at AS autoTopUpLastAttemptAt
+            auto_top_up_claimed_at AS autoTopUpClaimedAt
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             autoTopUpEnabled: number | boolean | null;
-            autoTopUpLastAttemptAt: number | null;
+            autoTopUpClaimedAt: number | null;
         }>();
     const attempt = await env.DB.prepare(
         `SELECT status,
@@ -962,7 +965,7 @@ test("POST /api/webhooks/stripe keeps auto top-up enabled after SCA prompt", asy
         }>();
 
     expect(updatedUser?.autoTopUpEnabled).toBe(1);
-    expect(updatedUser?.autoTopUpLastAttemptAt).toBeNull();
+    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
     expect(attempt?.status).toBe("requires_action");
     expect(attempt?.failureReason).toContain(hostedInvoiceUrl);
     expect(attempt?.completedAt).toBeNull();

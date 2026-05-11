@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "bf3db931-b15d-4fed-aba4-ff4260b55acf",
+  "id": "4c2ba126-4185-4a55-8727-255fdbf6543d",
   "prevId": "0df2b212-b504-4a26-b01f-9c3fe22343f5",
   "tables": {
     "account": {
@@ -887,8 +887,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "auto_top_up_last_attempt_at": {
-          "name": "auto_top_up_last_attempt_at",
+        "auto_top_up_claimed_at": {
+          "name": "auto_top_up_claimed_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

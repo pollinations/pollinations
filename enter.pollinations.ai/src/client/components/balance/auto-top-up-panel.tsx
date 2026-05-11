@@ -26,7 +26,6 @@ export type BillingState = {
         enabled: boolean;
         thresholdPollen: number;
         packAmountUsd: number;
-        lastAttemptAt: string | null;
         lastIssue: AutoTopUpIssue | null;
     };
     paymentMethod: {

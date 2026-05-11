@@ -38,7 +38,7 @@ export const user = sqliteTable("user", {
     .default(false)
     .notNull(),
   autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
-  autoTopUpLastAttemptAt: integer("auto_top_up_last_attempt_at", {
+  autoTopUpClaimedAt: integer("auto_top_up_claimed_at", {
     mode: "timestamp",
   }),
 }, (table) => [

@@ -77,25 +77,21 @@ wrangler tail --format json | tee logs.jsonl
 wrangler tail --format json | npx tsx scripts/format-logs.ts
 ```
 
-### image.pollinations.ai (EC2 systemd)
+### gen.pollinations.ai (image + text gateway)
+Image and text generation now run inside the gen Cloudflare Worker (the legacy EC2 `image-pollinations` and `text-pollinations` services are decommissioned). Use `wrangler tail` from `gen.pollinations.ai/`:
 ```bash
-# Real-time logs
-ssh enter-services "sudo journalctl -u image-pollinations.service -f"
-
-# Last 3 minutes
-ssh enter-services "sudo journalctl -u image-pollinations.service --since '3 minutes ago' --no-pager" > image-service-logs.txt
-
-# Recent errors only
-ssh enter-services "sudo journalctl -u image-pollinations.service -p err -n 50"
+cd gen.pollinations.ai
+wrangler tail --format json | tee gen-logs.jsonl
 ```
 
-### text.pollinations.ai (EC2 systemd)
+### Legacy anonymous image (OVH)
+Anonymous traffic to `image.pollinations.ai` still terminates on the OVH host:
 ```bash
 # Real-time logs
-ssh enter-services "sudo journalctl -u text-pollinations.service -f"
+ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo journalctl -u image-pollinations -f"
 
 # Last 3 minutes
-ssh enter-services "sudo journalctl -u text-pollinations.service --since '3 minutes ago' --no-pager" > text-service-logs.txt
+ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo journalctl -u image-pollinations --since '3 minutes ago' --no-pager" > legacy-image-logs.txt
 ```
 
 ---
@@ -146,9 +142,9 @@ AZURE_CONTENT_SAFETY_API_KEY=<new-key>
 
 # Environment Variables to Check
 
-## image.pollinations.ai
+Image and text env vars now live in the gen Worker secrets (`gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`, SOPS-encrypted). Decrypt to inspect:
 ```bash
-ssh enter-services "cat /home/ubuntu/pollinations/image.pollinations.ai/.env | grep -E 'AZURE|GOOGLE|CLOUDFLARE'"
+sops -d gen.pollinations.ai/secrets/prod.vars.json | jq 'keys[] | select(test("AZURE|GOOGLE|CLOUDFLARE|OPENAI"))'
 ```
 
 Key variables:
@@ -156,11 +152,6 @@ Key variables:
 - `AZURE_CONTENT_SAFETY_API_KEY` - Azure Content Safety API key
 - `GOOGLE_PROJECT_ID` - Google Cloud project for Vertex AI
 - `AZURE_MYCELI_PROD_SWEDEN_API_KEY` - Shared Azure API key (Kontext, GPT Image, GPT Image 1.5)
-
-## text.pollinations.ai
-```bash
-ssh enter-services "cat /home/ubuntu/pollinations/text.pollinations.ai/.env | grep -E 'AZURE|OPENAI|GOOGLE'"
-```
 
 ---
 
@@ -175,13 +166,8 @@ To update:
 # Decrypt, edit, re-encrypt
 sops gen.pollinations.ai/secrets/prod.vars.json
 
-# Deploy to server
-sops --output-type dotenv -d gen.pollinations.ai/secrets/prod.vars.json > /tmp/image.env
-scp /tmp/image.env enter-services:/home/ubuntu/pollinations/image.pollinations.ai/.env
-rm /tmp/image.env
-
-# Restart service
-ssh enter-services "sudo systemctl restart image-pollinations.service"
+# Deploy to the gen Worker (secrets ship with the deploy)
+cd gen.pollinations.ai && npm run deploy
 ```
 
 ---
@@ -189,14 +175,11 @@ ssh enter-services "sudo systemctl restart image-pollinations.service"
 # Log Analysis Commands
 
 ```bash
-# Count errors by type
-grep -i "error" image-service-logs.txt | grep -oE "(Azure Flux Kontext|Vertex AI|No active translate|getaddrinfo ENOTFOUND)" | sort | uniq -c | sort -rn
+# Count errors by type (against captured wrangler-tail JSON)
+jq -r '.logs[]?.message[]? // .message? // empty' gen-logs.jsonl | grep -oE "(Azure Flux Kontext|Vertex AI|No active translate|getaddrinfo ENOTFOUND)" | sort | uniq -c | sort -rn
 
 # Find content filter rejections
-grep -i "Content rejected" image-service-logs.txt | sort | uniq -c
-
-# Check DNS resolution on server
-ssh enter-services "nslookup gptimagemain1-resource.cognitiveservices.azure.com"
+jq -r '.logs[]?.message[]? // .message? // empty' gen-logs.jsonl | grep -i "Content rejected" | sort | uniq -c
 ```
 
 ---
@@ -469,13 +452,9 @@ The Tinybird token is a read-only public token found in:
      }' | jq '.result.events.events'
    ```
 
-4. **Check Backend Logs** - If error is from downstream service:
+4. **Check Gateway Logs** - Tail the gen Worker (image + text both run here):
    ```bash
-   # Image service
-   ssh enter-services "sudo journalctl -u image-pollinations.service --since '5 minutes ago'"
-   
-   # Text service
-   ssh enter-services "sudo journalctl -u text-pollinations.service --since '5 minutes ago'"
+   cd gen.pollinations.ai && wrangler tail --format json | tee gen-logs.jsonl
    ```
 
 5. **Test Model Directly** - Verify if model is actually broken:

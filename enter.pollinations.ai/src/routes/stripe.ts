@@ -205,14 +205,29 @@ export const stripeRoutes = new Hono<Env>()
      */
     .patch("/auto-top-up", async (c) => {
         const user = await requireSessionUser(c);
-        const body = (await c.req.json()) as {
+        const body = (await c.req.json().catch(() => null)) as {
             enabled?: boolean;
             packAmountUsd?: number;
-        };
+        } | null;
+
+        if (!body || typeof body.enabled !== "boolean") {
+            return c.json({ error: "enabled must be boolean" }, 400);
+        }
+
+        if (
+            body.enabled &&
+            (typeof body.packAmountUsd !== "number" ||
+                !Number.isFinite(body.packAmountUsd))
+        ) {
+            return c.json(
+                { error: "packAmountUsd must be a finite number" },
+                400,
+            );
+        }
 
         const result = await updateAutoTopUpSettings(c.env, user.id, {
-            enabled: body.enabled === true,
-            packAmountUsd: Number(body.packAmountUsd),
+            enabled: body.enabled,
+            packAmountUsd: body.packAmountUsd,
         });
 
         if (!result.ok) {
@@ -227,7 +242,7 @@ export const stripeRoutes = new Hono<Env>()
      * Internal endpoint called by gen after billing deductions.
      */
     .post("/auto-top-up/trigger", async (c) => {
-        if (!isInternalRequest(c.req.raw, c.env)) {
+        if (!(await isInternalRequest(c.req.raw, c.env))) {
             return c.json({ error: "Unauthorized" }, 401);
         }
 
@@ -260,10 +275,38 @@ async function requireSessionUser(c: Context<Env>) {
     return session.user;
 }
 
-function isInternalRequest(request: Request, env: CloudflareBindings): boolean {
-    if (!env.PLN_ENTER_TOKEN) return false;
+async function isInternalRequest(
+    request: Request,
+    env: CloudflareBindings,
+): Promise<boolean> {
+    const expectedToken = env.PLN_ENTER_TOKEN;
+    if (!expectedToken || expectedToken.length < 32) return false;
+
     const header = request.headers.get("Authorization") ?? "";
-    return header === `Bearer ${env.PLN_ENTER_TOKEN}`;
+    if (!header.startsWith("Bearer ")) return false;
+
+    const presentedToken = header.slice("Bearer ".length);
+    const [presentedDigest, expectedDigest] = await Promise.all([
+        sha256Utf8(presentedToken),
+        sha256Utf8(expectedToken),
+    ]);
+    return constantTimeBytesEqual(presentedDigest, expectedDigest);
+}
+
+async function sha256Utf8(value: string): Promise<Uint8Array> {
+    const bytes = new TextEncoder().encode(value);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return new Uint8Array(digest);
+}
+
+function constantTimeBytesEqual(left: Uint8Array, right: Uint8Array): boolean {
+    if (left.length !== right.length) return false;
+
+    let mismatch = 0;
+    for (let index = 0; index < left.length; index += 1) {
+        mismatch |= left[index] ^ right[index];
+    }
+    return mismatch === 0;
 }
 
 function normalizeStripePortalError(error: unknown): string {

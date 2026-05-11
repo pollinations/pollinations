@@ -282,12 +282,12 @@ export const stripeWebhooksRoutes = new Hono<Env>()
         }
 
         if (event.livemode !== (c.env.STRIPE_MODE === "live")) {
-            console.error("Stripe webhook mode mismatch:", {
+            console.warn("Stripe webhook mode mismatch:", {
                 eventId: event.id,
                 livemode: event.livemode,
                 stripeMode: c.env.STRIPE_MODE,
             });
-            return c.json({ error: "Stripe mode mismatch" }, 400);
+            return c.json({ received: true });
         }
 
         console.log(`Stripe webhook received: ${event.type} (${event.id})`);
@@ -455,7 +455,8 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 break;
             }
 
-            case "invoice.paid": {
+            case "invoice.paid":
+            case "invoice.payment_succeeded": {
                 const invoice = event.data.object as Stripe.Invoice;
                 const result = await creditAutoTopUpInvoice(c.env, invoice);
                 if (result.credited) {
@@ -485,10 +486,15 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "invoice.voided":
             case "invoice.marked_uncollectible": {
                 const invoice = event.data.object as Stripe.Invoice;
+                // Terminal Stripe-side states. The invoice itself is already
+                // in its final form, so we only record the attempt outcome —
+                // do not disable auto top-up for the user (e.g. they might
+                // have voided the invoice themselves via the portal).
                 await markAutoTopUpInvoiceFailed(
                     c.env,
                     invoice,
                     "Stripe invoice can no longer be collected.",
+                    { cleanupInvoice: false, disableAutoTopUp: false },
                 );
                 break;
             }

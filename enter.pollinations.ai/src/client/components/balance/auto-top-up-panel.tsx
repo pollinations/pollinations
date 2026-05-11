@@ -1,4 +1,8 @@
 import {
+    AUTO_TOP_UP_PACK_MAX_USD,
+    AUTO_TOP_UP_PACK_MIN_USD,
+} from "@shared/billing/auto-top-up.ts";
+import {
     type FC,
     type ReactNode,
     useCallback,
@@ -51,8 +55,6 @@ type AutoTopUpPanelProps = {
     userId: string;
 };
 
-const AUTO_TOP_UP_PACK_MIN = 5;
-const AUTO_TOP_UP_PACK_MAX = 100;
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";
 const PENDING_ENABLE_STORAGE_KEY_PREFIX = "pollinations:autoTopUpPendingEnable";
@@ -110,8 +112,8 @@ const AUTO_TOP_UP_TOOLTIP_CONTENT = (
 );
 const AUTO_TOP_UP_PACKS = POLLEN_PACKS.filter(
     (pack) =>
-        pack.amountUsd >= AUTO_TOP_UP_PACK_MIN &&
-        pack.amountUsd <= AUTO_TOP_UP_PACK_MAX,
+        pack.amountUsd >= AUTO_TOP_UP_PACK_MIN_USD &&
+        pack.amountUsd <= AUTO_TOP_UP_PACK_MAX_USD,
 );
 
 type SetupReadiness = {

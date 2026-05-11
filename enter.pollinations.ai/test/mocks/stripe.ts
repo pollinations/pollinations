@@ -22,7 +22,7 @@ type StripeCustomer = {
     invoice_settings: {
         default_payment_method: string | null;
     };
-    deleted?: false;
+    deleted?: boolean;
 };
 
 type StripePaymentMethod = {
@@ -103,6 +103,28 @@ type StripeInvoice = {
     metadata: Record<string, string>;
 };
 
+type StripeInvoicePayment = {
+    id: string;
+    object: "invoice_payment";
+    invoice: string;
+    amount_paid: number | null;
+    amount_requested: number;
+    currency: string;
+    is_default: boolean;
+    livemode: boolean;
+    payment: {
+        type: "payment_intent";
+        payment_intent: string;
+    };
+    status: string;
+};
+
+type StripePaymentIntent = {
+    id: string;
+    object: "payment_intent";
+    status: string;
+};
+
 type StripeRequest = {
     method: string;
     path: string;
@@ -117,6 +139,8 @@ export type MockStripeState = {
     portalSessions: StripePortalSession[];
     portalConfigurations: StripePortalConfiguration[];
     invoices: StripeInvoice[];
+    invoicePayments: StripeInvoicePayment[];
+    paymentIntents: StripePaymentIntent[];
     requests: StripeRequest[];
     customerCreateByIdempotencyKey: Record<string, string>;
 };
@@ -286,6 +310,26 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             state.invoices.push(invoice);
             return c.json(invoice);
         })
+        .get("/v1/invoices/:id", (c) => {
+            recordRequest(c, state);
+            const invoice = findInvoice(state, c.req.param("id"));
+            if (!invoice) return stripeNotFound(c);
+            return c.json(invoice);
+        })
+        .delete("/v1/invoices/:id", (c) => {
+            recordRequest(c, state);
+            const invoice = findInvoice(state, c.req.param("id"));
+            if (!invoice) return stripeNotFound(c);
+            if (invoice.status !== "draft") return stripeInvalidRequest(c);
+            state.invoices = state.invoices.filter(
+                (item) => item.id !== invoice.id,
+            );
+            return c.json({
+                id: invoice.id,
+                object: "invoice",
+                deleted: true,
+            });
+        })
         .post("/v1/invoiceitems", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
@@ -308,13 +352,63 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             invoice.status = "open";
             return c.json(invoice);
         })
+        .post("/v1/invoices/:id/void", (c) => {
+            recordRequest(c, state);
+            const invoice = findInvoice(state, c.req.param("id"));
+            if (!invoice) return stripeNotFound(c);
+            if (invoice.status !== "open") return stripeInvalidRequest(c);
+            invoice.status = "void";
+            return c.json(invoice);
+        })
         .post("/v1/invoices/:id/pay", (c) => {
             recordRequest(c, state);
             const invoice = findInvoice(state, c.req.param("id"));
             if (!invoice) return stripeNotFound(c);
             invoice.status = "paid";
             invoice.amount_paid = invoice.amount_due;
+            const paymentIntent: StripePaymentIntent = {
+                id: `pi_mock_${state.paymentIntents.length + 1}`,
+                object: "payment_intent",
+                status: "succeeded",
+            };
+            state.paymentIntents.push(paymentIntent);
+            state.invoicePayments.push({
+                id: `inpay_mock_${state.invoicePayments.length + 1}`,
+                object: "invoice_payment",
+                invoice: invoice.id,
+                amount_paid: invoice.amount_paid,
+                amount_requested: invoice.amount_due,
+                currency: invoice.currency,
+                is_default: true,
+                livemode: false,
+                payment: {
+                    type: "payment_intent",
+                    payment_intent: paymentIntent.id,
+                },
+                status: "paid",
+            });
             return c.json(invoice);
+        })
+        .get("/v1/invoice_payments", (c) => {
+            recordRequest(c, state);
+            const invoiceId = c.req.query("invoice");
+            const data = state.invoicePayments.filter(
+                (payment) => !invoiceId || payment.invoice === invoiceId,
+            );
+            return c.json({
+                object: "list",
+                url: "/v1/invoice_payments",
+                has_more: false,
+                data,
+            });
+        })
+        .get("/v1/payment_intents/:id", (c) => {
+            recordRequest(c, state);
+            const paymentIntent = state.paymentIntents.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!paymentIntent) return stripeNotFound(c);
+            return c.json(paymentIntent);
         });
 
     return {
@@ -374,6 +468,8 @@ function createInitialState(): MockStripeState {
         portalSessions: [],
         portalConfigurations: [],
         invoices: [],
+        invoicePayments: [],
+        paymentIntents: [],
         requests: [],
         customerCreateByIdempotencyKey: {},
     };
@@ -538,5 +634,17 @@ function stripeNotFound(c: Context) {
             },
         },
         404,
+    );
+}
+
+function stripeInvalidRequest(c: Context) {
+    return c.json(
+        {
+            error: {
+                type: "invalid_request_error",
+                message: "Invalid request",
+            },
+        },
+        400,
     );
 }

@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
@@ -217,6 +218,9 @@ export const track = (eventType: EventType) =>
                     if (
                         totalPrice > 0 &&
                         payerBucket === "pack" &&
+                        deduction.postDeductionPackBalance != null &&
+                        deduction.postDeductionPackBalance <=
+                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
                         userTracking.userId &&
                         (await isAutoTopUpConfigured(db, userTracking.userId))
                     ) {

@@ -356,7 +356,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                     </div>
                 )}
             </div>
-            <div className="mt-5">
+            <div className="mt-5 border-t border-amber-300/70 pt-5">
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </div>
             <div className="mt-8 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">

@@ -13,7 +13,6 @@ import { apiClient } from "@/client/api.ts";
 import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
-import { Card } from "../ui/card.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Tag } from "../ui/tag.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
@@ -61,7 +60,6 @@ type AutoTopUpPanelProps = {
 };
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
-const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";
 const AUTO_TOP_UP_DRAFT_STORAGE_KEY = "pollinations:auto-top-up-draft";
 const AUTO_TOP_UP_TOOLTIP_CONTENT = (
     <div className="space-y-2">
@@ -264,10 +262,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             />
 
             {showConfig && (
-                <Card
-                    bg="bg-white/80"
-                    className="!border-transparent space-y-4"
-                >
+                <div className="space-y-4">
                     <div className="flex flex-col items-start gap-4 pb-2 sm:flex-row sm:items-center sm:gap-4 sm:pb-12">
                         <div className="w-full min-w-0 flex-1 pb-10 sm:pb-0">
                             <PollenPackSlider
@@ -285,7 +280,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         />
                     </div>
 
-                    <div className={cn(DIVIDER_CLASS, "space-y-4")}>
+                    <div className="space-y-4">
                         <BillingSetup
                             paymentMethodReady={paymentMethodReady}
                             paymentMethodValue={formatPaymentMethod(
@@ -301,7 +296,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                             loading={isOpeningPortal}
                         />
                     </div>
-                </Card>
+                </div>
             )}
 
             {error && <ErrorNotice>{error}</ErrorNotice>}

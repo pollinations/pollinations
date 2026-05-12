@@ -658,11 +658,7 @@ export async function creditAutoTopUpInvoice(
         return { credited: false, reason: "invoice already credited" };
     }
 
-    const verification = await verifyAutoTopUpInvoicePayment(
-        env,
-        invoice,
-        attempt,
-    );
+    const verification = verifyAutoTopUpInvoicePayment(invoice, attempt);
     if (!verification.ok) {
         console.warn("[auto-top-up] invoice verification failed", {
             invoiceId: invoice.id,
@@ -1231,96 +1227,23 @@ async function markAttemptFailedByInvoice(
     );
 }
 
-async function verifyAutoTopUpInvoicePayment(
-    env: CloudflareBindings,
+function verifyAutoTopUpInvoicePayment(
     invoice: Stripe.Invoice,
     attempt: AutoTopUpAttemptRow,
-): Promise<{ ok: true } | { ok: false; reason: string }> {
+): { ok: true } | { ok: false; reason: string } {
     if (invoice.status !== "paid") {
         return { ok: false, reason: "invoice status is not paid" };
     }
 
-    const expectedAmountCents = attempt.amountUsd * 100;
-    const expectedCurrency = "usd";
-
-    if (invoice.amount_paid !== expectedAmountCents) {
+    if (invoice.amount_paid !== attempt.amountUsd * 100) {
         return { ok: false, reason: "amount mismatch" };
     }
 
-    if (invoice.currency !== expectedCurrency) {
+    if (invoice.currency !== "usd") {
         return { ok: false, reason: "currency mismatch" };
     }
 
-    const paymentIntentVerification = await verifySucceededInvoicePaymentIntent(
-        env,
-        invoice.id,
-        attempt,
-    );
-    if (!paymentIntentVerification.ok) {
-        return paymentIntentVerification;
-    }
-
     return { ok: true };
-}
-
-async function verifySucceededInvoicePaymentIntent(
-    env: CloudflareBindings,
-    invoiceId: string,
-    attempt: AutoTopUpAttemptRow,
-): Promise<{ ok: true } | { ok: false; reason: string }> {
-    const stripe = createStripeClient(env);
-    const expectedAmountCents = attempt.amountUsd * 100;
-    const expectedCurrency = "usd";
-    let startingAfter: string | undefined;
-    let sawSucceededPaymentIntent = false;
-
-    do {
-        const page = await stripe.invoicePayments.list({
-            invoice: invoiceId,
-            limit: 100,
-            ...(startingAfter && { starting_after: startingAfter }),
-        });
-
-        for (const payment of page.data) {
-            if (payment.status !== "paid") continue;
-            if (payment.payment.type !== "payment_intent") continue;
-            const paymentIntentId = getStripeId(payment.payment.payment_intent);
-            if (!paymentIntentId) continue;
-
-            const paymentIntent =
-                await stripe.paymentIntents.retrieve(paymentIntentId);
-            if (paymentIntent.status !== "succeeded") {
-                continue;
-            }
-
-            sawSucceededPaymentIntent = true;
-            if (payment.amount_paid !== expectedAmountCents) {
-                return {
-                    ok: false,
-                    reason: "payment intent amount mismatch",
-                };
-            }
-            if (payment.currency !== expectedCurrency) {
-                return {
-                    ok: false,
-                    reason: "payment intent currency mismatch",
-                };
-            }
-
-            return { ok: true };
-        }
-
-        const lastPayment = page.data.at(-1);
-        startingAfter =
-            page.has_more && lastPayment ? lastPayment.id : undefined;
-    } while (startingAfter);
-
-    return {
-        ok: false,
-        reason: sawSucceededPaymentIntent
-            ? "payment intent payment mismatch"
-            : "missing succeeded payment intent",
-    };
 }
 
 async function cleanupFailedAutoTopUpInvoice(

@@ -211,7 +211,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             </div>
 
             {/* Total + 7d earnings below */}
-            <div className="flex items-start justify-between gap-3 border-t border-amber-300/40 pt-3">
+            <div className="flex items-start justify-between gap-3 pt-3">
                 <span className="text-sm font-bold uppercase tracking-wide text-amber-900 pt-1">
                     Total
                 </span>
@@ -236,7 +236,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             </div>
 
             {/* Learn more */}
-            <div className="pt-3 text-[13px] leading-snug text-amber-950/45">
+            <div className="mt-5 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
                 <button
                     type="button"
                     onClick={() => {
@@ -377,7 +377,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             <div className="mt-5 border-t border-amber-300/70 pt-5">
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </div>
-            <div className="mt-8 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
+            <div className="mt-5 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>

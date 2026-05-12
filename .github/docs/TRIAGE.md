@@ -176,7 +176,6 @@ flowchart TD
 | -------------- | ------------------------------------------------ | -------------------- |
 | `DEV-BUG`      | Something is broken                              | `project-manager.py` |
 | `DEV-FEATURE`  | New functionality request                        | `project-manager.py` |
-| `DEV-QUEST`    | Community task - One off Pollen reward if merged | `project-manager.py` |
 | `DEV-TRACKING` | Meta-issue tracking other items                  | `project-manager.py` |
 | `DEV-DOCS`     | Documentation - dev docs, API docs, READMEs      | `project-manager.py` |
 | `DEV-INFRA`    | Infrastructure - CI/CD, deployments, monitoring  | `project-manager.py` |

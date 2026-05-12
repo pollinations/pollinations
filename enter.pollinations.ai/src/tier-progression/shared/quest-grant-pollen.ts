@@ -90,8 +90,7 @@ const grantCommand = command({
         // Idempotency key uses the immutable github_id, not the mutable username.
         const payoutKey = `quest:${questIssue}:pr:${prNumber}:gh:${githubId}:role:assignee`;
         const sql = `
-            BEGIN;
-            INSERT INTO quest_payout_credits (
+            INSERT OR IGNORE INTO quest_payout_credits (
                 payout_key,
                 quest_issue_number,
                 pr_number,
@@ -110,19 +109,23 @@ const grantCommand = command({
             );
             UPDATE user
             SET pack_balance = COALESCE(pack_balance, 0) + ${amount}
-            WHERE id = ${sqlString(user.id)};
-            COMMIT;
+            WHERE id = ${sqlString(user.id)} AND changes() = 1;
         `;
 
-        try {
-            queryD1(env, sql);
-        } catch (error) {
-            const text = `${(error as { stderr?: unknown }).stderr ?? ""}\n${error instanceof Error ? error.message : error}`;
-            if (text.includes("UNIQUE constraint failed")) {
-                console.log(`DUPLICATE payout_key=${payoutKey}`);
-                process.exit(3);
-            }
-            throw error;
+        const raw = queryD1(env, sql);
+        const result = JSON.parse(raw);
+        const insertResult = Array.isArray(result) ? result[0] : result;
+        const updateResult = Array.isArray(result) ? result[1] : null;
+        const inserted = Number(insertResult?.meta?.changes ?? 0);
+        const updated = Number(updateResult?.meta?.changes ?? 0);
+        if (inserted === 0) {
+            console.log(`DUPLICATE payout_key=${payoutKey}`);
+            process.exit(3);
+        }
+        if (updated !== 1) {
+            throw new Error(
+                `Payout row inserted but user balance update affected ${updated} rows`,
+            );
         }
 
         const previous = user.pack_balance ?? 0;

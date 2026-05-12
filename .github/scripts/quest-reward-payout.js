@@ -17,7 +17,7 @@ async function resolveLinkedQuest({ github, context, core }) {
     const pr = context.payload.pull_request;
     // GitHub closing keywords: close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved.
     const closePattern =
-        /\b(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s+#(\d+)/gi;
+        /\b(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)(?::\s*|\s+)#(\d+)/gi;
     const issueNumbers = [
         ...new Set(
             [...(pr.body || "").matchAll(closePattern)].map((m) =>

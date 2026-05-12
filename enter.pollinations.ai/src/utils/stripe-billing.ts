@@ -726,45 +726,21 @@ export async function creditAutoTopUpInvoice(
     }
 
     if (userChanges !== 1) {
-        // D1 batch only rolls back when a statement *errors*; a 0-row UPDATE
-        // user is a successful statement and the paid transition has already
-        // committed. A subsequent throw alone would be unsafe — the next
-        // webhook delivery would short-circuit on status='paid' and leave
-        // the user uncredited. Manually revert the attempt to 'pending' so
-        // Stripe retries can converge. Gate the revert on (status='paid'
-        // AND completed_at = our now) so we only undo our own transition.
-        const rollback = await env.DB.prepare(
-            `UPDATE stripe_auto_top_up_attempt
-                SET status = ?,
-                    completed_at = NULL,
-                    updated_at = ?,
-                    failure_reason = ?
-                WHERE stripe_invoice_id = ?
-                    AND status = ?
-                    AND completed_at = ?`,
-        )
-            .bind(
-                AUTO_TOP_UP_ATTEMPT_STATUS_PENDING,
-                Date.now(),
-                "balance update missed; awaiting webhook retry",
-                invoice.id,
-                AUTO_TOP_UP_ATTEMPT_STATUS_PAID,
-                now,
-            )
-            .run();
-        console.error(
-            "[auto-top-up] credit balance update missed; reverted attempt for retry",
-            {
-                invoiceId: invoice.id,
-                attemptId: attempt.id,
-                userId: attempt.userId,
-                attemptChanges,
-                userChanges,
-                rolledBack: rollback.meta.changes ?? 0,
-            },
-        );
+        // Impossible-in-practice: the user UPDATE's EXISTS subquery checks
+        // for the paid attempt we just wrote one statement earlier in the
+        // same batch. Reaching here means the user row vanished between
+        // statements (cascade-delete in flight) — at which point the
+        // attempt row is also gone and no retry can converge. Log loudly
+        // and throw so the webhook returns 5xx and the alert reaches us.
+        console.error("[auto-top-up] credit balance update missed", {
+            invoiceId: invoice.id,
+            attemptId: attempt.id,
+            userId: attempt.userId,
+            attemptChanges,
+            userChanges,
+        });
         throw new Error(
-            `Auto top-up credit failed for invoice ${invoice.id}: balance update did not match`,
+            `Auto top-up credit failed for invoice ${invoice.id}: user balance not updated`,
         );
     }
 

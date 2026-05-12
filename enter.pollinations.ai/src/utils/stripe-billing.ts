@@ -757,6 +757,25 @@ export async function markAutoTopUpInvoiceFailed(
     if (metadata[METADATA_PURPOSE] !== AUTO_TOP_UP_PURPOSE) return;
     if (!invoice.id) return;
 
+    // SCA race guard: Stripe fires `invoice.payment_failed` alongside
+    // `invoice.payment_action_required` for off-session SCA cards. The
+    // synchronous trigger has already set the attempt to `requires_action`
+    // and kept the invoice payable so the user can complete 3DS via the
+    // hosted invoice URL. Voiding the invoice here would kill that URL,
+    // and overwriting the attempt to `failed` would (incorrectly) trip
+    // `disableAutoTopUp`. Skip both side effects in that case.
+    const existing = await env.DB.prepare(
+        `SELECT status
+            FROM stripe_auto_top_up_attempt
+            WHERE stripe_invoice_id = ?
+            LIMIT 1`,
+    )
+        .bind(invoice.id)
+        .first<{ status: string }>();
+    if (existing?.status === AUTO_TOP_UP_ATTEMPT_STATUS_REQUIRES_ACTION) {
+        return;
+    }
+
     if (options.cleanupInvoice !== false) {
         await cleanupFailedAutoTopUpInvoice(env, invoice.id);
     }

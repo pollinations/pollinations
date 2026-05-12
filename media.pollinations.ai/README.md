@@ -94,7 +94,7 @@ Upload a media file. **Requires API key** via `Authorization: Bearer <key>` head
 
 **Errors:**
 - `400` - No file provided, empty file, or invalid JSON/base64
-- `413` - File too large (max 10MB)
+- `413` - File too large (max 50MB)
 
 ### `GET /:hash`
 
@@ -166,21 +166,21 @@ npm run deploy:production
 
 ## 📊 Limits
 
-- **Max file size:** 10MB
+- **Max file size:** 50MB
 - **Storage:** Cloudflare R2
-- **Default expiry:** 14 days (re-uploading the same file resets the TTL)
+- **Default retention:** 30 days (re-uploading the same file resets the timer)
 
 ## 🔒 Content Addressing
 
 Files are stored using a truncated SHA-256 hash (16 hex characters = 64 bits) as the key:
 - **Deduplication:** Uploading the same file twice returns the same URL
 - **Immutable:** Once uploaded, content cannot change (hash = content)
-- **Cacheable:** Files are cached for 1 year with `immutable` directive
+- **Cacheable:** Files are served with `Cache-Control: public, max-age=31536000, immutable` — content-addressed URLs are safe to cache forever because the URL → bytes mapping is fixed
 - **Collision resistance:** Birthday-paradox collision expected around ~4 billion files
 
 ## 📌 Retention Policy
 
-- **14-day TTL:** Files expire 14 days after upload. Re-uploading the same file resets the timer.
+- **30-day retention:** Files are retained for 30 days after upload. Re-uploading the same file resets the timer.
 - **No delete endpoint:** Content-addressed storage is append-only. Files cannot be deleted via the API.
 - **No user file listing:** There is no endpoint to list or manage your uploaded files.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.

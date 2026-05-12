@@ -5,6 +5,7 @@ interface CloudflareBindings {
     ELEVENLABS_API_KEY: string;
     ASSEMBLYAI_API_KEY?: string;
     OVHCLOUD_API_KEY: string;
+    PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
     MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;

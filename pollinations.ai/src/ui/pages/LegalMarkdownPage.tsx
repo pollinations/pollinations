@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 
@@ -35,6 +36,7 @@ function LegalMarkdownPage({
                     <div className="markdown-content">
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeSlug]}
                             components={{
                                 h1: ({ node: _node, ...props }) => (
                                     <h1

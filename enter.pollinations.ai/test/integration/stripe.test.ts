@@ -1302,6 +1302,88 @@ test("POST /api/stripe/auto-top-up/trigger disables auto top-up after failed aut
     ).toBe("void");
 });
 
+test("POST /api/stripe/auto-top-up/trigger leaves invoice open when SCA recovery fails", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_auto_top_up_sca_recovery");
+    customer.invoice_settings.default_payment_method = "pm_card";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_card", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+        })
+        .where(eq(userTable.id, user.id));
+
+    // pay() returns SCA-required, then the recovery retrieve() throws once
+    // (simulating a transient Stripe outage). The cleanup retrieve() that
+    // follows still succeeds — without the fix, cleanup would void the open
+    // invoice and destroy the user's hosted-invoice URL.
+    mocks.stripe.state.payBehavior["in_mock_1"] = {
+        statusCode: 402,
+        error: {
+            type: "StripeInvalidRequestError",
+            code: "invoice_payment_intent_requires_action",
+            message:
+                "This payment requires additional user action before it can be completed successfully.",
+            payment_intent: { status: "requires_action" },
+        },
+    };
+    mocks.stripe.state.retrieveFailures["in_mock_1"] = {
+        remaining: 1,
+        statusCode: 400,
+        message: "Stripe API temporarily unavailable",
+    };
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        status: "failed",
+    });
+
+    // The user's hosted-invoice URL must still be payable — Stripe's
+    // invoice.payment_action_required webhook is responsible for reconciling
+    // the attempt afterwards.
+    expect(
+        mocks.stripe.state.invoices.find(
+            (invoice) => invoice.id === "in_mock_1",
+        )?.status,
+    ).toBe("open");
+    const voidCalls = mocks.stripe.state.requests.filter(
+        (request) =>
+            request.method === "POST" &&
+            request.path === "/v1/invoices/in_mock_1/void",
+    );
+    expect(voidCalls).toHaveLength(0);
+});
+
 test("POST /api/stripe/auto-top-up/trigger skips during claim window", async ({
     sessionToken,
     mocks,

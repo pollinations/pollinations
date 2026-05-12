@@ -161,6 +161,16 @@ export type MockStripeState = {
             };
         }
     >;
+    /**
+     * Per-invoice transient failures for `GET /v1/invoices/:id`. Each call
+     * decrements `remaining` until zero, then the mock resumes returning the
+     * actual invoice. Lets tests simulate a Stripe outage that recovers
+     * mid-flow (e.g., the first retrieve fails, the second succeeds).
+     */
+    retrieveFailures: Record<
+        string,
+        { remaining: number; statusCode: number; message: string }
+    >;
 };
 
 export function createMockStripe(): MockAPI<MockStripeState> {
@@ -330,7 +340,21 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         })
         .get("/v1/invoices/:id", (c) => {
             recordRequest(c, state);
-            const invoice = findInvoice(state, c.req.param("id"));
+            const id = c.req.param("id");
+            const failure = state.retrieveFailures[id];
+            if (failure && failure.remaining > 0) {
+                failure.remaining -= 1;
+                return c.json(
+                    {
+                        error: {
+                            type: "StripeAPIError",
+                            message: failure.message,
+                        },
+                    },
+                    failure.statusCode as 400 | 402 | 500,
+                );
+            }
+            const invoice = findInvoice(state, id);
             if (!invoice) return stripeNotFound(c);
             return c.json(invoice);
         })
@@ -498,6 +522,7 @@ function createInitialState(): MockStripeState {
         requests: [],
         customerCreateByIdempotencyKey: {},
         payBehavior: {},
+        retrieveFailures: {},
     };
 }
 

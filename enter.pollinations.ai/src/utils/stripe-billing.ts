@@ -582,6 +582,7 @@ export async function processAutoTopUpForUser(
         // void the invoice (it must stay payable for the user to complete
         // auth), and do NOT disable auto top-up. The 24h expiry sweep will
         // clean up if the user never authenticates.
+        let skipInvoiceCleanup = false;
         let disableAfterFailure = shouldDisableAutoTopUpAfterFailure(error);
         if (isSCARequiredError(error) && createdInvoiceId) {
             try {
@@ -594,12 +595,19 @@ export async function processAutoTopUpForUser(
                     reason: "requires authentication",
                 };
             } catch (recoveryError) {
-                // If we can't retrieve the invoice or mark requires_action,
-                // treat this as a hard failure. We did not successfully leave
-                // the invoice in a recoverable user-authentication state.
+                // Recovery itself failed (transient Stripe outage between
+                // pay() and retrieve()). The invoice is finalized + open and
+                // the user's hosted-invoice URL still works. Skip cleanup so
+                // we do NOT void that URL — the invoice.payment_action_required
+                // webhook will arrive shortly and mark the attempt
+                // requires_action via the normal path. Disabling, however,
+                // is still the safe call: our local state did not commit, so
+                // we can't guarantee the dashboard reflects reality until the
+                // webhook reconciles.
+                skipInvoiceCleanup = true;
                 disableAfterFailure = true;
                 console.error(
-                    "[auto-top-up] SCA recovery failed; falling back to failure path",
+                    "[auto-top-up] SCA recovery failed; leaving invoice open for webhook",
                     {
                         invoiceId: createdInvoiceId,
                         attemptId,
@@ -615,7 +623,7 @@ export async function processAutoTopUpForUser(
         const message =
             error instanceof Error ? error.message : "Auto top-up failed.";
         await failAttempt(env.DB, attemptId, message);
-        if (createdInvoiceId) {
+        if (createdInvoiceId && !skipInvoiceCleanup) {
             await cleanupFailedAutoTopUpInvoice(env, createdInvoiceId);
         }
         if (disableAfterFailure) {

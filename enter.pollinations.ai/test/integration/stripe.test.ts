@@ -2138,7 +2138,7 @@ test("POST /api/webhooks/stripe keeps SCA invoices recoverable after payment fai
     ).toBe("open");
 });
 
-test("POST /api/webhooks/stripe fails open pending invoices after card decline", async ({
+test("POST /api/webhooks/stripe fails declined invoices without disabling auto top-up", async ({
     sessionToken,
     mocks,
 }) => {
@@ -2212,7 +2212,7 @@ test("POST /api/webhooks/stripe fails open pending invoices after card decline",
             completedAt: number | null;
         }>();
 
-    expect(updatedUser?.autoTopUpEnabled).toBe(0);
+    expect(updatedUser?.autoTopUpEnabled).toBe(1);
     expect(attempt?.status).toBe("failed");
     expect(attempt?.failureReason).toContain(
         "Stripe could not charge the default payment method.",

@@ -655,7 +655,6 @@ export async function markAutoTopUpInvoiceFailed(
     const paymentIntentId = getInvoicePaymentIntentId(invoice);
     if (
         options.cleanupInvoice !== false &&
-        options.disableAutoTopUp !== false &&
         invoice.status === "open" &&
         paymentIntentId
     ) {

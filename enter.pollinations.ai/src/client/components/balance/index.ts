@@ -1,3 +1,5 @@
+export type { BillingState } from "./auto-top-up-panel.tsx";
+export { AutoTopUpPanel } from "./auto-top-up-panel.tsx";
 export {
     BuyPollenPanel,
     PollenBalance,

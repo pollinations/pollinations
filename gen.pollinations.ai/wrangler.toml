@@ -237,6 +237,7 @@ LTX2_BASE_URL = "https://ltx2.test"
 NOVA_REEL_S3_BUCKET = "test-bucket"
 OPENAI_API_KEY = "not-a-secret-workers-test-only"
 PERPLEXITY_API_KEY = "not-a-secret-workers-test-only"
+PLN_ENTER_TOKEN = "not-a-secret-workers-test-only"
 PLN_GPU_TOKEN = "not-a-secret-workers-test-only"
 POLLEN_REFILL_PER_HOUR = 1
 PRUNA_API_KEY = "not-a-secret-workers-test-only"

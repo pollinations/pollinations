@@ -583,7 +583,7 @@ export async function processAutoTopUpForUser(
         // auth), and do NOT disable auto top-up. The 24h expiry sweep will
         // clean up if the user never authenticates.
         let skipInvoiceCleanup = false;
-        let disableAfterFailure = shouldDisableAutoTopUpAfterFailure(error);
+        const disableAfterFailure = shouldDisableAutoTopUpAfterFailure(error);
         if (isSCARequiredError(error) && createdInvoiceId) {
             try {
                 const stripe = createStripeClient(env);
@@ -597,15 +597,14 @@ export async function processAutoTopUpForUser(
             } catch (recoveryError) {
                 // Recovery itself failed (transient Stripe outage between
                 // pay() and retrieve()). The invoice is finalized + open and
-                // the user's hosted-invoice URL still works. Skip cleanup so
-                // we do NOT void that URL — the invoice.payment_action_required
-                // webhook will arrive shortly and mark the attempt
-                // requires_action via the normal path. Disabling, however,
-                // is still the safe call: our local state did not commit, so
-                // we can't guarantee the dashboard reflects reality until the
-                // webhook reconciles.
+                // the user's hosted-invoice URL still works, so skip cleanup
+                // to keep that URL alive and let the
+                // invoice.payment_action_required webhook reconcile the
+                // attempt to requires_action. Auto top-up stays enabled for
+                // the same reason: the underlying error is recoverable, and
+                // if the webhook never arrives the 24h requires_action expiry
+                // sweep is the authoritative cleanup (it disables there).
                 skipInvoiceCleanup = true;
-                disableAfterFailure = true;
                 console.error(
                     "[auto-top-up] SCA recovery failed; leaving invoice open for webhook",
                     {

@@ -1337,6 +1337,50 @@ test("POST /api/stripe/auto-top-up/trigger leaves invoice open when SCA recovery
             request.path === "/v1/invoices/in_mock_1/void",
     );
     expect(voidCalls).toHaveLength(0);
+
+    // Auto top-up must remain enabled — the SCA error is user-recoverable
+    // and the 24h requires_action expiry sweep is the authoritative
+    // disable path if 3DS is never completed.
+    const userAfterTrigger = await env.DB.prepare(
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled
+            FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ autoTopUpEnabled: number | boolean | null }>();
+    expect(userAfterTrigger?.autoTopUpEnabled).toBe(1);
+
+    // Now drive the reconciliation: Stripe fires
+    // invoice.payment_action_required and we must move the attempt from
+    // 'failed' to 'requires_action' so the dashboard shows the amber alert
+    // with the hosted-invoice URL.
+    const reconcileResponse = await postSignedStripeWebhook(
+        createAutoTopUpInvoiceEvent(
+            "invoice.payment_action_required",
+            "in_mock_1",
+            user.id,
+        ),
+    );
+    expect(reconcileResponse.status).toBe(200);
+
+    const attemptAfterWebhook = await env.DB.prepare(
+        `SELECT status, failure_reason AS failureReason
+            FROM stripe_auto_top_up_attempt
+            WHERE stripe_invoice_id = ?`,
+    )
+        .bind("in_mock_1")
+        .first<{ status: string; failureReason: string | null }>();
+    expect(attemptAfterWebhook?.status).toBe("requires_action");
+    expect(attemptAfterWebhook?.failureReason).toContain(
+        "additional payment authentication",
+    );
+
+    const userAfterWebhook = await env.DB.prepare(
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled
+            FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ autoTopUpEnabled: number | boolean | null }>();
+    expect(userAfterWebhook?.autoTopUpEnabled).toBe(1);
 });
 
 test("POST /api/stripe/auto-top-up/trigger skips during claim window", async ({

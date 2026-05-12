@@ -124,6 +124,7 @@ npx vitest run test/file.test.ts
 
 - Test real code, not mocks — use direct imports. Don't create mock infrastructure.
 - Read existing tests before adding; prefer extending existing files; follow existing conventions.
+- Tests encode WHY behavior matters, not just WHAT it does. A test that can't fail when business logic changes is wrong.
 - Snapshots (enter): VCR-style, replayed by default. `TEST_VCR_MODE=record` to record; default `replay-or-record`.
 - `.testingtokens` contains: `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`, `POLAR_ACCESS_TOKEN`.
 - Production API tests should hit `gen.pollinations.ai`.
@@ -147,6 +148,7 @@ npx vitest run test/file.test.ts
 - Never mark complete without proving it works — run tests, check logs, diff vs main when relevant.
 - Non-trivial changes: ask "is there a more elegant way?" If fix feels hacky, redo elegantly. Skip for obvious fixes.
 - Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
+- Surface conflicts, don't average them — if two patterns contradict, pick one (more recent / more tested), explain why, and flag the other for cleanup.
 
 ## Task Management
 
@@ -161,6 +163,7 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 - Simplicity first — minimal code impact.
 - No laziness — find root causes, no temp fixes, senior standards.
 - Minimal impact — touch only what's necessary.
+- Fail loud — "completed" is wrong if anything was skipped silently; "tests pass" is wrong if any were skipped. Surface uncertainty, don't hide it.
 
 ## Git Workflow
 

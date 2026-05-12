@@ -280,16 +280,11 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         />
                     </div>
 
-                    <div className="space-y-4">
-                        <BillingSetup
-                            paymentMethodReady={paymentMethodReady}
-                            paymentMethodValue={formatPaymentMethod(
-                                billingState,
-                            )}
-                            billingDetailsReady={billingDetailsReady}
-                            billingDetailsValue={formatBillingDetails(
-                                billingState,
-                            )}
+                    <div className="flex items-end justify-between gap-3">
+                        <SetupSnippet
+                            title="Payment method"
+                            ready={paymentMethodReady}
+                            value={formatPaymentMethod(billingState)}
                         />
                         <ManageBillingButton
                             onClick={openBillingPortal}
@@ -345,9 +340,9 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
         weight="light"
         onClick={onClick}
         disabled={loading}
-        className="w-fit max-w-full min-w-0 gap-2 whitespace-nowrap text-center shadow-none"
+        className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
     >
-        <span>{loading ? "Opening Stripe..." : "Manage billing details"}</span>
+        <span>{loading ? "Opening..." : "Manage billing"}</span>
         {!loading && <ExternalLinkIcon />}
     </Button>
 );
@@ -523,33 +518,6 @@ function getSaveDisabledReason(
     return null;
 }
 
-type BillingSetupProps = {
-    paymentMethodReady: boolean;
-    paymentMethodValue: string;
-    billingDetailsReady: boolean;
-    billingDetailsValue: ReactNode;
-};
-
-const BillingSetup: FC<BillingSetupProps> = ({
-    paymentMethodReady,
-    paymentMethodValue,
-    billingDetailsReady,
-    billingDetailsValue,
-}) => (
-    <div className="grid gap-3 md:grid-cols-2">
-        <SetupSnippet
-            title="Billing address"
-            ready={billingDetailsReady}
-            value={billingDetailsValue}
-        />
-        <SetupSnippet
-            title="Payment method"
-            ready={paymentMethodReady}
-            value={paymentMethodValue}
-        />
-    </div>
-);
-
 type SetupSnippetProps = {
     title: string;
     ready: boolean;
@@ -604,46 +572,6 @@ function formatPaymentMethod(billingState: BillingState | null): string {
     if (!paymentMethod.hasDefault) return "None";
     const brand = paymentMethod.brand ?? "Card";
     return paymentMethod.last4 ? `${brand} ****${paymentMethod.last4}` : brand;
-}
-
-function formatBillingDetails(billingState: BillingState | null): ReactNode {
-    const details = billingState?.billingDetails;
-    if (!details) return "None";
-
-    const lines: string[] = [];
-    const primary = details.name ?? details.email;
-    if (primary) lines.push(primary);
-
-    const street = joinNonEmpty([details.line1, details.line2], ", ");
-    if (street) lines.push(street);
-
-    const cityRegion = joinNonEmpty(
-        [details.city, details.state, details.postalCode],
-        " ",
-    );
-    const cityCountry = joinNonEmpty([cityRegion, details.country], ", ");
-    if (cityCountry) lines.push(cityCountry);
-
-    if (!lines.length) return "None";
-
-    return (
-        <span className="block space-y-0.5">
-            {lines.map((line) => (
-                <span key={line} className="block">
-                    {line}
-                </span>
-            ))}
-        </span>
-    );
-}
-
-function joinNonEmpty(
-    parts: ReadonlyArray<string | null | undefined>,
-    separator: string,
-): string {
-    return parts
-        .filter((part): part is string => Boolean(part))
-        .join(separator);
 }
 
 function normalizePackAmount(value: number | null | undefined): number {

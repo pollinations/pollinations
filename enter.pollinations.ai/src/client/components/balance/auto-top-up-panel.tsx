@@ -19,11 +19,17 @@ import { Tag } from "../ui/tag.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
-export type AutoTopUpIssue = {
-    kind: "failed" | "requires_action";
-    reason: string;
-    occurredAt: string;
-};
+export type AutoTopUpIssue =
+    | {
+          kind: "failed";
+          reason: string;
+          occurredAt: string;
+      }
+    | {
+          kind: "pending_payment";
+          invoiceUrl: string;
+          occurredAt: string;
+      };
 
 export type BillingState = {
     autoTopUp: {
@@ -609,39 +615,39 @@ type AutoTopUpIssueNoticeProps = {
 };
 
 const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
-    const isAuth = issue.kind === "requires_action";
-    const title = isAuth
-        ? "Authentication required for auto top-up"
+    const isPendingPayment = issue.kind === "pending_payment";
+    const title = isPendingPayment
+        ? "Auto top-up payment pending"
         : "Last auto top-up charge failed";
-    const body = isAuth
-        ? "Your bank asked you to confirm the last charge. Update your payment method or buy a pack manually to refresh authorization."
+    const body = isPendingPayment
+        ? "Stripe may need you to confirm this payment before your pollen is credited."
         : "We couldn't charge your default payment method. Update it to keep auto top-up working.";
     const occurredLabel = formatRelativeTime(issue.occurredAt);
-    const actionUrl = isAuth ? extractHostedInvoiceUrl(issue.reason) : null;
-    // Yellow palette for actionable auth-required (user can fix in one click)
-    // vs red for hard failures (card-level problem requiring user attention).
-    const containerClass = isAuth
+    const containerClass = isPendingPayment
         ? "rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-800"
         : "rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-xs text-red-700/90";
-    const linkClass = isAuth
-        ? "mt-1 inline-block font-semibold underline decoration-amber-700/30 underline-offset-2"
-        : "mt-1 inline-block font-semibold underline decoration-red-700/30 underline-offset-2";
-    const occurredClass = isAuth
+    const occurredClass = isPendingPayment
         ? "mt-1 text-[11px] text-amber-700/70"
         : "mt-1 text-[11px] text-red-700/70";
     return (
         <div role="alert" className={containerClass}>
             <div className="font-semibold">⚠ {title}</div>
             <div className="mt-0.5">{body}</div>
-            {actionUrl && (
-                <a
-                    href={actionUrl}
+            {isPendingPayment && (
+                <Button
+                    as="a"
+                    href={issue.invoiceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={linkClass}
+                    color="amber"
+                    weight="light"
+                    size="small"
+                    shape="rounded"
+                    className="mt-2 w-fit gap-1.5 shadow-none"
                 >
-                    Complete payment in Stripe
-                </a>
+                    <span>Complete payment in Stripe</span>
+                    <ExternalLinkIcon />
+                </Button>
             )}
             {occurredLabel && (
                 <div className={occurredClass}>
@@ -651,16 +657,6 @@ const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
         </div>
     );
 };
-
-function extractHostedInvoiceUrl(reason: string): string | null {
-    const match = reason.match(/https:\/\/invoice\.stripe\.com\/\S+/);
-    if (!match) return null;
-    try {
-        return new URL(match[0]).toString();
-    } catch {
-        return null;
-    }
-}
 
 function formatRelativeTime(iso: string): string | null {
     const ts = Date.parse(iso);

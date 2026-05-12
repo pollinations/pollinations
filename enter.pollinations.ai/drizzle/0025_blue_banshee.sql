@@ -1,7 +1,7 @@
 CREATE TABLE `stripe_auto_top_up_attempt` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
-	`stripe_invoice_id` text NOT NULL,
+	`stripe_invoice_id` text,
 	`amount_usd` integer NOT NULL,
 	`pollen_grant` real NOT NULL,
 	`status` text NOT NULL,
@@ -16,7 +16,7 @@ CREATE UNIQUE INDEX `stripe_auto_top_up_attempt_stripe_invoice_id_unique` ON `st
 CREATE INDEX `idx_stripe_auto_top_up_attempt_user_id` ON `stripe_auto_top_up_attempt` (`user_id`);--> statement-breakpoint
 CREATE INDEX `idx_stripe_auto_top_up_attempt_status` ON `stripe_auto_top_up_attempt` (`status`);--> statement-breakpoint
 ALTER TABLE `user` ADD `stripe_customer_id` text;--> statement-breakpoint
-ALTER TABLE `user` ADD `auto_top_up_enabled` integer DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE `user` ADD `auto_top_up_enabled` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE `user` ADD `auto_top_up_amount_usd` integer;--> statement-breakpoint
 CREATE UNIQUE INDEX `user_stripe_customer_id_unique` ON `user` (`stripe_customer_id`);--> statement-breakpoint
 CREATE INDEX `idx_user_auto_top_up_enabled` ON `user` (`auto_top_up_enabled`);

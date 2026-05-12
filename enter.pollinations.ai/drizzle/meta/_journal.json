@@ -183,13 +183,6 @@
       "when": 1778529206824,
       "tag": "0025_blue_banshee",
       "breakpoints": true
-    },
-    {
-      "idx": 26,
-      "version": "6",
-      "when": 1778532745295,
-      "tag": "0026_youthful_surge",
-      "breakpoints": true
     }
   ]
 }

@@ -662,7 +662,7 @@
           "name": "stripe_invoice_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "amount_usd": {
@@ -974,7 +974,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": false
+          "default": "0"
         },
         "auto_top_up_amount_usd": {
           "name": "auto_top_up_amount_usd",

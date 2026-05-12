@@ -153,8 +153,6 @@ export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", 
   stripeInvoiceId: text("stripe_invoice_id").unique(),
   amountUsd: integer("amount_usd").notNull(),
   pollenGrant: real("pollen_grant").notNull(),
-  expectedAmountCents: integer("expected_amount_cents").notNull(),
-  expectedCurrency: text("expected_currency").default("usd").notNull(),
   status: text("status").notNull(),
   failureReason: text("failure_reason"),
   createdAt: integer("created_at", { mode: "timestamp" })

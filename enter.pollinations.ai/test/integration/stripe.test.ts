@@ -128,8 +128,6 @@ async function insertAutoTopUpAttempt({
     status = "pending",
     amountUsd = 10,
     pollenGrant = 15,
-    expectedAmountCents = amountUsd * 100,
-    expectedCurrency = "usd",
     completedAt = null,
     createdAt = Date.now(),
     updatedAt = createdAt,
@@ -140,8 +138,6 @@ async function insertAutoTopUpAttempt({
     status?: string;
     amountUsd?: number;
     pollenGrant?: number;
-    expectedAmountCents?: number;
-    expectedCurrency?: string;
     completedAt?: number | null;
     createdAt?: number;
     updatedAt?: number;
@@ -153,13 +149,11 @@ async function insertAutoTopUpAttempt({
             stripe_invoice_id,
             amount_usd,
             pollen_grant,
-            expected_amount_cents,
-            expected_currency,
             status,
             created_at,
             updated_at,
             completed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             id,
@@ -167,8 +161,6 @@ async function insertAutoTopUpAttempt({
             invoiceId,
             amountUsd,
             pollenGrant,
-            expectedAmountCents,
-            expectedCurrency,
             status,
             createdAt,
             updatedAt,

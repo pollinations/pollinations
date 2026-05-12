@@ -63,8 +63,6 @@ type AutoTopUpAttemptRow = {
     amountUsd: number;
     pollenGrant: number;
     status: string;
-    expectedAmountCents: number;
-    expectedCurrency: string;
 };
 
 type AutoTopUpInput = {
@@ -438,8 +436,6 @@ export async function processAutoTopUpForUser(
         userId,
         amountUsd: pack.amountUsd,
         pollenGrant: pack.pollenGrant,
-        expectedAmountCents: pack.amountUsd * 100,
-        expectedCurrency: "usd",
     });
     if (!claimed) {
         return {
@@ -665,8 +661,8 @@ export async function creditAutoTopUpInvoice(
             invoiceStatus: invoice.status,
             amountPaid: invoice.amount_paid,
             currency: invoice.currency,
-            expectedAmountCents: attempt.expectedAmountCents,
-            expectedCurrency: attempt.expectedCurrency,
+            expectedAmountCents: attempt.amountUsd * 100,
+            expectedCurrency: "usd",
         });
         await markAttemptFailedByInvoice(
             env.DB,
@@ -1064,8 +1060,6 @@ async function claimAutoTopUpAttempt(
         userId: string;
         amountUsd: number;
         pollenGrant: number;
-        expectedAmountCents: number;
-        expectedCurrency: string;
     },
 ): Promise<boolean> {
     const now = Date.now();
@@ -1077,13 +1071,11 @@ async function claimAutoTopUpAttempt(
                 stripe_invoice_id,
                 amount_usd,
                 pollen_grant,
-                expected_amount_cents,
-                expected_currency,
                 status,
                 created_at,
                 updated_at
             )
-            SELECT ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?
+            SELECT ?, ?, NULL, ?, ?, ?, ?, ?
             WHERE EXISTS (
                 SELECT 1
                 FROM user
@@ -1104,8 +1096,6 @@ async function claimAutoTopUpAttempt(
             input.userId,
             input.amountUsd,
             input.pollenGrant,
-            input.expectedAmountCents,
-            input.expectedCurrency,
             AUTO_TOP_UP_ATTEMPT_STATUS_CLAIMED,
             now,
             now,
@@ -1174,9 +1164,7 @@ async function getAutoTopUpAttemptByInvoiceId(
                     stripe_invoice_id AS stripeInvoiceId,
                     amount_usd AS amountUsd,
                     pollen_grant AS pollenGrant,
-                    status,
-                    expected_amount_cents AS expectedAmountCents,
-                    expected_currency AS expectedCurrency
+                    status
                 FROM stripe_auto_top_up_attempt
                 WHERE stripe_invoice_id = ?
                 LIMIT 1`,
@@ -1254,11 +1242,14 @@ async function verifyAutoTopUpInvoicePayment(
         return { ok: false, reason: "invoice status is not paid" };
     }
 
-    if (invoice.amount_paid !== attempt.expectedAmountCents) {
+    const expectedAmountCents = attempt.amountUsd * 100;
+    const expectedCurrency = "usd";
+
+    if (invoice.amount_paid !== expectedAmountCents) {
         return { ok: false, reason: "amount mismatch" };
     }
 
-    if (invoice.currency !== attempt.expectedCurrency) {
+    if (invoice.currency !== expectedCurrency) {
         return { ok: false, reason: "currency mismatch" };
     }
 
@@ -1280,6 +1271,8 @@ async function verifySucceededInvoicePaymentIntent(
     attempt: AutoTopUpAttemptRow,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
     const stripe = createStripeClient(env);
+    const expectedAmountCents = attempt.amountUsd * 100;
+    const expectedCurrency = "usd";
     let startingAfter: string | undefined;
     let sawSucceededPaymentIntent = false;
 
@@ -1303,13 +1296,13 @@ async function verifySucceededInvoicePaymentIntent(
             }
 
             sawSucceededPaymentIntent = true;
-            if (payment.amount_paid !== attempt.expectedAmountCents) {
+            if (payment.amount_paid !== expectedAmountCents) {
                 return {
                     ok: false,
                     reason: "payment intent amount mismatch",
                 };
             }
-            if (payment.currency !== attempt.expectedCurrency) {
+            if (payment.currency !== expectedCurrency) {
                 return {
                     ok: false,
                     reason: "payment intent currency mismatch",

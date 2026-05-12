@@ -1,0 +1,34 @@
+{
+  "pr_number": 10890,
+  "title": "fix(nunchaku): install from prebuilt wheel + recovery doc fixes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10890",
+  "merged_at": "2026-05-12T12:54:21Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Wheels up for Nunchaku",
+    "blurb": "We've swapped out our lengthy source builds for prebuilt wheels, cutting Nunchaku setup time from 15 minutes to just 30 seconds. Faster pod recoveries mean less downtime for the hive!",
+    "summary": "Switched Nunchaku installation to use a prebuilt wheel and pinned PyTorch versions to improve RunPod deployment speed and reliability.",
+    "impact": "Pod recovery and worker boot times are significantly faster, reducing potential downtime during infrastructure resets.",
+    "keywords": [
+      "infrastructure",
+      "deployment",
+      "nunchaku",
+      "runpod",
+      "recovery"
+    ],
+    "visual_concept": "The bee mascot and the monitor-head robot working together to quickly attach a literal wheel to a server rack, symbolizing the switch to prebuilt Python wheels for faster deployment.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot quickly attaching a glowing lime green (#ecf874) wheel to a retro server rack. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-12/PR-10890.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot quickly attaching a glowing lime green (#ecf874) wheel to a retro server rack. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-12T12:55:23.656203+00:00"
+}

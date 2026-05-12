@@ -20,6 +20,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📖 Storytale](https://storytale.net) | Storytale is a multiplayer storytelling game where friends take turns adding sentences to a shared story. Pollinations powers three surfaces: | [@web](https://github.com/web) |
 | [🛠️ Pollenforge-CLI](226145187) | Convert Markdown content to a formatted output using Pollenforge-CLI. | [@cli](https://github.com/cli) |
 | [👻 The room](https://theroom-8mc4.vercel.app/) | Triggers a ghost jumpscare in The room. | [@web](https://github.com/web) |
 | [⛪ The Stream Church Webapp](https://thestreamchurch.org/) | Stream services and manage live events with The Stream Church Webapp, using Pollinations.ais API for asset generation and rapid web project deployment. | [@web](https://github.com/web) |
@@ -29,7 +30,6 @@
 | [💬 Compliment Generator](https://www.craygen.com/compliments/) | Upload an image to Compliment Generator to receive free compliments in various styles. | [@web](https://github.com/web) |
 | [🦖 Oráculo de la Era Salvaje · IA Bestias y Monstruos](https://dragonprimordial12-netizen.github.io/DragonP_Oraculo_de_la_Era_Salvaje/) | Chat con IA épico del juego Bestias y Monstruos en Roblox. Los jugadores pueden preguntar sobre bestias, jefes, estrategias y lore del mundo salvaje. Usa la API de texto de Pollinations con el modelo | [@roblox](https://github.com/roblox) |
 | [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menyediakan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@web](https://github.com/web) |
-| [📈 Quent](https://quent.kro.kr/) | Automate trading and indicator analysis with Quent using AI agent-based strategies. | [@web](https://github.com/web) |
 
 [Browse all apps →](apps/GREENHOUSE.md)
 ## 🚀 New Unified API — Now Live

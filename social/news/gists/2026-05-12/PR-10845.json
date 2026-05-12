@@ -1,0 +1,34 @@
+{
+  "pr_number": 10845,
+  "title": "chore(quest): simplify quest approval and payout",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10845",
+  "merged_at": "2026-05-12T20:55:53Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring cleaning the quest board",
+    "blurb": "We've swept away over 600 lines of bespoke automation for our community quests, leaning on GitHub's native tools instead. Payouts for merged quests are still automatic, just a whole lot simpler under the hood.",
+    "summary": "Simplified the community quest approval and payout workflows by replacing custom automation with GitHub-native label permissions.",
+    "impact": "Contributors will still receive automatic Pollen payouts for merged quests, but the underlying system is now much lighter and easier to maintain.",
+    "keywords": [
+      "quests",
+      "automation",
+      "github-actions",
+      "payouts",
+      "cleanup"
+    ],
+    "visual_concept": "The pollinations bee (Polly) cleaning up a wooden quest board or sweeping away old code/gears. The Nomnom creature eating the deleted code (representing the 600+ lines removed).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot sweeping away old gears and code snippets from a wooden quest board, while the round tan nomnom creature happily eats a stack of deprecated scripts. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-12/PR-10845.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot sweeping away old gears and code snippets from a wooden quest board, while the round tan nomnom creature happily eats a stack of deprecated scripts. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-12T20:56:54.405328+00:00"
+}

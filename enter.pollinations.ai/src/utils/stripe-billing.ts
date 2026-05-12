@@ -651,7 +651,7 @@ export async function markAutoTopUpInvoiceFailed(
 
     // Off-session SCA emits payment_failed while the PaymentIntent still
     // requires action. Keep only those invoices recoverable; ordinary declines
-    // fall through to cleanup + disable below.
+    // fall through to cleanup below.
     const paymentIntentId = getInvoicePaymentIntentId(invoice);
     if (
         options.cleanupInvoice !== false &&
@@ -1195,38 +1195,6 @@ function getBillingReturnUrl(env: CloudflareBindings): string {
 
 function shouldDisableAutoTopUpAfterFailure(error: unknown): boolean {
     if (!error || typeof error !== "object") return false;
-    if (isHardAuthenticationFailure(error)) return true;
-    if (isSCARequiredError(error)) return false;
     const stripeType = (error as { type?: unknown }).type;
-    return (
-        stripeType === "StripeCardError" ||
-        stripeType === "StripeInvalidRequestError"
-    );
-}
-
-function isHardAuthenticationFailure(error: unknown): boolean {
-    if (!error || typeof error !== "object") return false;
-    const e = error as { code?: unknown; raw?: { code?: unknown } };
-    return (
-        e.code === "payment_intent_authentication_failure" ||
-        e.raw?.code === "payment_intent_authentication_failure"
-    );
-}
-
-function isSCARequiredError(error: unknown): boolean {
-    if (!error || typeof error !== "object") return false;
-    const e = error as {
-        code?: unknown;
-        payment_intent?: { status?: unknown };
-        raw?: { code?: unknown; payment_intent?: { status?: unknown } };
-    };
-    const codes = new Set([
-        "invoice_payment_intent_requires_action",
-        "authentication_required",
-    ]);
-    if (typeof e.code === "string" && codes.has(e.code)) return true;
-    if (typeof e.raw?.code === "string" && codes.has(e.raw.code)) return true;
-    if (e.payment_intent?.status === "requires_action") return true;
-    if (e.raw?.payment_intent?.status === "requires_action") return true;
-    return false;
+    return stripeType === "StripeInvalidRequestError";
 }

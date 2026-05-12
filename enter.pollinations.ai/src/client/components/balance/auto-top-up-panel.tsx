@@ -229,19 +229,16 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     }, [saveAutoTopUp]);
 
     const lastIssue = billingState?.autoTopUp.lastIssue ?? null;
-    const issueNotice = lastIssue ? (
-        <AutoTopUpIssueNotice issue={lastIssue} />
-    ) : null;
+    const statusMessage = renderStatusMessage(toggleStatus, lastIssue);
 
     return (
         <div className="space-y-4">
             <AutoTopUpToggle
                 status={toggleStatus}
+                message={statusMessage}
                 disabled={isSaving}
                 onToggle={handleToggle}
             />
-
-            {toggleStatus === "off" && issueNotice}
 
             {showConfig && (
                 <Card
@@ -280,7 +277,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                             onClick={openBillingPortal}
                             loading={isOpeningPortal}
                         />
-                        {issueNotice}
                     </div>
                 </Card>
             )}
@@ -289,6 +285,31 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         </div>
     );
 };
+
+function renderStatusMessage(
+    status: ToggleStatus,
+    issue: AutoTopUpIssue | null,
+): ReactNode {
+    if (status === "off") return "Off";
+    if (status === "draft") return "Choose amount, then click Save to enable";
+    if (issue?.kind === "pending_payment") {
+        return (
+            <>
+                Payment pending —{" "}
+                <a
+                    href={issue.invoiceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold underline underline-offset-2 hover:text-amber-900"
+                >
+                    complete in Stripe
+                </a>
+            </>
+        );
+    }
+    if (issue?.kind === "failed") return "Last charge failed — update card";
+    return "On";
+}
 
 type ManageBillingButtonProps = {
     onClick: () => void;
@@ -315,14 +336,9 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
 
 type AutoTopUpToggleProps = {
     status: ToggleStatus;
+    message: ReactNode;
     disabled: boolean;
     onToggle: (enabled: boolean) => void;
-};
-
-const TOGGLE_STATUS_LABEL: Record<ToggleStatus, string> = {
-    off: "Off",
-    draft: "Choose amount, then click Save to enable",
-    on: "On",
 };
 
 const TOGGLE_TRACK_CLASS: Record<ToggleStatus, string> = {
@@ -333,6 +349,7 @@ const TOGGLE_TRACK_CLASS: Record<ToggleStatus, string> = {
 
 const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
     status,
+    message,
     disabled,
     onToggle,
 }) => {
@@ -382,7 +399,7 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
                             : "text-amber-800/75",
                     )}
                 >
-                    {TOGGLE_STATUS_LABEL[status]}
+                    {message}
                 </div>
             </div>
         </div>
@@ -545,69 +562,6 @@ const ErrorNotice: FC<{ children: ReactNode }> = ({ children }) => (
         {children}
     </div>
 );
-
-type AutoTopUpIssueNoticeProps = {
-    issue: AutoTopUpIssue;
-};
-
-const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
-    const isPendingPayment = issue.kind === "pending_payment";
-    const title = isPendingPayment
-        ? "Auto top-up payment pending"
-        : "Last auto top-up charge failed";
-    const body = isPendingPayment
-        ? "Stripe may need you to confirm this payment before your pollen is credited."
-        : "We couldn't charge your default payment method. Update it to keep auto top-up working.";
-    const occurredLabel = formatRelativeTime(issue.occurredAt);
-    const containerClass = isPendingPayment
-        ? "rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-800"
-        : "rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-xs text-red-700/90";
-    const occurredClass = isPendingPayment
-        ? "mt-1 text-[11px] text-amber-700/70"
-        : "mt-1 text-[11px] text-red-700/70";
-    return (
-        <div role="alert" className={containerClass}>
-            <div className="font-semibold">⚠ {title}</div>
-            <div className="mt-0.5">{body}</div>
-            {isPendingPayment && (
-                <Button
-                    as="a"
-                    href={issue.invoiceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    color="amber"
-                    weight="light"
-                    size="small"
-                    shape="rounded"
-                    className="mt-2 w-fit gap-1.5 shadow-none"
-                >
-                    <span>Complete payment in Stripe</span>
-                    <ExternalLinkIcon />
-                </Button>
-            )}
-            {occurredLabel && (
-                <div className={occurredClass}>
-                    Last attempt: {occurredLabel}
-                </div>
-            )}
-        </div>
-    );
-};
-
-function formatRelativeTime(iso: string): string | null {
-    const ts = Date.parse(iso);
-    if (Number.isNaN(ts)) return null;
-    const diffSeconds = Math.max(0, Math.round((Date.now() - ts) / 1000));
-    if (diffSeconds < 60) return "moments ago";
-    const diffMinutes = Math.round(diffSeconds / 60);
-    if (diffMinutes < 60)
-        return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
-    const diffHours = Math.round(diffMinutes / 60);
-    if (diffHours < 24)
-        return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-    const diffDays = Math.round(diffHours / 24);
-    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-}
 
 const ExternalLinkIcon: FC = () => (
     <svg

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-11",
+  "period_start": "2026-05-11",
+  "period_end": "2026-05-11",
+  "generated_at": "2026-05-12T06:54:49.929823+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-11/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-11/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-11/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped a couple things this week to make the ecosystem a bit cozier.\n\nFirst, the developer earnings dashboard is live. If you're building apps on our infrastructure, you can now actually see your pollen stacking up. No more guessing in the dark.\n\nSecond, we aligned our R2 cache headers and bumped media sizes. Translation: repeat media requests load instantly now. No more waiting for pixels you've already asked for.\n\nCheck the repo for the full notes. Keep building weird stuff. 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #developerupdate #webdev #techart",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

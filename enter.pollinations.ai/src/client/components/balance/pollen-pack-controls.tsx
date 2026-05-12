@@ -6,6 +6,7 @@ import {
     type PollenPack,
 } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
+import { Tag } from "../ui/tag.tsx";
 
 const sliderGradient = (percent: number): string =>
     `linear-gradient(to right, var(--color-amber-500) 0%, var(--color-amber-500) ${percent}%, var(--color-amber-200) ${percent}%, var(--color-amber-200) 100%)`;
@@ -64,7 +65,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                     className="pollen-pack-slider"
                 />
             </div>
-            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-semibold text-amber-700/80 tabular-nums">
+            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-amber-700/80 tabular-nums">
                 <div className="relative">
                     {packs.map((pack, index) => {
                         const isSelected =
@@ -73,11 +74,6 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                         const isLast = lastIndex > 0 && index === lastIndex;
                         const bonusPercent = getPackBonusPercent(pack);
                         const hasBonus = pack.bonusPollen > 0;
-                        const readoutPositionClass = isFirst
-                            ? "left-0"
-                            : isLast
-                              ? "right-0"
-                              : "left-1/2 -translate-x-1/2";
                         return (
                             <span
                                 key={pack.amountUsd}
@@ -93,25 +89,57 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                 )}
                             >
                                 <span className="relative inline-block">
-                                    ${pack.amountUsd}
+                                    <span
+                                        className={cn(
+                                            "inline-block",
+                                            isSelected &&
+                                                "text-2xl leading-none text-[#7C3F1E]",
+                                        )}
+                                    >
+                                        ${pack.amountUsd}
+                                    </span>
                                     {isSelected && (
-                                        <span
+                                        <Tag
+                                            color="amber"
+                                            size="sm"
                                             className={cn(
-                                                "absolute top-full mt-0.5 whitespace-nowrap font-medium text-amber-900",
-                                                readoutPositionClass,
+                                                "absolute top-full mt-1 flex-col items-stretch whitespace-nowrap",
+                                                isFirst
+                                                    ? "left-0"
+                                                    : isLast
+                                                      ? "right-0"
+                                                      : "left-1/2 -translate-x-1/2",
                                             )}
                                         >
-                                            {formatPollenPackValue(
-                                                pack.pollenGrant,
-                                            )}{" "}
-                                            pollen
+                                            <span
+                                                className={cn(
+                                                    isFirst
+                                                        ? "text-left"
+                                                        : isLast
+                                                          ? "text-right"
+                                                          : "text-center",
+                                                )}
+                                            >
+                                                {formatPollenPackValue(
+                                                    pack.pollenGrant,
+                                                )}{" "}
+                                                pollen
+                                            </span>
                                             {hasBonus && (
-                                                <span className="text-amber-700">
-                                                    {" (+"}
-                                                    {bonusPercent}% bonus)
+                                                <span
+                                                    className={cn(
+                                                        "text-amber-700",
+                                                        isFirst
+                                                            ? "text-left"
+                                                            : isLast
+                                                              ? "text-right"
+                                                              : "text-center",
+                                                    )}
+                                                >
+                                                    +{bonusPercent}% bonus
                                                 </span>
                                             )}
-                                        </span>
+                                        </Tag>
                                     )}
                                 </span>
                             </span>

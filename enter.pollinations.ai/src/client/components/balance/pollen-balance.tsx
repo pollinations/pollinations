@@ -59,6 +59,23 @@ const MailIcon: FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
+const WalletIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" />
+        <path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" />
+        <circle cx="17" cy="14" r="1.25" fill="currentColor" />
+    </svg>
+);
+
 const TooltipList: FC<{
     title: string;
     emoji: string;
@@ -219,7 +236,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
             </div>
 
             {/* Learn more */}
-            <div className="pt-3 flex justify-start">
+            <div className="pt-3 text-[13px] leading-snug text-amber-950/45">
                 <button
                     type="button"
                     onClick={() => {
@@ -232,9 +249,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             window.location.hash = slug;
                         }
                     }}
-                    className="text-xs text-amber-700/80 hover:text-amber-900 underline decoration-amber-400/60 underline-offset-2"
+                    className="flex items-start gap-1.5 underline decoration-amber-700/25 underline-offset-2 transition-colors hover:text-amber-950"
                 >
-                    Learn more →
+                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>Learn more</span>
                 </button>
             </div>
         </div>
@@ -336,8 +354,8 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
         <>
             <div className="space-y-4">
                 {selectedPack && (
-                    <div className="flex w-full flex-col items-start gap-4 pb-2 sm:flex-row sm:items-center sm:gap-4 sm:pb-12">
-                        <div className="w-full min-w-0 flex-1 pb-10 sm:pb-0">
+                    <div className="flex w-full flex-col items-start gap-4 pb-10 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
+                        <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}
                                 onChange={setSelectedPackAmount}
@@ -349,7 +367,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             color="amber"
                             weight="light"
                             title={`Buy $${selectedPack.amountUsd} pollen pack`}
-                            className="w-28 min-w-0 self-end text-center shadow-none sm:shrink-0 sm:self-center"
+                            className="w-28 min-w-0 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                         >
                             Buy
                         </Button>

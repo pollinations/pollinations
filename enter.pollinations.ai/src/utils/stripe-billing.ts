@@ -651,18 +651,14 @@ export async function markAutoTopUpInvoiceFailed(
 
     // Off-session SCA emits payment_failed while the PaymentIntent still
     // requires action. Keep only those invoices recoverable; ordinary declines
-    // fall through to cleanup below.
-    const paymentIntentId = getInvoicePaymentIntentId(invoice);
-    if (
-        options.cleanupInvoice !== false &&
-        invoice.status === "open" &&
-        paymentIntentId
-    ) {
-        const paymentIntent =
-            await createStripeClient(env).paymentIntents.retrieve(
-                paymentIntentId,
-            );
-        if (paymentIntent.status === "requires_action") return;
+    // fall through to cleanup below. API 2025-12-15.clover no longer surfaces
+    // `invoice.payment_intent`; resolve via `invoice.payments` instead.
+    if (options.cleanupInvoice !== false && invoice.status === "open") {
+        const paymentIntent = await retrieveInvoicePaymentIntent(
+            env,
+            invoice.id,
+        );
+        if (paymentIntent?.status === "requires_action") return;
     }
 
     if (options.cleanupInvoice !== false) {
@@ -680,13 +676,24 @@ export async function markAutoTopUpInvoiceFailed(
     }
 }
 
-function getInvoicePaymentIntentId(invoice: Stripe.Invoice): string | null {
-    const paymentIntent = (
-        invoice as Stripe.Invoice & {
-            payment_intent?: string | Stripe.PaymentIntent | null;
-        }
-    ).payment_intent;
-    return typeof paymentIntent === "string" ? paymentIntent : null;
+async function retrieveInvoicePaymentIntent(
+    env: CloudflareBindings,
+    invoiceId: string,
+): Promise<Stripe.PaymentIntent | null> {
+    const stripe = createStripeClient(env);
+    const expanded = (await stripe.invoices.retrieve(invoiceId, {
+        expand: ["payments.data.payment.payment_intent"],
+    })) as Stripe.Invoice & {
+        payments?: {
+            data?: Array<{
+                payment?: {
+                    payment_intent?: Stripe.PaymentIntent | string | null;
+                };
+            }>;
+        };
+    };
+    const pi = expanded.payments?.data?.[0]?.payment?.payment_intent;
+    return pi && typeof pi === "object" ? pi : null;
 }
 
 async function getUserStripeBillingRow(

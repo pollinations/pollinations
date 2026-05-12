@@ -14,7 +14,6 @@ import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
-import { Tag } from "../ui/tag.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
@@ -250,40 +249,49 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     }, [saveAutoTopUp]);
 
     const lastIssue = billingState?.autoTopUp.lastIssue ?? null;
-    const statusMessage = renderStatusMessage(toggleStatus, lastIssue);
+    const billingReady = paymentMethodReady && billingDetailsReady;
+    const showSliderAndSave = showConfig && billingReady;
+    const statusMessage = renderStatusMessage(
+        toggleStatus,
+        lastIssue,
+        billingReady,
+    );
+    const alertTone = toggleStatus === "draft" || lastIssue !== null;
 
     return (
         <div className="space-y-4">
             <AutoTopUpToggle
                 status={toggleStatus}
                 message={statusMessage}
+                alert={alertTone}
                 disabled={isSaving}
                 onToggle={handleToggle}
             />
 
             {showConfig && (
                 <div className="space-y-4">
-                    <div className="flex flex-col items-start gap-4 pb-2 sm:flex-row sm:items-center sm:gap-4 sm:pb-12">
-                        <div className="w-full min-w-0 flex-1 pb-10 sm:pb-0">
-                            <PollenPackSlider
-                                value={packAmountUsd}
-                                onChange={setPackAmountUsd}
-                                packs={AUTO_TOP_UP_PACKS}
-                                disabled={isSaving}
+                    {showSliderAndSave && (
+                        <div className="flex flex-col items-start gap-4 pb-10 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
+                            <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
+                                <PollenPackSlider
+                                    value={packAmountUsd}
+                                    onChange={setPackAmountUsd}
+                                    packs={AUTO_TOP_UP_PACKS}
+                                    disabled={isSaving}
+                                />
+                            </div>
+                            <AutoTopUpSaveButton
+                                showConfig={showConfig}
+                                hasUnsavedChanges={hasUnsavedChanges}
+                                setup={setup}
+                                onSave={handleSave}
                             />
                         </div>
-                        <AutoTopUpSaveButton
-                            showConfig={showConfig}
-                            hasUnsavedChanges={hasUnsavedChanges}
-                            setup={setup}
-                            onSave={handleSave}
-                        />
-                    </div>
+                    )}
 
                     <div className="flex items-end justify-between gap-3">
                         <SetupSnippet
                             title="Payment method"
-                            ready={paymentMethodReady}
                             value={formatPaymentMethod(billingState)}
                         />
                         <ManageBillingButton
@@ -302,9 +310,14 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 function renderStatusMessage(
     status: ToggleStatus,
     issue: AutoTopUpIssue | null,
+    billingReady: boolean,
 ): ReactNode {
     if (status === "off") return "Off";
-    if (status === "draft") return "Choose amount, then click Save to enable";
+    if (status === "draft") {
+        return billingReady
+            ? "Choose amount, then click Save to enable"
+            : "Add your payment method";
+    }
     if (issue?.kind === "pending_payment") {
         return (
             <>
@@ -350,6 +363,7 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
 type AutoTopUpToggleProps = {
     status: ToggleStatus;
     message: ReactNode;
+    alert: boolean;
     disabled: boolean;
     onToggle: (enabled: boolean) => void;
 };
@@ -359,10 +373,12 @@ const TOGGLE_TRACK_CLASS: Record<ToggleStatus, string> = {
     draft: "bg-amber-300 border-amber-400",
     on: "bg-emerald-300 border-emerald-400",
 };
+const TOGGLE_TRACK_ALERT_CLASS = "bg-red-400 border-red-500";
 
 const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
     status,
     message,
+    alert,
     disabled,
     onToggle,
 }) => {
@@ -380,7 +396,9 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
                 disabled={disabled}
                 className={cn(
                     "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60",
-                    TOGGLE_TRACK_CLASS[status],
+                    alert
+                        ? TOGGLE_TRACK_ALERT_CLASS
+                        : TOGGLE_TRACK_CLASS[status],
                 )}
             >
                 <span
@@ -393,11 +411,6 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
             <div className="min-w-0">
                 <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
                     Auto top-up
-                    {status === "draft" && (
-                        <Tag color="amber" size="sm" className="ml-2">
-                            Unsaved
-                        </Tag>
-                    )}
                     <InfoTip
                         content={AUTO_TOP_UP_TOOLTIP_CONTENT}
                         label="Auto top-up information"
@@ -407,9 +420,7 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
                 <div
                     className={cn(
                         "text-xs font-medium",
-                        status === "draft"
-                            ? "text-amber-700"
-                            : "text-amber-800/75",
+                        alert ? "text-red-700" : "text-amber-800/75",
                     )}
                 >
                     {message}
@@ -442,7 +453,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
     return (
         <DisabledControlTooltip
             content={saveDisabled ? disabledReason : null}
-            className="self-end sm:shrink-0 sm:self-center"
+            className="self-start sm:shrink-0 sm:self-center"
         >
             <Button
                 as="button"
@@ -451,7 +462,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 weight="light"
                 onClick={onSave}
                 disabled={saveDisabled}
-                className="w-28 min-w-0 self-end text-center shadow-none sm:self-center"
+                className="w-28 min-w-0 self-start text-center shadow-none sm:self-center"
             >
                 Save
             </Button>
@@ -520,23 +531,15 @@ function getSaveDisabledReason(
 
 type SetupSnippetProps = {
     title: string;
-    ready: boolean;
     value: ReactNode;
 };
 
-const SetupSnippet: FC<SetupSnippetProps> = ({ title, ready, value }) => (
-    <div className="min-w-0 space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[15px] font-bold text-amber-950">
-                {title}
-            </span>
-            <Tag color={ready ? "green" : "pink"} size="sm">
-                {ready ? "Ready" : "Required"}
-            </Tag>
-        </div>
-        <div className="break-words text-sm font-medium leading-relaxed text-amber-950">
+const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
+    <div className="min-w-0 break-words leading-relaxed text-amber-950">
+        <span className="text-[15px] font-bold">{title}:</span>{" "}
+        <span className="inline-flex rounded-md bg-white px-2 py-0.5 text-sm font-medium">
             {value}
-        </div>
+        </span>
     </div>
 );
 

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
+    type ApiKey,
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
@@ -97,6 +98,7 @@ export const Route = createFileRoute("/")({
             apiKeysResult,
             d1BalanceResult,
             profileResult,
+            billingState,
             earningsTodayResult,
         ] = await Promise.all([
             apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
@@ -109,18 +111,24 @@ export const Route = createFileRoute("/")({
             apiClient.account.profile
                 .$get()
                 .then((r) => (r.ok ? r.json() : null)),
+            apiClient.stripe.billing
+                .$get()
+                .then((r) => (r.ok ? r.json() : null)),
             apiClient.customer.balance.today
                 .$get()
                 .then((r) => (r.ok ? r.json() : null)),
         ]);
-        const apiKeys = apiKeysResult.data || [];
+        const apiKeys = (apiKeysResult.data || []) as ApiKey[];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
         const paidWeek = earningsTodayResult?.paidWeek ?? 0;
         const tierWeek = earningsTodayResult?.tierWeek ?? 0;
-        // Prefer D1 — session (KV-cached) may hold a stale username after relog.
+        // Prefer D1; session (KV-cached) may hold a stale username after relog.
+        const sessionUser = context.user as
+            | (typeof context.user & { githubUsername?: string | null })
+            | undefined;
         const githubUsername =
-            profileResult?.githubUsername ?? context.user?.githubUsername ?? "";
+            profileResult?.githubUsername ?? sessionUser?.githubUsername ?? "";
 
         return {
             user: context.user,
@@ -129,6 +137,7 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
+            billingState,
             paidWeek,
             tierWeek,
         };
@@ -144,6 +153,7 @@ function RouteComponent() {
         tierData,
         tierBalance,
         packBalance,
+        billingState,
         paidWeek,
         tierWeek,
     } = Route.useLoaderData();
@@ -320,7 +330,7 @@ function RouteComponent() {
                         framed
                         id="buy-pollen"
                     >
-                        <BuyPollenPanel />
+                        <BuyPollenPanel initialBillingState={billingState} />
                     </DashboardSection>
                     {tierData && (
                         <DashboardSection title="Tier" theme="amber" framed>

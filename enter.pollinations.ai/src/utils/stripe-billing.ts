@@ -649,23 +649,21 @@ export async function markAutoTopUpInvoiceFailed(
     if (metadata[METADATA_PURPOSE] !== AUTO_TOP_UP_PURPOSE) return;
     if (!invoice.id) return;
 
-    // An open invoice is still collectible in Stripe. Keep it pending so the
-    // customer can complete payment there; terminal webhooks or stale
-    // reconciliation will settle the local attempt.
+    // Off-session SCA emits payment_failed while the PaymentIntent still
+    // requires action. Keep only those invoices recoverable; ordinary declines
+    // fall through to cleanup + disable below.
+    const paymentIntentId = getInvoicePaymentIntentId(invoice);
     if (
         options.cleanupInvoice !== false &&
         options.disableAutoTopUp !== false &&
-        invoice.status === "open"
+        invoice.status === "open" &&
+        paymentIntentId
     ) {
-        const existing = await env.DB.prepare(
-            `SELECT status
-                FROM stripe_auto_top_up_attempt
-                WHERE stripe_invoice_id = ?
-                LIMIT 1`,
-        )
-            .bind(invoice.id)
-            .first<{ status: string }>();
-        if (existing?.status === AUTO_TOP_UP_ATTEMPT_STATUS_PENDING) return;
+        const paymentIntent =
+            await createStripeClient(env).paymentIntents.retrieve(
+                paymentIntentId,
+            );
+        if (paymentIntent.status === "requires_action") return;
     }
 
     if (options.cleanupInvoice !== false) {
@@ -681,6 +679,15 @@ export async function markAutoTopUpInvoiceFailed(
     if (options.disableAutoTopUp !== false && attempt) {
         await disableAutoTopUp(env.DB, attempt.userId);
     }
+}
+
+function getInvoicePaymentIntentId(invoice: Stripe.Invoice): string | null {
+    const paymentIntent = (
+        invoice as Stripe.Invoice & {
+            payment_intent?: string | Stripe.PaymentIntent | null;
+        }
+    ).payment_intent;
+    return typeof paymentIntent === "string" ? paymentIntent : null;
 }
 
 async function getUserStripeBillingRow(

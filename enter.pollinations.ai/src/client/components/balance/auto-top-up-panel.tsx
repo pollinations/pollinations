@@ -369,7 +369,7 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
         weight="light"
         onClick={onClick}
         disabled={loading}
-        className="btn-shimmer w-fit max-w-full min-w-0 gap-2 whitespace-nowrap border border-amber-300/70 text-center shadow-none"
+        className="w-fit max-w-full min-w-0 gap-2 whitespace-nowrap text-center shadow-none"
     >
         <span>{loading ? "Opening Stripe..." : "Manage billing details"}</span>
         {!loading && <ExternalLinkIcon />}
@@ -479,7 +479,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 weight="light"
                 onClick={onSave}
                 disabled={saveDisabled}
-                className="btn-shimmer w-28 min-w-0 self-end border border-amber-300/70 text-center shadow-none sm:self-center"
+                className="w-28 min-w-0 self-end text-center shadow-none sm:self-center"
             >
                 Save
             </Button>

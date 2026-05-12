@@ -44,13 +44,20 @@ export const formatPollenPackValue = (value: number): string =>
 export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
     ({ amountUsd, bonusPollen }) => {
         const pollenGrant = amountUsd + bonusPollen;
+        const hasBonus = bonusPollen > 0;
+        const bonusSuffix = hasBonus
+            ? ` + ${formatPollenPackValue(bonusPollen)} FREE`
+            : "";
+        const bonusSentence = hasBonus
+            ? ` We’re still in beta, so this pack includes ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)}.`
+            : "";
 
         return {
             amountUsd,
             bonusPollen,
             pollenGrant,
-            checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen + ${formatPollenPackValue(bonusPollen)} FREE`,
-            checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱 We’re still in beta, so this pack includes ${formatPollenPackValue(bonusPollen)} extra Pollen when you buy ${formatPollenPackValue(amountUsd)}. Feedback: ${CHECKOUT_FEEDBACK_URL}`,
+            checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen${bonusSuffix}`,
+            checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱${bonusSentence} Feedback: ${CHECKOUT_FEEDBACK_URL}`,
             checkoutImageUrl: CHECKOUT_IMAGE_URL,
             taxCode: POLLEN_TAX_CODE,
         };
@@ -65,3 +72,8 @@ export const getPollenPack = (value: string | number): PollenPack | undefined =>
 
 export const describePollenPack = (pack: PollenPack): string =>
     `$${pack.amountUsd} -> ${formatPollenPackValue(pack.pollenGrant)} pollen (+${formatPollenPackValue(pack.bonusPollen)} bonus)`;
+
+export const getPackBonusPercent = (pack: PollenPack): number =>
+    pack.amountUsd > 0
+        ? Math.round((pack.bonusPollen / pack.amountUsd) * 100)
+        : 0;

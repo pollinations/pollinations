@@ -6,6 +6,10 @@ import type Stripe from "stripe";
 import { getPollenPack } from "@/pollen-packs.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import {
+    creditAutoTopUpInvoice,
+    markAutoTopUpInvoiceFailed,
+} from "../utils/stripe-billing.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -276,6 +280,15 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             return c.json({ error: "Invalid signature" }, 400);
         }
 
+        if (event.livemode !== (c.env.STRIPE_MODE === "live")) {
+            console.warn("Stripe webhook mode mismatch:", {
+                eventId: event.id,
+                livemode: event.livemode,
+                stripeMode: c.env.STRIPE_MODE,
+            });
+            return c.json({ received: true });
+        }
+
         console.log(`Stripe webhook received: ${event.type} (${event.id})`);
 
         // Handle the event
@@ -437,6 +450,45 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     }).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
+                );
+                break;
+            }
+
+            case "invoice.paid":
+            case "invoice.payment_succeeded": {
+                const invoice = event.data.object as Stripe.Invoice;
+                const result = await creditAutoTopUpInvoice(c.env, invoice);
+                if (result.credited) {
+                    console.log(
+                        `Stripe auto top-up invoice credited: ${invoice.id} (+${result.pollenCredited} pollen)`,
+                    );
+                }
+                break;
+            }
+
+            case "invoice.payment_failed": {
+                const invoice = event.data.object as Stripe.Invoice;
+                await markAutoTopUpInvoiceFailed(
+                    c.env,
+                    invoice,
+                    "Stripe could not charge the default payment method.",
+                    { disableAutoTopUp: false },
+                );
+                break;
+            }
+
+            case "invoice.voided":
+            case "invoice.marked_uncollectible": {
+                const invoice = event.data.object as Stripe.Invoice;
+                // Terminal Stripe-side states. The invoice itself is already
+                // in its final form, so we only record the attempt outcome —
+                // do not disable auto top-up for the user (e.g. they might
+                // have voided the invoice themselves via the portal).
+                await markAutoTopUpInvoiceFailed(
+                    c.env,
+                    invoice,
+                    "Stripe invoice can no longer be collected.",
+                    { cleanupInvoice: false, disableAutoTopUp: false },
                 );
                 break;
             }

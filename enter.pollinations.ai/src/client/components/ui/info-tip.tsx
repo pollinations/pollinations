@@ -1,7 +1,8 @@
 import { type FC, type ReactNode, useId, useState } from "react";
 
 type InfoTipProps = {
-    text: ReactNode;
+    text?: ReactNode;
+    content?: ReactNode;
     label?: string;
     tone?: "pink" | "amber" | "yellow" | "blue" | "violet";
     placement?: "top" | "bottom";
@@ -37,6 +38,7 @@ const TONES = {
  */
 export const InfoTip: FC<InfoTipProps> = ({
     text,
+    content,
     label = "More info",
     tone = "pink",
     placement = "bottom",
@@ -75,7 +77,7 @@ export const InfoTip: FC<InfoTipProps> = ({
                 role="tooltip"
                 className={`${show ? "visible" : "invisible"} absolute left-1/2 -translate-x-1/2 ${placementClasses} z-50 w-[200px] whitespace-pre-line rounded-lg border px-3 py-2 text-left text-xs font-normal text-gray-800 shadow-lg pointer-events-none sm:w-[280px] ${classes.popup}`}
             >
-                {text}
+                {content ?? text}
             </span>
         </button>
     );

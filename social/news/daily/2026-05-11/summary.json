@@ -1,0 +1,19 @@
+{
+  "date": "2026-05-11",
+  "period_start": "2026-05-11",
+  "period_end": "2026-05-11",
+  "title": "Developer earnings dashboard is live",
+  "summary": "Developers get a new dashboard to track their Pollen earnings, and generated media now loads instantly on repeat views thanks to restored cache headers.\n\nAdded an Earnings dashboard to the developer portal. If you have markup enabled on your apps, you can now actually see your daily Pollen earnings, active users, and top-performing apps instead of guessing.\n\nRestored immutable, 1-year cache headers for R2-backed responses. Repeat requests for the same generated media or text will now load instantly from the browser cache, saving everyone unnecessary network trips. Also codified the 30-day storage lifecycle in CI.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 10727,
+      "date": "2026-05-11"
+    },
+    {
+      "number": 10748,
+      "date": "2026-05-11"
+    }
+  ],
+  "generated_at": "2026-05-12T06:54:49.929823+00:00"
+}

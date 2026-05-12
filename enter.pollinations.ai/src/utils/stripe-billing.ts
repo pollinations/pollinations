@@ -450,7 +450,7 @@ export async function processAutoTopUpForUser(
         const customerId = user.stripeCustomerId;
         if (!customerId) {
             await failAttempt(env.DB, attemptId, "missing Stripe customer");
-            await disableAutoTopUpAndClearClaim(env.DB, userId);
+            await disableAutoTopUp(env.DB, userId);
             return {
                 status: "skipped",
                 reason: "missing Stripe customer",
@@ -459,7 +459,7 @@ export async function processAutoTopUpForUser(
         const customer = await retrieveActiveCustomer(stripe, customerId);
         if (!customer) {
             await failAttempt(env.DB, attemptId, "deleted Stripe customer");
-            await disableAutoTopUpAndClearClaim(env.DB, userId);
+            await disableAutoTopUp(env.DB, userId);
             return {
                 status: "skipped",
                 reason: "deleted Stripe customer",
@@ -476,7 +476,7 @@ export async function processAutoTopUpForUser(
                 attemptId,
                 "missing default payment method",
             );
-            await disableAutoTopUpAndClearClaim(env.DB, userId);
+            await disableAutoTopUp(env.DB, userId);
             return {
                 status: "skipped",
                 reason: "missing default payment method",
@@ -485,7 +485,7 @@ export async function processAutoTopUpForUser(
 
         if (!isBillingDetailsComplete(customer, paymentMethod)) {
             await failAttempt(env.DB, attemptId, "missing billing details");
-            await disableAutoTopUpAndClearClaim(env.DB, userId);
+            await disableAutoTopUp(env.DB, userId);
             return { status: "skipped", reason: "missing billing details" };
         }
 
@@ -693,8 +693,7 @@ export async function creditAutoTopUpInvoice(
         ),
         env.DB.prepare(
             `UPDATE user
-                SET pack_balance = COALESCE(pack_balance, 0) + ?,
-                    auto_top_up_claimed_at = NULL
+                SET pack_balance = COALESCE(pack_balance, 0) + ?
                 WHERE id = ?
                     AND EXISTS (
                         SELECT 1
@@ -808,7 +807,7 @@ export async function markAutoTopUpInvoiceFailed(
     }
 
     if (options.disableAutoTopUp !== false && userIdToDisable) {
-        await disableAutoTopUpAndClearClaim(env.DB, userIdToDisable);
+        await disableAutoTopUp(env.DB, userIdToDisable);
     }
 }
 
@@ -1108,18 +1107,7 @@ async function claimAutoTopUpAttempt(
         )
         .run();
 
-    if ((result.meta.changes ?? 0) !== 1) return false;
-
-    await db
-        .prepare(
-            `UPDATE user
-                SET auto_top_up_claimed_at = ?
-                WHERE id = ?`,
-        )
-        .bind(now, input.userId)
-        .run();
-
-    return true;
+    return (result.meta.changes ?? 0) === 1;
 }
 
 async function setAutoTopUpAttemptInvoice(
@@ -1428,21 +1416,6 @@ async function disableAutoTopUp(db: D1Database, userId: string): Promise<void> {
                 SET auto_top_up_enabled = 0
                 WHERE id = ?
                     AND auto_top_up_enabled = 1`,
-        )
-        .bind(userId)
-        .run();
-}
-
-async function disableAutoTopUpAndClearClaim(
-    db: D1Database,
-    userId: string,
-): Promise<void> {
-    await db
-        .prepare(
-            `UPDATE user
-                SET auto_top_up_enabled = 0,
-                    auto_top_up_claimed_at = NULL
-                WHERE id = ?`,
         )
         .bind(userId)
         .run();

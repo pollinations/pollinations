@@ -697,7 +697,7 @@ test("PATCH /api/stripe/auto-top-up validates request shape", async ({
     });
 });
 
-test("PATCH /api/stripe/auto-top-up keeps in-flight claim when disabling", async ({
+test("PATCH /api/stripe/auto-top-up keeps configured pack when disabling", async ({
     sessionToken,
     mocks,
 }) => {
@@ -712,15 +712,13 @@ test("PATCH /api/stripe/auto-top-up keeps in-flight claim when disabling", async
     expect(user).toBeTruthy();
     if (!user) throw new Error("Expected seeded test user");
 
-    const claimedAt = Date.now();
     await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = 1,
-                auto_top_up_amount_usd = 10,
-                auto_top_up_claimed_at = ?
+                auto_top_up_amount_usd = 10
             WHERE id = ?`,
     )
-        .bind(claimedAt, user.id)
+        .bind(user.id)
         .run();
 
     const response = await SELF.fetch(`${base}/auto-top-up`, {
@@ -738,8 +736,7 @@ test("PATCH /api/stripe/auto-top-up keeps in-flight claim when disabling", async
 
     const updatedUser = await env.DB.prepare(
         `SELECT auto_top_up_enabled AS autoTopUpEnabled,
-            auto_top_up_amount_usd AS autoTopUpAmountUsd,
-            auto_top_up_claimed_at AS autoTopUpClaimedAt
+            auto_top_up_amount_usd AS autoTopUpAmountUsd
         FROM user
         WHERE id = ?`,
     )
@@ -747,12 +744,10 @@ test("PATCH /api/stripe/auto-top-up keeps in-flight claim when disabling", async
         .first<{
             autoTopUpEnabled: number | boolean | null;
             autoTopUpAmountUsd: number | null;
-            autoTopUpClaimedAt: number | null;
         }>();
 
     expect(updatedUser?.autoTopUpEnabled).toBe(0);
     expect(updatedUser?.autoTopUpAmountUsd).toBe(10);
-    expect(updatedUser?.autoTopUpClaimedAt).toBe(claimedAt);
 });
 
 test("PATCH /api/stripe/auto-top-up requires a default card before enabling", async ({
@@ -904,18 +899,15 @@ test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice"
     // Inline credit: pollen lands the moment Stripe confirms the charge,
     // before the webhook arrives. pack: 1 + 15 (pollen grant for $10) = 16.
     const updatedUser = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance,
-            auto_top_up_claimed_at AS autoTopUpClaimedAt
+        `SELECT pack_balance AS packBalance
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             packBalance: number | null;
-            autoTopUpClaimedAt: number | null;
         }>();
     expect(updatedUser?.packBalance).toBe(16);
-    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
 
     const attempt = await env.DB.prepare(
         `SELECT status, completed_at AS completedAt
@@ -1114,13 +1106,11 @@ test("POST /api/stripe/auto-top-up/trigger disables when Stripe customer is dele
     const [updatedUser] = await db
         .select({
             autoTopUpEnabled: userTable.autoTopUpEnabled,
-            autoTopUpClaimedAt: userTable.autoTopUpClaimedAt,
         })
         .from(userTable)
         .where(eq(userTable.id, user.id))
         .limit(1);
     expect(updatedUser?.autoTopUpEnabled).toBe(false);
-    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
     expect(
         mocks.stripe.state.requests.some(
             (request) =>
@@ -1576,15 +1566,13 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
     expect(secondResponse.status).toBe(200);
 
     const updatedUser = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance,
-            auto_top_up_claimed_at AS autoTopUpClaimedAt
+        `SELECT pack_balance AS packBalance
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             packBalance: number | null;
-            autoTopUpClaimedAt: number | null;
         }>();
     const attempt = await env.DB.prepare(
         `SELECT status, failure_reason AS failureReason
@@ -1595,7 +1583,6 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
         .first<{ status: string; failureReason: string | null }>();
 
     expect(updatedUser?.packBalance).toBe(16);
-    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -1994,15 +1981,13 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
     expect(paidRedeliveryResponse.status).toBe(200);
 
     const updatedUser = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance,
-            auto_top_up_claimed_at AS autoTopUpClaimedAt
+        `SELECT pack_balance AS packBalance
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             packBalance: number | null;
-            autoTopUpClaimedAt: number | null;
         }>();
     const attempt = await env.DB.prepare(
         `SELECT status, failure_reason AS failureReason
@@ -2013,7 +1998,6 @@ test("POST /api/webhooks/stripe does not let payment_failed reopen a paid auto t
         .first<{ status: string; failureReason: string | null }>();
 
     expect(updatedUser?.packBalance).toBe(16);
-    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -2056,15 +2040,13 @@ test("POST /api/webhooks/stripe keeps auto top-up enabled after SCA prompt", asy
     expect(response.status).toBe(200);
 
     const updatedUser = await env.DB.prepare(
-        `SELECT auto_top_up_enabled AS autoTopUpEnabled,
-            auto_top_up_claimed_at AS autoTopUpClaimedAt
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             autoTopUpEnabled: number | boolean | null;
-            autoTopUpClaimedAt: number | null;
         }>();
     const attempt = await env.DB.prepare(
         `SELECT status,
@@ -2081,7 +2063,6 @@ test("POST /api/webhooks/stripe keeps auto top-up enabled after SCA prompt", asy
         }>();
 
     expect(updatedUser?.autoTopUpEnabled).toBe(1);
-    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
     expect(attempt?.status).toBe("requires_action");
     expect(attempt?.failureReason).toContain(hostedInvoiceUrl);
     expect(attempt?.completedAt).toBeNull();
@@ -2411,7 +2392,7 @@ test("POST /api/webhooks/stripe payment_failed retry disables user even when att
 
     const invoiceId = "in_failed_retry_disable";
     // Simulate a prior delivery that transitioned the attempt to 'failed'
-    // but crashed before disableAutoTopUpAndClearClaim ran.
+    // but crashed before the user config was disabled.
     await insertAutoTopUpAttempt({
         userId: user.id,
         invoiceId,
@@ -2443,19 +2424,16 @@ test("POST /api/webhooks/stripe payment_failed retry disables user even when att
     expect(response.status).toBe(200);
 
     const updatedUser = await env.DB.prepare(
-        `SELECT auto_top_up_enabled AS autoTopUpEnabled,
-            auto_top_up_claimed_at AS autoTopUpClaimedAt
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled
         FROM user
         WHERE id = ?`,
     )
         .bind(user.id)
         .first<{
             autoTopUpEnabled: number | boolean | null;
-            autoTopUpClaimedAt: number | null;
         }>();
 
     expect(updatedUser?.autoTopUpEnabled).toBe(0);
-    expect(updatedUser?.autoTopUpClaimedAt).toBeNull();
 });
 
 test("POST /api/webhooks/stripe payment_failed retry does not disable when attempt already paid", async ({

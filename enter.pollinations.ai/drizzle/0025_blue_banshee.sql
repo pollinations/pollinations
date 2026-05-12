@@ -18,6 +18,5 @@ CREATE INDEX `idx_stripe_auto_top_up_attempt_status` ON `stripe_auto_top_up_atte
 ALTER TABLE `user` ADD `stripe_customer_id` text;--> statement-breakpoint
 ALTER TABLE `user` ADD `auto_top_up_enabled` integer DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE `user` ADD `auto_top_up_amount_usd` integer;--> statement-breakpoint
-ALTER TABLE `user` ADD `auto_top_up_claimed_at` integer;--> statement-breakpoint
 CREATE UNIQUE INDEX `user_stripe_customer_id_unique` ON `user` (`stripe_customer_id`);--> statement-breakpoint
 CREATE INDEX `idx_user_auto_top_up_enabled` ON `user` (`auto_top_up_enabled`);

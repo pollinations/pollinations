@@ -982,13 +982,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "auto_top_up_claimed_at": {
-          "name": "auto_top_up_claimed_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {

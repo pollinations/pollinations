@@ -1,0 +1,34 @@
+{
+  "pr_number": 10903,
+  "title": "Add Pollenforge-CLI to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10903",
+  "merged_at": "2026-05-12T23:02:44Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Forging new tools",
+    "blurb": "A new community tool has entered the greenhouse! Pollenforge-CLI is here to help you hammer your Markdown into beautifully formatted output.",
+    "summary": "Added Pollenforge-CLI, a new community-built tool for converting Markdown content into formatted output, to the app showcase.",
+    "impact": "Developers can now discover Pollenforge-CLI in the community greenhouse to streamline their Markdown formatting workflows.",
+    "keywords": [
+      "community",
+      "cli",
+      "markdown",
+      "tools",
+      "showcase"
+    ],
+    "visual_concept": "A cozy blacksmith forge metaphor for 'Pollenforge'. The bee mascot acting as a tiny blacksmith, forging a document on an anvil. Represents the CLI tool formatting markdown.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny blacksmith apron, tapping a glowing document on a small anvil with a tiny hammer. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-12/PR-10903.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny blacksmith apron, tapping a glowing document on a small anvil with a tiny hammer. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-12T23:03:40.682977+00:00",
+  "app_name": "Pollenforge-CLI",
+  "app_url": "https://github.com/ganya002/Pollenforge-CLI/tree/main"
+}

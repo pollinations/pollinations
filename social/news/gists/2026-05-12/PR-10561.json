@@ -1,0 +1,32 @@
+{
+  "pr_number": 10561,
+  "title": "feat: add Stripe Portal auto top-up",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10561",
+  "merged_at": "2026-05-12T17:55:37Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Set it and forget it",
+    "blurb": "We've added auto top-ups for Pollen packs so your generations never get interrupted. Just set your threshold and let the hive handle the rest.",
+    "summary": "Introduced Stripe Customer Portal integration and auto top-up functionality for Pollen packs, ensuring uninterrupted API usage.",
+    "impact": "Users can now configure their accounts to automatically purchase more Pollen when their balance drops below a set threshold.",
+    "keywords": [
+      "billing",
+      "stripe",
+      "pollen",
+      "auto-top-up",
+      "credits"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot managing a continuous, automatic flow of resources. A magical pollen dispenser that refills itself, representing the auto top-up feature.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot working together at a glowing lime green (#ecf874) magical pollen dispenser that automatically refills a glass jar. The robot holds a shiny golden pixel coin. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-12/PR-10561.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot working together at a glowing lime green (#ecf874) magical pollen dispenser that automatically refills a glass jar. The robot holds a shiny golden pixel coin. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-12T17:56:39.130053+00:00"
+}

@@ -58,42 +58,10 @@ export type BillingState = {
 
 type AutoTopUpPanelProps = {
     initialBillingState: BillingState | null;
-    userId: string;
 };
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";
-const PENDING_ENABLE_STORAGE_KEY_PREFIX = "pollinations:autoTopUpPendingEnable";
-
-function pendingEnableStorageKey(userId: string): string {
-    return `${PENDING_ENABLE_STORAGE_KEY_PREFIX}:${userId}`;
-}
-
-function readPendingEnable(userId: string): boolean {
-    if (typeof window === "undefined") return false;
-    try {
-        return (
-            window.sessionStorage.getItem(pendingEnableStorageKey(userId)) ===
-            "1"
-        );
-    } catch {
-        return false;
-    }
-}
-
-function writePendingEnable(userId: string, value: boolean): void {
-    if (typeof window === "undefined") return;
-    try {
-        const key = pendingEnableStorageKey(userId);
-        if (value) {
-            window.sessionStorage.setItem(key, "1");
-        } else {
-            window.sessionStorage.removeItem(key);
-        }
-    } catch {
-        // ignore storage errors (private mode, quota, etc.)
-    }
-}
 const AUTO_TOP_UP_TOOLTIP_CONTENT = (
     <div className="space-y-2">
         <div>
@@ -129,29 +97,19 @@ type SetupReadiness = {
     isSaving: boolean;
 };
 
-type ToggleStatus = "off" | "pending" | "on";
+type ToggleStatus = "off" | "draft" | "on";
 
 export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
-    userId,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
     const [packAmountUsd, setPackAmountUsd] = useState(
         normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
     );
+    const [enableDraft, setEnableDraft] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isOpeningPortal, setIsOpeningPortal] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [pendingEnable, setPendingEnableState] = useState(() =>
-        readPendingEnable(userId),
-    );
-    const setPendingEnable = useCallback(
-        (value: boolean) => {
-            writePendingEnable(userId, value);
-            setPendingEnableState(value);
-        },
-        [userId],
-    );
 
     const paymentMethodReady = billingState?.paymentMethod.hasDefault ?? false;
     const billingDetailsReady = billingState?.billingDetailsComplete ?? false;
@@ -159,21 +117,21 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         (pack) => pack.amountUsd === packAmountUsd,
     );
     const isEnabled = billingState?.autoTopUp.enabled ?? false;
+    const showConfig = isEnabled || enableDraft;
     const hasUnsavedChanges =
         billingState !== null &&
-        packAmountUsd !== billingState.autoTopUp.packAmountUsd;
+        showConfig &&
+        (!isEnabled || packAmountUsd !== billingState.autoTopUp.packAmountUsd);
     const setup: SetupReadiness = {
         paymentMethodReady,
         billingDetailsReady,
         hasSelectedPack: Boolean(selectedPack),
         isSaving,
     };
-    const billingReady = canEnable(setup);
-    const isPending = pendingEnable && !isEnabled && !billingReady;
     const toggleStatus: ToggleStatus = isEnabled
         ? "on"
-        : isPending
-          ? "pending"
+        : enableDraft
+          ? "draft"
           : "off";
 
     useEffect(() => {
@@ -181,8 +139,8 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         setPackAmountUsd(
             normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
         );
-        setPendingEnableState(readPendingEnable(userId));
-    }, [initialBillingState, userId]);
+        setEnableDraft(false);
+    }, [initialBillingState]);
 
     async function openBillingPortal(): Promise<void> {
         setIsOpeningPortal(true);
@@ -212,7 +170,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     }
 
     const saveAutoTopUp = useCallback(
-        async (enabled: boolean): Promise<void> => {
+        async (enabled: boolean): Promise<boolean> => {
             setIsSaving(true);
             setError(null);
             try {
@@ -235,12 +193,14 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         nextBillingState.autoTopUp.packAmountUsd,
                     ),
                 );
+                return true;
             } catch (err) {
                 setError(
                     err instanceof Error
                         ? err.message
                         : "Failed to save auto top-up",
                 );
+                return false;
             } finally {
                 setIsSaving(false);
             }
@@ -248,35 +208,25 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         [packAmountUsd],
     );
 
-    useEffect(() => {
-        if (pendingEnable && !isEnabled && billingReady && !isSaving) {
-            setPendingEnable(false);
-            void saveAutoTopUp(true);
-        }
-    }, [
-        pendingEnable,
-        isEnabled,
-        billingReady,
-        isSaving,
-        saveAutoTopUp,
-        setPendingEnable,
-    ]);
-
     const handleToggle = useCallback(
         (next: boolean) => {
             if (next) {
-                if (billingReady) {
-                    void saveAutoTopUp(true);
-                } else {
-                    setPendingEnable(true);
-                }
+                if (!isEnabled) setEnableDraft(true);
             } else {
-                setPendingEnable(false);
-                if (isEnabled) void saveAutoTopUp(false);
+                if (enableDraft) {
+                    setEnableDraft(false);
+                } else if (isEnabled) {
+                    void saveAutoTopUp(false);
+                }
             }
         },
-        [billingReady, isEnabled, saveAutoTopUp, setPendingEnable],
+        [enableDraft, isEnabled, saveAutoTopUp],
     );
+
+    const handleSave = useCallback(async () => {
+        const saved = await saveAutoTopUp(true);
+        if (saved) setEnableDraft(false);
+    }, [saveAutoTopUp]);
 
     const lastIssue = billingState?.autoTopUp.lastIssue ?? null;
     const issueNotice = lastIssue ? (
@@ -293,26 +243,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 
             {toggleStatus === "off" && issueNotice}
 
-            {toggleStatus === "pending" && (
-                <Card
-                    bg="bg-white/80"
-                    className="!border-transparent space-y-4"
-                >
-                    <BillingSetup
-                        paymentMethodReady={paymentMethodReady}
-                        paymentMethodValue={formatPaymentMethod(billingState)}
-                        billingDetailsReady={billingDetailsReady}
-                        billingDetailsValue={formatBillingDetails(billingState)}
-                    />
-                    <ManageBillingButton
-                        onClick={openBillingPortal}
-                        loading={isOpeningPortal}
-                    />
-                    {issueNotice}
-                </Card>
-            )}
-
-            {toggleStatus === "on" && (
+            {showConfig && (
                 <Card
                     bg="bg-white/80"
                     className="!border-transparent space-y-4"
@@ -327,10 +258,10 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                             />
                         </div>
                         <AutoTopUpSaveButton
-                            isEnabled={isEnabled}
+                            showConfig={showConfig}
                             hasUnsavedChanges={hasUnsavedChanges}
                             setup={setup}
-                            onSave={() => saveAutoTopUp(true)}
+                            onSave={handleSave}
                         />
                     </div>
 
@@ -390,13 +321,13 @@ type AutoTopUpToggleProps = {
 
 const TOGGLE_STATUS_LABEL: Record<ToggleStatus, string> = {
     off: "Off",
-    pending: "Active — add billing details to start charging",
+    draft: "Choose amount, then click Save to enable",
     on: "On",
 };
 
 const TOGGLE_TRACK_CLASS: Record<ToggleStatus, string> = {
     off: "bg-amber-100 border-amber-300",
-    pending: "bg-amber-300 border-amber-400",
+    draft: "bg-amber-300 border-amber-400",
     on: "bg-emerald-300 border-emerald-400",
 };
 
@@ -432,6 +363,11 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
             <div className="min-w-0">
                 <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
                     Auto top-up
+                    {status === "draft" && (
+                        <Tag color="amber" size="sm" className="ml-2">
+                            Unsaved
+                        </Tag>
+                    )}
                     <InfoTip
                         content={AUTO_TOP_UP_TOOLTIP_CONTENT}
                         label="Auto top-up information"
@@ -441,7 +377,7 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
                 <div
                     className={cn(
                         "text-xs font-medium",
-                        status === "pending"
+                        status === "draft"
                             ? "text-amber-700"
                             : "text-amber-800/75",
                     )}
@@ -454,21 +390,21 @@ const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
 };
 
 type AutoTopUpSaveButtonProps = {
-    isEnabled: boolean;
+    showConfig: boolean;
     hasUnsavedChanges: boolean;
     setup: SetupReadiness;
     onSave: () => void;
 };
 
 const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
-    isEnabled,
+    showConfig,
     hasUnsavedChanges,
     setup,
     onSave,
 }) => {
-    const saveDisabled = !isEnabled || !canEnable(setup) || !hasUnsavedChanges;
+    const saveDisabled = !showConfig || !canEnable(setup) || !hasUnsavedChanges;
     const disabledReason = getSaveDisabledReason({
-        isEnabled,
+        showConfig,
         hasUnsavedChanges,
         ...setup,
     });
@@ -541,13 +477,13 @@ function getDisabledReason(
 
 function getSaveDisabledReason(
     state: SetupReadiness & {
-        isEnabled: boolean;
+        showConfig: boolean;
         hasUnsavedChanges: boolean;
     },
 ): string | null {
     const setupReason = getDisabledReason(state, "saving changes");
     if (setupReason) return setupReason;
-    if (!state.isEnabled) return "Use the switch to enable auto top-up first.";
+    if (!state.showConfig) return "Use the switch to enable auto top-up first.";
     if (!state.hasUnsavedChanges) return "No changes to save.";
     return null;
 }

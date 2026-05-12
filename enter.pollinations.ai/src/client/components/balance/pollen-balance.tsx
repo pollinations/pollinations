@@ -309,12 +309,10 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
-    userId: string;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
-    userId,
 }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const [selectedPackAmount, setSelectedPackAmount] = useState(
@@ -359,10 +357,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 )}
             </div>
             <div className="mt-5">
-                <AutoTopUpPanel
-                    initialBillingState={initialBillingState}
-                    userId={userId}
-                />
+                <AutoTopUpPanel initialBillingState={initialBillingState} />
             </div>
             <div className="mt-8 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
                 <p className="flex items-start gap-1.5">

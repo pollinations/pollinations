@@ -579,6 +579,41 @@ export async function processAutoTopUpForUser(
 
         return { status: "created", invoiceId: paid.id };
     } catch (error) {
+        // SCA / 3DS path: the bank requires the user to authenticate this
+        // charge. The invoice is finalized but unpaid; Stripe will email the
+        // customer a link to the hosted invoice URL where they can complete
+        // 3DS. Mark the attempt as `requires_action` (not `failed`), do NOT
+        // void the invoice (it must stay payable for the user to complete
+        // auth), and do NOT disable auto top-up. The 24h expiry sweep will
+        // clean up if the user never authenticates.
+        if (isSCARequiredError(error) && createdInvoiceId) {
+            try {
+                const stripe = createStripeClient(env);
+                const invoice =
+                    await stripe.invoices.retrieve(createdInvoiceId);
+                await markAutoTopUpInvoiceRequiresAction(env, invoice);
+                return {
+                    status: "skipped",
+                    reason: "requires authentication",
+                };
+            } catch (recoveryError) {
+                // If we can't retrieve the invoice or mark requires_action,
+                // fall through to the regular failure path so we don't leave
+                // the attempt in a stuck `pending` state.
+                console.error(
+                    "[auto-top-up] SCA recovery failed; falling back to failure path",
+                    {
+                        invoiceId: createdInvoiceId,
+                        attemptId,
+                        error:
+                            recoveryError instanceof Error
+                                ? recoveryError.message
+                                : String(recoveryError),
+                    },
+                );
+            }
+        }
+
         const message =
             error instanceof Error ? error.message : "Auto top-up failed.";
         await failAttempt(env.DB, attemptId, message);
@@ -1433,11 +1468,43 @@ function getBillingReturnUrl(env: CloudflareBindings): string {
 
 function shouldDisableAutoTopUpAfterFailure(error: unknown): boolean {
     if (!error || typeof error !== "object") return false;
+    if (isSCARequiredError(error)) return false;
     const stripeType = (error as { type?: unknown }).type;
     return (
         stripeType === "StripeCardError" ||
         stripeType === "StripeInvalidRequestError"
     );
+}
+
+/**
+ * Detects when a Stripe error indicates the bank requires the cardholder to
+ * complete Strong Customer Authentication (3DS) before the charge can settle.
+ * Common in EU/UK under PSD2 even when off-session consent has been recorded.
+ *
+ * Surface signals (any one is sufficient):
+ *  - error.code === "invoice_payment_intent_requires_action"
+ *  - error.code === "authentication_required"
+ *  - error.code === "payment_intent_authentication_failure"
+ *  - error.payment_intent.status === "requires_action"
+ *  - error.raw.code === any of the above
+ */
+function isSCARequiredError(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false;
+    const e = error as {
+        code?: unknown;
+        payment_intent?: { status?: unknown };
+        raw?: { code?: unknown; payment_intent?: { status?: unknown } };
+    };
+    const codes = new Set([
+        "invoice_payment_intent_requires_action",
+        "authentication_required",
+        "payment_intent_authentication_failure",
+    ]);
+    if (typeof e.code === "string" && codes.has(e.code)) return true;
+    if (typeof e.raw?.code === "string" && codes.has(e.raw.code)) return true;
+    if (e.payment_intent?.status === "requires_action") return true;
+    if (e.raw?.payment_intent?.status === "requires_action") return true;
+    return false;
 }
 
 function isStripeInvalidRequestError(error: unknown): boolean {

@@ -618,11 +618,19 @@ const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
         : "We couldn't charge your default payment method. Update it to keep auto top-up working.";
     const occurredLabel = formatRelativeTime(issue.occurredAt);
     const actionUrl = isAuth ? extractHostedInvoiceUrl(issue.reason) : null;
+    // Yellow palette for actionable auth-required (user can fix in one click)
+    // vs red for hard failures (card-level problem requiring user attention).
+    const containerClass = isAuth
+        ? "rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-800"
+        : "rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-xs text-red-700/90";
+    const linkClass = isAuth
+        ? "mt-1 inline-block font-semibold underline decoration-amber-700/30 underline-offset-2"
+        : "mt-1 inline-block font-semibold underline decoration-red-700/30 underline-offset-2";
+    const occurredClass = isAuth
+        ? "mt-1 text-[11px] text-amber-700/70"
+        : "mt-1 text-[11px] text-red-700/70";
     return (
-        <div
-            role="alert"
-            className="rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-xs text-red-700/90"
-        >
+        <div role="alert" className={containerClass}>
             <div className="font-semibold">⚠ {title}</div>
             <div className="mt-0.5">{body}</div>
             {actionUrl && (
@@ -630,13 +638,13 @@ const AutoTopUpIssueNotice: FC<AutoTopUpIssueNoticeProps> = ({ issue }) => {
                     href={actionUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-block font-semibold underline decoration-red-700/30 underline-offset-2"
+                    className={linkClass}
                 >
                     Complete payment in Stripe
                 </a>
             )}
             {occurredLabel && (
-                <div className="mt-1 text-[11px] text-red-700/70">
+                <div className={occurredClass}>
                     Last attempt: {occurredLabel}
                 </div>
             )}

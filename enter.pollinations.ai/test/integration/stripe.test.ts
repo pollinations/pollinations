@@ -1137,6 +1137,108 @@ test("POST /api/stripe/auto-top-up/trigger disables when Stripe customer is dele
     ).toBe(false);
 });
 
+test("POST /api/stripe/auto-top-up/trigger marks requires_action when bank requires SCA", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_auto_top_up_sca");
+    customer.invoice_settings.default_payment_method = "pm_card";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_card", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+        })
+        .where(eq(userTable.id, user.id));
+
+    // Configure the mock to reject the pay() call with an SCA-shaped error
+    // (the same shape Stripe returns for EU cards under PSD2). Layer 2 should
+    // detect this, mark attempt requires_action, leave invoice payable.
+    mocks.stripe.state.payBehavior["in_mock_1"] = {
+        statusCode: 402,
+        error: {
+            type: "StripeInvalidRequestError",
+            code: "invoice_payment_intent_requires_action",
+            message:
+                "This payment requires additional user action before it can be completed successfully.",
+            payment_intent: { status: "requires_action" },
+        },
+    };
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        status: "skipped",
+        reason: "requires authentication",
+    });
+
+    // Attempt should be requires_action with the hosted invoice URL captured.
+    const attempt = await env.DB.prepare(
+        `SELECT status, failure_reason AS failureReason, completed_at AS completedAt
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind("in_mock_1")
+        .first<{
+            status: string;
+            failureReason: string | null;
+            completedAt: number | null;
+        }>();
+    expect(attempt?.status).toBe("requires_action");
+    expect(attempt?.failureReason).toContain("Stripe");
+    expect(attempt?.completedAt).toBeNull();
+
+    // User must NOT be disabled, balance unchanged.
+    const updatedUser = await env.DB.prepare(
+        `SELECT pack_balance AS packBalance,
+            auto_top_up_enabled AS autoTopUpEnabled
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{
+            packBalance: number | null;
+            autoTopUpEnabled: number | boolean | null;
+        }>();
+    expect(updatedUser?.packBalance).toBe(1);
+    expect(updatedUser?.autoTopUpEnabled).toBe(1);
+
+    // Invoice must NOT be voided — user needs to complete 3DS via the hosted
+    // URL, which Stripe will email them about automatically.
+    const voidedInvoiceCalls = mocks.stripe.state.requests.filter(
+        (request) =>
+            request.method === "POST" &&
+            request.path === "/v1/invoices/in_mock_1/void",
+    );
+    expect(voidedInvoiceCalls).toHaveLength(0);
+});
+
 test("POST /api/stripe/auto-top-up/trigger skips during claim window", async ({
     sessionToken,
     mocks,

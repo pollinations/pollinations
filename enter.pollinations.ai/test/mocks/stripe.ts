@@ -143,6 +143,24 @@ export type MockStripeState = {
     paymentIntents: StripePaymentIntent[];
     requests: StripeRequest[];
     customerCreateByIdempotencyKey: Record<string, string>;
+    /**
+     * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
+     * When set, the mock returns the configured failure (HTTP 4xx with the
+     * given Stripe error shape) instead of the default success behavior.
+     * Used by tests to simulate SCA / decline / generic errors at pay time.
+     */
+    payBehavior: Record<
+        string,
+        {
+            statusCode: number;
+            error: {
+                type: string;
+                code?: string;
+                message?: string;
+                payment_intent?: { status: string };
+            };
+        }
+    >;
 };
 
 export function createMockStripe(): MockAPI<MockStripeState> {
@@ -364,6 +382,13 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             recordRequest(c, state);
             const invoice = findInvoice(state, c.req.param("id"));
             if (!invoice) return stripeNotFound(c);
+            const behavior = state.payBehavior[invoice.id];
+            if (behavior) {
+                return c.json(
+                    { error: behavior.error },
+                    behavior.statusCode as 400 | 402 | 500,
+                );
+            }
             invoice.status = "paid";
             invoice.amount_paid = invoice.amount_due;
             const paymentIntent: StripePaymentIntent = {
@@ -472,6 +497,7 @@ function createInitialState(): MockStripeState {
         paymentIntents: [],
         requests: [],
         customerCreateByIdempotencyKey: {},
+        payBehavior: {},
     };
 }
 

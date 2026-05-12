@@ -1,0 +1,34 @@
+{
+  "pr_number": 10904,
+  "title": "Add Storytale to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10904",
+  "merged_at": "2026-05-12T23:06:23Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Once upon a hive",
+    "blurb": "Storytale just landed in the Greenhouse! Grab some friends and take turns weaving wild, AI-powered tales together.",
+    "summary": "Added Storytale, a multiplayer storytelling game where friends take turns building a shared narrative, to the community apps showcase.",
+    "impact": "The community can now discover and play Storytale, highlighting how Pollinations can power collaborative, creative gaming experiences.",
+    "keywords": [
+      "community",
+      "app",
+      "game",
+      "storytelling",
+      "multiplayer"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot sitting around a cozy campfire or reading a glowing storybook together, representing collaborative storytelling (Storytale). Warm, inviting, collaborative vibes.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor-head robot sitting around a small campfire reading a glowing magical storybook together. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-12/PR-10904.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee and a chunky monitor-head robot sitting around a small campfire reading a glowing magical storybook together. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-12T23:08:08.546386+00:00",
+  "app_name": "Storytale",
+  "app_url": "https://storytale.net"
+}

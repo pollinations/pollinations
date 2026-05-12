@@ -649,9 +649,9 @@ export async function markAutoTopUpInvoiceFailed(
     if (metadata[METADATA_PURPOSE] !== AUTO_TOP_UP_PURPOSE) return;
     if (!invoice.id) return;
 
-    // Off-session SCA can emit payment_failed while the invoice is still open.
-    // Keep pending invoices recoverable; paid/terminal webhooks or stale
-    // reconciliation will settle them.
+    // An open invoice is still collectible in Stripe. Keep it pending so the
+    // customer can complete payment there; terminal webhooks or stale
+    // reconciliation will settle the local attempt.
     if (
         options.cleanupInvoice !== false &&
         options.disableAutoTopUp !== false &&

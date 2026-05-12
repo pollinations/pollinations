@@ -62,6 +62,7 @@ type AutoTopUpPanelProps = {
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
 const DIVIDER_CLASS = "border-t border-amber-300/70 pt-4";
+const AUTO_TOP_UP_DRAFT_STORAGE_KEY = "pollinations:auto-top-up-draft";
 const AUTO_TOP_UP_TOOLTIP_CONTENT = (
     <div className="space-y-2">
         <div>
@@ -136,6 +137,19 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 
     useEffect(() => {
         setBillingState(initialBillingState);
+        const draftPackAmountUsd = isStripeBillingReturn()
+            ? readAutoTopUpDraftPackAmount()
+            : null;
+        if (
+            draftPackAmountUsd !== null &&
+            !initialBillingState?.autoTopUp.enabled
+        ) {
+            setPackAmountUsd(normalizePackAmount(draftPackAmountUsd));
+            setEnableDraft(true);
+            return;
+        }
+
+        if (initialBillingState?.autoTopUp.enabled) clearAutoTopUpDraft();
         setPackAmountUsd(
             normalizePackAmount(initialBillingState?.autoTopUp.packAmountUsd),
         );
@@ -146,6 +160,11 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         setIsOpeningPortal(true);
         setError(null);
         try {
+            if (enableDraft) {
+                writeAutoTopUpDraftPackAmount(packAmountUsd);
+            } else {
+                clearAutoTopUpDraft();
+            }
             const response = await apiClient.stripe.billing.portal.$post({
                 json: {},
             });
@@ -215,6 +234,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             } else {
                 if (enableDraft) {
                     setEnableDraft(false);
+                    clearAutoTopUpDraft();
                 } else if (isEnabled) {
                     void saveAutoTopUp(false);
                 }
@@ -225,7 +245,10 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
 
     const handleSave = useCallback(async () => {
         const saved = await saveAutoTopUp(true);
-        if (saved) setEnableDraft(false);
+        if (saved) {
+            setEnableDraft(false);
+            clearAutoTopUpDraft();
+        }
     }, [saveAutoTopUp]);
 
     const lastIssue = billingState?.autoTopUp.lastIssue ?? null;
@@ -295,7 +318,7 @@ function renderStatusMessage(
     if (issue?.kind === "pending_payment") {
         return (
             <>
-                Payment pending —{" "}
+                Further steps required in Stripe —{" "}
                 <a
                     href={issue.invoiceUrl}
                     target="_blank"
@@ -655,4 +678,46 @@ function extractErrorMessage(payload: unknown, fallback: string): string {
     if (typeof error === "string") return error;
     if (typeof message === "string") return message;
     return fallback;
+}
+
+function isStripeBillingReturn(): boolean {
+    return (
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get(
+            "stripe_billing_return",
+        ) === "true"
+    );
+}
+
+function readAutoTopUpDraftPackAmount(): number | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const raw = window.sessionStorage.getItem(
+            AUTO_TOP_UP_DRAFT_STORAGE_KEY,
+        );
+        if (!raw) return null;
+        const amount = Number(raw);
+        return Number.isFinite(amount) ? amount : null;
+    } catch {
+        return null;
+    }
+}
+
+function writeAutoTopUpDraftPackAmount(packAmountUsd: number): void {
+    try {
+        window.sessionStorage.setItem(
+            AUTO_TOP_UP_DRAFT_STORAGE_KEY,
+            String(packAmountUsd),
+        );
+    } catch {
+        // Ignore unavailable browser storage; the user can still reselect.
+    }
+}
+
+function clearAutoTopUpDraft(): void {
+    try {
+        window.sessionStorage.removeItem(AUTO_TOP_UP_DRAFT_STORAGE_KEY);
+    } catch {
+        // Ignore unavailable browser storage.
+    }
 }

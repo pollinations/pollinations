@@ -1221,6 +1221,87 @@ test("POST /api/stripe/auto-top-up/trigger marks requires_action when bank requi
     expect(voidedInvoiceCalls).toHaveLength(0);
 });
 
+test("POST /api/stripe/auto-top-up/trigger disables auto top-up after failed authentication", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_auto_top_up_auth_failed");
+    customer.invoice_settings.default_payment_method = "pm_auth_failed";
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(
+        mockCardPaymentMethod("pm_auth_failed", customer.id),
+    );
+
+    await db
+        .update(userTable)
+        .set({
+            packBalance: 1,
+            stripeCustomerId: customer.id,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+        })
+        .where(eq(userTable.id, user.id));
+
+    mocks.stripe.state.payBehavior["in_mock_1"] = {
+        statusCode: 402,
+        error: {
+            type: "StripeCardError",
+            code: "payment_intent_authentication_failure",
+            message: "The provided payment method has failed authentication.",
+        },
+    };
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        status: "failed",
+    });
+
+    const updatedUser = await env.DB.prepare(
+        `SELECT auto_top_up_enabled AS autoTopUpEnabled
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ autoTopUpEnabled: number | boolean | null }>();
+    const attempt = await env.DB.prepare(
+        `SELECT status, failure_reason AS failureReason
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind("in_mock_1")
+        .first<{ status: string; failureReason: string | null }>();
+
+    expect(updatedUser?.autoTopUpEnabled).toBe(0);
+    expect(attempt?.status).toBe("failed");
+    expect(attempt?.failureReason).toContain("failed authentication");
+    expect(
+        mocks.stripe.state.invoices.find(
+            (invoice) => invoice.id === "in_mock_1",
+        )?.status,
+    ).toBe("void");
+});
+
 test("POST /api/stripe/auto-top-up/trigger skips during claim window", async ({
     sessionToken,
     mocks,

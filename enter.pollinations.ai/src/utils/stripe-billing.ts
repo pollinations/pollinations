@@ -582,6 +582,7 @@ export async function processAutoTopUpForUser(
         // void the invoice (it must stay payable for the user to complete
         // auth), and do NOT disable auto top-up. The 24h expiry sweep will
         // clean up if the user never authenticates.
+        let disableAfterFailure = shouldDisableAutoTopUpAfterFailure(error);
         if (isSCARequiredError(error) && createdInvoiceId) {
             try {
                 const stripe = createStripeClient(env);
@@ -594,8 +595,9 @@ export async function processAutoTopUpForUser(
                 };
             } catch (recoveryError) {
                 // If we can't retrieve the invoice or mark requires_action,
-                // fall through to the regular failure path so we don't leave
-                // the attempt in a stuck `pending` state.
+                // treat this as a hard failure. We did not successfully leave
+                // the invoice in a recoverable user-authentication state.
+                disableAfterFailure = true;
                 console.error(
                     "[auto-top-up] SCA recovery failed; falling back to failure path",
                     {
@@ -616,7 +618,7 @@ export async function processAutoTopUpForUser(
         if (createdInvoiceId) {
             await cleanupFailedAutoTopUpInvoice(env, createdInvoiceId);
         }
-        if (shouldDisableAutoTopUpAfterFailure(error)) {
+        if (disableAfterFailure) {
             await disableAutoTopUp(env.DB, userId);
         }
         return { status: "failed", reason: message };
@@ -1434,11 +1436,21 @@ function getBillingReturnUrl(env: CloudflareBindings): string {
 
 function shouldDisableAutoTopUpAfterFailure(error: unknown): boolean {
     if (!error || typeof error !== "object") return false;
+    if (isHardAuthenticationFailure(error)) return true;
     if (isSCARequiredError(error)) return false;
     const stripeType = (error as { type?: unknown }).type;
     return (
         stripeType === "StripeCardError" ||
         stripeType === "StripeInvalidRequestError"
+    );
+}
+
+function isHardAuthenticationFailure(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false;
+    const e = error as { code?: unknown; raw?: { code?: unknown } };
+    return (
+        e.code === "payment_intent_authentication_failure" ||
+        e.raw?.code === "payment_intent_authentication_failure"
     );
 }
 
@@ -1450,7 +1462,6 @@ function shouldDisableAutoTopUpAfterFailure(error: unknown): boolean {
  * Surface signals (any one is sufficient):
  *  - error.code === "invoice_payment_intent_requires_action"
  *  - error.code === "authentication_required"
- *  - error.code === "payment_intent_authentication_failure"
  *  - error.payment_intent.status === "requires_action"
  *  - error.raw.code === any of the above
  */
@@ -1464,7 +1475,6 @@ function isSCARequiredError(error: unknown): boolean {
     const codes = new Set([
         "invoice_payment_intent_requires_action",
         "authentication_required",
-        "payment_intent_authentication_failure",
     ]);
     if (typeof e.code === "string" && codes.has(e.code)) return true;
     if (typeof e.raw?.code === "string" && codes.has(e.raw.code)) return true;

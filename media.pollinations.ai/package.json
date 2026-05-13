@@ -7,6 +7,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
+    "apply-lifecycle:production": "wrangler r2 bucket lifecycle set pollinations-media --file r2-lifecycle.json --force",
     "tail": "wrangler tail",
     "test": "vitest run",
     "test:watch": "vitest"

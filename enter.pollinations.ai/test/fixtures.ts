@@ -13,6 +13,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
 import { ensureConfigured } from "@/logger.ts";
 import { createMockGithub } from "./mocks/github.ts";
+import { createMockStripe } from "./mocks/stripe.ts";
 
 const createAuthClientInstance = () =>
     createAuthClient({
@@ -27,6 +28,7 @@ const createAuthClientInstance = () =>
 const createMocks = () => ({
     tinybird: createMockTinybird(),
     github: createMockGithub(),
+    stripe: createMockStripe(),
 });
 
 type Mocks = ReturnType<typeof createMocks>;

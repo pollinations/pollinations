@@ -241,3 +241,46 @@
     filter: grayscale(1) opacity(0.6);
     animation: emoji-pulse 1.5s ease-in-out infinite;
 }
+
+/* Pollen pack range slider — amber thumb on transparent track (gradient set inline) */
+.pollen-pack-slider {
+    @apply h-2 w-full cursor-grab appearance-none rounded-full outline-none transition;
+}
+
+.pollen-pack-slider:active {
+    @apply cursor-grabbing;
+}
+
+.pollen-pack-slider:disabled {
+    @apply cursor-not-allowed opacity-60;
+}
+
+.pollen-pack-slider:focus-visible {
+    @apply ring-2 ring-amber-500 ring-offset-2 ring-offset-white;
+}
+
+.pollen-pack-slider::-webkit-slider-runnable-track {
+    @apply h-2 rounded-full bg-transparent;
+}
+
+.pollen-pack-slider::-moz-range-track {
+    @apply h-2 rounded-full bg-transparent;
+}
+
+.pollen-pack-slider::-webkit-slider-thumb {
+    @apply mt-[-7px] h-[22px] w-[22px] appearance-none rounded-full border-[3px] border-amber-600 bg-white transition-transform;
+    box-shadow: 0 2px 6px rgba(180, 83, 9, 0.35);
+}
+
+.pollen-pack-slider::-moz-range-thumb {
+    @apply h-[22px] w-[22px] rounded-full border-[3px] border-amber-600 bg-white transition-transform;
+    box-shadow: 0 2px 6px rgba(180, 83, 9, 0.35);
+}
+
+.pollen-pack-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+}
+
+.pollen-pack-slider:active::-webkit-slider-thumb {
+    transform: scale(1.05);
+}

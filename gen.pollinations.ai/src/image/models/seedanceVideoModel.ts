@@ -21,12 +21,40 @@ const SEEDANCE_LITE_I2V = "seedance-1-0-lite-i2v-250428";
 // Pro-Fast uses single model for both T2V and I2V
 const SEEDANCE_PRO_FAST = "seedance-1-0-pro-fast-251015";
 
+/**
+ * Map a BytePlus error to an HTTP status. Patterns observed in prod logs:
+ * - "output ... may contain sensitive information" — content filter (400)
+ * - "Failed to process/fetch (reference) image" — unfetchable input URL (422)
+ * - numeric `code` already in 400..599 — provider-supplied status
+ * Default 500 keeps unknown failure modes loud.
+ */
+export function classifyByteplusError(
+    err: { code?: number | string; message?: string } | undefined,
+): number {
+    const message = err?.message ?? "";
+    if (/may contain sensitive|content (filter|policy)/i.test(message)) {
+        return 400;
+    }
+    if (
+        /failed to (process|fetch) (reference )?image|failed to fetch image/i.test(
+            message,
+        )
+    ) {
+        return 422;
+    }
+    const code = err?.code;
+    if (typeof code === "number" && code >= 400 && code < 600) {
+        return code;
+    }
+    return 500;
+}
+
 interface SeedanceTaskResponse {
     id?: string;
     task_id?: string;
     status?: string;
     error?: {
-        code: string;
+        code: number | string;
         message: string;
     };
 }
@@ -38,7 +66,7 @@ interface SeedanceTaskResult {
         video_url?: string;
     };
     error?: {
-        code: string;
+        code: number | string;
         message: string;
     };
     usage?: {
@@ -401,7 +429,8 @@ async function pollSeedanceTask(
             const errorMsg =
                 pollData.error?.message || "Video generation failed";
             logError("Seedance generation error:", pollData.error);
-            throw new HttpError(errorMsg, 500, undefined, pollUrl);
+            const httpStatus = classifyByteplusError(pollData.error);
+            throw new HttpError(errorMsg, httpStatus, undefined, pollUrl);
         }
 
         // Status is still pending/queued/generating - wait and try again

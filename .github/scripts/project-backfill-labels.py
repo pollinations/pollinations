@@ -31,7 +31,7 @@ Options:
 
 Notes:
     Priority is determined by AI based on issue content.
-    Labels like DEV-TRACKING, DEV-QUEST, DEV-VOTING don't need priority.
+    Labels like DEV-TRACKING and DEV-VOTING don't need priority.
 
 Environment:
     GITHUB_TOKEN        GitHub token with repo/project access

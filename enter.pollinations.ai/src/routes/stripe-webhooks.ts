@@ -6,6 +6,10 @@ import type Stripe from "stripe";
 import { getPollenPack } from "@/pollen-packs.ts";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import {
+    creditAutoTopUpInvoice,
+    markAutoTopUpInvoiceFailed,
+} from "../utils/stripe-billing.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -20,8 +24,6 @@ interface StripeEventData {
     livemode: boolean;
     payload: Stripe.Event;
 }
-
-const LEGACY_BETA_MULTIPLIER = 2;
 
 type CheckoutSessionResult = {
     success: boolean;
@@ -159,19 +161,18 @@ const handleCheckoutSessionCompleted = async (
 
     const userId = metadata.userId;
     const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
-    const pack = metadata.packAmount
-        ? getPollenPack(metadata.packAmount)
-        : undefined;
+    const packAmount = metadata.packAmount;
+    const pack = packAmount ? getPollenPack(packAmount) : undefined;
 
     if (amountPaid <= 0) {
         console.error("Invalid payment amount:", session.amount_total);
         return { success: false, message: "Invalid payment amount" };
     }
 
-    if (!pack && metadata.packAmount) {
-        console.error("Missing or invalid packAmount in checkout session:", {
+    if (!pack && packAmount) {
+        console.error("Missing or invalid pack amount in checkout session:", {
             sessionId: session.id,
-            packAmount: metadata.packAmount,
+            packAmount,
         });
         return {
             success: false,
@@ -179,9 +180,27 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
-    const creditsToAdd = pack
-        ? pack.pollenGrant
-        : amountPaid * LEGACY_BETA_MULTIPLIER;
+    if (!pack) {
+        console.error("Missing pack amount in checkout session:", {
+            sessionId: session.id,
+        });
+        return {
+            success: false,
+            message: "Missing pack metadata",
+        };
+    }
+
+    // Prefer the grant snapshotted into session metadata at checkout creation
+    // time; this guarantees the user is credited exactly what they saw, even
+    // when bonus values change between session creation and payment.
+    const metadataGrantValue = metadata.packPollenGrant;
+    const metadataGrant = metadataGrantValue
+        ? Number.parseFloat(metadataGrantValue)
+        : Number.NaN;
+    const creditsToAdd =
+        Number.isFinite(metadataGrant) && metadataGrant > 0
+            ? metadataGrant
+            : pack.pollenGrant;
 
     const db = drizzle(env.DB);
 
@@ -216,20 +235,8 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
-    if (!pack) {
-        console.warn(
-            "Legacy Stripe checkout session missing packAmount; applying 2x fallback",
-            {
-                sessionId: session.id,
-                amountPaid,
-            },
-        );
-    }
-
     console.log(
-        pack
-            ? `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: $${amountPaid}, session: ${session.id})`
-            : `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (legacy fallback, paid: $${amountPaid}, session: ${session.id})`,
+        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: $${amountPaid}, session: ${session.id})`,
     );
 
     return {
@@ -274,6 +281,15 @@ export const stripeWebhooksRoutes = new Hono<Env>()
         } catch (err) {
             console.error("Webhook signature verification failed:", err);
             return c.json({ error: "Invalid signature" }, 400);
+        }
+
+        if (event.livemode !== (c.env.STRIPE_MODE === "live")) {
+            console.warn("Stripe webhook mode mismatch:", {
+                eventId: event.id,
+                livemode: event.livemode,
+                stripeMode: c.env.STRIPE_MODE,
+            });
+            return c.json({ received: true });
         }
 
         console.log(`Stripe webhook received: ${event.type} (${event.id})`);
@@ -437,6 +453,45 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     }).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
+                );
+                break;
+            }
+
+            case "invoice.paid":
+            case "invoice.payment_succeeded": {
+                const invoice = event.data.object as Stripe.Invoice;
+                const result = await creditAutoTopUpInvoice(c.env, invoice);
+                if (result.credited) {
+                    console.log(
+                        `Stripe auto top-up invoice credited: ${invoice.id} (+${result.pollenCredited} pollen)`,
+                    );
+                }
+                break;
+            }
+
+            case "invoice.payment_failed": {
+                const invoice = event.data.object as Stripe.Invoice;
+                await markAutoTopUpInvoiceFailed(
+                    c.env,
+                    invoice,
+                    "Stripe could not charge the default payment method.",
+                    { disableAutoTopUp: false },
+                );
+                break;
+            }
+
+            case "invoice.voided":
+            case "invoice.marked_uncollectible": {
+                const invoice = event.data.object as Stripe.Invoice;
+                // Terminal Stripe-side states. The invoice itself is already
+                // in its final form, so we only record the attempt outcome —
+                // do not disable auto top-up for the user (e.g. they might
+                // have voided the invoice themselves via the portal).
+                await markAutoTopUpInvoiceFailed(
+                    c.env,
+                    invoice,
+                    "Stripe invoice can no longer be collected.",
+                    { cleanupInvoice: false, disableAutoTopUp: false },
                 );
                 break;
             }

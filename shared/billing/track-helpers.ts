@@ -86,9 +86,11 @@ export async function resolveDevMarkup(
 /**
  * Handles balance deduction and BYOP dev credit for billable requests.
  */
-export async function handleBalanceDeduction(
-    params: DeductionParams,
-): Promise<{ markup: MarkupResolution | null; payerBucket: Bucket | null }> {
+export async function handleBalanceDeduction(params: DeductionParams): Promise<{
+    markup: MarkupResolution | null;
+    payerBucket: Bucket | null;
+    postDeductionPackBalance: number | null;
+}> {
     const {
         db,
         isBilledUsage,
@@ -101,7 +103,11 @@ export async function handleBalanceDeduction(
     } = params;
 
     if (!isBilledUsage || !totalPrice) {
-        return { markup: null, payerBucket: null };
+        return {
+            markup: null,
+            payerBucket: null,
+            postDeductionPackBalance: null,
+        };
     }
 
     const resolved = await resolveDevMarkup(
@@ -113,15 +119,18 @@ export async function handleBalanceDeduction(
     const markup: MarkupResolution | null = resolved;
     const billedPrice = totalPrice + (markup?.devCredit ?? 0);
     let payerBucket: Bucket | null = null;
+    let postDeductionPackBalance: number | null = null;
 
     try {
         if (userId) {
-            payerBucket = await deductUserBalance(
+            const deduction = await deductUserBalance(
                 db,
                 userId,
                 billedPrice,
                 modelResolved,
             );
+            payerBucket = deduction.bucket;
+            postDeductionPackBalance = deduction.postDeductionPackBalance;
         }
 
         // API key budgets are decremented by the amount the user authorized the
@@ -182,7 +191,7 @@ export async function handleBalanceDeduction(
         throw error;
     }
 
-    return { markup, payerBucket };
+    return { markup, payerBucket, postDeductionPackBalance };
 }
 
 function hasApiKeyBudget(
@@ -221,13 +230,16 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelResolved?: string,
-): Promise<Bucket | null> {
+): Promise<{
+    bucket: Bucket | null;
+    postDeductionPackBalance: number | null;
+}> {
     try {
         const isPaidOnly = modelResolved
             ? (getModelDefinition(modelResolved as ModelName).paidOnly ?? false)
             : false;
 
-        const { ok, bucket } = await atomicDeductUserBalance(
+        const { ok, bucket, packBalance } = await atomicDeductUserBalance(
             db,
             userId,
             amount,
@@ -251,7 +263,10 @@ async function deductUserBalance(
                 ...deductionSource,
             },
         );
-        return bucket;
+        return {
+            bucket,
+            postDeductionPackBalance: bucket === "pack" ? packBalance : null,
+        };
     } catch (error) {
         log.error("Failed to decrement user balance for {userId}: {error}", {
             userId,

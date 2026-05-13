@@ -1,7 +1,12 @@
 import {
     createExecutionContext,
+    env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import type { AuthUser } from "@shared/auth/api-key.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -13,15 +18,20 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function createTestApp(consumePollen: (amount: number) => Promise<void>) {
+function createTestApp(
+    consumePollen: (amount: number) => Promise<void>,
+    user?: AuthUser,
+) {
     const app = new Hono<Env>();
 
     app.use("*", requestId());
     app.use("*", logger);
     app.use("*", async (c, next) => {
         c.set("auth", {
+            user,
             requireAuthorization: async () => {},
             requireUser: () => {
+                if (user) return user;
                 throw new Error("user should not be required in this test");
             },
             requireModelAccess: () => {},
@@ -139,5 +149,71 @@ describe("tracking observability", () => {
         });
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it("does not trigger auto top-up while post-deduction pack balance is above threshold", async () => {
+        const db = drizzle(env.DB);
+        const userId = `track-auto-top-up-${crypto.randomUUID()}`;
+        await db.insert(userTable).values({
+            id: userId,
+            email: `${userId}@test.local`,
+            name: "Track Auto Top Up Test",
+            tier: "flower",
+            tierBalance: 0,
+            packBalance: 100,
+            autoTopUpEnabled: true,
+            autoTopUpAmountUsd: 10,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const [user] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+        if (!user) throw new Error("Expected inserted user");
+
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+        const enterFetch = vi.fn<typeof env.ENTER.fetch>(async () =>
+            Response.json({ status: "created" }),
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(consumePollen, user).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "cf-connecting-ip": "203.0.113.42",
+                },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENTER: { fetch: enterFetch },
+                ENVIRONMENT: "test",
+                PLN_ENTER_TOKEN:
+                    "test_internal_token_with_enough_length_for_checks",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(enterFetch).not.toHaveBeenCalled();
     });
 });

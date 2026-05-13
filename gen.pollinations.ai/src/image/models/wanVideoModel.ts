@@ -52,6 +52,22 @@ const WAN_22_CONFIG: WanModelConfig = {
 const POLL_MAX_ATTEMPTS = 60; // 5 minutes max
 const POLL_DELAY_MS = 5000; // 5 second intervals
 
+function getDashScopeErrorStatus(message: string): number {
+    const lower = message.toLowerCase();
+    if (
+        lower.includes("content filter") ||
+        lower.includes("invalid") ||
+        lower.includes("validation") ||
+        lower.includes("not support")
+    ) {
+        return 400;
+    }
+    if (lower.includes("rate limit") || lower.includes("throttl")) {
+        return 429;
+    }
+    return 500;
+}
+
 interface WanTaskResponse {
     output?: {
         task_id: string;
@@ -432,7 +448,12 @@ async function pollWanTask(
         }
 
         if (pollResult.status === "failed") {
-            throw new HttpError(pollResult.error, 500, undefined, pollUrl);
+            throw new HttpError(
+                pollResult.error,
+                getDashScopeErrorStatus(pollResult.error),
+                undefined,
+                pollUrl,
+            );
         }
 
         await sleep(POLL_DELAY_MS);

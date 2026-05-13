@@ -82,6 +82,29 @@ polli usage --daily          # daily spend
 
 Publishable app keys default developer earnings off; pass `--earnings` to enable them.
 
+## Bees
+
+Deploy agent backends with a `bee.json` manifest:
+
+```bash
+polli bees init bee.json --name booking-assistant
+polli bees init bee.json --name booking-assistant --template queen
+polli bees validate bee.json
+polli bees deploy bee.json --dry-run       # preview runtime, URLs, scopes, meters
+polli bees deploy bee.json                 # calls POST /api/bees
+polli bees deploy bee.json --upgrade       # calls POST /api/bees?upgrade=1
+polli bees list
+polli bees status bee_booking-assistant
+polli bees events bee_booking-assistant
+polli bees delete bee_booking-assistant --yes
+```
+
+The default manifest omits runtime details. Missing `runtime` resolves to
+`worker + auto`; missing `state.backend` resolves to `sqlite`.
+`init` creates a Worker Bee by default; `--template queen` creates the
+full-runtime Queen Bee starter.
+Repeated deploys of the same generated bee id fail unless `--upgrade` is used.
+
 ## Links
 
 - [gen.pollinations.ai](https://gen.pollinations.ai) — API

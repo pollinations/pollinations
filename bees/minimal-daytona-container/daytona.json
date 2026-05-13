@@ -1,0 +1,13 @@
+{
+  "name": "minimal-daytona-container-bee",
+  "language": "typescript",
+  "entrypoint": "npm start",
+  "ports": [8787],
+  "env": {
+    "PORT": "8787"
+  },
+  "labels": {
+    "pollinations.kind": "bee",
+    "pollinations.provider": "daytona"
+  }
+}

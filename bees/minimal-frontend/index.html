@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bee Frontend</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      body {
+        margin: 0;
+        background: #eef5f0;
+        color: #16221c;
+      }
+
+      main {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        min-height: 100dvh;
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 24px;
+        gap: 16px;
+      }
+
+      header,
+      form,
+      .message {
+        border: 1px solid #c7d9cf;
+        background: #ffffff;
+        border-radius: 8px;
+      }
+
+      header {
+        padding: 16px;
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+      }
+
+      p {
+        margin: 0;
+        color: #4b5c51;
+      }
+
+      .settings {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      label {
+        display: grid;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #5b604f;
+      }
+
+      input,
+      textarea,
+      button {
+        font: inherit;
+      }
+
+      input,
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        border: 1px solid #b9cdc2;
+        border-radius: 6px;
+        background: #fff;
+        color: #20221c;
+        padding: 10px;
+      }
+
+      #messages {
+        overflow: auto;
+        display: grid;
+        align-content: start;
+        gap: 10px;
+      }
+
+      .message {
+        padding: 12px;
+      }
+
+      .message strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #98610f;
+      }
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        padding: 12px;
+      }
+
+      textarea {
+        min-height: 52px;
+        resize: vertical;
+      }
+
+      button {
+        border: 0;
+        border-radius: 6px;
+        background: #183b2d;
+        color: #fff;
+        padding: 0 18px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: progress;
+      }
+
+      @media (max-width: 620px) {
+        main {
+          padding: 14px;
+        }
+
+        .settings,
+        form {
+          grid-template-columns: 1fr;
+        }
+
+        button {
+          min-height: 44px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Bee Frontend</h1>
+        <p>A thin app shell over a deployed bee backend.</p>
+        <div class="settings">
+          <label>
+            Bee ID
+            <input id="bee" autocomplete="off" />
+          </label>
+          <label>
+            API origin
+            <input id="origin" autocomplete="off" />
+          </label>
+          <label>
+            User ID
+            <input id="user" autocomplete="off" value="browser-demo" />
+          </label>
+          <label>
+            Authorization token
+            <input id="token" autocomplete="off" placeholder="optional" />
+          </label>
+        </div>
+      </header>
+
+      <section id="messages" aria-live="polite"></section>
+
+      <form id="form">
+        <textarea
+          id="text"
+          required
+          placeholder="Ask the bee to help with a booking..."
+        ></textarea>
+        <button id="send" type="submit">Send</button>
+      </form>
+    </main>
+
+    <script type="module">
+      const params = new URLSearchParams(location.search);
+      const fields = {
+        bee: document.querySelector("#bee"),
+        origin: document.querySelector("#origin"),
+        user: document.querySelector("#user"),
+        token: document.querySelector("#token"),
+        text: document.querySelector("#text"),
+      };
+      const messages = document.querySelector("#messages");
+      const form = document.querySelector("#form");
+      const send = document.querySelector("#send");
+
+      fields.bee.value = params.get("bee") ?? "bee_booking-assistant";
+      fields.origin.value = params.get("origin") ?? "https://gen.pollinations.ai";
+
+      function appendMessage(role, text) {
+        const node = document.createElement("article");
+        node.className = "message";
+        node.innerHTML = `<strong></strong><span></span>`;
+        node.querySelector("strong").textContent = role;
+        node.querySelector("span").textContent = text;
+        messages.append(node);
+        node.scrollIntoView({ block: "end" });
+      }
+
+      function replyText(payload) {
+        return (
+          payload.reply ??
+          payload.text ??
+          payload.message ??
+          payload.choices?.[0]?.message?.content ??
+          JSON.stringify(payload)
+        );
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const text = fields.text.value.trim();
+        if (!text) return;
+        fields.text.value = "";
+        send.disabled = true;
+        appendMessage("you", text);
+
+        try {
+          const headers = { "content-type": "application/json" };
+          if (fields.token.value.trim()) {
+            headers.authorization = `Bearer ${fields.token.value.trim()}`;
+          }
+          const response = await fetch(
+            `${fields.origin.value.replace(/\/$/, "")}/bees/${fields.bee.value}/web/messages`,
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ text, userId: fields.user.value }),
+            },
+          );
+          const payload = await response.json();
+          if (!response.ok) {
+            appendMessage("error", payload.error ?? response.statusText);
+          } else {
+            appendMessage("bee", replyText(payload));
+          }
+        } catch (error) {
+          appendMessage("error", error instanceof Error ? error.message : String(error));
+        } finally {
+          send.disabled = false;
+          fields.text.focus();
+        }
+      });
+    </script>
+  </body>
+</html>

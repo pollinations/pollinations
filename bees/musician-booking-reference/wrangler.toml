@@ -1,0 +1,11 @@
+name = "musician-booking-reference-bee"
+main = "src/providers/cloudflare/worker.ts"
+compatibility_date = "2026-05-03"
+
+[[durable_objects.bindings]]
+name = "MUSICIAN_BOOKING_BEE"
+class_name = "MusicianBookingBeeDurableObject"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["MusicianBookingBeeDurableObject"]

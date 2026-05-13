@@ -1,0 +1,18 @@
+{
+  "projectName": "MinimalAwsAgentCoreBee",
+  "agents": [
+    {
+      "name": "MinimalAwsAgentCoreBee",
+      "protocol": "HTTP",
+      "container": {
+        "dockerfile": "Dockerfile",
+        "port": 8080,
+        "platform": "linux/arm64"
+      },
+      "paths": {
+        "ping": "/ping",
+        "invocations": "/invocations"
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "minimal-cloudflare-agents-bee",
+  "source": {
+    "type": "git",
+    "repository": "https://github.com/pollinations/pollinations.git",
+    "ref": "main",
+    "packagePath": "bees/minimal-cloudflare-agents"
+  },
+  "surfaces": [
+    "openai",
+    "web",
+    "a2a"
+  ],
+  "billing": {
+    "mode": "author-pays"
+  }
+}

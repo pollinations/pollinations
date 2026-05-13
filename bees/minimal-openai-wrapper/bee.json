@@ -1,0 +1,20 @@
+{
+  "name": "minimal-openai-wrapper-bee",
+  "source": {
+    "type": "git",
+    "repository": "https://github.com/pollinations/pollinations.git",
+    "ref": "main",
+    "packagePath": "bees/minimal-openai-wrapper"
+  },
+  "surfaces": [
+    "openai"
+  ],
+  "billing": {
+    "mode": "author-pays"
+  },
+  "env": {
+    "BEE_BASE_MODEL": "openai",
+    "BEE_SYSTEM_PROMPT": "You are a concise Pollinations bee. Answer helpfully, be direct, and keep responses short unless the user asks for detail."
+  }
+}
+

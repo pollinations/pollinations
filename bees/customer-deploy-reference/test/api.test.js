@@ -1,0 +1,309 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+    createDeploymentId,
+    DeployStore,
+    estimateBilling,
+    requiredScopes,
+    resolveProvider,
+    resolveRuntime,
+    routeForSurface,
+} from "../src/api.js";
+import { main } from "../src/cli.js";
+import { createStarterManifest, validateBeeManifest } from "../src/schema.js";
+
+test("deployment ids and routes are stable", () => {
+    const id = createDeploymentId("Booking Assistant!");
+
+    assert.equal(id, "bee_booking-assistant");
+    assert.equal(
+        routeForSurface("https://gen.pollinations.ai", id, "openai"),
+        "https://gen.pollinations.ai/v1/chat/completions",
+    );
+    assert.equal(
+        routeForSurface("https://gen.pollinations.ai", id, "web"),
+        "https://gen.pollinations.ai/bees/bee_booking-assistant/web/messages",
+    );
+    assert.equal(
+        routeForSurface("https://gen.pollinations.ai", id, "a2a"),
+        "https://gen.pollinations.ai/bees/bee_booking-assistant/a2a",
+    );
+});
+
+test("store creates deployment and events from manifest", () => {
+    const store = new DeployStore();
+    const deployment = store.create({
+        name: "Booking Assistant",
+        source: { type: "template", template: "musician-booking-reference" },
+        surfaces: ["openai", "web"],
+        billing: { mode: "author-pays" },
+    });
+
+    assert.equal(deployment.status, "queued");
+    assert.equal(deployment.modelId, "bee_booking-assistant");
+    assert.equal(deployment.runtime.provider, "cloudflare-agents");
+    assert.equal(deployment.state.backend, "sqlite");
+    assert.equal(deployment.surfaces.length, 2);
+    assert.equal(store.events(deployment.id).length, 1);
+});
+
+test("store rejects duplicate deployments unless upgrade is explicit", () => {
+    const store = new DeployStore();
+    const manifest = {
+        name: "Upgrade Bee",
+        source: { type: "template", template: "musician-booking-reference" },
+        surfaces: ["openai", "web"],
+        billing: { mode: "author-pays" },
+    };
+
+    const created = store.create(manifest);
+
+    assert.throws(() => store.create(manifest), {
+        message: "deployment already exists",
+        code: "deployment_exists",
+        id: created.id,
+    });
+
+    const upgraded = store.create(
+        { ...manifest, surfaces: ["openai"] },
+        "https://gen.pollinations.ai",
+        { upgrade: true },
+    );
+
+    assert.equal(upgraded.id, created.id);
+    assert.equal(upgraded.createdAt, created.createdAt);
+    assert.deepEqual(
+        upgraded.surfaces.map((surface) => surface.kind),
+        ["openai"],
+    );
+    assert.deepEqual(
+        store.events(created.id).map((event) => event.message),
+        ["Queued cloudflare-agents", "Upgrade queued cloudflare-agents"],
+    );
+});
+
+test("auto runtime resolves to Cloudflare Agents", () => {
+    assert.equal(resolveProvider({}), "cloudflare-agents");
+    assert.equal(resolveRuntime({}).kind, "worker");
+    assert.equal(
+        resolveProvider({ kind: "worker", provider: "auto" }),
+        "cloudflare-agents",
+    );
+    assert.equal(
+        resolveProvider({ kind: "container", provider: "auto" }),
+        "daytona",
+    );
+    assert.equal(
+        resolveProvider({ kind: "container", provider: "aws-agentcore" }),
+        "aws-agentcore",
+    );
+});
+
+test("validates worker and queen bee manifests", () => {
+    const worker = createStarterManifest("Worker Bee");
+    const workerWithPartialState = {
+        ...createStarterManifest("Worker State Bee"),
+        state: { retentionDays: 7 },
+    };
+    const queen = createStarterManifest("Queen Bee", "queen");
+
+    assert.equal(validateBeeManifest(worker).valid, true);
+    assert.equal(validateBeeManifest(workerWithPartialState).valid, true);
+    assert.equal(validateBeeManifest(queen).valid, true);
+    assert.deepEqual(worker.source, {
+        type: "template",
+        template: "minimal-cloudflare-agents",
+    });
+    assert.deepEqual(queen.source, {
+        type: "template",
+        template: "minimal-daytona-container",
+    });
+    assert.equal(queen.runtime.kind, "container");
+});
+
+test("manifest validation catches invalid runtime, state, surface, and user-pays client id", () => {
+    const manifest = {
+        ...createStarterManifest("Bad Bee"),
+        billing: { mode: "user-pays" },
+    };
+    const placeholderClientId = {
+        ...createStarterManifest("Bad Client"),
+        billing: { mode: "user-pays", clientId: "pk_replace_me" },
+    };
+    const badRuntime = {
+        ...createStarterManifest("Bad Runtime"),
+        runtime: { kind: "sandbox", provider: "auto" },
+    };
+    const badState = {
+        ...createStarterManifest("Bad State"),
+        state: { backend: "workspace" },
+    };
+    const badSurface = {
+        ...createStarterManifest("Bad Surface"),
+        surfaces: ["web", "mcp"],
+    };
+    const badProvider = {
+        ...createStarterManifest("Bad Provider"),
+        runtime: { kind: "worker", provider: "daytona" },
+    };
+
+    assert.equal(validateBeeManifest(manifest).valid, false);
+    assert.ok(
+        validateBeeManifest(manifest).errors.includes(
+            "billing.clientId is required for user-pays bees",
+        ),
+    );
+    assert.ok(
+        validateBeeManifest(placeholderClientId).errors.includes(
+            "billing.clientId must be a real App Key",
+        ),
+    );
+    assert.equal(validateBeeManifest(badRuntime).valid, false);
+    assert.equal(validateBeeManifest(badState).valid, false);
+    assert.equal(validateBeeManifest(badSurface).valid, false);
+    assert.equal(validateBeeManifest(badProvider).valid, false);
+});
+
+test("cli init creates a worker starter manifest", async () => {
+    const path = `/tmp/bee-${Date.now()}.json`;
+    const result = await main(["init", path, "--name", "Demo Bee"]);
+    const manifest = JSON.parse(
+        await import("node:fs/promises").then((fs) =>
+            fs.readFile(path, "utf8"),
+        ),
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(result.template, "worker");
+    assert.equal(manifest.name, "Demo Bee");
+    assert.equal(manifest.runtime, undefined);
+    assert.equal(manifest.state, undefined);
+    assert.deepEqual(manifest.surfaces, ["openai", "web"]);
+});
+
+test("cli init can create a queen starter manifest", async () => {
+    const path = `/tmp/bee-queen-${Date.now()}.json`;
+    const result = await main([
+        "init",
+        path,
+        "--name",
+        "Queen Demo",
+        "--template",
+        "queen",
+    ]);
+    const manifest = JSON.parse(
+        await import("node:fs/promises").then((fs) =>
+            fs.readFile(path, "utf8"),
+        ),
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(result.template, "queen");
+    assert.equal(manifest.name, "Queen Demo");
+    assert.deepEqual(manifest.runtime, { kind: "container" });
+    assert.deepEqual(manifest.surfaces, ["openai", "web"]);
+});
+
+test("cli validate reports manifest validity", async () => {
+    const result = await main([
+        "validate",
+        "manifests/minimal-cloudflare.json",
+    ]);
+
+    assert.equal(result.valid, true);
+    assert.equal(result.resolved.runtime.kind, "worker");
+    assert.equal(result.resolved.runtime.provider, "auto");
+    assert.equal(result.resolved.state.backend, "sqlite");
+});
+
+test("cli deploy reads a manifest file", async () => {
+    const deployment = await main([
+        "deploy",
+        "manifests/minimal-cloudflare.json",
+    ]);
+
+    assert.equal(deployment.id, "bee_booking-assistant");
+    assert.equal(deployment.runtime.provider, "cloudflare-agents");
+    assert.equal(deployment.runtime.requestedProvider, "auto");
+    assert.equal(deployment.runtime.kind, "worker");
+    assert.equal(deployment.state.backend, "sqlite");
+    assert.deepEqual(deployment.requiredScopes.invocation, ["generate"]);
+});
+
+test("cli dry-run wraps deployment without changing projected URLs", async () => {
+    const result = await main([
+        "deploy",
+        "manifests/minimal-cloudflare.json",
+        "--dry-run",
+    ]);
+
+    assert.equal(result.dryRun, true);
+    assert.equal(result.deployment.id, "bee_booking-assistant");
+    assert.equal(result.deployment.billingEstimate.currency, "pollen");
+    assert.ok(
+        result.deployment.billingEstimate.meters.some(
+            (meter) => meter.name === "orchestration_run",
+        ),
+    );
+});
+
+test("cli deploy can upgrade while overriding runtime provider", async () => {
+    const deployment = await main([
+        "deploy",
+        "manifests/minimal-cloudflare.json",
+        "--upgrade",
+        "--runtime",
+        "daytona",
+    ]);
+
+    assert.equal(deployment.runtime.provider, "daytona");
+    assert.equal(deployment.runtime.requestedProvider, "daytona");
+    assert.equal(deployment.runtime.kind, "container");
+    assert.ok(
+        deployment.billingEstimate.meters.some(
+            (meter) => meter.name === "runtime_compute",
+        ),
+    );
+});
+
+test("cli status, events, list, and delete use the same deployment store", async () => {
+    const path = `/tmp/bee-status-${Date.now()}.json`;
+    const manifest = {
+        ...createStarterManifest("Status Bee"),
+        name: `Status Bee ${Date.now()}`,
+    };
+    await import("node:fs/promises").then((fs) =>
+        fs.writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`),
+    );
+
+    const deployment = await main(["deploy", path]);
+    const status = await main(["status", deployment.id]);
+    const events = await main(["events", deployment.id]);
+    const list = await main(["list"]);
+    const deleted = await main(["delete", deployment.id]);
+
+    assert.equal(status.id, deployment.id);
+    assert.equal(events.length, 1);
+    assert.ok(list.some((item) => item.id === deployment.id));
+    assert.equal(deleted.deleted, true);
+});
+
+test("cli delete returns whether a deployment existed", async () => {
+    const deployment = await main(["deploy", "manifests/minimal-daytona.json"]);
+    const result = await main(["delete", deployment.id]);
+
+    assert.equal(result.deleted, true);
+});
+
+test("runtime, scopes, and billing helpers are deterministic", () => {
+    const manifest = createStarterManifest("Helper Bee");
+    const runtime = resolveRuntime(manifest.runtime);
+    const billing = estimateBilling(manifest, runtime);
+    const scopes = requiredScopes(manifest);
+
+    assert.equal(runtime.kind, "worker");
+    assert.equal(runtime.provider, "cloudflare-agents");
+    assert.deepEqual(scopes.developer, ["bees:read", "bees:write"]);
+    assert.deepEqual(scopes.invocation, []);
+    assert.equal(billing.currency, "pollen");
+});

@@ -1,0 +1,14 @@
+{
+  "name": "musician-booking-reference-bee",
+  "language": "typescript",
+  "entrypoint": "npm run serve",
+  "ports": [8787],
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "8787"
+  },
+  "labels": {
+    "pollinations.kind": "bee",
+    "pollinations.example": "musician-booking-reference"
+  }
+}

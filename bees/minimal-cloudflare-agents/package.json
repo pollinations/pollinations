@@ -1,0 +1,16 @@
+{
+  "name": "minimal-cloudflare-agents-bee",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "agents": "^0.12.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.43.0"
+  }
+}

@@ -1,0 +1,225 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+    type BeeDeploymentRequest,
+    createDeploymentId,
+    createQueuedDeployment,
+    deploymentPathForName,
+    handleBeeDeployApiRequest,
+    MemoryBeeDeployApiStore,
+    projectDeploymentRoutes,
+} from "../src/deploy-api/index.js";
+
+const request: BeeDeploymentRequest = {
+    name: "Booking Assistant!",
+    source: {
+        type: "git",
+        repository: "https://github.com/example/booking-bee.git",
+        ref: "main",
+        packagePath: "bees/booking",
+    },
+    surfaces: ["openai", "web", "discord", "a2a"],
+    billing: {
+        mode: "user-pays",
+        clientId: "pk_demo",
+        dailyPollenLimit: 5,
+    },
+};
+
+test("deployment ids are stable and URL-safe", () => {
+    assert.equal(createDeploymentId(request.name), "bee_booking-assistant");
+});
+
+test("deployment routes project all requested surfaces", () => {
+    const routes = projectDeploymentRoutes(
+        request,
+        "https://gen.pollinations.ai/",
+    );
+
+    assert.deepEqual(
+        routes.map((route) => route.kind),
+        ["openai", "web", "discord", "a2a"],
+    );
+    assert.equal(
+        routes.find((route) => route.kind === "openai")?.url,
+        "https://gen.pollinations.ai/v1/chat/completions",
+    );
+    assert.equal(
+        routes.find((route) => route.kind === "a2a")?.url,
+        "https://gen.pollinations.ai/bees/bee_booking-assistant/.well-known/agent-card.json",
+    );
+});
+
+test("queued deployments preserve runtime and timestamps", () => {
+    const deployment = createQueuedDeployment(
+        request,
+        "https://gen.pollinations.ai",
+        new Date("2026-05-03T00:00:00.000Z"),
+    );
+
+    assert.equal(deployment.status, "queued");
+    assert.equal(deployment.modelId, "bee_booking-assistant");
+    assert.equal(deployment.runtime.kind, "worker");
+    assert.equal(deployment.runtime.provider, "cloudflare-agents");
+    assert.equal(deployment.runtime.requestedProvider, "auto");
+    assert.equal(deployment.state.backend, "sqlite");
+    assert.deepEqual(deployment.requiredScopes.invocation, ["generate"]);
+    assert.ok(
+        deployment.billingEstimate.meters.some(
+            (meter) => meter.name === "orchestration_run",
+        ),
+    );
+    assert.equal(deployment.createdAt, "2026-05-03T00:00:00.000Z");
+});
+
+test("queued deployments apply manifest defaults", () => {
+    const deployment = createQueuedDeployment(
+        {
+            name: "Minimal Bee",
+            source: {
+                type: "template",
+                template: "musician-booking-reference",
+            },
+            surfaces: ["web"],
+            billing: { mode: "author-pays" },
+        },
+        "https://gen.pollinations.ai",
+    );
+
+    assert.equal(deployment.runtime.kind, "worker");
+    assert.equal(deployment.runtime.provider, "cloudflare-agents");
+    assert.equal(deployment.runtime.requestedProvider, "auto");
+    assert.equal(deployment.state.backend, "sqlite");
+});
+
+test("deployment API reference router creates, reads, patches, events, and deletes", async () => {
+    const store = new MemoryBeeDeployApiStore();
+    const created = await handleBeeDeployApiRequest(
+        new Request("https://gen.pollinations.ai/api/bees", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(request),
+        }),
+        { store },
+    );
+    const read = await handleBeeDeployApiRequest(
+        new Request(
+            `https://gen.pollinations.ai${deploymentPathForName(request.name)}`,
+        ),
+        { store },
+    );
+    const list = await handleBeeDeployApiRequest(
+        new Request("https://gen.pollinations.ai/api/bees"),
+        { store },
+    );
+    const patched = await handleBeeDeployApiRequest(
+        new Request(
+            `https://gen.pollinations.ai${deploymentPathForName(request.name)}`,
+            {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    runtime: { kind: "container", provider: "daytona" },
+                    state: { backend: "memory", retentionDays: 30 },
+                }),
+            },
+        ),
+        { store },
+    );
+    const events = await handleBeeDeployApiRequest(
+        new Request(
+            `https://gen.pollinations.ai${deploymentPathForName(
+                request.name,
+            )}/events`,
+        ),
+        { store },
+    );
+    const deleted = await handleBeeDeployApiRequest(
+        new Request(
+            `https://gen.pollinations.ai${deploymentPathForName(request.name)}`,
+            { method: "DELETE" },
+        ),
+        { store },
+    );
+
+    assert.equal(created.status, 202);
+    assert.equal(read.status, 200);
+    assert.equal(list.status, 200);
+    assert.equal(patched.status, 200);
+    assert.equal(events.status, 200);
+    assert.equal(deleted.status, 204);
+    assert.equal(
+        ((await patched.json()) as { runtime: { provider: string } }).runtime
+            .provider,
+        "daytona",
+    );
+    assert.equal(((await list.json()) as unknown[]).length, 1);
+    assert.equal(((await events.json()) as unknown[]).length, 2);
+});
+
+test("deployment API rejects duplicate ids unless upgrade is explicit", async () => {
+    const store = new MemoryBeeDeployApiStore();
+    const createRequest = () =>
+        new Request("https://gen.pollinations.ai/api/bees", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(request),
+        });
+
+    const created = await handleBeeDeployApiRequest(createRequest(), {
+        store,
+    });
+    const duplicate = await handleBeeDeployApiRequest(createRequest(), {
+        store,
+    });
+    const upgraded = await handleBeeDeployApiRequest(
+        new Request("https://gen.pollinations.ai/api/bees?upgrade=1", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+                ...request,
+                surfaces: ["openai"],
+                billing: { mode: "author-pays" },
+            }),
+        }),
+        { store },
+    );
+    const events = await store.listEvents(createDeploymentId(request.name));
+
+    assert.equal(created.status, 202);
+    assert.equal(duplicate.status, 409);
+    assert.deepEqual(await duplicate.json(), {
+        error: "Deployment already exists",
+        id: "bee_booking-assistant",
+        hint: "POST /api/bees?upgrade=1 to redeploy this bee",
+    });
+    assert.equal(upgraded.status, 202);
+    assert.deepEqual(
+        (
+            (await upgraded.json()) as { surfaces: Array<{ kind: string }> }
+        ).surfaces.map((surface) => surface.kind),
+        ["openai"],
+    );
+    assert.deepEqual(
+        events.map((event) => event.message),
+        ["Deployment queued", "Upgrade queued"],
+    );
+});
+
+test("patching runtime updates billing meters and state backend", async () => {
+    const store = new MemoryBeeDeployApiStore();
+    const created = await store.create(request, "https://gen.pollinations.ai");
+    const patched = await store.patch(created.id, {
+        runtime: { kind: "container", provider: "aws-agentcore" },
+        state: { retentionDays: 14 },
+    });
+
+    assert.equal(patched?.runtime.kind, "container");
+    assert.equal(patched?.runtime.provider, "aws-agentcore");
+    assert.equal(patched?.state.backend, "sqlite");
+    assert.ok(
+        patched?.billingEstimate.meters.some(
+            (meter) => meter.name === "runtime_compute",
+        ),
+    );
+});

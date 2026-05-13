@@ -1,0 +1,21 @@
+{
+  "name": "booking-assistant",
+  "source": {
+    "type": "git",
+    "repository": "https://github.com/example/booking-bee.git",
+    "ref": "main",
+    "packagePath": "bees/booking"
+  },
+  "surfaces": [
+    "openai",
+    "web"
+  ],
+  "billing": {
+    "mode": "user-pays",
+    "clientId": "pk_live_app_key",
+    "dailyPollenLimit": 5
+  },
+  "env": {
+    "PUBLIC_BEE_NAME": "Booking Assistant"
+  }
+}

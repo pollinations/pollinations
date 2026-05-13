@@ -1,0 +1,11 @@
+name = "musician-booking-reference-bee-agent"
+main = "src/providers/cloudflare/agents-sdk.ts"
+compatibility_date = "2026-05-03"
+
+[[durable_objects.bindings]]
+name = "MusicianBookingCloudflareAgent"
+class_name = "MusicianBookingCloudflareAgent"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["MusicianBookingCloudflareAgent"]

@@ -1,0 +1,26 @@
+{
+  "name": "container-booking-assistant",
+  "source": {
+    "type": "git",
+    "repository": "https://github.com/example/container-bee.git",
+    "ref": "main",
+    "packagePath": "bees/container-booking"
+  },
+  "runtime": {
+    "kind": "container",
+    "provider": "daytona"
+  },
+  "surfaces": [
+    "openai",
+    "web"
+  ],
+  "billing": {
+    "mode": "user-pays",
+    "clientId": "pk_live_app_key",
+    "dailyPollenLimit": 20
+  },
+  "state": {
+    "backend": "memory",
+    "retentionDays": 30
+  }
+}

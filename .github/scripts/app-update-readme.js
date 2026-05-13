@@ -22,6 +22,12 @@ if (headerIdx === -1) {
     process.exit(1);
 }
 
+// Parse header to get column positions (like useApps.ts)
+const headerCols = lines[headerIdx].split("|").map((c) => c.trim());
+headerCols.shift();
+headerCols.pop();
+const ci = (name) => headerCols.indexOf(name);
+
 const dataRows = lines.slice(headerIdx + 2).filter((l) => l.startsWith("|"));
 const last10 = dataRows.slice(0, 10);
 
@@ -31,13 +37,17 @@ const simplifiedRows = last10.map((row) => {
     // Remove first and last empty strings from split (matches parseApps.ts pattern)
     cols.shift();
     cols.pop();
-    // cols: [emoji, name, web_url, desc, language, category, platform, github, github_id, repo, stars, discord, other, submitted_date, issue_url, approved_date, byop, requests_24h]
-    const emoji = cols[0];
-    const name = cols[1];
-    const url = cols[2];
-    const desc = cols[3];
-    const github = cols[7];
-    const nameCell = url ? `[${emoji} ${name}](${url})` : `${emoji} ${name}`;
+
+    const emoji = cols[ci("Emoji")];
+    const name = cols[ci("Name")];
+    const url = cols[ci("Web_URL")];
+    const desc = cols[ci("Description")];
+    const github = cols[ci("GitHub_Username")];
+    const repo = cols[ci("Github_Repository_URL")];
+    const linkUrl = url || repo;
+    const nameCell = linkUrl
+        ? `[${emoji} ${name}](${linkUrl})`
+        : `${emoji} ${name}`;
     const authorCell = github
         ? `[${github}](https://github.com/${github.replace("@", "")})`
         : "";

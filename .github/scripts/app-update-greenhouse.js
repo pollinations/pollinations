@@ -44,6 +44,12 @@ function parseApps() {
         process.exit(1);
     }
 
+    // Parse header to get column positions (like useApps.ts)
+    const headerCols = lines[headerIdx].split("|").map((c) => c.trim());
+    headerCols.shift();
+    headerCols.pop();
+    const ci = (name) => headerCols.indexOf(name);
+
     const rows = lines.slice(headerIdx + 2).filter((l) => l.startsWith("|"));
     return rows
         .map((row) => {
@@ -52,7 +58,7 @@ function parseApps() {
             cols.pop();
             if (cols.length < 15) return null;
 
-            const starsCol = cols[9];
+            const starsCol = cols[ci("Github_Repository_Stars")];
             let stars = 0;
             const m = starsCol.match(/⭐([\d.]+)(k)?/);
             if (m) {
@@ -62,17 +68,20 @@ function parseApps() {
             }
 
             return {
-                emoji: cols[0],
-                name: cols[1],
-                url: cols[2],
-                description: cols[3],
-                category: cols[5].toLowerCase(),
-                github: cols[6],
-                repo: cols[8],
+                emoji: cols[ci("Emoji")],
+                name: cols[ci("Name")],
+                url: cols[ci("Web_URL")],
+                description: cols[ci("Description")],
+                category: cols[ci("Category")].toLowerCase(),
+                github: cols[ci("GitHub_Username")],
+                repo: cols[ci("Github_Repository_URL")],
                 stars,
-                approvedDate: cols[14] || "",
-                byop: cols.length > 15 && cols[15] === "true",
-                requests24h: cols.length > 16 ? parseInt(cols[16], 10) || 0 : 0,
+                approvedDate: cols[ci("Approved_Date")] || "",
+                byop: cols.length > ci("BYOP") && cols[ci("BYOP")] === "true",
+                requests24h:
+                    cols.length > ci("Requests_24h")
+                        ? parseInt(cols[ci("Requests_24h")], 10) || 0
+                        : 0,
             };
         })
         .filter(Boolean);

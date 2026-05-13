@@ -12,7 +12,7 @@ const chipSizes = {
 const intentClasses: Record<IntentName, string> = {
     danger: "bg-intent-danger-bg-light text-intent-danger-text",
     success: "bg-intent-success-bg-light text-intent-success-text",
-    paid: "bg-intent-paid text-intent-paid-deep",
+    paid: "bg-intent-paid-bg-light text-intent-paid-deep",
     alpha: "bg-intent-alpha-bg text-intent-alpha-text",
 };
 

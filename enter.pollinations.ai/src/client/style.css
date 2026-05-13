@@ -425,9 +425,14 @@ html[data-mode="dark"] [data-theme="green"] {
     --intent-paid-bg:            var(--color-paid);
     --intent-paid-bg-hover:      var(--color-paid-hover);
     --intent-paid-text-deep:     var(--color-paid-deep);
+    /* Soft variant — matches the wallet's paid tile (bg-paid/10). */
+    --intent-paid-bg-light:      oklch(from var(--color-paid) l c h / 0.12);
 
-    --intent-alpha-bg:           var(--color-orange-200);
-    --intent-alpha-text:         var(--color-orange-900);
+    /* Alpha — "warning sign" vibe. Saturated sunny yellow with deep
+       burnt-amber text. Distinct from the amber page theme via higher
+       chroma so an ALPHA tag reads as caution, not decoration. */
+    --intent-alpha-bg:           oklch(0.91 0.15 92);
+    --intent-alpha-text:         oklch(0.38 0.13 55);
 }
 
 html[data-mode="dark"] {
@@ -490,6 +495,7 @@ html[data-mode="dark"] {
     --color-intent-paid:               var(--intent-paid-bg);
     --color-intent-paid-hover:         var(--intent-paid-bg-hover);
     --color-intent-paid-deep:          var(--intent-paid-text-deep);
+    --color-intent-paid-bg-light:      var(--intent-paid-bg-light);
 
     --color-intent-alpha-bg:           var(--intent-alpha-bg);
     --color-intent-alpha-text:         var(--intent-alpha-text);

@@ -1,4 +1,4 @@
-import { type FC, type ReactNode, useEffect, useRef, useState } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
 import { cn } from "@/util.ts";
 import { ModalityButton } from "../api-keys/modality-button.tsx";
 import { MODALITY_COLORS, type Modality } from "../api-keys/modality-ui.ts";
@@ -21,10 +21,9 @@ type Mode = "light" | "dark";
 /**
  * /internal/design — dev-only design system showcase.
  *
- * Single source of truth for the design tokens (Colors section) and a
- * compact reference of each primitive. Use the header toggles to preview
- * any theme + mode combination — every section inherits from the page
- * `data-theme` cascade.
+ * Each section documents one primitive in context. Every theme token is
+ * surfaced through its primitive — there is no separate token catalog.
+ * Use the header toggles to preview any theme + mode combination.
  *
  * Gated to DEV in `routes/internal.design.tsx`.
  */
@@ -59,7 +58,6 @@ export const DesignShowcase: FC = () => {
                 onThemeOverrideChange={setThemeOverride}
             />
             <div className="mx-auto flex max-w-[960px] flex-col gap-10 px-6 pt-8 pb-10">
-                <ColorsSection theme={themeOverride} />
                 <TypographyDemo />
                 <ChipsDemo />
                 <ButtonsDemo />
@@ -157,133 +155,6 @@ function ToggleGroup<T extends string>({
         </div>
     );
 }
-
-// ─── Colors (the one source of truth) ───────────────────────
-
-type ColorRow = {
-    name: string;
-    /** Either a Tailwind utility class for bg, or a raw `var(--name)` CSS expression. */
-    swatch: string;
-    /** Optional foreground utility — used when the swatch displays sample text. */
-    fg?: string;
-};
-
-const themeBackgroundRows: readonly ColorRow[] = [
-    { name: "bg-subtle", swatch: "bg-theme-bg-subtle" },
-    { name: "bg-pale", swatch: "bg-theme-bg-pale" },
-    { name: "bg-active", swatch: "bg-theme-bg-active" },
-    { name: "bg-hover", swatch: "bg-theme-bg-hover" },
-];
-
-const themeBorderRows: readonly ColorRow[] = [
-    { name: "border", swatch: "bg-theme-border" },
-];
-
-const themeIdentityRows: readonly ColorRow[] = [
-    { name: "chip-bg", swatch: "bg-theme-chip-bg" },
-    { name: "accent", swatch: "bg-theme-accent" },
-];
-
-const themeButtonRows: readonly ColorRow[] = [
-    { name: "button-light-bg", swatch: "bg-theme-button-light-bg" },
-    { name: "button-light-text", swatch: "bg-theme-button-light-text" },
-    { name: "button-light-hover", swatch: "bg-theme-button-light-hover" },
-];
-
-const walletRows: readonly ColorRow[] = [
-    { name: "paid-pale", swatch: "bg-paid-pale" },
-    { name: "paid-soft", swatch: "bg-paid-soft" },
-    { name: "paid-deep", swatch: "bg-paid-deep" },
-    { name: "tier-pale", swatch: "bg-tier-pale" },
-    { name: "tier-soft", swatch: "bg-tier-soft" },
-    { name: "tier-deep", swatch: "bg-tier-deep" },
-];
-
-const universalRows: readonly ColorRow[] = [
-    { name: "surface-white", swatch: "bg-surface-white" },
-];
-
-const ColorsSection: FC<{ theme: ThemeName }> = ({ theme }) => (
-    <Section
-        title="Colors"
-        caption={`Every theme token in the system, grouped by role. Active theme: ${theme}. Text colors live in the Typography section.`}
-    >
-        <div className="flex flex-col gap-6">
-            <ColorGroup label="Backgrounds" rows={themeBackgroundRows} />
-            <ColorGroup label="Borders" rows={themeBorderRows} />
-            <ColorGroup
-                label="Identity (chip / accent / focus)"
-                rows={themeIdentityRows}
-            />
-            <ColorGroup label="Button (light variant)" rows={themeButtonRows} />
-            <ColorGroup label="Wallet" rows={walletRows} />
-            <ColorGroup label="Universal" rows={universalRows} />
-        </div>
-    </Section>
-);
-
-const ColorGroup: FC<{ label: string; rows: readonly ColorRow[] }> = ({
-    label,
-    rows,
-}) => (
-    <div className="flex flex-col gap-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
-            {label}
-        </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 lg:grid-cols-4">
-            {rows.map((row) => (
-                <Swatch key={row.name} row={row} />
-            ))}
-        </div>
-    </div>
-);
-
-const Swatch: FC<{ row: ColorRow }> = ({ row }) => (
-    <div className="flex items-center gap-2">
-        <span
-            className={cn(
-                "h-5 w-5 shrink-0 rounded border border-theme-border",
-                row.swatch,
-            )}
-        />
-        <div className="flex min-w-0 flex-col">
-            <code className="truncate text-xs font-mono text-theme-text-strong">
-                {row.name}
-            </code>
-            <Computed cls={row.swatch} />
-        </div>
-    </div>
-);
-
-/**
- * Reads the computed background-color of a 1×1 hidden span carrying the
- * given Tailwind class, then prints the resolved value (oklch / rgb).
- * Falls back to a dash if the class doesn't resolve.
- */
-const Computed: FC<{ cls: string | null | undefined }> = ({ cls }) => {
-    const ref = useRef<HTMLSpanElement>(null);
-    const [value, setValue] = useState<string>("");
-
-    useEffect(() => {
-        if (!cls || !ref.current) return;
-        const computed = getComputedStyle(ref.current).backgroundColor;
-        setValue(computed || "");
-    }, [cls]);
-
-    if (!cls) return <span className="text-xs text-theme-text-soft/60">—</span>;
-    return (
-        <>
-            <span
-                ref={ref}
-                aria-hidden
-                className={cn("absolute h-px w-px opacity-0", cls)}
-            />
-            <code className="truncate text-xs font-mono text-theme-text-soft/60">
-                {value || "…"}
-            </code>
-        </>
-    );
-};
 
 // ─── Typography ─────────────────────────────────────────────
 
@@ -452,10 +323,10 @@ const TypographyDemo: FC = () => (
 const ChipsDemo: FC = () => (
     <Section
         title="Chips"
-        caption="Default chip inherits the active page theme. Five intent chips: news/alpha tag models (uppercase); paid/tier tag pollen balances (also drive activity/usage identity chips, with emoji prefix); neutral is a bordered gray container for emoji icons (modalities + capabilities on pricing rows). Status pattern: theme=green for permissive/on, theme=amber for partial/restricted, gray override for off. Theme overrides also drive count badges (e.g. +1 redirect)."
+        caption="Default chip inherits the active page theme (uses chip-bg = bg-active under the hood). Five intent chips: news/alpha tag models (uppercase); paid/tier tag pollen balances (also drive activity/usage identity chips, with emoji prefix); neutral is a bordered gray container for emoji icons (modalities + capabilities on pricing rows). Status pattern: theme=green for permissive/on, theme=amber for partial/restricted, gray override for off. Theme overrides also drive count badges (e.g. +1 redirect)."
     >
         <div className="flex flex-col gap-3">
-            <ChipRow label="Default (theme)">
+            <ChipRow label="Default · chip-bg + chip-text">
                 <Chip>Theme</Chip>
             </ChipRow>
             <ChipRow label="Model labels">
@@ -528,10 +399,10 @@ const modalityList: readonly Modality[] = [
 const ButtonsDemo: FC = () => (
     <Section
         title="Buttons"
-        caption="Soft tile + deep text. Inherits the active theme; intent='danger' overrides destructive actions. Modality buttons (interactive model picker) share the same rounded-full shape, with per-modality hues for identity."
+        caption="Soft tile + deep text. Default uses button-light-bg + button-light-text; hover: button-light-hover. Inherits the active theme; intent='danger' overrides destructive actions. Modality buttons (interactive model picker) share the same rounded-full shape, with per-modality hues for identity."
     >
         <div className="flex flex-col gap-3">
-            <ChipRow label="Theme + intent">
+            <ChipRow label="Default · button-light-*">
                 <Button>Default</Button>
                 <Button disabled>Disabled</Button>
                 <Button intent="danger">Delete</Button>
@@ -594,56 +465,120 @@ const SwitchesDemo: FC = () => {
 const SurfacesDemo: FC = () => (
     <Section
         title="Surface"
-        caption="Three theme-aware roles + wallet surfaces. Panel is the outer bordered container; card is the white inner block; card-themed is a borderless theme-tinted inner block (pinned news, earnings callout). Wallet surfaces use bg-paid-pale / bg-tier-pale for paid + tier identity (wallet cards, tier explanation)."
+        caption="Every theme + wallet surface token, shown in its actual use. Surfaces are theme-aware: flip the theme toggle and they all recolor."
     >
         <div className="flex flex-col gap-4">
             <Surface variant="panel">
                 <p className="mb-3 text-xs font-mono uppercase tracking-wide text-theme-text-soft/60">
-                    outer · panel
+                    outer · panel ·{" "}
+                    <span className="text-theme-text-strong">
+                        bg-theme-bg-subtle + border-theme-border
+                    </span>
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Surface>
                         <p className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
-                            inner · card
+                            inner · card · surface-white
                         </p>
                         <p className="mt-1 text-sm text-theme-text-soft">
-                            Default. White, no border.
+                            White inner block. Mode-aware (light/dark).
                         </p>
                     </Surface>
                     <Surface variant="card-themed">
                         <p className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
-                            inner · card-themed
+                            inner · card-themed · bg-theme-bg-pale
                         </p>
                         <p className="mt-1 text-sm text-theme-text-strong">
-                            Theme-tinted callout.
+                            Theme-tinted callout. Tooltips + pinned news use
+                            this.
                         </p>
                     </Surface>
                 </div>
             </Surface>
+
+            <div className="flex flex-wrap items-center gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
+                <span className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
+                    states (theme-aware)
+                </span>
+                <div className="flex items-center gap-2">
+                    <span className="h-6 w-10 rounded bg-theme-bg-active" />
+                    <code className="text-xs font-mono text-theme-text-strong">
+                        bg-active
+                    </code>
+                    <span className="text-xs text-theme-text-soft/60">
+                        selected / chip default
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="h-6 w-10 rounded bg-theme-bg-hover" />
+                    <code className="text-xs font-mono text-theme-text-strong">
+                        bg-hover
+                    </code>
+                    <span className="text-xs text-theme-text-soft/60">
+                        strong hover
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="h-6 w-6 rounded-full bg-theme-accent shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" />
+                    <code className="text-xs font-mono text-theme-text-strong">
+                        accent
+                    </code>
+                    <span className="text-xs text-theme-text-soft/60">
+                        nav dot · focus ring (/70)
+                    </span>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-xl bg-paid-pale p-4">
                     <p className="text-xs font-mono uppercase tracking-wide text-paid-deep/70">
-                        wallet · paid
+                        wallet · paid · bg-paid-pale
                     </p>
                     <p className="mt-1 text-sm text-paid-deep">
-                        bg-paid-pale — paid wallet card.
+                        Paid wallet card. Text uses{" "}
+                        <code className="font-mono">text-paid-deep</code>.
                     </p>
                 </div>
                 <div className="rounded-xl bg-tier-pale p-4">
                     <p className="text-xs font-mono uppercase tracking-wide text-tier-deep/70">
-                        wallet · tier
+                        wallet · tier · bg-tier-pale
                     </p>
                     <p className="mt-1 text-sm text-tier-deep">
-                        bg-tier-pale — tier wallet card + active tier explainer.
+                        Tier wallet card + active tier explainer. Text uses{" "}
+                        <code className="font-mono">text-tier-deep</code>.
                     </p>
                 </div>
                 <div className="rounded-xl bg-tier-pale/40 p-4">
                     <p className="text-xs font-mono uppercase tracking-wide text-tier-deep/70">
-                        tier · other
+                        tier · other · bg-tier-pale/40
                     </p>
                     <p className="mt-1 text-sm text-tier-deep">
-                        bg-tier-pale/40 — non-current tiers in the explainer.
+                        Non-current tiers in the explainer (opacity modifier).
                     </p>
+                </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
+                <span className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
+                    wallet markers
+                </span>
+                <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-paid-soft" />
+                    <code className="text-xs font-mono text-theme-text-strong">
+                        bg-paid-soft
+                    </code>
+                    <span className="text-xs text-theme-text-soft/60">
+                        drawer dot · chart bar
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-tier-soft" />
+                    <code className="text-xs font-mono text-theme-text-strong">
+                        bg-tier-soft
+                    </code>
+                    <span className="text-xs text-theme-text-soft/60">
+                        drawer dot · chart bar
+                    </span>
                 </div>
             </div>
         </div>

@@ -163,13 +163,13 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Tag
                                             size="lg"
-                                            className="font-semibold bg-[#E08A52] text-amber-950"
+                                            className="font-semibold bg-paid text-amber-950"
                                         >
                                             💳 {formatPollen(stats.paidPollen)}
                                         </Tag>
                                         <Tag
                                             size="lg"
-                                            className="font-semibold bg-[#FCD34D] text-amber-950"
+                                            className="font-semibold bg-tier text-amber-950"
                                         >
                                             🌱 {formatPollen(stats.tierPollen)}
                                         </Tag>

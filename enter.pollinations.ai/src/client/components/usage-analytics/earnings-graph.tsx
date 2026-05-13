@@ -152,7 +152,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Tag
                                             size="lg"
-                                            className="font-semibold bg-[#E08A52] text-amber-950"
+                                            className="font-semibold bg-paid text-amber-950"
                                             title={`${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
                                         >
                                             💳{" "}
@@ -162,7 +162,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                         </Tag>
                                         <Tag
                                             size="lg"
-                                            className="font-semibold bg-[#FCD34D] text-amber-950"
+                                            className="font-semibold bg-tier text-amber-950"
                                             title={`${formatPollen(stats.totalTier)} pollen from tier-side spend`}
                                         >
                                             🌱{" "}

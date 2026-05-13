@@ -65,7 +65,7 @@ export const DesignShowcase: FC = () => {
                 <Placeholder title="Inputs" phase="Phase 8" />
                 <Placeholder title="IconButtons" phase="Phase 8" />
                 <Placeholder title="InfoTip" phase="Phase 9" />
-                <Placeholder title="Money colors" phase="Phase 6" />
+                <MoneyColorsDemo />
             </div>
         </div>
     );
@@ -510,6 +510,68 @@ const TabsDemo: FC = () => {
         </Section>
     );
 };
+
+// ─── Money colors ───────────────────────────────────────────
+
+type MoneySwatch = {
+    utility: string;
+    sample: "bg" | "text";
+    note: string;
+};
+
+const moneySwatches: readonly MoneySwatch[] = [
+    { utility: "bg-paid", sample: "bg", note: "Paid headline / dot" },
+    { utility: "bg-paid-hover", sample: "bg", note: "Paid hover state" },
+    { utility: "text-paid-deep", sample: "text", note: "Paid number text" },
+    { utility: "bg-tier", sample: "bg", note: "Tier headline / dot" },
+    { utility: "bg-tier-hover", sample: "bg", note: "Tier hover state" },
+    { utility: "text-tier-deep", sample: "text", note: "Tier number text" },
+] as const;
+
+const MoneyColorsDemo: FC = () => (
+    <Section
+        title="Money colors"
+        caption={
+            "Direct utilities for paid (orange) and tier (yellow) money UI. " +
+            "Use `bg-paid` / `text-paid-deep` etc. instead of inline hex."
+        }
+    >
+        <div className="flex flex-col divide-y divide-theme-divide rounded-xl border border-theme-border-soft bg-theme-bg-tinted">
+            {moneySwatches.map((swatch) => (
+                <div
+                    key={swatch.utility}
+                    className="flex items-center gap-4 px-4 py-3"
+                >
+                    <div
+                        className={cn(
+                            "flex h-10 w-16 shrink-0 items-center justify-center rounded-md",
+                            swatch.sample === "bg"
+                                ? swatch.utility
+                                : "bg-theme-bg-subtle",
+                        )}
+                    >
+                        {swatch.sample === "text" && (
+                            <span
+                                className={cn(
+                                    "font-bold text-xl tabular-nums",
+                                    swatch.utility,
+                                )}
+                            >
+                                Aa
+                            </span>
+                        )}
+                    </div>
+                    <code className="text-sm font-mono text-theme-text-strong">
+                        {swatch.utility}
+                    </code>
+                    <span className="ml-auto text-xs text-theme-text-muted">
+                        {swatch.note}
+                    </span>
+                </div>
+            ))}
+        </div>
+    </Section>
+);
 
 // ─── Helpers ────────────────────────────────────────────────
 

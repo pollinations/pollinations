@@ -1,5 +1,4 @@
 import { type FC, useState } from "react";
-import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { Button } from "../button.tsx";
@@ -8,9 +7,6 @@ import { Tooltip } from "../ui/tooltip.tsx";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
-
-const PAID_BAR = PAID_COLOR.bgClass;
-const TIER_BAR = TIER_COLOR.bgClass;
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -130,10 +126,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         : "grid grid-cols-2 gap-3"
                 }
             >
-                <div className="rounded-xl bg-[#E08A52]/10 p-4">
+                <div className="rounded-xl bg-paid/10 p-4">
                     <span className="flex items-center gap-2">
                         <span
-                            className={`h-2 w-2 rounded-full ${PAID_BAR}`}
+                            className="h-2 w-2 rounded-full bg-paid"
                             aria-hidden="true"
                         />
                         <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
@@ -156,7 +152,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             }
                         />
                     </span>
-                    <div className="mt-1 text-4xl sm:text-5xl font-bold tabular-nums leading-none tracking-tight text-[#7C3F1E]">
+                    <div className="mt-1 text-4xl sm:text-5xl font-bold tabular-nums leading-none tracking-tight text-paid-deep">
                         {formatPollen(displayPaidBalance)}
                     </div>
                     {paidWeek > 0 && (
@@ -169,10 +165,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     )}
                 </div>
                 {!hideTierColumn && (
-                    <div className="rounded-xl bg-[#FCD34D]/30 p-4">
+                    <div className="rounded-xl bg-tier/30 p-4">
                         <span className="flex items-center gap-2">
                             <span
-                                className={`h-2 w-2 rounded-full ${TIER_BAR}`}
+                                className="h-2 w-2 rounded-full bg-tier"
                                 aria-hidden="true"
                             />
                             <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
@@ -195,7 +191,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 }
                             />
                         </span>
-                        <div className="mt-1 text-4xl sm:text-5xl font-bold tabular-nums leading-none tracking-tight text-[#7A5807]">
+                        <div className="mt-1 text-4xl sm:text-5xl font-bold tabular-nums leading-none tracking-tight text-tier-deep">
                             {formatPollen(displayTierBalance)}
                         </div>
                         {tierWeek > 0 && (
@@ -284,7 +280,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
             <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                     <span
-                        className={`h-2 w-2 rounded-full ${PAID_BAR}`}
+                        className="h-2 w-2 rounded-full bg-paid"
                         aria-hidden="true"
                     />
                     Paid
@@ -304,7 +300,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                         <span
-                            className={`h-2 w-2 rounded-full ${TIER_BAR}`}
+                            className="h-2 w-2 rounded-full bg-tier"
                             aria-hidden="true"
                         />
                         Tier

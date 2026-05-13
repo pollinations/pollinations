@@ -93,7 +93,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         className={cn(
                                             "inline-block",
                                             isSelected &&
-                                                "text-2xl leading-none text-[#7C3F1E]",
+                                                "text-2xl leading-none text-paid-deep",
                                         )}
                                     >
                                         ${pack.amountUsd}

@@ -1,0 +1,33 @@
+{
+  "pr_number": 10868,
+  "title": "fix: reduce pollen pack bonuses",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10868",
+  "merged_at": "2026-05-13T12:59:50Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Updated Pollen Packs",
+    "blurb": "We've updated our Pollen pack tiers to ensure sustainable growth for the hive. The checkout experience has also been streamlined for better reliability!",
+    "summary": "Updated the Pollen pack tier structure and refined the Stripe checkout metadata for better reliability.",
+    "impact": "Purchasing Pollen is now backed by a more robust checkout system with updated tier options.",
+    "keywords": [
+      "billing",
+      "stripe",
+      "pollen",
+      "checkout"
+    ],
+    "visual_concept": "The bee mascot acting as a cozy shopkeeper, organizing a neat stack of golden pollen coins on a wooden counter, representing the updated store and checkout experience.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny shopkeeper apron, organizing a neat stack of glowing golden pollen coins on a wooden counter. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley shop vibes. Emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-13/PR-10868.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny shopkeeper apron, organizing a neat stack of glowing golden pollen coins on a wooden counter. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi Stardew Valley shop vibes. Emotionally warm and inviting."
+  },
+  "generated_at": "2026-05-13T13:00:59.503377+00:00"
+}

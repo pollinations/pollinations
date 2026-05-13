@@ -30,8 +30,7 @@
     <input id="urlInput" placeholder="or paste image URL" class="min-w-52 flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
     <button id="useUrl" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Use</button>
     <select id="modelSel" class="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
-      <option value="kontext">kontext (fast)</option>
-      <option value="nanobanana-2">nanobanana-2 (quality)</option>
+      <option value="nanobanana">nanobanana</option>
     </select>
     <button id="undoBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded" disabled>Undo</button>
     <button id="redoBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded" disabled>Redo</button>
@@ -160,6 +159,39 @@ disconnectBtn.onclick = () => {
   refreshConnectionUI();
 };
 refreshConnectionUI();
+
+(async function loadEditModels() {
+  const modelSel = document.getElementById("modelSel");
+  const DEFAULT_MODEL = "nanobanana";
+  // Models known to obey the burned-in red-circle annotation well
+  const RECOMMENDED = new Set(["nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
+  try {
+    const r = await fetch(`${BASE}/image/models`);
+    if (!r.ok) return;
+    const all = await r.json();
+    const edits = all.filter(m =>
+      m.input_modalities?.includes("image") && m.output_modalities?.includes("image"),
+    );
+    edits.sort((a, b) => {
+      const ra = RECOMMENDED.has(a.name) ? 0 : 1;
+      const rb = RECOMMENDED.has(b.name) ? 0 : 1;
+      return ra - rb || a.name.localeCompare(b.name);
+    });
+    modelSel.innerHTML = "";
+    for (const m of edits) {
+      const opt = document.createElement("option");
+      opt.value = m.name;
+      const tags = [];
+      if (RECOMMENDED.has(m.name)) tags.push("★");
+      if (m.paid_only) tags.push("paid");
+      opt.textContent = tags.length ? `${m.name} (${tags.join(" · ")})` : m.name;
+      modelSel.append(opt);
+    }
+    if ([...modelSel.options].some(o => o.value === DEFAULT_MODEL)) modelSel.value = DEFAULT_MODEL;
+  } catch {
+    // network blip — leave the hardcoded option in place
+  }
+})();
 
 async function loadImageFromURL(url, opts = {}) {
   clearError();

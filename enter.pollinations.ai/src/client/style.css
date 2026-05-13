@@ -87,7 +87,6 @@
     --theme-button-light-text:  var(--color-amber-900);
     --theme-button-light-hover: var(--color-amber-300);
 
-    --theme-ring-focus: oklch(from var(--color-amber-400) l c h / 0.7);
     --theme-accent:     var(--color-amber-500);
 }
 
@@ -110,7 +109,6 @@
     --theme-button-light-text:  var(--color-blue-900);
     --theme-button-light-hover: var(--color-blue-300);
 
-    --theme-ring-focus: oklch(from var(--color-blue-400) l c h / 0.7);
     --theme-accent:     var(--color-blue-500);
 }
 
@@ -133,7 +131,6 @@
     --theme-button-light-text:  var(--color-pink-900);
     --theme-button-light-hover: var(--color-pink-300);
 
-    --theme-ring-focus: oklch(from var(--color-pink-400) l c h / 0.7);
     --theme-accent:     var(--color-pink-500);
 }
 
@@ -156,7 +153,6 @@
     --theme-button-light-text:  var(--color-teal-900);
     --theme-button-light-hover: var(--color-teal-300);
 
-    --theme-ring-focus: oklch(from var(--color-teal-400) l c h / 0.7);
     --theme-accent:     var(--color-teal-500);
 }
 
@@ -179,7 +175,6 @@
     --theme-button-light-text:  var(--color-violet-900);
     --theme-button-light-hover: var(--color-violet-300);
 
-    --theme-ring-focus: oklch(from var(--color-violet-400) l c h / 0.7);
     --theme-accent:     var(--color-violet-500);
 }
 
@@ -205,7 +200,6 @@
     --theme-button-light-text:  var(--color-green-900);
     --theme-button-light-hover: var(--color-green-300);
 
-    --theme-ring-focus: oklch(from var(--color-green-400) l c h / 0.7);
     --theme-accent:     var(--color-green-500);
 }
 
@@ -339,7 +333,6 @@ html[data-mode="dark"] {
     --color-theme-button-light-text:  var(--theme-button-light-text);
     --color-theme-button-light-hover: var(--theme-button-light-hover);
 
-    --color-theme-ring-focus: var(--theme-ring-focus);
 
     --color-intent-danger-bg-light:    var(--intent-danger-bg-light);
     --color-intent-danger-text:        var(--intent-danger-text);

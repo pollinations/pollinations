@@ -343,7 +343,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                                 !inCurrentMonth &&
                                                     "text-gray-300",
                                                 sameUtcDay(date, today) &&
-                                                    "ring-1 ring-theme-ring-focus",
+                                                    "ring-1 ring-theme-accent/70",
                                                 selected
                                                     ? "bg-theme-bg-active text-theme-text-strong"
                                                     : "text-gray-700 hover:bg-theme-bg-subtle",

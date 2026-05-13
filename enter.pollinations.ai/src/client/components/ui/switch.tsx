@@ -55,7 +55,7 @@ export const Switch: FC<SwitchProps> = ({
             onClick={() => onChange(!checked)}
             disabled={disabled}
             className={cn(
-                "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring-focus disabled:cursor-not-allowed disabled:opacity-60",
+                "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-accent/70 disabled:cursor-not-allowed disabled:opacity-60",
                 trackClasses[effectiveStatus],
                 className,
             )}

@@ -182,7 +182,6 @@ const themeBorderRows: readonly ColorRow[] = [
 const themeIdentityRows: readonly ColorRow[] = [
     { name: "chip-bg", swatch: "bg-theme-chip-bg" },
     { name: "accent", swatch: "bg-theme-accent" },
-    { name: "ring-focus", swatch: "bg-theme-ring-focus" },
 ];
 
 const themeButtonRows: readonly ColorRow[] = [

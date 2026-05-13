@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-12",
+  "period_start": "2026-05-12",
+  "period_end": "2026-05-12",
+  "generated_at": "2026-05-13T06:58:41.218591+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-12/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped auto top-ups for pollen credits. your api calls no longer have to fail just because you went to sleep.\n\nalso added pollenforge-cli to the build and dropped storytale (multiplayer ai storytelling) into the games section."
+}

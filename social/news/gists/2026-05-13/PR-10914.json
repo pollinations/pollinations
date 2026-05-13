@@ -1,0 +1,33 @@
+{
+  "pr_number": 10914,
+  "title": "docs: update README — 2026-05-13",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10914",
+  "merged_at": "2026-05-13T08:03:26Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Fresh ink on the homepage",
+    "blurb": "Our trusty bot just updated the README with the latest community apps and news.",
+    "summary": "Automated daily update to the README file to feature the latest news and community applications.",
+    "impact": "Ensures visitors to the repository always see the most recent community highlights and project updates.",
+    "keywords": [
+      "readme",
+      "automation",
+      "docs",
+      "news"
+    ],
+    "visual_concept": "Monitor Robot and Polly the bee updating a giant pixelated book or bulletin board, representing the README.",
+    "image_prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head and the tiny bee mascot pinning new pixelated notes to a wooden bulletin board. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-13/PR-10914.jpg",
+    "prompt": "Cozy pixel art scene of a cute chunky robot with a CRT monitor head and the tiny bee mascot pinning new pixelated notes to a wooden bulletin board. Soft lime green (#ecf874) and pastel lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-13T08:04:19.895805+00:00"
+}

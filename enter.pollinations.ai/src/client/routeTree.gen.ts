@@ -63,7 +63,9 @@ const InternalDesignRoute = InternalDesignRouteImport.update({
   id: '/internal/design',
   path: '/internal/design',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import('./routes/internal.design.lazy').then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute

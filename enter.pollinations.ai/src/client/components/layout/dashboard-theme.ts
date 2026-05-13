@@ -49,6 +49,8 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
 // Page → theme lookup, derived from DASHBOARD_NAV_ITEMS.
 // Pages should read their theme from here so flipping a nav item's `theme`
 // retheme the corresponding page in one edit.
+// TODO(phase-5): narrow value type from DashboardTheme to ThemeName once legacy
+// themeTokens/dashboardThemeClasses are deleted. `gray` is reserved utility, not a page theme.
 export const dashboardThemeByPage = Object.fromEntries(
     DASHBOARD_NAV_ITEMS.map(({ id, theme }) => [id, theme]),
 ) as Record<DashboardPage, DashboardTheme>;

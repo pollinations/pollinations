@@ -95,10 +95,20 @@ Bee/nature metaphors fit the brand. Skip negativity — keep it celebratory.
 ### `summary`
 One clear sentence. Focus on WHAT changed and WHY. Written for a technical audience who follows the project.
 
-**Preserve concrete specifics** — when the PR centers on numbers, model names, prices, limits, version bumps, or named features, include them verbatim. Examples: `"$10 pack now grants 13 Pollen (was 20)"`, `"Llama 4 Maverick added via Fireworks"`, `"rate limit raised from 5 to 10 req/s"`. Abstracted summaries ("updated tier options") lose the information users actually need.
+**Preserve the load-bearing specifics from the PR body.** A summary that reads like a category label ("updated tier options", "new model added", "API improvements", "improved performance") is not useful — it forces readers to open the PR to learn anything. Identify the 1–3 concrete facts that make this PR distinct and put them in the sentence:
+- Names of models, endpoints, packages, fields, features, or providers being added/changed/removed
+- Numbers — version bumps, new defaults, prices, limits, sizes, timeouts, token counts
+- Before/after values when the PR changes existing behavior
+- The specific replacement when something is deprecated
+
+Examples — vague vs. specific:
+- ❌ "Added a new image model" → ✅ "Added Llama 4 Maverick via Fireworks, exposed at /v1/chat/completions"
+- ❌ "Updated tier options" → ✅ "Pollen pack bonuses reduced: $10 → 13 (was 20), $50 → 75 (was 110)"
+- ❌ "Improved checkout flow" → ✅ "Checkout metadata now uses packPollenGrant + packBonusPollen; the legacy 2x credit fallback is removed"
+- ❌ "Better rate limiting" → ✅ "Per-key rate limit dropped from 10 → 5 req/s for the free tier"
 
 ### `impact`
-One sentence about the practical effect. "Users will see...", "This means...", "Previously X, now Y." Carry the concrete numbers from `summary` through into `impact` when they're load-bearing.
+One sentence about the practical effect. "Users will see...", "This means...", "Previously X, now Y." Carry the same concrete specifics from `summary` through — never abstract them back into category language.
 
 ### `keywords`
 3-7 relevant keywords for clustering related PRs in the daily summary.
@@ -121,14 +131,10 @@ A short (1-2 sentence) pixel art scene description for generating the PR's annou
 
 All output fields (summary, impact) MUST frame changes positively — what users GAIN, not what they lose.
 
-### Reframing Guide
-Positive framing means tone, not abstraction. Always include the concrete change (numbers, names, before/after) — then frame it neutrally to positively.
+### Framing Principle
+Positive framing means tone, not abstraction. Always name the concrete change first — then frame it neutrally to positively. Abstracting a change into a category ("updated plans", "improvements", "new options") strips the information users actually came for, regardless of whether the underlying change is good news or bad news.
 
-- Price / pack changes → state the new amounts AND the change (`"$10 pack now grants 13 Pollen (was 20)"`). Don't replace numbers with phrases like "updated plans".
-- Rate limiting / tighter quotas → state the new limit AND the reason (`"per-key limit dropped from 10 to 5 req/s to even out usage"`). Don't replace with "reliability improvements".
-- Feature removals → name what was removed and what replaces it (`"legacy 2x Checkout fallback removed; new packBonusPollen metadata is now the source of truth"`).
-- Breaking API changes → name the old and new shape; link migration notes when present.
-- Deprecations → name the deprecated thing and its replacement.
+Apply this to every PR type — new features, deprecations, pricing changes, rate-limit changes, model additions, breaking API changes, performance improvements, infrastructure swaps, refactors. The specifics carry through to the user-facing sentence; the framing controls only the tone of how they're presented.
 
 ### Never surface in social content
 - Revenue or financial pressures

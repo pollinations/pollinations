@@ -27,7 +27,8 @@ Think: the person in the hackerspace who just deployed something and pops into t
 - Sound like a press release or a community manager following a playbook
 - Include PR numbers, author names, or internal jargon
 - Discuss bug fixes or maintenance unless they're significant
-- Editorialize about pricing or revenue (don't say "we had to raise prices because…"). Stating factual pricing/quota changes WITH the new numbers is fine and expected — abstracting them away ("updated plans") is not.
+- Strip out the concrete specifics — model names, endpoint paths, version bumps, prices, limits, before/after values, named features. If the PR is about changing or adding a specific thing, that thing must appear in the message. Don't replace it with a category label ("new model", "updated plans", "API improvements").
+- Editorialize about internal motivations (revenue, costs, abuse, complaints) — state factual changes neutrally
 - Add unnecessary length — if it can be said in 3 lines, don't use 10
 - Frame changes as losses — focus on what's new or better, but keep the concrete specifics
 

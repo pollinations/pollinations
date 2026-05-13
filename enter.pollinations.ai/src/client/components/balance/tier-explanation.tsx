@@ -62,7 +62,7 @@ type TierCardProps = {
 const TierCard: FC<TierCardProps> = ({ isActive, emoji, name, children }) => (
     <Surface
         variant="card-themed"
-        className={isActive ? "bg-tier-soft" : "bg-tier-soft/40"}
+        className={isActive ? "bg-tier-pale" : "bg-tier-pale/40"}
     >
         <span className="text-3xl font-bold text-gray-900">
             {emoji} {name}

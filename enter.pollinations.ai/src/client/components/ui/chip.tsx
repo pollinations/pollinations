@@ -20,8 +20,8 @@ const chipSizes = {
 const intentClasses: Record<ChipIntent, string> = {
     news: "bg-intent-news-bg text-intent-news-text",
     alpha: "bg-intent-alpha-bg text-intent-alpha-text",
-    paid: "bg-paid-soft text-paid-deep",
-    tier: "bg-tier-soft text-tier-deep",
+    paid: "bg-paid-pale text-paid-deep",
+    tier: "bg-tier-pale text-tier-deep",
 };
 
 type ChipProps = ComponentPropsWithoutRef<"span"> & {

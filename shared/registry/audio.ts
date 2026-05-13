@@ -138,7 +138,6 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
-        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),

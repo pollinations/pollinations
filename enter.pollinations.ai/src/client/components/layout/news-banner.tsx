@@ -1,6 +1,6 @@
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { cn } from "@/util.ts";
-import { Card } from "../ui/card.tsx";
+import { Surface } from "../ui/surface.tsx";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
@@ -132,7 +132,7 @@ export const NewsBanner: FC = () => {
 };
 
 const NewsCard: FC<{ item: NewsItem }> = ({ item }) => (
-    <Card
+    <Surface
         className={cn(
             "flex leading-relaxed",
             item.pinned
@@ -173,5 +173,5 @@ const NewsCard: FC<{ item: NewsItem }> = ({ item }) => (
                 </p>
             </div>
         </div>
-    </Card>
+    </Surface>
 );

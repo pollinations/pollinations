@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "@/util.ts";
-import { Panel } from "../ui/panel.tsx";
+import { Surface } from "../ui/surface.tsx";
 import {
     type DashboardTheme,
     type ThemeName,
@@ -8,7 +8,7 @@ import {
 } from "./dashboard-theme.ts";
 
 // `gray` is in DashboardTheme but not ThemeName; for the cascade it falls back
-// to the default `:root` (green). Drop it before passing to Surface/Panel.
+// to the default `:root` (green). Drop it before passing to Surface.
 const asThemeName = (theme: DashboardTheme): ThemeName | undefined =>
     themes.includes(theme as ThemeName) ? (theme as ThemeName) : undefined;
 
@@ -46,7 +46,9 @@ export const DashboardSection: FC<DashboardSectionProps> = ({
             )}
         </div>
         {framed ? (
-            <Panel theme={asThemeName(theme)}>{children}</Panel>
+            <Surface size="panel" tone="tinted" theme={asThemeName(theme)}>
+                {children}
+            </Surface>
         ) : (
             children
         )}

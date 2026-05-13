@@ -1,8 +1,7 @@
 import { type FC, useState } from "react";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { Card } from "../ui/card.tsx";
 import { LinkButton } from "../ui/link-button.tsx";
-import { Panel } from "../ui/panel.tsx";
+import { Surface } from "../ui/surface.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
 import { getModelPrices } from "./data.ts";
 import {
@@ -89,9 +88,9 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                 </div>
             </DashboardSection>
 
-            <Panel>
+            <Surface size="panel" tone="tinted">
                 <div className="grid gap-3 lg:grid-cols-3">
-                    <Card className="text-xs !border-transparent">
+                    <Surface className="text-xs !border-transparent">
                         <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                             💡 How Pollen is Spent
                         </div>
@@ -104,8 +103,8 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                                 2. 🪷 Paid-only models use paid balance only
                             </div>
                         </div>
-                    </Card>
-                    <Card className="text-xs !border-transparent">
+                    </Surface>
+                    <Surface className="text-xs !border-transparent">
                         <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                             🎁 Beta Bonus
                         </div>
@@ -140,8 +139,8 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                                 </span>
                             </div>
                         </div>
-                    </Card>
-                    <Card className="text-xs !border-transparent">
+                    </Surface>
+                    <Surface className="text-xs !border-transparent">
                         <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                             🧮 Pricing Metrics
                         </div>
@@ -157,9 +156,9 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                                 video/audio; TTS is estimated from text length
                             </div>
                         </div>
-                    </Card>
+                    </Surface>
                 </div>
-            </Panel>
+            </Surface>
         </div>
     );
 };

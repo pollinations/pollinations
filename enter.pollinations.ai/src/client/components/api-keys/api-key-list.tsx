@@ -3,9 +3,9 @@ import type { FC } from "react";
 import { useState } from "react";
 import { genDocsUrl } from "../../config.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { Card } from "../ui/card.tsx";
 import { Chip } from "../ui/chip.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
+import { Surface } from "../ui/surface.tsx";
 import { AccountBadge } from "./account-badge.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { DeleteConfirmation } from "./delete-confirmation.tsx";
@@ -73,7 +73,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
 
         return (
-            <Card
+            <Surface
                 key={apiKey.id}
                 className="!border-transparent transition-colors hover:bg-white/90"
             >
@@ -204,7 +204,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </>
                     )}
                 </div>
-            </Card>
+            </Surface>
         );
     }
 
@@ -225,7 +225,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                         </div>
                         {!sortedApiKeys.length && (
-                            <Card className="!border-transparent p-6 text-center">
+                            <Surface className="!border-transparent p-6 text-center">
                                 <p className="text-2xl mb-2">🔑</p>
                                 <p className="font-semibold text-gray-900 text-lg mb-2">
                                     Create your first API key
@@ -234,7 +234,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Use API keys for your own private
                                     server-side integrations.
                                 </p>
-                            </Card>
+                            </Surface>
                         )}
                         {sortedApiKeys.map(renderKeyCard)}
                     </div>
@@ -282,7 +282,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                         </div>
                         {!sortedAppKeys.length && (
-                            <Card className="!border-transparent p-6 text-center">
+                            <Surface className="!border-transparent p-6 text-center">
                                 <p className="text-2xl mb-2">🖥️</p>
                                 <p className="font-semibold text-gray-900 text-lg mb-2">
                                     Create your first app key
@@ -291,7 +291,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Use app keys when your users bring their own
                                     Pollinations account.
                                 </p>
-                            </Card>
+                            </Surface>
                         )}
                         {sortedAppKeys.map(renderKeyCard)}
                     </div>

@@ -4,9 +4,9 @@ import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
-import { Card } from "../ui/card.tsx";
 import { Chip } from "../ui/chip.tsx";
 import { Input } from "../ui/input.tsx";
+import { Surface } from "../ui/surface.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -208,13 +208,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
                         {error && (
-                            <Card
+                            <Surface
                                 intent="danger"
                                 tone="tinted"
                                 className="mb-4 text-intent-danger-text"
                             >
                                 {error}
-                            </Card>
+                            </Surface>
                         )}
 
                         <div className="space-y-4">

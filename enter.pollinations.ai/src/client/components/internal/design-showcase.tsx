@@ -1,12 +1,8 @@
-import { type FC, type ReactNode, useEffect, useState } from "react";
+import { type FC, type ReactNode, useEffect, useRef, useState } from "react";
 import { cn } from "@/util.ts";
+import { MODALITY_COLORS, type Modality } from "../api-keys/modality-ui.ts";
 import { Button } from "../button.tsx";
-import {
-    type IntentName,
-    intents,
-    type ThemeName,
-    themes,
-} from "../layout/dashboard-theme.ts";
+import { type ThemeName, themes } from "../layout/dashboard-theme.ts";
 import { Chip } from "../ui/chip.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
@@ -14,21 +10,20 @@ import { Input } from "../ui/input.tsx";
 import { Surface } from "../ui/surface.tsx";
 import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
-
-const switchStatuses: readonly SwitchStatus[] = [
-    "off",
-    "on",
-    "draft",
-    "ready",
-] as const;
+import { Tooltip } from "../ui/tooltip.tsx";
+import { Chart } from "../usage-analytics/chart.tsx";
+import { MultiSelect } from "../usage-analytics/multi-select.tsx";
+import type { DataPoint } from "../usage-analytics/types.ts";
 
 type Mode = "light" | "dark";
 
 /**
  * /internal/design — dev-only design system showcase.
  *
- * Validates the Phase 0 CSS-var cascade (Layers 1, 2, 2b, 3) and
- * placeholders the future component sections (Phases 1+).
+ * Single source of truth for the design tokens (Colors section) and a
+ * compact reference of each primitive. Use the header toggles to preview
+ * any theme + mode combination — every section inherits from the page
+ * `data-theme` cascade.
  *
  * Gated to DEV in `routes/internal.design.tsx`.
  */
@@ -38,28 +33,33 @@ export const DesignShowcase: FC = () => {
     );
     const [themeOverride, setThemeOverride] = useState<ThemeName>("amber");
 
-    // Reflect mode toggle to <html data-mode>. The query param is a
-    // dev-only convenience; the toggle here is the real lever.
     useEffect(() => {
         document.documentElement.dataset.mode = mode;
     }, [mode]);
 
+    useEffect(() => {
+        document.documentElement.classList.add("dashboard-shell");
+        document.body.classList.add("dashboard-shell");
+        return () => {
+            document.documentElement.classList.remove("dashboard-shell");
+            document.body.classList.remove("dashboard-shell");
+        };
+    }, []);
+
     return (
         <div
             data-theme={themeOverride}
-            className="min-h-dvh bg-theme-bg-subtle text-theme-text-base px-6 py-10"
+            className="h-dvh overflow-y-auto bg-theme-bg-subtle text-theme-text-base"
         >
-            <div className="mx-auto flex max-w-[960px] flex-col gap-10">
-                <Header
-                    mode={mode}
-                    onModeChange={setMode}
-                    themeOverride={themeOverride}
-                    onThemeOverrideChange={setThemeOverride}
-                />
-                <ThemesStrip />
+            <Header
+                mode={mode}
+                onModeChange={setMode}
+                themeOverride={themeOverride}
+                onThemeOverrideChange={setThemeOverride}
+            />
+            <div className="mx-auto flex max-w-[960px] flex-col gap-10 px-6 pt-8 pb-10">
+                <ColorsSection theme={themeOverride} />
                 <TypographyDemo />
-                <CascadeDemo />
-                <IntentDemo />
                 <ChipsDemo />
                 <ButtonsDemo />
                 <SwitchesDemo />
@@ -67,14 +67,15 @@ export const DesignShowcase: FC = () => {
                 <TabsDemo />
                 <InputsDemo />
                 <IconButtonsDemo />
-                <InfoTipDemo />
-                <MoneyColorsDemo />
+                <TooltipsDemo />
+                <MultiSelectDemo theme={themeOverride} />
+                <ChartDemo />
             </div>
         </div>
     );
 };
 
-// ─── Header (mode + theme override) ─────────────────────────
+// ─── Header ─────────────────────────────────────────────────
 
 type HeaderProps = {
     mode: Mode;
@@ -89,28 +90,30 @@ const Header: FC<HeaderProps> = ({
     themeOverride,
     onThemeOverrideChange,
 }) => (
-    <header className="flex flex-col gap-4 border-b border-theme-border-soft pb-6">
-        <div>
-            <h1 className="font-heading text-4xl text-theme-text-strong">
-                Design Showcase
-            </h1>
-            <p className="text-sm text-theme-text-muted">
-                Phase 0 cascade validation. Dev-only — gated in production.
-            </p>
-        </div>
-        <div className="flex flex-wrap items-end gap-6">
-            <ToggleGroup
-                label="Mode"
-                value={mode}
-                options={["light", "dark"]}
-                onChange={onModeChange}
-            />
-            <ToggleGroup
-                label="Theme override"
-                value={themeOverride}
-                options={themes}
-                onChange={onThemeOverrideChange}
-            />
+    <header className="sticky top-0 z-10 border-b border-theme-border-soft bg-theme-bg-subtle/90 px-6 py-4 backdrop-blur">
+        <div className="mx-auto flex max-w-[960px] flex-wrap items-end justify-between gap-x-6 gap-y-3">
+            <div>
+                <h1 className="font-heading text-2xl text-theme-text-strong">
+                    Design Showcase
+                </h1>
+                <p className="text-xs text-theme-text-muted">
+                    Single reference. Flip mode + theme to preview every state.
+                </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-6">
+                <ToggleGroup
+                    label="Mode"
+                    value={mode}
+                    options={["light", "dark"]}
+                    onChange={onModeChange}
+                />
+                <ToggleGroup
+                    label="Theme"
+                    value={themeOverride}
+                    options={themes}
+                    onChange={onThemeOverrideChange}
+                />
+            </div>
         </div>
     </header>
 );
@@ -142,7 +145,7 @@ function ToggleGroup<T extends string>({
                         className={cn(
                             "rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors",
                             value === option
-                                ? "bg-theme-button-strong-bg text-theme-button-strong-text"
+                                ? "bg-theme-chip-bg text-theme-chip-text"
                                 : "text-theme-text-soft hover:bg-theme-bg-hover",
                         )}
                     >
@@ -154,33 +157,203 @@ function ToggleGroup<T extends string>({
     );
 }
 
-// ─── Themes strip ───────────────────────────────────────────
+// ─── Colors (the one source of truth) ───────────────────────
 
-const ThemesStrip: FC = () => (
+type ColorRow = {
+    name: string;
+    /** Either a Tailwind utility class for bg, or a raw `var(--name)` CSS expression. */
+    swatch: string;
+    /** Optional foreground utility — used when the swatch displays sample text. */
+    fg?: string;
+};
+
+const themeRoleRows: readonly ColorRow[] = [
+    { name: "text-label", swatch: "bg-theme-text-label" },
+    { name: "text-base", swatch: "bg-theme-text-base" },
+    { name: "text-strong", swatch: "bg-theme-text-strong" },
+    { name: "text-muted", swatch: "bg-theme-text-muted" },
+    { name: "text-soft", swatch: "bg-theme-text-soft" },
+    { name: "text-softer", swatch: "bg-theme-text-softer" },
+    { name: "bg-idle", swatch: "bg-theme-bg-idle" },
+    { name: "bg-subtle", swatch: "bg-theme-bg-subtle" },
+    { name: "bg-tinted", swatch: "bg-theme-bg-tinted" },
+    { name: "bg-active", swatch: "bg-theme-bg-active" },
+    { name: "bg-hover", swatch: "bg-theme-bg-hover" },
+    { name: "chip-bg", swatch: "bg-theme-chip-bg" },
+    { name: "border", swatch: "bg-theme-border" },
+    { name: "border-soft", swatch: "bg-theme-border-soft" },
+    { name: "border-subtle", swatch: "bg-theme-border-subtle" },
+    { name: "button-light-bg", swatch: "bg-theme-button-light-bg" },
+    { name: "ring-focus", swatch: "bg-theme-ring-focus" },
+];
+
+const intentColumns = ["bg", "text"] as const;
+
+type IntentLabel = "danger" | "news" | "alpha" | "paid" | "tier";
+
+const intentList: readonly IntentLabel[] = [
+    "danger",
+    "news",
+    "alpha",
+    "paid",
+    "tier",
+] as const;
+
+const intentSwatch: Record<
+    IntentLabel,
+    Record<(typeof intentColumns)[number], string>
+> = {
+    danger: {
+        bg: "bg-intent-danger-bg-light",
+        text: "bg-intent-danger-text",
+    },
+    news: {
+        bg: "bg-intent-news-bg",
+        text: "bg-intent-news-text",
+    },
+    alpha: {
+        bg: "bg-intent-alpha-bg",
+        text: "bg-intent-alpha-text",
+    },
+    paid: {
+        bg: "bg-paid-soft",
+        text: "bg-paid-deep",
+    },
+    tier: {
+        bg: "bg-tier-soft",
+        text: "bg-tier-deep",
+    },
+};
+
+const moneyRows: readonly ColorRow[] = [
+    { name: "paid-soft", swatch: "bg-paid-soft" },
+    { name: "paid-deep", swatch: "bg-paid-deep" },
+    { name: "tier-soft", swatch: "bg-tier-soft" },
+    { name: "tier-deep", swatch: "bg-tier-deep" },
+];
+
+const universalRows: readonly ColorRow[] = [
+    { name: "surface-white", swatch: "bg-surface-white" },
+];
+
+const ColorsSection: FC<{ theme: ThemeName }> = ({ theme }) => (
     <Section
-        title="Themes"
-        caption="Six chrome hues. Each renders the same set of role tokens."
+        title="Colors"
+        caption="Every token in the system. The Theme block reflects the active theme — flip the toggle above to preview the others."
     >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {themes.map((theme) => (
-                <div
-                    key={theme}
-                    data-theme={theme}
-                    className="flex flex-col gap-2 rounded-xl border border-theme-border bg-theme-bg-idle p-4"
-                >
-                    <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                        {theme}
-                    </span>
-                    <div className="flex h-8 rounded-lg bg-theme-chip-bg" />
-                    <div className="flex h-8 rounded-lg bg-theme-button-strong-bg" />
-                    <div className="flex h-2 rounded-full bg-theme-bg-active" />
-                </div>
-            ))}
+        <div className="flex flex-col gap-6">
+            <ColorGroup label={`Theme · ${theme}`} rows={themeRoleRows} />
+            <IntentGroup />
+            <ColorGroup label="Money" rows={moneyRows} />
+            <ColorGroup label="Universal" rows={universalRows} />
         </div>
     </Section>
 );
 
-// ─── Typography (headings + size scale) ────────────────────
+const ColorGroup: FC<{ label: string; rows: readonly ColorRow[] }> = ({
+    label,
+    rows,
+}) => (
+    <div className="flex flex-col gap-2">
+        <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-label">
+            {label}
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 lg:grid-cols-4">
+            {rows.map((row) => (
+                <Swatch key={row.name} row={row} />
+            ))}
+        </div>
+    </div>
+);
+
+const IntentGroup: FC = () => (
+    <div className="flex flex-col gap-2">
+        <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-label">
+            Intents
+        </div>
+        <div className="overflow-hidden rounded-lg border border-theme-border-subtle">
+            <div className="grid grid-cols-[6rem_repeat(2,minmax(0,1fr))] gap-x-3 gap-y-2 bg-theme-bg-tinted px-3 py-2 text-2xs font-mono uppercase tracking-wide text-theme-text-softer">
+                <span />
+                {intentColumns.map((col) => (
+                    <span key={col}>{col}</span>
+                ))}
+            </div>
+            {intentList.map((intent) => (
+                <div
+                    key={intent}
+                    className="grid grid-cols-[6rem_repeat(2,minmax(0,1fr))] items-center gap-x-3 gap-y-2 border-t border-theme-border-subtle px-3 py-2"
+                >
+                    <span className="text-xs font-medium capitalize text-theme-text-strong">
+                        {intent}
+                    </span>
+                    {intentColumns.map((col) => {
+                        const cls = intentSwatch[intent][col];
+                        return (
+                            <div key={col} className="flex items-center gap-2">
+                                <span
+                                    className={cn(
+                                        "h-5 w-5 shrink-0 rounded border border-theme-border-subtle",
+                                        cls,
+                                    )}
+                                />
+                                <Computed cls={cls} />
+                            </div>
+                        );
+                    })}
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const Swatch: FC<{ row: ColorRow }> = ({ row }) => (
+    <div className="flex items-center gap-2">
+        <span
+            className={cn(
+                "h-5 w-5 shrink-0 rounded border border-theme-border-subtle",
+                row.swatch,
+            )}
+        />
+        <div className="flex min-w-0 flex-col">
+            <code className="truncate text-xs font-mono text-theme-text-strong">
+                {row.name}
+            </code>
+            <Computed cls={row.swatch} />
+        </div>
+    </div>
+);
+
+/**
+ * Reads the computed background-color of a 1×1 hidden span carrying the
+ * given Tailwind class, then prints the resolved value (oklch / rgb).
+ * Falls back to a dash if the class doesn't resolve.
+ */
+const Computed: FC<{ cls: string | null | undefined }> = ({ cls }) => {
+    const ref = useRef<HTMLSpanElement>(null);
+    const [value, setValue] = useState<string>("");
+
+    useEffect(() => {
+        if (!cls || !ref.current) return;
+        const computed = getComputedStyle(ref.current).backgroundColor;
+        setValue(computed || "");
+    }, [cls]);
+
+    if (!cls) return <span className="text-2xs text-theme-text-softer">—</span>;
+    return (
+        <>
+            <span
+                ref={ref}
+                aria-hidden
+                className={cn("absolute h-px w-px opacity-0", cls)}
+            />
+            <code className="truncate text-2xs font-mono text-theme-text-softer">
+                {value || "…"}
+            </code>
+        </>
+    );
+};
+
+// ─── Typography ─────────────────────────────────────────────
 
 type SizeRow = {
     utility: string;
@@ -206,10 +379,7 @@ const sizeScale: readonly SizeRow[] = [
 const TypographyDemo: FC = () => (
     <Section
         title="Typography"
-        caption={
-            "Headings cascade from `style.css @layer base`. h1 uses LCT Mogi (font-heading), " +
-            "h2-h3 use Fraunces (font-subheading), h4-h6 use Uncut Sans (font-body)."
-        }
+        caption="h1 uses LCT Mogi (font-heading), h2-h3 use Fraunces (font-subheading), h4-h6 use Uncut Sans (font-body)."
     >
         <div className="flex flex-col gap-6">
             <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
@@ -306,236 +476,119 @@ const HeadingRow: FC<{
     </div>
 );
 
-// ─── Cascade demo (single component, all 6 themes) ──────────
-
-const CascadeDemo: FC = () => (
-    <Section
-        title="Cascade demo"
-        caption={
-            "Same chip markup (`bg-theme-chip-bg text-theme-chip-text`) under " +
-            "each theme. The cascade picks the right hue."
-        }
-    >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {themes.map((theme) => (
-                <div
-                    key={theme}
-                    data-theme={theme}
-                    className="flex flex-col items-center gap-2 rounded-xl border border-theme-border bg-theme-bg-tinted p-4"
-                >
-                    <span className="rounded-full bg-theme-chip-bg px-3 py-1 text-xs font-medium text-theme-chip-text">
-                        {theme} chip
-                    </span>
-                    <span className="text-2xs text-theme-text-softer">
-                        text-theme-text-softer
-                    </span>
-                </div>
-            ))}
-        </div>
-    </Section>
-);
-
-// ─── Intent demo ────────────────────────────────────────────
-
-const IntentDemo: FC = () => (
-    <Section
-        title="Intent demo"
-        caption={
-            'Intents are theme-independent. `intent="danger"` shows red on every theme.'
-        }
-    >
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {themes.map((theme) => (
-                <div
-                    key={theme}
-                    data-theme={theme}
-                    className="flex flex-col gap-3 rounded-xl border border-theme-border bg-theme-bg-idle p-4"
-                >
-                    <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                        {theme}
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                        {intents.map((intent) => (
-                            <IntentChip key={intent} intent={intent} />
-                        ))}
-                    </div>
-                </div>
-            ))}
-        </div>
-    </Section>
-);
-
-const IntentChip: FC<{ intent: IntentName }> = ({ intent }) => {
-    // Raw classes per intent — Phase 0 lives in CSS, not in primitives yet.
-    const className =
-        intent === "danger"
-            ? "bg-intent-danger-bg-strong text-intent-danger-text-on-bg"
-            : intent === "success"
-              ? "bg-intent-success-bg-strong text-intent-success-text-on-bg"
-              : intent === "paid"
-                ? "bg-intent-paid text-white"
-                : "bg-intent-alpha-bg text-intent-alpha-text";
-    return (
-        <span
-            className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium capitalize",
-                className,
-            )}
-        >
-            {intent}
-        </span>
-    );
-};
-
 // ─── Chips ──────────────────────────────────────────────────
 
 const ChipsDemo: FC = () => (
     <Section
         title="Chips"
-        caption="<Chip> reads the cascade. Theme chips show one per [data-theme]; intent chips are theme-independent."
+        caption="Default chip inherits the active page theme. The four intent chips are dashboard labels: news + alpha tag models; paid + tier tag pollen balances."
     >
-        <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap gap-2">
-                {themes.map((theme) => (
-                    <Chip key={theme} theme={theme} className="capitalize">
-                        {theme}
+        <div className="flex flex-col gap-3">
+            <ChipRow label="Default (theme)">
+                <Chip>Theme</Chip>
+            </ChipRow>
+            <ChipRow label="Model labels">
+                <Chip intent="news">NEW</Chip>
+                <Chip intent="alpha">Alpha</Chip>
+                <Chip intent="paid">Paid</Chip>
+            </ChipRow>
+            <ChipRow label="Tier">
+                <Chip intent="tier">Tier</Chip>
+            </ChipRow>
+            <ChipRow label="Modalities">
+                {modalityList.map((m) => (
+                    <Chip key={m} className={MODALITY_COLORS[m].filled}>
+                        {m[0].toUpperCase() + m.slice(1)}
                     </Chip>
                 ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-                <Chip intent="danger">danger</Chip>
-                <Chip intent="success">success</Chip>
-                <Chip intent="paid">paid</Chip>
-                <Chip intent="alpha">alpha</Chip>
-            </div>
+            </ChipRow>
         </div>
     </Section>
 );
 
-// ─── Buttons ────────────────────────────────────────────────
+const ChipRow: FC<{ label: string; children: ReactNode }> = ({
+    label,
+    children,
+}) => (
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-3">
+        <span className="w-40 text-xs uppercase tracking-wide text-theme-text-label">
+            {label}
+        </span>
+        <div className="flex flex-wrap items-center gap-2">{children}</div>
+    </div>
+);
 
-const buttonWeights = ["light", "strong"] as const;
+const modalityList: readonly Modality[] = [
+    "text",
+    "image",
+    "video",
+    "audio",
+    "embedding",
+] as const;
+
+// ─── Buttons ────────────────────────────────────────────────
 
 const ButtonsDemo: FC = () => (
     <Section
         title="Buttons"
-        caption="<Button> reads the cascade for theme; intent overrides for semantic CTAs. Pill-only, two weights."
+        caption="Soft tile + deep text. Inherits the active theme; intent='danger' overrides destructive actions. Modality buttons (interactive model picker) use a flat colored recipe, shape-aligned to chips."
     >
-        <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 px-3 text-xs uppercase tracking-wide text-theme-text-label">
-                <span />
-                <span>light</span>
-                <span>strong</span>
-                <span>light · disabled</span>
-                <span>strong · disabled</span>
-            </div>
-            {themes.map((theme) => (
-                <div
-                    key={theme}
-                    data-theme={theme}
-                    className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-3"
-                >
-                    <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                        {theme}
-                    </span>
-                    {buttonWeights.map((weight) => (
-                        <Button key={weight} weight={weight}>
-                            {weight}
-                        </Button>
-                    ))}
-                    {buttonWeights.map((weight) => (
-                        <Button key={`${weight}-d`} weight={weight} disabled>
-                            {weight}
-                        </Button>
-                    ))}
-                </div>
-            ))}
-            <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3">
-                <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                    danger
-                </span>
-                <Button intent="danger" weight="light">
-                    light
-                </Button>
-                <Button intent="danger" weight="strong">
-                    strong
-                </Button>
-                <Button intent="danger" weight="light" disabled>
-                    light
-                </Button>
-                <Button intent="danger" weight="strong" disabled>
-                    strong
-                </Button>
-            </div>
-            <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3">
-                <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                    success
-                </span>
-                <Button intent="success" weight="light">
-                    light
-                </Button>
-                <Button intent="success" weight="strong">
-                    strong
-                </Button>
-                <Button intent="success" weight="light" disabled>
-                    light
-                </Button>
-                <Button intent="success" weight="strong" disabled>
-                    strong
-                </Button>
-            </div>
+        <div className="flex flex-col gap-3">
+            <ChipRow label="Theme + intent">
+                <Button>Default</Button>
+                <Button disabled>Disabled</Button>
+                <Button intent="danger">Delete</Button>
+            </ChipRow>
+            <ChipRow label="Modalities (interactive)">
+                {modalityList.map((m) => (
+                    <button
+                        key={m}
+                        type="button"
+                        className={`inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2.5 py-0.5 text-sm font-medium leading-normal transition-colors ${MODALITY_COLORS[m].filled}`}
+                    >
+                        {m[0].toUpperCase() + m.slice(1)}
+                    </button>
+                ))}
+            </ChipRow>
         </div>
     </Section>
 );
 
-// ─── Switches ───────────────────────────────────────────────
+// ─── Switch ─────────────────────────────────────────────────
+
+const switchStatuses: readonly SwitchStatus[] = ["off", "on", "draft"] as const;
 
 const SwitchesDemo: FC = () => {
-    const [checked, setChecked] = useState<Record<string, boolean>>({});
-    const isChecked = (key: string, status: SwitchStatus): boolean => {
-        const stored = checked[key];
-        if (stored !== undefined) return stored;
-        return status === "on" || status === "ready";
-    };
+    const [checked, setChecked] = useState<Record<SwitchStatus, boolean>>({
+        off: false,
+        on: true,
+        draft: true,
+    });
     return (
         <Section
-            title="Switches"
-            caption="<Switch> reads the cascade for off/on; intent vars for draft (red) and ready (green). Click to toggle."
+            title="Switch"
+            caption="Theme-independent. White-ish off, green on, red draft (for incomplete or failing state)."
         >
-            <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-2 px-3 text-xs uppercase tracking-wide text-theme-text-label">
-                    <span />
-                    {switchStatuses.map((status) => (
-                        <span key={status}>{status}</span>
-                    ))}
-                </div>
-                {themes.map((theme) => (
+            <div className="flex flex-wrap items-center gap-6 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+                {switchStatuses.map((status) => (
                     <div
-                        key={theme}
-                        data-theme={theme}
-                        className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-2 rounded-xl border border-theme-border bg-theme-bg-tinted p-3"
+                        key={status}
+                        className="flex flex-col items-start gap-1.5"
                     >
-                        <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                            {theme}
+                        <span className="text-2xs uppercase tracking-wide text-theme-text-label">
+                            {status}
                         </span>
-                        {switchStatuses.map((status) => {
-                            const key = `${theme}:${status}`;
-                            const value = isChecked(key, status);
-                            return (
-                                <Switch
-                                    key={status}
-                                    checked={value}
-                                    status={status}
-                                    onChange={(next) =>
-                                        setChecked((prev) => ({
-                                            ...prev,
-                                            [key]: next,
-                                        }))
-                                    }
-                                    ariaLabel={`${theme} ${status}`}
-                                />
-                            );
-                        })}
+                        <Switch
+                            checked={checked[status]}
+                            status={status}
+                            onChange={(next) =>
+                                setChecked((prev) => ({
+                                    ...prev,
+                                    [status]: next,
+                                }))
+                            }
+                            ariaLabel={status}
+                        />
                     </div>
                 ))}
             </div>
@@ -547,242 +600,249 @@ const SwitchesDemo: FC = () => {
 
 const SurfacesDemo: FC = () => (
     <Section
-        title="Surfaces"
-        caption="<Surface> is the unified primitive for Card (rounded-xl, p-4) and Panel (rounded-2xl, p-6). Two tones: white (mode-aware) and tinted (cascade). Intent overrides theme + tone."
+        title="Surface"
+        caption="Three roles, all theme-aware. Panel is the outer bordered container; card is the white inner block; card-themed is a borderless theme-tinted inner block (pinned news, earnings callout)."
     >
-        <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 px-3 text-xs uppercase tracking-wide text-theme-text-label">
-                <span />
-                <span>card · white</span>
-                <span>card · tinted</span>
-                <span>panel · white</span>
-                <span>panel · tinted</span>
+        <Surface variant="panel">
+            <p className="mb-3 text-2xs font-mono uppercase tracking-wide text-theme-text-softer">
+                outer · panel
+            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Surface>
+                    <p className="text-2xs font-mono uppercase tracking-wide text-theme-text-label">
+                        inner · card
+                    </p>
+                    <p className="mt-1 text-sm text-theme-text-soft">
+                        Default. White, no border.
+                    </p>
+                </Surface>
+                <Surface variant="card-themed">
+                    <p className="text-2xs font-mono uppercase tracking-wide text-theme-text-label">
+                        inner · card-themed
+                    </p>
+                    <p className="mt-1 text-sm text-theme-text-strong">
+                        Theme-tinted callout.
+                    </p>
+                </Surface>
             </div>
-            {themes.map((theme) => (
-                <div
-                    key={theme}
-                    data-theme={theme}
-                    className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3"
-                >
-                    <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                        {theme}
-                    </span>
-                    <Surface size="card" tone="white">
-                        <p className="text-xs text-theme-text-soft">
-                            card · white
-                        </p>
-                    </Surface>
-                    <Surface size="card" tone="tinted">
-                        <p className="text-xs text-theme-text-soft">
-                            card · tinted
-                        </p>
-                    </Surface>
-                    <Surface size="panel" tone="white">
-                        <p className="text-xs text-theme-text-soft">
-                            panel · white
-                        </p>
-                    </Surface>
-                    <Surface size="panel" tone="tinted">
-                        <p className="text-xs text-theme-text-soft">
-                            panel · tinted
-                        </p>
-                    </Surface>
-                </div>
-            ))}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {intents.map((intent) => (
-                    <Surface key={intent} intent={intent} size="card">
-                        <p className="text-xs font-medium capitalize">
-                            intent: {intent}
-                        </p>
-                    </Surface>
-                ))}
-            </div>
-        </div>
+        </Surface>
     </Section>
 );
 
 // ─── Tabs ───────────────────────────────────────────────────
 
 const TabsDemo: FC = () => {
-    const [active, setActive] = useState<string>("requests");
-    const options = ["requests", "pollen", "errors"] as const;
+    const [segmentActive, setSegmentActive] = useState("day");
+    const [pillActive, setPillActive] = useState("image");
+    const segmentOptions = ["day", "week", "month"] as const;
+    const pillOptions = [
+        "image",
+        "video",
+        "audio",
+        "text",
+        "embedding",
+    ] as const;
     return (
         <Section
             title="Tabs"
-            caption="<TabButton> active state reads `bg-theme-chip-bg`; inactive reads `bg-theme-bg-subtle`. One strip per theme."
+            caption="Two tab styles. Segment = connected pill with internal dividers (date selector). Pills = separate bold pills (model selector)."
         >
-            <div className="flex flex-col gap-3">
-                {themes.map((theme) => (
-                    <div
-                        key={theme}
-                        data-theme={theme}
-                        className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-3"
-                    >
-                        <span className="w-16 text-xs uppercase tracking-wide text-theme-text-label">
-                            {theme}
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                            {options.map((option) => (
-                                <TabButton
-                                    key={option}
-                                    active={active === option}
-                                    onClick={() => setActive(option)}
-                                >
-                                    {option}
-                                </TabButton>
-                            ))}
-                        </div>
+            <div className="flex flex-col gap-4 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+                <Field label="segment · activity date selector">
+                    <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
+                        {segmentOptions.map((option) => (
+                            <TabButton
+                                key={option}
+                                active={segmentActive === option}
+                                onClick={() => setSegmentActive(option)}
+                                className="px-4 pt-1.5 pb-2 text-base leading-normal min-h-0 capitalize"
+                            >
+                                {option}
+                            </TabButton>
+                        ))}
                     </div>
-                ))}
+                </Field>
+                <Field label="pills · model selector">
+                    <div className="flex flex-wrap gap-1.5">
+                        {pillOptions.map((option) => (
+                            <TabButton
+                                key={option}
+                                active={pillActive === option}
+                                onClick={() => setPillActive(option)}
+                                className="px-4 pt-1.5 pb-2 text-base"
+                            >
+                                <span className="font-bold capitalize">
+                                    {option}
+                                </span>
+                            </TabButton>
+                        ))}
+                    </div>
+                </Field>
             </div>
         </Section>
     );
 };
 
-// ─── Money colors ───────────────────────────────────────────
-
-type MoneySwatch = {
-    utility: string;
-    sample: "bg" | "text";
-    note: string;
-};
-
-const moneySwatches: readonly MoneySwatch[] = [
-    { utility: "bg-paid", sample: "bg", note: "Paid headline / dot" },
-    { utility: "bg-paid-hover", sample: "bg", note: "Paid hover state" },
-    { utility: "text-paid-deep", sample: "text", note: "Paid number text" },
-    { utility: "bg-tier", sample: "bg", note: "Tier headline / dot" },
-    { utility: "bg-tier-hover", sample: "bg", note: "Tier hover state" },
-    { utility: "text-tier-deep", sample: "text", note: "Tier number text" },
-] as const;
-
-const MoneyColorsDemo: FC = () => (
-    <Section
-        title="Money colors"
-        caption={
-            "Direct utilities for paid (orange) and tier (yellow) money UI. " +
-            "Use `bg-paid` / `text-paid-deep` etc. instead of inline hex."
-        }
-    >
-        <div className="flex flex-col divide-y divide-theme-divide rounded-xl border border-theme-border-soft bg-theme-bg-tinted">
-            {moneySwatches.map((swatch) => (
-                <div
-                    key={swatch.utility}
-                    className="flex items-center gap-4 px-4 py-3"
-                >
-                    <div
-                        className={cn(
-                            "flex h-10 w-16 shrink-0 items-center justify-center rounded-lg",
-                            swatch.sample === "bg"
-                                ? swatch.utility
-                                : "bg-theme-bg-subtle",
-                        )}
-                    >
-                        {swatch.sample === "text" && (
-                            <span
-                                className={cn(
-                                    "font-bold text-xl tabular-nums",
-                                    swatch.utility,
-                                )}
-                            >
-                                Aa
-                            </span>
-                        )}
-                    </div>
-                    <code className="text-sm font-mono text-theme-text-strong">
-                        {swatch.utility}
-                    </code>
-                    <span className="ml-auto text-xs text-theme-text-muted">
-                        {swatch.note}
-                    </span>
-                </div>
-            ))}
-        </div>
-    </Section>
-);
-
 // ─── Inputs ─────────────────────────────────────────────────
 
 const InputsDemo: FC = () => (
     <Section
-        title="Inputs"
-        caption={
-            "<Input> uses the universal `--color-focus-ring` for focus chrome — " +
-            "neutral on every page theme. Focus inside to see the ring."
-        }
+        title="Input"
+        caption="Focus ring inherits the active theme. Click into a field to see it."
     >
-        <div className="flex flex-col gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4 sm:flex-row sm:items-start">
-            <div className="flex flex-1 flex-col gap-1">
-                <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                    default
-                </span>
+        <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4 sm:grid-cols-3">
+            <Field label="default">
                 <Input placeholder="Default" />
-            </div>
-            <div className="flex flex-1 flex-col gap-1">
-                <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                    error
-                </span>
+            </Field>
+            <Field label="error">
                 <Input placeholder="Error" error />
-            </div>
-            <div className="flex flex-1 flex-col gap-1">
-                <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                    disabled
-                </span>
+            </Field>
+            <Field label="disabled">
                 <Input placeholder="Disabled" disabled />
-            </div>
+            </Field>
         </div>
     </Section>
+);
+
+const Field: FC<{ label: string; children: ReactNode }> = ({
+    label,
+    children,
+}) => (
+    <div className="flex flex-col gap-1">
+        <span className="text-2xs uppercase tracking-wide text-theme-text-label">
+            {label}
+        </span>
+        {children}
+    </div>
 );
 
 // ─── IconButtons ────────────────────────────────────────────
 
 const IconButtonsDemo: FC = () => (
     <Section
-        title="IconButtons"
-        caption={
-            "<IconButton> is utility chrome (delete/copy/edit). Default reads the " +
-            "cascade; `intent` overrides for semantic actions."
-        }
+        title="IconButton"
+        caption="Two real-world variants. Edit follows the page theme; delete is always danger-red."
     >
-        <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-[6rem_repeat(3,minmax(0,1fr))] items-center gap-3 px-3 text-xs uppercase tracking-wide text-theme-text-label">
-                <span />
-                <span>default</span>
-                <span>danger</span>
-                <span>success</span>
-            </div>
-            {themes.map((theme) => (
-                <div
-                    key={theme}
-                    data-theme={theme}
-                    className="grid grid-cols-[6rem_repeat(3,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-3"
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+            <Field label="edit · theme">
+                <IconButton title="Edit" onClick={() => {}}>
+                    ✎
+                </IconButton>
+            </Field>
+            <Field label="delete · danger">
+                <IconButton
+                    intent="danger"
+                    title="Delete"
+                    onClick={() => {}}
+                    className="text-lg"
                 >
-                    <span className="text-xs uppercase tracking-wide text-theme-text-label">
-                        {theme}
-                    </span>
-                    <IconButton title="Default" onClick={() => {}}>
-                        ✎
-                    </IconButton>
-                    <IconButton
-                        intent="danger"
-                        title="Delete"
-                        onClick={() => {}}
-                        className="text-lg"
-                    >
-                        ×
-                    </IconButton>
-                    <IconButton
-                        intent="success"
-                        title="Confirm"
-                        onClick={() => {}}
-                    >
-                        ✓
-                    </IconButton>
-                </div>
-            ))}
+                    ×
+                </IconButton>
+            </Field>
         </div>
     </Section>
+);
+
+// ─── Tooltips ───────────────────────────────────────────────
+
+/**
+ * One tooltip recipe across the whole app:
+ *  - Thin dark pill: `bg-gray-900 text-white text-xs px-2 py-1 rounded-md`
+ *  - No white background, no border
+ *  - `cursor-help` (the "?" cursor) on every trigger
+ *
+ * Two trigger components share that recipe:
+ *  - <InfoTip>: visible "i" badge (the badge follows the page theme)
+ *  - <Tooltip>: invisible wrapper around any child
+ *
+ * Hover any row below to verify the cursor swaps and the popup is
+ * always the same dark pill.
+ */
+const TooltipsDemo: FC = () => (
+    <Section
+        title="Tooltips"
+        caption="One recipe everywhere. Thin dark popup, cursor-help on every trigger. Two trigger types (info badge + mouseover wrapper) cover every hoverable info element in the app."
+    >
+        <div className="flex flex-col gap-4 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+            <TooltipRow label="Info badge">
+                <span className="inline-flex items-center text-sm text-theme-text-strong">
+                    Paid balance
+                    <InfoTip content="Pollen you bought + earnings from paid-side spend. Used for paid-only models." />
+                </span>
+                <span className="text-2xs text-theme-text-muted">
+                    &lt;InfoTip&gt; — visible "i" bubble. Theme-cascade badge.
+                </span>
+            </TooltipRow>
+
+            <TooltipRow label="Mouseover · chip">
+                <Tooltip content="3,420 requests" displayContents>
+                    <Chip intent="paid" size="lg" className="font-semibold">
+                        💳 12,304
+                    </Chip>
+                </Tooltip>
+                <span className="text-2xs text-theme-text-muted">
+                    &lt;Tooltip&gt; wrapping a chip. Hover the chip to reveal.
+                </span>
+            </TooltipRow>
+
+            <TooltipRow label="Mouseover · button">
+                <Tooltip
+                    content="Open the Stripe checkout to buy $20"
+                    displayContents
+                >
+                    <Button>Buy</Button>
+                </Tooltip>
+                <span className="text-2xs text-theme-text-muted">
+                    Wrapping any clickable. Click works through.
+                </span>
+            </TooltipRow>
+
+            <TooltipRow label="Mouseover · inline text">
+                <span className="text-sm text-theme-text-strong">
+                    Includes{" "}
+                    <Tooltip
+                        content="7+ developer points = published apps, contributions, or community standing"
+                        triggerAs="span"
+                    >
+                        <span className="underline decoration-dotted">
+                            7+ dev points
+                        </span>
+                    </Tooltip>{" "}
+                    to qualify.
+                </span>
+                <span className="text-2xs text-theme-text-muted">
+                    Inline trigger with dotted underline + cursor-help.
+                </span>
+            </TooltipRow>
+
+            <TooltipRow label="Mouseover · click action">
+                <Tooltip
+                    content="Click to copy"
+                    onClick={() => {}}
+                    displayContents
+                >
+                    <Chip size="lg" className="font-mono">
+                        sk_test_abc...123
+                    </Chip>
+                </Tooltip>
+                <span className="text-2xs text-theme-text-muted">
+                    Same recipe, plus `onClick` for copy-to-clipboard patterns.
+                </span>
+            </TooltipRow>
+        </div>
+    </Section>
+);
+
+const TooltipRow: FC<{ label: string; children: ReactNode }> = ({
+    label,
+    children,
+}) => (
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3">
+        <span className="w-44 shrink-0 text-xs uppercase tracking-wide text-theme-text-label">
+            {label}
+        </span>
+        <div className="flex flex-wrap items-center gap-3">{children}</div>
+    </div>
 );
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -807,38 +867,93 @@ const Section: FC<SectionProps> = ({ title, caption, children }) => (
     </section>
 );
 
-// ─── InfoTip ────────────────────────────────────────────────
+// ─── MultiSelect (dropdown for picking models / apps) ──────
 
-const infoTipTones = ["pink", "amber", "blue", "violet"] as const;
+// Long enough to overflow the dropdown's max height and show the
+// scrollbar — that's what we want documented here.
+const sampleModels: readonly { value: string; label: string }[] = [
+    { value: "flux", label: "Flux" },
+    { value: "klein", label: "Klein" },
+    { value: "sana", label: "Sana" },
+    { value: "z-image", label: "Z-Image" },
+    { value: "seedance", label: "Seedance" },
+    { value: "ltx-2", label: "LTX-2" },
+    { value: "wan", label: "Wan" },
+    { value: "veo", label: "Veo" },
+    { value: "openai", label: "OpenAI" },
+    { value: "openai-large", label: "OpenAI Large" },
+    { value: "claude", label: "Claude" },
+    { value: "deepseek", label: "DeepSeek" },
+    { value: "mistral", label: "Mistral" },
+    { value: "gemini", label: "Gemini" },
+    { value: "perplexity", label: "Perplexity" },
+    { value: "nomnom", label: "Nomnom" },
+    { value: "elevenlabs", label: "ElevenLabs" },
+    { value: "embedding-3", label: "Embedding 3" },
+] as const;
 
-const InfoTipDemo: FC = () => (
+const MultiSelectDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
+    const [selected, setSelected] = useState<string[]>([]);
+    return (
+        <Section
+            title="MultiSelect"
+            caption="Dropdown menu for picking multiple models or apps (used by the Activity page filters). Open it to see the scroll behaviour with many options."
+        >
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+                <MultiSelect
+                    options={[...sampleModels]}
+                    selected={selected}
+                    onChange={setSelected}
+                    placeholder="All"
+                    align="start"
+                    label="Models"
+                    theme={theme}
+                />
+            </div>
+        </Section>
+    );
+};
+
+// ─── Chart (stacked paid + tier bars) ───────────────────────
+
+function buildSampleChartData(): DataPoint[] {
+    const baseDate = new Date(2026, 4, 1);
+    const tiers = [120, 210, 80, 340, 290, 410, 180];
+    const paids = [40, 80, 30, 160, 120, 220, 90];
+    const labels = [
+        "May 1",
+        "May 2",
+        "May 3",
+        "May 4",
+        "May 5",
+        "May 6",
+        "May 7",
+    ];
+    return labels.map((label, i) => {
+        const ts = new Date(baseDate);
+        ts.setDate(baseDate.getDate() + i);
+        return {
+            label,
+            value: tiers[i] + paids[i],
+            tierValue: tiers[i],
+            paidValue: paids[i],
+            timestamp: ts,
+            fullDate: ts.toISOString().slice(0, 10),
+        };
+    });
+}
+
+const ChartDemo: FC = () => (
     <Section
-        title="InfoTip"
-        caption={
-            "Small `i` / `!` button with a flat single-tone popup on hover, " +
-            "click, or focus. Four tones — pink, amber, blue, violet."
-        }
+        title="Chart"
+        caption="Stacked bar chart used by the Activity page. Bars render in the paid-soft + tier-soft chip colors so the chart and chips read as the same identity."
     >
-        <div className="flex flex-wrap items-start gap-8 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-6">
-            {infoTipTones.map((tone) => (
-                <div key={tone} className="flex flex-col items-center gap-2">
-                    <span className="inline-flex items-center text-sm text-theme-text-strong">
-                        {tone}
-                        <InfoTip
-                            tone={tone}
-                            content={`This is a ${tone} InfoTip popup.`}
-                        />
-                    </span>
-                    <span className="inline-flex items-center text-sm text-theme-text-strong">
-                        warning
-                        <InfoTip
-                            tone={tone}
-                            icon="!"
-                            content={`Heads up — ${tone} variant.`}
-                        />
-                    </span>
-                </div>
-            ))}
+        <div className="rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+            <Chart
+                data={buildSampleChartData()}
+                metric="pollen"
+                showModelBreakdown={false}
+            />
         </div>
     </Section>
 );

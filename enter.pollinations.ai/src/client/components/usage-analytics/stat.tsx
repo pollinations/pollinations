@@ -9,7 +9,7 @@ type StatProps = {
 
 export const Stat: FC<StatProps> = ({ label, value, theme }) => (
     <div data-theme={theme} className="flex flex-col">
-        <span className="text-micro uppercase tracking-wide font-bold text-theme-text-label">
+        <span className="text-micro uppercase tracking-wide font-bold text-theme-text-strong">
             {label}
         </span>
         <span className="text-lg font-bold tabular-nums text-theme-text-strong">

@@ -97,7 +97,7 @@ const Header: FC<HeaderProps> = ({
                 <h1 className="font-heading text-2xl text-theme-text-strong">
                     Design Showcase
                 </h1>
-                <p className="text-xs text-theme-text-muted">
+                <p className="text-xs text-theme-text-soft">
                     Single reference. Flip mode + theme to preview every state.
                 </p>
             </div>
@@ -134,7 +134,7 @@ function ToggleGroup<T extends string>({
 }: ToggleGroupProps<T>): ReactNode {
     return (
         <div className="flex flex-col gap-2">
-            <span className="text-xs uppercase tracking-wide text-theme-text-label">
+            <span className="text-xs uppercase tracking-wide text-theme-text-strong">
                 {label}
             </span>
             <div className="flex flex-wrap gap-1 rounded-full border border-theme-border-soft bg-theme-bg-tinted p-1">
@@ -169,44 +169,44 @@ type ColorRow = {
 };
 
 const themeRoleRows: readonly ColorRow[] = [
-    { name: "text-label", swatch: "bg-theme-text-label" },
-    { name: "text-base", swatch: "bg-theme-text-base" },
     { name: "text-strong", swatch: "bg-theme-text-strong" },
-    { name: "text-muted", swatch: "bg-theme-text-muted" },
+    { name: "text-base", swatch: "bg-theme-text-base" },
     { name: "text-soft", swatch: "bg-theme-text-soft" },
-    { name: "text-softer", swatch: "bg-theme-text-softer" },
     { name: "bg-idle", swatch: "bg-theme-bg-idle" },
     { name: "bg-subtle", swatch: "bg-theme-bg-subtle" },
     { name: "bg-tinted", swatch: "bg-theme-bg-tinted" },
+    { name: "bg-pale", swatch: "bg-theme-bg-pale" },
+    { name: "bg-surface", swatch: "bg-theme-bg-surface" },
     { name: "bg-active", swatch: "bg-theme-bg-active" },
     { name: "bg-hover", swatch: "bg-theme-bg-hover" },
+    { name: "bg-hover-soft", swatch: "bg-theme-bg-hover-soft" },
+    { name: "bg-hover-faint", swatch: "bg-theme-bg-hover-faint" },
     { name: "chip-bg", swatch: "bg-theme-chip-bg" },
     { name: "border", swatch: "bg-theme-border" },
     { name: "border-soft", swatch: "bg-theme-border-soft" },
     { name: "border-subtle", swatch: "bg-theme-border-subtle" },
+    { name: "divide", swatch: "bg-theme-divide" },
+    { name: "accent", swatch: "bg-theme-accent" },
     { name: "button-light-bg", swatch: "bg-theme-button-light-bg" },
+    { name: "button-light-text", swatch: "bg-theme-button-light-text" },
+    { name: "button-light-hover", swatch: "bg-theme-button-light-hover" },
     { name: "ring-focus", swatch: "bg-theme-ring-focus" },
 ];
 
-const intentColumns = ["bg", "text"] as const;
+const intentColumns = ["bg", "text", "border"] as const;
 
-type IntentLabel = "danger" | "news" | "alpha" | "paid" | "tier";
+type IntentLabel = "danger" | "news" | "alpha";
 
-const intentList: readonly IntentLabel[] = [
-    "danger",
-    "news",
-    "alpha",
-    "paid",
-    "tier",
-] as const;
+const intentList: readonly IntentLabel[] = ["danger", "news", "alpha"] as const;
 
 const intentSwatch: Record<
     IntentLabel,
-    Record<(typeof intentColumns)[number], string>
+    Partial<Record<(typeof intentColumns)[number], string>>
 > = {
     danger: {
         bg: "bg-intent-danger-bg-light",
         text: "bg-intent-danger-text",
+        border: "bg-intent-danger-border",
     },
     news: {
         bg: "bg-intent-news-bg",
@@ -215,14 +215,6 @@ const intentSwatch: Record<
     alpha: {
         bg: "bg-intent-alpha-bg",
         text: "bg-intent-alpha-text",
-    },
-    paid: {
-        bg: "bg-paid-soft",
-        text: "bg-paid-deep",
-    },
-    tier: {
-        bg: "bg-tier-soft",
-        text: "bg-tier-deep",
     },
 };
 
@@ -258,7 +250,7 @@ const ColorGroup: FC<{ label: string; rows: readonly ColorRow[] }> = ({
     rows,
 }) => (
     <div className="flex flex-col gap-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-label">
+        <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
             {label}
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -271,11 +263,11 @@ const ColorGroup: FC<{ label: string; rows: readonly ColorRow[] }> = ({
 
 const IntentGroup: FC = () => (
     <div className="flex flex-col gap-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-label">
+        <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
             Intents
         </div>
         <div className="overflow-hidden rounded-lg border border-theme-border-subtle">
-            <div className="grid grid-cols-[6rem_repeat(2,minmax(0,1fr))] gap-x-3 gap-y-2 bg-theme-bg-tinted px-3 py-2 text-xs font-mono uppercase tracking-wide text-theme-text-softer">
+            <div className="grid grid-cols-[6rem_repeat(3,minmax(0,1fr))] gap-x-3 gap-y-2 bg-theme-bg-tinted px-3 py-2 text-xs font-mono uppercase tracking-wide text-theme-text-soft/60">
                 <span />
                 {intentColumns.map((col) => (
                     <span key={col}>{col}</span>
@@ -284,7 +276,7 @@ const IntentGroup: FC = () => (
             {intentList.map((intent) => (
                 <div
                     key={intent}
-                    className="grid grid-cols-[6rem_repeat(2,minmax(0,1fr))] items-center gap-x-3 gap-y-2 border-t border-theme-border-subtle px-3 py-2"
+                    className="grid grid-cols-[6rem_repeat(3,minmax(0,1fr))] items-center gap-x-3 gap-y-2 border-t border-theme-border-subtle px-3 py-2"
                 >
                     <span className="text-xs font-medium capitalize text-theme-text-strong">
                         {intent}
@@ -341,7 +333,7 @@ const Computed: FC<{ cls: string | null | undefined }> = ({ cls }) => {
         setValue(computed || "");
     }, [cls]);
 
-    if (!cls) return <span className="text-xs text-theme-text-softer">—</span>;
+    if (!cls) return <span className="text-xs text-theme-text-soft/60">—</span>;
     return (
         <>
             <span
@@ -349,7 +341,7 @@ const Computed: FC<{ cls: string | null | undefined }> = ({ cls }) => {
                 aria-hidden
                 className={cn("absolute h-px w-px opacity-0", cls)}
             />
-            <code className="truncate text-xs font-mono text-theme-text-softer">
+            <code className="truncate text-xs font-mono text-theme-text-soft/60">
                 {value || "…"}
             </code>
         </>
@@ -440,14 +432,14 @@ const TypographyDemo: FC = () => (
                         <code className="w-24 shrink-0 text-xs font-mono text-theme-text-strong">
                             {row.utility}
                         </code>
-                        <span className="w-12 shrink-0 text-xs font-mono text-theme-text-muted">
+                        <span className="w-12 shrink-0 text-xs font-mono text-theme-text-soft">
                             {row.px}
                         </span>
-                        <span className="min-w-0 flex-1 text-xs text-theme-text-softer">
+                        <span className="min-w-0 flex-1 text-xs text-theme-text-soft/60">
                             {row.purpose}
                         </span>
                         {row.offScale && (
-                            <span className="shrink-0 rounded-md bg-theme-bg-tinted px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-theme-text-muted">
+                            <span className="shrink-0 rounded-md bg-theme-bg-tinted px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-theme-text-soft">
                                 off-scale
                             </span>
                         )}
@@ -519,7 +511,7 @@ const ChipRow: FC<{ label: string; children: ReactNode }> = ({
     children,
 }) => (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-3">
-        <span className="w-40 text-xs uppercase tracking-wide text-theme-text-label">
+        <span className="w-40 text-xs uppercase tracking-wide text-theme-text-strong">
             {label}
         </span>
         <div className="flex flex-wrap items-center gap-2">{children}</div>
@@ -579,7 +571,7 @@ const SwitchesDemo: FC = () => {
                         key={status}
                         className="flex flex-col items-start gap-1.5"
                     >
-                        <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                        <span className="text-xs uppercase tracking-wide text-theme-text-strong">
                             {status}
                         </span>
                         <Switch
@@ -609,12 +601,12 @@ const SurfacesDemo: FC = () => (
     >
         <div className="flex flex-col gap-4">
             <Surface variant="panel">
-                <p className="mb-3 text-xs font-mono uppercase tracking-wide text-theme-text-softer">
+                <p className="mb-3 text-xs font-mono uppercase tracking-wide text-theme-text-soft/60">
                     outer · panel
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Surface>
-                        <p className="text-xs font-mono uppercase tracking-wide text-theme-text-label">
+                        <p className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
                             inner · card
                         </p>
                         <p className="mt-1 text-sm text-theme-text-soft">
@@ -622,7 +614,7 @@ const SurfacesDemo: FC = () => (
                         </p>
                     </Surface>
                     <Surface variant="card-themed">
-                        <p className="text-xs font-mono uppercase tracking-wide text-theme-text-label">
+                        <p className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
                             inner · card-themed
                         </p>
                         <p className="mt-1 text-sm text-theme-text-strong">
@@ -741,7 +733,7 @@ const Field: FC<{ label: string; children: ReactNode }> = ({
     children,
 }) => (
     <div className="flex flex-col gap-1">
-        <span className="text-xs uppercase tracking-wide text-theme-text-label">
+        <span className="text-xs uppercase tracking-wide text-theme-text-strong">
             {label}
         </span>
         {children}
@@ -801,7 +793,7 @@ const TooltipsDemo: FC = () => (
                     Paid balance
                     <InfoTip content="Pollen you bought + earnings from paid-side spend. Used for paid-only models." />
                 </span>
-                <span className="text-xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-soft">
                     &lt;InfoTip&gt; — visible "i" bubble. Theme-cascade badge.
                 </span>
             </TooltipRow>
@@ -812,7 +804,7 @@ const TooltipsDemo: FC = () => (
                         💳 12,304
                     </Chip>
                 </Tooltip>
-                <span className="text-xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-soft">
                     &lt;Tooltip&gt; wrapping a chip. Hover the chip to reveal.
                 </span>
             </TooltipRow>
@@ -824,7 +816,7 @@ const TooltipsDemo: FC = () => (
                 >
                     <Button>Buy</Button>
                 </Tooltip>
-                <span className="text-xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-soft">
                     Wrapping any clickable. Click works through.
                 </span>
             </TooltipRow>
@@ -842,7 +834,7 @@ const TooltipsDemo: FC = () => (
                     </Tooltip>{" "}
                     to qualify.
                 </span>
-                <span className="text-xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-soft">
                     Inline trigger with dotted underline + cursor-help.
                 </span>
             </TooltipRow>
@@ -857,7 +849,7 @@ const TooltipsDemo: FC = () => (
                         sk_test_abc...123
                     </Chip>
                 </Tooltip>
-                <span className="text-xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-soft">
                     Same recipe, plus `onClick` for copy-to-clipboard patterns.
                 </span>
             </TooltipRow>
@@ -870,7 +862,7 @@ const TooltipRow: FC<{ label: string; children: ReactNode }> = ({
     children,
 }) => (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3">
-        <span className="w-44 shrink-0 text-xs uppercase tracking-wide text-theme-text-label">
+        <span className="w-44 shrink-0 text-xs uppercase tracking-wide text-theme-text-strong">
             {label}
         </span>
         <div className="flex flex-wrap items-center gap-3">{children}</div>
@@ -892,7 +884,7 @@ const Section: FC<SectionProps> = ({ title, caption, children }) => (
                 {title}
             </h2>
             {caption && (
-                <p className="text-sm text-theme-text-muted">{caption}</p>
+                <p className="text-sm text-theme-text-soft">{caption}</p>
             )}
         </div>
         {children}

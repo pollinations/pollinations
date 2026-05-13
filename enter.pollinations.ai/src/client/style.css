@@ -69,12 +69,9 @@
 
 /* ─── Layer 2: per-theme cascade (light defaults) ────────────── */
 [data-theme="amber"] {
-    --theme-text-label:   var(--color-amber-600);
     --theme-text-base:    var(--color-amber-900);
     --theme-text-strong:  var(--color-amber-950);
-    --theme-text-muted:   oklch(from var(--color-amber-800) l c h / 0.75);
     --theme-text-soft:    var(--color-amber-700);
-    --theme-text-softer:  oklch(from var(--color-amber-700) l c h / 0.6);
 
     --theme-border-idle:    var(--color-amber-300);
     --theme-border-soft:    oklch(from var(--color-amber-300) l c h / 0.7);
@@ -102,12 +99,9 @@
 }
 
 [data-theme="blue"] {
-    --theme-text-label:   var(--color-blue-600);
     --theme-text-base:    var(--color-blue-900);
     --theme-text-strong:  var(--color-blue-950);
-    --theme-text-muted:   oklch(from var(--color-blue-800) l c h / 0.75);
     --theme-text-soft:    var(--color-blue-700);
-    --theme-text-softer:  oklch(from var(--color-blue-700) l c h / 0.6);
 
     --theme-border-idle:    var(--color-blue-300);
     --theme-border-soft:    oklch(from var(--color-blue-300) l c h / 0.7);
@@ -135,12 +129,9 @@
 }
 
 [data-theme="pink"] {
-    --theme-text-label:   var(--color-pink-600);
     --theme-text-base:    var(--color-pink-900);
     --theme-text-strong:  var(--color-pink-950);
-    --theme-text-muted:   oklch(from var(--color-pink-800) l c h / 0.75);
     --theme-text-soft:    var(--color-pink-700);
-    --theme-text-softer:  oklch(from var(--color-pink-700) l c h / 0.6);
 
     --theme-border-idle:    var(--color-pink-300);
     --theme-border-soft:    oklch(from var(--color-pink-300) l c h / 0.7);
@@ -168,12 +159,9 @@
 }
 
 [data-theme="teal"] {
-    --theme-text-label:   var(--color-teal-600);
     --theme-text-base:    var(--color-teal-900);
     --theme-text-strong:  var(--color-teal-950);
-    --theme-text-muted:   oklch(from var(--color-teal-800) l c h / 0.75);
     --theme-text-soft:    var(--color-teal-700);
-    --theme-text-softer:  oklch(from var(--color-teal-700) l c h / 0.6);
 
     --theme-border-idle:    var(--color-teal-300);
     --theme-border-soft:    oklch(from var(--color-teal-300) l c h / 0.7);
@@ -201,12 +189,9 @@
 }
 
 [data-theme="violet"] {
-    --theme-text-label:   var(--color-violet-600);
     --theme-text-base:    var(--color-violet-900);
     --theme-text-strong:  var(--color-violet-950);
-    --theme-text-muted:   oklch(from var(--color-violet-800) l c h / 0.75);
     --theme-text-soft:    var(--color-violet-700);
-    --theme-text-softer:  oklch(from var(--color-violet-700) l c h / 0.6);
 
     --theme-border-idle:    var(--color-violet-300);
     --theme-border-soft:    oklch(from var(--color-violet-300) l c h / 0.7);
@@ -237,12 +222,9 @@
    (sign-in, authorize, device, terms, etc.) resolve --theme-* vars. */
 :root,
 [data-theme="green"] {
-    --theme-text-label:   var(--color-green-600);
     --theme-text-base:    var(--color-green-900);
     --theme-text-strong:  var(--color-green-950);
-    --theme-text-muted:   oklch(from var(--color-green-800) l c h / 0.75);
     --theme-text-soft:    var(--color-green-700);
-    --theme-text-softer:  oklch(from var(--color-green-700) l c h / 0.6);
 
     --theme-border-idle:    var(--color-green-300);
     --theme-border-soft:    oklch(from var(--color-green-300) l c h / 0.7);
@@ -271,7 +253,6 @@
 
 /* ─── Layer 2 dark overrides (skeletal — to be curated later) ── */
 html[data-mode="dark"] [data-theme="amber"] {
-    --theme-text-label:   var(--color-amber-300);
     --theme-text-base:    var(--color-amber-100);
     --theme-text-strong:  var(--color-amber-50);
     --theme-bg-idle:      oklch(from var(--color-amber-950) l c h / 0.5);
@@ -291,7 +272,6 @@ html[data-mode="dark"] [data-theme="amber"] {
 }
 
 html[data-mode="dark"] [data-theme="blue"] {
-    --theme-text-label:   var(--color-blue-300);
     --theme-text-base:    var(--color-blue-100);
     --theme-text-strong:  var(--color-blue-50);
     --theme-bg-idle:      oklch(from var(--color-blue-950) l c h / 0.5);
@@ -311,7 +291,6 @@ html[data-mode="dark"] [data-theme="blue"] {
 }
 
 html[data-mode="dark"] [data-theme="pink"] {
-    --theme-text-label:   var(--color-pink-300);
     --theme-text-base:    var(--color-pink-100);
     --theme-text-strong:  var(--color-pink-50);
     --theme-bg-idle:      oklch(from var(--color-pink-950) l c h / 0.5);
@@ -331,7 +310,6 @@ html[data-mode="dark"] [data-theme="pink"] {
 }
 
 html[data-mode="dark"] [data-theme="teal"] {
-    --theme-text-label:   var(--color-teal-300);
     --theme-text-base:    var(--color-teal-100);
     --theme-text-strong:  var(--color-teal-50);
     --theme-bg-idle:      oklch(from var(--color-teal-950) l c h / 0.5);
@@ -351,7 +329,6 @@ html[data-mode="dark"] [data-theme="teal"] {
 }
 
 html[data-mode="dark"] [data-theme="violet"] {
-    --theme-text-label:   var(--color-violet-300);
     --theme-text-base:    var(--color-violet-100);
     --theme-text-strong:  var(--color-violet-50);
     --theme-bg-idle:      oklch(from var(--color-violet-950) l c h / 0.5);
@@ -371,7 +348,6 @@ html[data-mode="dark"] [data-theme="violet"] {
 }
 
 html[data-mode="dark"] [data-theme="green"] {
-    --theme-text-label:   var(--color-green-300);
     --theme-text-base:    var(--color-green-100);
     --theme-text-strong:  var(--color-green-50);
     --theme-bg-idle:      oklch(from var(--color-green-950) l c h / 0.5);
@@ -419,12 +395,9 @@ html[data-mode="dark"] {
 
 /* ─── Layer 3: Tailwind utility surface (`@theme inline`) ────── */
 @theme inline {
-    --color-theme-text-label:        var(--theme-text-label);
     --color-theme-text-base:         var(--theme-text-base);
     --color-theme-text-strong:       var(--theme-text-strong);
-    --color-theme-text-muted:        var(--theme-text-muted);
     --color-theme-text-soft:         var(--theme-text-soft);
-    --color-theme-text-softer:       var(--theme-text-softer);
 
     --color-theme-border:            var(--theme-border-idle);
     --color-theme-border-soft:       var(--theme-border-soft);

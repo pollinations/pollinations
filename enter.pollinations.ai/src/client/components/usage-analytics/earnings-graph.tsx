@@ -196,7 +196,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             value={stats.activeUsers.toLocaleString()}
                             detail={
                                 stats.appCount > 0 ? (
-                                    <span className="text-theme-text-muted">
+                                    <span className="text-theme-text-soft">
                                         across {stats.appCount} app
                                         {stats.appCount === 1 ? "" : "s"}
                                     </span>
@@ -284,7 +284,7 @@ const EarningsStatCard: FC<{
             {value}
         </div>
         {detail && (
-            <div className="mt-2 text-xs text-theme-text-muted">{detail}</div>
+            <div className="mt-2 text-xs text-theme-text-soft">{detail}</div>
         )}
     </div>
 );

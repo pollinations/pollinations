@@ -459,7 +459,7 @@ export const Chart: FC<ChartProps> = ({
                                             4 +
                                             breakdown.length * lineHeight
                                         }
-                                        className="text-xs fill-theme-text-softer italic"
+                                        className="text-xs fill-theme-text-soft/60 italic"
                                     >
                                         +{hiddenCount} more
                                     </text>

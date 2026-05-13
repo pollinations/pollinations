@@ -107,7 +107,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
             className="relative group flex items-center gap-2"
         >
             {label && (
-                <span className="text-xs font-medium text-theme-text-muted">
+                <span className="text-xs font-medium text-theme-text-soft">
                     {label}
                 </span>
             )}
@@ -128,7 +128,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     className={cn(
                         "truncate flex-1 text-left",
                         disabled
-                            ? "text-theme-text-softer"
+                            ? "text-theme-text-soft/60"
                             : open
                               ? "text-theme-text-strong"
                               : "text-theme-text-base",

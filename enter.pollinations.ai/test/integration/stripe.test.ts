@@ -81,7 +81,7 @@ async function insertAutoTopUpAttempt({
     invoiceId,
     status = "pending",
     amountUsd = 10,
-    pollenGrant = 15,
+    pollenGrant = 13,
     completedAt = null,
     createdAt = Date.now(),
     updatedAt = createdAt,
@@ -1028,7 +1028,7 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
     )
         .bind(user.id)
         .first<{ packBalance: number | null }>();
-    expect(afterWebhook?.packBalance).toBe(16);
+    expect(afterWebhook?.packBalance).toBe(14);
 
     const duplicateResponse = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", "in_mock_1", user.id),
@@ -1040,7 +1040,7 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
     )
         .bind(user.id)
         .first<{ packBalance: number | null }>();
-    expect(afterDuplicate?.packBalance).toBe(16);
+    expect(afterDuplicate?.packBalance).toBe(14);
 });
 
 test("POST /api/stripe/auto-top-up/trigger disables auto top-up when setup is incomplete", async ({
@@ -1648,7 +1648,7 @@ test("POST /api/stripe/auto-top-up/trigger credits stale paid pending invoices",
         .bind("attempt_stale_paid_pending")
         .first<{ status: string; completedAt: number | null }>();
 
-    expect(updatedUser?.packBalance).toBe(16);
+    expect(updatedUser?.packBalance).toBe(14);
     expect(attempt?.status).toBe("paid");
     expect(attempt?.completedAt).toBeTypeOf("number");
 });
@@ -1787,7 +1787,7 @@ test("POST /api/webhooks/stripe credits paid auto top-up invoice once", async ({
         .bind(invoiceId)
         .first<{ status: string; failureReason: string | null }>();
 
-    expect(updatedUser?.packBalance).toBe(16);
+    expect(updatedUser?.packBalance).toBe(14);
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });
@@ -1840,7 +1840,7 @@ test("POST /api/webhooks/stripe credits payment_succeeded auto top-up invoices",
         .bind(invoiceId)
         .first<{ status: string }>();
 
-    expect(updatedUser?.packBalance).toBe(16);
+    expect(updatedUser?.packBalance).toBe(14);
     expect(attempt?.status).toBe("paid");
 });
 
@@ -1888,7 +1888,7 @@ test("POST /api/webhooks/stripe credits once when paid and payment_succeeded bot
     )
         .bind(user.id)
         .first<{ packBalance: number | null }>();
-    expect(updatedUser?.packBalance).toBe(16);
+    expect(updatedUser?.packBalance).toBe(14);
 });
 
 test.for([
@@ -2334,7 +2334,7 @@ test("POST /api/webhooks/stripe still credits paid invoice after payment_failed 
         .bind(invoiceId)
         .first<{ status: string; failureReason: string | null }>();
 
-    expect(updatedUser?.packBalance).toBe(16);
+    expect(updatedUser?.packBalance).toBe(14);
     expect(attempt?.status).toBe("paid");
     expect(attempt?.failureReason).toBeNull();
 });

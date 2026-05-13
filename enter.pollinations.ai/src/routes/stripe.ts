@@ -110,6 +110,8 @@ export const stripeRoutes = new Hono<Env>()
                     metadata: {
                         userId,
                         packAmount: String(pack.amountUsd),
+                        pollenGrant: String(pack.pollenGrant),
+                        bonusPollen: String(pack.bonusPollen),
                     },
                 },
                 // Invoice creation after payment
@@ -121,11 +123,14 @@ export const stripeRoutes = new Hono<Env>()
                         },
                     },
                 },
-                // Metadata links the completed checkout back to the shared pack
-                // definition used by the webhook.
+                // Snapshot the grant shown at checkout time so the webhook
+                // credits exactly what the user saw, even if the catalog
+                // changes between session creation and payment.
                 metadata: {
                     userId,
                     packAmount: String(pack.amountUsd),
+                    pollenGrant: String(pack.pollenGrant),
+                    bonusPollen: String(pack.bonusPollen),
                 },
                 success_url: `${successUrl}?stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${cancelUrl}?stripe_canceled=true`,

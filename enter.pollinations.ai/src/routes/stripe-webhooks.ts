@@ -183,9 +183,20 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
-    const creditsToAdd = pack
-        ? pack.pollenGrant
-        : amountPaid * LEGACY_BETA_MULTIPLIER;
+    // Prefer the grant snapshotted into session metadata at checkout creation
+    // time; this guarantees the user is credited exactly what they saw, even
+    // when bonus values change between session creation and payment. Falls
+    // back to the current catalog (legacy sessions created pre-snapshot) and
+    // finally to the legacy beta multiplier (sessions without packAmount).
+    const metadataGrant = metadata.pollenGrant
+        ? Number.parseInt(metadata.pollenGrant, 10)
+        : Number.NaN;
+    const creditsToAdd =
+        Number.isFinite(metadataGrant) && metadataGrant > 0
+            ? metadataGrant
+            : pack
+              ? pack.pollenGrant
+              : amountPaid * LEGACY_BETA_MULTIPLIER;
 
     const db = drizzle(env.DB);
 

@@ -44,12 +44,6 @@ function parseApps() {
         process.exit(1);
     }
 
-    // Parse header to get column positions (like useApps.ts)
-    const headerCols = lines[headerIdx].split("|").map((c) => c.trim());
-    headerCols.shift();
-    headerCols.pop();
-    const ci = (name) => headerCols.indexOf(name);
-
     const rows = lines.slice(headerIdx + 2).filter((l) => l.startsWith("|"));
     return rows
         .map((row) => {
@@ -58,7 +52,7 @@ function parseApps() {
             cols.pop();
             if (cols.length < 15) return null;
 
-            const starsCol = cols[ci("Github_Repository_Stars")];
+            const starsCol = cols[10];
             let stars = 0;
             const m = starsCol.match(/⭐([\d.]+)(k)?/);
             if (m) {
@@ -68,20 +62,17 @@ function parseApps() {
             }
 
             return {
-                emoji: cols[ci("Emoji")],
-                name: cols[ci("Name")],
-                url: cols[ci("Web_URL")],
-                description: cols[ci("Description")],
-                category: cols[ci("Category")].toLowerCase(),
-                github: cols[ci("GitHub_Username")],
-                repo: cols[ci("Github_Repository_URL")],
+                emoji: cols[0],
+                name: cols[1],
+                url: cols[2],
+                description: cols[3],
+                category: cols[5].toLowerCase(),
+                github: cols[7],
+                repo: cols[9],
                 stars,
-                approvedDate: cols[ci("Approved_Date")] || "",
-                byop: cols.length > ci("BYOP") && cols[ci("BYOP")] === "true",
-                requests24h:
-                    cols.length > ci("Requests_24h")
-                        ? parseInt(cols[ci("Requests_24h")], 10) || 0
-                        : 0,
+                approvedDate: cols[15] || "",
+                byop: cols.length > 16 && cols[16] === "true",
+                requests24h: cols.length > 17 ? parseInt(cols[17], 10) || 0 : 0,
             };
         })
         .filter(Boolean);

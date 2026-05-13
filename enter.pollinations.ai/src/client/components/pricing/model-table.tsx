@@ -337,7 +337,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                         capabilityIcons={capabilityIcons}
                                     />
                                     {showNew && (
-                                        <Chip theme="green" size="sm">
+                                        <Chip intent="news" size="sm">
                                             NEW
                                         </Chip>
                                     )}

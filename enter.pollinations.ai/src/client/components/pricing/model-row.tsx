@@ -222,7 +222,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Tooltip>
                             )}
                             {showNew && (
-                                <Chip theme="green" size="sm">
+                                <Chip intent="news" size="sm">
                                     NEW
                                 </Chip>
                             )}

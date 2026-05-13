@@ -88,9 +88,9 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                 </div>
             </DashboardSection>
 
-            <Surface size="panel" tone="tinted">
+            <Surface variant="panel" theme="teal">
                 <div className="grid gap-3 lg:grid-cols-3">
-                    <Surface className="text-xs !border-transparent">
+                    <Surface className="text-xs">
                         <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                             💡 How Pollen is Spent
                         </div>
@@ -104,7 +104,7 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                             </div>
                         </div>
                     </Surface>
-                    <Surface className="text-xs !border-transparent">
+                    <Surface className="text-xs">
                         <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                             🎁 Beta Bonus
                         </div>
@@ -140,7 +140,7 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                             </div>
                         </div>
                     </Surface>
-                    <Surface className="text-xs !border-transparent">
+                    <Surface className="text-xs">
                         <div className="font-bold text-gray-900 uppercase tracking-wide mb-2">
                             🧮 Pricing Metrics
                         </div>

@@ -1,7 +1,10 @@
 import type { Link, LinkProps } from "@tanstack/react-router";
 import type { PropsWithChildren } from "react";
 import { cn } from "../../util.ts";
-import type { IntentName, ThemeName } from "./layout/dashboard-theme.ts";
+import type { ThemeName } from "./layout/dashboard-theme.ts";
+
+/** Button only supports `danger`. Paid/alpha live on Chip; success is gone. */
+type ButtonIntent = "danger";
 
 const sizes = {
     small: "px-2 pt-0.5 pb-1",
@@ -9,55 +12,24 @@ const sizes = {
     large: "px-6 py-3",
 } as const;
 
-// Cascade-driven base classes (read [data-theme] vars).
-const themeWeightClasses = {
-    light:
-        "bg-theme-button-light-bg text-theme-button-light-text " +
-        "hover:bg-theme-button-light-hover transition-colors",
-    strong:
-        "bg-theme-button-strong-bg text-theme-button-strong-text " +
-        "hover:bg-theme-button-strong-hover transition-colors",
-} as const;
+// Cascade-driven base — reads [data-theme] vars.
+const themeClasses =
+    "bg-theme-button-light-bg text-theme-button-light-text " +
+    "hover:bg-theme-button-light-hover transition-colors";
 
-// Intent → weight class lookup. Theme-independent (semantic).
-// `paid` and `alpha` use the same recipe for both weights — no semantic
-// distinction today. Table is exhaustive so the lookup is type-safe.
-type IntentWeights = { strong: string; light: string };
-const intentWeightClasses: Record<IntentName, IntentWeights> = {
-    danger: {
-        light:
-            "bg-intent-danger-bg-light text-intent-danger-text " +
-            "hover:bg-intent-danger-border transition-colors",
-        strong:
-            "bg-intent-danger-bg-strong text-intent-danger-text-on-bg " +
-            "hover:bg-intent-danger-bg-hover transition-colors",
-    },
-    success: {
-        light:
-            "bg-intent-success-bg-light text-intent-success-text " +
-            "hover:bg-intent-success-border transition-colors",
-        strong:
-            "bg-intent-success-bg-strong text-intent-success-text-on-bg " +
-            "hover:bg-intent-success-bg-hover transition-colors",
-    },
-    paid: {
-        light: "bg-intent-paid text-intent-paid-deep hover:bg-intent-paid-hover transition-colors",
-        strong: "bg-intent-paid text-intent-paid-deep hover:bg-intent-paid-hover transition-colors",
-    },
-    alpha: {
-        light: "bg-intent-alpha-bg text-intent-alpha-text transition-colors",
-        strong: "bg-intent-alpha-bg text-intent-alpha-text transition-colors",
-    },
+// Single intent: danger. Soft recipe — light tile + deep text, slightly
+// deeper bg on hover. No filled CTAs anywhere.
+const intentClasses: Record<ButtonIntent, string> = {
+    danger:
+        "bg-intent-danger-bg-light text-intent-danger-text " +
+        "hover:bg-intent-danger-border transition-colors",
 };
-
-type ButtonWeight = "light" | "strong";
 
 type BaseButtonProps = {
     /** Override the cascade theme for this button's subtree. Ignored when `intent` is set. */
     theme?: ThemeName;
-    /** Semantic intent (danger/success/paid/alpha). Wins over `theme`. */
-    intent?: IntentName;
-    weight?: ButtonWeight;
+    /** Only `"danger"` for now. */
+    intent?: ButtonIntent;
     size?: keyof typeof sizes;
     className?: string;
     disabled?: boolean;
@@ -66,14 +38,11 @@ type BaseButtonProps = {
 const buttonClasses = ({
     theme: _theme,
     intent,
-    weight = "strong",
     size,
     className,
     disabled,
 }: BaseButtonProps & { disabled?: boolean }) => {
-    const colorClasses = intent
-        ? intentWeightClasses[intent][weight]
-        : themeWeightClasses[weight];
+    const colorClasses = intent ? intentClasses[intent] : themeClasses;
     return cn(
         "inline-flex items-center justify-center rounded-full self-center placeholder-green-950 font-medium leading-normal box-border",
         disabled
@@ -108,7 +77,6 @@ export function Button<T extends React.ElementType>({
     children,
     theme,
     intent,
-    weight,
     size,
     className,
     disabled,
@@ -123,7 +91,6 @@ export function Button<T extends React.ElementType>({
             className={buttonClasses({
                 theme,
                 intent,
-                weight,
                 size,
                 className,
                 disabled,

@@ -333,7 +333,7 @@ const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
             className={cn(
                 "flex items-center gap-2 rounded-full px-3 py-2 text-left text-md font-medium transition-colors",
                 active
-                    ? "bg-theme-bg-active text-green-950"
+                    ? "bg-theme-bg-active text-theme-text-strong"
                     : "text-gray-800 hover:bg-white/60 hover:text-gray-950",
             )}
             onClick={onClick}

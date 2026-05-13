@@ -8,6 +8,8 @@ import {
     themes,
 } from "../layout/dashboard-theme.ts";
 import { Chip } from "../ui/chip.tsx";
+import { IconButton } from "../ui/icon-button.tsx";
+import { Input } from "../ui/input.tsx";
 import { Surface } from "../ui/surface.tsx";
 import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
@@ -62,8 +64,8 @@ export const DesignShowcase: FC = () => {
                 <SwitchesDemo />
                 <SurfacesDemo />
                 <TabsDemo />
-                <Placeholder title="Inputs" phase="Phase 8" />
-                <Placeholder title="IconButtons" phase="Phase 8" />
+                <InputsDemo />
+                <IconButtonsDemo />
                 <Placeholder title="InfoTip" phase="Phase 9" />
                 <MoneyColorsDemo />
             </div>
@@ -693,6 +695,89 @@ const MoneyColorsDemo: FC = () => (
                     <span className="ml-auto text-xs text-theme-text-muted">
                         {swatch.note}
                     </span>
+                </div>
+            ))}
+        </div>
+    </Section>
+);
+
+// ─── Inputs ─────────────────────────────────────────────────
+
+const InputsDemo: FC = () => (
+    <Section
+        title="Inputs"
+        caption={
+            "<Input> uses the universal `--color-focus-ring` for focus chrome — " +
+            "neutral on every page theme. Focus inside to see the ring."
+        }
+    >
+        <div className="flex flex-col gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4 sm:flex-row sm:items-start">
+            <div className="flex flex-1 flex-col gap-1">
+                <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                    default
+                </span>
+                <Input placeholder="Default" />
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+                <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                    error
+                </span>
+                <Input placeholder="Error" error />
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+                <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                    disabled
+                </span>
+                <Input placeholder="Disabled" disabled />
+            </div>
+        </div>
+    </Section>
+);
+
+// ─── IconButtons ────────────────────────────────────────────
+
+const IconButtonsDemo: FC = () => (
+    <Section
+        title="IconButtons"
+        caption={
+            "<IconButton> is utility chrome (delete/copy/edit). Default reads the " +
+            "cascade; `intent` overrides for semantic actions."
+        }
+    >
+        <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-[6rem_repeat(3,minmax(0,1fr))] items-center gap-3 px-3 text-xs uppercase tracking-wide text-theme-text-label">
+                <span />
+                <span>default</span>
+                <span>danger</span>
+                <span>success</span>
+            </div>
+            {themes.map((theme) => (
+                <div
+                    key={theme}
+                    data-theme={theme}
+                    className="grid grid-cols-[6rem_repeat(3,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-3"
+                >
+                    <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                        {theme}
+                    </span>
+                    <IconButton title="Default" onClick={() => {}}>
+                        ✎
+                    </IconButton>
+                    <IconButton
+                        intent="danger"
+                        title="Delete"
+                        onClick={() => {}}
+                        className="text-lg"
+                    >
+                        ×
+                    </IconButton>
+                    <IconButton
+                        intent="success"
+                        title="Confirm"
+                        onClick={() => {}}
+                    >
+                        ✓
+                    </IconButton>
                 </div>
             ))}
         </div>

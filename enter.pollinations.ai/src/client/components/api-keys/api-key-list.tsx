@@ -101,14 +101,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     )}
                     <div className="flex gap-1 shrink-0 ml-2 items-center">
                         <IconButton
-                            color="blue"
                             title="Edit key"
                             onClick={() => setEditingKey(apiKey)}
                         >
                             ✎
                         </IconButton>
                         <IconButton
-                            color="red"
+                            intent="danger"
                             title="Delete key"
                             onClick={() => setDeleteId(apiKey.id)}
                             className="text-lg"

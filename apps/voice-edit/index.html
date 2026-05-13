@@ -2,54 +2,162 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Voice Edit | Pollinations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { background:#0a0a0a; color:#e5e5e5; }
-  canvas { cursor: crosshair; touch-action: none; }
-  button:disabled { opacity: .45; cursor: not-allowed; }
+  :root {
+    --dark: #110518;
+    --cream: #F3EBDE;
+    --tan: #e8e2d8;
+    --border: #cfc8b8;
+    --accent: #E8F372;
+    --primary: #C9A9E4;
+    --secondary: #A4B4DE;
+    --muted: #4a3f5c;
+  }
+  body {
+    background: var(--cream);
+    color: var(--dark);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .pollen-card {
+    background: #fff;
+    border: 2px solid var(--dark);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-radius: 0;
+  }
+  .pollen-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    background: #fff;
+    color: var(--dark);
+    border: 2px solid var(--dark);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    padding: 0.45rem 0.9rem;
+    cursor: pointer;
+    transition: all 0.1s;
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+  }
+  .pollen-btn:hover:not(:disabled) { transform: translate(1px, 1px); border-right-width: 3px; border-bottom-width: 3px; }
+  .pollen-btn:active:not(:disabled) { transform: translate(2px, 2px); border-right-width: 2px; border-bottom-width: 2px; }
+  .pollen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pollen-btn-accent { background: var(--accent); }
+  .pollen-btn-primary { background: var(--primary); }
+  .pollen-input, .pollen-select {
+    font-family: 'IBM Plex Mono', monospace;
+    background: #fff;
+    color: var(--dark);
+    border: 2px solid var(--dark);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-radius: 0;
+    padding: 0.45rem 0.7rem;
+  }
+  .pollen-title {
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+  canvas { cursor: crosshair; touch-action: none; display: block; }
+  .canvas-wrap { background: #fff; border: 2px solid var(--dark); border-right-width: 4px; border-bottom-width: 4px; padding: 0; overflow: hidden; }
+
+  /* Cursor-anchored speech pill */
+  #cursorPill {
+    position: fixed;
+    z-index: 50;
+    transform: translate(18px, -50%);
+    background: #fff;
+    color: var(--dark);
+    border: 2px solid var(--dark);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-radius: 0;
+    padding: 0.5rem 0.8rem 0.5rem 0.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 0.95rem;
+    max-width: 18rem;
+    display: none;
+    align-items: center;
+    gap: 0.55rem;
+    pointer-events: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  #cursorPill.visible { display: inline-flex; }
+  #cursorPill .mic {
+    flex: 0 0 auto;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: var(--accent);
+    border: 2px solid var(--dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #cursorPill .mic .bar {
+    width: 3px;
+    background: var(--dark);
+    margin: 0 1px;
+    animation: micbar 0.9s ease-in-out infinite;
+  }
+  #cursorPill .mic .bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+  #cursorPill .mic .bar:nth-child(2) { height: 10px; animation-delay: .15s; }
+  #cursorPill .mic .bar:nth-child(3) { height: 6px; animation-delay: .3s; }
+  @keyframes micbar { 0%,100% { transform: scaleY(0.6); } 50% { transform: scaleY(1.2); } }
+  #cursorPill .text { min-width: 1ch; }
+  #cursorPill .text.placeholder { opacity: .55; font-style: italic; }
 </style>
 <body class="min-h-screen p-4 md:p-6 flex flex-col items-center gap-4">
-  <div class="w-full max-w-5xl flex items-center justify-between gap-4">
+  <div class="w-full max-w-5xl flex items-end justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-semibold tracking-tight">Voice Edit</h1>
-      <p class="text-sm text-neutral-500">Point at an image, speak or type an edit, release to apply.</p>
+      <h1 class="pollen-title text-2xl md:text-3xl">voice<br>edit</h1>
+      <p class="text-sm text-[var(--muted)] mt-2">point. talk. release. it's edited.</p>
     </div>
-    <div class="text-xs text-neutral-500 shrink-0" id="status">ready</div>
+    <div class="text-xs text-[var(--muted)] shrink-0" id="status">ready</div>
   </div>
 
-  <div id="error" class="hidden w-full max-w-5xl rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-100"></div>
+  <div id="error" class="hidden w-full max-w-5xl pollen-card px-4 py-3 text-sm" style="background:#ffe1e1;border-color:#a02020"></div>
 
   <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
-    <button id="connectBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded">Connect Pollinations</button>
-    <button id="disconnectBtn" class="hidden px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Disconnect</button>
-    <span id="account" class="text-neutral-400"></span>
+    <button id="connectBtn" class="pollen-btn pollen-btn-accent">connect pollinations</button>
+    <button id="disconnectBtn" class="hidden pollen-btn">disconnect</button>
+    <span id="account" class="text-[var(--muted)]"></span>
   </div>
 
   <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
-    <button id="loadBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Load starter image</button>
-    <input id="urlInput" placeholder="or paste image URL" class="min-w-52 flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
-    <button id="useUrl" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Use</button>
-    <select id="modelSel" class="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
+    <button id="loadBtn" class="pollen-btn">load starter</button>
+    <input id="urlInput" placeholder="or paste image URL" class="pollen-input min-w-52 flex-1 text-sm">
+    <button id="useUrl" class="pollen-btn">use</button>
+    <select id="modelSel" class="pollen-select text-sm">
       <option value="p-image-edit">p-image-edit</option>
     </select>
-    <button id="undoBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded" disabled>Undo</button>
-    <button id="redoBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded" disabled>Redo</button>
-    <button id="downloadBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Download</button>
+    <button id="undoBtn" class="pollen-btn" disabled>undo</button>
+    <button id="redoBtn" class="pollen-btn" disabled>redo</button>
+    <button id="downloadBtn" class="pollen-btn">download</button>
   </div>
 
   <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
-    <input id="intentInput" placeholder="Optional typed edit, e.g. make this a brass lamp" class="min-w-64 flex-1 px-3 py-2 bg-neutral-900 border border-neutral-800 rounded">
-    <button id="clearIntent" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 rounded">Clear</button>
+    <input id="intentInput" placeholder="optional typed edit, e.g. make this a brass lamp" class="pollen-input min-w-64 flex-1">
+    <button id="clearIntent" class="pollen-btn">clear</button>
   </div>
 
-  <div class="w-full max-w-5xl text-sm text-neutral-400">
-    <div>Click and hold on the image. If the text field is empty, the browser listens for your voice; otherwise it applies the typed edit.</div>
-    <div id="transcript" class="mt-1 text-neutral-300 italic min-h-[1.5em]"></div>
+  <div class="w-full max-w-5xl text-xs text-[var(--muted)]">
+    click and hold on the image. talk into the pill that pops up — release to apply.
   </div>
 
-  <div class="relative w-full max-w-5xl overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl">
-    <canvas id="canvas" width="1024" height="768" class="rounded-lg bg-neutral-900 max-w-full"></canvas>
-    <div id="recDot" class="hidden absolute top-4 right-4 w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
+  <div class="relative w-full max-w-5xl canvas-wrap">
+    <canvas id="canvas" width="1024" height="768" class="bg-white max-w-full"></canvas>
+  </div>
+
+  <div id="cursorPill" aria-hidden="true">
+    <span class="mic"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span>
+    <span class="text placeholder">listening…</span>
   </div>
 
 <script>
@@ -63,15 +171,34 @@ const STARTER = "https://media.pollinations.ai/649d0f9cf10b5e48";
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const statusEl = document.getElementById("status");
-const transcriptEl = document.getElementById("transcript");
 const errorEl = document.getElementById("error");
-const recDot = document.getElementById("recDot");
 const connectBtn = document.getElementById("connectBtn");
 const disconnectBtn = document.getElementById("disconnectBtn");
 const accountEl = document.getElementById("account");
 const intentInput = document.getElementById("intentInput");
 const undoBtn = document.getElementById("undoBtn");
 const redoBtn = document.getElementById("redoBtn");
+const pillEl = document.getElementById("cursorPill");
+const pillText = pillEl.querySelector(".text");
+
+function showPill(x, y, text, isPlaceholder = false) {
+  pillEl.style.left = `${x}px`;
+  pillEl.style.top = `${y}px`;
+  pillText.textContent = text;
+  pillText.classList.toggle("placeholder", isPlaceholder);
+  pillEl.classList.add("visible");
+}
+function movePill(x, y) {
+  pillEl.style.left = `${x}px`;
+  pillEl.style.top = `${y}px`;
+}
+function setPillText(text, isPlaceholder = false) {
+  pillText.textContent = text;
+  pillText.classList.toggle("placeholder", isPlaceholder);
+}
+function hidePill() {
+  pillEl.classList.remove("visible");
+}
 
 let currentImage = null;
 let currentImageURL = "";
@@ -220,7 +347,6 @@ document.getElementById("useUrl").onclick = () => {
 };
 document.getElementById("clearIntent").onclick = () => {
   intentInput.value = "";
-  transcriptEl.textContent = "";
 };
 
 function canvasPointFromEvent(e) {
@@ -235,11 +361,11 @@ function canvasPointFromEvent(e) {
   };
 }
 
-function startIntentCapture() {
+function startIntentCapture(clientX, clientY) {
   clearError();
   const typed = intentInput.value.trim();
   if (typed) {
-    transcriptEl.textContent = `→ ${typed}`;
+    showPill(clientX, clientY, typed, false);
     setStatus("release to edit…");
     return { mode: "typed", text: typed };
   }
@@ -262,26 +388,19 @@ function startIntentCapture() {
   recognition.interimResults = true;
   recognition.lang = navigator.language || "en-US";
 
-  capture.done = new Promise((resolve) => {
-    capture.resolve = resolve;
-  });
+  capture.done = new Promise((resolve) => { capture.resolve = resolve; });
   const finish = () => {
     if (capture.finished) return;
     capture.finished = true;
-    recDot.classList.add("hidden");
     capture.resolve({ text: capture.text.trim(), error: capture.error });
   };
   recognition.onresult = (event) => {
     let text = "";
-    for (let i = 0; i < event.results.length; i++) {
-      text += event.results[i][0].transcript;
-    }
+    for (let i = 0; i < event.results.length; i++) text += event.results[i][0].transcript;
     capture.text = text.trim();
-    transcriptEl.textContent = capture.text ? `→ ${capture.text}` : "listening…";
+    setPillText(capture.text || "listening…", !capture.text);
   };
-  recognition.onerror = (event) => {
-    capture.error = event.error || "speech recognition failed";
-  };
+  recognition.onerror = (event) => { capture.error = event.error || "speech recognition failed"; };
   recognition.onend = finish;
 
   try {
@@ -291,8 +410,7 @@ function startIntentCapture() {
     return null;
   }
 
-  recDot.classList.remove("hidden");
-  transcriptEl.textContent = "listening…";
+  showPill(clientX, clientY, "listening…", true);
   setStatus("listening…");
   return capture;
 }
@@ -302,7 +420,6 @@ async function stopIntentCapture(capture) {
   setStatus("processing…");
   try { capture.recognition.stop(); } catch {}
   const timeout = new Promise((resolve) => setTimeout(() => {
-    recDot.classList.add("hidden");
     resolve({ text: capture.text.trim(), error: capture.error });
   }, 1500));
   return Promise.race([capture.done, timeout]);
@@ -387,7 +504,6 @@ async function applyEditAtPoint(point, text) {
   if (!text.trim()) throw new Error("Nothing heard. Type an edit if voice input is unavailable.");
   setBusy(true);
   try {
-    transcriptEl.textContent = `→ ${text}`;
     const annotURL = await uploadDataURL(annotatedDataURL(point));
     const resultURL = await runEdit(annotURL, buildEditPrompt(text));
     pushUndo();
@@ -404,8 +520,12 @@ canvas.addEventListener("pointerdown", async (e) => {
   e.preventDefault();
   canvas.setPointerCapture(e.pointerId);
   clickPoint = canvasPointFromEvent(e);
-  transcriptEl.textContent = "";
-  activeCapture = startIntentCapture();
+  activeCapture = startIntentCapture(e.clientX, e.clientY);
+});
+
+canvas.addEventListener("pointermove", (e) => {
+  if (!activeCapture) return;
+  movePill(e.clientX, e.clientY);
 });
 
 canvas.addEventListener("pointerup", async (e) => {
@@ -415,6 +535,7 @@ canvas.addEventListener("pointerup", async (e) => {
   activeCapture = null;
   try {
     const { text, error } = await stopIntentCapture(capture);
+    hidePill();
     if (!text.trim() && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
     await applyEditAtPoint(clickPoint, text);
   } catch (err) {
@@ -427,7 +548,7 @@ canvas.addEventListener("pointercancel", () => {
     try { activeCapture.recognition.stop(); } catch {}
   }
   activeCapture = null;
-  recDot.classList.add("hidden");
+  hidePill();
   setStatus("ready");
 });
 

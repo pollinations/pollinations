@@ -282,7 +282,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                         disabled={!selectable}
                                         onClick={() => selectDate(date)}
                                         className={cn(
-                                            "rounded-md px-3 py-2 text-xs font-medium transition-colors duration-150",
+                                            "rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-150",
                                             selected
                                                 ? "bg-theme-bg-active text-theme-text-strong"
                                                 : "text-gray-700 hover:bg-theme-bg-hover-faint",
@@ -339,7 +339,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                             disabled={!selectable}
                                             onClick={() => selectDate(date)}
                                             className={cn(
-                                                "aspect-square rounded-md text-xs font-medium transition-colors duration-150",
+                                                "aspect-square rounded-lg text-xs font-medium transition-colors duration-150",
                                                 !inCurrentMonth &&
                                                     "text-gray-300",
                                                 sameUtcDay(date, today) &&

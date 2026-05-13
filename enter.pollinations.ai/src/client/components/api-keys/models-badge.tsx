@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from "react";
-import { Tag } from "../ui/tag.tsx";
+import { Chip } from "../ui/chip.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 
 export const ModelsBadge: FC<{
@@ -25,13 +25,13 @@ export const ModelsBadge: FC<{
 
     return (
         <Tooltip content={tooltipContent()} ariaLabel="Show allowed models">
-            <Tag
-                color={isAllModels ? "green" : "amber"}
+            <Chip
+                theme={isAllModels ? "green" : "amber"}
                 size="sm"
                 className="cursor-default transition-colors hover:brightness-95"
             >
                 {isAllModels ? "All" : modelCount}
-            </Tag>
+            </Chip>
         </Tooltip>
     );
 };

@@ -4,7 +4,7 @@ type InfoTipProps = {
     text?: ReactNode;
     content?: ReactNode;
     label?: string;
-    tone?: "pink" | "amber" | "yellow" | "blue" | "violet";
+    tone?: "pink" | "amber" | "blue" | "violet";
     placement?: "top" | "bottom";
     icon?: "i" | "!";
 };
@@ -12,23 +12,19 @@ type InfoTipProps = {
 const TONES = {
     pink: {
         badge: "bg-pink-100 border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400",
-        popup: "bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200",
+        popup: "bg-pink-50 border-pink-200",
     },
     amber: {
         badge: "bg-amber-200 border-amber-400 text-amber-800 hover:bg-amber-300 hover:border-amber-500",
-        popup: "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300",
-    },
-    yellow: {
-        badge: "bg-yellow-100 border-yellow-300 text-yellow-700 hover:bg-yellow-200 hover:border-yellow-400",
-        popup: "bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200",
+        popup: "bg-amber-50 border-amber-300",
     },
     blue: {
         badge: "bg-blue-100 border-blue-300 text-blue-600 hover:bg-blue-200 hover:border-blue-400",
-        popup: "bg-gradient-to-r from-blue-50 to-sky-50 border-blue-200",
+        popup: "bg-blue-50 border-blue-200",
     },
     violet: {
         badge: "bg-violet-100 border-violet-300 text-violet-600 hover:bg-violet-200 hover:border-violet-400",
-        popup: "bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200",
+        popup: "bg-violet-50 border-violet-200",
     },
 } as const;
 

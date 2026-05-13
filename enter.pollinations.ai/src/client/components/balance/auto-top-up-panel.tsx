@@ -507,7 +507,7 @@ type SetupSnippetProps = {
 const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
     <div className="min-w-0 break-words leading-relaxed text-amber-950">
         <span className="text-md font-bold">{title}:</span>{" "}
-        <span className="inline-flex rounded-md bg-white px-2 py-0.5 text-sm font-medium">
+        <span className="inline-flex rounded-lg bg-white px-2 py-0.5 text-sm font-medium">
             {value}
         </span>
     </div>

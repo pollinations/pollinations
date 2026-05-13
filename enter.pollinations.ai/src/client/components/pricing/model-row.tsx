@@ -1,7 +1,6 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Chip } from "../ui/chip.tsx";
-import { Tag } from "../ui/tag.tsx";
 import {
     calculatePerPollen,
     canAffordModel,
@@ -187,7 +186,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                     >
                         <span>{model.name}</span>
                         {copied && (
-                            <span className="rounded-md bg-teal-100 px-1.5 py-0.5 text-3xs font-semibold uppercase tracking-wide text-teal-700">
+                            <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-3xs font-semibold uppercase tracking-wide text-teal-700">
                                 copied
                             </span>
                         )}
@@ -200,28 +199,26 @@ export const ModelRow: FC<ModelRowProps> = ({
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                             {modalityIcons.length > 0 && (
                                 <Tooltip content={modalityLabel}>
-                                    <Tag
-                                        color="gray"
+                                    <Chip
                                         size="sm"
                                         className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
                                     >
                                         {modalityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
-                                    </Tag>
+                                    </Chip>
                                 </Tooltip>
                             )}
                             {capabilityIcons.length > 0 && (
                                 <Tooltip content={capabilityLabel}>
-                                    <Tag
-                                        color="gray"
+                                    <Chip
                                         size="sm"
                                         className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
                                     >
                                         {capabilityIcons.map((emoji) => (
                                             <span key={emoji}>{emoji}</span>
                                         ))}
-                                    </Tag>
+                                    </Chip>
                                 </Tooltip>
                             )}
                             {showNew && (

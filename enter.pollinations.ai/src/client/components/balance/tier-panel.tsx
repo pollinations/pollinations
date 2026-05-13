@@ -4,8 +4,8 @@ import {
     type TierStatus,
 } from "@shared/tier-config.ts";
 import type { FC } from "react";
+import { Chip } from "../ui/chip.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
-import { Tag } from "../ui/tag.tsx";
 import { TierExplanation } from "./tier-explanation";
 
 const APPEAL_URL =
@@ -71,18 +71,22 @@ const TierFinePrint: FC = () => (
     </div>
 );
 
-function getBadgeColor(
-    tier: TierStatus,
-): "gray" | "green" | "pink" | "amber" | "blue" | "orange" | "violet" {
+// Tier color → Chip class. Most tier colors map to ThemeName, but `gray`
+// (microbe/none) and `orange` (nectar) aren't theme hues so they get literal
+// classes mirroring the deprecated Tag palette.
+const TIER_BADGE_CLASSES: Record<string, string> = {
+    gray: "bg-gray-200 text-gray-900",
+    green: "bg-green-200 text-gray-900",
+    pink: "bg-pink-200 text-gray-900",
+    amber: "bg-amber-200 text-amber-900",
+    orange: "bg-orange-300 text-orange-950",
+    blue: "bg-blue-100 text-blue-700",
+    violet: "bg-violet-200 text-violet-950",
+};
+
+function getTierBadgeClass(tier: TierStatus): string {
     const tierColor = tier === "none" ? "gray" : getTierColor(tier);
-    return tierColor as
-        | "gray"
-        | "green"
-        | "pink"
-        | "amber"
-        | "blue"
-        | "orange"
-        | "violet";
+    return TIER_BADGE_CLASSES[tierColor] ?? TIER_BADGE_CLASSES.gray;
 }
 
 // ─── Microbe: Account Under Review ──────────────────────────
@@ -112,13 +116,12 @@ const TierScreen: FC<{
                 <span className="text-3xl font-bold text-gray-900">
                     {tierEmoji} {active_tier_name}
                 </span>
-                <Tag
-                    color={getBadgeColor(tier)}
+                <Chip
                     size="lg"
-                    className="font-semibold"
+                    className={`font-semibold ${getTierBadgeClass(tier)}`}
                 >
                     {pollen} pollen/hour
-                </Tag>
+                </Chip>
                 <InfoTip
                     tone="amber"
                     content={

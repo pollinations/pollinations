@@ -6,7 +6,7 @@ import {
     type PollenPack,
 } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
-import { Tag } from "../ui/tag.tsx";
+import { Chip } from "../ui/chip.tsx";
 
 const sliderGradient = (percent: number): string =>
     `linear-gradient(to right, var(--color-amber-500) 0%, var(--color-amber-500) ${percent}%, var(--color-amber-200) ${percent}%, var(--color-amber-200) 100%)`;
@@ -99,8 +99,8 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                         ${pack.amountUsd}
                                     </span>
                                     {isSelected && (
-                                        <Tag
-                                            color="amber"
+                                        <Chip
+                                            theme="amber"
                                             size="sm"
                                             className={cn(
                                                 "absolute top-full mt-1 flex-col items-stretch whitespace-nowrap",
@@ -139,7 +139,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                                     +{bonusPercent}% bonus
                                                 </span>
                                             )}
-                                        </Tag>
+                                        </Chip>
                                     )}
                                 </span>
                             </span>

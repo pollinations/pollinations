@@ -4,7 +4,7 @@ import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { Button } from "../button.tsx";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
-import { Tag } from "../ui/tag.tsx";
+import { Chip } from "../ui/chip.tsx";
 import { Chart } from "./chart";
 import { MultiSelect } from "./multi-select";
 import type { UsagePeriodSelection } from "./types";
@@ -150,7 +150,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             detail={
                                 stats.totalPollen > 0 ? (
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Tag
+                                        <Chip
                                             size="lg"
                                             className="font-semibold bg-paid text-amber-950"
                                             title={`${formatPollen(stats.totalPaid)} pollen from paid-side spend`}
@@ -159,8 +159,8 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                             <span className="tabular-nums">
                                                 {formatPollen(stats.totalPaid)}
                                             </span>
-                                        </Tag>
-                                        <Tag
+                                        </Chip>
+                                        <Chip
                                             size="lg"
                                             className="font-semibold bg-tier text-amber-950"
                                             title={`${formatPollen(stats.totalTier)} pollen from tier-side spend`}
@@ -169,7 +169,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                             <span className="tabular-nums">
                                                 {formatPollen(stats.totalTier)}
                                             </span>
-                                        </Tag>
+                                        </Chip>
                                     </div>
                                 ) : null
                             }
@@ -205,7 +205,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                 stats.topApp ? (
                                     <div className="flex flex-wrap items-center gap-2">
                                         {stats.topApp.uniqueUsers > 0 && (
-                                            <Tag
+                                            <Chip
                                                 size="lg"
                                                 className="font-semibold bg-rose-200 text-rose-900"
                                                 title={`${stats.topApp.uniqueUsers.toLocaleString()} distinct user${stats.topApp.uniqueUsers === 1 ? "" : "s"}`}
@@ -219,9 +219,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                                         ? "user"
                                                         : "users"}
                                                 </span>
-                                            </Tag>
+                                            </Chip>
                                         )}
-                                        <Tag
+                                        <Chip
                                             size="lg"
                                             className="font-semibold bg-rose-200 text-rose-900"
                                             title={`${formatPollen(stats.topApp.pollen)} pollen earned`}
@@ -234,7 +234,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                             <span className="font-medium opacity-70">
                                                 pollen
                                             </span>
-                                        </Tag>
+                                        </Chip>
                                     </div>
                                 ) : (
                                     "No earnings yet"

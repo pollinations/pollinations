@@ -9,6 +9,7 @@ import {
 } from "../layout/dashboard-theme.ts";
 import { Chip } from "../ui/chip.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
+import { InfoTip } from "../ui/info-tip.tsx";
 import { Input } from "../ui/input.tsx";
 import { Surface } from "../ui/surface.tsx";
 import { Switch, type SwitchStatus } from "../ui/switch.tsx";
@@ -66,7 +67,7 @@ export const DesignShowcase: FC = () => {
                 <TabsDemo />
                 <InputsDemo />
                 <IconButtonsDemo />
-                <Placeholder title="InfoTip" phase="Phase 9" />
+                <InfoTipDemo />
                 <MoneyColorsDemo />
             </div>
         </div>
@@ -170,8 +171,8 @@ const ThemesStrip: FC = () => (
                     <span className="text-xs uppercase tracking-wide text-theme-text-label">
                         {theme}
                     </span>
-                    <div className="flex h-8 rounded-md bg-theme-chip-bg" />
-                    <div className="flex h-8 rounded-md bg-theme-button-strong-bg" />
+                    <div className="flex h-8 rounded-lg bg-theme-chip-bg" />
+                    <div className="flex h-8 rounded-lg bg-theme-button-strong-bg" />
                     <div className="flex h-2 rounded-full bg-theme-bg-active" />
                 </div>
             ))}
@@ -672,7 +673,7 @@ const MoneyColorsDemo: FC = () => (
                 >
                     <div
                         className={cn(
-                            "flex h-10 w-16 shrink-0 items-center justify-center rounded-md",
+                            "flex h-10 w-16 shrink-0 items-center justify-center rounded-lg",
                             swatch.sample === "bg"
                                 ? swatch.utility
                                 : "bg-theme-bg-subtle",
@@ -806,13 +807,38 @@ const Section: FC<SectionProps> = ({ title, caption, children }) => (
     </section>
 );
 
-const Placeholder: FC<{ title: string; phase: string }> = ({
-    title,
-    phase,
-}) => (
-    <Section title={title}>
-        <div className="rounded-xl border border-dashed border-theme-border-soft bg-theme-bg-subtle p-6 text-sm text-theme-text-muted">
-            {phase} will populate this — see DESIGN_REFACTOR_PLAN.md
+// ─── InfoTip ────────────────────────────────────────────────
+
+const infoTipTones = ["pink", "amber", "blue", "violet"] as const;
+
+const InfoTipDemo: FC = () => (
+    <Section
+        title="InfoTip"
+        caption={
+            "Small `i` / `!` button with a flat single-tone popup on hover, " +
+            "click, or focus. Four tones — pink, amber, blue, violet."
+        }
+    >
+        <div className="flex flex-wrap items-start gap-8 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-6">
+            {infoTipTones.map((tone) => (
+                <div key={tone} className="flex flex-col items-center gap-2">
+                    <span className="inline-flex items-center text-sm text-theme-text-strong">
+                        {tone}
+                        <InfoTip
+                            tone={tone}
+                            content={`This is a ${tone} InfoTip popup.`}
+                        />
+                    </span>
+                    <span className="inline-flex items-center text-sm text-theme-text-strong">
+                        warning
+                        <InfoTip
+                            tone={tone}
+                            icon="!"
+                            content={`Heads up — ${tone} variant.`}
+                        />
+                    </span>
+                </div>
+            ))}
         </div>
     </Section>
 );

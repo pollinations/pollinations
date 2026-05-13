@@ -5,8 +5,8 @@ import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
+import { Chip } from "../ui/chip.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
-import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
 import { MultiSelect } from "./multi-select";
@@ -161,18 +161,18 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 value={formatPollen(stats.totalPollen)}
                                 detail={
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Tag
+                                        <Chip
                                             size="lg"
                                             className="font-semibold bg-paid text-amber-950"
                                         >
                                             💳 {formatPollen(stats.paidPollen)}
-                                        </Tag>
-                                        <Tag
+                                        </Chip>
+                                        <Chip
                                             size="lg"
                                             className="font-semibold bg-tier text-amber-950"
                                         >
                                             🌱 {formatPollen(stats.tierPollen)}
-                                        </Tag>
+                                        </Chip>
                                     </div>
                                 }
                                 theme={theme}
@@ -202,7 +202,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 detail={
                                     stats.topModel ? (
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <Tag
+                                            <Chip
                                                 size="lg"
                                                 className="font-semibold bg-rose-200 text-rose-900"
                                                 title={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
@@ -216,8 +216,8 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                                         ? "req"
                                                         : "reqs"}
                                                 </span>
-                                            </Tag>
-                                            <Tag
+                                            </Chip>
+                                            <Chip
                                                 size="lg"
                                                 className="font-semibold bg-rose-200 text-rose-900"
                                                 title={`${formatPollen(stats.topModel.pollen)} pollen`}
@@ -230,7 +230,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                                 <span className="font-medium opacity-70">
                                                     pollen
                                                 </span>
-                                            </Tag>
+                                            </Chip>
                                         </div>
                                     ) : (
                                         "No model usage yet"
@@ -278,9 +278,9 @@ const ModalityPills: FC<{
             {entries.map(({ modality, count }) => {
                 const { emoji, label } = MODALITY_META[modality];
                 return (
-                    <Tag
+                    <Chip
                         key={modality}
-                        color={theme}
+                        theme={theme}
                         size="lg"
                         className="font-semibold text-theme-text-base"
                         title={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
@@ -289,7 +289,7 @@ const ModalityPills: FC<{
                         <span className="tabular-nums">
                             {count.toLocaleString()}
                         </span>
-                    </Tag>
+                    </Chip>
                 );
             })}
         </div>

@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { cn } from "@/util.ts";
+import { Chip } from "../ui/chip.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
-import { Tag } from "../ui/tag.tsx";
 import { MODEL_CATEGORIES } from "./model-categories.ts";
 
 type ModelPermissionsProps = {
@@ -97,18 +97,19 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     <span className="text-sm font-medium">
                         Allow all models
                     </span>
-                    <Tag
-                        color={
-                            isUnrestricted
-                                ? "green"
-                                : selectedCount === 0
-                                  ? "gray"
-                                  : "amber"
-                        }
-                        className="ml-auto"
-                    >
-                        {`${selectedCount} selected`}
-                    </Tag>
+                    {isUnrestricted ? (
+                        <Chip theme="green" className="ml-auto">
+                            {`${selectedCount} selected`}
+                        </Chip>
+                    ) : selectedCount === 0 ? (
+                        <Chip className="ml-auto bg-gray-200 text-gray-900">
+                            {`${selectedCount} selected`}
+                        </Chip>
+                    ) : (
+                        <Chip theme="amber" className="ml-auto">
+                            {`${selectedCount} selected`}
+                        </Chip>
+                    )}
                 </label>
 
                 {/* Show model chips when restricting to specific models */}

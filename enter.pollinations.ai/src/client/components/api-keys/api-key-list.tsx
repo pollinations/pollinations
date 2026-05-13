@@ -248,7 +248,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Pollinations account and spend their own
                                     Pollen.
                                 </p>
-                                <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                                <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
                                     <span className="font-body text-2xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>

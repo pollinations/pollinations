@@ -36,7 +36,7 @@ export function AuthModal({
         <div className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto bg-green-950/50">
             <div
                 data-theme="amber"
-                className={`bg-theme-bg-surface border-2 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
+                className={`bg-theme-bg-subtle border-2 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
                 {...dialogProps}
             >
                 {children}

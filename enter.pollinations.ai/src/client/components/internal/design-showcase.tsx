@@ -137,7 +137,7 @@ function ToggleGroup<T extends string>({
             <span className="text-xs uppercase tracking-wide text-theme-text-strong">
                 {label}
             </span>
-            <div className="flex flex-wrap gap-1 rounded-full border border-theme-border bg-theme-bg-tinted p-1">
+            <div className="flex flex-wrap gap-1 rounded-full border border-theme-border bg-theme-bg-subtle p-1">
                 {options.map((option) => (
                     <button
                         key={option}
@@ -169,15 +169,10 @@ type ColorRow = {
 };
 
 const themeBackgroundRows: readonly ColorRow[] = [
-    { name: "bg-idle", swatch: "bg-theme-bg-idle" },
     { name: "bg-subtle", swatch: "bg-theme-bg-subtle" },
-    { name: "bg-tinted", swatch: "bg-theme-bg-tinted" },
     { name: "bg-pale", swatch: "bg-theme-bg-pale" },
-    { name: "bg-surface", swatch: "bg-theme-bg-surface" },
     { name: "bg-active", swatch: "bg-theme-bg-active" },
     { name: "bg-hover", swatch: "bg-theme-bg-hover" },
-    { name: "bg-hover-soft", swatch: "bg-theme-bg-hover-soft" },
-    { name: "bg-hover-faint", swatch: "bg-theme-bg-hover-faint" },
 ];
 
 const themeBorderRows: readonly ColorRow[] = [
@@ -441,7 +436,7 @@ const TypographyDemo: FC = () => (
                                 {row.purpose}
                             </span>
                             {row.offScale && (
-                                <span className="shrink-0 rounded-md bg-theme-bg-tinted px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-theme-text-soft">
+                                <span className="shrink-0 rounded-md bg-theme-bg-subtle px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-theme-text-soft">
                                     off-scale
                                 </span>
                             )}
@@ -513,7 +508,7 @@ const ChipRow: FC<{ label: string; children: ReactNode }> = ({
     label,
     children,
 }) => (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-3">
         <span className="w-40 text-xs uppercase tracking-wide text-theme-text-strong">
             {label}
         </span>
@@ -568,7 +563,7 @@ const SwitchesDemo: FC = () => {
             title="Switch"
             caption="Theme-independent. White-ish off, green on, red draft (for incomplete or failing state)."
         >
-            <div className="flex flex-wrap items-center gap-6 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
+            <div className="flex flex-wrap items-center gap-6 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
                 {switchStatuses.map((status) => (
                     <div
                         key={status}
@@ -674,7 +669,7 @@ const TabsDemo: FC = () => {
             title="Tabs"
             caption="Two tab styles. Segment = connected pill with internal dividers (date selector). Pills = separate bold pills (model selector)."
         >
-            <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
+            <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
                 <Field label="segment · activity date selector">
                     <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
                         {segmentOptions.map((option) => (
@@ -717,7 +712,7 @@ const InputsDemo: FC = () => (
         title="Input"
         caption="Focus ring inherits the active theme. Click into a field to see it."
     >
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-4 sm:grid-cols-3">
             <Field label="default">
                 <Input placeholder="Default" />
             </Field>
@@ -750,7 +745,7 @@ const IconButtonsDemo: FC = () => (
         title="IconButton"
         caption="Two real-world variants. Edit follows the page theme; delete is always danger-red."
     >
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
             <Field label="edit · theme">
                 <IconButton title="Edit" onClick={() => {}}>
                     ✎
@@ -790,7 +785,7 @@ const TooltipsDemo: FC = () => (
         title="Tooltips"
         caption="One recipe everywhere. Thin dark popup, cursor-help on every trigger. Two trigger types (info badge + mouseover wrapper) cover every hoverable info element in the app."
     >
-        <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
+        <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
             <TooltipRow label="Info badge">
                 <span className="inline-flex items-center text-sm text-theme-text-strong">
                     Paid balance
@@ -926,7 +921,7 @@ const MultiSelectDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
             title="MultiSelect"
             caption="Dropdown menu for picking multiple models or apps (used by the Activity page filters). Open it to see the scroll behaviour with many options."
         >
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
                 <MultiSelect
                     options={[...sampleModels]}
                     selected={selected}
@@ -975,7 +970,7 @@ const ChartDemo: FC = () => (
         title="Chart"
         caption="Stacked bar chart used by the Activity page. Bars render in the paid-soft + tier-soft chip colors so the chart and chips read as the same identity."
     >
-        <div className="rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
+        <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
             <Chart
                 data={buildSampleChartData()}
                 metric="pollen"

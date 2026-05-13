@@ -5,7 +5,7 @@ import type { ThemeName } from "../layout/dashboard-theme.ts";
 type SurfaceVariant = "panel" | "card" | "card-themed";
 
 const variantClasses: Record<SurfaceVariant, string> = {
-    panel: "rounded-2xl border border-theme-border bg-theme-bg-tinted p-6",
+    panel: "rounded-2xl border border-theme-border bg-theme-bg-subtle p-6",
     card: "rounded-xl bg-surface-white p-4",
     "card-themed": "rounded-xl bg-theme-bg-active p-4",
 };

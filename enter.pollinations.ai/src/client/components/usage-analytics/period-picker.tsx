@@ -175,8 +175,8 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                 onClick={() => setOpen((isOpen) => !isOpen)}
                 className={cn(
                     "inline-flex min-w-[150px] items-center justify-between gap-2 rounded-full border px-4 pt-1.5 pb-2 text-left text-base font-medium leading-normal",
-                    "border-theme-border bg-theme-bg-idle text-theme-text-base",
-                    "transition-all duration-200 ease-out hover:bg-theme-bg-hover-soft",
+                    "border-theme-border bg-theme-bg-subtle text-theme-text-base",
+                    "transition-all duration-200 ease-out hover:bg-theme-bg-pale",
                     open &&
                         "bg-theme-bg-active text-theme-text-strong shadow-sm",
                 )}
@@ -219,7 +219,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                             disabled={previousDisabled}
                             onClick={() => setViewDate(previousViewDate)}
                             className={cn(
-                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors text-theme-text-base hover:bg-theme-bg-hover-faint",
+                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors text-theme-text-base hover:bg-theme-bg-subtle",
                                 previousDisabled &&
                                     "cursor-not-allowed opacity-30 hover:bg-transparent",
                             )}
@@ -239,7 +239,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                             disabled={nextDisabled}
                             onClick={() => setViewDate(nextViewDate)}
                             className={cn(
-                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors text-theme-text-base hover:bg-theme-bg-hover-faint",
+                                "rounded-full px-2 py-1 text-xs font-semibold transition-colors text-theme-text-base hover:bg-theme-bg-subtle",
                                 nextDisabled &&
                                     "cursor-not-allowed opacity-30 hover:bg-transparent",
                             )}
@@ -285,7 +285,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                             "rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-150",
                                             selected
                                                 ? "bg-theme-bg-active text-theme-text-strong"
-                                                : "text-gray-700 hover:bg-theme-bg-hover-faint",
+                                                : "text-gray-700 hover:bg-theme-bg-subtle",
                                             !selectable &&
                                                 "cursor-not-allowed text-gray-300 hover:bg-transparent",
                                         )}
@@ -346,7 +346,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                                                     "ring-1 ring-theme-ring-focus",
                                                 selected
                                                     ? "bg-theme-bg-active text-theme-text-strong"
-                                                    : "text-gray-700 hover:bg-theme-bg-hover-faint",
+                                                    : "text-gray-700 hover:bg-theme-bg-subtle",
                                                 !selectable &&
                                                     "cursor-not-allowed text-gray-300 hover:bg-transparent",
                                             )}

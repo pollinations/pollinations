@@ -75,17 +75,12 @@
 
     --theme-border-idle:    var(--color-amber-300);
 
-    --theme-bg-idle:        oklch(from var(--color-amber-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-amber-50) l c h / 0.5);
-    --theme-bg-tinted:      oklch(from var(--color-amber-50) l c h / 0.7);
     --theme-bg-active:      var(--color-amber-200);
     --theme-bg-hover:       var(--color-amber-300);
-    --theme-bg-hover-soft:  var(--color-amber-100);
-    --theme-bg-hover-faint: var(--color-amber-50);
 
     --theme-chip-bg:    var(--color-amber-200);
     --theme-bg-pale:    var(--color-amber-100);
-    --theme-bg-surface: var(--color-amber-50);
     --theme-chip-text:  var(--color-amber-950);
 
     --theme-button-light-bg:    var(--color-amber-200);
@@ -103,17 +98,12 @@
 
     --theme-border-idle:    var(--color-blue-300);
 
-    --theme-bg-idle:        oklch(from var(--color-blue-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-blue-50) l c h / 0.5);
-    --theme-bg-tinted:      oklch(from var(--color-blue-50) l c h / 0.7);
     --theme-bg-active:      var(--color-blue-200);
     --theme-bg-hover:       var(--color-blue-300);
-    --theme-bg-hover-soft:  var(--color-blue-100);
-    --theme-bg-hover-faint: var(--color-blue-50);
 
     --theme-chip-bg:    var(--color-blue-200);
     --theme-bg-pale:    var(--color-blue-100);
-    --theme-bg-surface: var(--color-blue-50);
     --theme-chip-text:  var(--color-blue-950);
 
     --theme-button-light-bg:    var(--color-blue-200);
@@ -131,17 +121,12 @@
 
     --theme-border-idle:    var(--color-pink-300);
 
-    --theme-bg-idle:        oklch(from var(--color-pink-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-pink-50) l c h / 0.5);
-    --theme-bg-tinted:      oklch(from var(--color-pink-50) l c h / 0.7);
     --theme-bg-active:      var(--color-pink-200);
     --theme-bg-hover:       var(--color-pink-300);
-    --theme-bg-hover-soft:  var(--color-pink-100);
-    --theme-bg-hover-faint: var(--color-pink-50);
 
     --theme-chip-bg:    var(--color-pink-200);
     --theme-bg-pale:    var(--color-pink-100);
-    --theme-bg-surface: var(--color-pink-50);
     --theme-chip-text:  var(--color-pink-950);
 
     --theme-button-light-bg:    var(--color-pink-200);
@@ -159,17 +144,12 @@
 
     --theme-border-idle:    var(--color-teal-300);
 
-    --theme-bg-idle:        oklch(from var(--color-teal-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-teal-50) l c h / 0.5);
-    --theme-bg-tinted:      oklch(from var(--color-teal-50) l c h / 0.7);
     --theme-bg-active:      var(--color-teal-200);
     --theme-bg-hover:       var(--color-teal-300);
-    --theme-bg-hover-soft:  var(--color-teal-100);
-    --theme-bg-hover-faint: var(--color-teal-50);
 
     --theme-chip-bg:    var(--color-teal-200);
     --theme-bg-pale:    var(--color-teal-100);
-    --theme-bg-surface: var(--color-teal-50);
     --theme-chip-text:  var(--color-teal-950);
 
     --theme-button-light-bg:    var(--color-teal-200);
@@ -187,17 +167,12 @@
 
     --theme-border-idle:    var(--color-violet-300);
 
-    --theme-bg-idle:        oklch(from var(--color-violet-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-violet-50) l c h / 0.5);
-    --theme-bg-tinted:      oklch(from var(--color-violet-50) l c h / 0.7);
     --theme-bg-active:      var(--color-violet-200);
     --theme-bg-hover:       var(--color-violet-300);
-    --theme-bg-hover-soft:  var(--color-violet-100);
-    --theme-bg-hover-faint: var(--color-violet-50);
 
     --theme-chip-bg:    var(--color-violet-200);
     --theme-bg-pale:    var(--color-violet-100);
-    --theme-bg-surface: var(--color-violet-50);
     --theme-chip-text:  var(--color-violet-950);
 
     --theme-button-light-bg:    var(--color-violet-200);
@@ -218,17 +193,12 @@
 
     --theme-border-idle:    var(--color-green-300);
 
-    --theme-bg-idle:        oklch(from var(--color-green-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-green-50) l c h / 0.5);
-    --theme-bg-tinted:      oklch(from var(--color-green-50) l c h / 0.7);
     --theme-bg-active:      var(--color-green-200);
     --theme-bg-hover:       var(--color-green-300);
-    --theme-bg-hover-soft:  var(--color-green-100);
-    --theme-bg-hover-faint: var(--color-green-50);
 
     --theme-chip-bg:    var(--color-green-200);
     --theme-bg-pale:    var(--color-green-100);
-    --theme-bg-surface: var(--color-green-50);
     --theme-chip-text:  var(--color-green-950);
 
     --theme-button-light-bg:    var(--color-green-200);
@@ -243,10 +213,7 @@
 html[data-mode="dark"] [data-theme="amber"] {
     --theme-text-base:    var(--color-amber-100);
     --theme-text-strong:  var(--color-amber-50);
-    --theme-bg-idle:      oklch(from var(--color-amber-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-amber-950) l c h / 0.3);
-    --theme-bg-tinted:    oklch(from var(--color-amber-950) l c h / 0.4);
-    --theme-bg-surface:   var(--color-amber-950);
     --theme-bg-active:    var(--color-amber-800);
     --theme-bg-hover:     var(--color-amber-700);
     --theme-chip-bg:      var(--color-amber-800);
@@ -260,10 +227,7 @@ html[data-mode="dark"] [data-theme="amber"] {
 html[data-mode="dark"] [data-theme="blue"] {
     --theme-text-base:    var(--color-blue-100);
     --theme-text-strong:  var(--color-blue-50);
-    --theme-bg-idle:      oklch(from var(--color-blue-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-blue-950) l c h / 0.3);
-    --theme-bg-tinted:    oklch(from var(--color-blue-950) l c h / 0.4);
-    --theme-bg-surface:   var(--color-blue-950);
     --theme-bg-active:    var(--color-blue-800);
     --theme-bg-hover:     var(--color-blue-700);
     --theme-chip-bg:      var(--color-blue-800);
@@ -277,10 +241,7 @@ html[data-mode="dark"] [data-theme="blue"] {
 html[data-mode="dark"] [data-theme="pink"] {
     --theme-text-base:    var(--color-pink-100);
     --theme-text-strong:  var(--color-pink-50);
-    --theme-bg-idle:      oklch(from var(--color-pink-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-pink-950) l c h / 0.3);
-    --theme-bg-tinted:    oklch(from var(--color-pink-950) l c h / 0.4);
-    --theme-bg-surface:   var(--color-pink-950);
     --theme-bg-active:    var(--color-pink-800);
     --theme-bg-hover:     var(--color-pink-700);
     --theme-chip-bg:      var(--color-pink-800);
@@ -294,10 +255,7 @@ html[data-mode="dark"] [data-theme="pink"] {
 html[data-mode="dark"] [data-theme="teal"] {
     --theme-text-base:    var(--color-teal-100);
     --theme-text-strong:  var(--color-teal-50);
-    --theme-bg-idle:      oklch(from var(--color-teal-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-teal-950) l c h / 0.3);
-    --theme-bg-tinted:    oklch(from var(--color-teal-950) l c h / 0.4);
-    --theme-bg-surface:   var(--color-teal-950);
     --theme-bg-active:    var(--color-teal-800);
     --theme-bg-hover:     var(--color-teal-700);
     --theme-chip-bg:      var(--color-teal-800);
@@ -311,10 +269,7 @@ html[data-mode="dark"] [data-theme="teal"] {
 html[data-mode="dark"] [data-theme="violet"] {
     --theme-text-base:    var(--color-violet-100);
     --theme-text-strong:  var(--color-violet-50);
-    --theme-bg-idle:      oklch(from var(--color-violet-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-violet-950) l c h / 0.3);
-    --theme-bg-tinted:    oklch(from var(--color-violet-950) l c h / 0.4);
-    --theme-bg-surface:   var(--color-violet-950);
     --theme-bg-active:    var(--color-violet-800);
     --theme-bg-hover:     var(--color-violet-700);
     --theme-chip-bg:      var(--color-violet-800);
@@ -328,10 +283,7 @@ html[data-mode="dark"] [data-theme="violet"] {
 html[data-mode="dark"] [data-theme="green"] {
     --theme-text-base:    var(--color-green-100);
     --theme-text-strong:  var(--color-green-50);
-    --theme-bg-idle:      oklch(from var(--color-green-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-green-950) l c h / 0.3);
-    --theme-bg-tinted:    oklch(from var(--color-green-950) l c h / 0.4);
-    --theme-bg-surface:   var(--color-green-950);
     --theme-bg-active:    var(--color-green-800);
     --theme-bg-hover:     var(--color-green-700);
     --theme-chip-bg:      var(--color-green-800);
@@ -373,20 +325,15 @@ html[data-mode="dark"] {
 
     --color-theme-border:            var(--theme-border-idle);
 
-    --color-theme-bg-idle:           var(--theme-bg-idle);
     --color-theme-bg-subtle:         var(--theme-bg-subtle);
-    --color-theme-bg-tinted:         var(--theme-bg-tinted);
     --color-theme-bg-active:         var(--theme-bg-active);
     --color-theme-bg-hover:          var(--theme-bg-hover);
-    --color-theme-bg-hover-soft:     var(--theme-bg-hover-soft);
-    --color-theme-bg-hover-faint:    var(--theme-bg-hover-faint);
 
     --color-theme-accent:            var(--theme-accent);
 
     --color-theme-chip-bg:           var(--theme-chip-bg);
     --color-theme-chip-text:         var(--theme-chip-text);
     --color-theme-bg-pale:           var(--theme-bg-pale);
-    --color-theme-bg-surface:        var(--theme-bg-surface);
 
     --color-theme-button-light-bg:    var(--theme-button-light-bg);
     --color-theme-button-light-text:  var(--theme-button-light-text);

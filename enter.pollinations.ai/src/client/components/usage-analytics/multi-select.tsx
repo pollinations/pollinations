@@ -121,7 +121,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         ? "cursor-not-allowed opacity-60 border-theme-border bg-theme-bg-subtle"
                         : open
                           ? "border-theme-border bg-theme-bg-active"
-                          : "border-theme-border bg-theme-bg-idle hover:bg-theme-bg-hover-soft",
+                          : "border-theme-border bg-theme-bg-subtle hover:bg-theme-bg-pale",
                 )}
             >
                 <span
@@ -189,7 +189,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                 "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                 isAllSelected
                                     ? "bg-theme-bg-active text-theme-text-strong font-medium"
-                                    : "text-theme-text-base hover:bg-theme-bg-hover-faint",
+                                    : "text-theme-text-base hover:bg-theme-bg-subtle",
                             )}
                         >
                             <span
@@ -214,7 +214,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                                         "w-full px-3 py-2 text-left text-xs transition-colors flex items-center gap-3",
                                         isChecked
                                             ? "bg-theme-bg-active text-theme-text-strong"
-                                            : "text-theme-text-base hover:bg-theme-bg-hover-faint",
+                                            : "text-theme-text-base hover:bg-theme-bg-subtle",
                                     )}
                                 >
                                     <span

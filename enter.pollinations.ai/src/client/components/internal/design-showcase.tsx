@@ -199,31 +199,6 @@ const themeButtonRows: readonly ColorRow[] = [
     { name: "button-light-hover", swatch: "bg-theme-button-light-hover" },
 ];
 
-const intentColumns = ["bg", "text", "border"] as const;
-
-type IntentLabel = "danger" | "news" | "alpha";
-
-const intentList: readonly IntentLabel[] = ["danger", "news", "alpha"] as const;
-
-const intentSwatch: Record<
-    IntentLabel,
-    Partial<Record<(typeof intentColumns)[number], string>>
-> = {
-    danger: {
-        bg: "bg-intent-danger-bg-light",
-        text: "bg-intent-danger-text",
-        border: "bg-intent-danger-border",
-    },
-    news: {
-        bg: "bg-intent-news-bg",
-        text: "bg-intent-news-text",
-    },
-    alpha: {
-        bg: "bg-intent-alpha-bg",
-        text: "bg-intent-alpha-text",
-    },
-};
-
 const walletRows: readonly ColorRow[] = [
     { name: "paid-pale", swatch: "bg-paid-pale" },
     { name: "paid-soft", swatch: "bg-paid-soft" },
@@ -250,7 +225,6 @@ const ColorsSection: FC<{ theme: ThemeName }> = ({ theme }) => (
                 rows={themeIdentityRows}
             />
             <ColorGroup label="Button (light variant)" rows={themeButtonRows} />
-            <IntentGroup />
             <ColorGroup label="Wallet" rows={walletRows} />
             <ColorGroup label="Universal" rows={universalRows} />
         </div>
@@ -268,46 +242,6 @@ const ColorGroup: FC<{ label: string; rows: readonly ColorRow[] }> = ({
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3 lg:grid-cols-4">
             {rows.map((row) => (
                 <Swatch key={row.name} row={row} />
-            ))}
-        </div>
-    </div>
-);
-
-const IntentGroup: FC = () => (
-    <div className="flex flex-col gap-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-strong">
-            Intents
-        </div>
-        <div className="overflow-hidden rounded-lg border border-theme-border-subtle">
-            <div className="grid grid-cols-[6rem_repeat(3,minmax(0,1fr))] gap-x-3 gap-y-2 bg-theme-bg-tinted px-3 py-2 text-xs font-mono uppercase tracking-wide text-theme-text-soft/60">
-                <span />
-                {intentColumns.map((col) => (
-                    <span key={col}>{col}</span>
-                ))}
-            </div>
-            {intentList.map((intent) => (
-                <div
-                    key={intent}
-                    className="grid grid-cols-[6rem_repeat(3,minmax(0,1fr))] items-center gap-x-3 gap-y-2 border-t border-theme-border-subtle px-3 py-2"
-                >
-                    <span className="text-xs font-medium capitalize text-theme-text-strong">
-                        {intent}
-                    </span>
-                    {intentColumns.map((col) => {
-                        const cls = intentSwatch[intent][col];
-                        return (
-                            <div key={col} className="flex items-center gap-2">
-                                <span
-                                    className={cn(
-                                        "h-5 w-5 shrink-0 rounded border border-theme-border-subtle",
-                                        cls,
-                                    )}
-                                />
-                                <Computed cls={cls} />
-                            </div>
-                        );
-                    })}
-                </div>
             ))}
         </div>
     </div>

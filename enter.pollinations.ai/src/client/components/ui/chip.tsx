@@ -20,8 +20,8 @@ const chipSizes = {
 } as const;
 
 const intentClasses: Record<ChipIntent, string> = {
-    news: "bg-intent-news-bg text-intent-news-text",
-    alpha: "bg-intent-alpha-bg text-intent-alpha-text",
+    news: "bg-[oklch(0.935_0.06_158)] text-[oklch(0.46_0.13_158)]",
+    alpha: "bg-[oklch(0.91_0.15_92)] text-[oklch(0.38_0.13_55)]",
     paid: "bg-paid-pale text-paid-deep",
     tier: "bg-tier-pale text-tier-deep",
     neutral: "border border-gray-400/70 bg-gray-100/80 text-gray-900",

@@ -376,12 +376,8 @@ html[data-mode="dark"] [data-theme="green"] {
     --intent-danger-border:      oklch(0.78 0.115 25);
 
     /* News — Chip only. Soft green label for newly-added models. */
-    --intent-news-bg:            oklch(0.935 0.06 158);
-    --intent-news-text:          oklch(0.46 0.13 158);
 
     /* Alpha — Chip only. Saturated "warning sign" yellow + deep amber text. */
-    --intent-alpha-bg:           oklch(0.91 0.15 92);
-    --intent-alpha-text:         oklch(0.38 0.13 55);
 
     /* Paid + Tier intents reuse the canonical money colors above —
        Chip recipe = `bg-paid-soft text-paid-deep` (and same for tier).
@@ -429,11 +425,7 @@ html[data-mode="dark"] {
     --color-intent-danger-text:        var(--intent-danger-text);
     --color-intent-danger-border:      var(--intent-danger-border);
 
-    --color-intent-news-bg:            var(--intent-news-bg);
-    --color-intent-news-text:          var(--intent-news-text);
 
-    --color-intent-alpha-bg:           var(--intent-alpha-bg);
-    --color-intent-alpha-text:         var(--intent-alpha-text);
 
     --color-surface-white:             var(--color-surface-white-light);
 }

@@ -18,7 +18,7 @@ const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
 const SeedTooltipContent = () => (
     <div className="w-72">
         <p className="font-semibold text-gray-900 mb-2">Dev Points (need 7+)</p>
-        <table className="w-full text-left text-[11px]">
+        <table className="w-full text-left text-2xs">
             <tbody>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 pr-2 text-gray-600 leading-tight">
@@ -54,7 +54,7 @@ const SeedTooltipContent = () => (
                 </tr>
             </tbody>
         </table>
-        <p className="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-500">
+        <p className="mt-2 pt-2 border-t border-gray-100 text-3xs text-gray-500">
             Evaluated weekly. No action needed.
         </p>
     </div>
@@ -109,7 +109,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                                 </span>
                             </Tooltip>
                         </p>
-                        <p className="text-[10px] text-emerald-600 mt-0.5">
+                        <p className="text-3xs text-emerald-600 mt-0.5">
                             Auto-upgraded weekly
                         </p>
                     </div>
@@ -138,7 +138,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                                 Publish an app
                             </a>
                         </p>
-                        <p className="text-[10px] text-amber-600 mt-0.5">
+                        <p className="text-3xs text-amber-600 mt-0.5">
                             {TIER_EMOJIS.seed} Must be Seed first
                         </p>
                     </div>

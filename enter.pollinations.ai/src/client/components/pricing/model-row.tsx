@@ -187,7 +187,7 @@ export const ModelRow: FC<ModelRowProps> = ({
                     >
                         <span>{model.name}</span>
                         {copied && (
-                            <span className="rounded-md bg-teal-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+                            <span className="rounded-md bg-teal-100 px-1.5 py-0.5 text-3xs font-semibold uppercase tracking-wide text-teal-700">
                                 copied
                             </span>
                         )}

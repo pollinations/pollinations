@@ -253,7 +253,7 @@ const UsageStatCard: FC<{
     theme: ThemeName;
 }> = ({ label, value, detail, theme }) => (
     <div data-theme={theme} className="text-sm">
-        <div className="text-[10px] uppercase tracking-wide font-bold text-theme-text-label">
+        <div className="text-3xs uppercase tracking-wide font-bold text-theme-text-label">
             {label}
         </div>
         <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums text-theme-text-strong">

@@ -54,7 +54,7 @@ export const DesignShowcase: FC = () => {
                     onThemeOverrideChange={setThemeOverride}
                 />
                 <ThemesStrip />
-                <Placeholder title="Typography" phase="Phase 7" />
+                <TypographyDemo />
                 <CascadeDemo />
                 <IntentDemo />
                 <ChipsDemo />
@@ -177,6 +177,132 @@ const ThemesStrip: FC = () => (
     </Section>
 );
 
+// ─── Typography (headings + size scale) ────────────────────
+
+type SizeRow = {
+    utility: string;
+    px: string;
+    note?: string;
+};
+
+const sizeScale: readonly SizeRow[] = [
+    { utility: "text-3xs", px: "10px", note: "off-scale fine print" },
+    { utility: "text-2xs", px: "11px", note: "off-scale fine print" },
+    { utility: "text-xs", px: "12px" },
+    { utility: "text-sm", px: "14px" },
+    { utility: "text-md", px: "15px", note: "off-scale dashboard nav" },
+    { utility: "text-base", px: "16px", note: "body default" },
+    { utility: "text-lg", px: "18px" },
+    { utility: "text-xl", px: "20px" },
+    { utility: "text-2xl", px: "24px" },
+    { utility: "text-3xl", px: "30px" },
+    { utility: "text-4xl", px: "36px" },
+    { utility: "text-5xl", px: "48px" },
+] as const;
+
+const TypographyDemo: FC = () => (
+    <Section
+        title="Typography"
+        caption={
+            "Headings cascade from `style.css @layer base`. h1 uses LCT Mogi (font-heading), " +
+            "h2-h3 use Fraunces (font-subheading), h4-h6 use Uncut Sans (font-body)."
+        }
+    >
+        <div className="flex flex-col gap-6">
+            <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-label">
+                    Heading scale
+                </div>
+                <div className="flex flex-col gap-3">
+                    <HeadingRow tag="h1" utility="text-5xl font-heading">
+                        <h1>The quick brown fox</h1>
+                    </HeadingRow>
+                    <HeadingRow
+                        tag="h2"
+                        utility="text-3xl font-subheading tracking-tight"
+                    >
+                        <h2>The quick brown fox</h2>
+                    </HeadingRow>
+                    <HeadingRow
+                        tag="h3"
+                        utility="text-2xl font-subheading tracking-tight"
+                    >
+                        <h3>The quick brown fox</h3>
+                    </HeadingRow>
+                    <HeadingRow
+                        tag="h4"
+                        utility="text-lg font-body font-semibold"
+                    >
+                        <h4>The quick brown fox</h4>
+                    </HeadingRow>
+                    <HeadingRow
+                        tag="h5"
+                        utility="text-base font-body font-semibold"
+                    >
+                        <h5>The quick brown fox</h5>
+                    </HeadingRow>
+                    <HeadingRow
+                        tag="h6"
+                        utility="text-sm font-body font-semibold"
+                    >
+                        <h6>The quick brown fox</h6>
+                    </HeadingRow>
+                    <HeadingRow tag="p" utility="text-base (body default)">
+                        <p>The quick brown fox jumps over the lazy dog.</p>
+                    </HeadingRow>
+                </div>
+            </div>
+
+            <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-label">
+                    Size scale (Uncut Sans)
+                </div>
+                <div className="flex flex-col gap-2">
+                    {sizeScale.map((row) => (
+                        <div
+                            key={row.utility}
+                            className="flex items-baseline gap-4 border-b border-theme-border-subtle pb-2 last:border-b-0 last:pb-0"
+                        >
+                            <span
+                                className={`${row.utility} text-theme-text-strong w-64 truncate`}
+                            >
+                                The quick brown fox
+                            </span>
+                            <code className="text-xs font-mono text-theme-text-strong w-24">
+                                {row.utility}
+                            </code>
+                            <span className="text-xs font-mono text-theme-text-muted w-12">
+                                {row.px}
+                            </span>
+                            {row.note && (
+                                <span className="text-xs text-theme-text-softer">
+                                    {row.note}
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    </Section>
+);
+
+const HeadingRow: FC<{
+    tag: string;
+    utility: string;
+    children: ReactNode;
+}> = ({ tag, utility, children }) => (
+    <div className="flex items-baseline gap-4">
+        <code className="w-8 shrink-0 text-xs font-mono text-theme-text-muted">
+            {tag}
+        </code>
+        <div className="min-w-0 flex-1 text-theme-text-strong">{children}</div>
+        <code className="hidden shrink-0 text-xs font-mono text-theme-text-softer sm:block">
+            {utility}
+        </code>
+    </div>
+);
+
 // ─── Cascade demo (single component, all 6 themes) ──────────
 
 const CascadeDemo: FC = () => (
@@ -197,7 +323,7 @@ const CascadeDemo: FC = () => (
                     <span className="rounded-full bg-theme-chip-bg px-3 py-1 text-xs font-medium text-theme-chip-text">
                         {theme} chip
                     </span>
-                    <span className="text-[11px] text-theme-text-softer">
+                    <span className="text-2xs text-theme-text-softer">
                         text-theme-text-softer
                     </span>
                 </div>

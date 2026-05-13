@@ -290,7 +290,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                         {formatPollen(displayPaidBalance)}
                     </span>
                     {paidWeek > 0 && (
-                        <span className="text-[10px] font-bold tabular-nums text-green-700">
+                        <span className="text-3xs font-bold tabular-nums text-green-700">
                             +{formatPollen(paidWeek)}
                         </span>
                     )}
@@ -310,7 +310,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                             {formatPollen(displayTierBalance)}
                         </span>
                         {tierWeek > 0 && (
-                            <span className="text-[10px] font-bold tabular-nums text-green-700">
+                            <span className="text-3xs font-bold tabular-nums text-green-700">
                                 +{formatPollen(tierWeek)}
                             </span>
                         )}

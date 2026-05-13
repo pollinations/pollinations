@@ -68,7 +68,7 @@ export const InfoTip: FC<InfoTipProps> = ({
             aria-describedby={show ? tooltipId : undefined}
         >
             <span
-                className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border transition-colors text-[10px] font-bold cursor-pointer ${classes.badge}`}
+                className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border transition-colors text-3xs font-bold cursor-pointer ${classes.badge}`}
             >
                 {icon}
             </span>

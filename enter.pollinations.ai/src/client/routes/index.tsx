@@ -347,7 +347,7 @@ function RouteComponent() {
                             onChange={setActivityPeriod}
                             theme={dashboardThemeByPage.usage}
                         />
-                        <p className="text-[10px] text-gray-400">
+                        <p className="text-3xs text-gray-400">
                             Data refreshes every hour. Times shown in UTC.
                         </p>
                     </div>

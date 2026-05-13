@@ -279,7 +279,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     }
                 />
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
+                    <div className="flex min-w-0 items-center text-md font-bold text-amber-950">
                         Auto top-up
                         <InfoTip
                             content={AUTO_TOP_UP_TOOLTIP_CONTENT}
@@ -506,7 +506,7 @@ type SetupSnippetProps = {
 
 const SetupSnippet: FC<SetupSnippetProps> = ({ title, value }) => (
     <div className="min-w-0 break-words leading-relaxed text-amber-950">
-        <span className="text-[15px] font-bold">{title}:</span>{" "}
+        <span className="text-md font-bold">{title}:</span>{" "}
         <span className="inline-flex rounded-md bg-white px-2 py-0.5 text-sm font-medium">
             {value}
         </span>

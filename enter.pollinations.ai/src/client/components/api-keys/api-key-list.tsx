@@ -250,7 +250,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Pollen.
                                 </p>
                                 <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
-                                    <span className="font-body text-[11px] font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                                    <span className="font-body text-2xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
                                     Turn on earnings to receive a share of

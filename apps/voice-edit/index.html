@@ -4,7 +4,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body { background:#0a0a0a; color:#e5e5e5; }
-  .ring { box-shadow: 0 0 0 4px rgba(239,68,68,.6), 0 0 30px rgba(239,68,68,.4); }
   canvas { cursor: crosshair; touch-action: none; }
 </style>
 <body class="min-h-screen p-6 flex flex-col items-center gap-4">
@@ -16,7 +15,6 @@
   <div class="relative">
     <canvas id="canvas" width="1024" height="768" class="rounded-lg bg-neutral-900 max-w-full"></canvas>
     <div id="recDot" class="hidden absolute top-4 right-4 w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
-    <div id="marker" class="hidden absolute pointer-events-none w-24 h-24 -ml-12 -mt-12 rounded-full border-4 border-red-500 ring"></div>
   </div>
 
   <div class="w-full max-w-4xl flex items-center gap-2 text-sm">
@@ -48,14 +46,13 @@
 <script>
 const KEY_STORAGE = "voice-edit:api-key";
 const BASE = "https://gen.pollinations.ai";
-const STARTER = "https://media.pollinations.ai/c5d89da41260fc5a";
+const STARTER = "https://media.pollinations.ai/649d0f9cf10b5e48";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const statusEl = document.getElementById("status");
 const transcriptEl = document.getElementById("transcript");
 const recDot = document.getElementById("recDot");
-const marker = document.getElementById("marker");
 const keyInput = document.getElementById("keyInput");
 
 let currentImage = null;
@@ -106,13 +103,6 @@ function canvasPointFromEvent(e) {
     rectY: e.clientY - rect.top,
   };
 }
-
-function showMarker(p) {
-  marker.style.left = (canvas.offsetLeft + p.rectX) + "px";
-  marker.style.top = (canvas.offsetTop + p.rectY) + "px";
-  marker.classList.remove("hidden");
-}
-function hideMarker() { marker.classList.add("hidden"); }
 
 async function startRecording() {
   try {
@@ -210,7 +200,6 @@ canvas.addEventListener("pointerdown", async (e) => {
   e.preventDefault();
   canvas.setPointerCapture(e.pointerId);
   clickPoint = canvasPointFromEvent(e);
-  showMarker(clickPoint);
   transcriptEl.textContent = "";
   await startRecording();
 });
@@ -219,19 +208,17 @@ canvas.addEventListener("pointerup", async (e) => {
   if (!mediaRecorder || mediaRecorder.state !== "recording") return;
   try {
     const blob = await stopRecordingAndGetBlob();
-    if (blob.size < 1000) { setStatus("too short"); hideMarker(); return; }
+    if (blob.size < 1000) { setStatus("too short"); return; }
     const text = await transcribe(blob);
     transcriptEl.textContent = "→ " + text;
-    if (!text.trim()) { setStatus("nothing heard"); hideMarker(); return; }
+    if (!text.trim()) { setStatus("nothing heard"); return; }
     const annotURL = await uploadDataURL(annotatedDataURL(clickPoint));
     const prompt = `Edit the area marked with the red circle (labeled HERE). ${text}. Remove the red circle and HERE text in the final image.`;
     const resultURL = await runEdit(annotURL, prompt);
     await loadImageFromURL(resultURL);
-    hideMarker();
     setStatus("done");
   } catch (err) {
     setStatus("error: " + err.message);
-    hideMarker();
   }
 });
 

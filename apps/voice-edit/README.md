@@ -47,7 +47,18 @@ The red circle burned into the pixels at the click point IS the spatial groundin
 - `POST https://media.pollinations.ai/upload` — multipart `file`
 - `POST https://gen.pollinations.ai/v1/images/edits` — JSON `{prompt, image, model}`
 
-Auth: `Authorization: Bearer <app-key>` (create one at https://enter.pollinations.ai). The key is stored in your browser's `localStorage` — never bundled in source.
+Auth: **BYOP** (Bring Your Own Pollen). On first use, the app redirects to `enter.pollinations.ai/authorize?client_id=pk_<voice_edit_app_key>` — the user approves and returns with a scoped `sk_user_*` key in the URL fragment. The key spends the user's Pollen, not ours. The `pk_` App Key in source is just an identifier; only the user's returned `sk_` is sensitive (stored in their browser's `localStorage`).
+
+### App key registration (one-time, by the app owner)
+
+```bash
+curl -X POST https://gen.pollinations.ai/account/keys \
+  -H 'Authorization: Bearer <your_sk_>' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Voice Edit","type":"publishable","redirectUris":["https://pollinations.github.io/.../voice-edit/"],"earningsEnabled":true,"models":["kontext","nanobanana-2","whisper","universal-2"]}'
+```
+
+Paste the returned `pk_…` into `CLIENT_ID` in `index.html`. With `earningsEnabled:true`, the app owner earns 25% of each user's spend in the app.
 
 ---
 

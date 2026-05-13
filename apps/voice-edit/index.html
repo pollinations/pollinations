@@ -32,10 +32,9 @@
   </div>
 
   <div class="w-full max-w-4xl flex items-center gap-2 text-sm">
-    <input id="keyInput" type="password" placeholder="paste your Pollinations app key"
-      class="flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded font-mono">
-    <button id="saveKey" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Save</button>
-    <a href="https://enter.pollinations.ai" target="_blank" class="px-3 py-1.5 text-blue-400 hover:underline">get a key →</a>
+    <button id="connectBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded">Connect Pollinations</button>
+    <button id="disconnectBtn" class="hidden px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Disconnect</button>
+    <span id="account" class="text-neutral-400"></span>
   </div>
 
   <div class="w-full max-w-4xl text-sm text-neutral-400">
@@ -44,7 +43,9 @@
   </div>
 
 <script>
-const KEY_STORAGE = "voice-edit:api-key";
+const KEY_STORAGE = "voice-edit:user-key";
+const CLIENT_ID = "pk_VOICE_EDIT_APP_KEY"; // TODO: replace with real App Key from enter.pollinations.ai
+const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/649d0f9cf10b5e48";
 
@@ -53,7 +54,9 @@ const ctx = canvas.getContext("2d");
 const statusEl = document.getElementById("status");
 const transcriptEl = document.getElementById("transcript");
 const recDot = document.getElementById("recDot");
-const keyInput = document.getElementById("keyInput");
+const connectBtn = document.getElementById("connectBtn");
+const disconnectBtn = document.getElementById("disconnectBtn");
+const accountEl = document.getElementById("account");
 
 let currentImage = null;
 let mediaRecorder = null;
@@ -63,16 +66,54 @@ let stream = null;
 
 function setStatus(s) { statusEl.textContent = s; }
 
-keyInput.value = localStorage.getItem(KEY_STORAGE) || "";
-document.getElementById("saveKey").onclick = () => {
-  localStorage.setItem(KEY_STORAGE, keyInput.value.trim());
-  setStatus("key saved");
-};
+(function captureKeyFromFragment() {
+  if (!location.hash) return;
+  const params = new URLSearchParams(location.hash.slice(1));
+  const apiKey = params.get("api_key");
+  if (apiKey) {
+    localStorage.setItem(KEY_STORAGE, apiKey);
+    history.replaceState(null, "", location.pathname + location.search);
+  } else if (params.get("error")) {
+    setStatus("auth: " + params.get("error"));
+  }
+})();
+
 function getKey() {
-  const k = (keyInput.value || localStorage.getItem(KEY_STORAGE) || "").trim();
-  if (!k) throw new Error("no API key — paste one above (get one at enter.pollinations.ai)");
+  const k = localStorage.getItem(KEY_STORAGE);
+  if (!k) throw new Error("not connected — click Connect Pollinations");
   return k;
 }
+
+function refreshConnectionUI() {
+  const k = localStorage.getItem(KEY_STORAGE);
+  if (k) {
+    connectBtn.classList.add("hidden");
+    disconnectBtn.classList.remove("hidden");
+    accountEl.textContent = "connected";
+    fetch(`${ENTER}/api/device/userinfo`, { headers: { Authorization: `Bearer ${k}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(u => { if (u?.preferred_username) accountEl.textContent = `connected as ${u.preferred_username}`; })
+      .catch(() => {});
+  } else {
+    connectBtn.classList.remove("hidden");
+    disconnectBtn.classList.add("hidden");
+    accountEl.textContent = "";
+  }
+}
+
+connectBtn.onclick = () => {
+  const params = new URLSearchParams({
+    redirect_uri: location.origin + location.pathname,
+    client_id: CLIENT_ID,
+    scope: "generate",
+  });
+  location.href = `${ENTER}/authorize?${params}`;
+};
+disconnectBtn.onclick = () => {
+  localStorage.removeItem(KEY_STORAGE);
+  refreshConnectionUI();
+};
+refreshConnectionUI();
 
 async function loadImageFromURL(url) {
   setStatus("loading image…");

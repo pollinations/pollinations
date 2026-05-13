@@ -325,7 +325,7 @@ const SwitchesDemo: FC = () => {
                                             [key]: next,
                                         }))
                                     }
-                                    label={`${theme} ${status}`}
+                                    ariaLabel={`${theme} ${status}`}
                                 />
                             );
                         })}

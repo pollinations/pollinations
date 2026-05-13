@@ -257,11 +257,11 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         lastIssue,
         billingReady,
     );
-    const alertTone = toggleStatus === "draft" || lastIssue !== null;
     const switchStatus: SwitchStatus = mapToggleStatusToSwitchStatus(
         toggleStatus,
         lastIssue,
     );
+    const alertTone = switchStatus === "draft";
     const isToggleOn = toggleStatus !== "off";
 
     return (
@@ -272,7 +272,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     onChange={handleToggle}
                     status={switchStatus}
                     disabled={isSaving}
-                    label={
+                    ariaLabel={
                         isToggleOn
                             ? "Turn off auto top-up"
                             : "Enable auto top-up"

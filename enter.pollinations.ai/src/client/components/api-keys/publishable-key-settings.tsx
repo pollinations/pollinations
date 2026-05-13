@@ -100,7 +100,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         checked={earningsEnabled}
                         onChange={onEarningsEnabledChange}
                         disabled={disabled}
-                        label={
+                        ariaLabel={
                             earningsEnabled
                                 ? "Turn off developer earnings"
                                 : "Enable developer earnings"

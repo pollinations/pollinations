@@ -5,6 +5,7 @@ import {
 } from "@shared/tier-config.ts";
 import type { FC, ReactNode } from "react";
 import { Tooltip } from "../pricing/Tooltip.tsx";
+import { Chip } from "../ui/chip.tsx";
 import { Surface } from "../ui/surface.tsx";
 
 const SeedTooltipContent = () => (
@@ -56,10 +57,17 @@ type TierCardProps = {
     isActive: boolean;
     emoji: string;
     name: string;
+    pollen: number;
     children: ReactNode;
 };
 
-const TierCard: FC<TierCardProps> = ({ isActive, emoji, name, children }) => (
+const TierCard: FC<TierCardProps> = ({
+    isActive,
+    emoji,
+    name,
+    pollen,
+    children,
+}) => (
     <Surface
         variant="card-themed"
         className={isActive ? "bg-tier-pale" : "bg-tier-pale/40"}
@@ -67,6 +75,13 @@ const TierCard: FC<TierCardProps> = ({ isActive, emoji, name, children }) => (
         <span className="text-3xl font-bold text-gray-900">
             {emoji} {name}
         </span>
+        <Chip
+            intent={isActive ? undefined : "tier"}
+            size="sm"
+            className="font-mono mt-1"
+        >
+            {pollen} pollen/hour
+        </Chip>
         {children}
     </Surface>
 );
@@ -83,10 +98,8 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 isActive={currentTier === "spore"}
                 emoji={TIER_EMOJIS.spore}
                 name="Spore"
+                pollen={TIER_POLLEN.spore}
             >
-                <p className="text-xs font-mono text-gray-600 mt-1">
-                    {TIER_POLLEN.spore} pollen/hour
-                </p>
                 <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
                     <p className="text-xs text-gray-500">Verify account</p>
@@ -97,10 +110,8 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 isActive={currentTier === "seed"}
                 emoji={TIER_EMOJIS.seed}
                 name="Seed"
+                pollen={TIER_POLLEN.seed}
             >
-                <p className="text-xs font-mono text-gray-600 mt-1">
-                    {TIER_POLLEN.seed} pollen/hour
-                </p>
                 <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
                     <p className="text-xs text-gray-500">
@@ -120,10 +131,8 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 isActive={currentTier === "flower"}
                 emoji={TIER_EMOJIS.flower}
                 name="Flower"
+                pollen={TIER_POLLEN.flower}
             >
-                <p className="text-xs font-mono text-gray-600 mt-1">
-                    {TIER_POLLEN.flower} pollen/hour
-                </p>
                 <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
                     <p className="text-xs text-gray-500">

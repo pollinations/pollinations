@@ -95,14 +95,14 @@ export const AUDIO_SERVICES = {
         paidOnly: true,
         cost: [
             {
-                date: new Date("2026-05-14").getTime(),
+                date: new Date("2026-05-13").getTime(),
                 // ElevenLabs Scale plan: Flash v2.5 = 0.5 credit/char
                 completionAudioTokens: 0.083 / 1000,
             },
         ],
         price: [
             {
-                date: new Date("2026-05-14").getTime(),
+                date: new Date("2026-05-13").getTime(),
                 completionAudioTokens: (0.083 * 1.5) / 1000, // cost x 1.5
             },
         ],

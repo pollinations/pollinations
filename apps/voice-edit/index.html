@@ -1,0 +1,242 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Voice Edit v0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background:#0a0a0a; color:#e5e5e5; }
+  .ring { box-shadow: 0 0 0 4px rgba(239,68,68,.6), 0 0 30px rgba(239,68,68,.4); }
+  canvas { cursor: crosshair; touch-action: none; }
+</style>
+<body class="min-h-screen p-6 flex flex-col items-center gap-4">
+  <div class="w-full max-w-4xl flex items-center justify-between">
+    <h1 class="text-xl font-semibold">Voice Edit · v0</h1>
+    <div class="text-xs text-neutral-500" id="status">ready</div>
+  </div>
+
+  <div class="relative">
+    <canvas id="canvas" width="1024" height="768" class="rounded-lg bg-neutral-900 max-w-full"></canvas>
+    <div id="recDot" class="hidden absolute top-4 right-4 w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
+    <div id="marker" class="hidden absolute pointer-events-none w-24 h-24 -ml-12 -mt-12 rounded-full border-4 border-red-500 ring"></div>
+  </div>
+
+  <div class="w-full max-w-4xl flex items-center gap-2 text-sm">
+    <button id="loadBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Load starter image</button>
+    <input id="urlInput" placeholder="or paste image URL" class="flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
+    <button id="useUrl" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Use</button>
+    <select id="modelSel" class="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
+      <option value="kontext">kontext (fast)</option>
+      <option value="nanobanana-2">nanobanana-2 (quality)</option>
+    </select>
+    <select id="sttSel" class="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
+      <option value="whisper">whisper</option>
+      <option value="universal-2">universal-2</option>
+    </select>
+  </div>
+
+  <div class="w-full max-w-4xl flex items-center gap-2 text-sm">
+    <input id="keyInput" type="password" placeholder="paste your Pollinations app key"
+      class="flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded font-mono">
+    <button id="saveKey" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Save</button>
+    <a href="https://enter.pollinations.ai" target="_blank" class="px-3 py-1.5 text-blue-400 hover:underline">get a key →</a>
+  </div>
+
+  <div class="w-full max-w-4xl text-sm text-neutral-400">
+    <div>Click and hold on the image, speak your edit, release to apply.</div>
+    <div id="transcript" class="mt-1 text-neutral-300 italic min-h-[1.5em]"></div>
+  </div>
+
+<script>
+const KEY_STORAGE = "voice-edit:api-key";
+const BASE = "https://gen.pollinations.ai";
+const STARTER = "https://media.pollinations.ai/c5d89da41260fc5a";
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const statusEl = document.getElementById("status");
+const transcriptEl = document.getElementById("transcript");
+const recDot = document.getElementById("recDot");
+const marker = document.getElementById("marker");
+const keyInput = document.getElementById("keyInput");
+
+let currentImage = null;
+let mediaRecorder = null;
+let chunks = [];
+let clickPoint = null;
+let stream = null;
+
+function setStatus(s) { statusEl.textContent = s; }
+
+keyInput.value = localStorage.getItem(KEY_STORAGE) || "";
+document.getElementById("saveKey").onclick = () => {
+  localStorage.setItem(KEY_STORAGE, keyInput.value.trim());
+  setStatus("key saved");
+};
+function getKey() {
+  const k = (keyInput.value || localStorage.getItem(KEY_STORAGE) || "").trim();
+  if (!k) throw new Error("no API key — paste one above (get one at enter.pollinations.ai)");
+  return k;
+}
+
+async function loadImageFromURL(url) {
+  setStatus("loading image…");
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  ctx.drawImage(img, 0, 0);
+  currentImage = img;
+  setStatus("ready");
+}
+
+document.getElementById("loadBtn").onclick = () => loadImageFromURL(STARTER);
+document.getElementById("useUrl").onclick = () => {
+  const u = document.getElementById("urlInput").value.trim();
+  if (u) loadImageFromURL(u);
+};
+
+function canvasPointFromEvent(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width;
+  const sy = canvas.height / rect.height;
+  return {
+    x: Math.round((e.clientX - rect.left) * sx),
+    y: Math.round((e.clientY - rect.top) * sy),
+    rectX: e.clientX - rect.left,
+    rectY: e.clientY - rect.top,
+  };
+}
+
+function showMarker(p) {
+  marker.style.left = (canvas.offsetLeft + p.rectX) + "px";
+  marker.style.top = (canvas.offsetTop + p.rectY) + "px";
+  marker.classList.remove("hidden");
+}
+function hideMarker() { marker.classList.add("hidden"); }
+
+async function startRecording() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    setStatus("mic denied: " + err.message);
+    return false;
+  }
+  chunks = [];
+  const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+  mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  mediaRecorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  mediaRecorder.start();
+  recDot.classList.remove("hidden");
+  setStatus("recording…");
+  return true;
+}
+
+function stopRecordingAndGetBlob() {
+  return new Promise((res) => {
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      recDot.classList.add("hidden");
+      res(new Blob(chunks, { type: chunks[0]?.type || "audio/webm" }));
+    };
+    mediaRecorder.stop();
+  });
+}
+
+async function transcribe(blob) {
+  setStatus("transcribing…");
+  const fd = new FormData();
+  fd.append("file", blob, "rec.webm");
+  fd.append("model", document.getElementById("sttSel").value);
+  const r = await fetch(`${BASE}/v1/audio/transcriptions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getKey()}` },
+    body: fd,
+  });
+  if (!r.ok) throw new Error("transcribe failed " + r.status + " " + await r.text());
+  const j = await r.json();
+  return j.text || j.transcription || "";
+}
+
+function annotatedDataURL(p) {
+  const c = document.createElement("canvas");
+  c.width = canvas.width;
+  c.height = canvas.height;
+  const cc = c.getContext("2d");
+  cc.drawImage(canvas, 0, 0);
+  const r = Math.max(60, Math.round(Math.min(c.width, c.height) * 0.08));
+  cc.strokeStyle = "red";
+  cc.lineWidth = Math.max(6, Math.round(r * 0.12));
+  cc.beginPath(); cc.arc(p.x, p.y, r, 0, Math.PI * 2); cc.stroke();
+  cc.font = `bold ${Math.round(r * 0.5)}px sans-serif`;
+  cc.fillStyle = "red";
+  cc.fillText("HERE", p.x + r + 10, p.y);
+  return c.toDataURL("image/png");
+}
+
+async function uploadDataURL(dataURL) {
+  setStatus("uploading…");
+  const blob = await (await fetch(dataURL)).blob();
+  const fd = new FormData();
+  fd.append("file", blob, "annot.png");
+  const r = await fetch("https://media.pollinations.ai/upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getKey()}` },
+    body: fd,
+  });
+  if (!r.ok) throw new Error("upload failed " + r.status);
+  const j = await r.json();
+  return j.url || `https://media.pollinations.ai/${j.id}`;
+}
+
+async function runEdit(refURL, prompt) {
+  setStatus("editing…");
+  const model = document.getElementById("modelSel").value;
+  const r = await fetch(`${BASE}/v1/images/edits`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getKey()}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, image: refURL, model, response_format: "url" }),
+  });
+  if (!r.ok) throw new Error("edit failed " + r.status + " " + await r.text());
+  const j = await r.json();
+  const item = j.data?.[0];
+  if (!item) throw new Error("no image in response");
+  if (item.url) return item.url;
+  if (item.b64_json) return "data:image/png;base64," + item.b64_json;
+  throw new Error("no url or b64_json in response");
+}
+
+canvas.addEventListener("pointerdown", async (e) => {
+  if (!currentImage) { setStatus("load an image first"); return; }
+  e.preventDefault();
+  canvas.setPointerCapture(e.pointerId);
+  clickPoint = canvasPointFromEvent(e);
+  showMarker(clickPoint);
+  transcriptEl.textContent = "";
+  await startRecording();
+});
+
+canvas.addEventListener("pointerup", async (e) => {
+  if (!mediaRecorder || mediaRecorder.state !== "recording") return;
+  try {
+    const blob = await stopRecordingAndGetBlob();
+    if (blob.size < 1000) { setStatus("too short"); hideMarker(); return; }
+    const text = await transcribe(blob);
+    transcriptEl.textContent = "→ " + text;
+    if (!text.trim()) { setStatus("nothing heard"); hideMarker(); return; }
+    const annotURL = await uploadDataURL(annotatedDataURL(clickPoint));
+    const prompt = `Edit the area marked with the red circle (labeled HERE). ${text}. Remove the red circle and HERE text in the final image.`;
+    const resultURL = await runEdit(annotURL, prompt);
+    await loadImageFromURL(resultURL);
+    hideMarker();
+    setStatus("done");
+  } catch (err) {
+    setStatus("error: " + err.message);
+    hideMarker();
+  }
+});
+
+loadImageFromURL(STARTER);
+</script>
+</body>
+</content>
+</invoke>

@@ -7,6 +7,7 @@ import {
     themes,
 } from "../layout/dashboard-theme.ts";
 import { Chip } from "../ui/chip.tsx";
+import { Surface } from "../ui/surface.tsx";
 import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
 
@@ -58,7 +59,7 @@ export const DesignShowcase: FC = () => {
                 <ChipsDemo />
                 <Placeholder title="Buttons" phase="Phase 4" />
                 <SwitchesDemo />
-                <Placeholder title="Surfaces" phase="Phase 3" />
+                <SurfacesDemo />
                 <TabsDemo />
                 <Placeholder title="Inputs" phase="Phase 8" />
                 <Placeholder title="IconButtons" phase="Phase 8" />
@@ -335,6 +336,65 @@ const SwitchesDemo: FC = () => {
         </Section>
     );
 };
+
+// ─── Surfaces ───────────────────────────────────────────────
+
+const SurfacesDemo: FC = () => (
+    <Section
+        title="Surfaces"
+        caption="<Surface> is the unified primitive for Card (rounded-xl, p-4) and Panel (rounded-2xl, p-6). Two tones: white (mode-aware) and tinted (cascade). Intent overrides theme + tone."
+    >
+        <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 px-3 text-xs uppercase tracking-wide text-theme-text-label">
+                <span />
+                <span>card · white</span>
+                <span>card · tinted</span>
+                <span>panel · white</span>
+                <span>panel · tinted</span>
+            </div>
+            {themes.map((theme) => (
+                <div
+                    key={theme}
+                    data-theme={theme}
+                    className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3"
+                >
+                    <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                        {theme}
+                    </span>
+                    <Surface size="card" tone="white">
+                        <p className="text-xs text-theme-text-soft">
+                            card · white
+                        </p>
+                    </Surface>
+                    <Surface size="card" tone="tinted">
+                        <p className="text-xs text-theme-text-soft">
+                            card · tinted
+                        </p>
+                    </Surface>
+                    <Surface size="panel" tone="white">
+                        <p className="text-xs text-theme-text-soft">
+                            panel · white
+                        </p>
+                    </Surface>
+                    <Surface size="panel" tone="tinted">
+                        <p className="text-xs text-theme-text-soft">
+                            panel · tinted
+                        </p>
+                    </Surface>
+                </div>
+            ))}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {intents.map((intent) => (
+                    <Surface key={intent} intent={intent} size="card">
+                        <p className="text-xs font-medium capitalize">
+                            intent: {intent}
+                        </p>
+                    </Surface>
+                ))}
+            </div>
+        </div>
+    </Section>
+);
 
 // ─── Tabs ───────────────────────────────────────────────────
 

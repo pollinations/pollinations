@@ -133,7 +133,6 @@ export const NewsBanner: FC = () => {
 
 const NewsCard: FC<{ item: NewsItem }> = ({ item }) => (
     <Card
-        color="violet"
         className={cn(
             "flex leading-relaxed",
             item.pinned

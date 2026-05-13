@@ -1,34 +1,9 @@
-import type { FC, PropsWithChildren } from "react";
-import { cn } from "../../../util.ts";
-import { cardColors } from "../layout/dashboard-theme.ts";
+import type { ComponentProps, FC } from "react";
+import { Surface } from "./surface.tsx";
 
-type CardOwnProps = {
-    color?: keyof typeof cardColors;
-    bg?: string;
-    className?: string;
-};
+type CardProps = Omit<ComponentProps<typeof Surface>, "size">;
 
-type CardProps = PropsWithChildren<
-    CardOwnProps &
-        Omit<React.ComponentPropsWithoutRef<"div">, keyof CardOwnProps>
->;
-
-export const Card: FC<CardProps> = ({
-    color = "gray",
-    bg = "bg-white/80",
-    className,
-    children,
-    ...props
-}) => (
-    <div
-        className={cn(
-            "min-w-0 rounded-xl border p-4",
-            cardColors[color],
-            bg,
-            className,
-        )}
-        {...props}
-    >
-        {children}
-    </div>
+/** @deprecated Use `<Surface size="card" />` directly. Removed in Phase 9. */
+export const Card: FC<CardProps> = (props) => (
+    <Surface size="card" {...props} />
 );

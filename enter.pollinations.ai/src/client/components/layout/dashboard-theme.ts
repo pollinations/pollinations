@@ -56,33 +56,9 @@ export const dashboardThemeByPage = Object.fromEntries(
 ) as Record<DashboardPage, DashboardTheme>;
 
 // ─── Color palette (single source of truth) ──────────────────
-// `Panel`, `Card`, and `Button` import their slice from here.
+// `Button` imports its slice from here. (Panel/Card are cascade-driven via
+// `<Surface>` since Phase 3 — no per-theme class lookup needed.)
 // `dashboardThemeClasses` (below) rolls these up for the 7 nav themes.
-
-export const panelColors = {
-    amber: "border-amber-300 bg-amber-50/70",
-    blue: "border-blue-300 bg-blue-50/70",
-    gray: "border-gray-300 bg-gray-50/70",
-    green: "border-green-300 bg-green-50/70",
-    orange: "border-orange-300 bg-orange-50/70",
-    pink: "border-pink-300 bg-pink-50/70",
-    purple: "border-purple-300 bg-purple-50/70",
-    teal: "border-teal-200 bg-teal-50/70",
-    violet: "border-violet-300 bg-violet-50/70",
-} as const;
-
-export const cardColors = {
-    amber: "border-amber-300",
-    blue: "border-blue-300",
-    gray: "border-gray-200",
-    green: "border-green-300",
-    orange: "border-orange-300",
-    pink: "border-pink-300",
-    purple: "border-purple-300",
-    red: "border-red-300",
-    teal: "border-teal-200",
-    violet: "border-violet-200",
-} as const;
 
 export const buttonColors = {
     amber: {
@@ -355,8 +331,6 @@ export const dashboardThemeClasses: Record<
         title: string;
         dot: string;
         active: string;
-        panel: string;
-        card: string;
         button: (typeof buttonColors)[keyof typeof buttonColors];
         tokens: ThemeTokens;
     }
@@ -365,8 +339,6 @@ export const dashboardThemeClasses: Record<
         title: "text-amber-950",
         dot: "bg-amber-500",
         active: "bg-amber-200 text-green-950",
-        panel: panelColors.amber,
-        card: cardColors.amber,
         button: buttonColors.amber,
         tokens: themeTokens.amber,
     },
@@ -374,8 +346,6 @@ export const dashboardThemeClasses: Record<
         title: "text-blue-950",
         dot: "bg-blue-500",
         active: "bg-blue-200 text-green-950",
-        panel: panelColors.blue,
-        card: cardColors.blue,
         button: buttonColors.blue,
         tokens: themeTokens.blue,
     },
@@ -383,8 +353,6 @@ export const dashboardThemeClasses: Record<
         title: "text-gray-950",
         dot: "bg-gray-500",
         active: "bg-gray-200 text-green-950",
-        panel: panelColors.gray,
-        card: cardColors.gray,
         button: buttonColors.gray,
         tokens: themeTokens.gray,
     },
@@ -392,8 +360,6 @@ export const dashboardThemeClasses: Record<
         title: "text-green-950",
         dot: "bg-green-500",
         active: "bg-green-200 text-green-950",
-        panel: panelColors.green,
-        card: cardColors.green,
         button: buttonColors.green,
         tokens: themeTokens.green,
     },
@@ -401,8 +367,6 @@ export const dashboardThemeClasses: Record<
         title: "text-pink-950",
         dot: "bg-pink-500",
         active: "bg-pink-200 text-green-950",
-        panel: panelColors.pink,
-        card: cardColors.pink,
         button: buttonColors.pink,
         tokens: themeTokens.pink,
     },
@@ -410,8 +374,6 @@ export const dashboardThemeClasses: Record<
         title: "text-teal-950",
         dot: "bg-teal-500",
         active: "bg-teal-200 text-green-950",
-        panel: panelColors.teal,
-        card: cardColors.teal,
         button: buttonColors.teal,
         tokens: themeTokens.teal,
     },
@@ -419,8 +381,6 @@ export const dashboardThemeClasses: Record<
         title: "text-violet-950",
         dot: "bg-violet-500",
         active: "bg-violet-200 text-green-950",
-        panel: panelColors.violet,
-        card: cardColors.violet,
         button: buttonColors.violet,
         tokens: themeTokens.violet,
     },

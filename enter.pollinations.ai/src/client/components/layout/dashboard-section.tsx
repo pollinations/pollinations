@@ -4,7 +4,14 @@ import { Panel } from "../ui/panel.tsx";
 import {
     type DashboardTheme,
     dashboardThemeClasses,
+    type ThemeName,
+    themes,
 } from "./dashboard-theme.ts";
+
+// `gray` is in DashboardTheme but not ThemeName; for the cascade it falls back
+// to the default `:root` (green). Drop it before passing to Surface/Panel.
+const asThemeName = (theme: DashboardTheme): ThemeName | undefined =>
+    themes.includes(theme as ThemeName) ? (theme as ThemeName) : undefined;
 
 type DashboardSectionProps = {
     title: string;
@@ -41,6 +48,10 @@ export const DashboardSection: FC<DashboardSectionProps> = ({
                 <div className={cn("shrink-0", actionClassName)}>{action}</div>
             )}
         </div>
-        {framed ? <Panel color={theme}>{children}</Panel> : children}
+        {framed ? (
+            <Panel theme={asThemeName(theme)}>{children}</Panel>
+        ) : (
+            children
+        )}
     </section>
 );

@@ -75,7 +75,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         return (
             <Card
                 key={apiKey.id}
-                color="blue"
                 className="!border-transparent transition-colors hover:bg-white/90"
             >
                 <div className="flex items-center gap-2 mb-2">
@@ -227,10 +226,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                         </div>
                         {!sortedApiKeys.length && (
-                            <Card
-                                color="blue"
-                                className="!border-transparent p-6 text-center"
-                            >
+                            <Card className="!border-transparent p-6 text-center">
                                 <p className="text-2xl mb-2">🔑</p>
                                 <p className="font-semibold text-gray-900 text-lg mb-2">
                                     Create your first API key
@@ -287,10 +283,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                         </div>
                         {!sortedAppKeys.length && (
-                            <Card
-                                color="blue"
-                                className="!border-transparent p-6 text-center"
-                            >
+                            <Card className="!border-transparent p-6 text-center">
                                 <p className="text-2xl mb-2">🖥️</p>
                                 <p className="font-semibold text-gray-900 text-lg mb-2">
                                     Create your first app key

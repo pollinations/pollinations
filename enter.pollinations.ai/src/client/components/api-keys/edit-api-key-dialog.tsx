@@ -208,11 +208,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
                         {error && (
-                            <Card
-                                color="red"
-                                bg="bg-red-100"
-                                className="mb-4 text-red-700"
-                            >
+                            <Card bg="bg-red-100" className="mb-4 text-red-700">
                                 {error}
                             </Card>
                         )}

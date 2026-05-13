@@ -1048,9 +1048,12 @@ export const audioRoutes = new Hono<Env>()
                 });
             }
 
-            // Re-build formData for Whisper (Hono consumed the original body stream)
+            // Re-build formData for Whisper (Hono consumed the original body stream).
+            // Preserve filename — OVH needs the extension to detect format/duration.
             const whisperFormData = new FormData();
-            whisperFormData.append("file", file);
+            const filename =
+                file.name && file.name !== "blob" ? file.name : "audio.mp3";
+            whisperFormData.append("file", file, filename);
             if (language) whisperFormData.append("language", language);
             if (responseFormat)
                 whisperFormData.append("response_format", responseFormat);
@@ -1089,16 +1092,13 @@ export const audioRoutes = new Hono<Env>()
         },
     );
 
-/**
- * Extract usage from Whisper response body and build tracking headers.
- * OVH returns: {"usage": {"type": "duration", "duration": 21.0}, ...}
- */
+// OVH returns usage as either {type:"duration", duration:N} or {type:"duration", seconds:N}.
 function extractWhisperUsage(responseBody: string, log: Logger): number {
     const json = JSON.parse(responseBody);
-    const duration = json.usage?.duration;
+    const duration = json.usage?.duration ?? json.usage?.seconds;
     if (typeof duration !== "number" || duration <= 0) {
         throw new Error(
-            `Whisper response missing usage.duration: ${JSON.stringify(json.usage)}`,
+            `Whisper response missing usage duration: ${JSON.stringify(json.usage)}`,
         );
     }
     log.debug("Whisper usage: {duration}s", { duration });

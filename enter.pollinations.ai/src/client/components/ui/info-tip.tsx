@@ -1,58 +1,31 @@
-import { type FC, type ReactNode, useId, useState } from "react";
+import type { FC, ReactNode } from "react";
+import { Tooltip } from "./tooltip.tsx";
 
 type InfoTipProps = {
     text?: ReactNode;
     content?: ReactNode;
     label?: string;
-    placement?: "top" | "bottom";
 };
 
 /**
- * Small "i" badge with a thin dark tooltip popup on hover, click, or
- * focus. The badge itself follows the page theme via the cascade; the
- * popup uses the universal dark tooltip recipe (same as `<Tooltip>`).
+ * Small "i" badge that opens a tooltip on hover, click, or focus.
  *
- * Cursor on the badge is `cursor-help` — matches every other tooltip
- * trigger in the system.
+ * Both the badge and the popup follow the page theme: badge reads
+ * `bg-theme-bg-active`; popup uses the universal recipe via `<Tooltip>`
+ * (`bg-theme-bg-pale` + `border-theme-border` + `text-theme-text-strong`,
+ * viewport-clamped). Cursor on the badge is `cursor-help`.
+ *
+ * Wrapping `<Tooltip>` keeps positioning + clamping logic in one place
+ * — InfoTip only owns the badge styling.
  */
 export const InfoTip: FC<InfoTipProps> = ({
     text,
     content,
     label = "More info",
-    placement = "bottom",
-}) => {
-    const [show, setShow] = useState(false);
-    const tooltipId = useId();
-    const placementClasses =
-        placement === "top" ? "bottom-full mb-1" : "top-full mt-1";
-
-    return (
-        <button
-            type="button"
-            className="relative inline-flex items-center ml-1 cursor-help"
-            onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShow((prev) => !prev);
-            }}
-            onMouseEnter={() => setShow(true)}
-            onMouseLeave={() => setShow(false)}
-            onFocus={() => setShow(true)}
-            onBlur={() => setShow(false)}
-            aria-label={label}
-            aria-expanded={show}
-            aria-describedby={show ? tooltipId : undefined}
-        >
-            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-theme-border bg-theme-bg-active text-theme-text-strong text-micro font-bold transition-colors">
-                i
-            </span>
-            <span
-                id={tooltipId}
-                role="tooltip"
-                className={`${show ? "visible opacity-100" : "invisible opacity-0"} absolute left-1/2 -translate-x-1/2 ${placementClasses} z-50 w-[200px] sm:w-[280px] px-2 py-1 bg-theme-bg-pale text-theme-text-strong border border-theme-border text-xs rounded-md shadow-sm pointer-events-none whitespace-pre-line break-words text-left font-normal transition-opacity`}
-            >
-                {content ?? text}
-            </span>
-        </button>
-    );
-};
+}) => (
+    <Tooltip content={content ?? text} ariaLabel={label} className="ml-1">
+        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-theme-border bg-theme-bg-active font-bold text-micro text-theme-text-strong transition-colors">
+            i
+        </span>
+    </Tooltip>
+);

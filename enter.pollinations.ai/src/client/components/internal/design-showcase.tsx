@@ -33,6 +33,20 @@ export const DesignShowcase: FC = () => {
     );
     const [themeOverride, setThemeOverride] = useState<ThemeName>("amber");
 
+    // Capture the mode that was on <html> before this page mounted, then
+    // restore it on unmount — otherwise navigating away leaves the rest of
+    // the app stuck in whatever mode the showcase toggle was last set to.
+    useEffect(() => {
+        const prev = document.documentElement.dataset.mode;
+        return () => {
+            if (prev === undefined) {
+                document.documentElement.removeAttribute("data-mode");
+            } else {
+                document.documentElement.dataset.mode = prev;
+            }
+        };
+    }, []);
+
     useEffect(() => {
         document.documentElement.dataset.mode = mode;
     }, [mode]);
@@ -283,7 +297,7 @@ const TypographyDemo: FC = () => (
                     {fontRows.map((row) => (
                         <div
                             key={row.utility}
-                            className="flex items-baseline gap-4 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
+                            className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
                         >
                             <span
                                 className={cn(
@@ -321,7 +335,7 @@ const TypographyDemo: FC = () => (
                     {textColorRows.map((row) => (
                         <div
                             key={row.name}
-                            className="flex items-baseline gap-4 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
+                            className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
                         >
                             <span
                                 className={cn(
@@ -357,7 +371,7 @@ const TypographyDemo: FC = () => (
                     {typeRamp.map((row) => (
                         <div
                             key={row.utility}
-                            className="flex items-baseline gap-4 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
+                            className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
                         >
                             <span
                                 className={cn(
@@ -536,7 +550,7 @@ const SwitchesDemo: FC = () => {
 const SurfacesDemo: FC = () => (
     <Section
         title="Surface"
-        caption="Every theme + wallet surface token, shown in its actual use. Surfaces are theme-aware: flip the theme toggle and they all recolor."
+        caption="Every theme + wallet surface token, shown in its actual use. Theme surfaces (panel, card-themed) recolor with the page theme; surface-white and the wallet/tier surfaces are intentionally fixed."
     >
         <div className="flex flex-col gap-4">
             <Surface variant="panel">
@@ -557,11 +571,11 @@ const SurfacesDemo: FC = () => (
                     </Surface>
                     <Surface variant="card-themed">
                         <p className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
-                            inner · card-themed · bg-theme-bg-pale
+                            inner · card-themed · bg-theme-bg-active
                         </p>
                         <p className="mt-1 text-sm text-theme-text-strong">
-                            Theme-tinted callout. Tooltips + pinned news use
-                            this.
+                            Theme-tinted callout. Pinned news + earnings
+                            highlights use this.
                         </p>
                     </Surface>
                 </div>
@@ -683,7 +697,7 @@ const TabsDemo: FC = () => {
 const InputsDemo: FC = () => (
     <Section
         title="Input"
-        caption="Focus ring inherits the active theme. Click into a field to see it."
+        caption="Three states: default (gray border), error (red border), disabled (lower opacity). No theme focus ring — the ring was deliberately removed; the browser's default focus outline takes over for keyboard a11y."
     >
         <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-4 sm:grid-cols-3">
             <Field label="default">
@@ -742,21 +756,21 @@ const IconButtonsDemo: FC = () => (
 
 /**
  * One tooltip recipe across the whole app:
- *  - Thin dark pill: `bg-gray-900 text-white text-xs px-2 py-1 rounded-md`
- *  - No white background, no border
+ *  - Theme-cascade popup: `bg-theme-bg-pale text-theme-text-strong border border-theme-border text-xs px-2 py-1 rounded-md`
+ *  - Reads as part of the page (recolors with the theme), not system chrome
  *  - `cursor-help` (the "?" cursor) on every trigger
  *
  * Two trigger components share that recipe:
  *  - <InfoTip>: visible "i" badge (the badge follows the page theme)
  *  - <Tooltip>: invisible wrapper around any child
  *
- * Hover any row below to verify the cursor swaps and the popup is
- * always the same dark pill.
+ * Hover any row below to verify the cursor swaps and the popup is the
+ * same pale theme-tinted card.
  */
 const TooltipsDemo: FC = () => (
     <Section
         title="Tooltips"
-        caption="One recipe everywhere. Thin dark popup, cursor-help on every trigger. Two trigger types (info badge + mouseover wrapper) cover every hoverable info element in the app."
+        caption="One recipe everywhere. Pale theme-tinted popup with a soft border, cursor-help on every trigger. Two trigger types (info badge + mouseover wrapper) cover every hoverable info element in the app."
     >
         <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
             <TooltipRow label="Info badge">
@@ -784,11 +798,14 @@ const TooltipsDemo: FC = () => (
                 <Tooltip
                     content="Open the Stripe checkout to buy $20"
                     displayContents
+                    triggerAs="span"
                 >
                     <Button>Buy</Button>
                 </Tooltip>
                 <span className="text-xs text-theme-text-soft">
-                    Wrapping any clickable. Click works through.
+                    Wrapping a clickable: use{" "}
+                    <code className="font-mono">triggerAs="span"</code> so the
+                    Button keeps its own &lt;button&gt; (no nested buttons).
                 </span>
             </TooltipRow>
 
@@ -912,7 +929,10 @@ const MultiSelectDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
 // ─── Chart (stacked paid + tier bars) ───────────────────────
 
 function buildSampleChartData(): DataPoint[] {
-    const baseDate = new Date(2026, 4, 1);
+    // UTC throughout so the rendered "May 1" label matches the fullDate
+    // ("2026-05-01") in every timezone — local-time + toISOString() would
+    // shift the date in westward zones.
+    const baseUtc = Date.UTC(2026, 4, 1);
     const tiers = [120, 210, 80, 340, 290, 410, 180];
     const paids = [40, 80, 30, 160, 120, 220, 90];
     const labels = [
@@ -925,8 +945,7 @@ function buildSampleChartData(): DataPoint[] {
         "May 7",
     ];
     return labels.map((label, i) => {
-        const ts = new Date(baseDate);
-        ts.setDate(baseDate.getDate() + i);
+        const ts = new Date(baseUtc + i * 24 * 60 * 60 * 1000);
         return {
             label,
             value: tiers[i] + paids[i],
@@ -941,7 +960,7 @@ function buildSampleChartData(): DataPoint[] {
 const ChartDemo: FC = () => (
     <Section
         title="Chart"
-        caption="Stacked bar chart used by the Activity page. Bars render in the paid-soft + tier-soft chip colors so the chart and chips read as the same identity."
+        caption="Stacked bar chart used by the Activity page. Bar fills come from PAID_COLOR + TIER_COLOR in lib/balance-colors.ts — currently the same oklch values as bg-paid-pale + bg-tier-pale, so the wallet card and chart bar share one visual identity."
     >
         <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
             <Chart

@@ -7,7 +7,15 @@ import {
     themes,
 } from "../layout/dashboard-theme.ts";
 import { Chip } from "../ui/chip.tsx";
+import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
+
+const switchStatuses: readonly SwitchStatus[] = [
+    "off",
+    "on",
+    "draft",
+    "ready",
+] as const;
 
 type Mode = "light" | "dark";
 
@@ -49,7 +57,7 @@ export const DesignShowcase: FC = () => {
                 <IntentDemo />
                 <ChipsDemo />
                 <Placeholder title="Buttons" phase="Phase 4" />
-                <Placeholder title="Switches" phase="Phase 2" />
+                <SwitchesDemo />
                 <Placeholder title="Surfaces" phase="Phase 3" />
                 <TabsDemo />
                 <Placeholder title="Inputs" phase="Phase 8" />
@@ -272,6 +280,61 @@ const ChipsDemo: FC = () => (
         </div>
     </Section>
 );
+
+// ─── Switches ───────────────────────────────────────────────
+
+const SwitchesDemo: FC = () => {
+    const [checked, setChecked] = useState<Record<string, boolean>>({});
+    const isChecked = (key: string, status: SwitchStatus): boolean => {
+        const stored = checked[key];
+        if (stored !== undefined) return stored;
+        return status === "on" || status === "ready";
+    };
+    return (
+        <Section
+            title="Switches"
+            caption="<Switch> reads the cascade for off/on; intent vars for draft (red) and ready (green). Click to toggle."
+        >
+            <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-2 px-3 text-xs uppercase tracking-wide text-theme-text-label">
+                    <span />
+                    {switchStatuses.map((status) => (
+                        <span key={status}>{status}</span>
+                    ))}
+                </div>
+                {themes.map((theme) => (
+                    <div
+                        key={theme}
+                        data-theme={theme}
+                        className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-2 rounded-xl border border-theme-border bg-theme-bg-tinted p-3"
+                    >
+                        <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                            {theme}
+                        </span>
+                        {switchStatuses.map((status) => {
+                            const key = `${theme}:${status}`;
+                            const value = isChecked(key, status);
+                            return (
+                                <Switch
+                                    key={status}
+                                    checked={value}
+                                    status={status}
+                                    onChange={(next) =>
+                                        setChecked((prev) => ({
+                                            ...prev,
+                                            [key]: next,
+                                        }))
+                                    }
+                                    label={`${theme} ${status}`}
+                                />
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
+        </Section>
+    );
+};
 
 // ─── Tabs ───────────────────────────────────────────────────
 

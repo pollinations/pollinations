@@ -14,6 +14,7 @@ import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
+import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
@@ -257,16 +258,45 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
         billingReady,
     );
     const alertTone = toggleStatus === "draft" || lastIssue !== null;
+    const switchStatus: SwitchStatus = mapToggleStatusToSwitchStatus(
+        toggleStatus,
+        lastIssue,
+    );
+    const isToggleOn = toggleStatus !== "off";
 
     return (
         <div className="space-y-4">
-            <AutoTopUpToggle
-                status={toggleStatus}
-                message={statusMessage}
-                alert={alertTone}
-                disabled={isSaving}
-                onToggle={handleToggle}
-            />
+            <div className="flex min-w-0 items-center gap-3">
+                <Switch
+                    checked={isToggleOn}
+                    onChange={handleToggle}
+                    status={switchStatus}
+                    disabled={isSaving}
+                    label={
+                        isToggleOn
+                            ? "Turn off auto top-up"
+                            : "Enable auto top-up"
+                    }
+                />
+                <div className="min-w-0">
+                    <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
+                        Auto top-up
+                        <InfoTip
+                            content={AUTO_TOP_UP_TOOLTIP_CONTENT}
+                            label="Auto top-up information"
+                            tone="amber"
+                        />
+                    </div>
+                    <div
+                        className={cn(
+                            "text-xs font-medium",
+                            alertTone ? "text-red-700" : "text-amber-800/75",
+                        )}
+                    >
+                        {statusMessage}
+                    </div>
+                </div>
+            </div>
 
             {showConfig && (
                 <div className="space-y-4">
@@ -360,75 +390,15 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
     </Button>
 );
 
-type AutoTopUpToggleProps = {
-    status: ToggleStatus;
-    message: ReactNode;
-    alert: boolean;
-    disabled: boolean;
-    onToggle: (enabled: boolean) => void;
-};
-
-const TOGGLE_TRACK_CLASS: Record<ToggleStatus, string> = {
-    off: "bg-amber-100 border-amber-300",
-    draft: "bg-amber-300 border-amber-400",
-    on: "bg-emerald-300 border-emerald-400",
-};
-const TOGGLE_TRACK_ALERT_CLASS = "bg-red-400 border-red-500";
-
-const AutoTopUpToggle: FC<AutoTopUpToggleProps> = ({
-    status,
-    message,
-    alert,
-    disabled,
-    onToggle,
-}) => {
-    const isOn = status !== "off";
-    return (
-        <div className="flex min-w-0 items-center gap-3">
-            <button
-                type="button"
-                role="switch"
-                aria-checked={isOn}
-                aria-label={
-                    isOn ? "Turn off auto top-up" : "Enable auto top-up"
-                }
-                onClick={() => onToggle(!isOn)}
-                disabled={disabled}
-                className={cn(
-                    "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60",
-                    alert
-                        ? TOGGLE_TRACK_ALERT_CLASS
-                        : TOGGLE_TRACK_CLASS[status],
-                )}
-            >
-                <span
-                    className={cn(
-                        "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
-                        isOn ? "translate-x-6" : "translate-x-1",
-                    )}
-                />
-            </button>
-            <div className="min-w-0">
-                <div className="flex min-w-0 items-center text-[15px] font-bold text-amber-950">
-                    Auto top-up
-                    <InfoTip
-                        content={AUTO_TOP_UP_TOOLTIP_CONTENT}
-                        label="Auto top-up information"
-                        tone="amber"
-                    />
-                </div>
-                <div
-                    className={cn(
-                        "text-xs font-medium",
-                        alert ? "text-red-700" : "text-amber-800/75",
-                    )}
-                >
-                    {message}
-                </div>
-            </div>
-        </div>
-    );
-};
+function mapToggleStatusToSwitchStatus(
+    status: ToggleStatus,
+    issue: AutoTopUpIssue | null,
+): SwitchStatus {
+    if (status === "off") return "off";
+    if (status === "draft") return "draft";
+    // status === "on": red when there's an unresolved issue, green otherwise.
+    return issue !== null ? "draft" : "ready";
+}
 
 type AutoTopUpSaveButtonProps = {
     showConfig: boolean;

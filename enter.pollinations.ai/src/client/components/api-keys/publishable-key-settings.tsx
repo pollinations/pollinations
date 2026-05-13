@@ -1,7 +1,7 @@
 import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
-import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
+import { Switch } from "../ui/switch.tsx";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];
@@ -86,58 +86,28 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 </div>
             </Field.Root>
             {onEarningsEnabledChange && (
-                <DeveloperEarningsSwitch
-                    enabled={earningsEnabled}
-                    disabled={disabled}
-                    onToggle={onEarningsEnabledChange}
-                />
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <div className="text-sm font-semibold">
+                            Developer earnings
+                        </div>
+                        <p className="mt-0.5 text-xs text-blue-800/75">
+                            Users pay 25% over base rates. Markup credits to
+                            your balance.
+                        </p>
+                    </div>
+                    <Switch
+                        checked={earningsEnabled}
+                        onChange={onEarningsEnabledChange}
+                        disabled={disabled}
+                        label={
+                            earningsEnabled
+                                ? "Turn off developer earnings"
+                                : "Enable developer earnings"
+                        }
+                    />
+                </div>
             )}
         </div>
     );
 };
-
-type DeveloperEarningsSwitchProps = {
-    enabled: boolean;
-    disabled?: boolean;
-    onToggle: (enabled: boolean) => void;
-};
-
-const DeveloperEarningsSwitch: FC<DeveloperEarningsSwitchProps> = ({
-    enabled,
-    disabled = false,
-    onToggle,
-}) => (
-    <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="min-w-0">
-            <div className="text-sm font-semibold">Developer earnings</div>
-            <p className="mt-0.5 text-xs text-blue-800/75">
-                Users pay 25% over base rates. Markup credits to your balance.
-            </p>
-        </div>
-        <button
-            type="button"
-            role="switch"
-            aria-checked={enabled}
-            aria-label={
-                enabled
-                    ? "Turn off developer earnings"
-                    : "Enable developer earnings"
-            }
-            onClick={() => onToggle(!enabled)}
-            disabled={disabled}
-            className={cn(
-                "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-60",
-                enabled
-                    ? "border-blue-300 bg-blue-200"
-                    : "border-blue-300 bg-blue-100",
-            )}
-        >
-            <span
-                className={cn(
-                    "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
-                    enabled ? "translate-x-6" : "translate-x-1",
-                )}
-            />
-        </button>
-    </div>
-);

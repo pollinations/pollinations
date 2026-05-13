@@ -22,11 +22,11 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-05-05",
+        date: "2026-05-13",
         emoji: "🌻",
-        title: "Developer earnings are live",
+        title: "Pollen pack bonuses are stepping down",
         description:
-            "Turn on Developer earnings on any App Key to receive a share of pollen users spend in your app.",
+            "As the service keeps improving, the bonus Pollen included with each pack is being reduced — new rates take effect on May 18.",
     },
 ];
 

@@ -3,6 +3,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
@@ -250,7 +251,7 @@ describe("text cache", () => {
 
         expect(second.headers.get("X-Cache")).toBe("HIT");
         expect(second.headers.get("Cache-Control")).toBe(
-            "public, max-age=31536000, immutable",
+            IMMUTABLE_CACHE_CONTROL,
         );
         expect(second.headers.get("Content-Type")).toBe(
             "application/json; charset=utf-8",

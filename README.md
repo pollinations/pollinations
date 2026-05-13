@@ -20,18 +20,18 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🖼️ Générateur d'images IA](https://novapeda.eu/generateur-image.php) | Générateur d'images IA illustrates image generation in AI trainings and formations using the smallest available models. | [@web](https://github.com/web) |
-| [🧩 vox.riko](https://ganya002.github.io/vox.riko/) | Render the HTML head and body, including an h1 element containing vox.riko, based on the htmlhead/headbodyh1vox.riko/h1 snippet. | [@web](https://github.com/web) |
-| [🦅 EaglePollen Video](https://eagle.nomadedark.com.br/) | Gera videos automatizados para o TikTok. | [@web](https://github.com/web) |
-| [🩺 Viatosis](https://www.viatosis.tech) | Viatosis is a specialized medical e-learning platform that leverages Pollinations.ai to simplify the learning experience for students. We integrate AI-generated illustrations to explain complex medica | [@web](https://github.com/web) |
-| [🤖 PolliGPT](https://polli-gpt.lovable.app/) | **PolliGPT** | [@web](https://github.com/web) |
-| [🖥️ Hyggshi OS Web Edition](https://hyggshi-os-website.pages.dev/OSmain) | Hyggshi OS Web Edition is a multi-featured web-based OS simulator (PWA) built on Cloudflare Pages. It integrates the Pollinations.ai API to power a built-in Chat AI app supporting text generation (Gem | [@web](https://github.com/web) |
-| [🎮 idol-interaction](https://spritenguyen.github.io/idol-interaction-game-2/) | idol-interaction uses models from pollinations.ai for interpolation/content generation. Enter keywords in the scout tab to find characters, then chat, complete tasks, or take photos. | [@web](https://github.com/web) |
-| [📱 Toddler Read QR Card Generator](https://toddler-read.netlify.app/) | Generate a collection of toddler cards with QR codes readable in a dedicated mobile app, designed for toddlers without screen interaction. | [@web](https://github.com/web) |
-| [🧾 Madlisten](https://madlisten.dk/) | Use Madlisten to browse and view recipes. | [@web](https://github.com/web) |
-| [🖼️ pollimage](https://www.npmjs.com/package/pollimage) | PollImage is a developer-focused CLI powered by Pollinations.AI that generates AI images directly from the terminal. | [@cli](https://github.com/cli) |
+| [📖 Storytale](https://storytale.net) | Storytale is a multiplayer storytelling game where friends take turns adding sentences to a shared story. Pollinations powers three surfaces: | [@jmeijer19-glitch](https://github.com/jmeijer19-glitch) |
+| 🛠️ Pollenforge-CLI | Convert Markdown content to a formatted output using Pollenforge-CLI. | [@ganya002](https://github.com/ganya002) |
+| [👻 The room](https://theroom-8mc4.vercel.app/) | Triggers a ghost jumpscare in The room. | [@tuidienanhvan](https://github.com/tuidienanhvan) |
+| [⛪ The Stream Church Webapp](https://thestreamchurch.org/) | Stream services and manage live events with The Stream Church Webapp, using Pollinations.ais API for asset generation and rapid web project deployment. | [@titosoriano](https://github.com/titosoriano) |
+| [🎨 AI Art Gallery](https://juanrivera126.github.io/Gallery-Pollinations/) | AI Art Gallery uses Galera Pollinations to generate images from text prompts, create image variations, and download generated artwork. | [@Juanrivera126](https://github.com/Juanrivera126) |
+| [🏗️ anyproject (beta)](https://alkonsafe.ct.ws/anyproject/beta) | anyproject is a platform where people can play and share ai generated sites with each other! it uses pollinations in the backend with node.js's native fetch() to gen.pollinations.ai where the ai retur | [@alkonsafe](https://github.com/alkonsafe) |
+| 🤖 AI Chat | AI Chat is an Android conversational app that provides free access to 16+ AI models via the Pollinations.ai API. | [@JoJoGamer2020](https://github.com/JoJoGamer2020) |
+| [💬 Compliment Generator](https://www.craygen.com/compliments/) | Upload an image to Compliment Generator to receive free compliments in various styles. | [@craygen9](https://github.com/craygen9) |
+| [🦖 Oráculo de la Era Salvaje · IA Bestias y Monstruos](https://dragonprimordial12-netizen.github.io/DragonP_Oraculo_de_la_Era_Salvaje/) | Chat con IA épico del juego Bestias y Monstruos en Roblox. Los jugadores pueden preguntar sobre bestias, jefes, estrategias y lore del mundo salvaje. Usa la API de texto de Pollinations con el modelo | [@dragonprimordial12-netizen](https://github.com/dragonprimordial12-netizen) |
+| [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menyediakan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@arekgresikid](https://github.com/arekgresikid) |
 
-[Browse all apps →](apps/GREENHOUSE.md)
+[View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -48,6 +48,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-12** – **🛠️ Pollenforge-CLI** A community-built CLI tool for wrangling Markdown into formatted output just dropped in the showcase. [View repo](https://github.com/ganya002/Pollenforge-CLI/tree/main) <!-- app -->
+- **2026-05-12** – **🎲 Storytale** Take turns building a shared narrative with friends in this new multiplayer storytelling game powered by our text models. [Try it](https://storytale.net) <!-- app -->
+- **2026-05-11** – **📈 Developer Earnings Dashboard** Track the Pollen your apps are generating. Visualize daily earnings, active users, and top-performing apps directly in the [Dashboard](https://enter.pollinations.ai).
 - **2026-05-08** – **🤖 Gemma 4 26B** The new 26B parameter Gemma model is now live on the text API. It brings multimodal support, tool use, and a 262k context window for when you really need to paste that entire codebase. [View models](https://gen.pollinations.ai/v1/models)
 - **2026-05-08** – **🚀 Command Line Canvas** Because leaving the terminal is overrated. Generate AI images directly from your command line with the new PollImage CLI tool. [Try it](https://www.npmjs.com/package/pollimage) <!-- app -->
 - **2026-05-08** – **🌟 Madlisten** The hive is cooking. A new community-built recipe browsing application joins the showcase. [Try it](https://madlisten.dk/) <!-- app -->
@@ -55,9 +58,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-05-07** – **🧠 Text Embeddings API** You can now generate vector embeddings directly through the `/v1/embeddings` endpoint. Wire it up for semantic search or RAG without leaving the [Unified API](https://gen.pollinations.ai).
 - **2026-05-07** – **🎬 Seedance 2.0 Video Model** We wired up Replicate to bring you Seedance 2.0. Text-to-video, image-to-video, and frame interpolation are now live for your 720p generation needs.
 - **2026-05-07** – **🍯 Creator Rewards** App builders can now earn Pollen when users generate content through their apps. Opt-in via your API keys in the [Dashboard](https://enter.pollinations.ai) and watch the balance go up.
-- **2026-05-06** – **🔑 BYOP Attribution** Bring-your-own-keys tracking is now persistent. Your app actually gets credit for the generations it drives, which is helpful if you like accurate stats. [Check your dashboard](https://enter.pollinations.ai).
-- **2026-05-06** – **🌸 Showcase Pruning** We swept through the [community showcase](https://hello.pollinations.ai) to remove dead links and fix ownership credits. The garden is slightly more organized now.
-- **2026-05-05** – **🧰 Worl Tools** An offline-first desktop app packing over 20 utilities into one Swiss army knife. [Try it](https://worldtools-mu.vercel.app/) <!-- app -->
 ---
 
 ## 🌱 Introduction

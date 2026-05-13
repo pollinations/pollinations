@@ -1,9 +1,13 @@
 import { getLogger } from "@logtape/logtape";
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
-import { apikey as apikeyTable } from "@shared/db/better-auth.ts";
+import {
+    apikey as apikeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
@@ -38,6 +42,7 @@ import {
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
 import { eq } from "drizzle-orm";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import type { HonoRequest } from "hono";
@@ -195,6 +200,7 @@ export const track = (eventType: EventType) =>
                 let payerBucket: Awaited<
                     ReturnType<typeof handleBalanceDeduction>
                 >["payerBucket"] = null;
+                let shouldRunAutoTopUp = false;
                 try {
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
@@ -208,6 +214,18 @@ export const track = (eventType: EventType) =>
                     });
                     markup = deduction.markup;
                     payerBucket = deduction.payerBucket;
+                    const totalPrice = responseTracking.price?.totalPrice ?? 0;
+                    if (
+                        totalPrice > 0 &&
+                        payerBucket === "pack" &&
+                        deduction.postDeductionPackBalance != null &&
+                        deduction.postDeductionPackBalance <=
+                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
+                        userTracking.userId &&
+                        (await isAutoTopUpConfigured(db, userTracking.userId))
+                    ) {
+                        shouldRunAutoTopUp = true;
+                    }
                 } catch (error) {
                     log.error(
                         "Billing deduction failed after response; continuing tracking: {error}",
@@ -275,9 +293,68 @@ export const track = (eventType: EventType) =>
                     c.env.TINYBIRD_INGEST_TOKEN,
                     log,
                 );
+
+                if (shouldRunAutoTopUp && userTracking.userId) {
+                    await triggerAutoTopUp(c.env, userTracking.userId, log);
+                }
             })(),
         );
     });
+
+async function isAutoTopUpConfigured(
+    db: DrizzleD1Database,
+    userId: string,
+): Promise<boolean> {
+    const [user] = await db
+        .select({
+            enabled: userTable.autoTopUpEnabled,
+            amountUsd: userTable.autoTopUpAmountUsd,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .limit(1);
+
+    if (!user?.enabled || user.amountUsd == null) {
+        return false;
+    }
+
+    return true;
+}
+
+async function triggerAutoTopUp(
+    env: CloudflareBindings,
+    userId: string,
+    log: ReturnType<typeof getLogger>,
+): Promise<void> {
+    try {
+        const response = await env.ENTER.fetch(
+            "https://enter.pollinations.ai/api/stripe/auto-top-up/trigger",
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    userId,
+                    environment: env.ENVIRONMENT,
+                }),
+            },
+        );
+
+        if (!response.ok) {
+            log.warn("Auto top-up trigger failed for user {userId}", {
+                userId,
+                status: response.status,
+            });
+        }
+    } catch (error) {
+        log.warn("Auto top-up trigger errored for user {userId}: {error}", {
+            userId,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
 
 async function trackRequest(
     modelInfo: ModelVariables["model"],

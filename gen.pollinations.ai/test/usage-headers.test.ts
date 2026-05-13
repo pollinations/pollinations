@@ -76,12 +76,14 @@ describe("buildUsageHeaders", () => {
             promptAudioTokens: 500,
             completionAudioSeconds: 3.5,
             completionVideoSeconds: 10.2,
+            billingDollars: 0.000467060451,
         };
         const headers = buildUsageHeaders("gemini-large", usage);
 
         expect(headers["x-usage-prompt-audio-tokens"]).toBe("500");
         expect(headers["x-usage-completion-audio-seconds"]).toBe("3.5");
         expect(headers["x-usage-completion-video-seconds"]).toBe("10.2");
+        expect(headers["x-usage-billing-dollars"]).toBe("0.000467060451");
     });
 });
 
@@ -195,6 +197,7 @@ describe("parseUsageHeaders", () => {
             "x-usage-prompt-audio-seconds": "3.5",
             "x-usage-completion-audio-seconds": "10.25",
             "x-usage-completion-video-seconds": "15.75",
+            "x-usage-billing-dollars": "0.000467060451",
         };
 
         const usage = parseUsageHeaders(headers);
@@ -202,6 +205,7 @@ describe("parseUsageHeaders", () => {
         expect(usage.promptAudioSeconds).toBe(3.5);
         expect(usage.completionAudioSeconds).toBe(10.25);
         expect(usage.completionVideoSeconds).toBe(15.75);
+        expect(usage.billingDollars).toBe(0.000467060451);
     });
 
     it("should handle Headers object (from Response)", () => {
@@ -239,6 +243,7 @@ describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
             completionTextTokens: 75,
             completionReasoningTokens: 150,
             completionAudioSeconds: 5.5,
+            billingDollars: 0.000467060451,
         };
 
         const headers = buildUsageHeaders("test-model", originalUsage);
@@ -262,5 +267,6 @@ describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
         expect(parsedUsage.completionAudioSeconds).toBe(
             originalUsage.completionAudioSeconds,
         );
+        expect(parsedUsage.billingDollars).toBe(originalUsage.billingDollars);
     });
 });

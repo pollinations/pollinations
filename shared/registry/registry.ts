@@ -33,7 +33,8 @@ export type UsageType =
     | "completionAudioSeconds"
     | "completionImageTokens"
     | "completionVideoSeconds"
-    | "completionVideoTokens";
+    | "completionVideoTokens"
+    | "billingDollars";
 
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };

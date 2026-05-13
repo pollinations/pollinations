@@ -39,6 +39,7 @@ test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
         tokenPriceCompletionImage: 0,
         tokenPriceCompletionVideoSeconds: 0,
         tokenPriceCompletionVideoTokens: 0,
+        tokenPriceBillingDollars: 0,
         tokenCountPromptText: 100,
         tokenCountPromptCached: 0,
         tokenCountPromptAudio: 0,
@@ -49,6 +50,7 @@ test("sendToTinybird sends event to Tinybird API", async ({ log, mocks }) => {
         tokenCountCompletionImage: 0,
         tokenCountCompletionVideoSeconds: 0,
         tokenCountCompletionVideoTokens: 0,
+        tokenCountBillingDollars: 0,
         totalCost: 0.001,
         totalPrice: 0.002,
     };
@@ -94,6 +96,7 @@ test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
         tokenPriceCompletionImage: 0,
         tokenPriceCompletionVideoSeconds: 0,
         tokenPriceCompletionVideoTokens: 0,
+        tokenPriceBillingDollars: 0,
         tokenCountPromptText: 100,
         tokenCountPromptCached: 0,
         tokenCountPromptAudio: 0,
@@ -104,6 +107,7 @@ test("sendToTinybird handles API errors gracefully", async ({ log, mocks }) => {
         tokenCountCompletionImage: 0,
         tokenCountCompletionVideoSeconds: 0,
         tokenCountCompletionVideoTokens: 0,
+        tokenCountBillingDollars: 0,
         totalCost: 0.001,
         totalPrice: 0.002,
     };

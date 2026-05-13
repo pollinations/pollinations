@@ -22,6 +22,7 @@ type BillingEvent = {
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds?: number;
     tokenPriceCompletionVideoTokens?: number;
+    tokenPriceBillingDollars?: number;
     tokenCountPromptText: number;
     tokenCountPromptCached: number;
     tokenCountPromptAudio: number;
@@ -32,6 +33,7 @@ type BillingEvent = {
     tokenCountCompletionImage: number;
     tokenCountCompletionVideoSeconds?: number;
     tokenCountCompletionVideoTokens?: number;
+    tokenCountBillingDollars?: number;
     totalCost: number;
     totalPrice: number;
 };
@@ -48,6 +50,7 @@ function usageFromEvent(event: BillingEvent): Usage {
         completionImageTokens: event.tokenCountCompletionImage,
         completionVideoSeconds: event.tokenCountCompletionVideoSeconds || 0,
         completionVideoTokens: event.tokenCountCompletionVideoTokens || 0,
+        billingDollars: event.tokenCountBillingDollars || 0,
     };
 }
 
@@ -98,6 +101,9 @@ export function assertTrackedBillingEvent(
     );
     expect(event.tokenPriceCompletionVideoTokens || 0).toBe(
         priceDefinition?.completionVideoTokens || 0,
+    );
+    expect(event.tokenPriceBillingDollars || 0).toBe(
+        priceDefinition?.billingDollars || 0,
     );
 
     expect(event.totalCost).toBeCloseTo(expectedCost.totalCost, 8);

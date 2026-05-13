@@ -1056,4 +1056,30 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         isSpecialized: true,
     },
+    "replicate-generic": {
+        aliases: [],
+        modelId: "replicate-generic",
+        provider: "replicate",
+        brand: "Replicate",
+        category: "text",
+        paidOnly: true,
+        hidden: true,
+        cost: [
+            {
+                date: COST_START_DATE,
+                // Generic Replicate passes through scraped provider cost directly.
+                billingDollars: 1,
+            },
+        ],
+        price: [
+            {
+                date: COST_START_DATE,
+                billingDollars: 1.5,
+            },
+        ],
+        description:
+            "Generic Replicate passthrough for time-priced public models",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text", "image", "audio", "video"],
+    },
 } as const satisfies Record<string, ModelDefinition<string>>;

@@ -17,6 +17,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionImageTokens: "x-usage-completion-image-tokens",
     completionVideoSeconds: "x-usage-completion-video-seconds",
     completionVideoTokens: "x-usage-completion-video-tokens",
+    billingDollars: "x-usage-billing-dollars",
 };
 
 /**
@@ -107,6 +108,7 @@ export function parseUsageHeaders(
         "promptAudioSeconds",
         "completionAudioSeconds",
         "completionVideoSeconds",
+        "billingDollars",
     ]);
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {

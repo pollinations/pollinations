@@ -171,13 +171,26 @@ curl -s --connect-timeout 5 --max-time 10 https://gen.pollinations.ai/register
 ```
 Expected: 4 workers with 0% error rate, all `hsl3ksl31lvrcc-*.proxy.runpod.net`. The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s TTL); workers heartbeat to `gen.pollinations.ai/register`.
 
-**Restart a worker:**
+**Restart a worker** (fresh containers don't have `screen`; use `nohup`):
 ```bash
-ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p 19489 root@38.65.239.17
-screen -S flux-gpu0 -X quit
-screen -dmS flux-gpu0 bash -c 'source /opt/pollinations/image.pollinations.ai/nunchaku/venv/bin/activate && \
+ssh -i <SOPS:SSH_RUNPOD_FLUX_ZIMAGE> -p <runtime-port> root@<runtime-ip>
+pkill -f 'nunchaku/server.py'  # or pkill -f 'z-image/server.py'
+mkdir -p /workspace/logs
+cd /opt/pollinations/pollinations/image.pollinations.ai/nunchaku
+nohup bash -c "source venv/bin/activate && \
   CUDA_VISIBLE_DEVICES=0 PORT=8765 PUBLIC_IP=hsl3ksl31lvrcc-8765.proxy.runpod.net PUBLIC_PORT=443 \
-  SERVICE_TYPE=flux python /opt/pollinations/image.pollinations.ai/nunchaku/server.py 2>&1 | tee /tmp/flux-gpu0.log'
+  SERVICE_TYPE=flux HF_TOKEN=<SOPS:HF_TOKEN or .testingtokens> PLN_GPU_TOKEN=<SOPS> \
+  python server.py" > /workspace/logs/flux-gpu0.log 2>&1 &
+```
+
+**Pod stop/start wipes the container overlay disk** — `/opt/pollinations/` is gone after every restart. Only `/workspace/` persists. Full rebuild = clone repo → `bash setup.sh` (~5 min: prebuilt nunchaku wheel + HF model download).
+
+**SSH port rotates on stop/start.** Get current host/port via the RunPod GraphQL API:
+```bash
+RUNPOD_TOKEN=$(cat ~/.runpod/config.toml | grep apikey | cut -d\' -f2)
+curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_TOKEN" -H "Content-Type: application/json" \
+  -d '{"query":"{pod(input:{podId:\"hsl3ksl31lvrcc\"}){runtime{ports{ip privatePort publicPort type}}}}"}' \
+  | python3 -c "import sys,json;[print(p) for p in json.load(sys.stdin)['data']['pod']['runtime']['ports'] if p['privatePort']==22]"
 ```
 
 ---

@@ -145,7 +145,7 @@ def read_prompt_file() -> str:
 
 
 VALID_LABELS = {
-    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE"},
+    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE"},
     "support": {
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
@@ -153,8 +153,11 @@ VALID_LABELS = {
     "news": set()
 }
 
+SUPPORT_TYPE_LABELS = {".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION"}
+SUPPORT_SERVICE_LABELS = {"IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT"}
+
 PROTECTED_LABELS = {
-    "dev": {"DEV-TRACKING", "DEV-VOTING", "DEV-QUEST"},
+    "dev": {"DEV-TRACKING", "DEV-VOTING"},
 }
 
 
@@ -172,8 +175,10 @@ def normalize_labels(project: str, labels: list) -> list:
         return [label] if label else []
     
     if project == "support":
-        return [l for l in incoming if l in valid_labels]
-    
+        type_label = next((l for l in incoming if l in SUPPORT_TYPE_LABELS), None)
+        service_label = next((l for l in incoming if l in SUPPORT_SERVICE_LABELS), None)
+        return [l for l in (type_label, service_label) if l]
+
     return []
 
 
@@ -459,7 +464,7 @@ def main():
             log_error("Tier project not configured")
             return
     if "POLLEN-QUEST" in existing_labels:
-        log_debug("Found POLLEN-QUEST label; issue-quest-gate.yml owns quest routing")
+        log_debug("Found POLLEN-QUEST label; Quest project auto-add owns quest routing")
         return
 
     if "NEWS" in existing_labels:

@@ -72,3 +72,8 @@ export const getPollenPack = (value: string | number): PollenPack | undefined =>
 
 export const describePollenPack = (pack: PollenPack): string =>
     `$${pack.amountUsd} -> ${formatPollenPackValue(pack.pollenGrant)} pollen (+${formatPollenPackValue(pack.bonusPollen)} bonus)`;
+
+export const getPackBonusPercent = (pack: PollenPack): number =>
+    pack.amountUsd > 0
+        ? Math.round((pack.bonusPollen / pack.amountUsd) * 100)
+        : 0;

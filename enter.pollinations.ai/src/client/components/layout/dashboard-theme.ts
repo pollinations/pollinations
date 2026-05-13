@@ -15,18 +15,18 @@ export const DASHBOARD_NAV_ITEMS: {
     theme: DashboardTheme;
 }[] = [
     { id: "updates", label: "News & FAQ", theme: "violet" },
-    { id: "pollen", label: "Pollen", theme: "amber" },
-    { id: "usage", label: "Usage", theme: "pink" },
-    { id: "keys", label: "Keys", theme: "blue" },
     { id: "models", label: "Models", theme: "teal" },
+    { id: "keys", label: "Keys", theme: "blue" },
+    { id: "pollen", label: "Pollen", theme: "amber" },
+    { id: "usage", label: "Activity", theme: "pink" },
 ];
 
 export const DASHBOARD_PAGES: DashboardPage[] = [
     "updates",
+    "models",
+    "keys",
     "pollen",
     "usage",
-    "keys",
-    "models",
 ];
 
 // Page → theme lookup, derived from DASHBOARD_NAV_ITEMS.
@@ -63,7 +63,6 @@ export const cardColors = {
     red: "border-red-300",
     teal: "border-teal-200",
     violet: "border-violet-200",
-    yellow: "border-yellow-200",
 } as const;
 
 export const buttonColors = {

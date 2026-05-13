@@ -122,7 +122,7 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500 to-teal-500 text-white font-semibold text-xs shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
                                 >
                                     <span>🌸</span>
-                                    <span>Buy Pollen</span>
+                                    <span>Top-up</span>
                                     <span className="text-white/80">↑</span>
                                 </a>
                                 <span className="inline-flex items-center gap-2 whitespace-nowrap text-gray-400 text-[10px]">

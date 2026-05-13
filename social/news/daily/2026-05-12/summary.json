@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-12",
+  "period_start": "2026-05-12",
+  "period_end": "2026-05-12",
+  "title": "Auto top-ups for Pollen credits",
+  "summary": "Auto top-ups for Pollen credits are live, plus two new community apps hit the showcase.\n\nAdded Stripe Customer Portal integration so you can configure your account to automatically grab more Pollen when your balance dips. Uninterrupted API calls, zero manual intervention.\n\nTwo new community projects hit the showcase today. Pollenforge-CLI helps streamline Markdown formatting workflows, and Storytale is a multiplayer game for collaborative narrative building.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 10561,
+      "date": "2026-05-12"
+    },
+    {
+      "number": 10903,
+      "date": "2026-05-12"
+    },
+    {
+      "number": 10904,
+      "date": "2026-05-12"
+    }
+  ],
+  "generated_at": "2026-05-13T06:58:41.218591+00:00"
+}

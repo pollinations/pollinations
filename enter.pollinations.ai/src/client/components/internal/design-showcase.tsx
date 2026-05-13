@@ -168,10 +168,7 @@ type ColorRow = {
     fg?: string;
 };
 
-const themeRoleRows: readonly ColorRow[] = [
-    { name: "text-strong", swatch: "bg-theme-text-strong" },
-    { name: "text-base", swatch: "bg-theme-text-base" },
-    { name: "text-soft", swatch: "bg-theme-text-soft" },
+const themeBackgroundRows: readonly ColorRow[] = [
     { name: "bg-idle", swatch: "bg-theme-bg-idle" },
     { name: "bg-subtle", swatch: "bg-theme-bg-subtle" },
     { name: "bg-tinted", swatch: "bg-theme-bg-tinted" },
@@ -181,16 +178,25 @@ const themeRoleRows: readonly ColorRow[] = [
     { name: "bg-hover", swatch: "bg-theme-bg-hover" },
     { name: "bg-hover-soft", swatch: "bg-theme-bg-hover-soft" },
     { name: "bg-hover-faint", swatch: "bg-theme-bg-hover-faint" },
-    { name: "chip-bg", swatch: "bg-theme-chip-bg" },
+];
+
+const themeBorderRows: readonly ColorRow[] = [
     { name: "border", swatch: "bg-theme-border" },
     { name: "border-soft", swatch: "bg-theme-border-soft" },
     { name: "border-subtle", swatch: "bg-theme-border-subtle" },
     { name: "divide", swatch: "bg-theme-divide" },
+];
+
+const themeIdentityRows: readonly ColorRow[] = [
+    { name: "chip-bg", swatch: "bg-theme-chip-bg" },
     { name: "accent", swatch: "bg-theme-accent" },
+    { name: "ring-focus", swatch: "bg-theme-ring-focus" },
+];
+
+const themeButtonRows: readonly ColorRow[] = [
     { name: "button-light-bg", swatch: "bg-theme-button-light-bg" },
     { name: "button-light-text", swatch: "bg-theme-button-light-text" },
     { name: "button-light-hover", swatch: "bg-theme-button-light-hover" },
-    { name: "ring-focus", swatch: "bg-theme-ring-focus" },
 ];
 
 const intentColumns = ["bg", "text", "border"] as const;
@@ -234,10 +240,16 @@ const universalRows: readonly ColorRow[] = [
 const ColorsSection: FC<{ theme: ThemeName }> = ({ theme }) => (
     <Section
         title="Colors"
-        caption="Every token in the system. The Theme block reflects the active theme — flip the toggle above to preview the others."
+        caption={`Every theme token in the system, grouped by role. Active theme: ${theme}. Text colors live in the Typography section.`}
     >
         <div className="flex flex-col gap-6">
-            <ColorGroup label={`Theme · ${theme}`} rows={themeRoleRows} />
+            <ColorGroup label="Backgrounds" rows={themeBackgroundRows} />
+            <ColorGroup label="Borders" rows={themeBorderRows} />
+            <ColorGroup
+                label="Identity (chip / accent / focus)"
+                rows={themeIdentityRows}
+            />
+            <ColorGroup label="Button (light variant)" rows={themeButtonRows} />
             <IntentGroup />
             <ColorGroup label="Wallet" rows={walletRows} />
             <ColorGroup label="Universal" rows={universalRows} />
@@ -409,42 +421,102 @@ const typeRamp: readonly TypeRow[] = [
     },
 ] as const;
 
+const textColorRows: readonly {
+    name: string;
+    cls: string;
+    purpose: string;
+}[] = [
+    {
+        name: "text-strong",
+        cls: "text-theme-text-strong",
+        purpose: "Headings · emphatic body · stat numbers",
+    },
+    {
+        name: "text-base",
+        cls: "text-theme-text-base",
+        purpose: "Body default",
+    },
+    {
+        name: "text-soft",
+        cls: "text-theme-text-soft",
+        purpose: "Secondary · captions · meta",
+    },
+];
+
 const TypographyDemo: FC = () => (
     <Section
         title="Typography"
-        caption="font-heading = LCT Mogi (h1) · font-subheading = Fraunces (h2-h3) · font-body = Uncut Sans (h4-h6 + body). Each row below shows the rendered size + where it's actually used in the app."
+        caption="font-heading = LCT Mogi (h1) · font-subheading = Fraunces (h2-h3) · font-body = Uncut Sans (h4-h6 + body). Sizes and colors below both react to the active page theme — flip the toggle to preview."
     >
-        <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
-            <div className="flex flex-col gap-2">
-                {typeRamp.map((row) => (
-                    <div
-                        key={row.utility}
-                        className="flex items-baseline gap-4 border-b border-theme-border-subtle pb-2 last:border-b-0 last:pb-0"
-                    >
-                        <span
-                            className={cn(
-                                row.utility,
-                                "w-32 shrink-0 truncate font-body text-theme-text-strong",
-                            )}
+        <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-soft">
+                    Color (theme cascade)
+                </div>
+                <p className="mb-3 text-xs text-theme-text-soft/80">
+                    Three semantic text colors. For finer tones use opacity
+                    modifiers (e.g.{" "}
+                    <code className="font-mono">text-theme-text-soft/60</code>).
+                </p>
+                <div className="flex flex-col gap-2">
+                    {textColorRows.map((row) => (
+                        <div
+                            key={row.name}
+                            className="flex items-baseline gap-4 border-b border-theme-border-subtle pb-2 last:border-b-0 last:pb-0"
                         >
-                            Aa
-                        </span>
-                        <code className="w-24 shrink-0 text-xs font-mono text-theme-text-strong">
-                            {row.utility}
-                        </code>
-                        <span className="w-12 shrink-0 text-xs font-mono text-theme-text-soft">
-                            {row.px}
-                        </span>
-                        <span className="min-w-0 flex-1 text-xs text-theme-text-soft/60">
-                            {row.purpose}
-                        </span>
-                        {row.offScale && (
-                            <span className="shrink-0 rounded-md bg-theme-bg-tinted px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-theme-text-soft">
-                                off-scale
+                            <span
+                                className={cn(
+                                    "w-32 shrink-0 truncate font-body text-lg",
+                                    row.cls,
+                                )}
+                            >
+                                The quick brown fox
                             </span>
-                        )}
-                    </div>
-                ))}
+                            <code className="w-32 shrink-0 text-xs font-mono text-theme-text-strong">
+                                {row.name}
+                            </code>
+                            <span className="min-w-0 flex-1 text-xs text-theme-text-soft/60">
+                                {row.purpose}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-soft">
+                    Size ramp
+                </div>
+                <div className="flex flex-col gap-2">
+                    {typeRamp.map((row) => (
+                        <div
+                            key={row.utility}
+                            className="flex items-baseline gap-4 border-b border-theme-border-subtle pb-2 last:border-b-0 last:pb-0"
+                        >
+                            <span
+                                className={cn(
+                                    row.utility,
+                                    "w-32 shrink-0 truncate font-body text-theme-text-strong",
+                                )}
+                            >
+                                Aa
+                            </span>
+                            <code className="w-24 shrink-0 text-xs font-mono text-theme-text-strong">
+                                {row.utility}
+                            </code>
+                            <span className="w-12 shrink-0 text-xs font-mono text-theme-text-soft">
+                                {row.px}
+                            </span>
+                            <span className="min-w-0 flex-1 text-xs text-theme-text-soft/60">
+                                {row.purpose}
+                            </span>
+                            {row.offScale && (
+                                <span className="shrink-0 rounded-md bg-theme-bg-tinted px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-theme-text-soft">
+                                    off-scale
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     </Section>

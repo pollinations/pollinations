@@ -1,13 +1,13 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
+import { getModalityColors } from "./modality-ui.ts";
 import {
     MODEL_CATEGORIES,
     type ModelCategoryModel,
 } from "./model-categories.ts";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import {
-    getPermissionPillClasses,
     getPermissionUiTheme,
     type PermissionUiTheme,
 } from "./permission-ui.ts";
@@ -50,23 +50,6 @@ export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
         tooltip: "create, list, and revoke API keys",
     },
 ];
-
-const MODEL_CATEGORY_TEXT_CLASSES = {
-    Text: "text-blue-800",
-    Image: "text-rose-800",
-    Video: "text-teal-800",
-    Audio: "text-violet-800",
-    Embedding: "text-indigo-800",
-} as const;
-
-const MODEL_CATEGORY_HOVER_CLASSES = {
-    Text: "hover:bg-blue-50 hover:text-blue-900 hover:border-blue-300",
-    Image: "hover:bg-rose-50 hover:text-rose-900 hover:border-rose-300",
-    Video: "hover:bg-teal-50 hover:text-teal-900 hover:border-teal-300",
-    Audio: "hover:bg-violet-50 hover:text-violet-900 hover:border-violet-300",
-    Embedding:
-        "hover:bg-indigo-50 hover:text-indigo-900 hover:border-indigo-300",
-} as const;
 
 /**
  * Unified permissions input for API keys.
@@ -340,9 +323,7 @@ const ModelCategory: FC<{
             <span
                 className={cn(
                     "text-sm font-semibold",
-                    MODEL_CATEGORY_TEXT_CLASSES[
-                        label as keyof typeof MODEL_CATEGORY_TEXT_CLASSES
-                    ],
+                    getModalityColors(label)?.text,
                 )}
             >
                 {label}
@@ -399,17 +380,14 @@ const ModelChip: FC<{
             onClick={onClick}
             disabled={disabled}
             className={cn(
-                "px-2.5 py-1 rounded-lg text-xs transition-colors text-left border",
+                "inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-sm font-medium leading-normal transition-colors text-left",
                 selected
-                    ? getPermissionPillClasses(category ?? "") ||
-                          "bg-gray-100 text-gray-800 border-gray-400"
-                    : "bg-transparent text-gray-600 border-gray-300",
+                    ? (getModalityColors(category ?? "")?.filled ??
+                          "bg-gray-200 text-gray-900")
+                    : "bg-gray-100 text-gray-600",
                 !disabled &&
                     !selected &&
-                    MODEL_CATEGORY_HOVER_CLASSES[
-                        (category ??
-                            "Text") as keyof typeof MODEL_CATEGORY_HOVER_CLASSES
-                    ],
+                    getModalityColors(category ?? "")?.hover,
                 !disabled && "cursor-pointer",
                 disabled && "opacity-50 cursor-not-allowed",
             )}

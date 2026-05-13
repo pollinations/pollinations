@@ -62,30 +62,8 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
         },
     };
 
-const PERMISSION_CATEGORY_PILLS = {
-    text: "bg-blue-200 text-blue-900 border-blue-400",
-    image: "bg-pink-200 text-pink-900 border-pink-400",
-    video: "bg-teal-200 text-teal-900 border-teal-400",
-    audio: "bg-violet-200 text-violet-900 border-violet-400",
-    embedding: "bg-indigo-200 text-indigo-900 border-indigo-400",
-} as const;
-
 export function getPermissionUiTheme(
     theme: PermissionUiTheme = "blue",
 ): PermissionUiThemeConfig {
     return PERMISSION_UI_THEMES[theme];
-}
-
-export function getPermissionPillClasses(category: string): string {
-    const normalized =
-        category.toLowerCase() === "images"
-            ? "image"
-            : category.toLowerCase() === "embeddings"
-              ? "embedding"
-              : category;
-    return (
-        PERMISSION_CATEGORY_PILLS[
-            normalized.toLowerCase() as keyof typeof PERMISSION_CATEGORY_PILLS
-        ] ?? ""
-    );
 }

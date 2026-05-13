@@ -30,7 +30,6 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
 }) => {
     const {
         input: { classes: inputClasses },
-        accent: { tipTone },
     } = getPermissionUiTheme(theme);
 
     return (
@@ -42,7 +41,6 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                 <InfoTip
                     text="Key expires after this many days. Leave empty for no expiry."
                     label="Expiry information"
-                    tone={tipTone}
                 />
             </Field.Label>
             <div className="flex items-center gap-2">

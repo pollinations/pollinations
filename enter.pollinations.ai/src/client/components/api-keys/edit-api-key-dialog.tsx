@@ -6,7 +6,6 @@ import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { Chip } from "../ui/chip.tsx";
 import { Input } from "../ui/input.tsx";
-import { Surface } from "../ui/surface.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -208,13 +207,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
                         {error && (
-                            <Surface
-                                intent="danger"
-                                tone="tinted"
-                                className="mb-4 text-intent-danger-text"
-                            >
+                            <div className="mb-4 rounded-xl bg-intent-danger-bg-light p-4 text-intent-danger-text">
                                 {error}
-                            </Surface>
+                            </div>
                         )}
 
                         <div className="space-y-4">
@@ -256,7 +251,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         <Button
                             type="button"
                             intent="danger"
-                            weight="light"
                             onClick={onClose}
                             disabled={isSubmitting}
                         >

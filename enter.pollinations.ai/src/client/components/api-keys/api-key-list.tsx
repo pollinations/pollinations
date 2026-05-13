@@ -6,7 +6,7 @@ import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { Chip } from "../ui/chip.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
 import { Surface } from "../ui/surface.tsx";
-import { AccountBadge } from "./account-badge.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { DeleteConfirmation } from "./delete-confirmation.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
@@ -75,7 +75,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         return (
             <Surface
                 key={apiKey.id}
-                className="!border-transparent transition-colors hover:bg-white/90"
+                className="transition-colors hover:bg-white/90"
             >
                 <div className="flex items-center gap-2 mb-2">
                     <Chip size="sm">
@@ -152,17 +152,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 {primaryRedirectUri.replace(/^https?:\/\//, "")}
                             </a>
                             {extraRedirectUriCount > 0 && (
-                                <span
-                                    className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700"
-                                    title={redirectUrisMeta
+                                <Tooltip
+                                    content={redirectUrisMeta
                                         .slice(1)
                                         .map((uri) =>
                                             uri.replace(/^https?:\/\//, ""),
                                         )
                                         .join("\n")}
+                                    displayContents
                                 >
-                                    +{extraRedirectUriCount}
-                                </span>
+                                    <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700">
+                                        +{extraRedirectUriCount}
+                                    </span>
+                                </Tooltip>
                             )}
                         </span>
                     )}
@@ -192,14 +194,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 <span className="text-gray-400">
                                     Permissions:
                                 </span>
-                                <span className="flex items-center gap-1">
-                                    <ModelsBadge
-                                        permissions={apiKey.permissions}
-                                    />
-                                    <AccountBadge
-                                        permissions={apiKey.permissions}
-                                    />
-                                </span>
+                                <ModelsBadge permissions={apiKey.permissions} />
                             </span>
                         </>
                     )}
@@ -225,7 +220,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                         </div>
                         {!sortedApiKeys.length && (
-                            <Surface className="!border-transparent p-6 text-center">
+                            <Surface className="p-6 text-center">
                                 <p className="text-2xl mb-2">🔑</p>
                                 <p className="font-semibold text-gray-900 text-lg mb-2">
                                     Create your first API key
@@ -248,7 +243,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Pollinations account and spend their own
                                     Pollen.
                                 </p>
-                                <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                                <Surface
+                                    variant="card-themed"
+                                    className="mt-2 text-theme-text-strong"
+                                >
                                     <span className="font-body text-2xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
@@ -272,7 +270,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             ↗
                                         </span>
                                     </a>
-                                </p>
+                                </Surface>
                             </div>
                             <ApiKeyDialog
                                 onSubmit={onCreate}
@@ -282,7 +280,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             />
                         </div>
                         {!sortedAppKeys.length && (
-                            <Surface className="!border-transparent p-6 text-center">
+                            <Surface className="p-6 text-center">
                                 <p className="text-2xl mb-2">🖥️</p>
                                 <p className="font-semibold text-gray-900 text-lg mb-2">
                                     Create your first app key

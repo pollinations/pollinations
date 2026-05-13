@@ -30,7 +30,6 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
 }) => {
     const {
         input: { classes: inputClasses },
-        accent: { tipTone },
     } = getPermissionUiTheme(theme);
 
     return (
@@ -42,7 +41,6 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                 <InfoTip
                     text="Spending cap for this key. Leave empty for unlimited. Once the key spends its budget, requests through it are rejected."
                     label="Budget information"
-                    tone={tipTone}
                 />
             </Field.Label>
             <div className="flex items-center gap-2">

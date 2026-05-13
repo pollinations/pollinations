@@ -175,11 +175,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     triggerClassName,
                 )}
             >
-                <Button
-                    as="div"
-                    weight="light"
-                    className="shrink-0 whitespace-nowrap"
-                >
+                <Button as="div" className="shrink-0 whitespace-nowrap">
                     {triggerLabel}
                 </Button>
             </Dialog.Trigger>
@@ -334,7 +330,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 <Button
                                     type="button"
                                     intent="danger"
-                                    weight="light"
                                     onClick={() => setIsOpen(false)}
                                     className="disabled:opacity-50"
                                     disabled={isSubmitting}

@@ -19,7 +19,10 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
     >
         <Dialog.Backdrop className="fixed inset-0 z-[100] bg-gray-950/50" />
         <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
-            <Dialog.Content className="w-full max-w-md rounded-lg border-2 border-blue-300 bg-white p-6 shadow-lg">
+            <Dialog.Content
+                data-theme="blue"
+                className="w-full max-w-md rounded-lg border-2 border-blue-300 bg-white p-6 shadow-lg"
+            >
                 <Dialog.Title className="text-lg font-semibold mb-4">
                     Delete API Key
                 </Dialog.Title>
@@ -28,20 +31,10 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
                     cannot be undone.
                 </p>
                 <div className="flex gap-2 justify-end">
-                    <Button
-                        type="button"
-                        intent="danger"
-                        weight="light"
-                        onClick={onCancel}
-                    >
+                    <Button type="button" onClick={onCancel}>
                         Cancel
                     </Button>
-                    <Button
-                        type="button"
-                        intent="danger"
-                        weight="strong"
-                        onClick={onConfirm}
-                    >
+                    <Button type="button" intent="danger" onClick={onConfirm}>
                         Delete
                     </Button>
                 </div>

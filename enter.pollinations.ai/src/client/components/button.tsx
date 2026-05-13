@@ -20,9 +20,9 @@ const themeWeightClasses = {
 } as const;
 
 // Intent → weight class lookup. Theme-independent (semantic).
-// `paid` and `alpha` only define `light` — strong CTAs in those intents are
-// uncommon; add when needed (YAGNI).
-type IntentWeights = { strong?: string; light: string };
+// `paid` and `alpha` use the same recipe for both weights — no semantic
+// distinction today. Table is exhaustive so the lookup is type-safe.
+type IntentWeights = { strong: string; light: string };
 const intentWeightClasses: Record<IntentName, IntentWeights> = {
     danger: {
         light:
@@ -41,12 +41,12 @@ const intentWeightClasses: Record<IntentName, IntentWeights> = {
             "hover:bg-intent-success-bg-hover transition-colors",
     },
     paid: {
-        // Strong intentionally omitted — no current callsite. Falls back to light.
         light: "bg-intent-paid text-intent-paid-deep hover:bg-intent-paid-hover transition-colors",
+        strong: "bg-intent-paid text-intent-paid-deep hover:bg-intent-paid-hover transition-colors",
     },
     alpha: {
-        // Strong intentionally omitted — no current callsite. Falls back to light.
         light: "bg-intent-alpha-bg text-intent-alpha-text transition-colors",
+        strong: "bg-intent-alpha-bg text-intent-alpha-text transition-colors",
     },
 };
 
@@ -72,8 +72,7 @@ const buttonClasses = ({
     disabled,
 }: BaseButtonProps & { disabled?: boolean }) => {
     const colorClasses = intent
-        ? (intentWeightClasses[intent][weight] ??
-          intentWeightClasses[intent].light)
+        ? intentWeightClasses[intent][weight]
         : themeWeightClasses[weight];
     return cn(
         "inline-flex items-center justify-center rounded-full self-center placeholder-green-950 font-medium leading-normal box-border",

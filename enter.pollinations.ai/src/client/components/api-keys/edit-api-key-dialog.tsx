@@ -211,7 +211,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             <Card
                                 intent="danger"
                                 tone="tinted"
-                                className="mb-4"
+                                className="mb-4 text-intent-danger-text"
                             >
                                 {error}
                             </Card>

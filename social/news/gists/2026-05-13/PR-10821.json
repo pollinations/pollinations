@@ -1,0 +1,34 @@
+{
+  "pr_number": 10821,
+  "title": "simplify Pollen FAQ for voice and clarity",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10821",
+  "merged_at": "2026-05-13T14:33:27Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "FAQ, minus the fluff",
+    "blurb": "We gave the Pollen FAQ a much-needed haircut. Less marketing speak, more straight answers about how credits, tiers, and developer earnings actually work.",
+    "summary": "Simplified the Pollen FAQ to align with our brand voice by removing outdated numbers, marketing slogans, and unnecessary emojis.",
+    "impact": "Users will find clearer, more concise answers about wallet balances, tier requirements, and developer earnings without having to wade through hype.",
+    "keywords": [
+      "docs",
+      "faq",
+      "pollen",
+      "billing",
+      "credits"
+    ],
+    "visual_concept": "Polly the bee cleaning up documentation. Since the PR removes 'fluff' and 'hype', the Nomnom creature is perfect here—eating the discarded, crumpled-up marketing buzzwords and emojis while Polly holds a clean, simple manual.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a clean, glowing document. Nearby, the round tan Nomnom creature happily eats crumpled papers covered in marketing buzzwords and emojis. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-13/PR-10821.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny reading glasses, holding a clean, glowing document. Nearby, the round tan Nomnom creature happily eats crumpled papers covered in marketing buzzwords and emojis. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-13T14:34:32.387358+00:00"
+}

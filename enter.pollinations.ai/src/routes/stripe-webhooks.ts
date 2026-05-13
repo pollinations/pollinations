@@ -27,6 +27,21 @@ interface StripeEventData {
 
 const LEGACY_BETA_MULTIPLIER = 2;
 
+// Grandfather grants for Checkout sessions created before the bonus-reduction
+// rollout. Stripe Checkout sessions can stay open ~24h, so users who opened a
+// session pre-deploy might pay post-deploy. Those sessions carry only
+// `packAmount` in metadata (no `pollenGrant` snapshot), so we honor the grant
+// that was displayed to them by looking up the previous catalog here.
+// Safe to remove ~48h after the deploy that introduced this map.
+const PRE_REDUCTION_GRANTS: Record<string, number> = {
+    "2": 2.5,
+    "5": 7,
+    "10": 15,
+    "20": 30,
+    "50": 80,
+    "100": 200,
+};
+
 type CheckoutSessionResult = {
     success: boolean;
     message: string;
@@ -185,18 +200,26 @@ const handleCheckoutSessionCompleted = async (
 
     // Prefer the grant snapshotted into session metadata at checkout creation
     // time; this guarantees the user is credited exactly what they saw, even
-    // when bonus values change between session creation and payment. Falls
-    // back to the current catalog (legacy sessions created pre-snapshot) and
-    // finally to the legacy beta multiplier (sessions without packAmount).
+    // when bonus values change between session creation and payment. For
+    // sessions opened before the snapshot was added (packAmount present but
+    // no pollenGrant), honor the previous catalog so in-flight checkouts
+    // aren't under-credited. Falls back to the current catalog and finally
+    // to the legacy beta multiplier (sessions without packAmount).
     const metadataGrant = metadata.pollenGrant
-        ? Number.parseInt(metadata.pollenGrant, 10)
+        ? Number.parseFloat(metadata.pollenGrant)
         : Number.NaN;
+    const grandfatherGrant =
+        metadata.packAmount && metadata.packAmount in PRE_REDUCTION_GRANTS
+            ? PRE_REDUCTION_GRANTS[metadata.packAmount]
+            : undefined;
     const creditsToAdd =
         Number.isFinite(metadataGrant) && metadataGrant > 0
             ? metadataGrant
-            : pack
-              ? pack.pollenGrant
-              : amountPaid * LEGACY_BETA_MULTIPLIER;
+            : grandfatherGrant !== undefined
+              ? grandfatherGrant
+              : pack
+                ? pack.pollenGrant
+                : amountPaid * LEGACY_BETA_MULTIPLIER;
 
     const db = drizzle(env.DB);
 

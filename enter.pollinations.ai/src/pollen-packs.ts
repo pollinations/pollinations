@@ -70,8 +70,13 @@ export const isPollenPackAmount = (value: string): value is PollenPackAmount =>
 export const getPollenPack = (value: string | number): PollenPack | undefined =>
     POLLEN_PACKS.find((pack) => String(pack.amountUsd) === String(value));
 
-export const describePollenPack = (pack: PollenPack): string =>
-    `$${pack.amountUsd} -> ${formatPollenPackValue(pack.pollenGrant)} pollen (+${formatPollenPackValue(pack.bonusPollen)} bonus)`;
+export const describePollenPack = (pack: PollenPack): string => {
+    const bonusSuffix =
+        pack.bonusPollen > 0
+            ? ` (+${formatPollenPackValue(pack.bonusPollen)} bonus)`
+            : "";
+    return `$${pack.amountUsd} -> ${formatPollenPackValue(pack.pollenGrant)} pollen${bonusSuffix}`;
+};
 
 export const getPackBonusPercent = (pack: PollenPack): number =>
     pack.amountUsd > 0

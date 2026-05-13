@@ -232,6 +232,72 @@ test("GET /api/stripe/checkout/:amount reuses the stable Stripe customer", async
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
 
+test("GET /api/stripe/checkout/10 snapshots pack grant into session metadata", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await SELF.fetch(`${base}/checkout/10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    // Line item: unit amount + product copy must match the $10 pack catalog.
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("1000");
+    expect(body?.["line_items[0][price_data][currency]"]).toBe("usd");
+    expect(body?.["line_items[0][price_data][product_data][name]"]).toMatch(
+        /10 Pollen \+ 3 FREE/,
+    );
+
+    // Session metadata must snapshot the grant so the webhook credits
+    // exactly what was displayed at checkout time.
+    expect(body?.["metadata[packAmount]"]).toBe("10");
+    expect(body?.["metadata[pollenGrant]"]).toBe("13");
+    expect(body?.["metadata[bonusPollen]"]).toBe("3");
+
+    // payment_intent metadata mirrors session metadata as a safety net
+    // (some webhook code paths read from the payment intent instead).
+    expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("10");
+    expect(body?.["payment_intent_data[metadata][pollenGrant]"]).toBe("13");
+    expect(body?.["payment_intent_data[metadata][bonusPollen]"]).toBe("3");
+});
+
+test("GET /api/stripe/checkout/2 omits FREE label for no-bonus pack", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await SELF.fetch(`${base}/checkout/2`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body).toBeTruthy();
+
+    expect(body?.["line_items[0][price_data][unit_amount]"]).toBe("200");
+    expect(body?.["line_items[0][price_data][product_data][name]"]).not.toMatch(
+        /FREE/,
+    );
+
+    expect(body?.["metadata[packAmount]"]).toBe("2");
+    expect(body?.["metadata[pollenGrant]"]).toBe("2");
+    expect(body?.["metadata[bonusPollen]"]).toBe("0");
+});
+
 test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
     sessionToken,
     mocks,
@@ -2542,4 +2608,62 @@ test("POST /api/webhooks/stripe credits legacy sessions without packAmount only 
         WHERE session_id = 'cs_test_legacy_checkout'`,
     ).first<{ count: number }>();
     expect(processedEvent?.count).toBe(1);
+});
+
+test("POST /api/webhooks/stripe credits pre-snapshot sessions at the old grant", async ({
+    sessionToken,
+    mocks,
+}) => {
+    void sessionToken;
+    await mocks.enable("tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db
+        .update(userTable)
+        .set({ packBalance: 0 })
+        .where(eq(userTable.id, user.id));
+
+    // Simulates a Checkout session opened before the grant-snapshot rollout:
+    // packAmount is present, but the new pollenGrant/bonusPollen metadata is
+    // not. The webhook must credit the pre-reduction grant (15 for $10) so
+    // in-flight checkouts aren't silently under-credited.
+    const checkoutEvent = {
+        id: "evt_test_grandfather_checkout",
+        type: "checkout.session.completed",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_grandfather_checkout",
+                object: "checkout.session",
+                metadata: {
+                    userId: user.id,
+                    packAmount: "10",
+                },
+                payment_status: "paid",
+                amount_subtotal: 1000,
+                amount_total: 1000,
+                currency: "usd",
+                customer_email: "grandfather@example.com",
+                payment_method_types: ["card"],
+            },
+        },
+    };
+
+    const response = await postSignedStripeWebhook(checkoutEvent);
+    expect(response.status).toBe(200);
+
+    const [updatedUser] = await db
+        .select({ packBalance: userTable.packBalance })
+        .from(userTable)
+        .where(eq(userTable.id, user.id))
+        .limit(1);
+    expect(updatedUser?.packBalance).toBe(15);
 });

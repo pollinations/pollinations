@@ -42,4 +42,5 @@ test("pack descriptions stay aligned with the shared catalog", () => {
         "https://discord.gg/z5uMbEYK",
     );
     expect(describePollenPack(lastPack)).toBe("$100 -> 160 pollen (+60 bonus)");
+    expect(describePollenPack(POLLEN_PACKS[0])).toBe("$2 -> 2 pollen");
 });

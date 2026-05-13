@@ -72,10 +72,10 @@ From **2026-06-01**, balances expire after 12 months of inactivity.
 
 ## 🏅 What are tiers?
 
-Each tier defines a free Pollen amount. The tier balance refills to this amount hourly while below — refills don't accumulate beyond it. Earnings are credited separately. *If earnings carry the balance above this amount, the hourly refill pauses until you spend back down.*
+Each tier sets your hourly free Pollen — the tier balance refills up to that amount. If earnings push you above the cap, hourly refills pause until you spend back down.
 
-| Tier | Pollen/hour (your tier's free amount) |
-|------|---------------------------------------|
+| Tier | Pollen/hour |
+|------|-------------|
 | 🍄 Spore | 0.01 |
 | 🌱 Seed | 0.15 |
 | 🌸 Flower | 0.4 |

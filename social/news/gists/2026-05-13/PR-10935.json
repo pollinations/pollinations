@@ -1,0 +1,34 @@
+{
+  "pr_number": 10935,
+  "title": "fix: align elevenlabs pricing with scale plan",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10935",
+  "merged_at": "2026-05-13T22:05:27Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Cheaper buzzes and beeps",
+    "blurb": "We've updated our ElevenLabs integration to make text-to-speech generation even more affordable for the hive. Enjoy cheaper high-quality voice generation!",
+    "summary": "Aligned ElevenLabs model pricing with the Scale plan, reducing the cost of text-to-speech generation and updating access tiers for Scribe.",
+    "impact": "Users will enjoy cheaper rates for ElevenLabs TTS models, while Scribe has been moved to the paid tier for sustainable usage.",
+    "keywords": [
+      "pricing",
+      "elevenlabs",
+      "audio",
+      "tts",
+      "billing"
+    ],
+    "visual_concept": "Polly the bee adjusting price tags on a retro boombox or audio equipment. Nomnom creature happily eating the old expensive price tags.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot adjusting a lime green (#ecf874) price tag on a retro boombox. The round tan Nomnom creature happily eats the old price tags nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-13/PR-10935.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot adjusting a lime green (#ecf874) price tag on a retro boombox. The round tan Nomnom creature happily eats the old price tags nearby. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic, Stardew Valley vibes. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-13T22:06:35.159998+00:00"
+}

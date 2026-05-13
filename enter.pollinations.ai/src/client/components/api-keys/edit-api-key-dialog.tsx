@@ -5,8 +5,8 @@ import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { Card } from "../ui/card.tsx";
+import { Chip } from "../ui/chip.tsx";
 import { Input } from "../ui/input.tsx";
-import { Tag } from "../ui/tag.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -170,13 +170,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </Dialog.Title>
 
                         <div className="flex items-center gap-3">
-                            <Tag color="blue">
+                            <Chip>
                                 {appKey
                                     ? "🖥️ App"
                                     : isPublishable
                                       ? "🌐 Publishable"
                                       : "🔒 Secret"}
-                            </Tag>
+                            </Chip>
                             {isPublishable && plaintextKey ? (
                                 <Tooltip
                                     triggerAs="span"

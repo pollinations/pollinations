@@ -71,7 +71,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                         {(["requests", "pollen"] as Metric[]).map((m) => (
                             <TabButton
                                 key={m}
-                                theme={theme}
                                 active={filters.metric === m}
                                 onClick={() =>
                                     setFilters((f) => ({

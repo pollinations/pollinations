@@ -6,6 +6,8 @@ import {
     type ThemeName,
     themes,
 } from "../layout/dashboard-theme.ts";
+import { Chip } from "../ui/chip.tsx";
+import { TabButton } from "../ui/tab-button.tsx";
 
 type Mode = "light" | "dark";
 
@@ -45,11 +47,11 @@ export const DesignShowcase: FC = () => {
                 <Placeholder title="Typography" phase="Phase 7" />
                 <CascadeDemo />
                 <IntentDemo />
-                <Placeholder title="Chips" phase="Phase 1" />
+                <ChipsDemo />
                 <Placeholder title="Buttons" phase="Phase 4" />
                 <Placeholder title="Switches" phase="Phase 2" />
                 <Placeholder title="Surfaces" phase="Phase 3" />
-                <Placeholder title="Tabs" phase="Phase 1" />
+                <TabsDemo />
                 <Placeholder title="Inputs" phase="Phase 8" />
                 <Placeholder title="IconButtons" phase="Phase 8" />
                 <Placeholder title="InfoTip" phase="Phase 9" />
@@ -243,6 +245,69 @@ const IntentChip: FC<{ intent: IntentName }> = ({ intent }) => {
         >
             {intent}
         </span>
+    );
+};
+
+// ─── Chips ──────────────────────────────────────────────────
+
+const ChipsDemo: FC = () => (
+    <Section
+        title="Chips"
+        caption="<Chip> reads the cascade. Theme chips show one per [data-theme]; intent chips are theme-independent."
+    >
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap gap-2">
+                {themes.map((theme) => (
+                    <Chip key={theme} theme={theme} className="capitalize">
+                        {theme}
+                    </Chip>
+                ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+                <Chip intent="danger">danger</Chip>
+                <Chip intent="success">success</Chip>
+                <Chip intent="paid">paid</Chip>
+                <Chip intent="alpha">alpha</Chip>
+            </div>
+        </div>
+    </Section>
+);
+
+// ─── Tabs ───────────────────────────────────────────────────
+
+const TabsDemo: FC = () => {
+    const [active, setActive] = useState<string>("requests");
+    const options = ["requests", "pollen", "errors"] as const;
+    return (
+        <Section
+            title="Tabs"
+            caption="<TabButton> active state reads `bg-theme-chip-bg`; inactive reads `bg-theme-bg-subtle`. One strip per theme."
+        >
+            <div className="flex flex-col gap-3">
+                {themes.map((theme) => (
+                    <div
+                        key={theme}
+                        data-theme={theme}
+                        className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-3"
+                    >
+                        <span className="w-16 text-xs uppercase tracking-wide text-theme-text-label">
+                            {theme}
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {options.map((option) => (
+                                <TabButton
+                                    key={option}
+                                    active={active === option}
+                                    onClick={() => setActive(option)}
+                                >
+                                    {option}
+                                </TabButton>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </Section>
     );
 };
 

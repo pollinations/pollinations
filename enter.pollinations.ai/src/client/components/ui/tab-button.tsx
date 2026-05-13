@@ -1,12 +1,13 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "@/util.ts";
-import { type DashboardTheme, tabColors } from "../layout/dashboard-theme.ts";
+import type { ThemeName } from "../layout/dashboard-theme.ts";
 
 type TabButtonProps = {
-    theme: DashboardTheme;
     active: boolean;
     onClick: () => void;
     children: ReactNode;
+    /** Optional cascade override; defaults to inherited [data-theme]. */
+    theme?: ThemeName;
     ariaLabel?: string;
     disabled?: boolean;
     className?: string;
@@ -23,13 +24,16 @@ export const TabButton: FC<TabButtonProps> = ({
 }) => (
     <button
         type="button"
+        data-theme={theme}
         onClick={onClick}
         aria-label={ariaLabel}
         aria-pressed={active}
         disabled={disabled}
         className={cn(
             "inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
-            active ? tabColors[theme].active : tabColors[theme].inactive,
+            active
+                ? "bg-theme-chip-bg text-theme-chip-text border-theme-border"
+                : "bg-theme-bg-subtle text-theme-text-base border-theme-border-soft hover:bg-theme-bg-active",
             disabled && "cursor-not-allowed opacity-50",
             className,
         )}

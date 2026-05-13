@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { Tag } from "../ui/tag.tsx";
+import { Chip } from "../ui/chip.tsx";
 
 export const AccountBadge: FC<{
     permissions: Record<string, string[]> | null;
@@ -10,9 +10,9 @@ export const AccountBadge: FC<{
     return (
         <>
             {account.map((perm) => (
-                <Tag key={perm} color="violet" size="sm">
+                <Chip key={perm} theme="violet" size="sm">
                     {perm}
-                </Tag>
+                </Chip>
             ))}
         </>
     );

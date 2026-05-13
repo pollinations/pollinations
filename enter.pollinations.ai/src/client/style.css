@@ -212,6 +212,9 @@
     --theme-ring-focus: oklch(from var(--color-violet-400) l c h / 0.7);
 }
 
+/* Green is also the chrome default — :root fallback so unwrapped routes
+   (sign-in, authorize, device, terms, etc.) resolve --theme-* vars. */
+:root,
 [data-theme="green"] {
     --theme-text-label:   var(--color-green-600);
     --theme-text-base:    var(--color-green-900);

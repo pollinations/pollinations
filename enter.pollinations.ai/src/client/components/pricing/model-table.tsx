@@ -4,6 +4,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
+import { Chip } from "../ui/chip.tsx";
 import { Tag } from "../ui/tag.tsx";
 
 import { calculatePerPollen, canAffordModel } from "./calculations.ts";
@@ -337,27 +338,25 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                         capabilityIcons={capabilityIcons}
                                     />
                                     {showNew && (
-                                        <Tag color="green" size="sm">
+                                        <Chip theme="green" size="sm">
                                             NEW
-                                        </Tag>
+                                        </Chip>
                                     )}
                                     {showAlpha && (
-                                        <Tag color="orange" size="sm">
+                                        <Chip intent="alpha" size="sm">
                                             ALPHA
-                                        </Tag>
+                                        </Chip>
                                     )}
                                     {showPaidOnly && (
-                                        <Tag color="purple" size="sm">
+                                        <Chip intent="paid" size="sm">
                                             PAID
-                                        </Tag>
+                                        </Chip>
                                     )}
                                 </div>
                             )}
                         </div>
                     </div>
-                    <Tag color="teal" className="justify-self-end">
-                        {perPollen}
-                    </Tag>
+                    <Chip className="justify-self-end">{perPollen}</Chip>
                 </div>
             </div>
 

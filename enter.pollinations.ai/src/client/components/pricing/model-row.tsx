@@ -1,5 +1,6 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
+import { Chip } from "../ui/chip.tsx";
 import { Tag } from "../ui/tag.tsx";
 import {
     calculatePerPollen,
@@ -224,15 +225,15 @@ export const ModelRow: FC<ModelRowProps> = ({
                                 </Tooltip>
                             )}
                             {showNew && (
-                                <Tag color="green" size="sm">
+                                <Chip theme="green" size="sm">
                                     NEW
-                                </Tag>
+                                </Chip>
                             )}
                             {showAlpha && (
                                 <Tooltip content="Alpha model — experimental, may be unstable">
-                                    <Tag color="orange" size="sm">
+                                    <Chip intent="alpha" size="sm">
                                         ALPHA
-                                    </Tag>
+                                    </Chip>
                                 </Tooltip>
                             )}
                             {showPaidOnly && (
@@ -243,9 +244,9 @@ export const ModelRow: FC<ModelRowProps> = ({
                                             : "This model uses paid balance only."
                                     }
                                 >
-                                    <Tag color="purple" size="sm">
+                                    <Chip intent="paid" size="sm">
                                         PAID
-                                    </Tag>
+                                    </Chip>
                                 </Tooltip>
                             )}
                         </div>
@@ -255,7 +256,7 @@ export const ModelRow: FC<ModelRowProps> = ({
 
             {/* Per pollen — fixed width */}
             <div className="w-[90px] text-center shrink-0">
-                <Tag color="teal">{genPerPollen}</Tag>
+                <Chip>{genPerPollen}</Chip>
             </div>
 
             {/* Input prices — fixed width */}

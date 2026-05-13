@@ -145,62 +145,10 @@ export const buttonColors = {
     },
 } as const;
 
-export const pillColors = {
-    amber: { bg: "bg-amber-200", text: "text-amber-900" },
-    blue: { bg: "bg-blue-200", text: "text-blue-900" },
-    gray: { bg: "bg-gray-300", text: "text-gray-900" },
-    green: { bg: "bg-green-200", text: "text-green-900" },
-    orange: { bg: "bg-orange-300", text: "text-orange-950" },
-    pink: { bg: "bg-pink-200", text: "text-pink-900" },
-    teal: { bg: "bg-teal-200", text: "text-teal-900" },
-    violet: { bg: "bg-violet-200", text: "text-violet-950" },
-} as const;
-
-export const tabColors = {
-    amber: {
-        active: "border-amber-300 bg-amber-200 text-amber-950 hover:bg-amber-200",
-        inactive:
-            "border-amber-300 bg-amber-50/80 text-amber-900 hover:bg-amber-100",
-    },
-    blue: {
-        active: "border-blue-300 bg-blue-200 text-blue-950 hover:bg-blue-200",
-        inactive:
-            "border-blue-300 bg-blue-50/80 text-blue-900 hover:bg-blue-100",
-    },
-    gray: {
-        active: "border-gray-300 bg-gray-200 text-gray-950 hover:bg-gray-200",
-        inactive:
-            "border-gray-300 bg-gray-50/80 text-gray-900 hover:bg-gray-100",
-    },
-    green: {
-        active: "border-green-300 bg-green-200 text-green-950 hover:bg-green-200",
-        inactive:
-            "border-green-300 bg-green-50/80 text-green-900 hover:bg-green-100",
-    },
-    pink: {
-        active: "border-pink-300 bg-pink-200 text-pink-950 hover:bg-pink-200",
-        inactive:
-            "border-pink-300 bg-pink-50/80 text-pink-900 hover:bg-pink-100",
-    },
-    teal: {
-        active: "border-teal-300 bg-teal-200 text-teal-950 hover:bg-teal-200",
-        inactive:
-            "border-teal-300 bg-teal-50/80 text-teal-900 hover:bg-teal-100",
-    },
-    violet: {
-        active: "border-violet-300 bg-violet-200 text-violet-950 hover:bg-violet-200",
-        inactive:
-            "border-violet-300 bg-violet-50/80 text-violet-900 hover:bg-violet-100",
-    },
-} as const satisfies Record<
-    DashboardTheme,
-    { active: string; inactive: string }
->;
-
 // Per-theme token bundle for page chrome — literal class strings so Tailwind's JIT picks them up.
 // Covers per-page-themed surfaces only: text, borders, backgrounds, dividers, ring accents,
 // and scrollbar thumb. Out of scope: neutral grays/reds (loading/error/disabled), tier/modality
-// semantic colors, and Tag badge styling (`tagColors` in `ui/tag.tsx`).
+// semantic colors, and Chip styling (cascade-driven via `bg-theme-chip-*`).
 export const themeTokens = {
     amber: {
         text: {
@@ -410,8 +358,6 @@ export const dashboardThemeClasses: Record<
         panel: string;
         card: string;
         button: (typeof buttonColors)[keyof typeof buttonColors];
-        tab: (typeof tabColors)[keyof typeof tabColors];
-        pill: (typeof pillColors)[keyof typeof pillColors];
         tokens: ThemeTokens;
     }
 > = {
@@ -422,8 +368,6 @@ export const dashboardThemeClasses: Record<
         panel: panelColors.amber,
         card: cardColors.amber,
         button: buttonColors.amber,
-        tab: tabColors.amber,
-        pill: pillColors.amber,
         tokens: themeTokens.amber,
     },
     blue: {
@@ -433,8 +377,6 @@ export const dashboardThemeClasses: Record<
         panel: panelColors.blue,
         card: cardColors.blue,
         button: buttonColors.blue,
-        tab: tabColors.blue,
-        pill: pillColors.blue,
         tokens: themeTokens.blue,
     },
     gray: {
@@ -444,8 +386,6 @@ export const dashboardThemeClasses: Record<
         panel: panelColors.gray,
         card: cardColors.gray,
         button: buttonColors.gray,
-        tab: tabColors.gray,
-        pill: pillColors.gray,
         tokens: themeTokens.gray,
     },
     green: {
@@ -455,8 +395,6 @@ export const dashboardThemeClasses: Record<
         panel: panelColors.green,
         card: cardColors.green,
         button: buttonColors.green,
-        tab: tabColors.green,
-        pill: pillColors.green,
         tokens: themeTokens.green,
     },
     pink: {
@@ -466,8 +404,6 @@ export const dashboardThemeClasses: Record<
         panel: panelColors.pink,
         card: cardColors.pink,
         button: buttonColors.pink,
-        tab: tabColors.pink,
-        pill: pillColors.pink,
         tokens: themeTokens.pink,
     },
     teal: {
@@ -477,8 +413,6 @@ export const dashboardThemeClasses: Record<
         panel: panelColors.teal,
         card: cardColors.teal,
         button: buttonColors.teal,
-        tab: tabColors.teal,
-        pill: pillColors.teal,
         tokens: themeTokens.teal,
     },
     violet: {
@@ -488,8 +422,6 @@ export const dashboardThemeClasses: Record<
         panel: panelColors.violet,
         card: cardColors.violet,
         button: buttonColors.violet,
-        tab: tabColors.violet,
-        pill: pillColors.violet,
         tokens: themeTokens.violet,
     },
 };

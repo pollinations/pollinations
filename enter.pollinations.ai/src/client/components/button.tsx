@@ -34,7 +34,11 @@ const buttonClasses = ({
         disabled
             ? "opacity-50 cursor-not-allowed"
             : "hover:filter hover:brightness-105 cursor-pointer",
-        buttonColors[color || "green"][weight || "strong"],
+        // weight="light" reads from the [data-theme] cascade; `color` is ignored.
+        // Other weights still use the legacy buttonColors table (Phase 4 finishes the migration).
+        weight === "light"
+            ? "bg-theme-button-light-bg text-theme-button-light-text hover:bg-theme-button-light-hover transition-colors"
+            : buttonColors[color || "green"][weight || "strong"],
         weight === "outline"
             ? outlineSizes[size || "medium"]
             : sizes[size || "medium"],

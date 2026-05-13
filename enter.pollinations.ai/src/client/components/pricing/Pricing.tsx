@@ -65,7 +65,6 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                     {availableSections.map((section) => (
                         <TabButton
                             key={section}
-                            theme="teal"
                             active={activeTab === section}
                             onClick={() => setActiveTab(section)}
                             className="px-4 pt-1.5 pb-2 text-base"

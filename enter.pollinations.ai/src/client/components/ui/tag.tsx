@@ -1,6 +1,9 @@
 import type { ComponentPropsWithoutRef, FC } from "react";
 import { cn } from "../../../util.ts";
 
+// DEPRECATED: prefer <Chip> from "./chip.tsx" (cascade-driven via data-theme).
+// Tag survives as a back-compat shim with literal color classes; remaining
+// callsites are migrated piecemeal in Phases 2–8 and Tag is deleted in Phase 9.
 const tagColors = {
     gray: "bg-gray-200 text-gray-900",
     green: "bg-green-200 text-gray-900",
@@ -25,8 +28,10 @@ type TagProps = ComponentPropsWithoutRef<"span"> & {
     size?: keyof typeof tagSizes;
 };
 
-// Rectangular informational label. Use for non-actionable indicators
-// (status, scope, count, type). Round shapes are reserved for buttons.
+/**
+ * @deprecated Use <Chip> instead — it reads from the data-theme cascade.
+ * Tag is kept as a compat shim for callsites not yet migrated; deleted in Phase 9.
+ */
 export const Tag: FC<TagProps> = ({
     color = "gray",
     size = "md",

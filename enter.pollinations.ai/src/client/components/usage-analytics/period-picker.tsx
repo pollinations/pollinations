@@ -154,7 +154,6 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                     (granularity) => (
                         <TabButton
                             key={granularity}
-                            theme={theme}
                             active={value.granularity === granularity}
                             onClick={() => setGranularity(granularity)}
                             className="px-4 pt-1.5 pb-2 text-base leading-normal min-h-0"

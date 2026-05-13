@@ -63,8 +63,10 @@
     letter-spacing: -0.02em;
     line-height: 1.3;
   }
-  canvas { cursor: crosshair; touch-action: none; display: block; }
-  .canvas-wrap { background: #fff; border: 2px solid var(--dark); border-right-width: 4px; border-bottom-width: 4px; padding: 0; overflow: hidden; }
+  canvas { cursor: crosshair; touch-action: none; display: block; max-width: 100%; height: auto; }
+  .canvas-wrap { background: #fff; border: 2px solid var(--dark); border-right-width: 4px; border-bottom-width: 4px; padding: 0; overflow: hidden; position: relative; display: inline-block; width: 100%; }
+  .canvas-stage { position: relative; display: inline-block; width: 100%; }
+  .canvas-wrap.drop { outline: 4px dashed var(--accent); outline-offset: -8px; }
 
   /* Cursor-anchored speech pill */
   #cursorPill {
@@ -112,6 +114,39 @@
   @keyframes micbar { 0%,100% { transform: scaleY(0.6); } 50% { transform: scaleY(1.2); } }
   #cursorPill .text { min-width: 1ch; }
   #cursorPill .text.placeholder { opacity: .55; font-style: italic; }
+
+  /* Per-job pins anchored at the click point — sits over the canvas, same box */
+  #pinLayer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+  #pinLayer .pin { position: absolute; }
+  .pin {
+    position: absolute;
+    transform: translate(8px, -50%);
+    background: #fff;
+    border: 2px solid var(--dark);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    padding: 0.35rem 0.55rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    max-width: 14rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pin.processing { background: var(--accent); }
+  .pin.queued { background: #fff; opacity: 0.85; }
+  .pin .dot {
+    flex: 0 0 auto;
+    width: 0.55rem;
+    height: 0.55rem;
+    background: var(--dark);
+    border: 1.5px solid var(--dark);
+  }
+  .pin.processing .dot { background: var(--dark); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 </style>
 <body class="min-h-screen p-4 md:p-6 flex flex-col items-center gap-4">
   <div class="w-full max-w-5xl flex items-end justify-between gap-4">
@@ -132,10 +167,12 @@
 
   <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
     <button id="loadBtn" class="pollen-btn">load starter</button>
-    <input id="urlInput" placeholder="or paste image URL" class="pollen-input min-w-52 flex-1 text-sm">
+    <button id="uploadBtn" class="pollen-btn">upload</button>
+    <input id="fileInput" type="file" accept="image/*" class="hidden">
+    <input id="urlInput" placeholder="or paste image URL / drop image on canvas" class="pollen-input min-w-52 flex-1 text-sm">
     <button id="useUrl" class="pollen-btn">use</button>
     <select id="modelSel" class="pollen-select text-sm">
-      <option value="p-image-edit">p-image-edit</option>
+      <option value="nanobanana">nanobanana</option>
     </select>
     <button id="undoBtn" class="pollen-btn" disabled>undo</button>
     <button id="redoBtn" class="pollen-btn" disabled>redo</button>
@@ -152,7 +189,10 @@
   </div>
 
   <div class="relative w-full max-w-5xl canvas-wrap">
-    <canvas id="canvas" width="1024" height="768" class="bg-white max-w-full"></canvas>
+    <div class="canvas-stage">
+      <canvas id="canvas" width="1024" height="768" class="bg-white"></canvas>
+      <div id="pinLayer"></div>
+    </div>
   </div>
 
   <div id="cursorPill" aria-hidden="true">
@@ -180,6 +220,22 @@ const undoBtn = document.getElementById("undoBtn");
 const redoBtn = document.getElementById("redoBtn");
 const pillEl = document.getElementById("cursorPill");
 const pillText = pillEl.querySelector(".text");
+const pinLayer = document.getElementById("pinLayer");
+
+function renderPins() {
+  pinLayer.innerHTML = "";
+  for (let i = 0; i < editQueue.length; i++) {
+    const job = editQueue[i];
+    const pin = document.createElement("div");
+    pin.className = "pin " + (i === 0 && queueRunning ? "processing" : "queued");
+    const dot = document.createElement("span"); dot.className = "dot";
+    const text = document.createElement("span"); text.textContent = job.intent;
+    pin.append(dot, text);
+    pin.style.left = `${(job.point.x / canvas.width) * 100}%`;
+    pin.style.top = `${(job.point.y / canvas.height) * 100}%`;
+    pinLayer.append(pin);
+  }
+}
 
 function showPill(x, y, text, isPlaceholder = false) {
   pillEl.style.left = `${x}px`;
@@ -204,9 +260,10 @@ let currentImage = null;
 let currentImageURL = "";
 let clickPoint = null;
 let activeCapture = null;
-let isBusy = false;
 const undoStack = [];
 let redoStack = [];
+const editQueue = [];
+let queueRunning = false;
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 function setStatus(s) { statusEl.textContent = s; }
@@ -217,18 +274,9 @@ function showError(message) {
 }
 function clearError() { errorEl.classList.add("hidden"); }
 
-function setBusy(value) {
-  isBusy = value;
-  for (const el of document.querySelectorAll("button, input, select")) {
-    if (el.id === "disconnectBtn") continue;
-    el.disabled = value;
-  }
-  updateHistoryButtons();
-}
-
 function updateHistoryButtons() {
-  undoBtn.disabled = isBusy || undoStack.length === 0;
-  redoBtn.disabled = isBusy || redoStack.length === 0;
+  undoBtn.disabled = undoStack.length === 0;
+  redoBtn.disabled = redoStack.length === 0;
 }
 
 function pushUndo() {
@@ -289,7 +337,7 @@ refreshConnectionUI();
 
 (async function loadEditModels() {
   const modelSel = document.getElementById("modelSel");
-  const DEFAULT_MODEL = "p-image-edit";
+  const DEFAULT_MODEL = "nanobanana";
   // Models known to obey the burned-in red-circle annotation well
   const RECOMMENDED = new Set(["p-image-edit", "nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
   try {
@@ -337,6 +385,7 @@ async function loadImageFromURL(url, opts = {}) {
   currentImage = img;
   currentImageURL = url;
   updateHistoryButtons();
+  renderPins();
   setStatus("ready");
 }
 
@@ -345,6 +394,28 @@ document.getElementById("useUrl").onclick = () => {
   const u = document.getElementById("urlInput").value.trim();
   if (u) loadImageFromURL(u, { pushHistory: true }).catch(err => showError(err.message));
 };
+
+function loadLocalFile(file) {
+  if (!file || !file.type.startsWith("image/")) { showError("Drop or pick an image file."); return; }
+  const reader = new FileReader();
+  reader.onload = () => loadImageFromURL(reader.result, { pushHistory: true }).catch(err => showError(err.message));
+  reader.onerror = () => showError("Could not read file.");
+  reader.readAsDataURL(file);
+}
+document.getElementById("uploadBtn").onclick = () => document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange = (e) => loadLocalFile(e.target.files?.[0]);
+
+const dropZone = document.querySelector(".canvas-wrap");
+["dragenter", "dragover"].forEach(ev => dropZone.addEventListener(ev, (e) => {
+  e.preventDefault(); dropZone.classList.add("drop");
+}));
+["dragleave", "drop"].forEach(ev => dropZone.addEventListener(ev, (e) => {
+  e.preventDefault(); dropZone.classList.remove("drop");
+}));
+dropZone.addEventListener("drop", (e) => {
+  const file = e.dataTransfer?.files?.[0];
+  if (file) loadLocalFile(file);
+});
 document.getElementById("clearIntent").onclick = () => {
   intentInput.value = "";
 };
@@ -425,20 +496,34 @@ async function stopIntentCapture(capture) {
   return Promise.race([capture.done, timeout]);
 }
 
+function drawAnnotation(targetCtx, p, w, h) {
+  // ~4% of image diagonal — empirically optimal for Gemini Flash Image (r2clickthrough)
+  // Thin stroke + no text: avoids the text-glyph prior that re-renders "HERE" in outputs.
+  const r = Math.max(28, Math.round(Math.min(w, h) * 0.05));
+  const stroke = Math.max(4, Math.round(r * 0.18));
+  targetCtx.save();
+  // Semi-transparent ring — lets the model still see the pixels underneath.
+  targetCtx.globalAlpha = 0.7;
+  targetCtx.strokeStyle = "red";
+  targetCtx.lineWidth = stroke;
+  targetCtx.beginPath(); targetCtx.arc(p.x, p.y, r, 0, Math.PI * 2); targetCtx.stroke();
+  // Solid center dot anchors the exact click point.
+  targetCtx.globalAlpha = 1;
+  targetCtx.fillStyle = "red";
+  targetCtx.beginPath(); targetCtx.arc(p.x, p.y, Math.max(3, Math.round(r * 0.12)), 0, Math.PI * 2); targetCtx.fill();
+  targetCtx.restore();
+}
 function annotatedDataURL(p) {
   const c = document.createElement("canvas");
   c.width = canvas.width;
   c.height = canvas.height;
   const cc = c.getContext("2d");
   cc.drawImage(canvas, 0, 0);
-  const r = Math.max(60, Math.round(Math.min(c.width, c.height) * 0.08));
-  cc.strokeStyle = "red";
-  cc.lineWidth = Math.max(6, Math.round(r * 0.12));
-  cc.beginPath(); cc.arc(p.x, p.y, r, 0, Math.PI * 2); cc.stroke();
-  cc.font = `bold ${Math.round(r * 0.5)}px sans-serif`;
-  cc.fillStyle = "red";
-  cc.fillText("HERE", p.x + r + 10, p.y);
+  drawAnnotation(cc, p, c.width, c.height);
   return c.toDataURL("image/png");
+}
+function paintAnnotationOnCanvas(p) {
+  drawAnnotation(ctx, p, canvas.width, canvas.height);
 }
 
 async function friendlyError(response, label) {
@@ -475,9 +560,8 @@ async function uploadDataURL(dataURL) {
   return j.url || `https://media.pollinations.ai/${j.id}`;
 }
 
-async function runEdit(refURL, prompt) {
-  setStatus("editing…");
-  const model = document.getElementById("modelSel").value;
+async function runEdit(refURL, prompt, model) {
+  if (!model) model = document.getElementById("modelSel").value;
   const r = await fetch(`${BASE}/v1/images/edits`, {
     method: "POST",
     headers: { Authorization: `Bearer ${getKey()}`, "Content-Type": "application/json" },
@@ -494,28 +578,51 @@ async function runEdit(refURL, prompt) {
 
 function buildEditPrompt(text) {
   return [
-    "Use the red circle and HERE label only as edit instructions, not final content.",
-    `Modify the object or region inside the red circle: ${text}.`,
-    "Remove the red circle and HERE label in the final image. Keep unmarked areas unchanged."
+    `Modify the area marked by the red ring and dot: ${text}.`,
+    "Do not render the red ring or dot in the output.",
+    "Keep everything else unchanged.",
   ].join(" ");
 }
 
-async function applyEditAtPoint(point, text) {
+function enqueueEdit(point, text) {
   if (!text.trim()) throw new Error("Nothing heard. Type an edit if voice input is unavailable.");
-  setBusy(true);
+  const prompt = buildEditPrompt(text);
+  const model = document.getElementById("modelSel").value;
+  editQueue.push({ point, intent: text, prompt, model });
+  renderPins();
+  runQueue();
+}
+
+async function runQueue() {
+  if (queueRunning) return;
+  queueRunning = true;
   try {
-    const annotURL = await uploadDataURL(annotatedDataURL(point));
-    const resultURL = await runEdit(annotURL, buildEditPrompt(text));
-    pushUndo();
-    await loadImageFromURL(resultURL);
+    while (editQueue.length) {
+      const job = editQueue[0];
+      const annotated = annotatedDataURL(job.point);
+      paintAnnotationOnCanvas(job.point);
+      renderPins();
+      setStatus(`editing… (${editQueue.length} in queue)`);
+      try {
+        const annotURL = await uploadDataURL(annotated);
+        const resultURL = await runEdit(annotURL, job.prompt, job.model);
+        pushUndo();
+        await loadImageFromURL(resultURL);
+      } catch (err) {
+        showError(err.message);
+        if (currentImageURL) await loadImageFromURL(currentImageURL).catch(() => {});
+      }
+      editQueue.shift();
+      renderPins();
+    }
     setStatus("done");
   } finally {
-    setBusy(false);
+    queueRunning = false;
+    renderPins();
   }
 }
 
 canvas.addEventListener("pointerdown", async (e) => {
-  if (isBusy) return;
   if (!currentImage) { showError("Load an image first."); return; }
   e.preventDefault();
   canvas.setPointerCapture(e.pointerId);
@@ -532,12 +639,13 @@ canvas.addEventListener("pointerup", async (e) => {
   if (!activeCapture) return;
   e.preventDefault();
   const capture = activeCapture;
+  const point = clickPoint;
   activeCapture = null;
   try {
     const { text, error } = await stopIntentCapture(capture);
     hidePill();
     if (!text.trim() && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
-    await applyEditAtPoint(clickPoint, text);
+    enqueueEdit(point, text);
   } catch (err) {
     showError(err.message);
   }
@@ -553,7 +661,7 @@ canvas.addEventListener("pointercancel", () => {
 });
 
 undoBtn.onclick = () => {
-  if (!undoStack.length || isBusy) return;
+  if (!undoStack.length) return;
   redoStack.push(currentImageURL);
   loadImageFromURL(undoStack.pop()).then(() => {
     setStatus("undone");
@@ -562,7 +670,7 @@ undoBtn.onclick = () => {
 };
 
 redoBtn.onclick = () => {
-  if (!redoStack.length || isBusy) return;
+  if (!redoStack.length) return;
   undoStack.push(currentImageURL);
   loadImageFromURL(redoStack.pop()).then(() => {
     setStatus("redone");

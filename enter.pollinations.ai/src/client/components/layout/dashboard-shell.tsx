@@ -14,6 +14,7 @@ import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
+    dashboardThemeByPage,
     dashboardThemeClasses,
 } from "./dashboard-theme.ts";
 import { User } from "./user.tsx";
@@ -177,7 +178,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     </div>
                 </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
+            <div
+                className="flex min-w-0 flex-1 flex-col md:ml-60"
+                data-theme={dashboardThemeByPage[activePage]}
+            >
                 <MobileHeader
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}

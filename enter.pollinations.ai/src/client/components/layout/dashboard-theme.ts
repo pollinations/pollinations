@@ -1,3 +1,20 @@
+// ─── Phase 0: slim cascade-aligned exports ───────────────────
+// The 6 chrome themes the new CSS-var cascade exposes via [data-theme="…"].
+// Keep in sync with the [data-theme="*"] blocks in style.css.
+export const themes = [
+    "amber",
+    "blue",
+    "pink",
+    "teal",
+    "violet",
+    "green",
+] as const;
+export type ThemeName = (typeof themes)[number];
+
+// Semantic intents — theme-independent. Mirrors the --intent-* vars in style.css.
+export const intents = ["danger", "success", "paid", "alpha"] as const;
+export type IntentName = (typeof intents)[number];
+
 export type DashboardPage = "updates" | "pollen" | "usage" | "keys" | "models";
 
 export type DashboardTheme =

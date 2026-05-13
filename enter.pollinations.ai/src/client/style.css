@@ -39,7 +39,434 @@
     --font-subheading: "Fraunces", ui-serif, serif;
     --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
     --font-pixel: "Pixelify Sans", ui-monospace, monospace;
+    --text-3xs: 9px;
+    --text-2xs: 10px;
+    --text-md: 15px;
     --text-base: 16px;
+
+    /* ─── Layer 1: hue ramp constants ────────────────────────── */
+    /* Money colors — promoted from lib/balance-colors.ts */
+    --color-paid: #E08A52;
+    --color-paid-hover: #C97540;
+    --color-paid-deep: #7C3F1E;
+    --color-tier: #FCD34D;
+    --color-tier-hover: #EAB818;
+    --color-tier-deep: #7A5807;
+
+    /* Universal vars */
+    --color-focus-ring: oklch(from var(--color-emerald-500) l c h / 0.6);
+    --color-surface-white-light: oklch(1 0 0 / 0.8);
+    --color-surface-white-dark: oklch(0.18 0.01 240 / 0.85);
+}
+
+/* ─── Layer 2: per-theme cascade (light defaults) ────────────── */
+[data-theme="amber"] {
+    --theme-text-label:   var(--color-amber-600);
+    --theme-text-base:    var(--color-amber-900);
+    --theme-text-strong:  var(--color-amber-950);
+    --theme-text-muted:   oklch(from var(--color-amber-800) l c h / 0.75);
+    --theme-text-soft:    var(--color-amber-700);
+    --theme-text-softer:  oklch(from var(--color-amber-700) l c h / 0.6);
+
+    --theme-border-idle:    var(--color-amber-300);
+    --theme-border-soft:    oklch(from var(--color-amber-300) l c h / 0.7);
+    --theme-border-subtle:  var(--color-amber-200);
+
+    --theme-bg-idle:    oklch(from var(--color-amber-50) l c h / 0.8);
+    --theme-bg-subtle:  oklch(from var(--color-amber-50) l c h / 0.5);
+    --theme-bg-tinted:  oklch(from var(--color-amber-50) l c h / 0.7);
+    --theme-bg-active:  var(--color-amber-200);
+    --theme-bg-hover:   var(--color-amber-300);
+
+    --theme-chip-bg:    var(--color-amber-200);
+    --theme-chip-text:  var(--color-amber-950);
+
+    --theme-button-light-bg:    var(--color-amber-200);
+    --theme-button-light-text:  var(--color-amber-900);
+    --theme-button-light-hover: var(--color-amber-300);
+    --theme-button-strong-bg:    var(--color-amber-600);
+    --theme-button-strong-text:  white;
+    --theme-button-strong-hover: var(--color-amber-700);
+
+    --theme-ring-focus: oklch(from var(--color-amber-400) l c h / 0.7);
+}
+
+[data-theme="blue"] {
+    --theme-text-label:   var(--color-blue-600);
+    --theme-text-base:    var(--color-blue-900);
+    --theme-text-strong:  var(--color-blue-950);
+    --theme-text-muted:   oklch(from var(--color-blue-800) l c h / 0.75);
+    --theme-text-soft:    var(--color-blue-700);
+    --theme-text-softer:  oklch(from var(--color-blue-700) l c h / 0.6);
+
+    --theme-border-idle:    var(--color-blue-300);
+    --theme-border-soft:    oklch(from var(--color-blue-300) l c h / 0.7);
+    --theme-border-subtle:  var(--color-blue-200);
+
+    --theme-bg-idle:    oklch(from var(--color-blue-50) l c h / 0.8);
+    --theme-bg-subtle:  oklch(from var(--color-blue-50) l c h / 0.5);
+    --theme-bg-tinted:  oklch(from var(--color-blue-50) l c h / 0.7);
+    --theme-bg-active:  var(--color-blue-200);
+    --theme-bg-hover:   var(--color-blue-300);
+
+    --theme-chip-bg:    var(--color-blue-200);
+    --theme-chip-text:  var(--color-blue-950);
+
+    --theme-button-light-bg:    var(--color-blue-200);
+    --theme-button-light-text:  var(--color-blue-900);
+    --theme-button-light-hover: var(--color-blue-300);
+    --theme-button-strong-bg:    var(--color-blue-600);
+    --theme-button-strong-text:  white;
+    --theme-button-strong-hover: var(--color-blue-700);
+
+    --theme-ring-focus: oklch(from var(--color-blue-400) l c h / 0.7);
+}
+
+[data-theme="pink"] {
+    --theme-text-label:   var(--color-pink-600);
+    --theme-text-base:    var(--color-pink-900);
+    --theme-text-strong:  var(--color-pink-950);
+    --theme-text-muted:   oklch(from var(--color-pink-800) l c h / 0.75);
+    --theme-text-soft:    var(--color-pink-700);
+    --theme-text-softer:  oklch(from var(--color-pink-700) l c h / 0.6);
+
+    --theme-border-idle:    var(--color-pink-300);
+    --theme-border-soft:    oklch(from var(--color-pink-300) l c h / 0.7);
+    --theme-border-subtle:  var(--color-pink-200);
+
+    --theme-bg-idle:    oklch(from var(--color-pink-50) l c h / 0.8);
+    --theme-bg-subtle:  oklch(from var(--color-pink-50) l c h / 0.5);
+    --theme-bg-tinted:  oklch(from var(--color-pink-50) l c h / 0.7);
+    --theme-bg-active:  var(--color-pink-200);
+    --theme-bg-hover:   var(--color-pink-300);
+
+    --theme-chip-bg:    var(--color-pink-200);
+    --theme-chip-text:  var(--color-pink-950);
+
+    --theme-button-light-bg:    var(--color-pink-200);
+    --theme-button-light-text:  var(--color-pink-900);
+    --theme-button-light-hover: var(--color-pink-300);
+    --theme-button-strong-bg:    var(--color-pink-600);
+    --theme-button-strong-text:  white;
+    --theme-button-strong-hover: var(--color-pink-700);
+
+    --theme-ring-focus: oklch(from var(--color-pink-400) l c h / 0.7);
+}
+
+[data-theme="teal"] {
+    --theme-text-label:   var(--color-teal-600);
+    --theme-text-base:    var(--color-teal-900);
+    --theme-text-strong:  var(--color-teal-950);
+    --theme-text-muted:   oklch(from var(--color-teal-800) l c h / 0.75);
+    --theme-text-soft:    var(--color-teal-700);
+    --theme-text-softer:  oklch(from var(--color-teal-700) l c h / 0.6);
+
+    --theme-border-idle:    var(--color-teal-300);
+    --theme-border-soft:    oklch(from var(--color-teal-300) l c h / 0.7);
+    --theme-border-subtle:  var(--color-teal-200);
+
+    --theme-bg-idle:    oklch(from var(--color-teal-50) l c h / 0.8);
+    --theme-bg-subtle:  oklch(from var(--color-teal-50) l c h / 0.5);
+    --theme-bg-tinted:  oklch(from var(--color-teal-50) l c h / 0.7);
+    --theme-bg-active:  var(--color-teal-200);
+    --theme-bg-hover:   var(--color-teal-300);
+
+    --theme-chip-bg:    var(--color-teal-200);
+    --theme-chip-text:  var(--color-teal-950);
+
+    --theme-button-light-bg:    var(--color-teal-200);
+    --theme-button-light-text:  var(--color-teal-900);
+    --theme-button-light-hover: var(--color-teal-300);
+    --theme-button-strong-bg:    var(--color-teal-600);
+    --theme-button-strong-text:  white;
+    --theme-button-strong-hover: var(--color-teal-700);
+
+    --theme-ring-focus: oklch(from var(--color-teal-400) l c h / 0.7);
+}
+
+[data-theme="violet"] {
+    --theme-text-label:   var(--color-violet-600);
+    --theme-text-base:    var(--color-violet-900);
+    --theme-text-strong:  var(--color-violet-950);
+    --theme-text-muted:   oklch(from var(--color-violet-800) l c h / 0.75);
+    --theme-text-soft:    var(--color-violet-700);
+    --theme-text-softer:  oklch(from var(--color-violet-700) l c h / 0.6);
+
+    --theme-border-idle:    var(--color-violet-300);
+    --theme-border-soft:    oklch(from var(--color-violet-300) l c h / 0.7);
+    --theme-border-subtle:  var(--color-violet-200);
+
+    --theme-bg-idle:    oklch(from var(--color-violet-50) l c h / 0.8);
+    --theme-bg-subtle:  oklch(from var(--color-violet-50) l c h / 0.5);
+    --theme-bg-tinted:  oklch(from var(--color-violet-50) l c h / 0.7);
+    --theme-bg-active:  var(--color-violet-200);
+    --theme-bg-hover:   var(--color-violet-300);
+
+    --theme-chip-bg:    var(--color-violet-200);
+    --theme-chip-text:  var(--color-violet-950);
+
+    --theme-button-light-bg:    var(--color-violet-200);
+    --theme-button-light-text:  var(--color-violet-900);
+    --theme-button-light-hover: var(--color-violet-300);
+    --theme-button-strong-bg:    var(--color-violet-600);
+    --theme-button-strong-text:  white;
+    --theme-button-strong-hover: var(--color-violet-700);
+
+    --theme-ring-focus: oklch(from var(--color-violet-400) l c h / 0.7);
+}
+
+[data-theme="green"] {
+    --theme-text-label:   var(--color-green-600);
+    --theme-text-base:    var(--color-green-900);
+    --theme-text-strong:  var(--color-green-950);
+    --theme-text-muted:   oklch(from var(--color-green-800) l c h / 0.75);
+    --theme-text-soft:    var(--color-green-700);
+    --theme-text-softer:  oklch(from var(--color-green-700) l c h / 0.6);
+
+    --theme-border-idle:    var(--color-green-300);
+    --theme-border-soft:    oklch(from var(--color-green-300) l c h / 0.7);
+    --theme-border-subtle:  var(--color-green-200);
+
+    --theme-bg-idle:    oklch(from var(--color-green-50) l c h / 0.8);
+    --theme-bg-subtle:  oklch(from var(--color-green-50) l c h / 0.5);
+    --theme-bg-tinted:  oklch(from var(--color-green-50) l c h / 0.7);
+    --theme-bg-active:  var(--color-green-200);
+    --theme-bg-hover:   var(--color-green-300);
+
+    --theme-chip-bg:    var(--color-green-200);
+    --theme-chip-text:  var(--color-green-950);
+
+    --theme-button-light-bg:    var(--color-green-200);
+    --theme-button-light-text:  var(--color-green-900);
+    --theme-button-light-hover: var(--color-green-300);
+    --theme-button-strong-bg:    var(--color-green-600);
+    --theme-button-strong-text:  white;
+    --theme-button-strong-hover: var(--color-green-700);
+
+    --theme-ring-focus: oklch(from var(--color-green-400) l c h / 0.7);
+}
+
+/* ─── Layer 2 dark overrides (skeletal — to be curated later) ── */
+html[data-mode="dark"] [data-theme="amber"] {
+    --theme-text-label:   var(--color-amber-300);
+    --theme-text-base:    var(--color-amber-100);
+    --theme-text-strong:  var(--color-amber-50);
+    --theme-bg-idle:      oklch(from var(--color-amber-950) l c h / 0.5);
+    --theme-bg-subtle:    oklch(from var(--color-amber-950) l c h / 0.3);
+    --theme-bg-tinted:    oklch(from var(--color-amber-950) l c h / 0.4);
+    --theme-bg-active:    var(--color-amber-800);
+    --theme-bg-hover:     var(--color-amber-700);
+    --theme-chip-bg:      var(--color-amber-800);
+    --theme-chip-text:    var(--color-amber-50);
+    --theme-button-light-bg:    var(--color-amber-800);
+    --theme-button-light-text:  var(--color-amber-50);
+    --theme-button-light-hover: var(--color-amber-700);
+    --theme-button-strong-bg:   var(--color-amber-500);
+    --theme-button-strong-text: var(--color-amber-50);
+    --theme-button-strong-hover: var(--color-amber-400);
+    --theme-border-idle:    var(--color-amber-700);
+    --theme-border-soft:    oklch(from var(--color-amber-700) l c h / 0.7);
+    --theme-border-subtle:  var(--color-amber-800);
+}
+
+html[data-mode="dark"] [data-theme="blue"] {
+    --theme-text-label:   var(--color-blue-300);
+    --theme-text-base:    var(--color-blue-100);
+    --theme-text-strong:  var(--color-blue-50);
+    --theme-bg-idle:      oklch(from var(--color-blue-950) l c h / 0.5);
+    --theme-bg-subtle:    oklch(from var(--color-blue-950) l c h / 0.3);
+    --theme-bg-tinted:    oklch(from var(--color-blue-950) l c h / 0.4);
+    --theme-bg-active:    var(--color-blue-800);
+    --theme-bg-hover:     var(--color-blue-700);
+    --theme-chip-bg:      var(--color-blue-800);
+    --theme-chip-text:    var(--color-blue-50);
+    --theme-button-light-bg:    var(--color-blue-800);
+    --theme-button-light-text:  var(--color-blue-50);
+    --theme-button-light-hover: var(--color-blue-700);
+    --theme-button-strong-bg:   var(--color-blue-500);
+    --theme-button-strong-text: var(--color-blue-50);
+    --theme-button-strong-hover: var(--color-blue-400);
+    --theme-border-idle:    var(--color-blue-700);
+    --theme-border-soft:    oklch(from var(--color-blue-700) l c h / 0.7);
+    --theme-border-subtle:  var(--color-blue-800);
+}
+
+html[data-mode="dark"] [data-theme="pink"] {
+    --theme-text-label:   var(--color-pink-300);
+    --theme-text-base:    var(--color-pink-100);
+    --theme-text-strong:  var(--color-pink-50);
+    --theme-bg-idle:      oklch(from var(--color-pink-950) l c h / 0.5);
+    --theme-bg-subtle:    oklch(from var(--color-pink-950) l c h / 0.3);
+    --theme-bg-tinted:    oklch(from var(--color-pink-950) l c h / 0.4);
+    --theme-bg-active:    var(--color-pink-800);
+    --theme-bg-hover:     var(--color-pink-700);
+    --theme-chip-bg:      var(--color-pink-800);
+    --theme-chip-text:    var(--color-pink-50);
+    --theme-button-light-bg:    var(--color-pink-800);
+    --theme-button-light-text:  var(--color-pink-50);
+    --theme-button-light-hover: var(--color-pink-700);
+    --theme-button-strong-bg:   var(--color-pink-500);
+    --theme-button-strong-text: var(--color-pink-50);
+    --theme-button-strong-hover: var(--color-pink-400);
+    --theme-border-idle:    var(--color-pink-700);
+    --theme-border-soft:    oklch(from var(--color-pink-700) l c h / 0.7);
+    --theme-border-subtle:  var(--color-pink-800);
+}
+
+html[data-mode="dark"] [data-theme="teal"] {
+    --theme-text-label:   var(--color-teal-300);
+    --theme-text-base:    var(--color-teal-100);
+    --theme-text-strong:  var(--color-teal-50);
+    --theme-bg-idle:      oklch(from var(--color-teal-950) l c h / 0.5);
+    --theme-bg-subtle:    oklch(from var(--color-teal-950) l c h / 0.3);
+    --theme-bg-tinted:    oklch(from var(--color-teal-950) l c h / 0.4);
+    --theme-bg-active:    var(--color-teal-800);
+    --theme-bg-hover:     var(--color-teal-700);
+    --theme-chip-bg:      var(--color-teal-800);
+    --theme-chip-text:    var(--color-teal-50);
+    --theme-button-light-bg:    var(--color-teal-800);
+    --theme-button-light-text:  var(--color-teal-50);
+    --theme-button-light-hover: var(--color-teal-700);
+    --theme-button-strong-bg:   var(--color-teal-500);
+    --theme-button-strong-text: var(--color-teal-50);
+    --theme-button-strong-hover: var(--color-teal-400);
+    --theme-border-idle:    var(--color-teal-700);
+    --theme-border-soft:    oklch(from var(--color-teal-700) l c h / 0.7);
+    --theme-border-subtle:  var(--color-teal-800);
+}
+
+html[data-mode="dark"] [data-theme="violet"] {
+    --theme-text-label:   var(--color-violet-300);
+    --theme-text-base:    var(--color-violet-100);
+    --theme-text-strong:  var(--color-violet-50);
+    --theme-bg-idle:      oklch(from var(--color-violet-950) l c h / 0.5);
+    --theme-bg-subtle:    oklch(from var(--color-violet-950) l c h / 0.3);
+    --theme-bg-tinted:    oklch(from var(--color-violet-950) l c h / 0.4);
+    --theme-bg-active:    var(--color-violet-800);
+    --theme-bg-hover:     var(--color-violet-700);
+    --theme-chip-bg:      var(--color-violet-800);
+    --theme-chip-text:    var(--color-violet-50);
+    --theme-button-light-bg:    var(--color-violet-800);
+    --theme-button-light-text:  var(--color-violet-50);
+    --theme-button-light-hover: var(--color-violet-700);
+    --theme-button-strong-bg:   var(--color-violet-500);
+    --theme-button-strong-text: var(--color-violet-50);
+    --theme-button-strong-hover: var(--color-violet-400);
+    --theme-border-idle:    var(--color-violet-700);
+    --theme-border-soft:    oklch(from var(--color-violet-700) l c h / 0.7);
+    --theme-border-subtle:  var(--color-violet-800);
+}
+
+html[data-mode="dark"] [data-theme="green"] {
+    --theme-text-label:   var(--color-green-300);
+    --theme-text-base:    var(--color-green-100);
+    --theme-text-strong:  var(--color-green-50);
+    --theme-bg-idle:      oklch(from var(--color-green-950) l c h / 0.5);
+    --theme-bg-subtle:    oklch(from var(--color-green-950) l c h / 0.3);
+    --theme-bg-tinted:    oklch(from var(--color-green-950) l c h / 0.4);
+    --theme-bg-active:    var(--color-green-800);
+    --theme-bg-hover:     var(--color-green-700);
+    --theme-chip-bg:      var(--color-green-800);
+    --theme-chip-text:    var(--color-green-50);
+    --theme-button-light-bg:    var(--color-green-800);
+    --theme-button-light-text:  var(--color-green-50);
+    --theme-button-light-hover: var(--color-green-700);
+    --theme-button-strong-bg:   var(--color-green-500);
+    --theme-button-strong-text: var(--color-green-50);
+    --theme-button-strong-hover: var(--color-green-400);
+    --theme-border-idle:    var(--color-green-700);
+    --theme-border-soft:    oklch(from var(--color-green-700) l c h / 0.7);
+    --theme-border-subtle:  var(--color-green-800);
+}
+
+/* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
+:root {
+    --intent-danger-bg-light:    var(--color-red-100);
+    --intent-danger-bg-strong:   var(--color-red-600);
+    --intent-danger-bg-hover:    var(--color-red-700);
+    --intent-danger-text:        var(--color-red-700);
+    --intent-danger-text-on-bg:  white;
+    --intent-danger-border:      var(--color-red-300);
+
+    --intent-success-bg-light:   var(--color-emerald-100);
+    --intent-success-bg-strong:  var(--color-emerald-600);
+    --intent-success-bg-hover:   var(--color-emerald-700);
+    --intent-success-text:       var(--color-emerald-700);
+    --intent-success-text-on-bg: white;
+    --intent-success-border:     var(--color-emerald-300);
+
+    --intent-paid-bg:            var(--color-paid);
+    --intent-paid-bg-hover:      var(--color-paid-hover);
+    --intent-paid-text-deep:     var(--color-paid-deep);
+
+    --intent-alpha-bg:           var(--color-orange-200);
+    --intent-alpha-text:         var(--color-orange-900);
+}
+
+html[data-mode="dark"] {
+    --intent-danger-bg-light:    oklch(from var(--color-red-950) l c h / 0.4);
+    --intent-danger-text:        var(--color-red-300);
+    --intent-success-bg-light:   oklch(from var(--color-emerald-950) l c h / 0.4);
+    --intent-success-text:       var(--color-emerald-300);
+}
+
+/* ─── Layer 3: Tailwind utility surface (`@theme inline`) ────── */
+@theme inline {
+    --color-theme-text-label:        var(--theme-text-label);
+    --color-theme-text-base:         var(--theme-text-base);
+    --color-theme-text-strong:       var(--theme-text-strong);
+    --color-theme-text-muted:        var(--theme-text-muted);
+    --color-theme-text-soft:         var(--theme-text-soft);
+    --color-theme-text-softer:       var(--theme-text-softer);
+
+    --color-theme-border:            var(--theme-border-idle);
+    --color-theme-border-soft:       var(--theme-border-soft);
+    --color-theme-border-subtle:     var(--theme-border-subtle);
+
+    --color-theme-bg-idle:           var(--theme-bg-idle);
+    --color-theme-bg-subtle:         var(--theme-bg-subtle);
+    --color-theme-bg-tinted:         var(--theme-bg-tinted);
+    --color-theme-bg-active:         var(--theme-bg-active);
+    --color-theme-bg-hover:          var(--theme-bg-hover);
+
+    --color-theme-chip-bg:           var(--theme-chip-bg);
+    --color-theme-chip-text:         var(--theme-chip-text);
+
+    --color-theme-button-light-bg:    var(--theme-button-light-bg);
+    --color-theme-button-light-text:  var(--theme-button-light-text);
+    --color-theme-button-light-hover: var(--theme-button-light-hover);
+    --color-theme-button-strong-bg:    var(--theme-button-strong-bg);
+    --color-theme-button-strong-text:  var(--theme-button-strong-text);
+    --color-theme-button-strong-hover: var(--theme-button-strong-hover);
+
+    --color-theme-ring-focus: var(--theme-ring-focus);
+
+    --color-intent-danger-bg-light:    var(--intent-danger-bg-light);
+    --color-intent-danger-bg-strong:   var(--intent-danger-bg-strong);
+    --color-intent-danger-bg-hover:    var(--intent-danger-bg-hover);
+    --color-intent-danger-text:        var(--intent-danger-text);
+    --color-intent-danger-text-on-bg:  var(--intent-danger-text-on-bg);
+    --color-intent-danger-border:      var(--intent-danger-border);
+
+    --color-intent-success-bg-light:   var(--intent-success-bg-light);
+    --color-intent-success-bg-strong:  var(--intent-success-bg-strong);
+    --color-intent-success-bg-hover:   var(--intent-success-bg-hover);
+    --color-intent-success-text:       var(--intent-success-text);
+    --color-intent-success-text-on-bg: var(--intent-success-text-on-bg);
+    --color-intent-success-border:     var(--intent-success-border);
+
+    --color-intent-paid:               var(--intent-paid-bg);
+    --color-intent-paid-hover:         var(--intent-paid-bg-hover);
+    --color-intent-paid-deep:          var(--intent-paid-text-deep);
+
+    --color-intent-alpha-bg:           var(--intent-alpha-bg);
+    --color-intent-alpha-text:         var(--intent-alpha-text);
+
+    --color-surface-white:             var(--color-surface-white-light);
+}
+
+html[data-mode="dark"] {
+    --color-surface-white: var(--color-surface-white-dark);
 }
 
 @layer base {

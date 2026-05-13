@@ -17,6 +17,7 @@ import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DeviceRouteImport } from './routes/device'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InternalDesignRouteImport } from './routes/internal.design'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -58,6 +59,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InternalDesignRoute = InternalDesignRouteImport.update({
+  id: '/internal/design',
+  path: '/internal/design',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/internal/design': typeof InternalDesignRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/internal/design': typeof InternalDesignRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/internal/design': typeof InternalDesignRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/internal/design'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/internal/design'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/internal/design'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  InternalDesignRoute: typeof InternalDesignRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/internal/design': {
+      id: '/internal/design'
+      path: '/internal/design'
+      fullPath: '/internal/design'
+      preLoaderRoute: typeof InternalDesignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  InternalDesignRoute: InternalDesignRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

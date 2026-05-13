@@ -14,6 +14,17 @@ const router = createRouter({
     routeTree,
 });
 
+// ─── Phase 0: mode toggle wiring ─────────────────────────────
+// Default mode is light. Production toggle UI lands with the dark-mode
+// launch plan; for now we accept `?mode=dark` so the design showcase
+// can preview the dark cascade.
+function applyInitialMode(): void {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get("mode") === "dark" ? "dark" : "light";
+    document.documentElement.dataset.mode = mode;
+}
+applyInitialMode();
+
 const App: FC<PropsWithChildren> = () => {
     return <RouterProvider router={router} />;
 };

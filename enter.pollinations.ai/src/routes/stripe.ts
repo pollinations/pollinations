@@ -109,7 +109,7 @@ export const stripeRoutes = new Hono<Env>()
                 payment_intent_data: {
                     metadata: {
                         userId,
-                        packAmountUsd: String(pack.amountUsd),
+                        packAmount: String(pack.amountUsd),
                         packPollenGrant: String(pack.pollenGrant),
                         packBonusPollen: String(pack.bonusPollen),
                     },
@@ -128,7 +128,7 @@ export const stripeRoutes = new Hono<Env>()
                 // changes between session creation and payment.
                 metadata: {
                     userId,
-                    packAmountUsd: String(pack.amountUsd),
+                    packAmount: String(pack.amountUsd),
                     packPollenGrant: String(pack.pollenGrant),
                     packBonusPollen: String(pack.bonusPollen),
                 },

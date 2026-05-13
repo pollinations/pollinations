@@ -259,13 +259,13 @@ test("GET /api/stripe/checkout/10 snapshots pack grant into session metadata", a
 
     // Session metadata must snapshot the grant so the webhook credits
     // exactly what was displayed at checkout time.
-    expect(body?.["metadata[packAmountUsd]"]).toBe("10");
+    expect(body?.["metadata[packAmount]"]).toBe("10");
     expect(body?.["metadata[packPollenGrant]"]).toBe("13");
     expect(body?.["metadata[packBonusPollen]"]).toBe("3");
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
-    expect(body?.["payment_intent_data[metadata][packAmountUsd]"]).toBe("10");
+    expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("10");
     expect(body?.["payment_intent_data[metadata][packPollenGrant]"]).toBe("13");
     expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("3");
 });
@@ -293,10 +293,10 @@ test("GET /api/stripe/checkout/2 omits FREE label for no-bonus pack", async ({
         /FREE/,
     );
 
-    expect(body?.["metadata[packAmountUsd]"]).toBe("2");
+    expect(body?.["metadata[packAmount]"]).toBe("2");
     expect(body?.["metadata[packPollenGrant]"]).toBe("2");
     expect(body?.["metadata[packBonusPollen]"]).toBe("0");
-    expect(body?.["payment_intent_data[metadata][packAmountUsd]"]).toBe("2");
+    expect(body?.["payment_intent_data[metadata][packAmount]"]).toBe("2");
     expect(body?.["payment_intent_data[metadata][packPollenGrant]"]).toBe("2");
     expect(body?.["payment_intent_data[metadata][packBonusPollen]"]).toBe("0");
 });

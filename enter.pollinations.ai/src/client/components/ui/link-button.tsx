@@ -24,7 +24,6 @@ export const LinkButton: FC<LinkButtonProps> = ({
         target="_blank"
         rel="noopener noreferrer"
         theme={theme}
-        weight="light"
         size={size}
         className={cn("gap-2", className)}
     >

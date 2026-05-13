@@ -1,6 +1,15 @@
 import type { ComponentPropsWithoutRef, FC } from "react";
 import { cn } from "../../../util.ts";
-import type { IntentName, ThemeName } from "../layout/dashboard-theme.ts";
+import type { ThemeName } from "../layout/dashboard-theme.ts";
+
+/**
+ * Four semantic chip labels — each maps to a dashboard concept:
+ *  - news  : newly-added model (green)
+ *  - alpha : experimental model (warning yellow)
+ *  - paid  : paid pollen / paid-only model (orange, matches wallet)
+ *  - tier  : tier pollen (yellow, matches wallet)
+ */
+type ChipIntent = "news" | "alpha" | "paid" | "tier";
 
 const chipSizes = {
     sm: "px-2 py-0.5 text-xs",
@@ -8,19 +17,18 @@ const chipSizes = {
     lg: "px-3 py-1 text-sm",
 } as const;
 
-// Intent → light-style chip backgrounds (chips are quiet, not strong CTAs).
-const intentClasses: Record<IntentName, string> = {
-    danger: "bg-intent-danger-bg-light text-intent-danger-text",
-    success: "bg-intent-success-bg-light text-intent-success-text",
-    paid: "bg-intent-paid-bg-light text-intent-paid-deep",
+const intentClasses: Record<ChipIntent, string> = {
+    news: "bg-intent-news-bg text-intent-news-text",
     alpha: "bg-intent-alpha-bg text-intent-alpha-text",
+    paid: "bg-paid-soft text-paid-deep",
+    tier: "bg-tier-soft text-tier-deep",
 };
 
 type ChipProps = ComponentPropsWithoutRef<"span"> & {
     /** Override the cascade theme for this chip's subtree. */
     theme?: ThemeName;
-    /** Semantic intent — wins over `theme` when set. */
-    intent?: IntentName;
+    /** Semantic intent — paid or alpha. Wins over `theme` when set. */
+    intent?: ChipIntent;
     size?: keyof typeof chipSizes;
 };
 

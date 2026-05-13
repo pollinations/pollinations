@@ -4,52 +4,32 @@ type InfoTipProps = {
     text?: ReactNode;
     content?: ReactNode;
     label?: string;
-    tone?: "pink" | "amber" | "blue" | "violet";
     placement?: "top" | "bottom";
-    icon?: "i" | "!";
 };
 
-const TONES = {
-    pink: {
-        badge: "bg-pink-100 border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400",
-        popup: "bg-pink-50 border-pink-200",
-    },
-    amber: {
-        badge: "bg-amber-200 border-amber-400 text-amber-800 hover:bg-amber-300 hover:border-amber-500",
-        popup: "bg-amber-50 border-amber-300",
-    },
-    blue: {
-        badge: "bg-blue-100 border-blue-300 text-blue-600 hover:bg-blue-200 hover:border-blue-400",
-        popup: "bg-blue-50 border-blue-200",
-    },
-    violet: {
-        badge: "bg-violet-100 border-violet-300 text-violet-600 hover:bg-violet-200 hover:border-violet-400",
-        popup: "bg-violet-50 border-violet-200",
-    },
-} as const;
-
 /**
- * Small "i" button with a tooltip popup on hover/click.
- * Used next to form labels to provide contextual help.
+ * Small "i" badge with a thin dark tooltip popup on hover, click, or
+ * focus. The badge itself follows the page theme via the cascade; the
+ * popup uses the universal dark tooltip recipe (same as `<Tooltip>`).
+ *
+ * Cursor on the badge is `cursor-help` — matches every other tooltip
+ * trigger in the system.
  */
 export const InfoTip: FC<InfoTipProps> = ({
     text,
     content,
     label = "More info",
-    tone = "pink",
     placement = "bottom",
-    icon = "i",
 }) => {
     const [show, setShow] = useState(false);
     const tooltipId = useId();
-    const classes = TONES[tone];
     const placementClasses =
         placement === "top" ? "bottom-full mb-1" : "top-full mt-1";
 
     return (
         <button
             type="button"
-            className="relative inline-flex items-center ml-1"
+            className="relative inline-flex items-center ml-1 cursor-help"
             onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -63,15 +43,13 @@ export const InfoTip: FC<InfoTipProps> = ({
             aria-expanded={show}
             aria-describedby={show ? tooltipId : undefined}
         >
-            <span
-                className={`flex items-center justify-center w-3.5 h-3.5 rounded-full border transition-colors text-3xs font-bold cursor-pointer ${classes.badge}`}
-            >
-                {icon}
+            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-theme-border bg-theme-chip-bg text-theme-text-strong text-3xs font-bold transition-colors">
+                i
             </span>
             <span
                 id={tooltipId}
                 role="tooltip"
-                className={`${show ? "visible" : "invisible"} absolute left-1/2 -translate-x-1/2 ${placementClasses} z-50 w-[200px] whitespace-pre-line rounded-lg border px-3 py-2 text-left text-xs font-normal text-gray-800 shadow-lg pointer-events-none sm:w-[280px] ${classes.popup}`}
+                className={`${show ? "visible opacity-100" : "invisible opacity-0"} absolute left-1/2 -translate-x-1/2 ${placementClasses} z-50 w-[200px] sm:w-[280px] px-2 py-1 bg-theme-bg-pale text-theme-text-strong border border-theme-border text-xs rounded-md shadow-sm pointer-events-none whitespace-pre-line break-words text-left font-normal transition-opacity`}
             >
                 {content ?? text}
             </span>

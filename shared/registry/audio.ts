@@ -63,11 +63,20 @@ export const AUDIO_SERVICES = {
                 // ElevenLabs pricing: 1 credit = 1 character, ~$0.18 per 1000 chars
                 completionAudioTokens: 0.18 / 1000,
             },
+            {
+                date: new Date("2026-05-13").getTime(),
+                // ElevenLabs Scale plan: 1 credit/char * $0.166/1k credits
+                completionAudioTokens: 0.166 / 1000,
+            },
         ],
         price: [
             {
                 date: new Date("2026-02-07").getTime(),
                 completionAudioTokens: 0.00027, // $0.27 per 1000 chars
+            },
+            {
+                date: new Date("2026-05-13").getTime(),
+                completionAudioTokens: (0.166 * 1.5) / 1000, // cost x 1.5
             },
         ],
         description:
@@ -129,11 +138,23 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
+        paidOnly: true,
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
                 // ElevenLabs Scribe: $0.40/hour = $0.0001111/sec
                 promptAudioSeconds: 0.0001111,
+            },
+            {
+                date: new Date("2026-05-13").getTime(),
+                // ElevenLabs Scale plan: Scribe batch $0.22/hour
+                promptAudioSeconds: 0.22 / 3600,
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-05-13").getTime(),
+                promptAudioSeconds: (0.22 * 1.5) / 3600, // cost x 1.5 = $0.33/hour
             },
         ],
         description:

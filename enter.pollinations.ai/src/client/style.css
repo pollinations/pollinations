@@ -402,19 +402,25 @@ html[data-mode="dark"] [data-theme="green"] {
 
 /* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
 :root {
-    --intent-danger-bg-light:    var(--color-red-100);
-    --intent-danger-bg-strong:   var(--color-red-600);
-    --intent-danger-bg-hover:    var(--color-red-700);
-    --intent-danger-text:        var(--color-red-700);
+    /* Danger — deeper than red-600 with reduced chroma so it reads as
+       alert, not neon. Light variant has warmth so error surfaces feel
+       intentional, not washed-out. */
+    --intent-danger-bg-light:    oklch(0.935 0.045 25);
+    --intent-danger-bg-strong:   oklch(0.50 0.19 25);
+    --intent-danger-bg-hover:    oklch(0.43 0.17 25);
+    --intent-danger-text:        oklch(0.48 0.18 25);
     --intent-danger-text-on-bg:  white;
-    --intent-danger-border:      var(--color-red-300);
+    --intent-danger-border:      oklch(0.78 0.115 25);
 
-    --intent-success-bg-light:   var(--color-emerald-100);
-    --intent-success-bg-strong:  var(--color-emerald-600);
-    --intent-success-bg-hover:   var(--color-emerald-700);
-    --intent-success-text:       var(--color-emerald-700);
+    /* Success — refined deep green sitting between Tailwind's emerald
+       and green ramps. Less minty than emerald-600, more sophisticated.
+       Light variant has clear green presence. */
+    --intent-success-bg-light:   oklch(0.935 0.06 158);
+    --intent-success-bg-strong:  oklch(0.52 0.135 158);
+    --intent-success-bg-hover:   oklch(0.44 0.12 158);
+    --intent-success-text:       oklch(0.46 0.13 158);
     --intent-success-text-on-bg: white;
-    --intent-success-border:     var(--color-emerald-300);
+    --intent-success-border:     oklch(0.78 0.115 158);
 
     --intent-paid-bg:            var(--color-paid);
     --intent-paid-bg-hover:      var(--color-paid-hover);

@@ -95,8 +95,10 @@ Bee/nature metaphors fit the brand. Skip negativity — keep it celebratory.
 ### `summary`
 One clear sentence. Focus on WHAT changed and WHY. Written for a technical audience who follows the project.
 
+**Preserve concrete specifics** — when the PR centers on numbers, model names, prices, limits, version bumps, or named features, include them verbatim. Examples: `"$10 pack now grants 13 Pollen (was 20)"`, `"Llama 4 Maverick added via Fireworks"`, `"rate limit raised from 5 to 10 req/s"`. Abstracted summaries ("updated tier options") lose the information users actually need.
+
 ### `impact`
-One sentence about the practical effect. "Users will see...", "This means...", "Previously X, now Y."
+One sentence about the practical effect. "Users will see...", "This means...", "Previously X, now Y." Carry the concrete numbers from `summary` through into `impact` when they're load-bearing.
 
 ### `keywords`
 3-7 relevant keywords for clustering related PRs in the daily summary.
@@ -120,11 +122,13 @@ A short (1-2 sentence) pixel art scene description for generating the PR's annou
 All output fields (summary, impact) MUST frame changes positively — what users GAIN, not what they lose.
 
 ### Reframing Guide
-- Price increases → "new tier options" or "updated plans" — focus on what tiers unlock
-- Rate limiting / tighter quotas → "reliability improvements" or "fairer usage"
-- Feature removals → "streamlined experience" — focus on what remains or replaces it
-- Breaking API changes → "migration to better system" — focus on the improvement
-- Deprecations → "making way for [replacement]"
+Positive framing means tone, not abstraction. Always include the concrete change (numbers, names, before/after) — then frame it neutrally to positively.
+
+- Price / pack changes → state the new amounts AND the change (`"$10 pack now grants 13 Pollen (was 20)"`). Don't replace numbers with phrases like "updated plans".
+- Rate limiting / tighter quotas → state the new limit AND the reason (`"per-key limit dropped from 10 to 5 req/s to even out usage"`). Don't replace with "reliability improvements".
+- Feature removals → name what was removed and what replaces it (`"legacy 2x Checkout fallback removed; new packBonusPollen metadata is now the source of truth"`).
+- Breaking API changes → name the old and new shape; link migration notes when present.
+- Deprecations → name the deprecated thing and its replacement.
 
 ### Never surface in social content
 - Revenue or financial pressures

@@ -22,7 +22,7 @@ Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolv
 
 There are **three ways**:
 
-1. 💳 **Buy** — Purchase Pollen packs with a credit card. Lands in your **paid balance**; from 2026-06-01, expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
+1. 💳 **Buy** — Pay by card, Pollen goes to your **paid balance**. Expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
 2. 🌱 **Tier grants** — Free Pollen that refills every hour into your **tier balance**. Contribute to unlock bigger hourly grants.
 3. 🌻 **Dev earnings** — Turn on Developer earnings for an App Key. Each request through your app is billed +25% over model cost (= 20% of user spend) — credited to your wallet. Earnings drip into your tier or paid balance, mirroring whichever the user paid from.
 
@@ -58,21 +58,22 @@ Registration gives you **instant access** to the Pollinations API. Create API ke
 
 One central wallet across all your apps, split into two balances:
 
-- **🌱 Tier balance** — hourly grants (only while below your tier's free amount) + tier-side earnings (user spending in your apps).
-- **💳 Paid balance** — purchased Pollen + paid-side earnings (user spending in your apps).
+- **🌱 Tier balance** — free, refilled hourly up to your tier cap.
+- **💳 Paid balance** — purchased Pollen.
+- **Earnings** — credited to the balance the user spent from.
 
-From **2026-06-01**, balances expire after 12 months of inactivity.
+Balances expire after 12 months of account inactivity.
 
-**Each request pays from a single balance — no partial spend across the two.**
+**Every request comes from one balance, not both at once.**
 
-- **Regular models** pay from your tier balance if it can cover the request, otherwise from paid.
-- **Paid-only models** pay from paid only.
+- **Regular models** use your free tier balance first. If it can't cover the cost, they switch to paid.
+- **Paid-only models** always charge your paid balance.
 
 ⏰ If a request streams over its estimate, the bucket that paid for it can go negative. Your 🌱 tier balance recovers automatically — hourly refills bring it back up one increment at a time, capped at your tier. Your 💳 paid balance stays negative until you top up.
 
 ## 🏅 What are tiers?
 
-Each tier sets your hourly free Pollen — the tier balance refills up to that amount. If earnings push you above the cap, hourly refills pause until you spend back down.
+Your tier sets how much free Pollen you get each hour. The tier balance tops up to that amount, then waits.
 
 | Tier | Pollen/hour |
 |------|-------------|

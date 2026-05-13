@@ -30,7 +30,7 @@
     <input id="urlInput" placeholder="or paste image URL" class="min-w-52 flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
     <button id="useUrl" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Use</button>
     <select id="modelSel" class="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
-      <option value="nanobanana">nanobanana</option>
+      <option value="p-image-edit">p-image-edit</option>
     </select>
     <button id="undoBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded" disabled>Undo</button>
     <button id="redoBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded" disabled>Redo</button>
@@ -162,9 +162,9 @@ refreshConnectionUI();
 
 (async function loadEditModels() {
   const modelSel = document.getElementById("modelSel");
-  const DEFAULT_MODEL = "nanobanana";
+  const DEFAULT_MODEL = "p-image-edit";
   // Models known to obey the burned-in red-circle annotation well
-  const RECOMMENDED = new Set(["nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
+  const RECOMMENDED = new Set(["p-image-edit", "nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
   try {
     const r = await fetch(`${BASE}/image/models`);
     if (!r.ok) return;

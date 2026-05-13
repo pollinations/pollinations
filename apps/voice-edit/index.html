@@ -1,45 +1,56 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>Voice Edit v0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Edit | Pollinations</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body { background:#0a0a0a; color:#e5e5e5; }
   canvas { cursor: crosshair; touch-action: none; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
 </style>
-<body class="min-h-screen p-6 flex flex-col items-center gap-4">
-  <div class="w-full max-w-4xl flex items-center justify-between">
-    <h1 class="text-xl font-semibold">Voice Edit · v0</h1>
-    <div class="text-xs text-neutral-500" id="status">ready</div>
+<body class="min-h-screen p-4 md:p-6 flex flex-col items-center gap-4">
+  <div class="w-full max-w-5xl flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Voice Edit</h1>
+      <p class="text-sm text-neutral-500">Point at an image, speak or type an edit, release to apply.</p>
+    </div>
+    <div class="text-xs text-neutral-500 shrink-0" id="status">ready</div>
   </div>
 
-  <div class="relative">
-    <canvas id="canvas" width="1024" height="768" class="rounded-lg bg-neutral-900 max-w-full"></canvas>
-    <div id="recDot" class="hidden absolute top-4 right-4 w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
-  </div>
+  <div id="error" class="hidden w-full max-w-5xl rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-100"></div>
 
-  <div class="w-full max-w-4xl flex items-center gap-2 text-sm">
-    <button id="loadBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Load starter image</button>
-    <input id="urlInput" placeholder="or paste image URL" class="flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
-    <button id="useUrl" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Use</button>
-    <select id="modelSel" class="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
-      <option value="kontext">kontext (fast)</option>
-      <option value="nanobanana-2">nanobanana-2 (quality)</option>
-    </select>
-    <select id="sttSel" class="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
-      <option value="whisper">whisper</option>
-      <option value="universal-2">universal-2</option>
-    </select>
-  </div>
-
-  <div class="w-full max-w-4xl flex items-center gap-2 text-sm">
+  <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
     <button id="connectBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded">Connect Pollinations</button>
     <button id="disconnectBtn" class="hidden px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Disconnect</button>
     <span id="account" class="text-neutral-400"></span>
   </div>
 
-  <div class="w-full max-w-4xl text-sm text-neutral-400">
-    <div>Click and hold on the image, speak your edit, release to apply.</div>
+  <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
+    <button id="loadBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Load starter image</button>
+    <input id="urlInput" placeholder="or paste image URL" class="min-w-52 flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
+    <button id="useUrl" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Use</button>
+    <select id="modelSel" class="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded">
+      <option value="kontext">kontext (fast)</option>
+      <option value="nanobanana-2">nanobanana-2 (quality)</option>
+    </select>
+    <button id="undoBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded" disabled>Undo</button>
+    <button id="redoBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded" disabled>Redo</button>
+    <button id="downloadBtn" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded">Download</button>
+  </div>
+
+  <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
+    <input id="intentInput" placeholder="Optional typed edit, e.g. make this a brass lamp" class="min-w-64 flex-1 px-3 py-2 bg-neutral-900 border border-neutral-800 rounded">
+    <button id="clearIntent" class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 rounded">Clear</button>
+  </div>
+
+  <div class="w-full max-w-5xl text-sm text-neutral-400">
+    <div>Click and hold on the image. If the text field is empty, the browser listens for your voice; otherwise it applies the typed edit.</div>
     <div id="transcript" class="mt-1 text-neutral-300 italic min-h-[1.5em]"></div>
+  </div>
+
+  <div class="relative w-full max-w-5xl overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl">
+    <canvas id="canvas" width="1024" height="768" class="rounded-lg bg-neutral-900 max-w-full"></canvas>
+    <div id="recDot" class="hidden absolute top-4 right-4 w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
   </div>
 
 <script>
@@ -54,18 +65,52 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const statusEl = document.getElementById("status");
 const transcriptEl = document.getElementById("transcript");
+const errorEl = document.getElementById("error");
 const recDot = document.getElementById("recDot");
 const connectBtn = document.getElementById("connectBtn");
 const disconnectBtn = document.getElementById("disconnectBtn");
 const accountEl = document.getElementById("account");
+const intentInput = document.getElementById("intentInput");
+const undoBtn = document.getElementById("undoBtn");
+const redoBtn = document.getElementById("redoBtn");
 
 let currentImage = null;
-let mediaRecorder = null;
-let chunks = [];
+let currentImageURL = "";
 let clickPoint = null;
-let stream = null;
+let activeCapture = null;
+let isBusy = false;
+const undoStack = [];
+let redoStack = [];
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 function setStatus(s) { statusEl.textContent = s; }
+function showError(message) {
+  errorEl.textContent = message;
+  errorEl.classList.remove("hidden");
+  setStatus("error");
+}
+function clearError() { errorEl.classList.add("hidden"); }
+
+function setBusy(value) {
+  isBusy = value;
+  for (const el of document.querySelectorAll("button, input, select")) {
+    if (el.id === "disconnectBtn") continue;
+    el.disabled = value;
+  }
+  updateHistoryButtons();
+}
+
+function updateHistoryButtons() {
+  undoBtn.disabled = isBusy || undoStack.length === 0;
+  redoBtn.disabled = isBusy || redoStack.length === 0;
+}
+
+function pushUndo() {
+  if (!currentImageURL) return;
+  undoStack.push(currentImageURL);
+  redoStack = [];
+  updateHistoryButtons();
+}
 
 (function captureKeyFromFragment() {
   if (!location.hash) return;
@@ -75,7 +120,7 @@ function setStatus(s) { statusEl.textContent = s; }
     localStorage.setItem(KEY_STORAGE, apiKey);
     history.replaceState(null, "", location.pathname + location.search);
   } else if (params.get("error")) {
-    setStatus("auth: " + params.get("error"));
+    showError(`Authorization failed: ${params.get("error")}`);
   }
 })();
 
@@ -116,22 +161,34 @@ disconnectBtn.onclick = () => {
 };
 refreshConnectionUI();
 
-async function loadImageFromURL(url) {
+async function loadImageFromURL(url, opts = {}) {
+  clearError();
+  if (opts.pushHistory) pushUndo();
   setStatus("loading image…");
   const img = new Image();
   img.crossOrigin = "anonymous";
-  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = () => rej(new Error("could not load image; try another URL"));
+    img.src = url;
+  });
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
   ctx.drawImage(img, 0, 0);
   currentImage = img;
+  currentImageURL = url;
+  updateHistoryButtons();
   setStatus("ready");
 }
 
-document.getElementById("loadBtn").onclick = () => loadImageFromURL(STARTER);
+document.getElementById("loadBtn").onclick = () => loadImageFromURL(STARTER, { pushHistory: true }).catch(err => showError(err.message));
 document.getElementById("useUrl").onclick = () => {
   const u = document.getElementById("urlInput").value.trim();
-  if (u) loadImageFromURL(u);
+  if (u) loadImageFromURL(u, { pushHistory: true }).catch(err => showError(err.message));
+};
+document.getElementById("clearIntent").onclick = () => {
+  intentInput.value = "";
+  transcriptEl.textContent = "";
 };
 
 function canvasPointFromEvent(e) {
@@ -146,47 +203,77 @@ function canvasPointFromEvent(e) {
   };
 }
 
-async function startRecording() {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (err) {
-    setStatus("mic denied: " + err.message);
-    return false;
+function startIntentCapture() {
+  clearError();
+  const typed = intentInput.value.trim();
+  if (typed) {
+    transcriptEl.textContent = `→ ${typed}`;
+    setStatus("release to edit…");
+    return { mode: "typed", text: typed };
   }
-  chunks = [];
-  const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
-  mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-  mediaRecorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-  mediaRecorder.start();
+
+  if (!SpeechRecognition) {
+    showError("Voice input is not available in this browser. Type an edit, then click the target area.");
+    return null;
+  }
+
+  const capture = {
+    mode: "speech",
+    text: "",
+    error: "",
+    finished: false,
+    resolve: null,
+  };
+  const recognition = new SpeechRecognition();
+  capture.recognition = recognition;
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = navigator.language || "en-US";
+
+  capture.done = new Promise((resolve) => {
+    capture.resolve = resolve;
+  });
+  const finish = () => {
+    if (capture.finished) return;
+    capture.finished = true;
+    recDot.classList.add("hidden");
+    capture.resolve({ text: capture.text.trim(), error: capture.error });
+  };
+  recognition.onresult = (event) => {
+    let text = "";
+    for (let i = 0; i < event.results.length; i++) {
+      text += event.results[i][0].transcript;
+    }
+    capture.text = text.trim();
+    transcriptEl.textContent = capture.text ? `→ ${capture.text}` : "listening…";
+  };
+  recognition.onerror = (event) => {
+    capture.error = event.error || "speech recognition failed";
+  };
+  recognition.onend = finish;
+
+  try {
+    recognition.start();
+  } catch {
+    showError("Voice input could not start. Type an edit instead.");
+    return null;
+  }
+
   recDot.classList.remove("hidden");
-  setStatus("recording…");
-  return true;
+  transcriptEl.textContent = "listening…";
+  setStatus("listening…");
+  return capture;
 }
 
-function stopRecordingAndGetBlob() {
-  return new Promise((res) => {
-    mediaRecorder.onstop = () => {
-      stream.getTracks().forEach(t => t.stop());
-      recDot.classList.add("hidden");
-      res(new Blob(chunks, { type: chunks[0]?.type || "audio/webm" }));
-    };
-    mediaRecorder.stop();
-  });
-}
-
-async function transcribe(blob) {
-  setStatus("transcribing…");
-  const fd = new FormData();
-  fd.append("file", blob, "rec.webm");
-  fd.append("model", document.getElementById("sttSel").value);
-  const r = await fetch(`${BASE}/v1/audio/transcriptions`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${getKey()}` },
-    body: fd,
-  });
-  if (!r.ok) throw new Error("transcribe failed " + r.status + " " + await r.text());
-  const j = await r.json();
-  return j.text || j.transcription || "";
+async function stopIntentCapture(capture) {
+  if (capture.mode === "typed") return { text: capture.text, error: "" };
+  setStatus("processing…");
+  try { capture.recognition.stop(); } catch {}
+  const timeout = new Promise((resolve) => setTimeout(() => {
+    recDot.classList.add("hidden");
+    resolve({ text: capture.text.trim(), error: capture.error });
+  }, 1500));
+  return Promise.race([capture.done, timeout]);
 }
 
 function annotatedDataURL(p) {
@@ -205,6 +292,25 @@ function annotatedDataURL(p) {
   return c.toDataURL("image/png");
 }
 
+async function friendlyError(response, label) {
+  let details = "";
+  try {
+    const text = await response.text();
+    const json = JSON.parse(text);
+    details = json.error?.message || json.message || text;
+  } catch {
+    details = response.statusText || "request failed";
+  }
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem(KEY_STORAGE);
+    refreshConnectionUI();
+    return `${label}: authorization expired. Connect Pollinations again.`;
+  }
+  if (response.status === 402) return `${label}: add Pollen credits, then try again.`;
+  if (response.status === 429) return `${label}: rate limited. Wait a moment or switch models.`;
+  return `${label}: ${response.status} ${details}`;
+}
+
 async function uploadDataURL(dataURL) {
   setStatus("uploading…");
   const blob = await (await fetch(dataURL)).blob();
@@ -215,7 +321,7 @@ async function uploadDataURL(dataURL) {
     headers: { Authorization: `Bearer ${getKey()}` },
     body: fd,
   });
-  if (!r.ok) throw new Error("upload failed " + r.status);
+  if (!r.ok) throw new Error(await friendlyError(r, "Upload failed"));
   const j = await r.json();
   return j.url || `https://media.pollinations.ai/${j.id}`;
 }
@@ -228,44 +334,100 @@ async function runEdit(refURL, prompt) {
     headers: { Authorization: `Bearer ${getKey()}`, "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, image: refURL, model, response_format: "url" }),
   });
-  if (!r.ok) throw new Error("edit failed " + r.status + " " + await r.text());
+  if (!r.ok) throw new Error(await friendlyError(r, "Edit failed"));
   const j = await r.json();
   const item = j.data?.[0];
   if (!item) throw new Error("no image in response");
   if (item.url) return item.url;
-  if (item.b64_json) return "data:image/png;base64," + item.b64_json;
+  if (item.b64_json) return `data:image/png;base64,${item.b64_json}`;
   throw new Error("no url or b64_json in response");
 }
 
+function buildEditPrompt(text) {
+  return [
+    "Use the red circle and HERE label only as edit instructions, not final content.",
+    `Modify the object or region inside the red circle: ${text}.`,
+    "Remove the red circle and HERE label in the final image. Keep unmarked areas unchanged."
+  ].join(" ");
+}
+
+async function applyEditAtPoint(point, text) {
+  if (!text.trim()) throw new Error("Nothing heard. Type an edit if voice input is unavailable.");
+  setBusy(true);
+  try {
+    transcriptEl.textContent = `→ ${text}`;
+    const annotURL = await uploadDataURL(annotatedDataURL(point));
+    const resultURL = await runEdit(annotURL, buildEditPrompt(text));
+    pushUndo();
+    await loadImageFromURL(resultURL);
+    setStatus("done");
+  } finally {
+    setBusy(false);
+  }
+}
+
 canvas.addEventListener("pointerdown", async (e) => {
-  if (!currentImage) { setStatus("load an image first"); return; }
+  if (isBusy) return;
+  if (!currentImage) { showError("Load an image first."); return; }
   e.preventDefault();
   canvas.setPointerCapture(e.pointerId);
   clickPoint = canvasPointFromEvent(e);
   transcriptEl.textContent = "";
-  await startRecording();
+  activeCapture = startIntentCapture();
 });
 
 canvas.addEventListener("pointerup", async (e) => {
-  if (!mediaRecorder || mediaRecorder.state !== "recording") return;
+  if (!activeCapture) return;
+  e.preventDefault();
+  const capture = activeCapture;
+  activeCapture = null;
   try {
-    const blob = await stopRecordingAndGetBlob();
-    if (blob.size < 1000) { setStatus("too short"); return; }
-    const text = await transcribe(blob);
-    transcriptEl.textContent = "→ " + text;
-    if (!text.trim()) { setStatus("nothing heard"); return; }
-    const annotURL = await uploadDataURL(annotatedDataURL(clickPoint));
-    const prompt = `Edit the area marked with the red circle (labeled HERE). ${text}. Remove the red circle and HERE text in the final image.`;
-    const resultURL = await runEdit(annotURL, prompt);
-    await loadImageFromURL(resultURL);
-    setStatus("done");
+    const { text, error } = await stopIntentCapture(capture);
+    if (!text.trim() && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
+    await applyEditAtPoint(clickPoint, text);
   } catch (err) {
-    setStatus("error: " + err.message);
+    showError(err.message);
   }
 });
 
-loadImageFromURL(STARTER);
+canvas.addEventListener("pointercancel", () => {
+  if (activeCapture?.recognition) {
+    try { activeCapture.recognition.stop(); } catch {}
+  }
+  activeCapture = null;
+  recDot.classList.add("hidden");
+  setStatus("ready");
+});
+
+undoBtn.onclick = () => {
+  if (!undoStack.length || isBusy) return;
+  redoStack.push(currentImageURL);
+  loadImageFromURL(undoStack.pop()).then(() => {
+    setStatus("undone");
+    updateHistoryButtons();
+  }).catch(err => showError(err.message));
+};
+
+redoBtn.onclick = () => {
+  if (!redoStack.length || isBusy) return;
+  undoStack.push(currentImageURL);
+  loadImageFromURL(redoStack.pop()).then(() => {
+    setStatus("redone");
+    updateHistoryButtons();
+  }).catch(err => showError(err.message));
+};
+
+document.getElementById("downloadBtn").onclick = () => {
+  try {
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "voice-edit.png";
+    a.click();
+  } catch {
+    if (currentImageURL) window.open(currentImageURL, "_blank", "noopener");
+  }
+};
+
+loadImageFromURL(STARTER).catch(err => showError(err.message));
 </script>
 </body>
-</content>
-</invoke>

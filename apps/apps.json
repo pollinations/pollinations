@@ -87,6 +87,13 @@
         "title": "Pollinations × OpenClaw",
         "description": "Use 25+ AI models as your OpenClaw brain through Pollinations' unified API"
     },
+    "voice-edit": {
+        "subdomain": "voice-edit",
+        "buildCommand": null,
+        "outputDir": ".",
+        "title": "Voice Edit",
+        "description": "Point at an image, speak or type an edit, and apply it with Pollinations"
+    },
     "slidepainter": {
         "subdomain": "slidepainter",
         "buildCommand": "npm run build",

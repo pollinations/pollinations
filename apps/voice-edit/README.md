@@ -15,11 +15,7 @@ A minimal clone of Google AI Studio's AI Pointer / Magic Pointer demo, built on 
 ## How It Works
 
 ```
-click+hold ── MediaRecorder ──┐
-                              │
-release ──┐                   │
-          ▼                   ▼
- POST /v1/audio/transcriptions (whisper)
+click+hold ── browser speech recognition or typed prompt
           │
           ▼
  annotate canvas (red circle at click pt)
@@ -39,11 +35,10 @@ The red circle burned into the pixels at the click point IS the spatial groundin
 ## Models
 
 - **Edit**: `kontext` (fast, obeys the red-circle marker). Fallback: `nanobanana-2`.
-- **STT**: `whisper`. Fallback: `universal-2`.
+- **Voice input**: browser-native speech recognition, with typed prompt fallback. No server STT call is required.
 
 ## API
 
-- `POST https://gen.pollinations.ai/v1/audio/transcriptions` — multipart, `file` + `model`
 - `POST https://media.pollinations.ai/upload` — multipart `file`
 - `POST https://gen.pollinations.ai/v1/images/edits` — JSON `{prompt, image, model}`
 
@@ -55,7 +50,7 @@ Auth: **BYOP** (Bring Your Own Pollen). On first use, the app redirects to `ente
 curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Authorization: Bearer <your_sk_>' \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Voice Edit","type":"publishable","redirectUris":["https://pollinations.github.io/.../voice-edit/"],"earningsEnabled":true,"models":["kontext","nanobanana-2","whisper","universal-2"]}'
+  -d '{"name":"Voice Edit","type":"publishable","redirectUris":["https://voice-edit.pollinations.ai/"],"earningsEnabled":true,"models":["kontext","nanobanana-2"]}'
 ```
 
 Paste the returned `pk_…` into `CLIENT_ID` in `index.html`. With `earningsEnabled:true`, the app owner earns 25% of each user's spend in the app.

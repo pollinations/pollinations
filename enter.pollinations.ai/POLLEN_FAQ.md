@@ -61,7 +61,7 @@ One central wallet across all your apps, split into two balances:
 - **🌱 Tier balance** — hourly grants (only while below your tier's free amount) + tier-side earnings (user spending in your apps).
 - **💳 Paid balance** — purchased Pollen + paid-side earnings (user spending in your apps).
 
-From **2026-06-01**, your wallet expires after 12 months of account inactivity. Existing balances start the clock on that date, so everyone gets a full 12-month window from the effective date. Signing in, making API requests, or buying Pollen counts as activity.
+From **2026-06-01**, balances expire after 12 months of inactivity.
 
 **Each request pays from a single balance — no partial spend across the two.**
 

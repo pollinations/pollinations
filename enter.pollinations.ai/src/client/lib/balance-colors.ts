@@ -1,18 +1,13 @@
 /**
- * Hex constants for chart libraries that can't read CSS vars.
+ * Color strings for chart libraries (Recharts) that can't read CSS vars
+ * from a `fill` prop. For Tailwind className consumers, use the named
+ * utilities (`bg-paid-soft`, `text-paid-deep`, `bg-tier-soft`, etc.) —
+ * defined as `--color-paid-*` / `--color-tier-*` in `style.css @theme`.
  *
- * Recharts (and similar) need raw color strings for `fill` props. For Tailwind
- * className consumers, use the named utilities (`bg-paid`, `text-paid-deep`,
- * `bg-tier`, `text-tier-deep`) — defined as `--color-paid` etc. in
- * `style.css @theme` — instead of importing these constants.
+ * These values mirror the **soft** chip-background colors so chart bars
+ * and paid/tier chips read as the same visual identity. Hover is handled
+ * via CSS opacity in chart.tsx, no separate color needed.
  */
 
-export const PAID_COLOR = {
-    base: "#E08A52",
-    hover: "#C97540",
-} as const;
-
-export const TIER_COLOR = {
-    base: "#FCD34D",
-    hover: "#EAB818",
-} as const;
+export const PAID_COLOR = "oklch(0.924 0.12 95.746)"; // matches --color-paid-soft (amber-200 — same as paid chip bg)
+export const TIER_COLOR = "oklch(0.925 0.075 55)"; // matches --color-tier-soft (peach — same as tier chip bg)

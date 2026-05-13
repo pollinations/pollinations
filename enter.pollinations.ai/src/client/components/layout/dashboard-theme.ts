@@ -11,9 +11,9 @@ export const themes = [
 ] as const;
 export type ThemeName = (typeof themes)[number];
 
-// Semantic intents — theme-independent. Mirrors the --intent-* vars in style.css.
-export const intents = ["danger", "success", "paid", "alpha"] as const;
-export type IntentName = (typeof intents)[number];
+// Intent maps live per-primitive now: Button/Surface/IconButton support
+// `danger`; Chip supports the four label intents (news/alpha/paid/tier).
+// See each component's file for its own ChipIntent / SurfaceIntent / etc.
 
 export type DashboardPage = "updates" | "pollen" | "usage" | "keys" | "models";
 

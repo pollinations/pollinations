@@ -45,16 +45,20 @@
     --text-base: 16px;
 
     /* ─── Layer 1: hue ramp constants ────────────────────────── */
-    /* Money colors — promoted from lib/balance-colors.ts */
-    --color-paid: #E08A52;
-    --color-paid-hover: #C97540;
-    --color-paid-deep: #7C3F1E;
-    --color-tier: #FCD34D;
-    --color-tier-hover: #EAB818;
-    --color-tier-deep: #7A5807;
+    /* Paid + Tier — 2 values per concept. Used everywhere paid or tier
+       identity appears: wallet, chart bars, chips, page backgrounds.
+       soft = backgrounds and accents (dots, chart bars all share this);
+       deep = text. No separate mid-tone solid — soft is enough.
+
+       Paid uses amber so it unifies with the Pollen page chrome (top-up
+       buttons, page theme), reinforcing "this is where you buy paid".
+       Tier uses the warm orange family. */
+    --color-paid-soft: oklch(0.924 0.12 95.746);
+    --color-paid-deep: #78350f;
+    --color-tier-soft: oklch(0.925 0.075 55);
+    --color-tier-deep: #7C3F1E;
 
     /* Universal vars */
-    --color-focus-ring: oklch(from var(--color-emerald-500) l c h / 0.6);
     --color-surface-white-light: oklch(1 0 0 / 0.8);
     --color-surface-white-dark: oklch(0.18 0.01 240 / 0.85);
 }
@@ -81,14 +85,13 @@
     --theme-bg-hover-faint: var(--color-amber-50);
 
     --theme-chip-bg:    var(--color-amber-200);
+    --theme-bg-pale:    var(--color-amber-100);
+    --theme-bg-surface: var(--color-amber-50);
     --theme-chip-text:  var(--color-amber-950);
 
     --theme-button-light-bg:    var(--color-amber-200);
     --theme-button-light-text:  var(--color-amber-900);
     --theme-button-light-hover: var(--color-amber-300);
-    --theme-button-strong-bg:    var(--color-amber-600);
-    --theme-button-strong-text:  white;
-    --theme-button-strong-hover: var(--color-amber-700);
 
     --theme-ring-focus: oklch(from var(--color-amber-400) l c h / 0.7);
     --theme-accent:     var(--color-amber-500);
@@ -115,14 +118,13 @@
     --theme-bg-hover-faint: var(--color-blue-50);
 
     --theme-chip-bg:    var(--color-blue-200);
+    --theme-bg-pale:    var(--color-blue-100);
+    --theme-bg-surface: var(--color-blue-50);
     --theme-chip-text:  var(--color-blue-950);
 
     --theme-button-light-bg:    var(--color-blue-200);
     --theme-button-light-text:  var(--color-blue-900);
     --theme-button-light-hover: var(--color-blue-300);
-    --theme-button-strong-bg:    var(--color-blue-600);
-    --theme-button-strong-text:  white;
-    --theme-button-strong-hover: var(--color-blue-700);
 
     --theme-ring-focus: oklch(from var(--color-blue-400) l c h / 0.7);
     --theme-accent:     var(--color-blue-500);
@@ -149,14 +151,13 @@
     --theme-bg-hover-faint: var(--color-pink-50);
 
     --theme-chip-bg:    var(--color-pink-200);
+    --theme-bg-pale:    var(--color-pink-100);
+    --theme-bg-surface: var(--color-pink-50);
     --theme-chip-text:  var(--color-pink-950);
 
     --theme-button-light-bg:    var(--color-pink-200);
     --theme-button-light-text:  var(--color-pink-900);
     --theme-button-light-hover: var(--color-pink-300);
-    --theme-button-strong-bg:    var(--color-pink-600);
-    --theme-button-strong-text:  white;
-    --theme-button-strong-hover: var(--color-pink-700);
 
     --theme-ring-focus: oklch(from var(--color-pink-400) l c h / 0.7);
     --theme-accent:     var(--color-pink-500);
@@ -183,14 +184,13 @@
     --theme-bg-hover-faint: var(--color-teal-50);
 
     --theme-chip-bg:    var(--color-teal-200);
+    --theme-bg-pale:    var(--color-teal-100);
+    --theme-bg-surface: var(--color-teal-50);
     --theme-chip-text:  var(--color-teal-950);
 
     --theme-button-light-bg:    var(--color-teal-200);
     --theme-button-light-text:  var(--color-teal-900);
     --theme-button-light-hover: var(--color-teal-300);
-    --theme-button-strong-bg:    var(--color-teal-600);
-    --theme-button-strong-text:  white;
-    --theme-button-strong-hover: var(--color-teal-700);
 
     --theme-ring-focus: oklch(from var(--color-teal-400) l c h / 0.7);
     --theme-accent:     var(--color-teal-500);
@@ -217,14 +217,13 @@
     --theme-bg-hover-faint: var(--color-violet-50);
 
     --theme-chip-bg:    var(--color-violet-200);
+    --theme-bg-pale:    var(--color-violet-100);
+    --theme-bg-surface: var(--color-violet-50);
     --theme-chip-text:  var(--color-violet-950);
 
     --theme-button-light-bg:    var(--color-violet-200);
     --theme-button-light-text:  var(--color-violet-900);
     --theme-button-light-hover: var(--color-violet-300);
-    --theme-button-strong-bg:    var(--color-violet-600);
-    --theme-button-strong-text:  white;
-    --theme-button-strong-hover: var(--color-violet-700);
 
     --theme-ring-focus: oklch(from var(--color-violet-400) l c h / 0.7);
     --theme-accent:     var(--color-violet-500);
@@ -254,14 +253,13 @@
     --theme-bg-hover-faint: var(--color-green-50);
 
     --theme-chip-bg:    var(--color-green-200);
+    --theme-bg-pale:    var(--color-green-100);
+    --theme-bg-surface: var(--color-green-50);
     --theme-chip-text:  var(--color-green-950);
 
     --theme-button-light-bg:    var(--color-green-200);
     --theme-button-light-text:  var(--color-green-900);
     --theme-button-light-hover: var(--color-green-300);
-    --theme-button-strong-bg:    var(--color-green-600);
-    --theme-button-strong-text:  white;
-    --theme-button-strong-hover: var(--color-green-700);
 
     --theme-ring-focus: oklch(from var(--color-green-400) l c h / 0.7);
     --theme-accent:     var(--color-green-500);
@@ -275,6 +273,7 @@ html[data-mode="dark"] [data-theme="amber"] {
     --theme-bg-idle:      oklch(from var(--color-amber-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-amber-950) l c h / 0.3);
     --theme-bg-tinted:    oklch(from var(--color-amber-950) l c h / 0.4);
+    --theme-bg-surface:   var(--color-amber-950);
     --theme-bg-active:    var(--color-amber-800);
     --theme-bg-hover:     var(--color-amber-700);
     --theme-chip-bg:      var(--color-amber-800);
@@ -282,9 +281,6 @@ html[data-mode="dark"] [data-theme="amber"] {
     --theme-button-light-bg:    var(--color-amber-800);
     --theme-button-light-text:  var(--color-amber-50);
     --theme-button-light-hover: var(--color-amber-700);
-    --theme-button-strong-bg:   var(--color-amber-500);
-    --theme-button-strong-text: var(--color-amber-50);
-    --theme-button-strong-hover: var(--color-amber-400);
     --theme-border-idle:    var(--color-amber-700);
     --theme-border-soft:    oklch(from var(--color-amber-700) l c h / 0.7);
     --theme-border-subtle:  var(--color-amber-800);
@@ -297,6 +293,7 @@ html[data-mode="dark"] [data-theme="blue"] {
     --theme-bg-idle:      oklch(from var(--color-blue-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-blue-950) l c h / 0.3);
     --theme-bg-tinted:    oklch(from var(--color-blue-950) l c h / 0.4);
+    --theme-bg-surface:   var(--color-blue-950);
     --theme-bg-active:    var(--color-blue-800);
     --theme-bg-hover:     var(--color-blue-700);
     --theme-chip-bg:      var(--color-blue-800);
@@ -304,9 +301,6 @@ html[data-mode="dark"] [data-theme="blue"] {
     --theme-button-light-bg:    var(--color-blue-800);
     --theme-button-light-text:  var(--color-blue-50);
     --theme-button-light-hover: var(--color-blue-700);
-    --theme-button-strong-bg:   var(--color-blue-500);
-    --theme-button-strong-text: var(--color-blue-50);
-    --theme-button-strong-hover: var(--color-blue-400);
     --theme-border-idle:    var(--color-blue-700);
     --theme-border-soft:    oklch(from var(--color-blue-700) l c h / 0.7);
     --theme-border-subtle:  var(--color-blue-800);
@@ -319,6 +313,7 @@ html[data-mode="dark"] [data-theme="pink"] {
     --theme-bg-idle:      oklch(from var(--color-pink-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-pink-950) l c h / 0.3);
     --theme-bg-tinted:    oklch(from var(--color-pink-950) l c h / 0.4);
+    --theme-bg-surface:   var(--color-pink-950);
     --theme-bg-active:    var(--color-pink-800);
     --theme-bg-hover:     var(--color-pink-700);
     --theme-chip-bg:      var(--color-pink-800);
@@ -326,9 +321,6 @@ html[data-mode="dark"] [data-theme="pink"] {
     --theme-button-light-bg:    var(--color-pink-800);
     --theme-button-light-text:  var(--color-pink-50);
     --theme-button-light-hover: var(--color-pink-700);
-    --theme-button-strong-bg:   var(--color-pink-500);
-    --theme-button-strong-text: var(--color-pink-50);
-    --theme-button-strong-hover: var(--color-pink-400);
     --theme-border-idle:    var(--color-pink-700);
     --theme-border-soft:    oklch(from var(--color-pink-700) l c h / 0.7);
     --theme-border-subtle:  var(--color-pink-800);
@@ -341,6 +333,7 @@ html[data-mode="dark"] [data-theme="teal"] {
     --theme-bg-idle:      oklch(from var(--color-teal-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-teal-950) l c h / 0.3);
     --theme-bg-tinted:    oklch(from var(--color-teal-950) l c h / 0.4);
+    --theme-bg-surface:   var(--color-teal-950);
     --theme-bg-active:    var(--color-teal-800);
     --theme-bg-hover:     var(--color-teal-700);
     --theme-chip-bg:      var(--color-teal-800);
@@ -348,9 +341,6 @@ html[data-mode="dark"] [data-theme="teal"] {
     --theme-button-light-bg:    var(--color-teal-800);
     --theme-button-light-text:  var(--color-teal-50);
     --theme-button-light-hover: var(--color-teal-700);
-    --theme-button-strong-bg:   var(--color-teal-500);
-    --theme-button-strong-text: var(--color-teal-50);
-    --theme-button-strong-hover: var(--color-teal-400);
     --theme-border-idle:    var(--color-teal-700);
     --theme-border-soft:    oklch(from var(--color-teal-700) l c h / 0.7);
     --theme-border-subtle:  var(--color-teal-800);
@@ -363,6 +353,7 @@ html[data-mode="dark"] [data-theme="violet"] {
     --theme-bg-idle:      oklch(from var(--color-violet-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-violet-950) l c h / 0.3);
     --theme-bg-tinted:    oklch(from var(--color-violet-950) l c h / 0.4);
+    --theme-bg-surface:   var(--color-violet-950);
     --theme-bg-active:    var(--color-violet-800);
     --theme-bg-hover:     var(--color-violet-700);
     --theme-chip-bg:      var(--color-violet-800);
@@ -370,9 +361,6 @@ html[data-mode="dark"] [data-theme="violet"] {
     --theme-button-light-bg:    var(--color-violet-800);
     --theme-button-light-text:  var(--color-violet-50);
     --theme-button-light-hover: var(--color-violet-700);
-    --theme-button-strong-bg:   var(--color-violet-500);
-    --theme-button-strong-text: var(--color-violet-50);
-    --theme-button-strong-hover: var(--color-violet-400);
     --theme-border-idle:    var(--color-violet-700);
     --theme-border-soft:    oklch(from var(--color-violet-700) l c h / 0.7);
     --theme-border-subtle:  var(--color-violet-800);
@@ -385,6 +373,7 @@ html[data-mode="dark"] [data-theme="green"] {
     --theme-bg-idle:      oklch(from var(--color-green-950) l c h / 0.5);
     --theme-bg-subtle:    oklch(from var(--color-green-950) l c h / 0.3);
     --theme-bg-tinted:    oklch(from var(--color-green-950) l c h / 0.4);
+    --theme-bg-surface:   var(--color-green-950);
     --theme-bg-active:    var(--color-green-800);
     --theme-bg-hover:     var(--color-green-700);
     --theme-chip-bg:      var(--color-green-800);
@@ -392,9 +381,6 @@ html[data-mode="dark"] [data-theme="green"] {
     --theme-button-light-bg:    var(--color-green-800);
     --theme-button-light-text:  var(--color-green-50);
     --theme-button-light-hover: var(--color-green-700);
-    --theme-button-strong-bg:   var(--color-green-500);
-    --theme-button-strong-text: var(--color-green-50);
-    --theme-button-strong-hover: var(--color-green-400);
     --theme-border-idle:    var(--color-green-700);
     --theme-border-soft:    oklch(from var(--color-green-700) l c h / 0.7);
     --theme-border-subtle:  var(--color-green-800);
@@ -406,40 +392,25 @@ html[data-mode="dark"] [data-theme="green"] {
        alert, not neon. Light variant has warmth so error surfaces feel
        intentional, not washed-out. */
     --intent-danger-bg-light:    oklch(0.935 0.045 25);
-    --intent-danger-bg-strong:   oklch(0.50 0.19 25);
-    --intent-danger-bg-hover:    oklch(0.43 0.17 25);
     --intent-danger-text:        oklch(0.48 0.18 25);
-    --intent-danger-text-on-bg:  white;
     --intent-danger-border:      oklch(0.78 0.115 25);
 
-    /* Success — refined deep green sitting between Tailwind's emerald
-       and green ramps. Less minty than emerald-600, more sophisticated.
-       Light variant has clear green presence. */
-    --intent-success-bg-light:   oklch(0.935 0.06 158);
-    --intent-success-bg-strong:  oklch(0.52 0.135 158);
-    --intent-success-bg-hover:   oklch(0.44 0.12 158);
-    --intent-success-text:       oklch(0.46 0.13 158);
-    --intent-success-text-on-bg: white;
-    --intent-success-border:     oklch(0.78 0.115 158);
+    /* News — Chip only. Soft green label for newly-added models. */
+    --intent-news-bg:            oklch(0.935 0.06 158);
+    --intent-news-text:          oklch(0.46 0.13 158);
 
-    --intent-paid-bg:            var(--color-paid);
-    --intent-paid-bg-hover:      var(--color-paid-hover);
-    --intent-paid-text-deep:     var(--color-paid-deep);
-    /* Soft variant — matches the wallet's paid tile (bg-paid/10). */
-    --intent-paid-bg-light:      oklch(from var(--color-paid) l c h / 0.12);
-
-    /* Alpha — "warning sign" vibe. Saturated sunny yellow with deep
-       burnt-amber text. Distinct from the amber page theme via higher
-       chroma so an ALPHA tag reads as caution, not decoration. */
+    /* Alpha — Chip only. Saturated "warning sign" yellow + deep amber text. */
     --intent-alpha-bg:           oklch(0.91 0.15 92);
     --intent-alpha-text:         oklch(0.38 0.13 55);
+
+    /* Paid + Tier intents reuse the canonical money colors above —
+       Chip recipe = `bg-paid-soft text-paid-deep` (and same for tier).
+       No duplicate intent vars; one source of truth lives in Layer 1. */
 }
 
 html[data-mode="dark"] {
     --intent-danger-bg-light:    oklch(from var(--color-red-950) l c h / 0.4);
     --intent-danger-text:        var(--color-red-300);
-    --intent-success-bg-light:   oklch(from var(--color-emerald-950) l c h / 0.4);
-    --intent-success-text:       var(--color-emerald-300);
 }
 
 /* ─── Layer 3: Tailwind utility surface (`@theme inline`) ────── */
@@ -468,34 +439,21 @@ html[data-mode="dark"] {
 
     --color-theme-chip-bg:           var(--theme-chip-bg);
     --color-theme-chip-text:         var(--theme-chip-text);
+    --color-theme-bg-pale:           var(--theme-bg-pale);
+    --color-theme-bg-surface:        var(--theme-bg-surface);
 
     --color-theme-button-light-bg:    var(--theme-button-light-bg);
     --color-theme-button-light-text:  var(--theme-button-light-text);
     --color-theme-button-light-hover: var(--theme-button-light-hover);
-    --color-theme-button-strong-bg:    var(--theme-button-strong-bg);
-    --color-theme-button-strong-text:  var(--theme-button-strong-text);
-    --color-theme-button-strong-hover: var(--theme-button-strong-hover);
 
     --color-theme-ring-focus: var(--theme-ring-focus);
 
     --color-intent-danger-bg-light:    var(--intent-danger-bg-light);
-    --color-intent-danger-bg-strong:   var(--intent-danger-bg-strong);
-    --color-intent-danger-bg-hover:    var(--intent-danger-bg-hover);
     --color-intent-danger-text:        var(--intent-danger-text);
-    --color-intent-danger-text-on-bg:  var(--intent-danger-text-on-bg);
     --color-intent-danger-border:      var(--intent-danger-border);
 
-    --color-intent-success-bg-light:   var(--intent-success-bg-light);
-    --color-intent-success-bg-strong:  var(--intent-success-bg-strong);
-    --color-intent-success-bg-hover:   var(--intent-success-bg-hover);
-    --color-intent-success-text:       var(--intent-success-text);
-    --color-intent-success-text-on-bg: var(--intent-success-text-on-bg);
-    --color-intent-success-border:     var(--intent-success-border);
-
-    --color-intent-paid:               var(--intent-paid-bg);
-    --color-intent-paid-hover:         var(--intent-paid-bg-hover);
-    --color-intent-paid-deep:          var(--intent-paid-text-deep);
-    --color-intent-paid-bg-light:      var(--intent-paid-bg-light);
+    --color-intent-news-bg:            var(--intent-news-bg);
+    --color-intent-news-text:          var(--intent-news-text);
 
     --color-intent-alpha-bg:           var(--intent-alpha-bg);
     --color-intent-alpha-text:         var(--intent-alpha-text);

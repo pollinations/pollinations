@@ -161,24 +161,26 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                         .join("\n")}
                                     displayContents
                                 >
-                                    <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700">
+                                    <Chip theme="blue" size="sm">
                                         +{extraRedirectUriCount}
-                                    </span>
+                                    </Chip>
                                 </Tooltip>
                             )}
                         </span>
                     )}
                     {isApp && (
-                        <span
-                            className={`rounded px-2 py-0.5 font-medium ${
+                        <Chip
+                            theme={earningsEnabled ? "green" : undefined}
+                            size="sm"
+                            className={
                                 earningsEnabled
-                                    ? "bg-green-100 text-green-700"
+                                    ? undefined
                                     : "bg-gray-100 text-gray-500"
-                            }`}
+                            }
                             title="Developer earnings"
                         >
                             Earnings {earningsEnabled ? "on" : "off"}
-                        </span>
+                        </Chip>
                     )}
                     {!isApp && (
                         <>

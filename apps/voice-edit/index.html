@@ -44,7 +44,8 @@
 
 <script>
 const KEY_STORAGE = "voice-edit:user-key";
-const CLIENT_ID = "pk_VOICE_EDIT_APP_KEY"; // TODO: replace with real App Key from enter.pollinations.ai
+// Optional App Key — register at enter.pollinations.ai → /authorize will fall back to hostname if blank
+const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/649d0f9cf10b5e48";
@@ -104,9 +105,9 @@ function refreshConnectionUI() {
 connectBtn.onclick = () => {
   const params = new URLSearchParams({
     redirect_uri: location.origin + location.pathname,
-    client_id: CLIENT_ID,
     scope: "generate",
   });
+  if (CLIENT_ID) params.set("client_id", CLIENT_ID);
   location.href = `${ENTER}/authorize?${params}`;
 };
 disconnectBtn.onclick = () => {

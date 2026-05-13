@@ -123,7 +123,7 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                                     <span>Top-up</span>
                                     <span className="text-white/80">↑</span>
                                 </a>
-                                <span className="inline-flex items-center gap-2 whitespace-nowrap text-gray-400 text-3xs">
+                                <span className="inline-flex items-center gap-2 whitespace-nowrap text-gray-400 text-micro">
                                     <span>powered by</span>
                                     <svg
                                         className="h-4"

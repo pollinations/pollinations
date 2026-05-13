@@ -277,7 +277,7 @@ const EarningsStatCard: FC<{
     detail?: ReactNode;
 }> = ({ theme, label, value, detail }) => (
     <div data-theme={theme} className="text-sm">
-        <div className="text-3xs uppercase tracking-wide font-bold text-theme-text-soft">
+        <div className="text-micro uppercase tracking-wide font-bold text-theme-text-soft">
             {label}
         </div>
         <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums text-theme-text-base">

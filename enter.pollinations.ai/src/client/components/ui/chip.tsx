@@ -3,13 +3,15 @@ import { cn } from "../../../util.ts";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
 
 /**
- * Four semantic chip labels — each maps to a dashboard concept:
- *  - news  : newly-added model (green)
- *  - alpha : experimental model (warning yellow)
- *  - paid  : paid pollen / paid-only model (orange, matches wallet)
- *  - tier  : tier pollen (yellow, matches wallet)
+ * Five semantic chip labels — each maps to a dashboard concept:
+ *  - news    : newly-added model (green)
+ *  - alpha   : experimental model (warning yellow)
+ *  - paid    : paid pollen / paid-only model (orange, matches wallet)
+ *  - tier    : tier pollen (yellow, matches wallet)
+ *  - neutral : bordered gray container for emoji icons
+ *              (modalities + capabilities on the pricing rows).
  */
-type ChipIntent = "news" | "alpha" | "paid" | "tier";
+type ChipIntent = "news" | "alpha" | "paid" | "tier" | "neutral";
 
 const chipSizes = {
     sm: "px-2 py-0.5 text-xs",
@@ -22,6 +24,7 @@ const intentClasses: Record<ChipIntent, string> = {
     alpha: "bg-intent-alpha-bg text-intent-alpha-text",
     paid: "bg-paid-pale text-paid-deep",
     tier: "bg-tier-pale text-tier-deep",
+    neutral: "border border-gray-400/70 bg-gray-100/80 text-gray-900",
 };
 
 type ChipProps = ComponentPropsWithoutRef<"span"> & {

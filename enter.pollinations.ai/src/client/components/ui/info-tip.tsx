@@ -43,7 +43,7 @@ export const InfoTip: FC<InfoTipProps> = ({
             aria-expanded={show}
             aria-describedby={show ? tooltipId : undefined}
         >
-            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-theme-border bg-theme-chip-bg text-theme-text-strong text-3xs font-bold transition-colors">
+            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-theme-border bg-theme-chip-bg text-theme-text-strong text-micro font-bold transition-colors">
                 i
             </span>
             <span

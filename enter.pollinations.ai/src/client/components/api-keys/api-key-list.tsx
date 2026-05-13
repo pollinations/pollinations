@@ -249,7 +249,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     variant="card-themed"
                                     className="mt-2 text-theme-text-strong"
                                 >
-                                    <span className="font-body text-2xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                                    <span className="font-body text-xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
                                     Turn on earnings to receive a share of

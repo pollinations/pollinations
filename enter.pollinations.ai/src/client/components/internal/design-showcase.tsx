@@ -275,7 +275,7 @@ const IntentGroup: FC = () => (
             Intents
         </div>
         <div className="overflow-hidden rounded-lg border border-theme-border-subtle">
-            <div className="grid grid-cols-[6rem_repeat(2,minmax(0,1fr))] gap-x-3 gap-y-2 bg-theme-bg-tinted px-3 py-2 text-2xs font-mono uppercase tracking-wide text-theme-text-softer">
+            <div className="grid grid-cols-[6rem_repeat(2,minmax(0,1fr))] gap-x-3 gap-y-2 bg-theme-bg-tinted px-3 py-2 text-xs font-mono uppercase tracking-wide text-theme-text-softer">
                 <span />
                 {intentColumns.map((col) => (
                     <span key={col}>{col}</span>
@@ -341,7 +341,7 @@ const Computed: FC<{ cls: string | null | undefined }> = ({ cls }) => {
         setValue(computed || "");
     }, [cls]);
 
-    if (!cls) return <span className="text-2xs text-theme-text-softer">—</span>;
+    if (!cls) return <span className="text-xs text-theme-text-softer">—</span>;
     return (
         <>
             <span
@@ -349,7 +349,7 @@ const Computed: FC<{ cls: string | null | undefined }> = ({ cls }) => {
                 aria-hidden
                 className={cn("absolute h-px w-px opacity-0", cls)}
             />
-            <code className="truncate text-2xs font-mono text-theme-text-softer">
+            <code className="truncate text-xs font-mono text-theme-text-softer">
                 {value || "…"}
             </code>
         </>
@@ -358,125 +358,104 @@ const Computed: FC<{ cls: string | null | undefined }> = ({ cls }) => {
 
 // ─── Typography ─────────────────────────────────────────────
 
-type SizeRow = {
+type TypeRow = {
     utility: string;
     px: string;
-    note?: string;
+    /** Where this size is actually used in the app. Empty = step exists but no live callsite. */
+    purpose: string;
+    offScale?: boolean;
 };
 
-const sizeScale: readonly SizeRow[] = [
-    { utility: "text-3xs", px: "10px", note: "off-scale fine print" },
-    { utility: "text-2xs", px: "11px", note: "off-scale fine print" },
-    { utility: "text-xs", px: "12px" },
-    { utility: "text-sm", px: "14px" },
-    { utility: "text-md", px: "15px", note: "off-scale dashboard nav" },
-    { utility: "text-base", px: "16px", note: "body default" },
-    { utility: "text-lg", px: "18px" },
-    { utility: "text-xl", px: "20px" },
-    { utility: "text-2xl", px: "24px" },
-    { utility: "text-3xl", px: "30px" },
-    { utility: "text-4xl", px: "36px" },
-    { utility: "text-5xl", px: "48px" },
+const typeRamp: readonly TypeRow[] = [
+    {
+        utility: "text-5xl",
+        px: "48px",
+        purpose: "Pollen balance (sm:) · error emoji",
+    },
+    {
+        utility: "text-4xl",
+        px: "36px",
+        purpose: "Pollen balance · authorize emoji",
+    },
+    {
+        utility: "text-3xl",
+        px: "30px",
+        purpose: "Tier card name · error h1 · pollen balance (sm:)",
+    },
+    {
+        utility: "text-2xl",
+        px: "24px",
+        purpose: "Page h1 · big stat numbers (usage / earnings) · code input",
+    },
+    {
+        utility: "text-xl",
+        px: "20px",
+        purpose: "Section heading (sm:) · dialog title",
+    },
+    {
+        utility: "text-lg",
+        px: "18px",
+        purpose: "Section heading · FAQ h2",
+    },
+    { utility: "text-base", px: "16px", purpose: "Body default" },
+    {
+        utility: "text-sm",
+        px: "14px",
+        purpose: "UI text · controls · labels · dashboard nav",
+    },
+    {
+        utility: "text-xs",
+        px: "12px",
+        purpose: "Meta · chip labels · captions · fine print",
+    },
+    {
+        utility: "text-micro",
+        px: "10px",
+        purpose:
+            "Stat labels · chart ticks · status pills · InfoTip badge · sidebar meta",
+        offScale: true,
+    },
 ] as const;
 
 const TypographyDemo: FC = () => (
     <Section
         title="Typography"
-        caption="h1 uses LCT Mogi (font-heading), h2-h3 use Fraunces (font-subheading), h4-h6 use Uncut Sans (font-body)."
+        caption="font-heading = LCT Mogi (h1) · font-subheading = Fraunces (h2-h3) · font-body = Uncut Sans (h4-h6 + body). Each row below shows the rendered size + where it's actually used in the app."
     >
-        <div className="flex flex-col gap-6">
-            <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-label">
-                    Heading scale
-                </div>
-                <div className="flex flex-col gap-3">
-                    <HeadingRow tag="h1" utility="text-5xl font-heading">
-                        <h1>The quick brown fox</h1>
-                    </HeadingRow>
-                    <HeadingRow
-                        tag="h2"
-                        utility="text-3xl font-subheading tracking-tight"
+        <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
+            <div className="flex flex-col gap-2">
+                {typeRamp.map((row) => (
+                    <div
+                        key={row.utility}
+                        className="flex items-baseline gap-4 border-b border-theme-border-subtle pb-2 last:border-b-0 last:pb-0"
                     >
-                        <h2>The quick brown fox</h2>
-                    </HeadingRow>
-                    <HeadingRow
-                        tag="h3"
-                        utility="text-2xl font-subheading tracking-tight"
-                    >
-                        <h3>The quick brown fox</h3>
-                    </HeadingRow>
-                    <HeadingRow
-                        tag="h4"
-                        utility="text-lg font-body font-semibold"
-                    >
-                        <h4>The quick brown fox</h4>
-                    </HeadingRow>
-                    <HeadingRow
-                        tag="h5"
-                        utility="text-base font-body font-semibold"
-                    >
-                        <h5>The quick brown fox</h5>
-                    </HeadingRow>
-                    <HeadingRow
-                        tag="h6"
-                        utility="text-sm font-body font-semibold"
-                    >
-                        <h6>The quick brown fox</h6>
-                    </HeadingRow>
-                    <HeadingRow tag="p" utility="text-base (body default)">
-                        <p>The quick brown fox jumps over the lazy dog.</p>
-                    </HeadingRow>
-                </div>
-            </div>
-
-            <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-label">
-                    Size scale (Uncut Sans)
-                </div>
-                <div className="flex flex-col gap-2">
-                    {sizeScale.map((row) => (
-                        <div
-                            key={row.utility}
-                            className="flex items-baseline gap-4 border-b border-theme-border-subtle pb-2 last:border-b-0 last:pb-0"
-                        >
-                            <span
-                                className={`${row.utility} text-theme-text-strong w-64 truncate`}
-                            >
-                                The quick brown fox
-                            </span>
-                            <code className="text-xs font-mono text-theme-text-strong w-24">
-                                {row.utility}
-                            </code>
-                            <span className="text-xs font-mono text-theme-text-muted w-12">
-                                {row.px}
-                            </span>
-                            {row.note && (
-                                <span className="text-xs text-theme-text-softer">
-                                    {row.note}
-                                </span>
+                        <span
+                            className={cn(
+                                row.utility,
+                                "w-32 shrink-0 truncate font-body text-theme-text-strong",
                             )}
-                        </div>
-                    ))}
-                </div>
+                        >
+                            Aa
+                        </span>
+                        <code className="w-24 shrink-0 text-xs font-mono text-theme-text-strong">
+                            {row.utility}
+                        </code>
+                        <span className="w-12 shrink-0 text-xs font-mono text-theme-text-muted">
+                            {row.px}
+                        </span>
+                        <span className="min-w-0 flex-1 text-xs text-theme-text-softer">
+                            {row.purpose}
+                        </span>
+                        {row.offScale && (
+                            <span className="shrink-0 rounded-md bg-theme-bg-tinted px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-theme-text-muted">
+                                off-scale
+                            </span>
+                        )}
+                    </div>
+                ))}
             </div>
         </div>
     </Section>
-);
-
-const HeadingRow: FC<{
-    tag: string;
-    utility: string;
-    children: ReactNode;
-}> = ({ tag, utility, children }) => (
-    <div className="flex items-baseline gap-4">
-        <code className="w-8 shrink-0 text-xs font-mono text-theme-text-muted">
-            {tag}
-        </code>
-        <div className="min-w-0 flex-1 text-theme-text-strong">{children}</div>
-        <code className="hidden shrink-0 text-xs font-mono text-theme-text-softer sm:block">
-            {utility}
-        </code>
-    </div>
 );
 
 // ─── Chips ──────────────────────────────────────────────────
@@ -484,7 +463,7 @@ const HeadingRow: FC<{
 const ChipsDemo: FC = () => (
     <Section
         title="Chips"
-        caption="Default chip inherits the active page theme. Four intent chips for dashboard labels (news/alpha tag models; paid/tier tag balances). Selection pattern: current = theme chip, other = intent chip (used in tier cards). Status pattern: theme=green for permissive/on, theme=amber for partial/restricted, gray override for off. Theme overrides also drive count badges (e.g. +1 redirect)."
+        caption="Default chip inherits the active page theme. Five intent chips: news/alpha tag models (uppercase); paid/tier tag pollen balances (also drive activity/usage identity chips, with emoji prefix); neutral is a bordered gray container for emoji icons (modalities + capabilities on pricing rows). Status pattern: theme=green for permissive/on, theme=amber for partial/restricted, gray override for off. Theme overrides also drive count badges (e.g. +1 redirect)."
     >
         <div className="flex flex-col gap-3">
             <ChipRow label="Default (theme)">
@@ -492,15 +471,20 @@ const ChipsDemo: FC = () => (
             </ChipRow>
             <ChipRow label="Model labels">
                 <Chip intent="news">NEW</Chip>
-                <Chip intent="alpha">Alpha</Chip>
-                <Chip intent="paid">Paid</Chip>
+                <Chip intent="alpha">ALPHA</Chip>
+                <Chip intent="paid">PAID</Chip>
             </ChipRow>
-            <ChipRow label="Tier">
-                <Chip intent="tier">Tier</Chip>
+            <ChipRow label="Balance identity (activity / usage)">
+                <Chip intent="paid">💳 Paid</Chip>
+                <Chip intent="tier">🌱 Tier</Chip>
             </ChipRow>
-            <ChipRow label="Selection (current vs other)">
-                <Chip>Current</Chip>
-                <Chip intent="tier">Other</Chip>
+            <ChipRow label="Neutral (icon container)">
+                <Chip intent="neutral" size="sm">
+                    💬👁️🎬
+                </Chip>
+                <Chip intent="neutral" size="sm">
+                    🔧📎
+                </Chip>
             </ChipRow>
             <ChipRow label="Status (permissive / partial / off)">
                 <Chip theme="green" size="sm">
@@ -595,7 +579,7 @@ const SwitchesDemo: FC = () => {
                         key={status}
                         className="flex flex-col items-start gap-1.5"
                     >
-                        <span className="text-2xs uppercase tracking-wide text-theme-text-label">
+                        <span className="text-xs uppercase tracking-wide text-theme-text-label">
                             {status}
                         </span>
                         <Switch
@@ -625,12 +609,12 @@ const SurfacesDemo: FC = () => (
     >
         <div className="flex flex-col gap-4">
             <Surface variant="panel">
-                <p className="mb-3 text-2xs font-mono uppercase tracking-wide text-theme-text-softer">
+                <p className="mb-3 text-xs font-mono uppercase tracking-wide text-theme-text-softer">
                     outer · panel
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Surface>
-                        <p className="text-2xs font-mono uppercase tracking-wide text-theme-text-label">
+                        <p className="text-xs font-mono uppercase tracking-wide text-theme-text-label">
                             inner · card
                         </p>
                         <p className="mt-1 text-sm text-theme-text-soft">
@@ -638,7 +622,7 @@ const SurfacesDemo: FC = () => (
                         </p>
                     </Surface>
                     <Surface variant="card-themed">
-                        <p className="text-2xs font-mono uppercase tracking-wide text-theme-text-label">
+                        <p className="text-xs font-mono uppercase tracking-wide text-theme-text-label">
                             inner · card-themed
                         </p>
                         <p className="mt-1 text-sm text-theme-text-strong">
@@ -649,7 +633,7 @@ const SurfacesDemo: FC = () => (
             </Surface>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-xl bg-paid-pale p-4">
-                    <p className="text-2xs font-mono uppercase tracking-wide text-paid-deep/70">
+                    <p className="text-xs font-mono uppercase tracking-wide text-paid-deep/70">
                         wallet · paid
                     </p>
                     <p className="mt-1 text-sm text-paid-deep">
@@ -657,7 +641,7 @@ const SurfacesDemo: FC = () => (
                     </p>
                 </div>
                 <div className="rounded-xl bg-tier-pale p-4">
-                    <p className="text-2xs font-mono uppercase tracking-wide text-tier-deep/70">
+                    <p className="text-xs font-mono uppercase tracking-wide text-tier-deep/70">
                         wallet · tier
                     </p>
                     <p className="mt-1 text-sm text-tier-deep">
@@ -665,7 +649,7 @@ const SurfacesDemo: FC = () => (
                     </p>
                 </div>
                 <div className="rounded-xl bg-tier-pale/40 p-4">
-                    <p className="text-2xs font-mono uppercase tracking-wide text-tier-deep/70">
+                    <p className="text-xs font-mono uppercase tracking-wide text-tier-deep/70">
                         tier · other
                     </p>
                     <p className="mt-1 text-sm text-tier-deep">
@@ -757,7 +741,7 @@ const Field: FC<{ label: string; children: ReactNode }> = ({
     children,
 }) => (
     <div className="flex flex-col gap-1">
-        <span className="text-2xs uppercase tracking-wide text-theme-text-label">
+        <span className="text-xs uppercase tracking-wide text-theme-text-label">
             {label}
         </span>
         {children}
@@ -817,7 +801,7 @@ const TooltipsDemo: FC = () => (
                     Paid balance
                     <InfoTip content="Pollen you bought + earnings from paid-side spend. Used for paid-only models." />
                 </span>
-                <span className="text-2xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-muted">
                     &lt;InfoTip&gt; — visible "i" bubble. Theme-cascade badge.
                 </span>
             </TooltipRow>
@@ -828,7 +812,7 @@ const TooltipsDemo: FC = () => (
                         💳 12,304
                     </Chip>
                 </Tooltip>
-                <span className="text-2xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-muted">
                     &lt;Tooltip&gt; wrapping a chip. Hover the chip to reveal.
                 </span>
             </TooltipRow>
@@ -840,7 +824,7 @@ const TooltipsDemo: FC = () => (
                 >
                     <Button>Buy</Button>
                 </Tooltip>
-                <span className="text-2xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-muted">
                     Wrapping any clickable. Click works through.
                 </span>
             </TooltipRow>
@@ -858,7 +842,7 @@ const TooltipsDemo: FC = () => (
                     </Tooltip>{" "}
                     to qualify.
                 </span>
-                <span className="text-2xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-muted">
                     Inline trigger with dotted underline + cursor-help.
                 </span>
             </TooltipRow>
@@ -873,7 +857,7 @@ const TooltipsDemo: FC = () => (
                         sk_test_abc...123
                     </Chip>
                 </Tooltip>
-                <span className="text-2xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-muted">
                     Same recipe, plus `onClick` for copy-to-clipboard patterns.
                 </span>
             </TooltipRow>

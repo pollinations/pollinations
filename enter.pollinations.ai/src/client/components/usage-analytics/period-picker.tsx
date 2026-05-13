@@ -297,7 +297,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                         </div>
                     ) : (
                         <>
-                            <div className="mb-1 grid grid-cols-7 gap-1 text-center text-3xs font-bold uppercase text-gray-400">
+                            <div className="mb-1 grid grid-cols-7 gap-1 text-center text-micro font-bold uppercase text-gray-400">
                                 {WEEKDAY_LABELS.map((label) => (
                                     <div key={label}>{label}</div>
                                 ))}

@@ -4,14 +4,14 @@ import {
     type TierStatus,
 } from "@shared/tier-config.ts";
 import type { FC, ReactNode } from "react";
+import { cn } from "@/util.ts";
 import { Tooltip } from "../pricing/Tooltip.tsx";
-import { Chip } from "../ui/chip.tsx";
 import { Surface } from "../ui/surface.tsx";
 
 const SeedTooltipContent = () => (
     <div className="w-72">
         <p className="font-semibold text-gray-900 mb-2">Dev Points (need 7+)</p>
-        <table className="w-full text-left text-2xs">
+        <table className="w-full text-left text-xs">
             <tbody>
                 <tr className="border-b border-gray-100">
                     <td className="py-1 pr-2 text-gray-600 leading-tight">
@@ -47,7 +47,7 @@ const SeedTooltipContent = () => (
                 </tr>
             </tbody>
         </table>
-        <p className="mt-2 pt-2 border-t border-gray-100 text-3xs text-gray-500">
+        <p className="mt-2 pt-2 border-t border-gray-100 text-micro text-gray-500">
             Evaluated weekly. No action needed.
         </p>
     </div>
@@ -75,13 +75,14 @@ const TierCard: FC<TierCardProps> = ({
         <span className="text-3xl font-bold text-gray-900">
             {emoji} {name}
         </span>
-        <Chip
-            intent={isActive ? undefined : "tier"}
-            size="sm"
-            className="font-mono mt-1"
+        <p
+            className={cn(
+                "text-xs font-mono text-gray-600 mt-1",
+                isActive && "font-bold text-gray-900",
+            )}
         >
             {pollen} pollen/hour
-        </Chip>
+        </p>
         {children}
     </Surface>
 );
@@ -121,7 +122,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                             </span>
                         </Tooltip>
                     </p>
-                    <p className="text-3xs text-emerald-600 mt-0.5">
+                    <p className="text-micro text-emerald-600 mt-0.5">
                         Auto-upgraded weekly
                     </p>
                 </div>
@@ -143,7 +144,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                             Publish an app
                         </a>
                     </p>
-                    <p className="text-3xs text-amber-600 mt-0.5">
+                    <p className="text-micro text-amber-600 mt-0.5">
                         {TIER_EMOJIS.seed} Must be Seed first
                     </p>
                 </div>

@@ -253,7 +253,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         href={genDocsUrl()}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-md font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
+                        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
                     >
                         <span>API Reference</span>
                         <svg
@@ -285,7 +285,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             menuItems={<AccountMenuLinks />}
                         />
                     ) : null)}
-                <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-2xs leading-snug text-green-950/55">
+                <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-green-950/55">
                     <a
                         href="https://pollinations.ai/terms"
                         target="_blank"
@@ -311,7 +311,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         Refunds
                     </a>
                 </div>
-                <div className="px-3 text-2xs leading-none text-green-950/45">
+                <div className="px-3 text-xs leading-none text-green-950/45">
                     © 2026 Myceli.AI
                 </div>
             </div>
@@ -331,7 +331,7 @@ const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
             type="button"
             data-theme={item.theme}
             className={cn(
-                "flex items-center gap-2 rounded-full px-3 py-2 text-left text-md font-medium transition-colors",
+                "flex items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-medium transition-colors",
                 active
                     ? "bg-theme-bg-active text-theme-text-strong"
                     : "text-gray-800 hover:bg-white/60 hover:text-gray-950",
@@ -428,12 +428,12 @@ const BrandChip: FC<{
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pl-[7px] pr-[10px] text-2xs font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
+        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pl-[7px] pr-[10px] text-micro font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
     >
         <span className="h-[11px] w-[11px]">{icon}</span>
-        <span>{text}</span>
+        <span className="-translate-y-px">{text}</span>
         {count && (
-            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-3xs text-green-950/55">
+            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-micro text-green-950/55">
                 {count}
             </span>
         )}

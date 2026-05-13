@@ -378,7 +378,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({
                                 {model.name}
                             </span>
                             {copied && (
-                                <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-3xs font-semibold uppercase tracking-wide text-teal-700">
+                                <span className="rounded-lg bg-teal-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-teal-700">
                                     copied
                                 </span>
                             )}
@@ -529,20 +529,14 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     return (
         <>
             {modalityIcons.length > 0 && (
-                <Chip
-                    size="sm"
-                    className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
-                >
+                <Chip intent="neutral" size="sm">
                     {modalityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}
                 </Chip>
             )}
             {capabilityIcons.length > 0 && (
-                <Chip
-                    size="sm"
-                    className="border border-gray-400/70 bg-gray-100/80 text-gray-900"
-                >
+                <Chip intent="neutral" size="sm">
                     {capabilityIcons.map((emoji) => (
                         <span key={emoji}>{emoji}</span>
                     ))}

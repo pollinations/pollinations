@@ -202,7 +202,7 @@ export const Chart: FC<ChartProps> = ({
                             y={t.y}
                             textAnchor="end"
                             alignmentBaseline="middle"
-                            className="text-3xs fill-gray-400 font-medium"
+                            className="text-micro fill-gray-400 font-medium"
                         >
                             {formatVal(t.value)}
                         </text>
@@ -216,7 +216,7 @@ export const Chart: FC<ChartProps> = ({
                             x={bars[0].x + bars[0].width / 2}
                             y={height - 8}
                             textAnchor="middle"
-                            className="text-3xs fill-gray-400"
+                            className="text-micro fill-gray-400"
                         >
                             {bars[0].label}
                         </text>
@@ -228,7 +228,7 @@ export const Chart: FC<ChartProps> = ({
                                 }
                                 y={height - 8}
                                 textAnchor="middle"
-                                className="text-3xs fill-gray-400"
+                                className="text-micro fill-gray-400"
                             >
                                 {bars[Math.floor(bars.length / 2)].label}
                             </text>
@@ -240,7 +240,7 @@ export const Chart: FC<ChartProps> = ({
                             }
                             y={height - 8}
                             textAnchor="middle"
-                            className="text-3xs fill-gray-400"
+                            className="text-micro fill-gray-400"
                         >
                             {bars[bars.length - 1].label}
                         </text>

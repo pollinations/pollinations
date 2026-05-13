@@ -334,7 +334,7 @@ const ModelCategory: FC<{
                 onClick={() => toggleCategory(models)}
                 disabled={disabled}
                 className={cn(
-                    "text-3xs disabled:opacity-50 cursor-pointer",
+                    "text-micro disabled:opacity-50 cursor-pointer",
                     getPermissionUiTheme(theme).accent.actionTextClasses,
                 )}
             >

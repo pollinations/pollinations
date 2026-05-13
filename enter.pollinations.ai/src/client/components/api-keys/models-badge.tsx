@@ -13,7 +13,7 @@ export const ModelsBadge: FC<{
         if (isAllModels) return "Access to all models";
         if (modelCount === 0) return "No models allowed";
         return (
-            <span className="block font-mono text-2xs leading-relaxed text-left whitespace-nowrap">
+            <span className="block font-mono text-xs leading-relaxed text-left whitespace-nowrap">
                 {models?.map((model) => (
                     <span className="block" key={model}>
                         {model}

@@ -395,7 +395,7 @@ export const Chart: FC<ChartProps> = ({
                                         y1={tooltipY + headerHeight + 2}
                                         x2={tooltipX + tooltipWidth - 12}
                                         y2={tooltipY + headerHeight + 2}
-                                        className="stroke-theme-border-soft"
+                                        className="stroke-theme-border"
                                         strokeWidth="1"
                                     />
                                 )}

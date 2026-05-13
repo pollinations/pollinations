@@ -74,8 +74,6 @@
     --theme-text-soft:    var(--color-amber-700);
 
     --theme-border-idle:    var(--color-amber-300);
-    --theme-border-soft:    oklch(from var(--color-amber-300) l c h / 0.7);
-    --theme-border-subtle:  var(--color-amber-200);
 
     --theme-bg-idle:        oklch(from var(--color-amber-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-amber-50) l c h / 0.5);
@@ -104,8 +102,6 @@
     --theme-text-soft:    var(--color-blue-700);
 
     --theme-border-idle:    var(--color-blue-300);
-    --theme-border-soft:    oklch(from var(--color-blue-300) l c h / 0.7);
-    --theme-border-subtle:  var(--color-blue-200);
 
     --theme-bg-idle:        oklch(from var(--color-blue-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-blue-50) l c h / 0.5);
@@ -134,8 +130,6 @@
     --theme-text-soft:    var(--color-pink-700);
 
     --theme-border-idle:    var(--color-pink-300);
-    --theme-border-soft:    oklch(from var(--color-pink-300) l c h / 0.7);
-    --theme-border-subtle:  var(--color-pink-200);
 
     --theme-bg-idle:        oklch(from var(--color-pink-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-pink-50) l c h / 0.5);
@@ -164,8 +158,6 @@
     --theme-text-soft:    var(--color-teal-700);
 
     --theme-border-idle:    var(--color-teal-300);
-    --theme-border-soft:    oklch(from var(--color-teal-300) l c h / 0.7);
-    --theme-border-subtle:  var(--color-teal-200);
 
     --theme-bg-idle:        oklch(from var(--color-teal-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-teal-50) l c h / 0.5);
@@ -194,8 +186,6 @@
     --theme-text-soft:    var(--color-violet-700);
 
     --theme-border-idle:    var(--color-violet-300);
-    --theme-border-soft:    oklch(from var(--color-violet-300) l c h / 0.7);
-    --theme-border-subtle:  var(--color-violet-200);
 
     --theme-bg-idle:        oklch(from var(--color-violet-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-violet-50) l c h / 0.5);
@@ -227,8 +217,6 @@
     --theme-text-soft:    var(--color-green-700);
 
     --theme-border-idle:    var(--color-green-300);
-    --theme-border-soft:    oklch(from var(--color-green-300) l c h / 0.7);
-    --theme-border-subtle:  var(--color-green-200);
 
     --theme-bg-idle:        oklch(from var(--color-green-50) l c h / 0.8);
     --theme-bg-subtle:      oklch(from var(--color-green-50) l c h / 0.5);
@@ -267,8 +255,6 @@ html[data-mode="dark"] [data-theme="amber"] {
     --theme-button-light-text:  var(--color-amber-50);
     --theme-button-light-hover: var(--color-amber-700);
     --theme-border-idle:    var(--color-amber-700);
-    --theme-border-soft:    oklch(from var(--color-amber-700) l c h / 0.7);
-    --theme-border-subtle:  var(--color-amber-800);
 }
 
 html[data-mode="dark"] [data-theme="blue"] {
@@ -286,8 +272,6 @@ html[data-mode="dark"] [data-theme="blue"] {
     --theme-button-light-text:  var(--color-blue-50);
     --theme-button-light-hover: var(--color-blue-700);
     --theme-border-idle:    var(--color-blue-700);
-    --theme-border-soft:    oklch(from var(--color-blue-700) l c h / 0.7);
-    --theme-border-subtle:  var(--color-blue-800);
 }
 
 html[data-mode="dark"] [data-theme="pink"] {
@@ -305,8 +289,6 @@ html[data-mode="dark"] [data-theme="pink"] {
     --theme-button-light-text:  var(--color-pink-50);
     --theme-button-light-hover: var(--color-pink-700);
     --theme-border-idle:    var(--color-pink-700);
-    --theme-border-soft:    oklch(from var(--color-pink-700) l c h / 0.7);
-    --theme-border-subtle:  var(--color-pink-800);
 }
 
 html[data-mode="dark"] [data-theme="teal"] {
@@ -324,8 +306,6 @@ html[data-mode="dark"] [data-theme="teal"] {
     --theme-button-light-text:  var(--color-teal-50);
     --theme-button-light-hover: var(--color-teal-700);
     --theme-border-idle:    var(--color-teal-700);
-    --theme-border-soft:    oklch(from var(--color-teal-700) l c h / 0.7);
-    --theme-border-subtle:  var(--color-teal-800);
 }
 
 html[data-mode="dark"] [data-theme="violet"] {
@@ -343,8 +323,6 @@ html[data-mode="dark"] [data-theme="violet"] {
     --theme-button-light-text:  var(--color-violet-50);
     --theme-button-light-hover: var(--color-violet-700);
     --theme-border-idle:    var(--color-violet-700);
-    --theme-border-soft:    oklch(from var(--color-violet-700) l c h / 0.7);
-    --theme-border-subtle:  var(--color-violet-800);
 }
 
 html[data-mode="dark"] [data-theme="green"] {
@@ -362,8 +340,6 @@ html[data-mode="dark"] [data-theme="green"] {
     --theme-button-light-text:  var(--color-green-50);
     --theme-button-light-hover: var(--color-green-700);
     --theme-border-idle:    var(--color-green-700);
-    --theme-border-soft:    oklch(from var(--color-green-700) l c h / 0.7);
-    --theme-border-subtle:  var(--color-green-800);
 }
 
 /* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
@@ -396,8 +372,6 @@ html[data-mode="dark"] {
     --color-theme-text-soft:         var(--theme-text-soft);
 
     --color-theme-border:            var(--theme-border-idle);
-    --color-theme-border-soft:       var(--theme-border-soft);
-    --color-theme-border-subtle:     var(--theme-border-subtle);
 
     --color-theme-bg-idle:           var(--theme-bg-idle);
     --color-theme-bg-subtle:         var(--theme-bg-subtle);
@@ -407,7 +381,6 @@ html[data-mode="dark"] {
     --color-theme-bg-hover-soft:     var(--theme-bg-hover-soft);
     --color-theme-bg-hover-faint:    var(--theme-bg-hover-faint);
 
-    --color-theme-divide:            var(--theme-border-soft);
     --color-theme-accent:            var(--theme-accent);
 
     --color-theme-chip-bg:           var(--theme-chip-bg);

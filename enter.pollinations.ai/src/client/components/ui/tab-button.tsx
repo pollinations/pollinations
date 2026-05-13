@@ -33,7 +33,7 @@ export const TabButton: FC<TabButtonProps> = ({
             "inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
             active
                 ? "bg-theme-chip-bg text-theme-chip-text border-theme-border"
-                : "bg-theme-bg-subtle text-theme-text-base border-theme-border-soft hover:bg-theme-bg-active",
+                : "bg-theme-bg-subtle text-theme-text-base border-theme-border hover:bg-theme-bg-active",
             disabled && "cursor-not-allowed opacity-50",
             className,
         )}

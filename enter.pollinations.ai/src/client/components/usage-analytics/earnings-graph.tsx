@@ -106,7 +106,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     </div>
                 </div>
 
-                <div className="border-t pt-4 border-theme-border-soft">
+                <div className="border-t pt-4 border-theme-border">
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
                             <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
@@ -141,7 +141,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     )}
                 </div>
 
-                <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border-soft divide-theme-divide">
+                <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border divide-theme-border">
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                         <EarningsStatCard
                             theme={theme}

@@ -91,7 +91,7 @@ const Header: FC<HeaderProps> = ({
     themeOverride,
     onThemeOverrideChange,
 }) => (
-    <header className="sticky top-0 z-10 border-b border-theme-border-soft bg-theme-bg-subtle/90 px-6 py-4 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b border-theme-border bg-theme-bg-subtle/90 px-6 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-[960px] flex-wrap items-end justify-between gap-x-6 gap-y-3">
             <div>
                 <h1 className="font-heading text-2xl text-theme-text-strong">
@@ -137,7 +137,7 @@ function ToggleGroup<T extends string>({
             <span className="text-xs uppercase tracking-wide text-theme-text-strong">
                 {label}
             </span>
-            <div className="flex flex-wrap gap-1 rounded-full border border-theme-border-soft bg-theme-bg-tinted p-1">
+            <div className="flex flex-wrap gap-1 rounded-full border border-theme-border bg-theme-bg-tinted p-1">
                 {options.map((option) => (
                     <button
                         key={option}
@@ -182,9 +182,6 @@ const themeBackgroundRows: readonly ColorRow[] = [
 
 const themeBorderRows: readonly ColorRow[] = [
     { name: "border", swatch: "bg-theme-border" },
-    { name: "border-soft", swatch: "bg-theme-border-soft" },
-    { name: "border-subtle", swatch: "bg-theme-border-subtle" },
-    { name: "divide", swatch: "bg-theme-divide" },
 ];
 
 const themeIdentityRows: readonly ColorRow[] = [
@@ -251,7 +248,7 @@ const Swatch: FC<{ row: ColorRow }> = ({ row }) => (
     <div className="flex items-center gap-2">
         <span
             className={cn(
-                "h-5 w-5 shrink-0 rounded border border-theme-border-subtle",
+                "h-5 w-5 shrink-0 rounded border border-theme-border",
                 row.swatch,
             )}
         />
@@ -383,7 +380,7 @@ const TypographyDemo: FC = () => (
         caption="font-heading = LCT Mogi (h1) · font-subheading = Fraunces (h2-h3) · font-body = Uncut Sans (h4-h6 + body). Sizes and colors below both react to the active page theme — flip the toggle to preview."
     >
         <div className="flex flex-col gap-4">
-            <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
+            <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-6">
                 <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-soft">
                     Color (theme cascade)
                 </div>
@@ -396,7 +393,7 @@ const TypographyDemo: FC = () => (
                     {textColorRows.map((row) => (
                         <div
                             key={row.name}
-                            className="flex items-baseline gap-4 border-b border-theme-border-subtle pb-2 last:border-b-0 last:pb-0"
+                            className="flex items-baseline gap-4 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
                         >
                             <span
                                 className={cn(
@@ -416,7 +413,7 @@ const TypographyDemo: FC = () => (
                     ))}
                 </div>
             </div>
-            <div className="rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-6">
+            <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-6">
                 <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-soft">
                     Size ramp
                 </div>
@@ -424,7 +421,7 @@ const TypographyDemo: FC = () => (
                     {typeRamp.map((row) => (
                         <div
                             key={row.utility}
-                            className="flex items-baseline gap-4 border-b border-theme-border-subtle pb-2 last:border-b-0 last:pb-0"
+                            className="flex items-baseline gap-4 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
                         >
                             <span
                                 className={cn(
@@ -516,7 +513,7 @@ const ChipRow: FC<{ label: string; children: ReactNode }> = ({
     label,
     children,
 }) => (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-3">
         <span className="w-40 text-xs uppercase tracking-wide text-theme-text-strong">
             {label}
         </span>
@@ -571,7 +568,7 @@ const SwitchesDemo: FC = () => {
             title="Switch"
             caption="Theme-independent. White-ish off, green on, red draft (for incomplete or failing state)."
         >
-            <div className="flex flex-wrap items-center gap-6 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+            <div className="flex flex-wrap items-center gap-6 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
                 {switchStatuses.map((status) => (
                     <div
                         key={status}
@@ -677,7 +674,7 @@ const TabsDemo: FC = () => {
             title="Tabs"
             caption="Two tab styles. Segment = connected pill with internal dividers (date selector). Pills = separate bold pills (model selector)."
         >
-            <div className="flex flex-col gap-4 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+            <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
                 <Field label="segment · activity date selector">
                     <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
                         {segmentOptions.map((option) => (
@@ -720,7 +717,7 @@ const InputsDemo: FC = () => (
         title="Input"
         caption="Focus ring inherits the active theme. Click into a field to see it."
     >
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-4 sm:grid-cols-3">
             <Field label="default">
                 <Input placeholder="Default" />
             </Field>
@@ -753,7 +750,7 @@ const IconButtonsDemo: FC = () => (
         title="IconButton"
         caption="Two real-world variants. Edit follows the page theme; delete is always danger-red."
     >
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
             <Field label="edit · theme">
                 <IconButton title="Edit" onClick={() => {}}>
                     ✎
@@ -793,7 +790,7 @@ const TooltipsDemo: FC = () => (
         title="Tooltips"
         caption="One recipe everywhere. Thin dark popup, cursor-help on every trigger. Two trigger types (info badge + mouseover wrapper) cover every hoverable info element in the app."
     >
-        <div className="flex flex-col gap-4 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+        <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
             <TooltipRow label="Info badge">
                 <span className="inline-flex items-center text-sm text-theme-text-strong">
                     Paid balance
@@ -867,7 +864,7 @@ const TooltipRow: FC<{ label: string; children: ReactNode }> = ({
     label,
     children,
 }) => (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-3">
         <span className="w-44 shrink-0 text-xs uppercase tracking-wide text-theme-text-strong">
             {label}
         </span>
@@ -929,7 +926,7 @@ const MultiSelectDemo: FC<{ theme: ThemeName }> = ({ theme }) => {
             title="MultiSelect"
             caption="Dropdown menu for picking multiple models or apps (used by the Activity page filters). Open it to see the scroll behaviour with many options."
         >
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
                 <MultiSelect
                     options={[...sampleModels]}
                     selected={selected}
@@ -978,7 +975,7 @@ const ChartDemo: FC = () => (
         title="Chart"
         caption="Stacked bar chart used by the Activity page. Bars render in the paid-soft + tier-soft chip colors so the chart and chips read as the same identity."
     >
-        <div className="rounded-xl border border-theme-border-soft bg-theme-bg-tinted p-4">
+        <div className="rounded-xl border border-theme-border bg-theme-bg-tinted p-4">
             <Chart
                 data={buildSampleChartData()}
                 metric="pollen"

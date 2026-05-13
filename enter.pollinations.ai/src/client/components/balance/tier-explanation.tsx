@@ -101,7 +101,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 name="Spore"
                 pollen={TIER_POLLEN.spore}
             >
-                <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
+                <div className="mt-1.5 border-t border-theme-border pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
                     <p className="text-xs text-gray-500">Verify account</p>
                 </div>
@@ -113,7 +113,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 name="Seed"
                 pollen={TIER_POLLEN.seed}
             >
-                <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
+                <div className="mt-1.5 border-t border-theme-border pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
                     <p className="text-xs text-gray-500">
                         <Tooltip content={<SeedTooltipContent />}>
@@ -134,7 +134,7 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
                 name="Flower"
                 pollen={TIER_POLLEN.flower}
             >
-                <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
+                <div className="mt-1.5 border-t border-theme-border pt-1.5">
                     <p className={requirementLabelStyle}>To unlock</p>
                     <p className="text-xs text-gray-500">
                         <a

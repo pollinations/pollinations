@@ -118,7 +118,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 className={cn(
                     "inline-flex min-h-8 min-w-[140px] items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
                     disabled
-                        ? "cursor-not-allowed opacity-60 border-theme-border-subtle bg-theme-bg-subtle"
+                        ? "cursor-not-allowed opacity-60 border-theme-border bg-theme-bg-subtle"
                         : open
                           ? "border-theme-border bg-theme-bg-active"
                           : "border-theme-border bg-theme-bg-idle hover:bg-theme-bg-hover-soft",

@@ -10,7 +10,7 @@ export const HIGHLIGHTS_GITHUB_URL =
 const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
-    date: string;
+    date?: string;
     emoji: string;
     title: string;
     description: string;
@@ -22,7 +22,12 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-05-05",
+        emoji: "🌻",
+        title: "Pollen pack bonuses are stepping down",
+        description:
+            "As the service keeps improving, the bonus Pollen included with each pack is being reduced.",
+    },
+    {
         emoji: "🌻",
         title: "Developer earnings are live",
         description:

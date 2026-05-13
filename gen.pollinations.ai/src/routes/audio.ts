@@ -33,8 +33,6 @@ import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { requireGenerationAccess } from "@/utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 
-const DEFAULT_ELEVENLABS_MODEL = "eleven_v3";
-
 const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
@@ -118,6 +116,7 @@ function mapOutputFormat(format: string): string {
 }
 
 export async function generateSpeech(opts: {
+    modelName?: AudioModelName;
     text: string;
     voice: string;
     responseFormat: string;
@@ -125,7 +124,9 @@ export async function generateSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { text, voice, responseFormat, apiKey, log } = opts;
+    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
+    const resolvedModelName: AudioModelName = modelName ?? "elevenlabs";
+    const elevenLabsModelId = getModelDefinition(resolvedModelName).modelId;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -161,7 +162,7 @@ export async function generateSpeech(opts: {
 
     const elevenLabsBody: Record<string, unknown> = {
         text,
-        model_id: DEFAULT_ELEVENLABS_MODEL,
+        model_id: elevenLabsModelId,
         voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
@@ -187,7 +188,10 @@ export async function generateSpeech(opts: {
     const contentType = response.headers.get("content-type") || "audio/mpeg";
 
     const usageHeaders = {
-        ...buildUsageHeaders("elevenlabs", createAudioTokenUsage(text.length)),
+        ...buildUsageHeaders(
+            resolvedModelName,
+            createAudioTokenUsage(text.length),
+        ),
         "x-tts-voice": voice,
     };
 
@@ -743,6 +747,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     return withSafetyHeaders(
         c,
         await generateSpeech({
+            modelName: c.var.model.resolved as AudioModelName,
             text,
             voice: query.voice || "alloy",
             responseFormat: query.response_format || "mp3",
@@ -867,6 +872,7 @@ export const audioRoutes = new Hono<Env>()
             return withSafetyHeaders(
                 c,
                 await generateSpeech({
+                    modelName: c.var.model.resolved as AudioModelName,
                     text: safeInput,
                     voice,
                     responseFormat: response_format,

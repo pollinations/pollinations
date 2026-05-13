@@ -37,7 +37,9 @@ const simplifiedRows = last10.map((row) => {
     const url = cols[2];
     const desc = cols[3];
     const github = cols[7];
-    const nameCell = url ? `[${emoji} ${name}](${url})` : `${emoji} ${name}`;
+    const repo = cols[9];
+    const link = url || repo;
+    const nameCell = link ? `[${emoji} ${name}](${link})` : `${emoji} ${name}`;
     const authorCell = github
         ? `[${github}](https://github.com/${github.replace("@", "")})`
         : "";

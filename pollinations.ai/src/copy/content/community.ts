@@ -6,8 +6,7 @@ export const COMMUNITY_PAGE = {
         "Contribute to pollinations.ai — open source, open roadmap, open community",
     // Section 1 — Hero
     title: "Contribute",
-    subtitlePrefix:
-        "🌸 pollinations.ai is open source — the code, the roadmap, the conversations.",
+    subtitlePrefix: "🌸 pollinations.ai is open source.",
     subtitleBold: "Builders shape the platform directly.",
     subtitleSuffix:
         " Share what you need, meet the people using it, and help build what comes next. 🌿",

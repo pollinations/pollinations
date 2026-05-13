@@ -196,7 +196,7 @@ export default function CommunityPage() {
                                         href={LINKS.discordPollenBeta}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="font-headline text-xs font-black text-dark bg-accent-strong px-2 py-0.5 hover:underline"
+                                        className="font-bold hover:underline"
                                     >
                                         {pageCopy.discordDesc2Link}
                                     </a>

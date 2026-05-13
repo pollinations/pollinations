@@ -42,7 +42,7 @@ export const DesignShowcase: FC = () => {
                     onThemeOverrideChange={setThemeOverride}
                 />
                 <ThemesStrip />
-                <TypographySection />
+                <Placeholder title="Typography" phase="Phase 7" />
                 <CascadeDemo />
                 <IntentDemo />
                 <Placeholder title="Chips" phase="Phase 1" />
@@ -159,52 +159,6 @@ const ThemesStrip: FC = () => (
                     <div className="flex h-8 rounded-md bg-theme-chip-bg" />
                     <div className="flex h-8 rounded-md bg-theme-button-strong-bg" />
                     <div className="flex h-2 rounded-full bg-theme-bg-active" />
-                </div>
-            ))}
-        </div>
-    </Section>
-);
-
-// ─── Typography ─────────────────────────────────────────────
-
-const TYPE_SIZES = [
-    "text-3xs",
-    "text-2xs",
-    "text-xs",
-    "text-sm",
-    "text-md",
-    "text-base",
-    "text-lg",
-    "text-xl",
-    "text-2xl",
-    "text-3xl",
-    "text-4xl",
-    "text-5xl",
-] as const;
-
-const TypographySection: FC = () => (
-    <Section
-        title="Typography"
-        caption="Headings, body, and the full size ramp."
-    >
-        <div className="flex flex-col gap-2 rounded-xl border border-theme-border-soft bg-theme-bg-idle p-6">
-            <h1>H1 — Heading One</h1>
-            <h2>H2 — Heading Two</h2>
-            <h3>H3 — Heading Three</h3>
-            <h4>H4 — Heading Four</h4>
-            <h5>H5 — Heading Five</h5>
-            <h6>H6 — Heading Six</h6>
-            <p>Body — the quick brown fox jumps over the lazy dog.</p>
-        </div>
-        <div className="mt-4 flex flex-col gap-1 rounded-xl border border-theme-border-soft bg-theme-bg-idle p-6">
-            {TYPE_SIZES.map((size) => (
-                <div key={size} className="flex items-baseline gap-3">
-                    <span className="w-20 shrink-0 font-mono text-xs text-theme-text-softer">
-                        {size}
-                    </span>
-                    <span className={cn(size, "text-theme-text-base")}>
-                        Aa Bb Cc 0123 — sample text
-                    </span>
                 </div>
             ))}
         </div>

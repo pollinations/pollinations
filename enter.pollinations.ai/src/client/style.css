@@ -39,9 +39,6 @@
     --font-subheading: "Fraunces", ui-serif, serif;
     --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
     --font-pixel: "Pixelify Sans", ui-monospace, monospace;
-    --text-3xs: 9px;
-    --text-2xs: 10px;
-    --text-md: 15px;
     --text-base: 16px;
 
     /* ─── Layer 1: hue ramp constants ────────────────────────── */

@@ -141,7 +141,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         <Button
             type={createdKey ? "button" : "submit"}
             onClick={createdKey ? handleCopyAndClose : undefined}
-            color="blue"
             className="disabled:opacity-50"
             disabled={isCreateDisabled}
         >
@@ -178,7 +177,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             >
                 <Button
                     as="div"
-                    color="blue"
                     weight="light"
                     className="shrink-0 whitespace-nowrap"
                 >
@@ -335,7 +333,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             {!createdKey && (
                                 <Button
                                     type="button"
-                                    color="red"
+                                    intent="danger"
                                     weight="light"
                                     onClick={() => setIsOpen(false)}
                                     className="disabled:opacity-50"

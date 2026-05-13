@@ -1,5 +1,6 @@
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { cn } from "@/util.ts";
+import { Button } from "../button.tsx";
 import {
     type IntentName,
     intents,
@@ -57,7 +58,7 @@ export const DesignShowcase: FC = () => {
                 <CascadeDemo />
                 <IntentDemo />
                 <ChipsDemo />
-                <Placeholder title="Buttons" phase="Phase 4" />
+                <ButtonsDemo />
                 <SwitchesDemo />
                 <SurfacesDemo />
                 <TabsDemo />
@@ -277,6 +278,82 @@ const ChipsDemo: FC = () => (
                 <Chip intent="success">success</Chip>
                 <Chip intent="paid">paid</Chip>
                 <Chip intent="alpha">alpha</Chip>
+            </div>
+        </div>
+    </Section>
+);
+
+// ─── Buttons ────────────────────────────────────────────────
+
+const buttonWeights = ["light", "strong"] as const;
+
+const ButtonsDemo: FC = () => (
+    <Section
+        title="Buttons"
+        caption="<Button> reads the cascade for theme; intent overrides for semantic CTAs. Pill-only, two weights."
+    >
+        <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 px-3 text-xs uppercase tracking-wide text-theme-text-label">
+                <span />
+                <span>light</span>
+                <span>strong</span>
+                <span>light · disabled</span>
+                <span>strong · disabled</span>
+            </div>
+            {themes.map((theme) => (
+                <div
+                    key={theme}
+                    data-theme={theme}
+                    className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border bg-theme-bg-tinted p-3"
+                >
+                    <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                        {theme}
+                    </span>
+                    {buttonWeights.map((weight) => (
+                        <Button key={weight} weight={weight}>
+                            {weight}
+                        </Button>
+                    ))}
+                    {buttonWeights.map((weight) => (
+                        <Button key={`${weight}-d`} weight={weight} disabled>
+                            {weight}
+                        </Button>
+                    ))}
+                </div>
+            ))}
+            <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3">
+                <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                    danger
+                </span>
+                <Button intent="danger" weight="light">
+                    light
+                </Button>
+                <Button intent="danger" weight="strong">
+                    strong
+                </Button>
+                <Button intent="danger" weight="light" disabled>
+                    light
+                </Button>
+                <Button intent="danger" weight="strong" disabled>
+                    strong
+                </Button>
+            </div>
+            <div className="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] items-center gap-3 rounded-xl border border-theme-border-soft bg-theme-bg-subtle p-3">
+                <span className="text-xs uppercase tracking-wide text-theme-text-label">
+                    success
+                </span>
+                <Button intent="success" weight="light">
+                    light
+                </Button>
+                <Button intent="success" weight="strong">
+                    strong
+                </Button>
+                <Button intent="success" weight="light" disabled>
+                    light
+                </Button>
+                <Button intent="success" weight="strong" disabled>
+                    strong
+                </Button>
             </div>
         </div>
     </Section>

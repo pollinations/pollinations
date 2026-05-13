@@ -29,7 +29,7 @@ export type DashboardTheme =
 export const DASHBOARD_NAV_ITEMS: {
     id: DashboardPage;
     label: string;
-    theme: DashboardTheme;
+    theme: ThemeName;
 }[] = [
     { id: "updates", label: "News & FAQ", theme: "violet" },
     { id: "models", label: "Models", theme: "teal" },
@@ -49,77 +49,13 @@ export const DASHBOARD_PAGES: DashboardPage[] = [
 // Page → theme lookup, derived from DASHBOARD_NAV_ITEMS.
 // Pages should read their theme from here so flipping a nav item's `theme`
 // retheme the corresponding page in one edit.
-// TODO(phase-5): narrow value type from DashboardTheme to ThemeName once legacy
-// themeTokens/dashboardThemeClasses are deleted. `gray` is reserved utility, not a page theme.
 export const dashboardThemeByPage = Object.fromEntries(
     DASHBOARD_NAV_ITEMS.map(({ id, theme }) => [id, theme]),
-) as Record<DashboardPage, DashboardTheme>;
+) as Record<DashboardPage, ThemeName>;
 
 // ─── Color palette (single source of truth) ──────────────────
-// `Button` imports its slice from here. (Panel/Card are cascade-driven via
-// `<Surface>` since Phase 3 — no per-theme class lookup needed.)
-// `dashboardThemeClasses` (below) rolls these up for the 7 nav themes.
-
-export const buttonColors = {
-    amber: {
-        light: "bg-amber-200 text-amber-900 hover:bg-amber-300",
-        strong: "bg-amber-500 text-white hover:bg-amber-400",
-        outline:
-            "border-2 border-amber-500 text-amber-900 hover:bg-amber-500 hover:text-white transition-colors",
-    },
-    blue: {
-        light: "bg-blue-200 text-blue-900 hover:bg-blue-300 transition-colors",
-        strong: "bg-blue-200 text-blue-900 hover:bg-blue-300 transition-colors",
-        outline:
-            "border-2 border-blue-300 text-blue-900 hover:bg-blue-100 hover:border-blue-400 transition-colors",
-    },
-    dark: {
-        light: "bg-gray-200 text-gray-900 hover:bg-gray-300",
-        strong: "bg-gray-900 text-white hover:bg-gray-700",
-        outline:
-            "border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white transition-colors",
-    },
-    gray: {
-        light: "bg-gray-200 text-gray-900 hover:bg-gray-300",
-        strong: "bg-gray-700 text-white hover:bg-gray-600",
-        outline:
-            "border-2 border-gray-700 text-gray-900 hover:bg-gray-700 hover:text-white transition-colors",
-    },
-    green: {
-        light: "bg-green-200 text-green-900 hover:bg-green-300",
-        strong: "bg-green-950 text-green-100 hover:bg-green-800",
-        outline:
-            "border-2 border-green-950 text-green-950 hover:bg-green-950 hover:text-green-100 transition-colors",
-    },
-    pink: {
-        light: "bg-pink-200 text-pink-900 hover:bg-pink-300",
-        strong: "bg-pink-700 text-pink-50 hover:bg-pink-600",
-        outline:
-            "border-2 border-pink-500 text-pink-900 hover:bg-pink-500 hover:text-white transition-colors",
-    },
-    purple: {
-        light: "bg-indigo-200 text-indigo-900",
-        strong: "bg-indigo-900 text-indigo-50",
-        outline: "border-2 border-indigo-900 text-indigo-900",
-    },
-    red: {
-        light: "bg-red-200 text-red-900 hover:bg-red-300",
-        strong: "bg-red-900 text-red-50 hover:bg-red-700",
-        outline:
-            "border-2 border-red-700 text-red-700 hover:bg-red-700 hover:text-white transition-colors",
-    },
-    teal: {
-        light: "bg-teal-200 text-teal-900 hover:bg-teal-300",
-        strong: "bg-teal-600 text-white hover:bg-teal-500",
-        outline:
-            "border-2 border-teal-600 text-teal-900 hover:bg-teal-600 hover:text-white transition-colors",
-    },
-    violet: {
-        light: "bg-violet-200 text-violet-900",
-        strong: "bg-violet-600 text-white",
-        outline: "border-2 border-violet-600 text-violet-900",
-    },
-} as const;
+// Button colors moved to the cascade in Phase 4 (read `bg-theme-button-*`).
+// Panel/Card are cascade-driven via `<Surface>` since Phase 3.
 
 // Per-theme token bundle for page chrome — literal class strings so Tailwind's JIT picks them up.
 // Covers per-page-themed surfaces only: text, borders, backgrounds, dividers, ring accents,
@@ -331,7 +267,6 @@ export const dashboardThemeClasses: Record<
         title: string;
         dot: string;
         active: string;
-        button: (typeof buttonColors)[keyof typeof buttonColors];
         tokens: ThemeTokens;
     }
 > = {
@@ -339,49 +274,42 @@ export const dashboardThemeClasses: Record<
         title: "text-amber-950",
         dot: "bg-amber-500",
         active: "bg-amber-200 text-green-950",
-        button: buttonColors.amber,
         tokens: themeTokens.amber,
     },
     blue: {
         title: "text-blue-950",
         dot: "bg-blue-500",
         active: "bg-blue-200 text-green-950",
-        button: buttonColors.blue,
         tokens: themeTokens.blue,
     },
     gray: {
         title: "text-gray-950",
         dot: "bg-gray-500",
         active: "bg-gray-200 text-green-950",
-        button: buttonColors.gray,
         tokens: themeTokens.gray,
     },
     green: {
         title: "text-green-950",
         dot: "bg-green-500",
         active: "bg-green-200 text-green-950",
-        button: buttonColors.green,
         tokens: themeTokens.green,
     },
     pink: {
         title: "text-pink-950",
         dot: "bg-pink-500",
         active: "bg-pink-200 text-green-950",
-        button: buttonColors.pink,
         tokens: themeTokens.pink,
     },
     teal: {
         title: "text-teal-950",
         dot: "bg-teal-500",
         active: "bg-teal-200 text-green-950",
-        button: buttonColors.teal,
         tokens: themeTokens.teal,
     },
     violet: {
         title: "text-violet-950",
         dot: "bg-violet-500",
         active: "bg-violet-200 text-green-950",
-        button: buttonColors.violet,
         tokens: themeTokens.violet,
     },
 };

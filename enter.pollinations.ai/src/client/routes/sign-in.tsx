@@ -126,7 +126,7 @@ function SignedOutAccountArea({
             as="button"
             onClick={onSignIn}
             disabled={loading}
-            color="amber"
+            theme="amber"
             weight="light"
             className="w-full justify-center text-center"
         >

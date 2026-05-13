@@ -30,7 +30,7 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
                 <div className="flex gap-2 justify-end">
                     <Button
                         type="button"
-                        color="red"
+                        intent="danger"
                         weight="light"
                         onClick={onCancel}
                     >
@@ -38,7 +38,7 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
                     </Button>
                     <Button
                         type="button"
-                        color="red"
+                        intent="danger"
                         weight="strong"
                         onClick={onConfirm}
                     >

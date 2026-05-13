@@ -120,7 +120,7 @@ function DeviceComponent() {
                             as="button"
                             onClick={signIn}
                             disabled={isSigningIn}
-                            color="amber"
+                            theme="amber"
                             weight="light"
                         >
                             {isSigningIn
@@ -163,7 +163,7 @@ function DeviceComponent() {
                     <Button
                         as="button"
                         type="submit"
-                        color="amber"
+                        theme="amber"
                         weight="light"
                         disabled={checking}
                     >

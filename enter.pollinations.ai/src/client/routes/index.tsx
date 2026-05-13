@@ -21,9 +21,9 @@ import {
     DashboardShell,
 } from "../components/layout/dashboard-shell.tsx";
 import {
-    type DashboardTheme,
     dashboardThemeByPage,
     isDashboardPage,
+    type ThemeName,
 } from "../components/layout/dashboard-theme.ts";
 import { UpdatesPage } from "../components/layout/updates-page.tsx";
 import { Pricing } from "../components/pricing";
@@ -43,13 +43,13 @@ function DownloadCsvButton({
     theme,
     onClick,
 }: {
-    theme: DashboardTheme;
+    theme: ThemeName;
     onClick: () => void;
 }) {
     return (
         <Button
             as="button"
-            color={theme}
+            theme={theme}
             weight="light"
             onClick={onClick}
             className="flex items-center gap-1.5"

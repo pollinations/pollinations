@@ -64,8 +64,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         />
                         <Button
                             type="button"
-                            color="blue"
-                            weight="outline"
+                            weight="light"
                             onClick={() => remove(index)}
                             disabled={disabled}
                         >
@@ -76,7 +75,6 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 <div>
                     <Button
                         type="button"
-                        color="blue"
                         weight="light"
                         onClick={add}
                         disabled={disabled}

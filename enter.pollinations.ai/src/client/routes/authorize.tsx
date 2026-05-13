@@ -467,7 +467,7 @@ function AuthorizeComponent() {
                             as="button"
                             onClick={handleDeny}
                             weight="light"
-                            color="red"
+                            intent="danger"
                             disabled={isSigningIn}
                         >
                             Deny
@@ -477,7 +477,7 @@ function AuthorizeComponent() {
                                 as="button"
                                 onClick={signIn}
                                 disabled={isSigningIn}
-                                color="amber"
+                                theme="amber"
                                 weight="light"
                             >
                                 {isSigningIn
@@ -749,7 +749,7 @@ function AuthorizeComponent() {
                         as="button"
                         onClick={handleDeny}
                         weight="light"
-                        color="red"
+                        intent="danger"
                         disabled={isAuthorizing}
                     >
                         Deny
@@ -759,7 +759,7 @@ function AuthorizeComponent() {
                             as="button"
                             onClick={handleAuthorize}
                             disabled={!canAuthorize || isAuthorizing}
-                            color="amber"
+                            theme="amber"
                             weight="light"
                         >
                             {isAuthorizing ? "Authorizing..." : "Authorize"}

@@ -1,10 +1,10 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
-import type { DashboardTheme } from "../layout/dashboard-theme.ts";
+import type { ThemeName } from "../layout/dashboard-theme.ts";
 
 type LinkButtonProps = {
-    theme: DashboardTheme;
+    theme: ThemeName;
     href: string;
     size?: "small" | "medium" | "large";
     className?: string;
@@ -23,7 +23,7 @@ export const LinkButton: FC<LinkButtonProps> = ({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        color={theme}
+        theme={theme}
         weight="light"
         size={size}
         className={cn("gap-2", className)}

@@ -4,7 +4,7 @@ import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
+import { type ThemeName, themeTokens } from "../layout/dashboard-theme.ts";
 import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
 import { MultiSelect } from "./multi-select";
@@ -14,7 +14,7 @@ import { useEarningsData } from "./use-earnings-data";
 type EarningsGraphProps = {
     period: UsagePeriodSelection;
     apps: Array<{ id: string; name: string }>;
-    theme: DashboardTheme;
+    theme: ThemeName;
 };
 
 import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
@@ -66,7 +66,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             action={
                 <Button
                     as="button"
-                    color={theme}
+                    theme={theme}
                     weight="light"
                     onClick={downloadEarnings}
                     className="flex items-center gap-1.5"
@@ -257,7 +257,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
 };
 
 const EarningsStatCard: FC<{
-    theme: DashboardTheme;
+    theme: ThemeName;
     label: string;
     value: ReactNode;
     detail?: ReactNode;

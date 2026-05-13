@@ -208,7 +208,11 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
                         {error && (
-                            <Card bg="bg-red-100" className="mb-4 text-red-700">
+                            <Card
+                                intent="danger"
+                                tone="tinted"
+                                className="mb-4"
+                            >
                                 {error}
                             </Card>
                         )}
@@ -251,7 +255,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
                         <Button
                             type="button"
-                            color="red"
+                            intent="danger"
                             weight="light"
                             onClick={onClose}
                             disabled={isSubmitting}
@@ -260,7 +264,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </Button>
                         <Button
                             type="button"
-                            color="blue"
                             onClick={handleSave}
                             disabled={isSubmitting}
                         >

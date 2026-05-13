@@ -36,8 +36,6 @@ type SurfaceOwnProps = {
     size?: SurfaceSize;
     /** Semantic intent. Wins over `theme` and `tone` for bg + border. */
     intent?: IntentName;
-    /** @deprecated Use `intent` instead. Removed in Phase 4 once consumers migrate. */
-    bg?: string;
     className?: string;
 };
 
@@ -60,13 +58,12 @@ export const Surface: FC<SurfaceProps> = ({
     tone = "white",
     size = "card",
     intent,
-    bg,
     className,
     children,
     ...rest
 }) => {
     const toneBg = tone === "white" ? "bg-surface-white" : "bg-theme-bg-tinted";
-    const resolvedBg = intent ? intentBg[intent] : (bg ?? toneBg);
+    const resolvedBg = intent ? intentBg[intent] : toneBg;
     const resolvedBorder = intent
         ? intentBorder[intent]
         : "border-theme-border";

@@ -379,7 +379,7 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
     <Button
         as="button"
         type="button"
-        color="amber"
+        theme="amber"
         weight="light"
         onClick={onClick}
         disabled={loading}
@@ -428,7 +428,7 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
             <Button
                 as="button"
                 type="button"
-                color="amber"
+                theme="amber"
                 weight="light"
                 onClick={onSave}
                 disabled={saveDisabled}

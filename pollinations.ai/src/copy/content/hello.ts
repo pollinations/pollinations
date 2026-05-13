@@ -34,7 +34,7 @@ export const HELLO_PAGE = {
         {
             emoji: "🪩",
             title: "All the models",
-            lead: "One API for current AI capabilities.",
+            lead: "Text, image, video, audio — one API.",
             desc: "- **Text, image, video, audio**\n- **Vision, search, embeddings**\n- Streaming, tools, structured output\n- **OpenAI-compatible** endpoints",
             linkText: "Browse the model list",
             linkUrl: "enterModels",
@@ -50,7 +50,7 @@ export const HELLO_PAGE = {
         {
             emoji: "🌱",
             title: "Free Credits",
-            lead: "Build before you need revenue.",
+            lead: "Build before users show up.",
             desc: "- **Refill Pollen** for prototypes & testing\n- Earn extra from **Pollen Quests** 🎯\n- More activity unlocks more room 📈",
             linkText: "How tiers work",
             linkUrl: "enterTiersFaq",
@@ -75,7 +75,7 @@ export const HELLO_PAGE = {
     whatYouGetFooterUrl: "enterApiDocs",
 
     // Section 8 — Last Updates
-    openTitle: "Last Updates",
+    openTitle: "Latest",
     recentUpdatesMoreText: "More",
     recentUpdatesMoreUrl: "highlightsSource",
     // Section 9 — Next
@@ -107,7 +107,7 @@ export const HELLO_PAGE = {
     // Section 9 — CTA
     ctaTitle: "Start building",
     ctaBody:
-        "One API. Free credits, user wallets, and earnings when your app gets used.",
+        "One API. Free credits to start, and earnings when your app gets used.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

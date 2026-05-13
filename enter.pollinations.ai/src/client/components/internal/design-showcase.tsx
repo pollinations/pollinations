@@ -226,7 +226,7 @@ const intentSwatch: Record<
     },
 };
 
-const moneyRows: readonly ColorRow[] = [
+const walletRows: readonly ColorRow[] = [
     { name: "paid-pale", swatch: "bg-paid-pale" },
     { name: "paid-soft", swatch: "bg-paid-soft" },
     { name: "paid-deep", swatch: "bg-paid-deep" },
@@ -247,7 +247,7 @@ const ColorsSection: FC<{ theme: ThemeName }> = ({ theme }) => (
         <div className="flex flex-col gap-6">
             <ColorGroup label={`Theme · ${theme}`} rows={themeRoleRows} />
             <IntentGroup />
-            <ColorGroup label="Money" rows={moneyRows} />
+            <ColorGroup label="Wallet" rows={walletRows} />
             <ColorGroup label="Universal" rows={universalRows} />
         </div>
     </Section>
@@ -484,7 +484,7 @@ const HeadingRow: FC<{
 const ChipsDemo: FC = () => (
     <Section
         title="Chips"
-        caption="Default chip inherits the active page theme. The four intent chips are dashboard labels: news + alpha tag models; paid + tier tag pollen balances."
+        caption="Default chip inherits the active page theme. Four intent chips for dashboard labels (news/alpha tag models; paid/tier tag balances). Selection pattern: current = theme chip, other = intent chip (used in tier cards). Status pattern: theme=green for permissive/on, theme=amber for partial/restricted, gray override for off. Theme overrides also drive count badges (e.g. +1 redirect)."
     >
         <div className="flex flex-col gap-3">
             <ChipRow label="Default (theme)">
@@ -497,6 +497,27 @@ const ChipsDemo: FC = () => (
             </ChipRow>
             <ChipRow label="Tier">
                 <Chip intent="tier">Tier</Chip>
+            </ChipRow>
+            <ChipRow label="Selection (current vs other)">
+                <Chip>Current</Chip>
+                <Chip intent="tier">Other</Chip>
+            </ChipRow>
+            <ChipRow label="Status (permissive / partial / off)">
+                <Chip theme="green" size="sm">
+                    All
+                </Chip>
+                <Chip theme="amber" size="sm">
+                    82
+                </Chip>
+                <Chip theme="green" size="sm">
+                    Earnings on
+                </Chip>
+                <Chip size="sm" className="bg-gray-100 text-gray-500">
+                    Earnings off
+                </Chip>
+                <Chip theme="blue" size="sm">
+                    +1
+                </Chip>
             </ChipRow>
             <ChipRow label="Modalities">
                 {modalityList.map((m) => (
@@ -600,31 +621,59 @@ const SwitchesDemo: FC = () => {
 const SurfacesDemo: FC = () => (
     <Section
         title="Surface"
-        caption="Three roles, all theme-aware. Panel is the outer bordered container; card is the white inner block; card-themed is a borderless theme-tinted inner block (pinned news, earnings callout)."
+        caption="Three theme-aware roles + wallet surfaces. Panel is the outer bordered container; card is the white inner block; card-themed is a borderless theme-tinted inner block (pinned news, earnings callout). Wallet surfaces use bg-paid-pale / bg-tier-pale for paid + tier identity (wallet cards, tier explanation)."
     >
-        <Surface variant="panel">
-            <p className="mb-3 text-2xs font-mono uppercase tracking-wide text-theme-text-softer">
-                outer · panel
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Surface>
-                    <p className="text-2xs font-mono uppercase tracking-wide text-theme-text-label">
-                        inner · card
+        <div className="flex flex-col gap-4">
+            <Surface variant="panel">
+                <p className="mb-3 text-2xs font-mono uppercase tracking-wide text-theme-text-softer">
+                    outer · panel
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Surface>
+                        <p className="text-2xs font-mono uppercase tracking-wide text-theme-text-label">
+                            inner · card
+                        </p>
+                        <p className="mt-1 text-sm text-theme-text-soft">
+                            Default. White, no border.
+                        </p>
+                    </Surface>
+                    <Surface variant="card-themed">
+                        <p className="text-2xs font-mono uppercase tracking-wide text-theme-text-label">
+                            inner · card-themed
+                        </p>
+                        <p className="mt-1 text-sm text-theme-text-strong">
+                            Theme-tinted callout.
+                        </p>
+                    </Surface>
+                </div>
+            </Surface>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-xl bg-paid-pale p-4">
+                    <p className="text-2xs font-mono uppercase tracking-wide text-paid-deep/70">
+                        wallet · paid
                     </p>
-                    <p className="mt-1 text-sm text-theme-text-soft">
-                        Default. White, no border.
+                    <p className="mt-1 text-sm text-paid-deep">
+                        bg-paid-pale — paid wallet card.
                     </p>
-                </Surface>
-                <Surface variant="card-themed">
-                    <p className="text-2xs font-mono uppercase tracking-wide text-theme-text-label">
-                        inner · card-themed
+                </div>
+                <div className="rounded-xl bg-tier-pale p-4">
+                    <p className="text-2xs font-mono uppercase tracking-wide text-tier-deep/70">
+                        wallet · tier
                     </p>
-                    <p className="mt-1 text-sm text-theme-text-strong">
-                        Theme-tinted callout.
+                    <p className="mt-1 text-sm text-tier-deep">
+                        bg-tier-pale — tier wallet card + active tier explainer.
                     </p>
-                </Surface>
+                </div>
+                <div className="rounded-xl bg-tier-pale/40 p-4">
+                    <p className="text-2xs font-mono uppercase tracking-wide text-tier-deep/70">
+                        tier · other
+                    </p>
+                    <p className="mt-1 text-sm text-tier-deep">
+                        bg-tier-pale/40 — non-current tiers in the explainer.
+                    </p>
+                </div>
             </div>
-        </Surface>
+        </div>
     </Section>
 );
 

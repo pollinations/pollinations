@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    getMockEarningsResponse,
+    getMockEarningsScenario,
+} from "../../lib/mock-earnings.ts";
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "./period-utils.ts";
 import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
 
@@ -73,6 +77,22 @@ export function useEarningsData(
         setDailyEarnings([]);
         setPerApp([]);
         setGlobalSummary(null);
+
+        // REMOVE BEFORE MERGE — design-only mock short-circuit (see lib/mock-earnings.ts).
+        const mockScenario = getMockEarningsScenario();
+        if (mockScenario) {
+            const mock = getMockEarningsResponse(mockScenario, {
+                period: { granularity, period },
+                selectedAppKeyIds: selectedAppKeyIdsKey
+                    ? selectedAppKeyIdsKey.split(",")
+                    : [],
+            });
+            setDailyEarnings(mock.daily);
+            setPerApp(mock.perApp);
+            setGlobalSummary(mock.global);
+            setLoading(false);
+            return;
+        }
 
         const params = new URLSearchParams({
             granularity,

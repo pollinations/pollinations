@@ -1,0 +1,34 @@
+{
+  "pr_number": 10729,
+  "title": "refactor(hello): rework hero copy, split last updates and next sections",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10729",
+  "merged_at": "2026-05-13T22:42:49Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Painting the front door",
+    "blurb": "The homepage got a rewrite. Less corporate speak, more focus on how to actually build AI apps that pay for themselves. We also split the roadmap into what just shipped and what's next, because time is linear.",
+    "summary": "Reworked the homepage and community page copy to center around user wallets, developer earnings, and a clearer split between recent updates and the upcoming roadmap.",
+    "impact": "New visitors get a much clearer picture of how the platform works, and the community page now focuses on builders shaping the platform rather than grinding for tiers.",
+    "keywords": [
+      "homepage",
+      "copy",
+      "roadmap",
+      "community",
+      "seo"
+    ],
+    "visual_concept": "Polly the bee acting as a painter/decorator, refreshing a welcome sign or front gate to represent the homepage update. The robot companion can hold a blueprint or roadmap.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting a large wooden 'HELLO' sign in a lush digital garden. A chunky retro robot companion with a monitor head stands nearby holding a blueprint roadmap, screen glowing happily. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-13/PR-10729.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, painting a large wooden 'HELLO' sign in a lush digital garden. A chunky retro robot companion with a monitor head stands nearby holding a blueprint roadmap, screen glowing happily. Soft lime green (#ecf874) and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-13T22:43:57.621826+00:00"
+}

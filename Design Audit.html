@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Design Audit — pollinations dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --bg: #ecfccb20;
+    --paper: #fafaf7;
+    --ink: #052e16;     /* green-950 */
+    --ink-2: #14532d;   /* green-900 */
+    --muted: #4b5563;
+    --line: #052e1612;
+    --line-2: #052e1620;
+    --flag-red: #b91c1c;
+    --flag-amber: #b45309;
+    --flag-blue: #1d4ed8;
+  }
+  html, body { background: var(--paper); color: var(--ink); }
+  body { font-family: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif; font-feature-settings: "ss01","cv11"; }
+  .font-display { font-family: "Fraunces", ui-serif, Georgia, serif; font-variation-settings: "opsz" 60; letter-spacing: -0.01em; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+  /* Document chrome */
+  .doc { max-width: 1200px; margin: 0 auto; padding: 56px 48px 120px; }
+  .rule { height: 1px; background: var(--line-2); }
+  .rule-soft { height: 1px; background: var(--line); }
+
+  /* Section header */
+  .sec-num { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; }
+  .sec-title { font-family: "Fraunces", serif; font-variation-settings: "opsz" 80; font-weight: 500; font-size: 36px; letter-spacing: -0.02em; line-height: 1; margin-top: 6px; }
+  .sec-desc { color: var(--muted); margin-top: 10px; font-size: 14px; max-width: 64ch; line-height: 1.55; }
+
+  /* Subsection */
+  .h3 { font-family: "Fraunces", serif; font-weight: 500; font-size: 20px; letter-spacing: -0.01em; }
+  .lbl { font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; }
+  .kbd { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: #1f2937; background: #f4f4ef; border: 1px solid #e5e5dd; border-radius: 4px; padding: 1px 6px; }
+
+  /* Swatch grid */
+  .swatch { aspect-ratio: 1 / 1; border-radius: 8px; border: 1px solid rgba(0,0,0,.06); }
+  .swatch-tall { height: 56px; border-radius: 8px; border: 1px solid rgba(0,0,0,.06); }
+  .swatch-row { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+
+  /* Token table */
+  .tok-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tok-tbl th, .tok-tbl td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .tok-tbl th { font-family: "JetBrains Mono", monospace; font-weight: 500; font-size: 10.5px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+  .tok-tbl td.mono { font-family: "JetBrains Mono", monospace; font-size: 11.5px; }
+  .tok-tbl tr:hover td { background: #fafaf3; }
+
+  /* Card chip */
+  .chip { background: #f4f4ef; border: 1px solid #e5e5dd; border-radius: 999px; padding: 2px 9px; font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: #1f2937; }
+
+  /* Flag callouts */
+  .flag { border: 1px solid var(--line-2); border-radius: 10px; padding: 14px 16px; background: #fff; display: grid; grid-template-columns: 86px 1fr; gap: 16px; align-items: start; }
+  .flag-sev { font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; align-self: start; display: inline-block; }
+  .sev-high { background: #fee2e2; color: var(--flag-red); }
+  .sev-med  { background: #fef3c7; color: var(--flag-amber); }
+  .sev-low  { background: #dbeafe; color: var(--flag-blue); }
+  .flag h4 { font-family: "Fraunces", serif; font-weight: 500; font-size: 17px; letter-spacing: -0.01em; margin-bottom: 4px; }
+  .flag p { color: #374151; font-size: 13.5px; line-height: 1.55; }
+  .flag .ev { margin-top: 8px; font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: #1f2937; background: #f8f8f3; border: 1px solid #ececdf; border-radius: 6px; padding: 8px 10px; white-space: pre-wrap; }
+
+  /* Demo button helpers (preview, not part of the system) */
+  .demo { background: #fff; border: 1px solid var(--line-2); border-radius: 14px; padding: 16px; }
+  .demo-grid { display: grid; gap: 10px; }
+
+  /* Switch demo */
+  .swt-track { position: relative; display: inline-flex; height: 28px; width: 48px; flex-shrink: 0; align-items: center; border-radius: 9999px; border: 1px solid; transition: background-color .15s; }
+  .swt-thumb { display: inline-block; height: 20px; width: 20px; border-radius: 9999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.1); transition: transform .15s; transform: translateX(4px); }
+  .swt-on .swt-thumb { transform: translateX(24px); }
+
+  /* InfoTip badge */
+  .infotip-i { display:inline-flex; align-items:center; justify-content:center; width: 14px; height: 14px; border-radius: 9999px; border: 1px solid; font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 700; line-height: 1; }
+
+  /* Tag preview */
+  .tag-prev { display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; padding: 2px 10px; font-size: 12.5px; font-weight: 500; line-height: 1.4; }
+
+  /* Pill / Tab preview */
+  .pill-prev { display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+  .pill-prev.tab { border: 1px solid; min-height: 28px; }
+
+  /* Button preview (size: medium) */
+  .btn-prev { display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 6px 16px 8px; font-size: 14.5px; font-weight: 500; line-height: 1.4; cursor: default; }
+  .btn-prev.outline { border-width: 2px; border-style: solid; padding: 4px 14px 6px; }
+
+  /* Mini callouts */
+  .note { font-size: 12px; color: var(--muted); }
+  .danger-text { color: var(--flag-red); font-weight: 600; }
+  .strike { text-decoration: line-through; opacity: 0.55; }
+
+  /* Comparison strip */
+  .cmp-strip { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: stretch; }
+  .cmp-cell { background: #fff; border: 1px solid var(--line-2); border-radius: 10px; padding: 10px; }
+  .cmp-cell .ttl { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+
+  /* Anchor links */
+  .toc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px dotted var(--line-2); padding-bottom: 1px; }
+  .toc a:hover { border-bottom-color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- ================= HEADER ================= -->
+  <header class="flex items-start justify-between gap-8 mb-12">
+    <div>
+      <div class="sec-num">Design Audit · pollinations.ai dashboard</div>
+      <h1 class="font-display text-[64px] leading-[0.95] tracking-tight mt-3" style="font-variation-settings: 'opsz' 144;">
+        Component &amp;<br/>color extraction
+      </h1>
+      <p class="sec-desc max-w-[58ch]">
+        A flat extraction of every primitive, color, and type token currently in the codebase
+        — followed by a list of redundancies and near-duplicates that should be consolidated
+        before the next pass. Hand this to the code assistant as the source of truth.
+      </p>
+    </div>
+    <div class="text-right shrink-0">
+      <div class="lbl">Source</div>
+      <div class="mono text-[12px] mt-1">enter.pollinations.ai</div>
+      <div class="mono text-[12px] text-gray-500">src/client/components/</div>
+      <div class="lbl mt-4">Stack</div>
+      <div class="mono text-[12px] mt-1">Tailwind 4 · React 18</div>
+      <div class="lbl mt-4">Date</div>
+      <div class="mono text-[12px] mt-1">May 13, 2026</div>
+    </div>
+  </header>
+
+  <!-- TOC -->
+  <nav class="toc grid grid-cols-4 gap-x-6 gap-y-2 text-[13px] mb-16">
+    <a href="#summary">00 · Summary</a>
+    <a href="#type">01 · Typography</a>
+    <a href="#palette">02 · Page themes (7)</a>
+    <a href="#tokens">03 · Theme tokens</a>
+    <a href="#buttons">04 · Buttons</a>
+    <a href="#tabs">05 · Tabs · Pills · Tags</a>
+    <a href="#switches">06 · Switches</a>
+    <a href="#surfaces">07 · Surfaces</a>
+    <a href="#inputs">08 · Inputs &amp; tips</a>
+    <a href="#money">09 · Money colors</a>
+    <a href="#radius">10 · Radius &amp; borders</a>
+    <a href="#audit">11 · Audit findings →</a>
+  </nav>
+
+  <!-- ================= SUMMARY ================= -->
+  <section id="summary" class="mb-20">
+    <div class="sec-num">00</div>
+    <h2 class="sec-title">Summary</h2>
+    <p class="sec-desc">
+      The dashboard already has a real token system (<span class="mono text-[12px]">dashboard-theme.ts</span>)
+      built around 7 page themes — amber, blue, gray, green, pink, teal, violet — but the same color shows up
+      under four different keys (<span class="mono text-[12px]">panelColors</span>,
+      <span class="mono text-[12px]">cardColors</span>, <span class="mono text-[12px]">pillColors</span>,
+      <span class="mono text-[12px]">tagColors</span>, <span class="mono text-[12px]">tabColors</span>,
+      <span class="mono text-[12px]">themeTokens</span>) and they don't always agree. The biggest wins are:
+      collapse pill / tag / tab-active / button-light into one chip primitive, ship a single
+      <span class="mono text-[12px]">&lt;Switch&gt;</span>, and promote the 4 hard-coded
+      <span class="mono text-[12px]">#hex</span> money colors into the token file.
+    </p>
+
+    <div class="grid grid-cols-4 gap-3 mt-8">
+      <div class="demo">
+        <div class="lbl">Themes</div>
+        <div class="font-display text-[40px] leading-none mt-1">7</div>
+        <div class="note mt-2">amber, blue, gray, green, pink, teal, violet</div>
+      </div>
+      <div class="demo">
+        <div class="lbl">Primitives</div>
+        <div class="font-display text-[40px] leading-none mt-1">10</div>
+        <div class="note mt-2">Button, Tab, Tag, Switch, Card, Panel, Input, InfoTip, IconButton, LinkButton</div>
+      </div>
+      <div class="demo">
+        <div class="lbl">Color tables</div>
+        <div class="font-display text-[40px] leading-none mt-1">6</div>
+        <div class="note mt-2">panel · card · button · pill · tab · tokens. <span class="danger-text">≥ 4 overlap.</span></div>
+      </div>
+      <div class="demo">
+        <div class="lbl">Flagged issues</div>
+        <div class="font-display text-[40px] leading-none mt-1">14</div>
+        <div class="note mt-2">5 high · 6 medium · 3 low — see §11.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TYPOGRAPHY ================= -->
+  <section id="type" class="mb-20">
+    <div class="sec-num">01</div>
+    <h2 class="sec-title">Typography</h2>
+    <p class="sec-desc">Three custom fonts, declared in <span class="mono text-[12px]">style.css → @theme</span>. Base size is 16px.</p>
+
+    <div class="grid grid-cols-3 gap-4 mt-8">
+      <div class="demo">
+        <div class="lbl">--font-heading</div>
+        <div class="mt-2 text-[44px] leading-[1] tracking-tight" style="font-family: ui-sans-serif, sans-serif;">LCT Mogi</div>
+        <div class="note mt-3"><span class="mono text-[12px]">h1 · text-5xl</span> (48px)</div>
+        <div class="note">Loaded from <span class="mono text-[12px]">lct-mogi-a.woff2</span></div>
+      </div>
+      <div class="demo">
+        <div class="lbl">--font-subheading</div>
+        <div class="mt-2 text-[40px] leading-[1] tracking-tight font-display">Fraunces</div>
+        <div class="note mt-3"><span class="mono text-[12px]">h2 · text-3xl</span> (30px)</div>
+        <div class="note"><span class="mono text-[12px]">h3 · text-2xl</span> (24px)</div>
+      </div>
+      <div class="demo">
+        <div class="lbl">--font-body</div>
+        <div class="mt-2 text-[40px] leading-[1] tracking-tight" style="font-family: ui-sans-serif, sans-serif; font-weight: 500;">Uncut Sans</div>
+        <div class="note mt-3"><span class="mono text-[12px]">body · 16px · weight 300–700 var</span></div>
+        <div class="note">Default body weight: <span class="mono text-[12px]">font-medium</span></div>
+      </div>
+    </div>
+
+    <h3 class="h3 mt-10 mb-3">Used sizes (audit)</h3>
+    <table class="tok-tbl">
+      <thead><tr><th>Role</th><th>Class</th><th>px</th><th>Where used</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>H1</td><td class="mono">text-5xl + font-heading</td><td class="mono">48</td><td>Page titles</td><td>—</td></tr>
+        <tr><td>H2</td><td class="mono">text-3xl + font-subheading</td><td class="mono">30</td><td>Section titles</td><td>—</td></tr>
+        <tr><td>H3</td><td class="mono">text-2xl + font-subheading</td><td class="mono">24</td><td>Sub-sections</td><td>—</td></tr>
+        <tr><td>H4–H6</td><td class="mono">text-xl</td><td class="mono">20</td><td>—</td><td class="danger-text">No font family set, no tracking — visually drops out of the system.</td></tr>
+        <tr><td>Body</td><td class="mono">text-base</td><td class="mono">16</td><td>Default</td><td>—</td></tr>
+        <tr><td>Display amount</td><td class="mono">text-4xl / text-5xl</td><td class="mono">36 / 48</td><td>pollen-balance</td><td>—</td></tr>
+        <tr><td>UI label</td><td class="mono">text-sm</td><td class="mono">14</td><td>Form labels, body copy in cards</td><td>—</td></tr>
+        <tr><td>Meta</td><td class="mono">text-xs</td><td class="mono">12</td><td>Tabs, tags, helper text</td><td>—</td></tr>
+        <tr><td>Micro</td><td class="mono">text-[11px]</td><td class="mono">11</td><td>Brand chip, footer links</td><td>Arbitrary value — not a token.</td></tr>
+        <tr><td>Display num</td><td class="mono">text-[15px]</td><td class="mono">15</td><td>Nav items, switch title</td><td>Arbitrary value — appears twice, should be a token.</td></tr>
+        <tr><td>Caption</td><td class="mono">text-[10px]</td><td class="mono">10</td><td>InfoTip badge, model row "NEW" pill</td><td>Arbitrary value.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="flag mt-6">
+      <div><span class="flag-sev sev-med">Medium</span></div>
+      <div>
+        <h4>Type scale leaks arbitrary px values</h4>
+        <p>You're using <span class="mono">text-[11px]</span>, <span class="mono">text-[15px]</span>, <span class="mono">text-[10px]</span> as one-offs. Pin them as <span class="mono">--text-xxs / --text-meta / --text-ui</span> in <span class="mono">@theme</span> so they appear in autocomplete and stay consistent.</p>
+        <p class="mt-1">Also: <span class="mono">h4–h6</span> are styled identically and have no font family — either make them <span class="mono">font-subheading</span> too, or drop the rule.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PALETTE ================= -->
+  <section id="palette" class="mb-20">
+    <div class="sec-num">02</div>
+    <h2 class="sec-title">Page themes — 7 hues</h2>
+    <p class="sec-desc">
+      Each nav item picks a Tailwind hue. Every theme exposes the same 6 strength levels (50 → 950),
+      consumed by Panel, Card, Button, Tab, Pill, and Tag. Below shows the raw Tailwind ramp each theme uses.
+    </p>
+
+    <div class="space-y-3 mt-8">
+      <!-- ramp header -->
+      <div class="grid items-center gap-3" style="grid-template-columns: 120px repeat(10, 1fr);">
+        <div></div>
+        <div class="lbl text-center">50</div>
+        <div class="lbl text-center">100</div>
+        <div class="lbl text-center">200</div>
+        <div class="lbl text-center">300</div>
+        <div class="lbl text-center">400</div>
+        <div class="lbl text-center">500</div>
+        <div class="lbl text-center">600</div>
+        <div class="lbl text-center">700</div>
+        <div class="lbl text-center">900</div>
+        <div class="lbl text-center">950</div>
+      </div>
+
+      <!-- AMBER -->
+      <div class="grid items-center gap-3" style="grid-template-columns: 120px repeat(10, 1fr);">
+        <div><div class="font-display text-[18px]">amber</div><div class="mono text-[10.5px] text-gray-500">Pollen</div></div>
+        <div class="swatch bg-amber-50"></div><div class="swatch bg-amber-100"></div><div class="swatch bg-amber-200"></div><div class="swatch bg-amber-300"></div><div class="swatch bg-amber-400"></div><div class="swatch bg-amber-500"></div><div class="swatch bg-amber-600"></div><div class="swatch bg-amber-700"></div><div class="swatch bg-amber-900"></div><div class="swatch bg-amber-950"></div>
+      </div>
+      <!-- BLUE -->
+      <div class="grid items-center gap-3" style="grid-template-columns: 120px repeat(10, 1fr);">
+        <div><div class="font-display text-[18px]">blue</div><div class="mono text-[10.5px] text-gray-500">Keys</div></div>
+        <div class="swatch bg-blue-50"></div><div class="swatch bg-blue-100"></div><div class="swatch bg-blue-200"></div><div class="swatch bg-blue-300"></div><div class="swatch bg-blue-400"></div><div class="swatch bg-blue-500"></div><div class="swatch bg-blue-600"></div><div class="swatch bg-blue-700"></div><div class="swatch bg-blue-900"></div><div class="swatch bg-blue-950"></div>
+      </div>
+      <!-- GRAY -->
+      <div class="grid items-center gap-3" style="grid-template-columns: 120px repeat(10, 1fr);">
+        <div><div class="font-display text-[18px]">gray</div><div class="mono text-[10.5px] text-gray-500">Neutral</div></div>
+        <div class="swatch bg-gray-50"></div><div class="swatch bg-gray-100"></div><div class="swatch bg-gray-200"></div><div class="swatch bg-gray-300"></div><div class="swatch bg-gray-400"></div><div class="swatch bg-gray-500"></div><div class="swatch bg-gray-600"></div><div class="swatch bg-gray-700"></div><div class="swatch bg-gray-900"></div><div class="swatch bg-gray-950"></div>
+      </div>
+      <!-- GREEN -->
+      <div class="grid items-center gap-3" style="grid-template-columns: 120px repeat(10, 1fr);">
+        <div><div class="font-display text-[18px]">green</div><div class="mono text-[10.5px] text-gray-500">Shell · brand</div></div>
+        <div class="swatch bg-green-50"></div><div class="swatch bg-green-100"></div><div class="swatch bg-green-200"></div><div class="swatch bg-green-300"></div><div class="swatch bg-green-400"></div><div class="swatch bg-green-500"></div><div class="swatch bg-green-600"></div><div class="swatch bg-green-700"></div><div class="swatch bg-green-900"></div><div class="swatch bg-green-950"></div>
+      </div>
+      <!-- PINK -->
+      <div class="grid items-center gap-3" style="grid-template-columns: 120px repeat(10, 1fr);">
+        <div><div class="font-display text-[18px]">pink</div><div class="mono text-[10.5px] text-gray-500">Activity</div></div>
+        <div class="swatch bg-pink-50"></div><div class="swatch bg-pink-100"></div><div class="swatch bg-pink-200"></div><div class="swatch bg-pink-300"></div><div class="swatch bg-pink-400"></div><div class="swatch bg-pink-500"></div><div class="swatch bg-pink-600"></div><div class="swatch bg-pink-700"></div><div class="swatch bg-pink-900"></div><div class="swatch bg-pink-950"></div>
+      </div>
+      <!-- TEAL -->
+      <div class="grid items-center gap-3" style="grid-template-columns: 120px repeat(10, 1fr);">
+        <div><div class="font-display text-[18px]">teal</div><div class="mono text-[10.5px] text-gray-500">Models</div></div>
+        <div class="swatch bg-teal-50"></div><div class="swatch bg-teal-100"></div><div class="swatch bg-teal-200"></div><div class="swatch bg-teal-300"></div><div class="swatch bg-teal-400"></div><div class="swatch bg-teal-500"></div><div class="swatch bg-teal-600"></div><div class="swatch bg-teal-700"></div><div class="swatch bg-teal-900"></div><div class="swatch bg-teal-950"></div>
+      </div>
+      <!-- VIOLET -->
+      <div class="grid items-center gap-3" style="grid-template-columns: 120px repeat(10, 1fr);">
+        <div><div class="font-display text-[18px]">violet</div><div class="mono text-[10.5px] text-gray-500">News &amp; FAQ</div></div>
+        <div class="swatch bg-violet-50"></div><div class="swatch bg-violet-100"></div><div class="swatch bg-violet-200"></div><div class="swatch bg-violet-300"></div><div class="swatch bg-violet-400"></div><div class="swatch bg-violet-500"></div><div class="swatch bg-violet-600"></div><div class="swatch bg-violet-700"></div><div class="swatch bg-violet-900"></div><div class="swatch bg-violet-950"></div>
+      </div>
+    </div>
+
+    <h3 class="h3 mt-10 mb-3">Hues defined but not in the nav system</h3>
+    <p class="sec-desc" style="margin-top:0">Live in <span class="mono">panelColors</span>, <span class="mono">cardColors</span>, <span class="mono">buttonColors</span> or <span class="mono">tagColors</span> but never referenced by a page theme.</p>
+    <div class="grid grid-cols-5 gap-4 mt-4">
+      <div class="demo">
+        <div class="swatch-tall bg-orange-300"></div>
+        <div class="font-display text-[16px] mt-2">orange</div>
+        <div class="note">Used in panel + card + pill + tag (e.g. limit warnings).</div>
+      </div>
+      <div class="demo">
+        <div class="swatch-tall bg-purple-200"></div>
+        <div class="font-display text-[16px] mt-2">purple</div>
+        <div class="note danger-text">Duplicates violet. <span class="mono">purple</span> only lives in panel / card / button / tag — <span class="mono">violet</span> covers everything. Pick one.</div>
+      </div>
+      <div class="demo">
+        <div class="swatch-tall bg-red-200"></div>
+        <div class="font-display text-[16px] mt-2">red</div>
+        <div class="note">Destructive only — confirm dialogs, errors. Keep separate.</div>
+      </div>
+      <div class="demo">
+        <div class="swatch-tall bg-yellow-200"></div>
+        <div class="font-display text-[16px] mt-2">yellow</div>
+        <div class="note danger-text">Only used by <span class="mono">tagColors</span> and <span class="mono">InfoTip</span> tone. Drop or fold into amber.</div>
+      </div>
+      <div class="demo">
+        <div class="swatch-tall bg-indigo-200"></div>
+        <div class="font-display text-[16px] mt-2">indigo</div>
+        <div class="note danger-text"><span class="mono">buttonColors.purple</span> actually renders <span class="mono">bg-indigo-*</span>. Naming bug.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TOKENS ================= -->
+  <section id="tokens" class="mb-20">
+    <div class="sec-num">03</div>
+    <h2 class="sec-title">Theme tokens</h2>
+    <p class="sec-desc">
+      Every theme exposes the same shape — <span class="mono">{ text, border, bg, divide, ring, scrollbar }</span>.
+      Shown for <span class="font-medium">amber</span>; the other 6 are structurally identical.
+    </p>
+
+    <table class="tok-tbl mt-6">
+      <thead><tr><th>Group</th><th>Token</th><th>Class</th><th>Preview</th></tr></thead>
+      <tbody>
+        <tr><td>text</td><td class="mono">label</td><td class="mono">text-amber-600</td><td class="text-amber-600">Sample label</td></tr>
+        <tr><td>text</td><td class="mono">base</td><td class="mono">text-amber-900</td><td class="text-amber-900">Sample base</td></tr>
+        <tr><td>text</td><td class="mono">strong</td><td class="mono">text-amber-950</td><td class="text-amber-950 font-semibold">Sample strong</td></tr>
+        <tr><td>text</td><td class="mono">muted</td><td class="mono">text-amber-800/75</td><td class="text-amber-800/75">Sample muted</td></tr>
+        <tr><td>text</td><td class="mono">soft</td><td class="mono">text-amber-700</td><td class="text-amber-700">Sample soft</td></tr>
+        <tr><td>text</td><td class="mono">softer</td><td class="mono">text-amber-700/60</td><td class="text-amber-700/60">Sample softer</td></tr>
+        <tr><td>border</td><td class="mono">idle</td><td class="mono">border-amber-300</td><td><div style="width:120px;height:18px" class="border border-amber-300 rounded"></div></td></tr>
+        <tr><td>border</td><td class="mono">soft</td><td class="mono">border-amber-300/70</td><td><div style="width:120px;height:18px" class="border border-amber-300/70 rounded"></div></td></tr>
+        <tr><td>border</td><td class="mono">subtle</td><td class="mono">border-amber-200</td><td><div style="width:120px;height:18px" class="border border-amber-200 rounded"></div></td></tr>
+        <tr><td>bg</td><td class="mono">idle</td><td class="mono">bg-amber-50/80</td><td><div style="width:120px;height:18px" class="bg-amber-50/80 rounded border border-amber-200"></div></td></tr>
+        <tr><td>bg</td><td class="mono">subtle</td><td class="mono">bg-amber-50/50</td><td><div style="width:120px;height:18px" class="bg-amber-50/50 rounded border border-amber-200"></div></td></tr>
+        <tr><td>bg</td><td class="mono">active</td><td class="mono">bg-amber-200</td><td><div style="width:120px;height:18px" class="bg-amber-200 rounded"></div></td></tr>
+        <tr><td>ring</td><td class="mono">ring</td><td class="mono">ring-amber-400/70</td><td><div style="width:60px;height:18px;display:inline-block" class="bg-white ring-2 ring-amber-400/70 rounded"></div></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ================= BUTTONS ================= -->
+  <section id="buttons" class="mb-20">
+    <div class="sec-num">04</div>
+    <h2 class="sec-title">Buttons</h2>
+    <p class="sec-desc">
+      <span class="mono">&lt;Button&gt;</span> — <span class="mono">color</span> × <span class="mono">weight</span> ×
+      <span class="mono">size</span> × <span class="mono">shape</span>.
+      <span class="mono">color</span> drives palette (amber, blue, dark, gray, green, pink, purple/indigo, red, teal, violet).
+      <span class="mono">weight</span> drives strength (light, strong, outline). Default shape is <span class="mono">pill</span>.
+    </p>
+
+    <h3 class="h3 mt-8 mb-3">Sizes</h3>
+    <div class="demo flex gap-3 flex-wrap items-center">
+      <button class="btn-prev bg-green-950 text-green-100" style="padding: 2px 8px 4px; font-size: 12.5px;">Small</button>
+      <button class="btn-prev bg-green-950 text-green-100">Medium</button>
+      <button class="btn-prev bg-green-950 text-green-100" style="padding: 12px 24px;">Large</button>
+      <span class="lbl ml-4">Padding</span>
+      <span class="mono text-[12px]">sm: px-2 pt-0.5 pb-1</span>
+      <span class="mono text-[12px]">md: px-4 pt-1.5 pb-2</span>
+      <span class="mono text-[12px]">lg: px-6 py-3</span>
+    </div>
+
+    <h3 class="h3 mt-8 mb-3">Weights × theme colors</h3>
+    <table class="tok-tbl">
+      <thead><tr><th>Color</th><th>light</th><th>strong</th><th>outline</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>amber</td>
+          <td><span class="btn-prev bg-amber-200 text-amber-900">Button</span></td>
+          <td><span class="btn-prev bg-amber-500 text-white">Button</span></td>
+          <td><span class="btn-prev outline border-amber-500 text-amber-900">Button</span></td>
+          <td class="note">—</td>
+        </tr>
+        <tr>
+          <td>blue</td>
+          <td><span class="btn-prev bg-blue-200 text-blue-900">Button</span></td>
+          <td><span class="btn-prev bg-blue-200 text-blue-900">Button</span></td>
+          <td><span class="btn-prev outline border-blue-300 text-blue-900">Button</span></td>
+          <td class="danger-text">light === strong. Likely bug.</td>
+        </tr>
+        <tr>
+          <td>dark</td>
+          <td><span class="btn-prev bg-gray-200 text-gray-900">Button</span></td>
+          <td><span class="btn-prev bg-gray-900 text-white">Button</span></td>
+          <td><span class="btn-prev outline border-gray-900 text-gray-900">Button</span></td>
+          <td class="note">Default action color.</td>
+        </tr>
+        <tr>
+          <td>gray</td>
+          <td><span class="btn-prev bg-gray-200 text-gray-900">Button</span></td>
+          <td><span class="btn-prev bg-gray-700 text-white">Button</span></td>
+          <td><span class="btn-prev outline border-gray-700 text-gray-900">Button</span></td>
+          <td class="danger-text"><span class="mono">light</span> identical to <span class="mono">dark.light</span>.</td>
+        </tr>
+        <tr>
+          <td>green</td>
+          <td><span class="btn-prev bg-green-200 text-green-900">Button</span></td>
+          <td><span class="btn-prev bg-green-950 text-green-100">Button</span></td>
+          <td><span class="btn-prev outline border-green-950 text-green-950">Button</span></td>
+          <td class="note">Default <span class="mono">color</span> on Button.</td>
+        </tr>
+        <tr>
+          <td>pink</td>
+          <td><span class="btn-prev bg-pink-200 text-pink-900">Button</span></td>
+          <td><span class="btn-prev bg-pink-700 text-pink-50">Button</span></td>
+          <td><span class="btn-prev outline border-pink-500 text-pink-900">Button</span></td>
+          <td class="note">Outline border is <span class="mono">500</span>, others are <span class="mono">700/900</span>.</td>
+        </tr>
+        <tr>
+          <td>purple</td>
+          <td><span class="btn-prev bg-indigo-200 text-indigo-900">Button</span></td>
+          <td><span class="btn-prev bg-indigo-900 text-indigo-50">Button</span></td>
+          <td><span class="btn-prev outline border-indigo-900 text-indigo-900">Button</span></td>
+          <td class="danger-text">Renders indigo. No hover state. No transition.</td>
+        </tr>
+        <tr>
+          <td>red</td>
+          <td><span class="btn-prev bg-red-200 text-red-900">Button</span></td>
+          <td><span class="btn-prev bg-red-900 text-red-50">Button</span></td>
+          <td><span class="btn-prev outline border-red-700 text-red-700">Button</span></td>
+          <td class="note">Destructive.</td>
+        </tr>
+        <tr>
+          <td>teal</td>
+          <td><span class="btn-prev bg-teal-200 text-teal-900">Button</span></td>
+          <td><span class="btn-prev bg-teal-600 text-white">Button</span></td>
+          <td><span class="btn-prev outline border-teal-600 text-teal-900">Button</span></td>
+          <td class="note">—</td>
+        </tr>
+        <tr>
+          <td>violet</td>
+          <td><span class="btn-prev bg-violet-200 text-violet-900">Button</span></td>
+          <td><span class="btn-prev bg-violet-600 text-white">Button</span></td>
+          <td><span class="btn-prev outline border-violet-600 text-violet-900">Button</span></td>
+          <td class="danger-text">No hover state.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="flag mt-6">
+      <div><span class="flag-sev sev-high">High</span></div>
+      <div>
+        <h4>Strong-weight mapping is inconsistent across themes</h4>
+        <p>"Strong" sits at different lightness per theme — amber 500, teal 600, pink 700, gray 700, indigo 900, red 900, green 950. Pick one rule (e.g. always 600 background + white text, or always 950 + 50 text) and adjust the outliers. Right now "primary on amber" reads visually lighter than "primary on green".</p>
+        <div class="ev">amber.strong → bg-amber-500 text-white
+teal.strong → bg-teal-600  text-white
+violet.strong → bg-violet-600 text-white
+pink.strong → bg-pink-700 text-pink-50
+gray.strong → bg-gray-700 text-white
+purple.strong → bg-indigo-900 text-indigo-50
+red.strong → bg-red-900 text-red-50
+green.strong → bg-green-950 text-green-100</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TABS / PILLS / TAGS ================= -->
+  <section id="tabs" class="mb-20">
+    <div class="sec-num">05</div>
+    <h2 class="sec-title">Tab · Pill · Tag — the chip problem</h2>
+    <p class="sec-desc">
+      You have three "small colored chip" primitives plus the <span class="mono">light</span> button weight.
+      They produce nearly identical pixels.
+    </p>
+
+    <div class="cmp-strip mt-8">
+      <div class="cmp-cell">
+        <div class="ttl">tabColors.amber.active</div>
+        <span class="pill-prev tab border-amber-300 bg-amber-200 text-amber-950">Active tab</span>
+        <div class="mono text-[11px] mt-2 text-gray-600">border-amber-300 bg-amber-200 text-amber-950</div>
+      </div>
+      <div class="cmp-cell">
+        <div class="ttl">pillColors.amber</div>
+        <span class="pill-prev bg-amber-200 text-amber-900">Pill</span>
+        <div class="mono text-[11px] mt-2 text-gray-600">bg-amber-200 text-amber-900</div>
+      </div>
+      <div class="cmp-cell">
+        <div class="ttl">tagColors.amber</div>
+        <span class="tag-prev bg-amber-200 text-amber-900">Tag</span>
+        <div class="mono text-[11px] mt-2 text-gray-600">bg-amber-200 text-amber-900</div>
+      </div>
+    </div>
+
+    <div class="cmp-strip mt-3">
+      <div class="cmp-cell">
+        <div class="ttl">tabColors.amber.inactive</div>
+        <span class="pill-prev tab border-amber-300 bg-amber-50/80 text-amber-900">Inactive tab</span>
+        <div class="mono text-[11px] mt-2 text-gray-600">border-amber-300 bg-amber-50/80 text-amber-900</div>
+      </div>
+      <div class="cmp-cell">
+        <div class="ttl">buttonColors.amber.light</div>
+        <span class="btn-prev bg-amber-200 text-amber-900">Button</span>
+        <div class="mono text-[11px] mt-2 text-gray-600">bg-amber-200 text-amber-900 hover:bg-amber-300</div>
+      </div>
+      <div class="cmp-cell">
+        <div class="ttl">dashboardThemeClasses.amber.active</div>
+        <span class="pill-prev bg-amber-200 text-green-950">Nav</span>
+        <div class="mono text-[11px] mt-2 text-gray-600"><span class="danger-text">bg-amber-200 text-green-950</span> ← text color wrong</div>
+      </div>
+    </div>
+
+    <div class="flag mt-6">
+      <div><span class="flag-sev sev-high">High</span></div>
+      <div>
+        <h4>Collapse Tag / Pill / Tab-active / Button-light into one chip primitive</h4>
+        <p>Per theme, four tables hold the same recipe <span class="mono">bg-X-200 + text-X-900</span>. They should be a single <span class="mono">chipColors[theme]</span> consumed by Tag, Pill, Tab (active), and Button (light). The shape (rect vs pill vs full) and behavior (clickable vs static) is what differs — not the color.</p>
+        <div class="ev">Same recipe, four definitions:
+  tagColors.amber       = bg-amber-200 text-amber-900
+  pillColors.amber      = bg-amber-200 text-amber-900
+  tabColors.amber.active = bg-amber-200 text-amber-950   ← text drift
+  buttonColors.amber.light = bg-amber-200 text-amber-900</div>
+      </div>
+    </div>
+
+    <div class="flag mt-3">
+      <div><span class="flag-sev sev-high">High</span></div>
+      <div>
+        <h4><code>dashboardThemeClasses[X].active</code> uses <code>text-green-950</code> for every theme</h4>
+        <p>The active nav row is themed by background but locked to dark-green text — including for blue, pink, violet, teal. Either drop the text color and let it inherit, or swap to <span class="mono">text-X-950</span>. This looks like copy-paste from green.</p>
+        <div class="ev">amber.active  = "bg-amber-200 text-green-950"   ← should be text-amber-950
+blue.active   = "bg-blue-200 text-green-950"    ← should be text-blue-950
+pink.active   = "bg-pink-200 text-green-950"    ← should be text-pink-950
+…all 7 themes have the same bug.</div>
+      </div>
+    </div>
+
+    <h3 class="h3 mt-10 mb-3">Tag has 4 colors no theme uses</h3>
+    <table class="tok-tbl">
+      <thead><tr><th>Tag color</th><th>Recipe</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag-prev bg-gray-200 text-gray-900">label</span></td><td class="mono">bg-gray-200 text-gray-900</td><td class="note">OK · matches pill/tab</td></tr>
+        <tr><td><span class="tag-prev bg-green-200 text-gray-900">label</span></td><td class="mono">bg-green-200 <span class="danger-text">text-gray-900</span></td><td class="danger-text">Drift — pill uses text-green-900</td></tr>
+        <tr><td><span class="tag-prev bg-pink-200 text-gray-900">label</span></td><td class="mono">bg-pink-200 <span class="danger-text">text-gray-900</span></td><td class="danger-text">Drift — pill uses text-pink-900</td></tr>
+        <tr><td><span class="tag-prev bg-amber-200 text-amber-900">label</span></td><td class="mono">bg-amber-200 text-amber-900</td><td class="note">OK</td></tr>
+        <tr><td><span class="tag-prev bg-orange-300 text-orange-950">label</span></td><td class="mono">bg-orange-300 text-orange-950</td><td class="note">Outlier (300, not 200) — keep if reserved for "limit"</td></tr>
+        <tr><td><span class="tag-prev bg-blue-100 text-blue-700">label</span></td><td class="mono">bg-blue-100 text-blue-700</td><td class="danger-text">Different recipe from pill blue (bg-200 text-900)</td></tr>
+        <tr><td><span class="tag-prev bg-purple-200 text-gray-900">label</span></td><td class="mono">bg-purple-200 text-gray-900</td><td class="danger-text">Uses purple, not violet. Drop or alias.</td></tr>
+        <tr><td><span class="tag-prev bg-violet-200 text-violet-950">label</span></td><td class="mono">bg-violet-200 text-violet-950</td><td class="note">OK</td></tr>
+        <tr><td><span class="tag-prev bg-teal-200 text-gray-900">label</span></td><td class="mono">bg-teal-200 <span class="danger-text">text-gray-900</span></td><td class="danger-text">Drift — pill uses text-teal-900</td></tr>
+        <tr><td><span class="tag-prev bg-yellow-200 text-gray-900">label</span></td><td class="mono">bg-yellow-200 text-gray-900</td><td class="danger-text">Only place yellow is used. Drop or alias to amber.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="h3 mt-10 mb-3">TabButton — actual primitive</h3>
+    <div class="demo">
+      <div class="flex flex-wrap gap-2">
+        <span class="pill-prev tab border-amber-300 bg-amber-200 text-amber-950">Active</span>
+        <span class="pill-prev tab border-amber-300 bg-amber-50/80 text-amber-900">Inactive</span>
+        <span class="pill-prev tab border-blue-300 bg-blue-200 text-blue-950">Active</span>
+        <span class="pill-prev tab border-blue-300 bg-blue-50/80 text-blue-900">Inactive</span>
+        <span class="pill-prev tab border-green-300 bg-green-200 text-green-950">Active</span>
+        <span class="pill-prev tab border-pink-300 bg-pink-200 text-pink-950">Active</span>
+        <span class="pill-prev tab border-teal-300 bg-teal-200 text-teal-950">Active</span>
+        <span class="pill-prev tab border-violet-300 bg-violet-200 text-violet-950">Active</span>
+      </div>
+      <div class="note mt-3">
+        <span class="mono">min-h-8 · rounded-full · border · px-3 py-1.5 · text-xs font-medium · transition-all 200ms</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SWITCHES ================= -->
+  <section id="switches" class="mb-20">
+    <div class="sec-num">06</div>
+    <h2 class="sec-title">Switches</h2>
+    <p class="sec-desc">
+      Two switch implementations exist, identical in structure (28×48 track, 20px thumb, 4→24px travel)
+      but with hand-rolled colors. <span class="danger-text">No shared <span class="mono">&lt;Switch&gt;</span> primitive exists.</span>
+    </p>
+
+    <div class="grid grid-cols-2 gap-4 mt-8">
+      <div class="demo">
+        <div class="lbl">balance/auto-top-up-panel.tsx · <span class="mono">AutoTopUpToggle</span></div>
+        <div class="flex items-center gap-3 mt-4">
+          <span class="swt-track bg-amber-100 border-amber-300"><span class="swt-thumb"></span></span>
+          <span class="text-[15px] font-bold text-amber-950">Off</span>
+        </div>
+        <div class="flex items-center gap-3 mt-3">
+          <span class="swt-track swt-on bg-amber-300 border-amber-400"><span class="swt-thumb"></span></span>
+          <span class="text-[15px] font-bold text-amber-950">Draft</span>
+        </div>
+        <div class="flex items-center gap-3 mt-3">
+          <span class="swt-track swt-on bg-emerald-300 border-emerald-400"><span class="swt-thumb"></span></span>
+          <span class="text-[15px] font-bold text-amber-950">On</span>
+        </div>
+        <div class="flex items-center gap-3 mt-3">
+          <span class="swt-track swt-on" style="background:#f87171; border-color:#ef4444"><span class="swt-thumb"></span></span>
+          <span class="text-[15px] font-bold text-red-700">Alert</span>
+        </div>
+        <div class="note mt-4">3 states + 1 alert. Focus ring: amber-300.</div>
+      </div>
+      <div class="demo">
+        <div class="lbl">api-keys/publishable-key-settings.tsx · <span class="mono">DeveloperEarningsSwitch</span></div>
+        <div class="flex items-center gap-3 mt-4">
+          <span class="swt-track bg-blue-100 border-blue-300"><span class="swt-thumb"></span></span>
+          <span class="text-[14px] font-semibold text-blue-900">Off</span>
+        </div>
+        <div class="flex items-center gap-3 mt-3">
+          <span class="swt-track swt-on bg-blue-200 border-blue-300"><span class="swt-thumb"></span></span>
+          <span class="text-[14px] font-semibold text-blue-900">On</span>
+        </div>
+        <div class="note mt-4">2 states only. Focus ring: blue-300.</div>
+      </div>
+    </div>
+
+    <div class="flag mt-6">
+      <div><span class="flag-sev sev-high">High</span></div>
+      <div>
+        <h4>Promote to a single <code>&lt;Switch theme="amber" status="…"&gt;</code></h4>
+        <p>Both copies render the same track/thumb geometry. Move it to <span class="mono">ui/switch.tsx</span>, drive bg + ring from <span class="mono">themeTokens[theme]</span>, accept <span class="mono">status: "off" | "on" | "alert"</span> (and optional "draft") so the auto-top-up case is just a longer state machine over the same primitive. The "on" state can default to <span class="mono">bg-X-300</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SURFACES ================= -->
+  <section id="surfaces" class="mb-20">
+    <div class="sec-num">07</div>
+    <h2 class="sec-title">Surfaces — Card &amp; Panel</h2>
+
+    <div class="grid grid-cols-2 gap-4 mt-8">
+      <div>
+        <div class="lbl mb-2">Card · <span class="mono">rounded-xl border p-4</span></div>
+        <div class="rounded-xl border border-amber-300 bg-white/80 p-4">
+          <div class="text-amber-950 font-semibold">Amber card</div>
+          <div class="text-amber-800/75 text-sm mt-1">White bg, themed border.</div>
+        </div>
+        <div class="rounded-xl border border-blue-300 bg-white/80 p-4 mt-3">
+          <div class="text-blue-950 font-semibold">Blue card</div>
+          <div class="text-blue-800/75 text-sm mt-1">—</div>
+        </div>
+        <div class="rounded-xl border border-teal-200 bg-white/80 p-4 mt-3">
+          <div class="text-teal-950 font-semibold">Teal card</div>
+          <div class="text-teal-800/75 text-sm mt-1"><span class="danger-text">border-teal-200</span> — others use 300. Outlier.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="lbl mb-2">Panel · <span class="mono">rounded-2xl border p-6</span></div>
+        <div class="rounded-2xl border border-amber-300 bg-amber-50/70 p-6">
+          <div class="text-amber-950 font-semibold">Amber panel</div>
+          <div class="text-amber-800/75 text-sm mt-1">Tinted bg (50/70), themed border.</div>
+        </div>
+        <div class="rounded-2xl border border-blue-300 bg-blue-50/70 p-6 mt-3">
+          <div class="text-blue-950 font-semibold">Blue panel</div>
+        </div>
+        <div class="rounded-2xl border border-teal-200 bg-teal-50/70 p-6 mt-3">
+          <div class="text-teal-950 font-semibold">Teal panel</div>
+          <div class="text-teal-800/75 text-sm mt-1"><span class="danger-text">border-teal-200</span> — outlier here too.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flag mt-6">
+      <div><span class="flag-sev sev-med">Medium</span></div>
+      <div>
+        <h4>Card and Panel are the same primitive at two radii</h4>
+        <p>Card = <span class="mono">rounded-xl</span> + <span class="mono">bg-white/80</span> + themed border. Panel = <span class="mono">rounded-2xl</span> + <span class="mono">bg-X-50/70</span> + themed border. Same shape, different fill rule. Consider one <span class="mono">&lt;Surface&gt;</span> with <span class="mono">tone: "white" | "tinted"</span> and <span class="mono">size: "card" | "panel"</span>.</p>
+      </div>
+    </div>
+
+    <div class="flag mt-3">
+      <div><span class="flag-sev sev-low">Low</span></div>
+      <div>
+        <h4>Teal uses border-200, every other theme uses border-300</h4>
+        <p>Both <span class="mono">cardColors.teal</span> and <span class="mono">panelColors.teal</span> are off by one step on the ramp. Bump them to <span class="mono">border-teal-300</span> for parity.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= INPUTS / INFOTIP ================= -->
+  <section id="inputs" class="mb-20">
+    <div class="sec-num">08</div>
+    <h2 class="sec-title">Inputs &amp; helpers</h2>
+
+    <div class="grid grid-cols-2 gap-4 mt-8">
+      <div class="demo">
+        <div class="lbl">Input · <span class="mono">ui/input.tsx</span></div>
+        <input class="mt-3 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" placeholder="Default" />
+        <input class="mt-2 w-full px-3 py-2 border border-red-400 rounded-lg focus:outline-none" placeholder="Error" />
+        <div class="note mt-3">Focus ring is <span class="mono">green-500</span> on every page regardless of theme.</div>
+      </div>
+      <div class="demo">
+        <div class="lbl">IconButton · <span class="mono">ui/icon-button.tsx</span></div>
+        <div class="flex gap-2 mt-3 items-center">
+          <span class="inline-flex items-center justify-center h-6 w-6 rounded bg-blue-50 text-blue-400">✎</span>
+          <span class="inline-flex items-center justify-center h-6 w-6 rounded bg-red-50 text-red-400">×</span>
+          <span class="inline-flex items-center justify-center h-6 w-6 rounded bg-gray-50 text-gray-400">⋯</span>
+          <span class="ml-2 mono text-[11px] text-gray-500">blue · red · gray only</span>
+        </div>
+        <div class="note mt-3">Doesn't take the page theme. <span class="danger-text">No parity with the 7-hue system.</span></div>
+      </div>
+    </div>
+
+    <h3 class="h3 mt-10 mb-3">InfoTip — 5 tones, each with a gradient popup</h3>
+    <div class="demo flex flex-wrap gap-6">
+      <span class="inline-flex items-center gap-2">
+        <span class="infotip-i bg-pink-100 border-pink-300 text-pink-500">i</span>
+        <span class="mono text-[11px]">pink</span>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="infotip-i bg-amber-200 border-amber-400 text-amber-800">i</span>
+        <span class="mono text-[11px]">amber</span>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="infotip-i bg-yellow-100 border-yellow-300 text-yellow-700">i</span>
+        <span class="mono text-[11px] danger-text">yellow ← duplicates amber</span>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="infotip-i bg-blue-100 border-blue-300 text-blue-600">i</span>
+        <span class="mono text-[11px]">blue</span>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="infotip-i bg-violet-100 border-violet-300 text-violet-600">i</span>
+        <span class="mono text-[11px]">violet</span>
+      </span>
+    </div>
+
+    <div class="flag mt-6">
+      <div><span class="flag-sev sev-med">Medium</span></div>
+      <div>
+        <h4>InfoTip popup uses gradients — the only gradients in the UI besides Pricing</h4>
+        <p>Popup background is <span class="mono">bg-gradient-to-r from-X-50 to-Y-50</span> for every tone. A flat tinted background (<span class="mono">bg-X-50</span>) matches the rest of the system and is one fewer concept to maintain. Also drop the <span class="mono">yellow</span> tone — it's the only place yellow exists.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MONEY ================= -->
+  <section id="money" class="mb-20">
+    <div class="sec-num">09</div>
+    <h2 class="sec-title">Money colors — Paid &amp; Tier</h2>
+    <p class="sec-desc">
+      Used by <span class="mono">PollenBalance</span>, <span class="mono">EarningsGraph</span>,
+      <span class="mono">UsageGraph</span>. Defined as raw hex in <span class="mono">lib/balance-colors.ts</span>
+      and used via arbitrary classes like <span class="mono">bg-[#E08A52]</span>.
+    </p>
+
+    <table class="tok-tbl mt-6">
+      <thead><tr><th>Role</th><th>Token</th><th>Hex</th><th>Swatch</th><th>Tailwind closest</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Paid · base</td>
+          <td class="mono">PAID_COLOR.base</td>
+          <td class="mono">#E08A52</td>
+          <td><div style="width:80px;height:24px;background:#E08A52" class="rounded"></div></td>
+          <td class="mono">≈ orange-400</td>
+        </tr>
+        <tr>
+          <td>Paid · hover</td>
+          <td class="mono">PAID_COLOR.hover</td>
+          <td class="mono">#C97540</td>
+          <td><div style="width:80px;height:24px;background:#C97540" class="rounded"></div></td>
+          <td class="mono">≈ orange-500</td>
+        </tr>
+        <tr>
+          <td>Paid · text</td>
+          <td class="mono">(inline) text-[#7C3F1E]</td>
+          <td class="mono">#7C3F1E</td>
+          <td><div style="width:80px;height:24px;background:#7C3F1E" class="rounded"></div></td>
+          <td class="mono">≈ orange-900</td>
+        </tr>
+        <tr>
+          <td>Tier · base</td>
+          <td class="mono">TIER_COLOR.base</td>
+          <td class="mono">#FCD34D</td>
+          <td><div style="width:80px;height:24px;background:#FCD34D" class="rounded"></div></td>
+          <td class="mono">= amber-300</td>
+        </tr>
+        <tr>
+          <td>Tier · hover</td>
+          <td class="mono">TIER_COLOR.hover</td>
+          <td class="mono">#EAB818</td>
+          <td><div style="width:80px;height:24px;background:#EAB818" class="rounded"></div></td>
+          <td class="mono">≈ amber-400/500</td>
+        </tr>
+        <tr>
+          <td>Tier · text</td>
+          <td class="mono">(inline) text-[#7A5807]</td>
+          <td class="mono">#7A5807</td>
+          <td><div style="width:80px;height:24px;background:#7A5807" class="rounded"></div></td>
+          <td class="mono">≈ amber-900</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="flag mt-6">
+      <div><span class="flag-sev sev-med">Medium</span></div>
+      <div>
+        <h4>Money colors should live next to the theme tokens</h4>
+        <p>The Paid orange is custom-mixed (not Tailwind orange-400), so keep it — but move all four hex values into <span class="mono">dashboard-theme.ts</span> under a <span class="mono">money</span> namespace and expose CSS vars (<span class="mono">--color-paid / --color-paid-text / --color-tier / --color-tier-text</span>). Then drop every <span class="mono">bg-[#E08A52]</span>, <span class="mono">text-[#7C3F1E]</span> in favor of <span class="mono">bg-paid text-paid-deep</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RADIUS & BORDER ================= -->
+  <section id="radius" class="mb-20">
+    <div class="sec-num">10</div>
+    <h2 class="sec-title">Radius &amp; border widths</h2>
+
+    <table class="tok-tbl mt-6">
+      <thead><tr><th>Class</th><th>Shape</th><th>Used by</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">rounded-md</td><td><div style="width:60px;height:24px" class="rounded-md bg-gray-100 border border-gray-300"></div></td><td>Tag, modal menu items</td><td class="note">OK</td></tr>
+        <tr><td class="mono">rounded-lg</td><td><div style="width:60px;height:24px" class="rounded-lg bg-gray-100 border border-gray-300"></div></td><td>Input, tooltip, dialogs, auth modal, period picker dropdown</td><td class="note">OK</td></tr>
+        <tr><td class="mono">rounded-xl</td><td><div style="width:60px;height:24px" class="rounded-xl bg-gray-100 border border-gray-300"></div></td><td>Card, model-row, pollen-balance</td><td class="note">OK</td></tr>
+        <tr><td class="mono">rounded-2xl</td><td><div style="width:60px;height:24px" class="rounded-2xl bg-gray-100 border border-gray-300"></div></td><td>Panel only</td><td class="note">OK</td></tr>
+        <tr><td class="mono">rounded-full</td><td><div style="width:60px;height:24px" class="rounded-full bg-gray-100 border border-gray-300"></div></td><td>Button (default), Tab, NavButton, switch track, brand chip, dot</td><td class="note">OK</td></tr>
+        <tr><td class="mono">rounded-none</td><td><div style="width:60px;height:24px" class="rounded-none bg-gray-100 border border-gray-300"></div></td><td>Button shape="rect"</td><td class="note">Optional escape hatch</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="h3 mt-10 mb-3">Border widths</h3>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="demo">
+        <div class="lbl">1px · default</div>
+        <div class="rounded-lg border border-gray-300 p-4 mt-2">Cards, panels, inputs, tabs</div>
+      </div>
+      <div class="demo">
+        <div class="lbl">2px · button-outline</div>
+        <div class="rounded-full border-2 border-gray-900 px-4 py-2 mt-2 inline-block">Outline button</div>
+      </div>
+      <div class="demo">
+        <div class="lbl">4px · modals</div>
+        <div class="rounded-lg border-4 border-amber-300 p-4 mt-2">Auth modal · API key dialog</div>
+        <div class="note mt-2">Used only on 2 dialogs.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= AUDIT ================= -->
+  <section id="audit" class="mb-10">
+    <div class="sec-num">11</div>
+    <h2 class="sec-title">Audit findings</h2>
+    <p class="sec-desc">
+      Hand-pickable list, ordered by impact. Severity reflects how much visual debt removing it pays back.
+    </p>
+
+    <div class="space-y-3 mt-8">
+
+      <div class="flag">
+        <div><span class="flag-sev sev-high">High · 01</span></div>
+        <div>
+          <h4>Three tables (Tag, Pill, Tab-active) + Button-light all encode the same chip</h4>
+          <p>Per theme, four tables define <span class="mono">bg-X-200 text-X-900</span>. They should be one <span class="mono">chipColors[theme]</span> consumed by all four primitives. Estimated removal: 4 lookup tables × 7 themes = <strong>28 redundant entries</strong>.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-high">High · 02</span></div>
+        <div>
+          <h4><code>dashboardThemeClasses[X].active</code> ships <code>text-green-950</code> for every theme</h4>
+          <p>Active nav row stays dark-green even on the pink, blue, violet, teal, amber pages. Either drop the text class entirely or use <span class="mono">text-X-950</span>. Copy-paste from the green entry.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-high">High · 03</span></div>
+        <div>
+          <h4>Switch primitive duplicated</h4>
+          <p><span class="mono">AutoTopUpToggle</span> (balance) and <span class="mono">DeveloperEarningsSwitch</span> (api-keys) are the same track / thumb / animation. Promote to <span class="mono">ui/switch.tsx</span> with <span class="mono">theme</span> + <span class="mono">status</span> props.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-high">High · 04</span></div>
+        <div>
+          <h4>"Strong" button weight is at a different shade per theme</h4>
+          <p>500 (amber), 600 (teal, violet), 700 (pink, gray), 900 (purple, red), 950 (green). Visually, the primary button doesn't read as the same UI element across pages.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-high">High · 05</span></div>
+        <div>
+          <h4><code>buttonColors.blue.light</code> === <code>buttonColors.blue.strong</code></h4>
+          <p>Both are <span class="mono">bg-blue-200 text-blue-900 hover:bg-blue-300</span>. Either fix <span class="mono">strong</span> to use <span class="mono">bg-blue-600 text-white</span> for parity with teal/violet, or document that blue has no strong variant.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-med">Medium · 06</span></div>
+        <div>
+          <h4><code>purple</code> and <code>violet</code> both exist; purple actually renders indigo</h4>
+          <p><span class="mono">buttonColors.purple</span> uses <span class="mono">bg-indigo-*</span>. <span class="mono">cardColors.purple</span> uses real purple. <span class="mono">tagColors.purple</span> uses real purple. Drop <span class="mono">purple</span>, keep <span class="mono">violet</span> as the canonical name.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-med">Medium · 07</span></div>
+        <div>
+          <h4>Tag color recipes drift from pill / theme</h4>
+          <p><span class="mono">tag.green</span>, <span class="mono">tag.pink</span>, <span class="mono">tag.teal</span> all use <span class="mono">text-gray-900</span> while pill uses <span class="mono">text-X-900</span>. <span class="mono">tag.blue</span> is <span class="mono">bg-blue-100 text-blue-700</span> — wholly different recipe. Align with the chip token from finding 01.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-med">Medium · 08</span></div>
+        <div>
+          <h4>Card and Panel are the same surface at two radii</h4>
+          <p>Merge into <span class="mono">&lt;Surface tone="white"|"tinted" size="card"|"panel"&gt;</span>.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-med">Medium · 09</span></div>
+        <div>
+          <h4>Money colors live as raw hex in 6 places</h4>
+          <p><span class="mono">#E08A52</span>, <span class="mono">#FCD34D</span>, <span class="mono">#7C3F1E</span>, <span class="mono">#7A5807</span> appear as <span class="mono">bg-[#…]</span> / <span class="mono">text-[#…]</span> across pollen-balance, earnings-graph, usage-graph. Hoist to CSS vars + Tailwind tokens.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-med">Medium · 10</span></div>
+        <div>
+          <h4>Type scale leaks arbitrary px (10, 11, 15)</h4>
+          <p>Used in nav (<span class="mono">text-[15px]</span>), brand chip / footer (<span class="mono">text-[11px]</span>), InfoTip badge (<span class="mono">text-[10px]</span>). Make them named tokens. Also: <span class="mono">h4–h6</span> have no font family.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-med">Medium · 11</span></div>
+        <div>
+          <h4>InfoTip is the only place using two-color gradients</h4>
+          <p><span class="mono">bg-gradient-to-r from-X-50 to-Y-50</span>. Replace with flat <span class="mono">bg-X-50</span> — one fewer concept, and matches the rest of the system.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-low">Low · 12</span></div>
+        <div>
+          <h4>Teal uses <code>border-200</code>; every other theme uses <code>border-300</code></h4>
+          <p>Bump <span class="mono">cardColors.teal</span> and <span class="mono">panelColors.teal</span> to <span class="mono">border-teal-300</span>.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-low">Low · 13</span></div>
+        <div>
+          <h4>Yellow tone in Tag and InfoTip used only there</h4>
+          <p>Drop <span class="mono">tagColors.yellow</span> and <span class="mono">InfoTip tone="yellow"</span>; replace with <span class="mono">amber</span>.</p>
+        </div>
+      </div>
+
+      <div class="flag">
+        <div><span class="flag-sev sev-low">Low · 14</span></div>
+        <div>
+          <h4>Input focus ring is locked to green</h4>
+          <p>The shared <span class="mono">&lt;Input&gt;</span> uses <span class="mono">focus:border-green-500</span> regardless of page theme. Either accept a <span class="mono">theme</span> prop or remove the page-themed assumption from focus rings everywhere.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= NEXT STEPS ================= -->
+  <section class="mb-12">
+    <div class="rule-soft mb-10"></div>
+    <div class="sec-num">Next pass</div>
+    <h2 class="sec-title">Proposed clean shape</h2>
+    <p class="sec-desc">
+      Once findings 01–05 are resolved, the shape of <span class="mono">dashboard-theme.ts</span> becomes:
+    </p>
+
+    <div class="demo mt-6">
+      <pre class="mono text-[12.5px] leading-[1.65] text-gray-800">themes = {
+  amber:  { hue: "amber",  ramp: { …auto-derived from Tailwind } },
+  blue:   { hue: "blue",   …                                       },
+  gray:   { hue: "gray",   …                                       },
+  green:  { hue: "green",  …                                       },
+  pink:   { hue: "pink",   …                                       },
+  teal:   { hue: "teal",   …                                       },
+  violet: { hue: "violet", …                                       },
+}
+
+// per-theme roles, derived (no hand-typing of "bg-X-200 text-X-900"):
+text:    label | base | strong | muted | soft | softer
+border:  idle  | soft | subtle
+bg:      idle  | subtle | active | hover
+chip:    bg + text                  // ← replaces tag/pill/tab-active/btn-light
+button:  light | strong | outline   // strong rule = one shade across themes
+surface: card | panel               // ← replaces Card + Panel
+switch:  off | on | alert           // ← shared primitive
+ring:    focus
+
+semantic = { destructive: red, success: green, warning: amber }
+money    = { paid, paid-deep, tier, tier-deep }  // 4 hex, hoisted from balance-colors.ts</pre>
+    </div>
+
+    <p class="sec-desc mt-6">
+      With these changes the four "is this a tag or a button-light or a tab" judgement calls collapse into one (<span class="mono">chip</span>),
+      and the theme story drops from 6 tables × 7–10 themes (~ 60 entries) to one derived ramp per hue.
+    </p>
+  </section>
+
+</div>
+</body>
+</html>

@@ -340,7 +340,7 @@ const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
             aria-current={active ? "page" : undefined}
         >
             <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] bg-theme-accent"
+                className="h-2.5 w-2.5 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] bg-theme-bg-hover"
                 aria-hidden="true"
             />
             {item.label}

@@ -126,7 +126,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         : "grid grid-cols-2 gap-3"
                 }
             >
-                <div className="rounded-xl bg-paid-pale p-4">
+                <div className="rounded-xl bg-paid-pale/60 p-4">
                     <span className="flex items-center gap-2">
                         <span
                             className="h-2 w-2 rounded-full bg-paid-soft"
@@ -164,7 +164,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     )}
                 </div>
                 {!hideTierColumn && (
-                    <div className="rounded-xl bg-tier-pale p-4">
+                    <div className="rounded-xl bg-tier-pale/60 p-4">
                         <span className="flex items-center gap-2">
                             <span
                                 className="h-2 w-2 rounded-full bg-tier-soft"

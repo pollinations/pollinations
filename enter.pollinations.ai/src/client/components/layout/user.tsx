@@ -26,7 +26,7 @@ export const User: FC<UserProps> = ({
                 <button
                     type="button"
                     className={cn(
-                        "flex min-w-0 flex-row gap-2 p-1 pr-3 bg-amber-200 rounded-full items-center self-center hover:bg-amber-300 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-300 whitespace-nowrap",
+                        "flex min-w-0 flex-row gap-2 p-1 pr-3 bg-amber-200 rounded-full items-center self-center hover:bg-amber-300 transition-colors cursor-pointer whitespace-nowrap",
                         className,
                     )}
                 >
@@ -58,7 +58,7 @@ export const User: FC<UserProps> = ({
                 </button>
             </Menu.Trigger>
             <Menu.Positioner>
-                <Menu.Content className="bg-amber-200 rounded-lg min-w-0 w-[var(--reference-width)] z-50 focus:outline-none focus:ring-2 focus:ring-amber-300 p-1">
+                <Menu.Content className="bg-amber-200 rounded-lg min-w-0 w-[var(--reference-width)] z-50 focus:outline-none p-1">
                     {menuItems}
                     {menuItems && (
                         <div className="my-1 border-t border-amber-300" />

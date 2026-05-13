@@ -20,8 +20,8 @@ type SwitchProps = {
 //  draft — soft red (incomplete / error / setup needed)
 const trackClasses: Record<SwitchStatus, string> = {
     off: "bg-gray-200",
-    on: "bg-[oklch(0.935_0.06_158)]",
-    draft: "bg-[oklch(0.935_0.045_25)]",
+    on: "bg-[oklch(0.88_0.12_158)]",
+    draft: "bg-[oklch(0.88_0.12_25)]",
 };
 
 /**
@@ -55,7 +55,7 @@ export const Switch: FC<SwitchProps> = ({
             onClick={() => onChange(!checked)}
             disabled={disabled}
             className={cn(
-                "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-accent/70 disabled:cursor-not-allowed disabled:opacity-60",
+                "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-60",
                 trackClasses[effectiveStatus],
                 className,
             )}

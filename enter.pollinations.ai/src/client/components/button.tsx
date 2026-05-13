@@ -14,15 +14,15 @@ const sizes = {
 
 // Cascade-driven base — reads [data-theme] vars.
 const themeClasses =
-    "bg-theme-button-light-bg text-theme-button-light-text " +
-    "hover:bg-theme-button-light-hover transition-colors";
+    "bg-theme-bg-active text-theme-text-base " +
+    "hover:bg-theme-bg-hover transition-colors";
 
 // Single intent: danger. Soft recipe — light tile + deep text, slightly
 // deeper bg on hover. No filled CTAs anywhere.
 const intentClasses: Record<ButtonIntent, string> = {
     danger:
         "bg-intent-danger-bg-light text-intent-danger-text " +
-        "hover:bg-intent-danger-border transition-colors",
+        "hover:bg-[oklch(0.88_0.075_25)] transition-colors",
 };
 
 type BaseButtonProps = {

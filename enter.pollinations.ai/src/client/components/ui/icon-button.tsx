@@ -6,7 +6,7 @@ type IconButtonIntent = "danger";
 
 const intentClasses: Record<IconButtonIntent, string> = {
     danger:
-        "bg-intent-danger-bg-light hover:bg-intent-danger-border " +
+        "bg-intent-danger-bg-light hover:bg-[oklch(0.88_0.075_25)] " +
         "text-intent-danger-text",
 };
 

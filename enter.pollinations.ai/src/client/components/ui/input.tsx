@@ -11,7 +11,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             className={cn(
                 "px-3 py-2 border rounded-lg",
-                "focus:outline-none focus-visible:border-theme-accent/70 focus-visible:ring-1 focus-visible:ring-theme-accent/70",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 error ? "border-red-400" : "border-gray-300",
                 className,

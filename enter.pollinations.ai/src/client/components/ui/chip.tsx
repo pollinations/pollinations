@@ -21,7 +21,7 @@ const chipSizes = {
 
 const intentClasses: Record<ChipIntent, string> = {
     news: "bg-[oklch(0.935_0.06_158)] text-[oklch(0.46_0.13_158)]",
-    alpha: "bg-[oklch(0.91_0.15_92)] text-[oklch(0.38_0.13_55)]",
+    alpha: "bg-[oklch(0.93_0.06_300)] text-[oklch(0.42_0.18_300)]",
     paid: "bg-paid-pale text-paid-deep",
     tier: "bg-tier-pale text-tier-deep",
     neutral: "border border-gray-400/70 bg-gray-100/80 text-gray-900",
@@ -36,7 +36,7 @@ type ChipProps = ComponentPropsWithoutRef<"span"> & {
 };
 
 // Static, rectangular colored container. Round shapes are reserved for buttons.
-// Reads `bg-theme-chip-bg` / `text-theme-chip-text` from the cascade unless
+// Reads `bg-theme-bg-active` / `text-theme-text-strong` from the cascade unless
 // `intent` is set (semantic, theme-independent).
 export const Chip: FC<ChipProps> = ({
     theme,
@@ -48,7 +48,7 @@ export const Chip: FC<ChipProps> = ({
 }) => {
     const intentClass = intent
         ? intentClasses[intent]
-        : "bg-theme-chip-bg text-theme-chip-text";
+        : "bg-theme-bg-active text-theme-text-strong";
     return (
         <span
             {...rest}

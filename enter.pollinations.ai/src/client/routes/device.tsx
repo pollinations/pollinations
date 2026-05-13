@@ -150,7 +150,7 @@ function DeviceComponent() {
                                 setUserCode(e.target.value.toUpperCase())
                             }
                             placeholder="XXXX-XXXX"
-                            className="w-full text-center text-2xl font-mono tracking-widest p-3 border-2 border-theme-border rounded-lg bg-surface-white text-theme-text-strong focus:border-theme-accent focus:outline-none"
+                            className="w-full text-center text-2xl font-mono tracking-widest p-3 border-2 border-theme-border rounded-lg bg-surface-white text-theme-text-strong"
                             ref={inputRef}
                             maxLength={20}
                             disabled={checking}

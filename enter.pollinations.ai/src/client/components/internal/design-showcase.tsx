@@ -144,7 +144,7 @@ function ToggleGroup<T extends string>({
                         className={cn(
                             "rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors",
                             value === option
-                                ? "bg-theme-chip-bg text-theme-chip-text"
+                                ? "bg-theme-bg-active text-theme-text-strong"
                                 : "text-theme-text-soft hover:bg-theme-bg-hover",
                         )}
                     >
@@ -217,11 +217,15 @@ const typeRamp: readonly TypeRow[] = [
     },
 ] as const;
 
-const textColorRows: readonly {
+type TextColorRow = {
     name: string;
     cls: string;
     purpose: string;
-}[] = [
+    /** When true, this color is theme-independent (fixed semantic color). */
+    semantic?: boolean;
+};
+
+const textColorRows: readonly TextColorRow[] = [
     {
         name: "text-strong",
         cls: "text-theme-text-strong",
@@ -237,14 +241,73 @@ const textColorRows: readonly {
         cls: "text-theme-text-soft",
         purpose: "Secondary · captions · meta",
     },
+    {
+        name: "text-green-700",
+        cls: "text-green-700",
+        purpose: "Earnings delta (wallet + drawer · positive)",
+        semantic: true,
+    },
+];
+
+type FontRow = {
+    utility: string;
+    family: string;
+    purpose: string;
+};
+
+const fontRows: readonly FontRow[] = [
+    { utility: "font-heading", family: "LCT Mogi", purpose: "h1 only" },
+    {
+        utility: "font-subheading",
+        family: "Fraunces",
+        purpose: "h2 · h3 (tracking-tight)",
+    },
+    {
+        utility: "font-body",
+        family: "Uncut Sans",
+        purpose: "h4–h6 · body · all UI",
+    },
 ];
 
 const TypographyDemo: FC = () => (
     <Section
         title="Typography"
-        caption="font-heading = LCT Mogi (h1) · font-subheading = Fraunces (h2-h3) · font-body = Uncut Sans (h4-h6 + body). Sizes and colors below both react to the active page theme — flip the toggle to preview."
+        caption="Three font families + three text colors + ten sizes. Sizes and colors react to the active theme; fonts are global."
     >
         <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-6">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-soft">
+                    Fonts
+                </div>
+                <div className="flex flex-col gap-2">
+                    {fontRows.map((row) => (
+                        <div
+                            key={row.utility}
+                            className="flex items-baseline gap-4 border-b border-theme-border pb-2 last:border-b-0 last:pb-0"
+                        >
+                            <span
+                                className={cn(
+                                    "w-48 shrink-0 truncate text-2xl text-theme-text-strong",
+                                    row.utility,
+                                    row.utility === "font-subheading" &&
+                                        "tracking-tight",
+                                )}
+                            >
+                                The quick brown fox
+                            </span>
+                            <code className="w-32 shrink-0 text-xs font-mono text-theme-text-strong">
+                                {row.utility}
+                            </code>
+                            <span className="w-28 shrink-0 text-xs text-theme-text-soft">
+                                {row.family}
+                            </span>
+                            <span className="min-w-0 flex-1 text-xs text-theme-text-soft/60">
+                                {row.purpose}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
             <div className="rounded-xl border border-theme-border bg-theme-bg-subtle p-6">
                 <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-theme-text-soft">
                     Color (theme cascade)
@@ -264,9 +327,12 @@ const TypographyDemo: FC = () => (
                                 className={cn(
                                     "w-32 shrink-0 truncate font-body text-lg",
                                     row.cls,
+                                    row.semantic && "font-bold tabular-nums",
                                 )}
                             >
-                                The quick brown fox
+                                {row.semantic
+                                    ? "+1842.7"
+                                    : "The quick brown fox"}
                             </span>
                             <code className="w-32 shrink-0 text-xs font-mono text-theme-text-strong">
                                 {row.name}
@@ -274,6 +340,11 @@ const TypographyDemo: FC = () => (
                             <span className="min-w-0 flex-1 text-xs text-theme-text-soft/60">
                                 {row.purpose}
                             </span>
+                            {row.semantic && (
+                                <span className="shrink-0 rounded-md bg-theme-bg-subtle px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-theme-text-soft">
+                                    semantic
+                                </span>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -323,10 +394,10 @@ const TypographyDemo: FC = () => (
 const ChipsDemo: FC = () => (
     <Section
         title="Chips"
-        caption="Default chip inherits the active page theme (uses chip-bg = bg-active under the hood). Five intent chips: news/alpha tag models (uppercase); paid/tier tag pollen balances (also drive activity/usage identity chips, with emoji prefix); neutral is a bordered gray container for emoji icons (modalities + capabilities on pricing rows). Status pattern: theme=green for permissive/on, theme=amber for partial/restricted, gray override for off. Theme overrides also drive count badges (e.g. +1 redirect)."
+        caption="Default chip inherits the active page theme (bg-active + text-strong). Five intent chips: news/alpha tag models (uppercase); paid/tier tag pollen balances (also drive activity/usage identity chips, with emoji prefix); neutral is a bordered gray container for emoji icons (modalities + capabilities on pricing rows). Status pattern: theme=green for permissive/on, theme=amber for partial/restricted, gray override for off. Theme overrides also drive count badges (e.g. +1 redirect)."
     >
         <div className="flex flex-col gap-3">
-            <ChipRow label="Default · chip-bg + chip-text">
+            <ChipRow label="Default · bg-active + text-strong">
                 <Chip>Theme</Chip>
             </ChipRow>
             <ChipRow label="Model labels">
@@ -399,10 +470,10 @@ const modalityList: readonly Modality[] = [
 const ButtonsDemo: FC = () => (
     <Section
         title="Buttons"
-        caption="Soft tile + deep text. Default uses button-light-bg + button-light-text; hover: button-light-hover. Inherits the active theme; intent='danger' overrides destructive actions. Modality buttons (interactive model picker) share the same rounded-full shape, with per-modality hues for identity."
+        caption="Soft tile + deep text. Default uses bg-active + text-base (same shade family as chips); hover: bg-hover. Inherits the active theme; intent='danger' overrides destructive actions. Modality buttons (interactive model picker) share the same rounded-full shape, with per-modality hues for identity."
     >
         <div className="flex flex-col gap-3">
-            <ChipRow label="Default · button-light-*">
+            <ChipRow label="Default · bg-active + text-base">
                 <Button>Default</Button>
                 <Button disabled>Disabled</Button>
                 <Button intent="danger">Delete</Button>
@@ -496,64 +567,32 @@ const SurfacesDemo: FC = () => (
                 </div>
             </Surface>
 
-            <div className="flex flex-wrap items-center gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
-                <span className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
-                    states (theme-aware)
-                </span>
-                <div className="flex items-center gap-2">
-                    <span className="h-6 w-10 rounded bg-theme-bg-active" />
-                    <code className="text-xs font-mono text-theme-text-strong">
-                        bg-active
-                    </code>
-                    <span className="text-xs text-theme-text-soft/60">
-                        selected / chip default
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="h-6 w-10 rounded bg-theme-bg-hover" />
-                    <code className="text-xs font-mono text-theme-text-strong">
-                        bg-hover
-                    </code>
-                    <span className="text-xs text-theme-text-soft/60">
-                        strong hover
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="h-6 w-6 rounded-full bg-theme-accent shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" />
-                    <code className="text-xs font-mono text-theme-text-strong">
-                        accent
-                    </code>
-                    <span className="text-xs text-theme-text-soft/60">
-                        nav dot · focus ring (/70)
-                    </span>
-                </div>
-            </div>
-
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-xl bg-paid-pale p-4">
+                <div className="rounded-xl bg-paid-pale/60 p-4">
                     <p className="text-xs font-mono uppercase tracking-wide text-paid-deep/70">
-                        wallet · paid · bg-paid-pale
+                        wallet · paid · bg-paid-pale/60
                     </p>
                     <p className="mt-1 text-sm text-paid-deep">
-                        Paid wallet card. Text uses{" "}
+                        Paid wallet card — paid-pale softened to /60. Text uses{" "}
                         <code className="font-mono">text-paid-deep</code>.
+                    </p>
+                </div>
+                <div className="rounded-xl bg-tier-pale/60 p-4">
+                    <p className="text-xs font-mono uppercase tracking-wide text-tier-deep/70">
+                        wallet · tier · bg-tier-pale/60
+                    </p>
+                    <p className="mt-1 text-sm text-tier-deep">
+                        Tier wallet card — tier-pale softened to /60. Text uses{" "}
+                        <code className="font-mono">text-tier-deep</code>.
                     </p>
                 </div>
                 <div className="rounded-xl bg-tier-pale p-4">
                     <p className="text-xs font-mono uppercase tracking-wide text-tier-deep/70">
-                        wallet · tier · bg-tier-pale
+                        tier explainer · active · bg-tier-pale
                     </p>
                     <p className="mt-1 text-sm text-tier-deep">
-                        Tier wallet card + active tier explainer. Text uses{" "}
-                        <code className="font-mono">text-tier-deep</code>.
-                    </p>
-                </div>
-                <div className="rounded-xl bg-tier-pale/40 p-4">
-                    <p className="text-xs font-mono uppercase tracking-wide text-tier-deep/70">
-                        tier · other · bg-tier-pale/40
-                    </p>
-                    <p className="mt-1 text-sm text-tier-deep">
-                        Non-current tiers in the explainer (opacity modifier).
+                        Active tier card (full strength); inactive tiers use{" "}
+                        <code className="font-mono">bg-tier-pale/40</code>.
                     </p>
                 </div>
             </div>

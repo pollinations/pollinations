@@ -3,16 +3,16 @@
 export const HELLO_PAGE = {
     pageTitle: "hello",
     pageDescription:
-        "Build AI apps with one API, free Pollen, user wallets, and developer earnings",
+        "Build AI apps that pay for themselves. One API for text, image, audio, video. Users bring their own credits, you optionally take a share.",
     // Section 1 — Hero
     heroTitle: "Build an AI app.",
     heroBodyPrefix: "⚡ Build with one API for text, image, audio, and video.",
-    heroBodyBold: "Free Pollen to start, user wallets when you launch.",
-    heroBodySuffix: " Turn on developer earnings when your app gets used. 🌱",
+    heroBodyBold: "We handle the models and infrastructure.",
+    heroBodySuffix: " Users spend across apps. Earn rewards. 🌱",
     heroStat1: "10K",
     heroStat1Label: "weekly active devs",
     heroStat2: "1.5M",
-    heroStat2Label: "requests / day",
+    heroStat2Label: "daily requests",
     heroStat3: "500+",
     heroStat3Label: "live apps",
     startBuildingButton: "Register",
@@ -25,17 +25,11 @@ export const HELLO_PAGE = {
     whatYouGetItems: [
         {
             emoji: "👛",
-            title: "User wallets",
-            lead: "Let users bring their own Pollen.",
-            desc: "- **Sign in** and spend from their **own wallet** 👛\n- Set **spending caps** they control\n- **Revoke access** any time",
+            title: "Wallets & earnings",
+            lead: "Users bring their own Pollen. You take a share.",
+            desc: "- Users **sign in** and spend from their **own wallet** 👛\n- Set **spending caps**, **revoke access** any time\n- Turn on earnings on your **App Key** to receive a **share** when users spend in your app 💰",
             linkText: "Add Pollen to your app",
             linkUrl: "byopDocs",
-        },
-        {
-            emoji: "🌻",
-            title: "Builder earnings",
-            lead: "Earn when your app gets used.",
-            desc: "- Turn on earnings on your **App Key**\n- Receive a **share** when users spend Pollen in your app 💰",
         },
         {
             emoji: "🪩",
@@ -90,21 +84,20 @@ export const HELLO_PAGE = {
         {
             title: "Pollinations Login",
             description:
-                "OAuth sign-in for your users, with token handling and production-ready auth.",
+                "Drop-in sign-in for your users. Token handling included.",
         },
         {
             title: "App Hosting",
             description:
-                "Ship your app on our infra. No deploy setup, no separate hosting bill.",
+                "Push your app to our infra. No deploy setup, no separate bill.",
         },
         {
             title: "App Discovery",
-            description: "A marketplace where users find your app.",
+            description: "Where users find your app.",
         },
         {
             title: "Ads SDK",
-            description:
-                "Optional ad placements with revenue shared back into your wallet.",
+            description: "Optional ad slots. Earnings go to your wallet.",
         },
     ],
     comingFooterEmoji: "",
@@ -112,9 +105,9 @@ export const HELLO_PAGE = {
     comingFooterLine2: "",
 
     // Section 9 — CTA
-    ctaTitle: "Start building with Pollen",
+    ctaTitle: "Start building",
     ctaBody:
-        "One API, free Pollen, user wallets, and developer earnings when your app gets used.",
+        "One API. Free credits, user wallets, and earnings when your app gets used.",
     browseAppsLink: "Browse Apps",
     communityLink: "Community",
 };

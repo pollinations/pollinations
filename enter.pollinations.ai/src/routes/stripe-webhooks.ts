@@ -25,23 +25,6 @@ interface StripeEventData {
     payload: Stripe.Event;
 }
 
-const LEGACY_BETA_MULTIPLIER = 2;
-
-// Grandfather grants for Checkout sessions created before the bonus-reduction
-// rollout. Stripe Checkout sessions can stay open ~24h, so users who opened a
-// session pre-deploy might pay post-deploy. Those sessions carry only
-// `packAmount` in metadata (no `pollenGrant` snapshot), so we honor the grant
-// that was displayed to them by looking up the previous catalog here.
-// Safe to remove ~48h after the deploy that introduced this map.
-const PRE_REDUCTION_GRANTS: Record<string, number> = {
-    "2": 2.5,
-    "5": 7,
-    "10": 15,
-    "20": 30,
-    "50": 80,
-    "100": 200,
-};
-
 type CheckoutSessionResult = {
     success: boolean;
     message: string;
@@ -178,19 +161,18 @@ const handleCheckoutSessionCompleted = async (
 
     const userId = metadata.userId;
     const amountPaid = Math.round((session.amount_subtotal || 0) / 100);
-    const pack = metadata.packAmount
-        ? getPollenPack(metadata.packAmount)
-        : undefined;
+    const packAmount = metadata.packAmountUsd ?? metadata.packAmount;
+    const pack = packAmount ? getPollenPack(packAmount) : undefined;
 
     if (amountPaid <= 0) {
         console.error("Invalid payment amount:", session.amount_total);
         return { success: false, message: "Invalid payment amount" };
     }
 
-    if (!pack && metadata.packAmount) {
-        console.error("Missing or invalid packAmount in checkout session:", {
+    if (!pack && packAmount) {
+        console.error("Missing or invalid pack amount in checkout session:", {
             sessionId: session.id,
-            packAmount: metadata.packAmount,
+            packAmount,
         });
         return {
             success: false,
@@ -198,28 +180,27 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
+    if (!pack) {
+        console.error("Missing pack amount in checkout session:", {
+            sessionId: session.id,
+        });
+        return {
+            success: false,
+            message: "Missing pack metadata",
+        };
+    }
+
     // Prefer the grant snapshotted into session metadata at checkout creation
     // time; this guarantees the user is credited exactly what they saw, even
-    // when bonus values change between session creation and payment. For
-    // sessions opened before the snapshot was added (packAmount present but
-    // no pollenGrant), honor the previous catalog so in-flight checkouts
-    // aren't under-credited. Falls back to the current catalog and finally
-    // to the legacy beta multiplier (sessions without packAmount).
-    const metadataGrant = metadata.pollenGrant
-        ? Number.parseFloat(metadata.pollenGrant)
+    // when bonus values change between session creation and payment.
+    const metadataGrantValue = metadata.packPollenGrant;
+    const metadataGrant = metadataGrantValue
+        ? Number.parseFloat(metadataGrantValue)
         : Number.NaN;
-    const grandfatherGrant =
-        metadata.packAmount && metadata.packAmount in PRE_REDUCTION_GRANTS
-            ? PRE_REDUCTION_GRANTS[metadata.packAmount]
-            : undefined;
     const creditsToAdd =
         Number.isFinite(metadataGrant) && metadataGrant > 0
             ? metadataGrant
-            : grandfatherGrant !== undefined
-              ? grandfatherGrant
-              : pack
-                ? pack.pollenGrant
-                : amountPaid * LEGACY_BETA_MULTIPLIER;
+            : pack.pollenGrant;
 
     const db = drizzle(env.DB);
 
@@ -254,20 +235,8 @@ const handleCheckoutSessionCompleted = async (
         };
     }
 
-    if (!pack) {
-        console.warn(
-            "Legacy Stripe checkout session missing packAmount; applying 2x fallback",
-            {
-                sessionId: session.id,
-                amountPaid,
-            },
-        );
-    }
-
     console.log(
-        pack
-            ? `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: $${amountPaid}, session: ${session.id})`
-            : `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (legacy fallback, paid: $${amountPaid}, session: ${session.id})`,
+        `Stripe: Credited ${creditsToAdd} pollen to user ${userId} (pack: $${pack.amountUsd}, paid: $${amountPaid}, session: ${session.id})`,
     );
 
     return {

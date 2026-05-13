@@ -109,9 +109,9 @@ export const stripeRoutes = new Hono<Env>()
                 payment_intent_data: {
                     metadata: {
                         userId,
-                        packAmount: String(pack.amountUsd),
-                        pollenGrant: String(pack.pollenGrant),
-                        bonusPollen: String(pack.bonusPollen),
+                        packAmountUsd: String(pack.amountUsd),
+                        packPollenGrant: String(pack.pollenGrant),
+                        packBonusPollen: String(pack.bonusPollen),
                     },
                 },
                 // Invoice creation after payment
@@ -128,9 +128,9 @@ export const stripeRoutes = new Hono<Env>()
                 // changes between session creation and payment.
                 metadata: {
                     userId,
-                    packAmount: String(pack.amountUsd),
-                    pollenGrant: String(pack.pollenGrant),
-                    bonusPollen: String(pack.bonusPollen),
+                    packAmountUsd: String(pack.amountUsd),
+                    packPollenGrant: String(pack.pollenGrant),
+                    packBonusPollen: String(pack.bonusPollen),
                 },
                 success_url: `${successUrl}?stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${cancelUrl}?stripe_canceled=true`,

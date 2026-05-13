@@ -126,17 +126,12 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         : "grid grid-cols-2 gap-3"
                 }
             >
-                <div className="rounded-xl bg-paid/10 p-4">
+                <div className="rounded-xl bg-paid-soft p-4">
                     <span className="flex items-center gap-2">
-                        <span
-                            className="h-2 w-2 rounded-full bg-paid"
-                            aria-hidden="true"
-                        />
                         <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
                             Paid
                         </span>
                         <InfoTip
-                            tone="amber"
                             label="About paid balance"
                             text={
                                 <TooltipList
@@ -165,17 +160,12 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     )}
                 </div>
                 {!hideTierColumn && (
-                    <div className="rounded-xl bg-tier/30 p-4">
+                    <div className="rounded-xl bg-tier-soft p-4">
                         <span className="flex items-center gap-2">
-                            <span
-                                className="h-2 w-2 rounded-full bg-tier"
-                                aria-hidden="true"
-                            />
                             <span className="text-sm font-bold uppercase tracking-wide text-amber-900">
                                 Tier
                             </span>
                             <InfoTip
-                                tone="amber"
                                 label="About tier balance"
                                 text={
                                     <TooltipList
@@ -280,7 +270,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
             <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                     <span
-                        className="h-2 w-2 rounded-full bg-paid"
+                        className="h-2 w-2 rounded-full bg-paid-soft"
                         aria-hidden="true"
                     />
                     Paid
@@ -300,7 +290,7 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                         <span
-                            className="h-2 w-2 rounded-full bg-tier"
+                            className="h-2 w-2 rounded-full bg-tier-soft"
                             aria-hidden="true"
                         />
                         Tier
@@ -357,16 +347,19 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                 onChange={setSelectedPackAmount}
                             />
                         </div>
-                        <Button
-                            as="a"
-                            href={`/api/stripe/checkout/${selectedPack.amountUsd}`}
-                            theme="amber"
-                            weight="light"
-                            title={`Buy $${selectedPack.amountUsd} pollen pack`}
-                            className="w-28 min-w-0 self-start text-center shadow-none sm:shrink-0 sm:self-center"
+                        <Tooltip
+                            content={`Buy $${selectedPack.amountUsd} pollen pack`}
+                            displayContents
                         >
-                            Buy
-                        </Button>
+                            <Button
+                                as="a"
+                                href={`/api/stripe/checkout/${selectedPack.amountUsd}`}
+                                theme="amber"
+                                className="w-28 min-w-0 self-start text-center shadow-none sm:shrink-0 sm:self-center"
+                            >
+                                Buy
+                            </Button>
+                        </Tooltip>
                     </div>
                 )}
             </div>

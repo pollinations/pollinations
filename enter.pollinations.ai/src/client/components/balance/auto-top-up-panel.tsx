@@ -284,7 +284,6 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                         <InfoTip
                             content={AUTO_TOP_UP_TOOLTIP_CONTENT}
                             label="Auto top-up information"
-                            tone="amber"
                         />
                     </div>
                     <div
@@ -380,7 +379,6 @@ const ManageBillingButton: FC<ManageBillingButtonProps> = ({
         as="button"
         type="button"
         theme="amber"
-        weight="light"
         onClick={onClick}
         disabled={loading}
         className="w-fit shrink-0 gap-1.5 whitespace-nowrap shadow-none"
@@ -396,8 +394,9 @@ function mapToggleStatusToSwitchStatus(
 ): SwitchStatus {
     if (status === "off") return "off";
     if (status === "draft") return "draft";
-    // status === "on": red when there's an unresolved issue, green otherwise.
-    return issue !== null ? "draft" : "ready";
+    // status === "on": red (draft) when there's an unresolved issue,
+    // green (on) when fully configured.
+    return issue !== null ? "draft" : "on";
 }
 
 type AutoTopUpSaveButtonProps = {
@@ -429,7 +428,6 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
                 as="button"
                 type="button"
                 theme="amber"
-                weight="light"
                 onClick={onSave}
                 disabled={saveDisabled}
                 className="w-28 min-w-0 self-start text-center shadow-none sm:self-center"

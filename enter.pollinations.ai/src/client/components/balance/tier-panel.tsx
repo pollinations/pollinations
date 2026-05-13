@@ -1,10 +1,5 @@
-import {
-    getTierColor,
-    getTierEmoji,
-    type TierStatus,
-} from "@shared/tier-config.ts";
+import type { TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
-import { Chip } from "../ui/chip.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { TierExplanation } from "./tier-explanation";
 
@@ -44,8 +39,53 @@ const BeakerIcon: FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
-const TierFinePrint: FC = () => (
+const TrendUpIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <polyline points="3 17 9 11 13 15 21 7" />
+        <polyline points="15 7 21 7 21 13" />
+    </svg>
+);
+
+type TierFinePrintProps = { showTierHint?: boolean };
+
+const TierFinePrint: FC<TierFinePrintProps> = ({ showTierHint = false }) => (
     <div className="mt-5 space-y-2 border-t border-amber-300/70 pt-5 text-[13px] leading-snug text-amber-950/45">
+        {showTierHint && (
+            <p className="flex items-start gap-1.5">
+                <TrendUpIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                    Higher tier → bigger hourly refill on your tier balance.
+                    <InfoTip
+                        content={
+                            <ul className="list-disc space-y-1 pl-4">
+                                <li>
+                                    Pollen refills every hour up to your tier
+                                    cap.
+                                </li>
+                                <li>
+                                    Requests that cost more than estimated can
+                                    briefly push your balance negative.
+                                </li>
+                                <li>
+                                    When negative, hourly refills bring it back
+                                    up one increment at a time until you hit
+                                    your tier cap.
+                                </li>
+                            </ul>
+                        }
+                    />
+                </span>
+            </p>
+        )}
         <p className="flex items-start gap-1.5">
             <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
@@ -71,23 +111,9 @@ const TierFinePrint: FC = () => (
     </div>
 );
 
-// Tier color → Chip class. Most tier colors map to ThemeName, but `gray`
-// (microbe/none) and `orange` (nectar) aren't theme hues so they get literal
-// classes mirroring the deprecated Tag palette.
-const TIER_BADGE_CLASSES: Record<string, string> = {
-    gray: "bg-gray-200 text-gray-900",
-    green: "bg-green-200 text-gray-900",
-    pink: "bg-pink-200 text-gray-900",
-    amber: "bg-amber-200 text-amber-900",
-    orange: "bg-orange-300 text-orange-950",
-    blue: "bg-blue-100 text-blue-700",
-    violet: "bg-violet-200 text-violet-950",
-};
-
-function getTierBadgeClass(tier: TierStatus): string {
-    const tierColor = tier === "none" ? "gray" : getTierColor(tier);
-    return TIER_BADGE_CLASSES[tierColor] ?? TIER_BADGE_CLASSES.gray;
-}
+// All tier levels render with the same `<Chip intent="tier">` recipe —
+// the soft yellow chip. Tier identity is communicated via the emoji +
+// name, not by colour.
 
 // ─── Microbe: Account Under Review ──────────────────────────
 
@@ -103,52 +129,12 @@ const MicrobeLimitedPanel: FC = () => (
 
 // ─── Tier screen (spore + creator tiers) ─────────────────────
 
-const TierScreen: FC<{
-    tier: TierStatus;
-    active_tier_name: string;
-    pollen: number;
-}> = ({ tier, active_tier_name, pollen }) => {
-    const tierEmoji = getTierEmoji(tier);
-
-    return (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-3xl font-bold text-gray-900">
-                    {tierEmoji} {active_tier_name}
-                </span>
-                <Chip
-                    size="lg"
-                    className={`font-semibold ${getTierBadgeClass(tier)}`}
-                >
-                    {pollen} pollen/hour
-                </Chip>
-                <InfoTip
-                    tone="amber"
-                    content={
-                        <ul className="list-disc space-y-1 pl-4">
-                            <li>
-                                Pollen refills every hour up to your tier cap.
-                            </li>
-                            <li>
-                                Requests that cost more than estimated can
-                                briefly push your balance negative.
-                            </li>
-                            <li>
-                                When negative, hourly refills bring it back up
-                                one increment at a time until you hit your tier
-                                cap.
-                            </li>
-                        </ul>
-                    }
-                />
-            </div>
-
-            <TierExplanation currentTier={tier} />
-
-            <TierFinePrint />
-        </div>
-    );
-};
+const TierScreen: FC<{ tier: TierStatus }> = ({ tier }) => (
+    <div className="flex flex-col gap-3">
+        <TierExplanation currentTier={tier} />
+        <TierFinePrint showTierHint />
+    </div>
+);
 
 type TierPanelProps = {
     active: {
@@ -160,17 +146,8 @@ type TierPanelProps = {
 };
 
 export const TierPanel: FC<TierPanelProps> = ({ active }) => {
-    const { tier, pollen } = active;
-
-    if (tier === "microbe") {
+    if (active.tier === "microbe") {
         return <MicrobeLimitedPanel />;
     }
-
-    return (
-        <TierScreen
-            tier={tier}
-            active_tier_name={active.displayName}
-            pollen={pollen ?? 0}
-        />
-    );
+    return <TierScreen tier={active.tier} />;
 };

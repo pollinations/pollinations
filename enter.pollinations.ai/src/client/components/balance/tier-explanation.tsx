@@ -1,19 +1,11 @@
 import {
-    TIER_COLORS,
     TIER_EMOJIS,
     TIER_POLLEN,
     type TierStatus,
 } from "@shared/tier-config.ts";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { Tooltip } from "../pricing/Tooltip.tsx";
-
-const COLOR_TO_CLASSES: Record<string, { bg: string; ring: string }> = {
-    blue: { bg: "bg-blue-100/60", ring: "ring-blue-400" },
-    green: { bg: "bg-green-100/60", ring: "ring-green-400" },
-    pink: { bg: "bg-pink-100/60", ring: "ring-pink-400" },
-    amber: { bg: "bg-amber-100/60", ring: "ring-amber-400" },
-    orange: { bg: "bg-orange-100/60", ring: "ring-orange-400" },
-};
+import { Surface } from "../ui/surface.tsx";
 
 const SeedTooltipContent = () => (
     <div className="w-72">
@@ -60,6 +52,25 @@ const SeedTooltipContent = () => (
     </div>
 );
 
+type TierCardProps = {
+    isActive: boolean;
+    emoji: string;
+    name: string;
+    children: ReactNode;
+};
+
+const TierCard: FC<TierCardProps> = ({ isActive, emoji, name, children }) => (
+    <Surface
+        variant="card-themed"
+        className={isActive ? "bg-tier-soft" : "bg-tier-soft/40"}
+    >
+        <span className="text-3xl font-bold text-gray-900">
+            {emoji} {name}
+        </span>
+        {children}
+    </Surface>
+);
+
 export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
     currentTier,
 }) => {
@@ -67,83 +78,67 @@ export const TierExplanation: FC<{ currentTier?: TierStatus }> = ({
         "text-[9px] font-semibold text-gray-400 uppercase tracking-wide";
 
     return (
-        <div>
-            <p className="text-sm text-gray-900 leading-relaxed mb-3">
-                📈 Higher tier → bigger hourly refill on your tier balance.
-            </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                {/* Spore */}
-                <div
-                    className={`min-w-0 rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.spore].bg} ${currentTier === "spore" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.spore].ring}` : ""}`}
-                >
-                    <div className="flex items-center gap-1.5">
-                        <span>{TIER_EMOJIS.spore}</span>
-                        <strong className="text-gray-800 text-sm">Spore</strong>
-                    </div>
-                    <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.spore} pollen/hour
-                    </p>
-                    <div className="mt-1.5 border-t border-gray-200 pt-1.5">
-                        <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">Verify account</p>
-                    </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <TierCard
+                isActive={currentTier === "spore"}
+                emoji={TIER_EMOJIS.spore}
+                name="Spore"
+            >
+                <p className="text-xs font-mono text-gray-600 mt-1">
+                    {TIER_POLLEN.spore} pollen/hour
+                </p>
+                <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
+                    <p className={requirementLabelStyle}>To unlock</p>
+                    <p className="text-xs text-gray-500">Verify account</p>
                 </div>
+            </TierCard>
 
-                {/* Seed */}
-                <div
-                    className={`min-w-0 rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.seed].bg} ${currentTier === "seed" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.seed].ring}` : ""}`}
-                >
-                    <div className="flex items-center gap-1.5">
-                        <span>{TIER_EMOJIS.seed}</span>
-                        <strong className="text-gray-800 text-sm">Seed</strong>
-                    </div>
-                    <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.seed} pollen/hour
+            <TierCard
+                isActive={currentTier === "seed"}
+                emoji={TIER_EMOJIS.seed}
+                name="Seed"
+            >
+                <p className="text-xs font-mono text-gray-600 mt-1">
+                    {TIER_POLLEN.seed} pollen/hour
+                </p>
+                <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
+                    <p className={requirementLabelStyle}>To unlock</p>
+                    <p className="text-xs text-gray-500">
+                        <Tooltip content={<SeedTooltipContent />}>
+                            <span className="cursor-default underline decoration-dotted">
+                                7+ dev points
+                            </span>
+                        </Tooltip>
                     </p>
-                    <div className="mt-1.5 border-t border-gray-200 pt-1.5">
-                        <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">
-                            <Tooltip content={<SeedTooltipContent />}>
-                                <span className="cursor-default underline decoration-dotted">
-                                    7+ dev points
-                                </span>
-                            </Tooltip>
-                        </p>
-                        <p className="text-3xs text-emerald-600 mt-0.5">
-                            Auto-upgraded weekly
-                        </p>
-                    </div>
+                    <p className="text-3xs text-emerald-600 mt-0.5">
+                        Auto-upgraded weekly
+                    </p>
                 </div>
+            </TierCard>
 
-                {/* Flower */}
-                <div
-                    className={`min-w-0 rounded-lg p-3 ${COLOR_TO_CLASSES[TIER_COLORS.flower].bg} ${currentTier === "flower" ? `ring-2 ${COLOR_TO_CLASSES[TIER_COLORS.flower].ring}` : ""}`}
-                >
-                    <div className="flex items-center gap-1.5">
-                        <span>{TIER_EMOJIS.flower}</span>
-                        <strong className="text-gray-800 text-sm">
-                            Flower
-                        </strong>
-                    </div>
-                    <p className="text-xs font-mono text-gray-600 mt-1">
-                        {TIER_POLLEN.flower} pollen/hour
+            <TierCard
+                isActive={currentTier === "flower"}
+                emoji={TIER_EMOJIS.flower}
+                name="Flower"
+            >
+                <p className="text-xs font-mono text-gray-600 mt-1">
+                    {TIER_POLLEN.flower} pollen/hour
+                </p>
+                <div className="mt-1.5 border-t border-theme-border-subtle pt-1.5">
+                    <p className={requirementLabelStyle}>To unlock</p>
+                    <p className="text-xs text-gray-500">
+                        <a
+                            href="https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml"
+                            className="text-blue-600 hover:underline"
+                        >
+                            Publish an app
+                        </a>
                     </p>
-                    <div className="mt-1.5 border-t border-gray-200 pt-1.5">
-                        <p className={requirementLabelStyle}>To unlock</p>
-                        <p className="text-xs text-gray-500">
-                            <a
-                                href="https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml"
-                                className="text-blue-600 hover:underline"
-                            >
-                                Publish an app
-                            </a>
-                        </p>
-                        <p className="text-3xs text-amber-600 mt-0.5">
-                            {TIER_EMOJIS.seed} Must be Seed first
-                        </p>
-                    </div>
+                    <p className="text-3xs text-amber-600 mt-0.5">
+                        {TIER_EMOJIS.seed} Must be Seed first
+                    </p>
                 </div>
-            </div>
+            </TierCard>
         </div>
     );
 };

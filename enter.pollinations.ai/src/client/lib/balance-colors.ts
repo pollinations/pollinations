@@ -9,5 +9,5 @@
  * via CSS opacity in chart.tsx, no separate color needed.
  */
 
-export const PAID_COLOR = "oklch(0.924 0.12 95.746)"; // matches --color-paid-soft (amber-200 — same as paid chip bg)
-export const TIER_COLOR = "oklch(0.925 0.075 55)"; // matches --color-tier-soft (peach — same as tier chip bg)
+export const PAID_COLOR = "oklch(0.93 0.09 95.746)"; // matches --color-paid-pale (light amber — same as paid chip bg)
+export const TIER_COLOR = "oklch(0.93 0.06 55)"; // matches --color-tier-pale (light peach — same as tier chip bg)

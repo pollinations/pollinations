@@ -1,56 +1,33 @@
-import { getTierColor, type TierStatus } from "@shared/tier-config.ts";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
     grid: "#e5e7eb", // gray-200
-    paidBar: "#fde68a", // amber-200
-    paidBarHover: "#fcd34d", // amber-300
-    tooltipBg: "#ffffff",
-    tooltipBorder: "#e5e7eb", // gray-200
-    tooltipSep: "#e5e7eb", // gray-200
-} as const;
-
-const TIER_BAR_COLORS = {
-    gray: { base: "#d1d5db", hover: "#9ca3af" },
-    blue: { base: "#bfdbfe", hover: "#93c5fd" },
-    green: { base: "#bbf7d0", hover: "#86efac" },
-    pink: { base: "#fbcfe8", hover: "#f9a8d4" },
-    amber: { base: "#fde68a", hover: "#fcd34d" },
-    orange: { base: "#fdba74", hover: "#fb923c" },
-    violet: { base: "#c4b5fd", hover: "#a78bfa" },
 } as const;
 
 type ChartProps = {
     data: DataPoint[];
     metric: Metric;
     showModelBreakdown: boolean;
-    tier?: TierStatus;
-    paidBarColor?: { base: string; hover: string };
-    tierBarColor?: { base: string; hover: string };
+    /** Override bar colors. Defaults to the system paid/tier brand hex. */
+    paidBarColor?: string;
+    tierBarColor?: string;
 };
 
 export const Chart: FC<ChartProps> = ({
     data,
     metric,
     showModelBreakdown,
-    tier,
-    paidBarColor,
-    tierBarColor: tierBarColorProp,
+    paidBarColor = PAID_COLOR,
+    tierBarColor = TIER_COLOR,
 }) => {
-    const paidBar = paidBarColor?.base ?? CHART_COLORS.paidBar;
-    const paidBarHover = paidBarColor?.hover ?? CHART_COLORS.paidBarHover;
     const [hovered, setHovered] = useState<number | null>(null);
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(600);
-    const tierBarColor =
-        tierBarColorProp ??
-        TIER_BAR_COLORS[
-            getTierColor(tier || "spore") as keyof typeof TIER_BAR_COLORS
-        ];
 
     // Animate on mount with cleanup to prevent memory leaks
     useEffect(() => {
@@ -289,15 +266,13 @@ export const Chart: FC<ChartProps> = ({
                                 )}
                                 rx={bar.paidHeight > 0 ? 0 : 2}
                                 style={{
-                                    fill:
-                                        hovered === idx
-                                            ? tierBarColor.hover
-                                            : tierBarColor.base,
-                                    transition: "fill 0.15s ease-out",
+                                    fill: tierBarColor,
+                                    opacity: hovered === idx ? 0.85 : 1,
+                                    transition: "opacity 0.15s ease-out",
                                 }}
                             />
                         )}
-                        {/* Paid segment (top) - purple */}
+                        {/* Paid segment (top) */}
                         {bar.paidHeight > 0 && (
                             <rect
                                 x={bar.x}
@@ -313,11 +288,9 @@ export const Chart: FC<ChartProps> = ({
                                 )}
                                 rx={2}
                                 style={{
-                                    fill:
-                                        hovered === idx
-                                            ? paidBarHover
-                                            : paidBar,
-                                    transition: "fill 0.15s ease-out",
+                                    fill: paidBarColor,
+                                    opacity: hovered === idx ? 0.85 : 1,
+                                    transition: "opacity 0.15s ease-out",
                                 }}
                             />
                         )}
@@ -394,15 +367,14 @@ export const Chart: FC<ChartProps> = ({
                                     width={tooltipWidth}
                                     height={tooltipHeight}
                                     rx="8"
-                                    fill={CHART_COLORS.tooltipBg}
-                                    stroke={CHART_COLORS.tooltipBorder}
+                                    className="fill-theme-bg-pale stroke-theme-border"
                                     strokeWidth="1"
                                 />
                                 <text
                                     x={tooltipX + 12}
                                     y={tooltipY + 18}
                                     textAnchor="start"
-                                    className="text-xs fill-gray-500"
+                                    className="text-xs fill-theme-text-soft"
                                 >
                                     {dateOnly}
                                 </text>
@@ -410,7 +382,7 @@ export const Chart: FC<ChartProps> = ({
                                     x={tooltipX + 12}
                                     y={tooltipY + 36}
                                     textAnchor="start"
-                                    className="text-sm font-bold fill-gray-900"
+                                    className="text-sm font-bold fill-theme-text-strong"
                                 >
                                     {metric === "requests"
                                         ? "requests"
@@ -423,7 +395,7 @@ export const Chart: FC<ChartProps> = ({
                                         y1={tooltipY + headerHeight + 2}
                                         x2={tooltipX + tooltipWidth - 12}
                                         y2={tooltipY + headerHeight + 2}
-                                        stroke={CHART_COLORS.tooltipSep}
+                                        className="stroke-theme-border-soft"
                                         strokeWidth="1"
                                     />
                                 )}
@@ -448,7 +420,7 @@ export const Chart: FC<ChartProps> = ({
                                                         4 +
                                                         i * lineHeight
                                                     }
-                                                    className="text-xs fill-gray-600"
+                                                    className="text-xs fill-theme-text-soft"
                                                 >
                                                     {truncateLabel(m.label, 22)}
                                                 </text>
@@ -466,7 +438,7 @@ export const Chart: FC<ChartProps> = ({
                                                         i * lineHeight
                                                     }
                                                     textAnchor="end"
-                                                    className="text-xs fill-gray-900 font-medium"
+                                                    className="text-xs fill-theme-text-strong font-medium"
                                                 >
                                                     {formatTooltipVal(
                                                         metric === "requests"
@@ -487,7 +459,7 @@ export const Chart: FC<ChartProps> = ({
                                             4 +
                                             breakdown.length * lineHeight
                                         }
-                                        className="text-xs fill-gray-400 italic"
+                                        className="text-xs fill-theme-text-softer italic"
                                     >
                                         +{hiddenCount} more
                                     </text>

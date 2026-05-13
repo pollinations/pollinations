@@ -1,4 +1,3 @@
-import type { TierStatus } from "@shared/tier-config.ts";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
@@ -7,6 +6,7 @@ import { DashboardSection } from "../layout/dashboard-section.tsx";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { Chip } from "../ui/chip.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import { Chart } from "./chart";
 import { MODALITY_META, type ModelModality } from "./constants";
 import { MultiSelect } from "./multi-select";
@@ -14,7 +14,6 @@ import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 type UsageGraphProps = {
-    tier?: TierStatus;
     period: UsagePeriodSelection;
     apiKeys: Array<{ id: string; name: string }>;
     action?: ReactNode;
@@ -22,7 +21,6 @@ type UsageGraphProps = {
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
-    tier,
     period,
     apiKeys,
     action,
@@ -146,7 +144,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                             data={chartData}
                             metric={filters.metric}
                             showModelBreakdown={showModelBreakdown}
-                            tier={tier}
                             paidBarColor={PAID_COLOR}
                             tierBarColor={TIER_COLOR}
                         />
@@ -162,14 +159,16 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 detail={
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Chip
+                                            intent="paid"
                                             size="lg"
-                                            className="font-semibold bg-paid text-amber-950"
+                                            className="font-semibold"
                                         >
                                             💳 {formatPollen(stats.paidPollen)}
                                         </Chip>
                                         <Chip
+                                            intent="tier"
                                             size="lg"
-                                            className="font-semibold bg-tier text-amber-950"
+                                            className="font-semibold"
                                         >
                                             🌱 {formatPollen(stats.tierPollen)}
                                         </Chip>
@@ -202,35 +201,44 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                                 detail={
                                     stats.topModel ? (
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold bg-rose-200 text-rose-900"
-                                                title={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
+                                            <Tooltip
+                                                content={`${stats.topModel.requests.toLocaleString()} request${stats.topModel.requests === 1 ? "" : "s"}`}
+                                                displayContents
                                             >
-                                                <span className="tabular-nums">
-                                                    {stats.topModel.requests.toLocaleString()}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    {stats.topModel.requests ===
-                                                    1
-                                                        ? "req"
-                                                        : "reqs"}
-                                                </span>
-                                            </Chip>
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold bg-rose-200 text-rose-900"
-                                                title={`${formatPollen(stats.topModel.pollen)} pollen`}
+                                                <Chip
+                                                    size="lg"
+                                                    className="font-semibold"
+                                                >
+                                                    <span className="tabular-nums">
+                                                        {stats.topModel.requests.toLocaleString()}
+                                                    </span>
+                                                    <span className="font-medium opacity-70">
+                                                        {stats.topModel
+                                                            .requests === 1
+                                                            ? "req"
+                                                            : "reqs"}
+                                                    </span>
+                                                </Chip>
+                                            </Tooltip>
+                                            <Tooltip
+                                                content={`${formatPollen(stats.topModel.pollen)} pollen`}
+                                                displayContents
                                             >
-                                                <span className="tabular-nums">
-                                                    {formatPollen(
-                                                        stats.topModel.pollen,
-                                                    )}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    pollen
-                                                </span>
-                                            </Chip>
+                                                <Chip
+                                                    size="lg"
+                                                    className="font-semibold"
+                                                >
+                                                    <span className="tabular-nums">
+                                                        {formatPollen(
+                                                            stats.topModel
+                                                                .pollen,
+                                                        )}
+                                                    </span>
+                                                    <span className="font-medium opacity-70">
+                                                        pollen
+                                                    </span>
+                                                </Chip>
+                                            </Tooltip>
                                         </div>
                                     ) : (
                                         "No model usage yet"
@@ -278,18 +286,22 @@ const ModalityPills: FC<{
             {entries.map(({ modality, count }) => {
                 const { emoji, label } = MODALITY_META[modality];
                 return (
-                    <Chip
+                    <Tooltip
                         key={modality}
-                        theme={theme}
-                        size="lg"
-                        className="font-semibold text-theme-text-base"
-                        title={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
+                        content={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
+                        displayContents
                     >
-                        <span aria-hidden="true">{emoji}</span>
-                        <span className="tabular-nums">
-                            {count.toLocaleString()}
-                        </span>
-                    </Chip>
+                        <Chip
+                            theme={theme}
+                            size="lg"
+                            className="font-semibold text-theme-text-base"
+                        >
+                            <span aria-hidden="true">{emoji}</span>
+                            <span className="tabular-nums">
+                                {count.toLocaleString()}
+                            </span>
+                        </Chip>
+                    </Tooltip>
                 );
             })}
         </div>

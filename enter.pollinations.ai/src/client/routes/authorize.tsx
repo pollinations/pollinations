@@ -12,8 +12,8 @@ import { authClient } from "../auth.ts";
 import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
+import { getModalityColors } from "../components/api-keys/modality-ui.ts";
 import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
-import { getPermissionPillClasses } from "../components/api-keys/permission-ui.ts";
 import { PollenBudgetInput } from "../components/api-keys/pollen-budget-input.tsx";
 import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import {
@@ -24,6 +24,7 @@ import {
     ErrorBanner,
 } from "../components/auth/auth-modal.tsx";
 import { Button } from "../components/button.tsx";
+import { Chip } from "../components/ui/chip.tsx";
 import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { useScrollLock } from "../hooks/use-scroll-lock.ts";
@@ -421,10 +422,10 @@ function AuthorizeComponent() {
                     <div className="text-4xl mb-4">
                         {denied ? "\u{1F6AB}" : "\u{2705}"}
                     </div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                    <h2 className="text-lg font-semibold text-theme-text-strong mb-2">
                         {denied ? "Access Denied" : "Device Authorized"}
                     </h2>
-                    <p className="text-sm text-amber-900">
+                    <p className="text-sm text-theme-text-base">
                         You can close this tab and return to your device.
                     </p>
                 </div>
@@ -455,7 +456,7 @@ function AuthorizeComponent() {
                                 userCode={user_code}
                                 redirectHostname={redirectHostname}
                             />
-                            <p className="text-sm text-amber-900 mt-3">
+                            <p className="text-sm text-theme-text-base mt-3">
                                 Sign in to review and approve the requested
                                 access.
                             </p>
@@ -466,7 +467,6 @@ function AuthorizeComponent() {
                         <Button
                             as="button"
                             onClick={handleDeny}
-                            weight="light"
                             intent="danger"
                             disabled={isSigningIn}
                         >
@@ -478,7 +478,6 @@ function AuthorizeComponent() {
                                 onClick={signIn}
                                 disabled={isSigningIn}
                                 theme="amber"
-                                weight="light"
                             >
                                 {isSigningIn
                                     ? "Signing in..."
@@ -515,13 +514,13 @@ function AuthorizeComponent() {
                                 className="w-6 h-6 rounded-full shrink-0"
                             />
                         )}
-                        <span className="text-sm font-medium text-gray-900 truncate">
+                        <span className="text-sm font-medium text-theme-text-strong truncate">
                             {user.githubUsername || user.email}
                         </span>
                     </a>
-                    <div className="inline-flex items-stretch rounded-full bg-amber-100 border border-amber-300 text-sm overflow-hidden shrink-0">
+                    <div className="inline-flex items-stretch rounded-full bg-theme-bg-pale border border-theme-border text-sm overflow-hidden shrink-0">
                         {totalBalance !== null && (
-                            <span className="flex items-center px-3 text-amber-900 whitespace-nowrap">
+                            <span className="flex items-center px-3 text-theme-text-base whitespace-nowrap">
                                 {formatPollen(totalBalance)} pollen
                             </span>
                         )}
@@ -530,9 +529,9 @@ function AuthorizeComponent() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className={cn(
-                                "flex items-center px-3 py-1 font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 transition-colors cursor-pointer",
+                                "flex items-center px-3 py-1 font-medium text-theme-text-base bg-theme-bg-active hover:bg-theme-bg-hover transition-colors cursor-pointer",
                                 totalBalance !== null &&
-                                    "border-l border-amber-300",
+                                    "border-l border-theme-border",
                             )}
                         >
                             Top up
@@ -546,10 +545,10 @@ function AuthorizeComponent() {
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
                     <div>
-                        <div className="-mx-6 px-6 py-4 bg-amber-100 border-y border-amber-300">
+                        <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
                             <p
                                 id="authorize-dialog-title"
-                                className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2"
+                                className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-2"
                             >
                                 Authorize
                             </p>
@@ -562,12 +561,12 @@ function AuthorizeComponent() {
                         </div>
 
                         <div className="p-4">
-                            <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-3">
+                            <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-3">
                                 To
                             </p>
-                            <ul className="text-sm text-amber-900 space-y-3">
+                            <ul className="text-sm text-theme-text-base space-y-3">
                                 <li className="flex items-start gap-2">
-                                    <span className="w-4 shrink-0 text-amber-800">
+                                    <span className="w-4 shrink-0 text-theme-text-soft">
                                         &#x1F464;
                                     </span>
                                     <span>
@@ -580,7 +579,7 @@ function AuthorizeComponent() {
                                 ) && (
                                     <li className="flex items-start gap-2">
                                         <span
-                                            className="flex h-5 w-4 shrink-0 items-center justify-center text-amber-800"
+                                            className="flex h-5 w-4 shrink-0 items-center justify-center text-theme-text-soft"
                                             aria-hidden="true"
                                         >
                                             <svg
@@ -610,7 +609,7 @@ function AuthorizeComponent() {
                                     "usage",
                                 ) && (
                                     <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-amber-800">
+                                        <span className="w-4 shrink-0 text-theme-text-soft">
                                             &#x1F4CA;
                                         </span>
                                         <span>
@@ -622,7 +621,7 @@ function AuthorizeComponent() {
                                     "keys",
                                 ) && (
                                     <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-amber-800">
+                                        <span className="w-4 shrink-0 text-theme-text-soft">
                                             &#x1F511;
                                         </span>
                                         <span>
@@ -634,8 +633,8 @@ function AuthorizeComponent() {
                                     <span
                                         className={`w-4 shrink-0 ${
                                             modalities.length === 0
-                                                ? "text-red-600"
-                                                : "text-amber-700"
+                                                ? "text-intent-danger-text"
+                                                : "text-theme-text-soft"
                                         }`}
                                     >
                                         {modalities.length === 0
@@ -649,12 +648,16 @@ function AuthorizeComponent() {
                                             <span>Generate</span>
                                             <div className="flex items-center gap-1 flex-nowrap">
                                                 {modalities.map((m) => (
-                                                    <span
+                                                    <Chip
                                                         key={m}
-                                                        className={`px-2 py-0.5 rounded-full text-xs border shrink-0 ${getPermissionPillClasses(m)}`}
+                                                        size="sm"
+                                                        className={
+                                                            getModalityColors(m)
+                                                                ?.filled ?? ""
+                                                        }
                                                     >
                                                         {m}
-                                                    </span>
+                                                    </Chip>
                                                 ))}
                                             </div>
                                         </div>
@@ -663,7 +666,7 @@ function AuthorizeComponent() {
                                 {attribution?.earningsEnabled && (
                                     <li className="flex items-start gap-2">
                                         <span
-                                            className="w-4 shrink-0 text-amber-800"
+                                            className="w-4 shrink-0 text-theme-text-soft"
                                             aria-hidden="true"
                                         >
                                             &#x1F331;
@@ -680,7 +683,7 @@ function AuthorizeComponent() {
                             </ul>
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-amber-300">
+                        <div className="-mx-6 px-10 py-4 border-t border-theme-border">
                             <PollenBudgetInput
                                 value={keyPermissions.permissions.pollenBudget}
                                 onChange={keyPermissions.setPollenBudget}
@@ -689,7 +692,7 @@ function AuthorizeComponent() {
                             />
                         </div>
 
-                        <div className="-mx-6 px-10 py-4 border-t border-amber-300">
+                        <div className="-mx-6 px-10 py-4 border-t border-theme-border">
                             <ExpiryDaysInput
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}
@@ -698,11 +701,11 @@ function AuthorizeComponent() {
                             />
                         </div>
 
-                        <details className="group -mx-6 border-t border-amber-300">
+                        <details className="group -mx-6 border-t border-theme-border">
                             <summary className="cursor-pointer list-none px-3 py-3 flex items-center justify-end select-none">
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-amber-800 hover:bg-amber-100 hover:text-amber-950 transition-colors">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-theme-text-soft hover:bg-theme-bg-pale hover:text-theme-text-strong transition-colors">
                                     Permissions
-                                    <span className="text-amber-700 transition-transform group-open:rotate-180">
+                                    <span className="text-theme-text-soft transition-transform group-open:rotate-180">
                                         &#x25BE;
                                     </span>
                                 </span>
@@ -740,7 +743,7 @@ function AuthorizeComponent() {
                     href="https://pollinations.ai/terms"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-amber-800 hover:text-gray-900 hover:underline"
+                    className="text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
                 >
                     Terms & Conditions
                 </a>
@@ -748,7 +751,6 @@ function AuthorizeComponent() {
                     <Button
                         as="button"
                         onClick={handleDeny}
-                        weight="light"
                         intent="danger"
                         disabled={isAuthorizing}
                     >
@@ -760,7 +762,6 @@ function AuthorizeComponent() {
                             onClick={handleAuthorize}
                             disabled={!canAuthorize || isAuthorizing}
                             theme="amber"
-                            weight="light"
                         >
                             {isAuthorizing ? "Authorizing..." : "Authorize"}
                         </Button>

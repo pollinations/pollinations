@@ -108,10 +108,10 @@ function DeviceComponent() {
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {signInError && <ErrorBanner>{signInError}</ErrorBanner>}
                     <AuthInfoCard>
-                        <p className="text-gray-900">
+                        <p className="text-theme-text-strong">
                             Connect a device to your Pollinations account.
                         </p>
-                        <p className="text-sm text-amber-900 mt-3">
+                        <p className="text-sm text-theme-text-base mt-3">
                             Sign in to enter the device code.
                         </p>
                     </AuthInfoCard>
@@ -121,7 +121,6 @@ function DeviceComponent() {
                             onClick={signIn}
                             disabled={isSigningIn}
                             theme="amber"
-                            weight="light"
                         >
                             {isSigningIn
                                 ? "Signing in..."
@@ -141,7 +140,7 @@ function DeviceComponent() {
 
                 <AuthInfoCard>
                     <div className="space-y-3">
-                        <p className="text-gray-900">
+                        <p className="text-theme-text-strong">
                             Enter the code from your device.
                         </p>
                         <input
@@ -151,7 +150,7 @@ function DeviceComponent() {
                                 setUserCode(e.target.value.toUpperCase())
                             }
                             placeholder="XXXX-XXXX"
-                            className="w-full text-center text-2xl font-mono tracking-widest p-3 border-2 border-amber-300 rounded-lg bg-white text-gray-900 focus:border-amber-600 focus:outline-none"
+                            className="w-full text-center text-2xl font-mono tracking-widest p-3 border-2 border-theme-border rounded-lg bg-surface-white text-theme-text-strong focus:border-theme-accent focus:outline-none"
                             ref={inputRef}
                             maxLength={20}
                             disabled={checking}
@@ -164,7 +163,6 @@ function DeviceComponent() {
                         as="button"
                         type="submit"
                         theme="amber"
-                        weight="light"
                         disabled={checking}
                     >
                         {checking ? "Verifying..." : "Continue"}

@@ -127,7 +127,6 @@ function SignedOutAccountArea({
             onClick={onSignIn}
             disabled={loading}
             theme="amber"
-            weight="light"
             className="w-full justify-center text-center"
         >
             {loading ? "Signing in..." : "Sign in with GitHub"}

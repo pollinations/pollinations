@@ -50,7 +50,6 @@ function DownloadCsvButton({
         <Button
             as="button"
             theme={theme}
-            weight="light"
             onClick={onClick}
             className="flex items-center gap-1.5"
         >
@@ -352,7 +351,6 @@ function RouteComponent() {
                         </p>
                     </div>
                     <UsageGraph
-                        tier={tierData?.active?.tier}
                         period={activityPeriod}
                         apiKeys={selectableKeys}
                         theme={dashboardThemeByPage.usage}

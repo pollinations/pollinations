@@ -46,7 +46,7 @@ export const DashboardSection: FC<DashboardSectionProps> = ({
             )}
         </div>
         {framed ? (
-            <Surface size="panel" tone="tinted" theme={asThemeName(theme)}>
+            <Surface variant="panel" theme={asThemeName(theme)}>
                 {children}
             </Surface>
         ) : (

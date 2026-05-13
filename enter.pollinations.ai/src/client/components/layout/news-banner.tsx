@@ -133,11 +133,13 @@ export const NewsBanner: FC = () => {
 
 const NewsCard: FC<{ item: NewsItem }> = ({ item }) => (
     <Surface
+        variant={item.pinned ? "card-themed" : "card"}
+        theme={item.pinned ? "violet" : undefined}
         className={cn(
             "flex leading-relaxed",
             item.pinned
-                ? "min-h-0 md:col-span-2 xl:col-span-3 !border-transparent !bg-violet-200/70 text-base"
-                : "min-h-48 !border-transparent text-sm",
+                ? "min-h-0 md:col-span-2 xl:col-span-3 text-base"
+                : "min-h-48 text-sm",
         )}
     >
         <div

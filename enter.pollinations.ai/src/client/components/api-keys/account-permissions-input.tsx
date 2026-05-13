@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
+import { ModalityButton } from "./modality-button.tsx";
 import { getModalityColors } from "./modality-ui.ts";
 import {
     MODEL_CATEGORIES,
@@ -373,29 +374,16 @@ const ModelChip: FC<{
     disabled,
     showApiName = true,
     category,
-}) => {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            disabled={disabled}
-            className={cn(
-                "inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-sm font-medium leading-normal transition-colors text-left",
-                selected
-                    ? (getModalityColors(category ?? "")?.filled ??
-                          "bg-gray-200 text-gray-900")
-                    : "bg-gray-100 text-gray-600",
-                !disabled &&
-                    !selected &&
-                    getModalityColors(category ?? "")?.hover,
-                !disabled && "cursor-pointer",
-                disabled && "opacity-50 cursor-not-allowed",
-            )}
-        >
-            {officialName}
-            {showApiName && (
-                <span className="font-mono opacity-70"> - {apiName}</span>
-            )}
-        </button>
-    );
-};
+}) => (
+    <ModalityButton
+        category={category}
+        selected={selected}
+        onClick={onClick}
+        disabled={disabled}
+    >
+        {officialName}
+        {showApiName && (
+            <span className="font-mono opacity-70"> - {apiName}</span>
+        )}
+    </ModalityButton>
+);

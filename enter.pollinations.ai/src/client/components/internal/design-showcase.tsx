@@ -1,5 +1,6 @@
 import { type FC, type ReactNode, useEffect, useRef, useState } from "react";
 import { cn } from "@/util.ts";
+import { ModalityButton } from "../api-keys/modality-button.tsx";
 import { MODALITY_COLORS, type Modality } from "../api-keys/modality-ui.ts";
 import { Button } from "../button.tsx";
 import { type ThemeName, themes } from "../layout/dashboard-theme.ts";
@@ -226,8 +227,10 @@ const intentSwatch: Record<
 };
 
 const moneyRows: readonly ColorRow[] = [
+    { name: "paid-pale", swatch: "bg-paid-pale" },
     { name: "paid-soft", swatch: "bg-paid-soft" },
     { name: "paid-deep", swatch: "bg-paid-deep" },
+    { name: "tier-pale", swatch: "bg-tier-pale" },
     { name: "tier-soft", swatch: "bg-tier-soft" },
     { name: "tier-deep", swatch: "bg-tier-deep" },
 ];
@@ -531,7 +534,7 @@ const modalityList: readonly Modality[] = [
 const ButtonsDemo: FC = () => (
     <Section
         title="Buttons"
-        caption="Soft tile + deep text. Inherits the active theme; intent='danger' overrides destructive actions. Modality buttons (interactive model picker) use a flat colored recipe, shape-aligned to chips."
+        caption="Soft tile + deep text. Inherits the active theme; intent='danger' overrides destructive actions. Modality buttons (interactive model picker) share the same rounded-full shape, with per-modality hues for identity."
     >
         <div className="flex flex-col gap-3">
             <ChipRow label="Theme + intent">
@@ -541,13 +544,9 @@ const ButtonsDemo: FC = () => (
             </ChipRow>
             <ChipRow label="Modalities (interactive)">
                 {modalityList.map((m) => (
-                    <button
-                        key={m}
-                        type="button"
-                        className={`inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2.5 py-0.5 text-sm font-medium leading-normal transition-colors ${MODALITY_COLORS[m].filled}`}
-                    >
+                    <ModalityButton key={m} category={m}>
                         {m[0].toUpperCase() + m.slice(1)}
-                    </button>
+                    </ModalityButton>
                 ))}
             </ChipRow>
         </div>

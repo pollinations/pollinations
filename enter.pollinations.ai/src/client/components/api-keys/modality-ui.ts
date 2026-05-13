@@ -7,8 +7,10 @@
  *   1. The model-selection buttons in the API key creation flow.
  *   2. The static modality chips on the OAuth authorize screen.
  *
- * Both consumers render with `rounded-lg` shape so they match the rest
- * of the design system. Page-theme hues only — no rogue indigo/rose.
+ * Interactive selection (model-picker) renders as `rounded-full` pills
+ * aligned to the canonical Button. Static display (authorize summary)
+ * renders as `rounded-lg` chips. Page-theme hues only — no rogue
+ * indigo/rose.
  */
 export type Modality = "text" | "image" | "video" | "audio" | "embedding";
 

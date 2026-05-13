@@ -80,4 +80,6 @@ export const LINKS = {
     docsAuth: "https://gen.pollinations.ai/docs#description/-authentication",
     highlightsSource:
         "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md",
+    polliCli:
+        "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

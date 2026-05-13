@@ -27,7 +27,7 @@ export const HELLO_PAGE = {
             emoji: "👛",
             title: "User wallets",
             lead: "Let users bring their own Pollen.",
-            desc: "They sign in, set spending caps, revoke access, and spend from their own wallet inside your app.",
+            desc: "- **Sign in** and spend from their **own wallet** 👛\n- Set **spending caps** they control\n- **Revoke access** any time",
             linkText: "Add Pollen to your app",
             linkUrl: "byopDocs",
         },
@@ -35,35 +35,43 @@ export const HELLO_PAGE = {
             emoji: "🌻",
             title: "Builder earnings",
             lead: "Earn when your app gets used.",
-            desc: "Turn on earnings for your App Key and receive a share when users spend Pollen in your app.",
-        },
-        {
-            emoji: "🌱",
-            title: "Free Credits",
-            lead: "Build before you need revenue.",
-            desc: "Start with refilling Pollen for prototypes, testing, and early users. More activity unlocks more room.",
-            linkText: "How tiers work",
-            linkUrl: "enterTiersFaq",
+            desc: "- Turn on earnings on your **App Key**\n- Receive a **share** when users spend Pollen in your app 💰",
         },
         {
             emoji: "🪩",
             title: "All the models",
             lead: "One API for current AI capabilities.",
-            desc: "Text, image, video, audio, vision, search, embeddings, streaming, tools, and structured output. OpenAI-compatible endpoints keep integration light.",
+            desc: "- **Text, image, video, audio**\n- **Vision, search, embeddings**\n- Streaming, tools, structured output\n- **OpenAI-compatible** endpoints",
             linkText: "Browse the model list",
             linkUrl: "enterModels",
+        },
+        {
+            emoji: "⌨️",
+            title: "CLI for humans & agents",
+            lead: "Generate from the terminal.",
+            desc: '- `polli gen image "cat in space"` — **text, image, audio, video** in one CLI 🎛️\n- **Agent-friendly**: `--json` output, stdin context, clear exit codes\n- Point Claude Code, Cursor, or Codex at the **shipped SKILL.md**',
+            linkText: "Install polli CLI",
+            linkUrl: "polliCli",
+        },
+        {
+            emoji: "🌱",
+            title: "Free Credits",
+            lead: "Build before you need revenue.",
+            desc: "- **Refill Pollen** for prototypes & testing\n- Earn extra from **Pollen Quests** 🎯\n- More activity unlocks more room 📈",
+            linkText: "How tiers work",
+            linkUrl: "enterTiersFaq",
         },
         {
             emoji: "🎯",
             title: "Media inputs",
             lead: "Files become generation context.",
-            desc: "Upload media, get a URL, and use images, audio, documents, or other files in model calls.",
+            desc: "- Upload **any media**, get a URL back\n- Use images, audio, documents in **model calls**",
         },
         {
             emoji: "💎",
             title: "Open Source",
             lead: "Fork it, inspect it, build with us.",
-            desc: "The stack is open, transparent, and shaped by the developer community.",
+            desc: "- **Open and transparent** stack\n- Shaped by the **developer community**",
             linkText: "Fork on GitHub",
             linkUrl: "githubFork",
         },
@@ -80,11 +88,6 @@ export const HELLO_PAGE = {
     roadmapTitle: "Next",
     roadmapItems: [
         {
-            title: "Pollen Quest",
-            description:
-                "Earn Pollen by completing achievements, hitting milestones, and resolving issues.",
-        },
-        {
             title: "Pollinations Login",
             description:
                 "OAuth sign-in for your users, with token handling and production-ready auth.",
@@ -93,10 +96,6 @@ export const HELLO_PAGE = {
             title: "App Hosting",
             description:
                 "Ship your app on our infra. No deploy setup, no separate hosting bill.",
-        },
-        {
-            title: "Dev Earnings Analytics",
-            description: "See which apps are earning Pollen.",
         },
         {
             title: "App Discovery",

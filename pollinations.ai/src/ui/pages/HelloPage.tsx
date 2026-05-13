@@ -24,9 +24,9 @@ function HelloPage() {
     useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const quietLinkClass =
-        "font-headline text-[10px] font-bold text-subtle/70 hover:text-subtle hover:underline inline-flex items-center gap-1";
+        "font-body text-xs font-semibold text-dark hover:text-dark underline underline-offset-2 inline-flex items-center gap-1";
     const quietMarkdownLinkClass =
-        "font-headline text-[10px] font-bold text-subtle/70 hover:text-subtle hover:underline";
+        "font-body text-xs font-semibold text-dark hover:text-dark underline underline-offset-2";
 
     const { translated: translatedWhatYouGet } = useTranslate(
         HELLO_PAGE.whatYouGetItems,
@@ -127,20 +127,16 @@ function HelloPage() {
                             ) => {
                                 const accents = [
                                     {
-                                        card: "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
-                                        title: "bg-primary-strong border-primary-strong",
+                                        card: "bg-primary-light border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
                                     },
                                     {
-                                        card: "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
-                                        title: "bg-secondary-strong border-secondary-strong",
+                                        card: "bg-secondary-light border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
                                     },
                                     {
-                                        card: "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
-                                        title: "bg-tertiary-strong border-tertiary-strong",
+                                        card: "bg-tertiary-light border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
                                     },
                                     {
-                                        card: "border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]",
-                                        title: "bg-accent-strong border-accent-strong",
+                                        card: "bg-accent-light border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]",
                                     },
                                 ];
                                 const accent = accents[i % accents.length];
@@ -153,85 +149,89 @@ function HelloPage() {
                                                 : "flex flex-col"
                                         }
                                     >
-                                        <div className="flex items-center mb-2 px-1">
-                                            <h3
-                                                className={`font-headline text-base font-black text-dark border rounded px-2 py-1 ${accent.title}`}
-                                            >
-                                                {item.title}
-                                            </h3>
-                                        </div>
                                         <div
-                                            className={`bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 flex flex-col flex-1 ${accent.card}`}
+                                            className={`rounded-sub-card border-r-2 border-b-2 flex flex-col flex-1 overflow-hidden ${accent.card}`}
                                         >
-                                            {item.lead && (
-                                                <p className="font-body text-sm font-bold text-dark leading-relaxed">
-                                                    {item.lead}
-                                                </p>
-                                            )}
-                                            <p className="font-body text-sm font-medium text-dark leading-relaxed mt-2 whitespace-pre-line">
-                                                {item.desc}
-                                            </p>
-                                            {item.linkText && (
-                                                <div className="mt-auto pt-3 flex justify-end">
-                                                    <a
-                                                        href={
-                                                            item.linkUrl
-                                                                ? LINKS[
-                                                                      item.linkUrl as keyof typeof LINKS
-                                                                  ]
-                                                                : LINKS.enterModels
-                                                        }
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className={
-                                                            quietLinkClass
-                                                        }
+                                            <div className="px-4 pt-3">
+                                                <h3 className="font-headline text-base font-black text-dark bg-white inline-block px-2 py-1 rounded">
+                                                    {item.title}
+                                                </h3>
+                                            </div>
+                                            <div className="px-4 pt-2 pb-4 flex flex-col flex-1">
+                                                <div className="font-body text-sm font-medium text-dark leading-relaxed mt-2">
+                                                    <LazyMarkdown
+                                                        components={{
+                                                            ul: ({
+                                                                node,
+                                                                ...props
+                                                            }) => (
+                                                                <ul
+                                                                    {...props}
+                                                                    className="space-y-2.5 list-disc pl-5 marker:text-dark"
+                                                                />
+                                                            ),
+                                                            li: ({
+                                                                node,
+                                                                ...props
+                                                            }) => (
+                                                                <li
+                                                                    {...props}
+                                                                    className="text-sm text-dark leading-relaxed pl-1"
+                                                                />
+                                                            ),
+                                                            p: ({
+                                                                node,
+                                                                ...props
+                                                            }) => (
+                                                                <p
+                                                                    {...props}
+                                                                    className="m-0"
+                                                                />
+                                                            ),
+                                                            strong: ({
+                                                                node,
+                                                                ...props
+                                                            }) => (
+                                                                <strong
+                                                                    {...props}
+                                                                    className="font-bold text-dark"
+                                                                />
+                                                            ),
+                                                        }}
                                                     >
-                                                        <span
-                                                            className="text-xs"
-                                                            aria-hidden="true"
-                                                        >
-                                                            {item.emoji}
-                                                        </span>
-                                                        {item.linkText}
-                                                        <ExternalLinkIcon
-                                                            className="w-2.5 h-2.5"
-                                                            strokeWidth="3"
-                                                        />
-                                                    </a>
+                                                        {item.desc}
+                                                    </LazyMarkdown>
                                                 </div>
-                                            )}
+                                                {item.linkText && (
+                                                    <div className="mt-auto pt-3 flex justify-end">
+                                                        <a
+                                                            href={
+                                                                item.linkUrl
+                                                                    ? LINKS[
+                                                                          item.linkUrl as keyof typeof LINKS
+                                                                      ]
+                                                                    : LINKS.enterModels
+                                                            }
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className={
+                                                                quietLinkClass
+                                                            }
+                                                        >
+                                                            {item.linkText}
+                                                            <ExternalLinkIcon
+                                                                className="w-2.5 h-2.5"
+                                                                strokeWidth="3"
+                                                            />
+                                                        </a>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 );
                             },
                         )}
-                    </div>
-                    <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 mt-6 text-right">
-                        <span className="font-body text-sm text-muted">
-                            {pageCopy.whatYouGetFooter}
-                        </span>
-                        <Button
-                            as="a"
-                            href={
-                                LINKS[
-                                    pageCopy.whatYouGetFooterUrl as keyof typeof LINKS
-                                ]
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="iconText"
-                            size={null}
-                            className="h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark"
-                        >
-                            <span className="font-headline text-[10px] font-black uppercase tracking-wider">
-                                {pageCopy.whatYouGetFooterLink}
-                            </span>
-                            <ExternalLinkIcon
-                                className="w-3 h-3"
-                                strokeWidth="4"
-                            />
-                        </Button>
                     </div>
                 </div>
 
@@ -249,15 +249,13 @@ function HelloPage() {
                                     key={`${item.date}-${item.title}`}
                                     className="py-1 break-inside-avoid"
                                 >
-                                    <p className="font-mono font-black text-xs text-dark">
-                                        <span className="bg-white px-1.5 py-0.5">
-                                            {item.date}
-                                        </span>
-                                        <span className="ml-2">
-                                            {item.emoji}
-                                        </span>
-                                        <span className="font-headline text-[10px] font-black text-dark ml-1">
+                                    <p className="text-xs text-dark">
+                                        <span>{item.emoji}</span>
+                                        <span className="font-body text-xs font-bold text-dark bg-white px-1.5 py-0.5 ml-1">
                                             {item.title}
+                                        </span>
+                                        <span className="font-body font-semibold text-muted ml-2">
+                                            {item.date}
                                         </span>
                                     </p>
                                     <div className="font-body text-sm text-muted leading-relaxed mt-0.5">
@@ -338,7 +336,7 @@ function HelloPage() {
                                         key={item.title}
                                         className="py-1 break-inside-avoid"
                                     >
-                                        <p className="font-headline text-[10px] font-black text-dark">
+                                        <p className="font-body text-xs font-bold text-dark">
                                             <span className="bg-white px-1.5 py-0.5">
                                                 {item.title}
                                             </span>
@@ -373,15 +371,6 @@ function HelloPage() {
                         >
                             {pageCopy.startBuildingButton}
                             <ExternalLinkIcon className="w-4 h-4" />
-                        </Button>
-                        <Button
-                            as={Link}
-                            to="/apps"
-                            variant="secondary"
-                            size="lg"
-                            className="bg-accent-light text-dark"
-                        >
-                            {pageCopy.browseAppsLink}
                         </Button>
                         <Button
                             as={Link}

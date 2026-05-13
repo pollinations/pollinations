@@ -1,10 +1,9 @@
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
-import { cn } from "@/util.ts";
 import { Button } from "../button.tsx";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { type ThemeName, themeTokens } from "../layout/dashboard-theme.ts";
+import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
 import { MultiSelect } from "./multi-select";
@@ -24,7 +23,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     apps,
     theme,
 }) => {
-    const tokens = themeTokens[theme];
     const [selectedAppKeyIds, setSelectedAppKeyIds] = useState<string[]>([]);
 
     const appSelectOptions = apps.map((a) => ({
@@ -108,7 +106,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     </div>
                 </div>
 
-                <div className={cn("border-t pt-4", tokens.border.soft)}>
+                <div className="border-t pt-4 border-theme-border-soft">
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
                             <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
@@ -143,13 +141,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     )}
                 </div>
 
-                <div
-                    className={cn(
-                        "flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x",
-                        tokens.border.soft,
-                        tokens.divide,
-                    )}
-                >
+                <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border-soft divide-theme-divide">
                     <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                         <EarningsStatCard
                             theme={theme}
@@ -190,7 +182,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             value={stats.activeUsers.toLocaleString()}
                             detail={
                                 stats.appCount > 0 ? (
-                                    <span className={tokens.text.muted}>
+                                    <span className="text-theme-text-muted">
                                         across {stats.appCount} app
                                         {stats.appCount === 1 ? "" : "s"}
                                     </span>
@@ -261,33 +253,18 @@ const EarningsStatCard: FC<{
     label: string;
     value: ReactNode;
     detail?: ReactNode;
-}> = ({ theme, label, value, detail }) => {
-    const tokens = themeTokens[theme];
-    return (
-        <div className="text-sm">
-            <div
-                className={cn(
-                    "text-[10px] uppercase tracking-wide font-bold",
-                    tokens.text.soft,
-                )}
-            >
-                {label}
-            </div>
-            <div
-                className={cn(
-                    "mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums",
-                    tokens.text.base,
-                )}
-            >
-                {value}
-            </div>
-            {detail && (
-                <div className={cn("mt-2 text-xs", tokens.text.muted)}>
-                    {detail}
-                </div>
-            )}
+}> = ({ theme, label, value, detail }) => (
+    <div data-theme={theme} className="text-sm">
+        <div className="text-[10px] uppercase tracking-wide font-bold text-theme-text-soft">
+            {label}
         </div>
-    );
-};
+        <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums text-theme-text-base">
+            {value}
+        </div>
+        {detail && (
+            <div className="mt-2 text-xs text-theme-text-muted">{detail}</div>
+        )}
+    </div>
+);
 
 export default EarningsGraph;

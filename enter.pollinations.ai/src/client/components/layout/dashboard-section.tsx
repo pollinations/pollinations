@@ -3,7 +3,6 @@ import { cn } from "@/util.ts";
 import { Panel } from "../ui/panel.tsx";
 import {
     type DashboardTheme,
-    dashboardThemeClasses,
     type ThemeName,
     themes,
 } from "./dashboard-theme.ts";
@@ -37,10 +36,8 @@ export const DashboardSection: FC<DashboardSectionProps> = ({
     <section id={id} className={cn("scroll-mt-10 space-y-2", className)}>
         <div className="flex flex-wrap items-center justify-between gap-3 px-1">
             <h2
-                className={cn(
-                    "text-left text-lg font-semibold sm:text-xl",
-                    dashboardThemeClasses[theme].title,
-                )}
+                data-theme={asThemeName(theme)}
+                className="text-left text-lg font-semibold sm:text-xl text-theme-text-strong"
             >
                 {title}
             </h2>

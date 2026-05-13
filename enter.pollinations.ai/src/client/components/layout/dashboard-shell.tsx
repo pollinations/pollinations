@@ -15,7 +15,6 @@ import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
     dashboardThemeByPage,
-    dashboardThemeClasses,
 } from "./dashboard-theme.ts";
 import { User } from "./user.tsx";
 
@@ -330,20 +329,18 @@ const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
     return (
         <button
             type="button"
+            data-theme={item.theme}
             className={cn(
                 "flex items-center gap-2 rounded-full px-3 py-2 text-left text-[15px] font-medium transition-colors",
                 active
-                    ? dashboardThemeClasses[item.theme].active
+                    ? "bg-theme-bg-active text-green-950"
                     : "text-gray-800 hover:bg-white/60 hover:text-gray-950",
             )}
             onClick={onClick}
             aria-current={active ? "page" : undefined}
         >
             <span
-                className={cn(
-                    "h-2.5 w-2.5 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]",
-                    dashboardThemeClasses[item.theme].dot,
-                )}
+                className="h-2.5 w-2.5 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] bg-theme-accent"
                 aria-hidden="true"
             />
             {item.label}

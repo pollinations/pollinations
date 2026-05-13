@@ -3,9 +3,8 @@ import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { PAID_COLOR, TIER_COLOR } from "@/client/lib/balance-colors.ts";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
-import { cn } from "@/util.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
-import { type DashboardTheme, themeTokens } from "../layout/dashboard-theme.ts";
+import type { ThemeName } from "../layout/dashboard-theme.ts";
 import { TabButton } from "../ui/tab-button.tsx";
 import { Tag } from "../ui/tag.tsx";
 import { Chart } from "./chart";
@@ -19,7 +18,7 @@ type UsageGraphProps = {
     period: UsagePeriodSelection;
     apiKeys: Array<{ id: string; name: string }>;
     action?: ReactNode;
-    theme: DashboardTheme;
+    theme: ThemeName;
 };
 
 export const UsageGraph: FC<UsageGraphProps> = ({
@@ -29,7 +28,6 @@ export const UsageGraph: FC<UsageGraphProps> = ({
     action,
     theme,
 }) => {
-    const tokens = themeTokens[theme];
     const [filters, setFilters] = useState<Omit<FilterState, "period">>({
         metric: "pollen",
         selectedKeyIds: [],
@@ -119,7 +117,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                     </div>
                 </div>
 
-                <div className={cn("border-t pt-4", tokens.border.soft)}>
+                <div className="border-t pt-4 border-theme-border-soft">
                     {loading && (
                         <div className="flex items-center justify-center h-[180px]">
                             <p className="text-sm text-gray-400 animate-[pulse_2s_ease-in-out_infinite]">
@@ -156,13 +154,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
                 </div>
 
                 {!loading && !error && (
-                    <div
-                        className={cn(
-                            "flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x",
-                            tokens.border.soft,
-                            tokens.divide,
-                        )}
-                    >
+                    <div className="flex flex-col gap-4 border-t pt-4 sm:flex-row sm:gap-0 sm:divide-x border-theme-border-soft divide-theme-divide">
                         <div className="flex-1 sm:px-4 sm:first:pl-0 sm:last:pr-0">
                             <UsageStatCard
                                 label="Pollen spent"
@@ -258,47 +250,31 @@ const UsageStatCard: FC<{
     label: string;
     value: ReactNode;
     detail?: ReactNode;
-    theme: DashboardTheme;
-}> = ({ label, value, detail, theme }) => {
-    const tokens = themeTokens[theme];
-    return (
-        <div className="text-sm">
-            <div
-                className={cn(
-                    "text-[10px] uppercase tracking-wide font-bold",
-                    tokens.text.label,
-                )}
-            >
-                {label}
-            </div>
-            <div
-                className={cn(
-                    "mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums",
-                    tokens.text.strong,
-                )}
-            >
-                {value}
-            </div>
-            {detail && (
-                <div className={cn("mt-2 text-xs", tokens.text.muted)}>
-                    {detail}
-                </div>
-            )}
+    theme: ThemeName;
+}> = ({ label, value, detail, theme }) => (
+    <div data-theme={theme} className="text-sm">
+        <div className="text-[10px] uppercase tracking-wide font-bold text-theme-text-label">
+            {label}
         </div>
-    );
-};
+        <div className="mt-1 min-h-8 break-words text-2xl font-bold leading-tight tabular-nums text-theme-text-strong">
+            {value}
+        </div>
+        {detail && (
+            <div className="mt-2 text-xs text-theme-text-muted">{detail}</div>
+        )}
+    </div>
+);
 
 const ModalityPills: FC<{
     breakdown: Record<ModelModality, number>;
-    theme: DashboardTheme;
+    theme: ThemeName;
 }> = ({ breakdown, theme }) => {
-    const tokens = themeTokens[theme];
     const entries = (Object.keys(MODALITY_META) as ModelModality[])
         .map((modality) => ({ modality, count: breakdown[modality] }))
         .filter(({ count }) => count > 0);
     if (entries.length === 0) return null;
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-theme={theme} className="flex flex-wrap items-center gap-2">
             {entries.map(({ modality, count }) => {
                 const { emoji, label } = MODALITY_META[modality];
                 return (
@@ -306,7 +282,7 @@ const ModalityPills: FC<{
                         key={modality}
                         color={theme}
                         size="lg"
-                        className={cn("font-semibold", tokens.text.base)}
+                        className="font-semibold text-theme-text-base"
                         title={`${count.toLocaleString()} ${label} request${count === 1 ? "" : "s"}`}
                     >
                         <span aria-hidden="true">{emoji}</span>

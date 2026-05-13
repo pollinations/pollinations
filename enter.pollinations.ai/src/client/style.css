@@ -69,11 +69,13 @@
     --theme-border-soft:    oklch(from var(--color-amber-300) l c h / 0.7);
     --theme-border-subtle:  var(--color-amber-200);
 
-    --theme-bg-idle:    oklch(from var(--color-amber-50) l c h / 0.8);
-    --theme-bg-subtle:  oklch(from var(--color-amber-50) l c h / 0.5);
-    --theme-bg-tinted:  oklch(from var(--color-amber-50) l c h / 0.7);
-    --theme-bg-active:  var(--color-amber-200);
-    --theme-bg-hover:   var(--color-amber-300);
+    --theme-bg-idle:        oklch(from var(--color-amber-50) l c h / 0.8);
+    --theme-bg-subtle:      oklch(from var(--color-amber-50) l c h / 0.5);
+    --theme-bg-tinted:      oklch(from var(--color-amber-50) l c h / 0.7);
+    --theme-bg-active:      var(--color-amber-200);
+    --theme-bg-hover:       var(--color-amber-300);
+    --theme-bg-hover-soft:  var(--color-amber-100);
+    --theme-bg-hover-faint: var(--color-amber-50);
 
     --theme-chip-bg:    var(--color-amber-200);
     --theme-chip-text:  var(--color-amber-950);
@@ -86,6 +88,7 @@
     --theme-button-strong-hover: var(--color-amber-700);
 
     --theme-ring-focus: oklch(from var(--color-amber-400) l c h / 0.7);
+    --theme-accent:     var(--color-amber-500);
 }
 
 [data-theme="blue"] {
@@ -100,11 +103,13 @@
     --theme-border-soft:    oklch(from var(--color-blue-300) l c h / 0.7);
     --theme-border-subtle:  var(--color-blue-200);
 
-    --theme-bg-idle:    oklch(from var(--color-blue-50) l c h / 0.8);
-    --theme-bg-subtle:  oklch(from var(--color-blue-50) l c h / 0.5);
-    --theme-bg-tinted:  oklch(from var(--color-blue-50) l c h / 0.7);
-    --theme-bg-active:  var(--color-blue-200);
-    --theme-bg-hover:   var(--color-blue-300);
+    --theme-bg-idle:        oklch(from var(--color-blue-50) l c h / 0.8);
+    --theme-bg-subtle:      oklch(from var(--color-blue-50) l c h / 0.5);
+    --theme-bg-tinted:      oklch(from var(--color-blue-50) l c h / 0.7);
+    --theme-bg-active:      var(--color-blue-200);
+    --theme-bg-hover:       var(--color-blue-300);
+    --theme-bg-hover-soft:  var(--color-blue-100);
+    --theme-bg-hover-faint: var(--color-blue-50);
 
     --theme-chip-bg:    var(--color-blue-200);
     --theme-chip-text:  var(--color-blue-950);
@@ -117,6 +122,7 @@
     --theme-button-strong-hover: var(--color-blue-700);
 
     --theme-ring-focus: oklch(from var(--color-blue-400) l c h / 0.7);
+    --theme-accent:     var(--color-blue-500);
 }
 
 [data-theme="pink"] {
@@ -131,11 +137,13 @@
     --theme-border-soft:    oklch(from var(--color-pink-300) l c h / 0.7);
     --theme-border-subtle:  var(--color-pink-200);
 
-    --theme-bg-idle:    oklch(from var(--color-pink-50) l c h / 0.8);
-    --theme-bg-subtle:  oklch(from var(--color-pink-50) l c h / 0.5);
-    --theme-bg-tinted:  oklch(from var(--color-pink-50) l c h / 0.7);
-    --theme-bg-active:  var(--color-pink-200);
-    --theme-bg-hover:   var(--color-pink-300);
+    --theme-bg-idle:        oklch(from var(--color-pink-50) l c h / 0.8);
+    --theme-bg-subtle:      oklch(from var(--color-pink-50) l c h / 0.5);
+    --theme-bg-tinted:      oklch(from var(--color-pink-50) l c h / 0.7);
+    --theme-bg-active:      var(--color-pink-200);
+    --theme-bg-hover:       var(--color-pink-300);
+    --theme-bg-hover-soft:  var(--color-pink-100);
+    --theme-bg-hover-faint: var(--color-pink-50);
 
     --theme-chip-bg:    var(--color-pink-200);
     --theme-chip-text:  var(--color-pink-950);
@@ -148,6 +156,7 @@
     --theme-button-strong-hover: var(--color-pink-700);
 
     --theme-ring-focus: oklch(from var(--color-pink-400) l c h / 0.7);
+    --theme-accent:     var(--color-pink-500);
 }
 
 [data-theme="teal"] {
@@ -162,11 +171,13 @@
     --theme-border-soft:    oklch(from var(--color-teal-300) l c h / 0.7);
     --theme-border-subtle:  var(--color-teal-200);
 
-    --theme-bg-idle:    oklch(from var(--color-teal-50) l c h / 0.8);
-    --theme-bg-subtle:  oklch(from var(--color-teal-50) l c h / 0.5);
-    --theme-bg-tinted:  oklch(from var(--color-teal-50) l c h / 0.7);
-    --theme-bg-active:  var(--color-teal-200);
-    --theme-bg-hover:   var(--color-teal-300);
+    --theme-bg-idle:        oklch(from var(--color-teal-50) l c h / 0.8);
+    --theme-bg-subtle:      oklch(from var(--color-teal-50) l c h / 0.5);
+    --theme-bg-tinted:      oklch(from var(--color-teal-50) l c h / 0.7);
+    --theme-bg-active:      var(--color-teal-200);
+    --theme-bg-hover:       var(--color-teal-300);
+    --theme-bg-hover-soft:  var(--color-teal-100);
+    --theme-bg-hover-faint: var(--color-teal-50);
 
     --theme-chip-bg:    var(--color-teal-200);
     --theme-chip-text:  var(--color-teal-950);
@@ -179,6 +190,7 @@
     --theme-button-strong-hover: var(--color-teal-700);
 
     --theme-ring-focus: oklch(from var(--color-teal-400) l c h / 0.7);
+    --theme-accent:     var(--color-teal-500);
 }
 
 [data-theme="violet"] {
@@ -193,11 +205,13 @@
     --theme-border-soft:    oklch(from var(--color-violet-300) l c h / 0.7);
     --theme-border-subtle:  var(--color-violet-200);
 
-    --theme-bg-idle:    oklch(from var(--color-violet-50) l c h / 0.8);
-    --theme-bg-subtle:  oklch(from var(--color-violet-50) l c h / 0.5);
-    --theme-bg-tinted:  oklch(from var(--color-violet-50) l c h / 0.7);
-    --theme-bg-active:  var(--color-violet-200);
-    --theme-bg-hover:   var(--color-violet-300);
+    --theme-bg-idle:        oklch(from var(--color-violet-50) l c h / 0.8);
+    --theme-bg-subtle:      oklch(from var(--color-violet-50) l c h / 0.5);
+    --theme-bg-tinted:      oklch(from var(--color-violet-50) l c h / 0.7);
+    --theme-bg-active:      var(--color-violet-200);
+    --theme-bg-hover:       var(--color-violet-300);
+    --theme-bg-hover-soft:  var(--color-violet-100);
+    --theme-bg-hover-faint: var(--color-violet-50);
 
     --theme-chip-bg:    var(--color-violet-200);
     --theme-chip-text:  var(--color-violet-950);
@@ -210,6 +224,7 @@
     --theme-button-strong-hover: var(--color-violet-700);
 
     --theme-ring-focus: oklch(from var(--color-violet-400) l c h / 0.7);
+    --theme-accent:     var(--color-violet-500);
 }
 
 /* Green is also the chrome default — :root fallback so unwrapped routes
@@ -227,11 +242,13 @@
     --theme-border-soft:    oklch(from var(--color-green-300) l c h / 0.7);
     --theme-border-subtle:  var(--color-green-200);
 
-    --theme-bg-idle:    oklch(from var(--color-green-50) l c h / 0.8);
-    --theme-bg-subtle:  oklch(from var(--color-green-50) l c h / 0.5);
-    --theme-bg-tinted:  oklch(from var(--color-green-50) l c h / 0.7);
-    --theme-bg-active:  var(--color-green-200);
-    --theme-bg-hover:   var(--color-green-300);
+    --theme-bg-idle:        oklch(from var(--color-green-50) l c h / 0.8);
+    --theme-bg-subtle:      oklch(from var(--color-green-50) l c h / 0.5);
+    --theme-bg-tinted:      oklch(from var(--color-green-50) l c h / 0.7);
+    --theme-bg-active:      var(--color-green-200);
+    --theme-bg-hover:       var(--color-green-300);
+    --theme-bg-hover-soft:  var(--color-green-100);
+    --theme-bg-hover-faint: var(--color-green-50);
 
     --theme-chip-bg:    var(--color-green-200);
     --theme-chip-text:  var(--color-green-950);
@@ -244,6 +261,7 @@
     --theme-button-strong-hover: var(--color-green-700);
 
     --theme-ring-focus: oklch(from var(--color-green-400) l c h / 0.7);
+    --theme-accent:     var(--color-green-500);
 }
 
 /* ─── Layer 2 dark overrides (skeletal — to be curated later) ── */
@@ -428,6 +446,11 @@ html[data-mode="dark"] {
     --color-theme-bg-tinted:         var(--theme-bg-tinted);
     --color-theme-bg-active:         var(--theme-bg-active);
     --color-theme-bg-hover:          var(--theme-bg-hover);
+    --color-theme-bg-hover-soft:     var(--theme-bg-hover-soft);
+    --color-theme-bg-hover-faint:    var(--theme-bg-hover-faint);
+
+    --color-theme-divide:            var(--theme-border-soft);
+    --color-theme-accent:            var(--theme-accent);
 
     --color-theme-chip-bg:           var(--theme-chip-bg);
     --color-theme-chip-text:         var(--theme-chip-text);

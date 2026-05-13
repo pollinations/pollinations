@@ -19,9 +19,9 @@ type SwitchProps = {
 //  on    — soft green (universal "enabled" affordance)
 //  draft — soft red (incomplete / error / setup needed)
 const trackClasses: Record<SwitchStatus, string> = {
-    off: "bg-gray-200 border-gray-300",
-    on: "bg-[oklch(0.935_0.06_158)] border-[oklch(0.78_0.115_158)]",
-    draft: "bg-[oklch(0.935_0.045_25)] border-[oklch(0.78_0.115_25)]",
+    off: "bg-gray-200",
+    on: "bg-[oklch(0.935_0.06_158)]",
+    draft: "bg-[oklch(0.935_0.045_25)]",
 };
 
 /**
@@ -55,7 +55,7 @@ export const Switch: FC<SwitchProps> = ({
             onClick={() => onChange(!checked)}
             disabled={disabled}
             className={cn(
-                "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring-focus disabled:cursor-not-allowed disabled:opacity-60",
+                "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ring-focus disabled:cursor-not-allowed disabled:opacity-60",
                 trackClasses[effectiveStatus],
                 className,
             )}

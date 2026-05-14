@@ -63,10 +63,28 @@
     letter-spacing: -0.02em;
     line-height: 1.3;
   }
-  canvas { cursor: crosshair; touch-action: none; display: block; max-width: 100%; height: auto; }
-  .canvas-wrap { background: #fff; border: 2px solid var(--dark); border-right-width: 4px; border-bottom-width: 4px; padding: 0; overflow: hidden; position: relative; display: inline-block; width: 100%; }
-  .canvas-stage { position: relative; display: inline-block; width: 100%; }
+  canvas { cursor: crosshair; touch-action: none; display: block; max-width: 100%; max-height: calc(100vh - 200px); width: auto; height: auto; margin: 0 auto; }
+  .canvas-wrap { background: #fff; border: 2px solid var(--dark); border-right-width: 4px; border-bottom-width: 4px; padding: 0; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; width: 100%; }
+  .canvas-stage { position: relative; display: inline-block; max-width: 100%; }
   .canvas-wrap.drop { outline: 4px dashed var(--accent); outline-offset: -8px; }
+  .canvas-wrap.locked canvas { cursor: not-allowed; filter: grayscale(0.4) opacity(0.55); }
+  #connectOverlay {
+    position: absolute; inset: 0; z-index: 20;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(243, 235, 222, 0.88);
+    backdrop-filter: blur(2px);
+  }
+  .canvas-wrap.locked #connectOverlay { display: flex; }
+  #connectOverlay .panel {
+    background: #fff;
+    border: 2px solid var(--dark);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    padding: 1.2rem 1.4rem;
+    text-align: center;
+    max-width: 22rem;
+  }
+  #connectOverlay .panel p { font-size: 0.9rem; margin-bottom: 0.9rem; }
 
   /* Cursor-anchored speech pill */
   #cursorPill {
@@ -149,49 +167,41 @@
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 </style>
 <body class="min-h-screen p-4 md:p-6 flex flex-col items-center gap-4">
-  <div class="w-full max-w-5xl flex items-end justify-between gap-4">
-    <div>
-      <h1 class="pollen-title text-2xl md:text-3xl">voice<br>edit</h1>
-      <p class="text-sm text-[var(--muted)] mt-2">point. talk. release. it's edited.</p>
-    </div>
-    <div class="text-xs text-[var(--muted)] shrink-0" id="status">ready</div>
+  <div class="w-full max-w-5xl flex items-baseline gap-3">
+    <h1 class="pollen-title text-xl md:text-2xl">voice·edit</h1>
+    <span class="text-xs text-[var(--muted)]">point. talk. release.</span>
+    <span class="text-xs text-[var(--muted)] ml-auto" id="account"></span>
+    <span class="text-xs text-[var(--muted)]" id="status">ready</span>
   </div>
 
   <div id="error" class="hidden w-full max-w-5xl pollen-card px-4 py-3 text-sm" style="background:#ffe1e1;border-color:#a02020"></div>
 
   <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
-    <button id="connectBtn" class="pollen-btn pollen-btn-accent">connect pollinations</button>
+    <button id="connectBtn" class="pollen-btn pollen-btn-accent">connect</button>
     <button id="disconnectBtn" class="hidden pollen-btn">disconnect</button>
-    <span id="account" class="text-[var(--muted)]"></span>
-  </div>
-
-  <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
-    <button id="loadBtn" class="pollen-btn">load starter</button>
-    <button id="uploadBtn" class="pollen-btn">upload</button>
+    <button id="uploadBtn" class="pollen-btn">image</button>
     <input id="fileInput" type="file" accept="image/*" class="hidden">
-    <input id="urlInput" placeholder="or paste image URL / drop image on canvas" class="pollen-input min-w-52 flex-1 text-sm">
-    <button id="useUrl" class="pollen-btn">use</button>
     <select id="modelSel" class="pollen-select text-sm">
       <option value="nanobanana">nanobanana</option>
     </select>
-    <button id="undoBtn" class="pollen-btn" disabled>undo</button>
-    <button id="redoBtn" class="pollen-btn" disabled>redo</button>
-    <button id="downloadBtn" class="pollen-btn">download</button>
-  </div>
-
-  <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
-    <input id="intentInput" placeholder="optional typed edit, e.g. make this a brass lamp" class="pollen-input min-w-64 flex-1">
-    <button id="clearIntent" class="pollen-btn">clear</button>
-  </div>
-
-  <div class="w-full max-w-5xl text-xs text-[var(--muted)]">
-    click and hold on the image. talk into the pill that pops up — release to apply.
+    <label class="ml-2 text-xs flex items-center gap-1 select-none">
+      <input id="typeMode" type="checkbox"> type instead
+    </label>
+    <button id="undoBtn" class="pollen-btn ml-auto" disabled title="undo">↶</button>
+    <button id="redoBtn" class="pollen-btn" disabled title="redo">↷</button>
+    <button id="downloadBtn" class="pollen-btn" title="download">↓</button>
   </div>
 
   <div class="relative w-full max-w-5xl canvas-wrap">
     <div class="canvas-stage">
       <canvas id="canvas" width="1024" height="768" class="bg-white"></canvas>
       <div id="pinLayer"></div>
+    </div>
+    <div id="connectOverlay">
+      <div class="panel">
+        <p>connect to pollinations to start editing</p>
+        <button id="connectOverlayBtn" class="pollen-btn pollen-btn-accent">connect</button>
+      </div>
     </div>
   </div>
 
@@ -206,7 +216,7 @@ const KEY_STORAGE = "voice-edit:user-key";
 const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
-const STARTER = "https://media.pollinations.ai/649d0f9cf10b5e48";
+const STARTER = "https://media.pollinations.ai/051ed82a46f5f85d";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -215,7 +225,6 @@ const errorEl = document.getElementById("error");
 const connectBtn = document.getElementById("connectBtn");
 const disconnectBtn = document.getElementById("disconnectBtn");
 const accountEl = document.getElementById("account");
-const intentInput = document.getElementById("intentInput");
 const undoBtn = document.getElementById("undoBtn");
 const redoBtn = document.getElementById("redoBtn");
 const pillEl = document.getElementById("cursorPill");
@@ -306,10 +315,12 @@ function getKey() {
 
 function refreshConnectionUI() {
   const k = localStorage.getItem(KEY_STORAGE);
+  const canvasWrap = document.querySelector(".canvas-wrap");
   if (k) {
     connectBtn.classList.add("hidden");
     disconnectBtn.classList.remove("hidden");
     accountEl.textContent = "connected";
+    canvasWrap.classList.remove("locked");
     fetch(`${ENTER}/api/device/userinfo`, { headers: { Authorization: `Bearer ${k}` } })
       .then(r => r.ok ? r.json() : null)
       .then(u => { if (u?.preferred_username) accountEl.textContent = `connected as ${u.preferred_username}`; })
@@ -317,18 +328,22 @@ function refreshConnectionUI() {
   } else {
     connectBtn.classList.remove("hidden");
     disconnectBtn.classList.add("hidden");
-    accountEl.textContent = "";
+    accountEl.textContent = "not connected";
+    canvasWrap.classList.add("locked");
+    setStatus("not connected");
   }
 }
 
-connectBtn.onclick = () => {
+function startConnect() {
   const params = new URLSearchParams({
     redirect_uri: location.origin + location.pathname,
     scope: "generate",
   });
   if (CLIENT_ID) params.set("client_id", CLIENT_ID);
   location.href = `${ENTER}/authorize?${params}`;
-};
+}
+connectBtn.onclick = startConnect;
+document.getElementById("connectOverlayBtn").onclick = startConnect;
 disconnectBtn.onclick = () => {
   localStorage.removeItem(KEY_STORAGE);
   refreshConnectionUI();
@@ -389,12 +404,6 @@ async function loadImageFromURL(url, opts = {}) {
   setStatus("ready");
 }
 
-document.getElementById("loadBtn").onclick = () => loadImageFromURL(STARTER, { pushHistory: true }).catch(err => showError(err.message));
-document.getElementById("useUrl").onclick = () => {
-  const u = document.getElementById("urlInput").value.trim();
-  if (u) loadImageFromURL(u, { pushHistory: true }).catch(err => showError(err.message));
-};
-
 function loadLocalFile(file) {
   if (!file || !file.type.startsWith("image/")) { showError("Drop or pick an image file."); return; }
   const reader = new FileReader();
@@ -404,6 +413,29 @@ function loadLocalFile(file) {
 }
 document.getElementById("uploadBtn").onclick = () => document.getElementById("fileInput").click();
 document.getElementById("fileInput").onchange = (e) => loadLocalFile(e.target.files?.[0]);
+
+function promptTypedEdit(clientX, clientY, point) {
+  showPill(clientX, clientY, "", true);
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "type edit, press enter";
+  input.style.cssText = "border:none;outline:none;background:transparent;font:inherit;width:14rem;color:var(--dark);";
+  pillText.replaceWith(input);
+  input.focus();
+  setStatus("typing…");
+  return new Promise((resolve) => {
+    const finish = (text) => {
+      input.replaceWith(pillText);
+      hidePill();
+      resolve(text);
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); finish(input.value.trim()); }
+      if (e.key === "Escape") { e.preventDefault(); finish(""); }
+    });
+    input.addEventListener("blur", () => finish(input.value.trim()));
+  });
+}
 
 const dropZone = document.querySelector(".canvas-wrap");
 ["dragenter", "dragover"].forEach(ev => dropZone.addEventListener(ev, (e) => {
@@ -416,10 +448,6 @@ dropZone.addEventListener("drop", (e) => {
   const file = e.dataTransfer?.files?.[0];
   if (file) loadLocalFile(file);
 });
-document.getElementById("clearIntent").onclick = () => {
-  intentInput.value = "";
-};
-
 function canvasPointFromEvent(e) {
   const rect = canvas.getBoundingClientRect();
   const sx = canvas.width / rect.width;
@@ -434,20 +462,12 @@ function canvasPointFromEvent(e) {
 
 function startIntentCapture(clientX, clientY) {
   clearError();
-  const typed = intentInput.value.trim();
-  if (typed) {
-    showPill(clientX, clientY, typed, false);
-    setStatus("release to edit…");
-    return { mode: "typed", text: typed };
-  }
-
   if (!SpeechRecognition) {
-    showError("Voice input is not available in this browser. Type an edit, then click the target area.");
+    showError("Voice input is not available in this browser.");
     return null;
   }
 
   const capture = {
-    mode: "speech",
     text: "",
     error: "",
     finished: false,
@@ -487,7 +507,6 @@ function startIntentCapture(clientX, clientY) {
 }
 
 async function stopIntentCapture(capture) {
-  if (capture.mode === "typed") return { text: capture.text, error: "" };
   setStatus("processing…");
   try { capture.recognition.stop(); } catch {}
   const timeout = new Promise((resolve) => setTimeout(() => {
@@ -625,8 +644,19 @@ async function runQueue() {
 canvas.addEventListener("pointerdown", async (e) => {
   if (!currentImage) { showError("Load an image first."); return; }
   e.preventDefault();
-  canvas.setPointerCapture(e.pointerId);
+  const typeMode = document.getElementById("typeMode").checked;
   clickPoint = canvasPointFromEvent(e);
+  if (typeMode) {
+    const point = clickPoint;
+    const text = await promptTypedEdit(e.clientX, e.clientY, point);
+    if (text) {
+      try { enqueueEdit(point, text); } catch (err) { showError(err.message); }
+    } else {
+      setStatus("ready");
+    }
+    return;
+  }
+  canvas.setPointerCapture(e.pointerId);
   activeCapture = startIntentCapture(e.clientX, e.clientY);
 });
 

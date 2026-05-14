@@ -1,0 +1,35 @@
+{
+  "pr_number": 10925,
+  "title": "fix(social): preserve load-bearing specifics in PR-merge Discord posts",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/10925",
+  "merged_at": "2026-05-14T14:22:57Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "## Changes Made\n\n- The Discord PR-merge announcements were dropping the load-bearing details (numbers, model names, before/after values) and reading like category labels. Two root causes: the gist prompt actively abstracted specifics away, and the Discord-message stage never saw the original PR body.\n- Rewrote the prompts so every PR type (model adds, refactors, pricing changes, rate limits, perf, infra) is required to preserve names + numbers + before/after values in the user-visible summary. Positive tone is preserved; the specifics carry through.\n- Plumbed an excerpt of the PR body through to the Discord-message generation step so the model can quote concrete details directly.\n- Relaxed the \"don't mention pricing / rate limits\" rule into \"don't editorialize about internal motivations\". Stating factual numbers is fine and expected.\n\n## Checks\n\n- [ ] Watch the next real PR-merge Discord post — specifics surfaced (numbers, names, before/after).\n- [ ] Spot-check the gist JSON for that PR — summary / impact carry the concrete details, PR body excerpt is present.\n- [ ] No regression on app-submission PRs (separate code path).\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "The details are in the details",
+    "blurb": "We've upgraded our social media pipeline to keep the juicy details intact when announcing PR merges. No more vague summaries!",
+    "summary": "Updated the social media pipeline prompts and scripts to preserve specific details like model names, numbers, and before/after values in Discord PR-merge announcements.",
+    "impact": "Discord announcements will now include concrete facts and figures from PRs instead of generic category labels.",
+    "keywords": [
+      "social",
+      "discord",
+      "prompts",
+      "pipeline",
+      "automation"
+    ],
+    "visual_concept": "The Robot holding a highly detailed printout with the Bee looking at it, representing the preservation of specific details in text generation.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a detailed code printout filled with tiny numbers and text. The cute bee mascot hovers nearby, wearing tiny reading glasses and pointing at a specific line. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-14/PR-10925.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head holding a detailed code printout filled with tiny numbers and text. The cute bee mascot hovers nearby, wearing tiny reading glasses and pointing at a specific line. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-05-14T14:23:58.139468+00:00"
+}

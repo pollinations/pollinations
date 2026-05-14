@@ -15,7 +15,7 @@ Voice-driven image editor. Click-and-hold on image, speak edit, release. Red rin
 | STT | `POST /v1/audio/transcriptions`, model=`scribe` | ElevenLabs Scribe v2. 1.6% WER on Artificial Analysis AA-AgentTalk (short voice-agent clips) vs ~2.3% Universal-3 Pro; Whisper-large-v3 ranks well below and hallucinates "Thank you / Thanks for watching" on silent or sub-second audio (documented YouTube-training-data artifact, arXiv:2501.11378). Tried `universal-2` earlier — worse on short clips. |
 | upload | `POST media.pollinations.ai/upload` | annotated PNG before /edits |
 | default edit model | `nanobanana` | Gemini 2.5 Flash Image. Recommended: `nanobanana`, `p-image-edit`, `kontext`, `gpt-image-2`. |
-| starter image | Merian banana flower (PD) | `media.pollinations.ai/051ed82a46f5f85d` |
+| starter image | "Most detailed view of a human cell" (Evan Ingersoll & Gael McGill, Digizyme) | `media.pollinations.ai/10efdd0c1cfc65fa` |
 
 ## marker
 

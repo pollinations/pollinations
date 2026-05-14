@@ -1,0 +1,34 @@
+{
+  "pr_number": 10948,
+  "title": "fix(quest): resolve PR→quest link via GraphQL, ping fallback on miss",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10948",
+  "merged_at": "2026-05-14T22:43:21Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Replace body-keyword regex with `pullRequest.closingIssuesReferences` so the resolver also catches PRs linked via the GitHub Development sidebar — maintainers can rescue a quest PR pre-merge without retraining contributors.\n- On miss (no `POLLEN-QUEST` linked at merge), post a comment on the PR pinging \\`QUEST_PAYOUT_FALLBACK\\` instead of silently green-skipping the payout. Fixes the failure mode from PR #10927 / quest #10920.\n\n## Why\nPR #10927 fulfilled quest #10920 but said \\\"Goes with #10920\\\" — not a closing keyword. The current regex missed it, Compute/Grant/Receipt all skipped, workflow ended green, contributor only noticed hours later. Three independent design passes (research survey, Plan, Codex) agreed: GitHub's native PR↔issue link is strictly stronger than parsing contributor free text.\n\n## Test plan\n- [x] \\`Fixes #N\\` in body → resolves (same as today)\n- [x] Sidebar-linked issue, no keyword → resolves (new)\n- [x] No link at all → no payout, fallback maintainer pinged on the PR (was: silent skip)\n- [x] \\`npx biome check --write\\` clean\n\n## Notes\n- Workflow gains \\`pull-requests: write\\` for the miss-comment (was \\`read\\`).\n- Output contract of \\`resolveLinkedQuest\\` is unchanged — \\`computePayout\\` / \\`runPollenGrant\\` / \\`postReceipt\\` are untouched.\n- CloudCompile's 5 Pollen for #10920 has been back-filled manually with \\`quest-grant-pollen.ts\\`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "No quest left behind",
+    "blurb": "We've upgraded our quest payout system to use GitHub's native issue linking, ensuring contributors get their Pollen even if they forget the magic 'Fixes #' keyword.",
+    "summary": "The quest reward payout workflow now uses GitHub's GraphQL API to resolve linked issues instead of regex parsing, and pings maintainers if a PR is merged without a linked quest.",
+    "impact": "Contributors will reliably receive their Pollen rewards when linking quests via the GitHub sidebar, and maintainers will be alerted to manually intervene if a link is missing.",
+    "keywords": [
+      "github-actions",
+      "quests",
+      "pollen-rewards",
+      "graphql"
+    ],
+    "visual_concept": "Polly the bee acting as a postal worker or detective, successfully connecting a PR document to a quest board. The robot companion helps ensure nothing gets lost.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny postal worker hat, happily pinning a glowing document to a wooden quest board. A chunky retro robot with a CRT monitor head gives a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-14/PR-10948.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny postal worker hat, happily pinning a glowing document to a wooden quest board. A chunky retro robot with a CRT monitor head gives a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-05-14T22:44:21.864923+00:00"
+}

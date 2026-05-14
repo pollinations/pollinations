@@ -208,19 +208,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
-                <DashboardSection title="API" theme="blue" framed>
+                <DashboardSection
+                    title="API"
+                    theme="blue"
+                    framed
+                    action={
+                        <ApiKeyDialog
+                            onSubmit={onCreate}
+                            onComplete={() => {}}
+                            triggerLabel="🔑 + API Key"
+                        />
+                    }
+                >
                     <div className="flex flex-col gap-3">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <p className="min-w-0 flex-1 text-sm text-gray-600">
-                                For your own backend, scripts, and CLIs — billed
-                                to your account.
-                            </p>
-                            <ApiKeyDialog
-                                onSubmit={onCreate}
-                                onComplete={() => {}}
-                                triggerLabel="🔑 + API Key"
-                            />
-                        </div>
                         {!sortedApiKeys.length && (
                             <Surface className="p-6 text-center">
                                 <p className="text-2xl mb-2">🔑</p>
@@ -235,54 +235,54 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedApiKeys.map(renderKeyCard)}
                     </div>
+                    <p className="mt-5 flex items-start gap-1.5 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
+                        <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            For your own backend, scripts, and CLIs — billed to
+                            your account.
+                        </span>
+                    </p>
                 </DashboardSection>
-                <DashboardSection title="App" theme="blue" framed>
+                <DashboardSection
+                    title="App"
+                    theme="blue"
+                    framed
+                    action={
+                        <ApiKeyDialog
+                            onSubmit={onCreate}
+                            onComplete={() => {}}
+                            triggerLabel="🖥️ + Add App"
+                            simplified
+                        />
+                    }
+                >
                     <div className="flex flex-col gap-3">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0 flex-1 text-sm text-gray-600">
-                                <p>
-                                    For apps where users sign in with their own
-                                    Pollinations account and spend their own
-                                    Pollen.
-                                </p>
-                                <Surface
-                                    variant="card-themed"
-                                    className="mt-2 w-fit text-theme-text-strong"
+                        <Surface
+                            variant="card-themed"
+                            className="w-fit text-theme-text-strong"
+                        >
+                            <span className="font-body text-xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                                New!
+                            </span>
+                            Turn on earnings to receive a share of pollen users
+                            spend in your app.{" "}
+                            <a
+                                href={genDocsUrl("#tag/bring-your-own-pollen")}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-blue-700 hover:text-blue-900"
+                            >
+                                <span className="underline underline-offset-2">
+                                    Read the guide
+                                </span>
+                                <span
+                                    aria-hidden="true"
+                                    className="no-underline ml-0.5"
                                 >
-                                    <span className="font-body text-xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
-                                        New!
-                                    </span>
-                                    Turn on earnings to receive a share of
-                                    pollen users spend in your app.
-                                    <div className="mt-1">
-                                        <a
-                                            href={genDocsUrl(
-                                                "#tag/bring-your-own-pollen",
-                                            )}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="font-medium text-blue-700 hover:text-blue-900"
-                                        >
-                                            <span className="underline underline-offset-2">
-                                                Read the guide
-                                            </span>
-                                            <span
-                                                aria-hidden="true"
-                                                className="no-underline ml-0.5"
-                                            >
-                                                ↗
-                                            </span>
-                                        </a>
-                                    </div>
-                                </Surface>
-                            </div>
-                            <ApiKeyDialog
-                                onSubmit={onCreate}
-                                onComplete={() => {}}
-                                triggerLabel="🖥️ + Add App"
-                                simplified
-                            />
-                        </div>
+                                    ↗
+                                </span>
+                            </a>
+                        </Surface>
                         {!sortedAppKeys.length && (
                             <Surface className="p-6 text-center">
                                 <p className="text-2xl mb-2">🖥️</p>
@@ -297,6 +297,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         )}
                         {sortedAppKeys.map(renderKeyCard)}
                     </div>
+                    <p className="mt-5 flex items-start gap-1.5 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
+                        <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            For apps where users sign in with their own
+                            Pollinations account and spend their own Pollen.
+                        </span>
+                    </p>
                 </DashboardSection>
             </div>
             <DeleteConfirmation
@@ -314,3 +321,35 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         </>
     );
 };
+
+const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <polyline points="4 8 8 12 4 16" />
+        <line x1="12" y1="20" x2="20" y2="20" />
+    </svg>
+);
+
+const AppIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="2" y="4" width="20" height="14" rx="2" />
+        <path d="M2 20h20" />
+    </svg>
+);

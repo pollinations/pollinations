@@ -22,13 +22,15 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-05-13",
         emoji: "🌻",
         title: "Pollen pack bonuses are stepping down",
         description:
             "As the service keeps improving, the bonus Pollen included with each pack is being reduced.",
     },
     {
-        emoji: "🌻",
+        date: "2026-05-07",
+        emoji: "🪷",
         title: "Developer earnings are live",
         description:
             "Turn on Developer earnings on any App Key to receive a share of pollen users spend in your app.",
@@ -115,7 +117,7 @@ export const NewsBanner: FC = () => {
                 <Surface
                     variant="card-themed"
                     theme="violet"
-                    className="flex flex-col gap-4 text-base leading-relaxed"
+                    className="flex flex-col divide-y divide-violet-300/40 leading-relaxed"
                 >
                     {PINNED_NEWS.map((item) => (
                         <PinnedNews key={item.title} item={item} />
@@ -137,12 +139,21 @@ export const NewsBanner: FC = () => {
 };
 
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
-    <div className="min-w-0">
-        <div className="font-semibold text-gray-900 text-base sm:text-lg">
+    <div className="min-w-0 py-3 first:pt-0 last:pb-0">
+        {item.date && (
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-violet-700/70">
+                {formatNewsDate(item.date)}
+            </div>
+        )}
+        <div className="flex items-baseline gap-2 font-semibold text-gray-900 text-base sm:text-lg">
+            {item.emoji && (
+                <span aria-hidden="true" className="shrink-0">
+                    {item.emoji}
+                </span>
+            )}
             <span>{item.title}</span>
-            {item.emoji && <span className="ml-2">{item.emoji}</span>}
         </div>
-        <p className="mt-1 text-gray-700">
+        <p className="mt-1 text-sm text-gray-700">
             {renderWithLinks(item.description)}
         </p>
     </div>

@@ -17,13 +17,13 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "../components/auth/auth-modal.tsx";
-import { Button } from "../components/button.tsx";
 import { AccountPermissionsInput } from "../components/keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../components/keys/expiry-days-input.tsx";
 import { useKeyPermissions } from "../components/keys/key-permissions.tsx";
-import { getModalityColors } from "../components/keys/modality-ui.ts";
-import { computeCategoryModalities } from "../components/keys/model-categories.ts";
 import { PollenBudgetInput } from "../components/keys/pollen-budget-input.tsx";
+import { getModalityColors } from "../components/models/modality-ui.ts";
+import { computeCategoryModalities } from "../components/models/model-categories.ts";
+import { Button } from "../components/ui/button.tsx";
 import { Chip } from "../components/ui/chip.tsx";
 import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";

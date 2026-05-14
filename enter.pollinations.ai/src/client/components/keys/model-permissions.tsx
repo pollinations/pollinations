@@ -1,8 +1,8 @@
 import type { FC } from "react";
 import { cn } from "@/util.ts";
+import { MODEL_CATEGORIES } from "../models/model-categories.ts";
 import { Chip } from "../ui/chip.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
-import { MODEL_CATEGORIES } from "./model-categories.ts";
 
 type ModelPermissionsProps = {
     /** Selected model IDs. null = all models allowed, [] = restricted but none selected */

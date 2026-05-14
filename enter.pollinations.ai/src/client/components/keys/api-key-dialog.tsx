@@ -9,7 +9,7 @@ import {
 } from "unique-names-generator";
 import { cn } from "@/util.ts";
 import { genDocsUrl } from "../../config.ts";
-import { Button } from "../button.tsx";
+import { Button } from "../ui/button.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";

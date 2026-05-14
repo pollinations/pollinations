@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { cn } from "../../../util.ts";
-import { Tooltip } from "./Tooltip.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 
 const priceBadgeColors = {
     gray: "text-gray-700",

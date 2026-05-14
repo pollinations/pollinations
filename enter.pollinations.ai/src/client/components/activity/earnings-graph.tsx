@@ -1,9 +1,9 @@
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
-import { Button } from "../button.tsx";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
+import { Button } from "../ui/button.tsx";
 import { Chip } from "../ui/chip.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { Chart } from "./chart";

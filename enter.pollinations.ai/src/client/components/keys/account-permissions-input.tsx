@@ -1,12 +1,12 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
-import { ModalityButton } from "./modality-button.tsx";
-import { getModalityColors } from "./modality-ui.ts";
+import { getModalityColors } from "../models/modality-ui.ts";
 import {
     MODEL_CATEGORIES,
     type ModelCategoryModel,
-} from "./model-categories.ts";
+} from "../models/model-categories.ts";
+import { ModalityButton } from "./modality-button.tsx";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import {
     getPermissionUiTheme,

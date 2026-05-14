@@ -12,7 +12,7 @@ import {
 import { apiClient } from "@/client/api.ts";
 import { POLLEN_PACKS } from "@/pollen-packs.ts";
 import { cn } from "@/util.ts";
-import { Button } from "../button.tsx";
+import { Button } from "../ui/button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";

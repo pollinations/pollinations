@@ -1,7 +1,7 @@
 import type { Link, LinkProps } from "@tanstack/react-router";
 import type { PropsWithChildren } from "react";
-import { cn } from "../../util.ts";
-import type { ThemeName } from "./layout/dashboard-theme.ts";
+import { cn } from "../../../util.ts";
+import type { ThemeName } from "../layout/dashboard-theme.ts";
 
 /** Button only supports `danger`. Paid/alpha live on Chip; success is gone. */
 type ButtonIntent = "danger";

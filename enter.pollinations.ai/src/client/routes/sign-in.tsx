@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { Button } from "../components/button.tsx";
 import {
     type DashboardPage,
     DashboardShell,
@@ -12,6 +11,7 @@ import {
 } from "../components/layout/dashboard-theme.ts";
 import { Models } from "../components/models";
 import { NewsFaq } from "../components/news-faq";
+import { Button } from "../components/ui/button.tsx";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",

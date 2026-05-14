@@ -5,7 +5,7 @@ import {
 import { type FC, type MouseEvent, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Chip } from "../ui/chip.tsx";
-
+import { Tooltip } from "../ui/tooltip.tsx";
 import { calculatePerPollen, canAffordModel } from "./calculations.ts";
 import {
     getModelBrandLogoPath,
@@ -23,7 +23,6 @@ import {
     PriceBadge,
     type PriceBadgeConfig,
 } from "./price-badge.tsx";
-import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
 export type SectionType = "image" | "video" | "audio" | "text" | "embedding";

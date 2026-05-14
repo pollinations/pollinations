@@ -1,7 +1,7 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { getModelDisplayName } from "../keys/model-utils.ts";
+import { getModelDisplayName } from "../models/model-utils.ts";
 
 export type ModelModality = "text" | "image" | "audio";
 

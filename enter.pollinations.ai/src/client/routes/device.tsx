@@ -8,7 +8,7 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "../components/auth/auth-modal.tsx";
-import { Button } from "../components/button.tsx";
+import { Button } from "../components/ui/button.tsx";
 import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 

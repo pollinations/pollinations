@@ -1,6 +1,7 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Chip } from "../ui/chip.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
 import {
     calculatePerPollen,
     canAffordModel,
@@ -18,7 +19,6 @@ import {
     isPaidOnly,
 } from "./model-info.ts";
 import { groupPriceBadges, PriceBadge } from "./price-badge.tsx";
-import { Tooltip } from "./Tooltip.tsx";
 import type { ModelPrice } from "./types.ts";
 
 type ModelRowProps = {

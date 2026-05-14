@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "@/util.ts";
-import { getModalityColors } from "./modality-ui.ts";
+import { getModalityColors } from "../models/modality-ui.ts";
 
 type ModalityButtonProps = {
     /** Modality key or category string ("Text", "Images", etc). */

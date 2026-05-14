@@ -3,7 +3,7 @@ import { Field } from "@ark-ui/react/field";
 import type { FC } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
-import { Button } from "../button.tsx";
+import { Button } from "../ui/button.tsx";
 import { Chip } from "../ui/chip.tsx";
 import { Input } from "../ui/input.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";

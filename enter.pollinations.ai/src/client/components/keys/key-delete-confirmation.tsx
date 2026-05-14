@@ -1,6 +1,6 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import type { FC } from "react";
-import { Button } from "../button.tsx";
+import { Button } from "../ui/button.tsx";
 
 interface DeleteConfirmationProps {
     deleteId: string | null;

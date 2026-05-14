@@ -1,7 +1,7 @@
 import { type FC, useState } from "react";
 import { formatPollen } from "@/client/lib/format-pollen.ts";
 import { POLLEN_PACKS } from "@/pollen-packs.ts";
-import { Button } from "../button.tsx";
+import { Button } from "../ui/button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";

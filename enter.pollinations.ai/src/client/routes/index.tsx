@@ -10,7 +10,6 @@ import {
     UsageGraph,
     type UsagePeriodSelection,
 } from "../components/activity";
-import { Button } from "../components/button.tsx";
 import {
     type ApiKey,
     ApiKeyList,
@@ -35,6 +34,7 @@ import {
     SidebarWallet,
     TierPanel,
 } from "../components/pollen";
+import { Button } from "../components/ui/button.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;

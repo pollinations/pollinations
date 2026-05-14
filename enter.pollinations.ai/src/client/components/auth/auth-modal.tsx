@@ -9,10 +9,9 @@ type AuthModalProps = {
     tone?: "default" | "error";
 };
 
-// Whole modal locks to the amber theme via `data-theme="amber"` on the
-// wrapper. Every child reads colors from the cascade (text-theme-*,
-// bg-theme-*, border-theme-*) — flip the attribute, retint the world.
-// Backdrop is a fixed brand green (theme-independent occluder).
+// Whole screen locks to the amber theme via `data-theme="amber"` on the
+// outer wrapper — the backdrop and the card both read from the amber
+// cascade. Outer is amber-pale (soft wash); card stays subtle for contrast.
 export function AuthModal({
     children,
     dialog,
@@ -33,10 +32,12 @@ export function AuthModal({
             ? "border-intent-danger-border"
             : "border-theme-border";
     return (
-        <div className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto bg-green-950/50">
+        <div
+            data-theme="amber"
+            className="fixed inset-0 flex items-start justify-center overflow-y-auto bg-theme-bg-pale p-4"
+        >
             <div
-                data-theme="amber"
-                className={`bg-theme-bg-subtle border-2 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
+                className={`bg-surface-white border-2 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
                 {...dialogProps}
             >
                 {children}

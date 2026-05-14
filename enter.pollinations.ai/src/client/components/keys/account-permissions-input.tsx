@@ -6,6 +6,7 @@ import {
     MODEL_CATEGORIES,
     type ModelCategoryModel,
 } from "../models/model-categories.ts";
+import { Disclosure } from "../ui/disclosure.tsx";
 import { ModalityButton } from "./modality-button.tsx";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
 import {
@@ -219,40 +220,17 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                 })}
 
                 {/* Models */}
-                <div
-                    className={cn(
-                        "rounded-lg border transition-all",
-                        rowTheme.selectedClasses,
-                        disabled && "opacity-50 cursor-not-allowed",
-                    )}
-                >
-                    {/* biome-ignore lint/a11y/useSemanticElements: full-row toggle with nested interactive children */}
-                    <div
-                        role="button"
-                        tabIndex={disabled ? -1 : 0}
-                        aria-expanded={modelsExpanded}
-                        aria-label="Toggle model list"
-                        onClick={() =>
-                            !disabled && setModelsExpanded((v) => !v)
-                        }
-                        onKeyDown={(e) => {
-                            if (disabled) return;
-                            if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                setModelsExpanded((v) => !v);
-                            }
-                        }}
-                        className={cn(
-                            "flex items-center gap-3 px-3 py-2",
-                            rowTheme.focusRingClasses,
-                            !disabled &&
-                                (!isUnrestricted
-                                    ? rowTheme.selectedHoverClasses
-                                    : rowTheme.rowHoverClasses),
-                            !disabled && "cursor-pointer",
-                        )}
-                    >
-                        <div className="flex flex-1 items-baseline gap-1">
+                <Disclosure
+                    expanded={modelsExpanded}
+                    onToggle={() => setModelsExpanded((v) => !v)}
+                    disabled={disabled}
+                    ariaLabel="Toggle model list"
+                    wrapperClassName={rowTheme.selectedClasses}
+                    hoverClassName={rowTheme.selectedHoverClasses}
+                    focusClassName={rowTheme.focusRingClasses}
+                    panelClassName="border-t border-gray-200 px-3 pb-3 pt-3 space-y-3"
+                    label={
+                        <div className="flex items-baseline gap-1">
                             <span className="text-sm font-medium">Models</span>
                             <span className="text-sm text-gray-500">
                                 –{" "}
@@ -261,37 +239,23 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                                     : `restricted to ${selectedCount} selected model${selectedCount === 1 ? "" : "s"}`}
                             </span>
                         </div>
-                        <span
-                            className={cn(
-                                "text-gray-500 text-xs transition-transform",
-                                modelsExpanded && "rotate-180",
-                            )}
-                            aria-hidden="true"
-                        >
-                            ▼
-                        </span>
-                    </div>
-                    {modelsExpanded && (
-                        <div className="px-3 pb-3 pt-3 space-y-3 border-t border-gray-200">
-                            {MODEL_CATEGORIES.map(({ label, models }) => (
-                                <ModelCategory
-                                    key={label}
-                                    label={label}
-                                    models={models}
-                                    disabled={disabled}
-                                    isModelSelected={isModelSelected}
-                                    toggleModel={toggleModel}
-                                    toggleCategory={toggleCategory}
-                                    isCategoryAllSelected={
-                                        isCategoryAllSelected
-                                    }
-                                    showApiName={showApiName}
-                                    theme={theme}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                    }
+                >
+                    {MODEL_CATEGORIES.map(({ label, models }) => (
+                        <ModelCategory
+                            key={label}
+                            label={label}
+                            models={models}
+                            disabled={disabled}
+                            isModelSelected={isModelSelected}
+                            toggleModel={toggleModel}
+                            toggleCategory={toggleCategory}
+                            isCategoryAllSelected={isCategoryAllSelected}
+                            showApiName={showApiName}
+                            theme={theme}
+                        />
+                    ))}
+                </Disclosure>
             </div>
         </div>
     );

@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/util.ts";
 import type { ThemeName } from "../layout/dashboard-theme.ts";
+import { ChevronIcon } from "../ui/chevron-icon.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
 import {
     addUtcDays,
@@ -181,25 +182,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
                 )}
             >
                 <span>{formatPeriodLabel(value)}</span>
-                <svg
-                    aria-hidden="true"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    className={cn(
-                        "shrink-0 transition-transform duration-200 ease-out",
-                        open && "rotate-180",
-                    )}
-                >
-                    <path
-                        d="M3 4.5 6 7.5l3-3"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.5"
-                    />
-                </svg>
+                <ChevronIcon expanded={open} />
             </button>
             {open && (
                 <div

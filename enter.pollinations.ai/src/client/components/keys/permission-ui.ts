@@ -40,7 +40,7 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
             },
             input: {
                 classes:
-                    "bg-amber-100 border-amber-400 focus-visible:border-amber-400 focus-visible:ring-amber-500/60",
+                    "bg-amber-100 border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 focus-visible:border-amber-500",
             },
         },
         blue: {
@@ -57,7 +57,7 @@ const PERMISSION_UI_THEMES: Record<PermissionUiTheme, PermissionUiThemeConfig> =
             },
             input: {
                 classes:
-                    "bg-blue-50 border-blue-200 focus-visible:border-blue-300 focus-visible:ring-blue-200",
+                    "bg-blue-50 border-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:border-blue-300",
             },
         },
     };

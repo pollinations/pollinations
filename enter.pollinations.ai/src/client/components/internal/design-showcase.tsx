@@ -8,6 +8,7 @@ import { type ThemeName, themes } from "../layout/dashboard-theme.ts";
 import { MODALITY_COLORS, type Modality } from "../models/modality-ui.ts";
 import { Button } from "../ui/button.tsx";
 import { Chip } from "../ui/chip.tsx";
+import { Disclosure } from "../ui/disclosure.tsx";
 import { IconButton } from "../ui/icon-button.tsx";
 import { InfoTip } from "../ui/info-tip.tsx";
 import { Input } from "../ui/input.tsx";
@@ -78,6 +79,7 @@ export const DesignShowcase: FC = () => {
                 <SwitchesDemo />
                 <SurfacesDemo />
                 <TabsDemo />
+                <DisclosureDemo />
                 <InputsDemo />
                 <IconButtonsDemo />
                 <TooltipsDemo />
@@ -665,6 +667,58 @@ const TabsDemo: FC = () => {
 };
 
 // ─── Inputs ─────────────────────────────────────────────────
+
+const DisclosureDemo: FC = () => {
+    const [openA, setOpenA] = useState(false);
+    const [openB, setOpenB] = useState(true);
+    return (
+        <Section
+            title="Disclosure"
+            caption="One collapsible row primitive for the whole app — used for permission groups, model selectors, advanced settings. Shared ChevronIcon also drives dropdown pills (date picker, OAuth Permissions toggle), so every up/down triangle in the app is the same SVG."
+        >
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-theme-border bg-theme-bg-subtle p-4 sm:grid-cols-2">
+                <Field label="collapsed">
+                    <Disclosure
+                        expanded={openA}
+                        onToggle={() => setOpenA((v) => !v)}
+                        wrapperClassName="bg-theme-bg-pale"
+                        label={
+                            <span className="text-sm font-medium">
+                                Advanced settings
+                            </span>
+                        }
+                    >
+                        <p className="text-sm text-theme-text-base">
+                            Body content goes here. The panel is whatever
+                            children you pass.
+                        </p>
+                    </Disclosure>
+                </Field>
+                <Field label="expanded">
+                    <Disclosure
+                        expanded={openB}
+                        onToggle={() => setOpenB((v) => !v)}
+                        wrapperClassName="bg-theme-bg-pale"
+                        label={
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-sm font-medium">
+                                    Models
+                                </span>
+                                <span className="text-sm text-theme-text-soft">
+                                    – all models allowed
+                                </span>
+                            </div>
+                        }
+                    >
+                        <p className="text-sm text-theme-text-base">
+                            Nested content rendered inside the panel.
+                        </p>
+                    </Disclosure>
+                </Field>
+            </div>
+        </Section>
+    );
+};
 
 const InputsDemo: FC = () => (
     <Section

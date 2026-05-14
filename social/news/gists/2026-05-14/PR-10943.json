@@ -1,0 +1,34 @@
+{
+  "pr_number": 10943,
+  "title": "chore(quest): bake quest workflow rules into issue body",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10943",
+  "merged_at": "2026-05-14T22:45:35Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "## Summary\n\n- GitHub strips `type: markdown` blocks from the created issue body — they only render on the form. That's why issues opened from this template don't show the assignment workflow.\n- Move the rules into a required `process` textarea at the top of the form so they bake into every quest issue.\n- Drop both unused `type: markdown` blocks.\n\n## Test plan\n\n- [x] YAML parses\n- [x] Field order: process → goal → scope → acceptance → resources → parent-issue → reward\n- [ ] Open a draft quest issue from the template and confirm the \"How this quest works\" block appears in the body",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Quest rules baked in",
+    "blurb": "We've updated our GitHub quest templates so the workflow rules actually stick around in the issue body. No more lost instructions!",
+    "summary": "Moved the quest workflow rules from GitHub markdown blocks into a required textarea in the issue template so they persist in the created issue body.",
+    "impact": "Contributors will now see the assignment and workflow rules directly in the body of every newly opened quest issue.",
+    "keywords": [
+      "github",
+      "templates",
+      "quests",
+      "contributing"
+    ],
+    "visual_concept": "The bee (Polly) organizing or stamping a document/scroll (representing the issue template) with rules, while the Nomnom creature eats the old discarded markdown blocks.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot stamping a large parchment scroll with a lime green (#ecf874) wax seal. The round tan nomnom creature sits nearby happily eating discarded paper scraps. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-14/PR-10943.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot stamping a large parchment scroll with a lime green (#ecf874) wax seal. The round tan nomnom creature sits nearby happily eating discarded paper scraps. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-14T22:46:24.766328+00:00"
+}

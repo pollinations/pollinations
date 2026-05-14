@@ -39,7 +39,172 @@
     --font-subheading: "Fraunces", ui-serif, serif;
     --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
     --font-pixel: "Pixelify Sans", ui-monospace, monospace;
+    --text-micro: 10px;
     --text-base: 16px;
+
+    /* ─── Layer 1: hue ramp constants ────────────────────────── */
+    /* Paid + Tier — 3 values per concept. Used everywhere paid or tier
+       identity appears: wallet, chart bars, chips, page backgrounds.
+       pale = large + repeated surfaces (wallet cards, chips,
+              chart bars) — light wash that pairs with deep text;
+       soft = small identity markers (drawer dots, tier-explanation
+              segments) — mid-tone with enough chroma that paid vs
+              tier read as distinct hues even at 8px;
+       deep = text + bold headline numbers.
+
+       Paid uses amber so it unifies with the Pollen page chrome (top-up
+       buttons, page theme), reinforcing "this is where you buy paid".
+       Tier uses the warm orange family. */
+    --color-paid-pale: oklch(0.93 0.09 95.746);
+    --color-paid-soft: oklch(0.85 0.16 95.746);
+    --color-paid-deep: #78350f;
+    --color-tier-pale: oklch(0.93 0.06 55);
+    --color-tier-soft: oklch(0.83 0.13 55);
+    --color-tier-deep: #7C3F1E;
+}
+
+/* ─── Layer 2: per-theme cascade (light defaults) ────────────── */
+[data-theme="amber"] {
+    --theme-text-base:    var(--color-amber-900);
+    --theme-text-strong:  var(--color-amber-950);
+    --theme-text-soft:    var(--color-amber-700);
+
+    --theme-border-idle:    var(--color-amber-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-amber-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-amber-200);
+    --theme-bg-hover:       var(--color-amber-300);
+
+    --theme-bg-pale:    var(--color-amber-100);
+
+
+}
+
+[data-theme="blue"] {
+    --theme-text-base:    var(--color-blue-900);
+    --theme-text-strong:  var(--color-blue-950);
+    --theme-text-soft:    var(--color-blue-700);
+
+    --theme-border-idle:    var(--color-blue-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-blue-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-blue-200);
+    --theme-bg-hover:       var(--color-blue-300);
+
+    --theme-bg-pale:    var(--color-blue-100);
+
+
+}
+
+[data-theme="pink"] {
+    --theme-text-base:    var(--color-pink-900);
+    --theme-text-strong:  var(--color-pink-950);
+    --theme-text-soft:    var(--color-pink-700);
+
+    --theme-border-idle:    var(--color-pink-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-pink-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-pink-200);
+    --theme-bg-hover:       var(--color-pink-300);
+
+    --theme-bg-pale:    var(--color-pink-100);
+
+
+}
+
+[data-theme="teal"] {
+    --theme-text-base:    var(--color-teal-900);
+    --theme-text-strong:  var(--color-teal-950);
+    --theme-text-soft:    var(--color-teal-700);
+
+    --theme-border-idle:    var(--color-teal-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-teal-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-teal-200);
+    --theme-bg-hover:       var(--color-teal-300);
+
+    --theme-bg-pale:    var(--color-teal-100);
+
+
+}
+
+[data-theme="violet"] {
+    --theme-text-base:    var(--color-violet-900);
+    --theme-text-strong:  var(--color-violet-950);
+    --theme-text-soft:    var(--color-violet-700);
+
+    --theme-border-idle:    var(--color-violet-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-violet-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-violet-200);
+    --theme-bg-hover:       var(--color-violet-300);
+
+    --theme-bg-pale:    var(--color-violet-100);
+
+
+}
+
+/* Green is also the chrome default — :root fallback so unwrapped routes
+   (sign-in, authorize, device, terms, etc.) resolve --theme-* vars. */
+:root,
+[data-theme="green"] {
+    --theme-text-base:    var(--color-green-900);
+    --theme-text-strong:  var(--color-green-950);
+    --theme-text-soft:    var(--color-green-700);
+
+    --theme-border-idle:    var(--color-green-300);
+
+    --theme-bg-subtle:      oklch(from var(--color-green-50) l c h / 0.5);
+    --theme-bg-active:      var(--color-green-200);
+    --theme-bg-hover:       var(--color-green-300);
+
+    --theme-bg-pale:    var(--color-green-100);
+
+
+}
+
+/* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
+:root {
+    /* Danger — deeper than red-600 with reduced chroma so it reads as
+       alert, not neon. Light variant has warmth so error surfaces feel
+       intentional, not washed-out. */
+    --intent-danger-bg-light:    oklch(0.935 0.045 25);
+    --intent-danger-text:        oklch(0.48 0.18 25);
+    --intent-danger-border:      oklch(0.78 0.115 25);
+
+    /* News — Chip only. Soft green label for newly-added models. */
+
+    /* Alpha — Chip only. Saturated "warning sign" yellow + deep amber text. */
+
+    /* Paid + Tier intents reuse the canonical money colors above —
+       Chip recipe = `bg-paid-soft text-paid-deep` (and same for tier).
+       No duplicate intent vars; one source of truth lives in Layer 1. */
+}
+
+/* ─── Layer 3: Tailwind utility surface (`@theme inline`) ────── */
+@theme inline {
+    --color-theme-text-base:         var(--theme-text-base);
+    --color-theme-text-strong:       var(--theme-text-strong);
+    --color-theme-text-soft:         var(--theme-text-soft);
+
+    --color-theme-border:            var(--theme-border-idle);
+
+    --color-theme-bg-subtle:         var(--theme-bg-subtle);
+    --color-theme-bg-active:         var(--theme-bg-active);
+    --color-theme-bg-hover:          var(--theme-bg-hover);
+
+
+    --color-theme-bg-pale:           var(--theme-bg-pale);
+
+
+
+    --color-intent-danger-bg-light:    var(--intent-danger-bg-light);
+    --color-intent-danger-text:        var(--intent-danger-text);
+    --color-intent-danger-border:      var(--intent-danger-border);
+
+
+
+    --color-surface-white:             oklch(1 0 0 / 0.8);
 }
 
 @layer base {
@@ -87,10 +252,16 @@
         @apply font-subheading text-2xl tracking-tight;
     }
 
-    h4,
-    h5,
+    h4 {
+        @apply font-body text-lg font-semibold;
+    }
+
+    h5 {
+        @apply font-body text-base font-semibold;
+    }
+
     h6 {
-        @apply text-xl;
+        @apply font-body text-sm font-semibold;
     }
 
     /* Hide scrollbars while keeping functionality */

@@ -1,0 +1,355 @@
+import { formatDistanceToNowStrict } from "date-fns";
+import type { FC } from "react";
+import { useState } from "react";
+import { genDocsUrl } from "../../config.ts";
+import { DashboardSection } from "../layout/dashboard-section.tsx";
+import { Chip } from "../ui/chip.tsx";
+import { IconButton } from "../ui/icon-button.tsx";
+import { Surface } from "../ui/surface.tsx";
+import { Tooltip } from "../ui/tooltip.tsx";
+import { ApiKeyDialog } from "./api-key-dialog.tsx";
+import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
+import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
+import { KeyDisplay } from "./key-display.tsx";
+import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
+import { ModelsBadge } from "./models-badge.tsx";
+import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
+
+function isPublishableKey(apiKey: ApiKey): boolean {
+    return apiKey.metadata?.keyType === "publishable";
+}
+
+function isAppKey(apiKey: ApiKey): boolean {
+    if (!isPublishableKey(apiKey)) return false;
+
+    const redirectUris = apiKey.metadata?.redirectUris;
+    const hasRedirectUris =
+        Array.isArray(redirectUris) &&
+        redirectUris.some(
+            (uri) => typeof uri === "string" && uri.trim().length > 0,
+        );
+
+    return hasRedirectUris || apiKey.metadata?.earningsEnabled === true;
+}
+
+export const ApiKeyList: FC<ApiKeyManagerProps> = ({
+    apiKeys,
+    onCreate,
+    onUpdate,
+    onDelete,
+}) => {
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
+
+    async function handleDelete(): Promise<void> {
+        if (deleteId) {
+            await onDelete(deleteId);
+            setDeleteId(null);
+        }
+    }
+
+    const now = Date.now();
+    const visibleKeys = apiKeys.filter(
+        (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
+    );
+    const sortedKeys = [...visibleKeys].sort(
+        (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
+    const sortedAppKeys = sortedKeys.filter(isAppKey);
+
+    function renderKeyCard(apiKey: ApiKey) {
+        const isPublishable = isPublishableKey(apiKey);
+        const isApp = isAppKey(apiKey);
+        const plaintextKey = apiKey.metadata?.plaintextKey as
+            | string
+            | undefined;
+        const redirectUrisMeta = Array.isArray(apiKey.metadata?.redirectUris)
+            ? (apiKey.metadata?.redirectUris as string[])
+            : [];
+        const primaryRedirectUri = redirectUrisMeta[0] || "";
+        const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
+        const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
+
+        return (
+            <Surface
+                key={apiKey.id}
+                className="transition-colors hover:bg-white/90"
+            >
+                <div className="flex items-center gap-2 mb-2">
+                    <Chip size="sm">
+                        {isApp
+                            ? "🖥️ App"
+                            : isPublishable
+                              ? "🌐 Publishable"
+                              : "🔒 Secret"}
+                    </Chip>
+                    <span className="text-sm font-medium truncate">
+                        {apiKey.name}
+                    </span>
+                    <span className="flex-1" />
+                    {isPublishable && plaintextKey ? (
+                        <KeyDisplay
+                            fullKey={plaintextKey}
+                            start={apiKey.start ?? ""}
+                        />
+                    ) : (
+                        <span className="font-mono text-xs text-gray-500 shrink-0">
+                            {apiKey.start}...
+                        </span>
+                    )}
+                    <div className="flex gap-1 shrink-0 ml-2 items-center">
+                        <IconButton
+                            title="Edit key"
+                            onClick={() => setEditingKey(apiKey)}
+                        >
+                            ✎
+                        </IconButton>
+                        <IconButton
+                            intent="danger"
+                            title="Delete key"
+                            onClick={() => setDeleteId(apiKey.id)}
+                            className="text-lg"
+                        >
+                            ×
+                        </IconButton>
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 text-xs">
+                    <span>
+                        <span className="text-gray-400">Created: </span>
+                        <span className="text-gray-500">
+                            {formatDistanceToNowStrict(apiKey.createdAt, {
+                                addSuffix: false,
+                                locale: shortLocale,
+                            })}
+                        </span>
+                    </span>
+                    <span>
+                        <span className="text-gray-400">Used: </span>
+                        <span className="text-gray-500">
+                            {apiKey.lastRequest
+                                ? formatDistanceToNowStrict(
+                                      new Date(apiKey.lastRequest),
+                                      {
+                                          addSuffix: false,
+                                          locale: shortLocale,
+                                      },
+                                  )
+                                : "never"}
+                        </span>
+                    </span>
+                    {isPublishable && primaryRedirectUri && (
+                        <span className="inline-flex min-w-0 items-center gap-1">
+                            <span className="text-gray-400">Redirect: </span>
+                            <a
+                                href={primaryRedirectUri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline truncate max-w-[200px] inline-block align-bottom text-blue-600"
+                            >
+                                {primaryRedirectUri.replace(/^https?:\/\//, "")}
+                            </a>
+                            {extraRedirectUriCount > 0 && (
+                                <Tooltip
+                                    content={redirectUrisMeta
+                                        .slice(1)
+                                        .map((uri) =>
+                                            uri.replace(/^https?:\/\//, ""),
+                                        )
+                                        .join("\n")}
+                                    displayContents
+                                >
+                                    <Chip theme="blue" size="sm">
+                                        +{extraRedirectUriCount}
+                                    </Chip>
+                                </Tooltip>
+                            )}
+                        </span>
+                    )}
+                    {isApp && (
+                        <Chip
+                            theme={earningsEnabled ? "green" : undefined}
+                            size="sm"
+                            className={
+                                earningsEnabled
+                                    ? undefined
+                                    : "bg-gray-100 text-gray-500"
+                            }
+                            title="Developer earnings"
+                        >
+                            Earnings {earningsEnabled ? "on" : "off"}
+                        </Chip>
+                    )}
+                    {!isApp && (
+                        <>
+                            <LimitsBadge
+                                expiresAt={
+                                    apiKey.expiresAt
+                                        ? new Date(apiKey.expiresAt)
+                                        : null
+                                }
+                                pollenBudget={apiKey.pollenBalance}
+                            />
+                            <span className="flex items-center gap-1">
+                                <span className="text-gray-400">
+                                    Permissions:
+                                </span>
+                                <ModelsBadge permissions={apiKey.permissions} />
+                            </span>
+                        </>
+                    )}
+                </div>
+            </Surface>
+        );
+    }
+
+    return (
+        <>
+            <div className="flex flex-col gap-6">
+                <DashboardSection
+                    title="API"
+                    theme="blue"
+                    framed
+                    action={
+                        <ApiKeyDialog
+                            onSubmit={onCreate}
+                            onComplete={() => {}}
+                            triggerLabel="🔑 + API Key"
+                        />
+                    }
+                >
+                    <div className="flex flex-col gap-3">
+                        {!sortedApiKeys.length && (
+                            <Surface className="p-6 text-center">
+                                <p className="text-2xl mb-2">🔑</p>
+                                <p className="font-semibold text-gray-900 text-lg mb-2">
+                                    Create your first API key
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    Use API keys for your own private
+                                    server-side integrations.
+                                </p>
+                            </Surface>
+                        )}
+                        {sortedApiKeys.map(renderKeyCard)}
+                    </div>
+                    <p className="mt-5 flex items-start gap-1.5 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
+                        <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            For your own backend, scripts, and CLIs — billed to
+                            your account.
+                        </span>
+                    </p>
+                </DashboardSection>
+                <DashboardSection
+                    title="App"
+                    theme="blue"
+                    framed
+                    action={
+                        <ApiKeyDialog
+                            onSubmit={onCreate}
+                            onComplete={() => {}}
+                            triggerLabel="🖥️ + Add App"
+                            simplified
+                        />
+                    }
+                >
+                    <div className="flex flex-col gap-3">
+                        <Surface
+                            variant="card-themed"
+                            className="w-fit text-theme-text-strong"
+                        >
+                            <span className="font-body text-xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
+                                New!
+                            </span>
+                            Turn on earnings to receive a share of pollen users
+                            spend in your app.{" "}
+                            <a
+                                href={genDocsUrl("#tag/bring-your-own-pollen")}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-blue-700 hover:text-blue-900"
+                            >
+                                <span className="underline underline-offset-2">
+                                    Read the guide
+                                </span>
+                                <span
+                                    aria-hidden="true"
+                                    className="no-underline ml-0.5"
+                                >
+                                    ↗
+                                </span>
+                            </a>
+                        </Surface>
+                        {!sortedAppKeys.length && (
+                            <Surface className="p-6 text-center">
+                                <p className="text-2xl mb-2">🖥️</p>
+                                <p className="font-semibold text-gray-900 text-lg mb-2">
+                                    Create your first app key
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    Use app keys when your users bring their own
+                                    Pollinations account.
+                                </p>
+                            </Surface>
+                        )}
+                        {sortedAppKeys.map(renderKeyCard)}
+                    </div>
+                    <p className="mt-5 flex items-start gap-1.5 border-t border-gray-200 pt-5 text-[13px] leading-snug text-gray-500">
+                        <AppIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            For apps where users sign in with their own
+                            Pollinations account and spend their own Pollen.
+                        </span>
+                    </p>
+                </DashboardSection>
+            </div>
+            <DeleteConfirmation
+                deleteId={deleteId}
+                onConfirm={handleDelete}
+                onCancel={() => setDeleteId(null)}
+            />
+            {editingKey && (
+                <EditApiKeyDialog
+                    apiKey={editingKey}
+                    onUpdate={onUpdate}
+                    onClose={() => setEditingKey(null)}
+                />
+            )}
+        </>
+    );
+};
+
+const TerminalIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <polyline points="4 8 8 12 4 16" />
+        <line x1="12" y1="20" x2="20" y2="20" />
+    </svg>
+);
+
+const AppIcon: FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
+        <rect x="2" y="4" width="20" height="14" rx="2" />
+        <path d="M2 20h20" />
+    </svg>
+);

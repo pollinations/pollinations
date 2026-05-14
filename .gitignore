@@ -5,6 +5,10 @@ temp/
 # Crush
 .crush/
 
+# Local-only design planning docs (kept out of the repo)
+/DESIGN_REFACTOR_PLAN.md
+/Design Audit.html
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

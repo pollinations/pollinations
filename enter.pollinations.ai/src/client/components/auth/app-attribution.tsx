@@ -30,40 +30,35 @@ export function AppAttribution({
         .join("\n");
     return (
         <>
-            <p className="text-gray-900">
+            <p className="text-theme-text-strong">
                 <span className="font-bold text-lg">{displayName}</span>
             </p>
             {attribution?.githubUsername && (
-                <p className="text-sm text-amber-900 mt-1">
+                <p className="text-sm text-theme-text-base mt-1">
                     by{" "}
                     <a
                         href={`https://github.com/${attribution.githubUsername}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium underline hover:text-gray-900"
+                        className="font-medium underline hover:text-theme-text-strong"
                     >
                         @{attribution.githubUsername}
                     </a>
                 </p>
             )}
             {!isDeviceMode && attribution?.appName && redirectHostname && (
-                <p className="text-xs text-amber-900 font-mono mt-1">
+                <p className="text-xs text-theme-text-base font-mono mt-1">
                     {redirectHostname}
                 </p>
             )}
             {isDeviceMode && userCode && (
-                <p className="text-xs text-amber-900 font-mono mt-1">
+                <p className="text-xs text-theme-text-base font-mono mt-1">
                     Code: {userCode}
                 </p>
             )}
-            <p className="font-body text-xs font-semibold text-amber-800 tracking-wide mt-3">
+            <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mt-3">
                 To access your Pollinations account{" "}
-                <InfoTip
-                    text={tipText}
-                    label="API key sharing warning"
-                    tone="amber"
-                    icon="!"
-                />
+                <InfoTip text={tipText} label="API key sharing warning" />
             </p>
         </>
     );

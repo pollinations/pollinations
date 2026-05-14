@@ -5,7 +5,7 @@ import {
     getActivePriceDefinition,
     getModelDefinition,
 } from "../../shared/registry/registry.ts";
-import { getModelPrices } from "../src/client/components/pricing/data.ts";
+import { getModelPrices } from "../src/client/components/models/data.ts";
 
 test("pricing data uses explicit public price when a model defines one", () => {
     const geminiFast = getModelPrices().find(

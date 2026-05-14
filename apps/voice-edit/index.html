@@ -159,9 +159,6 @@
     align-items: center;
     gap: 0.4rem;
   }
-  /* Flipped: pin extends to the left of the dot; dot is the *last* visual child.
-     Translate so the dot center is on the anchor: full pin width minus (half-dot + dot-border + right-padding). */
-  .pin.flip { flex-direction: row-reverse; transform: translate(calc(-100% + 0.55rem + 0.275rem + 1.5px), -50%); }
   .pin.processing { background: var(--accent); }
   .pin.queued { background: #fff; opacity: 0.85; }
   .pin .dot {
@@ -251,9 +248,6 @@ function renderPins() {
     pin.style.left = `${job.xPct}%`;
     pin.style.top = `${job.yPct}%`;
     pinLayer.append(pin);
-    const pinBox = pin.getBoundingClientRect();
-    const layerBox = pinLayer.getBoundingClientRect();
-    pin.classList.toggle("flip", pinBox.right > layerBox.right);
   }
 }
 function render() {
@@ -573,8 +567,11 @@ async function stopIntentCapture(capture) {
 function strokeWidthFor(w, h) {
   return Math.max(6, Math.round(Math.min(w, h) * 0.015));
 }
+function ringRadius(w, h) {
+  return Math.max(28, Math.round(Math.min(w, h) * 0.05));
+}
 function drawRing(targetCtx, p, w, h) {
-  const r = Math.max(28, Math.round(Math.min(w, h) * 0.05));
+  const r = ringRadius(w, h);
   targetCtx.save();
   targetCtx.globalAlpha = 0.35;
   targetCtx.strokeStyle = "red";
@@ -600,10 +597,13 @@ function pathLength(points) {
   }
   return total;
 }
-function pathCentroid(points) {
-  let sx = 0, sy = 0;
-  for (const p of points) { sx += p.x; sy += p.y; }
-  return { x: sx / points.length, y: sy / points.length };
+function pathBounds(points) {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+  }
+  return { minX, maxX, minY, maxY };
 }
 
 async function friendlyError(response, label) {
@@ -717,7 +717,9 @@ canvas.addEventListener("pointerdown", async (e) => {
     if (text) {
       drawRing(ctx, point, canvas.width, canvas.height);
       const annotated = canvas.toDataURL("image/png");
-      try { enqueueEdit({ point, text, annotated }); }
+      const r = ringRadius(canvas.width, canvas.height);
+      const pinPoint = { x: point.x + r, y: point.y };
+      try { enqueueEdit({ point: pinPoint, text, annotated }); }
       catch (err) { showError(err.message); }
     } else {
       resetCanvas();
@@ -753,7 +755,15 @@ canvas.addEventListener("pointerup", async (e) => {
   const isDrag = pathLength(stroke) > minLen;
   if (!isDrag) drawRing(ctx, capture.point, canvas.width, canvas.height);
   const annotated = canvas.toDataURL("image/png");
-  const pinPoint = isDrag ? pathCentroid(stroke) : capture.point;
+  // Pin always anchors at the rightmost edge of the marking, vertically centered on it.
+  let pinPoint;
+  if (isDrag) {
+    const b = pathBounds(stroke);
+    pinPoint = { x: b.maxX, y: (b.minY + b.maxY) / 2 };
+  } else {
+    const r = ringRadius(canvas.width, canvas.height);
+    pinPoint = { x: capture.point.x + r, y: capture.point.y };
+  }
   try {
     const { text, error } = await stopIntentCapture(capture);
     pill({ visible: false });

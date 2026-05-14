@@ -10,13 +10,13 @@ import {
     UsageGraph,
     type UsagePeriodSelection,
 } from "../components/activity";
+import { Button } from "../components/button.tsx";
 import {
     type ApiKey,
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
-} from "../components/api-keys";
-import { Button } from "../components/button.tsx";
+} from "../components/keys";
 import { DashboardSection } from "../components/layout/dashboard-section.tsx";
 import {
     type DashboardPage,
@@ -27,8 +27,8 @@ import {
     isDashboardPage,
     type ThemeName,
 } from "../components/layout/dashboard-theme.ts";
-import { UpdatesPage } from "../components/layout/updates-page.tsx";
-import { Pricing } from "../components/models";
+import { Models } from "../components/models";
+import { NewsFaq } from "../components/news-faq";
 import {
     BuyPollenPanel,
     PollenBalance,
@@ -323,7 +323,7 @@ function RouteComponent() {
                 />
             }
         >
-            {activePage === "news-faq" && <UpdatesPage />}
+            {activePage === "news-faq" && <NewsFaq />}
             {activePage === "pollen" && (
                 <div className="flex flex-col gap-6">
                     <DashboardSection title="Wallet" theme="amber" framed>
@@ -391,7 +391,7 @@ function RouteComponent() {
                 />
             )}
             {activePage === "models" && (
-                <Pricing tierBalance={tierBalance} packBalance={packBalance} />
+                <Models tierBalance={tierBalance} packBalance={packBalance} />
             )}
         </DashboardShell>
     );

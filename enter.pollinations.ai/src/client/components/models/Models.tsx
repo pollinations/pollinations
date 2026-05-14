@@ -11,12 +11,12 @@ import {
 } from "./model-table.tsx";
 import { useModelStats } from "./use-model-stats.ts";
 
-type PricingProps = {
+type ModelsProps = {
     tierBalance?: number;
     packBalance?: number;
 };
 
-export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
+export const Models: FC<ModelsProps> = ({ tierBalance, packBalance }) => {
     const [activeTab, setActiveTab] = useState<SectionType>("image");
     const { stats } = useModelStats();
     const allModels = getModelPrices(stats);

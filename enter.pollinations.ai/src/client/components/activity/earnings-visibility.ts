@@ -1,4 +1,4 @@
-import type { ApiKey } from "../api-keys/types.ts";
+import type { ApiKey } from "../keys/types.ts";
 
 export type EarningsApp = {
     id: string;

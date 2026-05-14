@@ -1,10 +1,10 @@
 import type { FC } from "react";
 import { FAQ, FAQ_GITHUB_URL } from "../faq.tsx";
+import { DashboardSection } from "../layout/dashboard-section.tsx";
+import { HIGHLIGHTS_GITHUB_URL, NewsBanner } from "../layout/news-banner.tsx";
 import { LinkButton } from "../ui/link-button.tsx";
-import { DashboardSection } from "./dashboard-section.tsx";
-import { HIGHLIGHTS_GITHUB_URL, NewsBanner } from "./news-banner.tsx";
 
-export const UpdatesPage: FC = () => (
+export const NewsFaq: FC = () => (
     <div className="flex flex-col gap-6">
         <DashboardSection
             title="News"

@@ -10,8 +10,8 @@ import {
     DASHBOARD_NAV_ITEMS,
     isDashboardPage,
 } from "../components/layout/dashboard-theme.ts";
-import { UpdatesPage } from "../components/layout/updates-page.tsx";
-import { Pricing } from "../components/models";
+import { Models } from "../components/models";
+import { NewsFaq } from "../components/news-faq";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
@@ -109,8 +109,8 @@ function RouteComponent() {
                 />
             }
         >
-            {activePage === "news-faq" && <UpdatesPage />}
-            {activePage === "models" && <Pricing />}
+            {activePage === "news-faq" && <NewsFaq />}
+            {activePage === "models" && <Models />}
         </DashboardShell>
     );
 }

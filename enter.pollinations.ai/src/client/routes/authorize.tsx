@@ -9,12 +9,6 @@ import { useEffect, useState } from "react";
 import { cn } from "../../util.ts";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
-import { AccountPermissionsInput } from "../components/api-keys/account-permissions-input.tsx";
-import { ExpiryDaysInput } from "../components/api-keys/expiry-days-input.tsx";
-import { useKeyPermissions } from "../components/api-keys/key-permissions.tsx";
-import { getModalityColors } from "../components/api-keys/modality-ui.ts";
-import { computeCategoryModalities } from "../components/api-keys/model-categories.ts";
-import { PollenBudgetInput } from "../components/api-keys/pollen-budget-input.tsx";
 import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import {
     AuthInfoCard,
@@ -24,6 +18,12 @@ import {
     ErrorBanner,
 } from "../components/auth/auth-modal.tsx";
 import { Button } from "../components/button.tsx";
+import { AccountPermissionsInput } from "../components/keys/account-permissions-input.tsx";
+import { ExpiryDaysInput } from "../components/keys/expiry-days-input.tsx";
+import { useKeyPermissions } from "../components/keys/key-permissions.tsx";
+import { getModalityColors } from "../components/keys/modality-ui.ts";
+import { computeCategoryModalities } from "../components/keys/model-categories.ts";
+import { PollenBudgetInput } from "../components/keys/pollen-budget-input.tsx";
 import { Chip } from "../components/ui/chip.tsx";
 import { config } from "../config.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";

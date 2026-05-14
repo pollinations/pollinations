@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { ApiKey } from "../src/client/components/api-keys/types.ts";
+import type { ApiKey } from "../src/client/components/keys/types.ts";
 import { getEarningsEnabledApps } from "../src/client/components/usage-analytics/earnings-visibility.ts";
 
 const baseKey: ApiKey = {

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-13",
+  "period_start": "2026-05-13",
+  "period_end": "2026-05-13",
+  "generated_at": "2026-05-14T06:57:38.267738+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-13/images/reddit.jpg"
+    }
+  ],
+  "title": "Homepage refactor, FAQ cleanup, and cheaper ElevenLabs TTS",
+  "text": "Pushed a few updates to the repo today (3 PRs merged). Mostly housekeeping and documentation cleanup, but there is one pricing fix for audio generation that matters if you use the text-to-speech endpoints.\n\nFirst, the docs and homepage (PR #10729, #10821). The hero copy was getting stale and the layout was cluttered. We split the \"last updates\" and \"next up\" sections so you can actually read the roadmap without scrolling past a wall of text. We also rewrote the Pollen FAQ. It was getting overly complicated. It is now simplified for clarity—just the actual mechanics of how the credits work, minus the fluff.\n\nSecond, the audio pricing fix (PR #10935). The ElevenLabs TTS pricing was out of sync with our scale plan. We aligned it, which effectively makes the text-to-speech endpoint more affordable if you are running heavy workloads or batching a lot of audio generation.\n\nEverything is live. You can check the code and the exact PRs on our GitHub (github.com/pollinations/pollinations) or read the updated FAQ on the site. Let us know if the new homepage layout breaks on any weird viewport sizes."
+}

@@ -1,0 +1,33 @@
+{
+  "pr_number": 10912,
+  "title": "refactor(enter): unify dashboard design system",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10912",
+  "merged_at": "2026-05-14T14:11:01Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh coat of paint",
+    "blurb": "We finally stopped scattering colors everywhere and built a proper design system for the dashboard. Everything from API keys to model selection is now delightfully consistent.",
+    "summary": "The enter.pollinations.ai dashboard has been refactored to use a single, unified design system with shared UI primitives and a streamlined CSS architecture.",
+    "impact": "Navigating your API keys, models, and billing is now a visually consistent and much cleaner experience.",
+    "keywords": [
+      "dashboard",
+      "ui",
+      "design-system",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee wearing a painter's beret, organizing UI elements (buttons, switches, tabs) on a retro computer screen alongside the monitor robot.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, organizing glowing UI buttons and switches alongside a cute chunky monitor robot. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text on the robot's screen in pixel font: 'CLEAN'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-14/PR-10912.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, organizing glowing UI buttons and switches alongside a cute chunky monitor robot. Soft lime green (#ecf874) and pastel peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Text on the robot's screen in pixel font: 'CLEAN'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-14T14:12:06.090706+00:00"
+}

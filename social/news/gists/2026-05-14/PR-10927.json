@@ -1,0 +1,36 @@
+{
+  "pr_number": 10927,
+  "title": "[PATCH]: fix repo-only app links in app lists (apps/ dir) & workflows.",
+  "author": "CloudCompile",
+  "url": "https://github.com/pollinations/pollinations/pull/10927",
+  "merged_at": "2026-05-14T11:44:44Z",
+  "labels": [
+    "WEB",
+    ".DOCS",
+    "POLLEN-QUEST"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fixing the garden paths",
+    "blurb": "We've updated our community app lists to properly link to repository-only projects. The greenhouse is looking tidier than ever!",
+    "summary": "Refactored the GitHub Actions scripts that generate our app showcases to dynamically parse table columns, fixing broken links for repository-only apps.",
+    "impact": "Community apps without a dedicated web URL will now correctly link to their GitHub repositories in the README and Greenhouse lists.",
+    "keywords": [
+      "github-actions",
+      "community",
+      "apps",
+      "greenhouse",
+      "docs"
+    ],
+    "visual_concept": "Polly the bee acting as a gardener, organizing signs or pathways in a greenhouse. A robot helper holding a map or a sign.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, organizing wooden signs in a lush digital greenhouse. A chunky robot with a CRT monitor head holds a glowing map of pathways. Code-plants sprout from lime green (#ecf874) flower pots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-14/PR-10927.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny gardener's apron, organizing wooden signs in a lush digital greenhouse. A chunky robot with a CRT monitor head holds a glowing map of pathways. Code-plants sprout from lime green (#ecf874) flower pots. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-14T11:45:53.235627+00:00"
+}

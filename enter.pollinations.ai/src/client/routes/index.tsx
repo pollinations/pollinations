@@ -36,10 +36,6 @@ import {
     TierPanel,
 } from "../components/pollen";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
-import {
-    getMockEarningsScenario,
-    getMockTodayEarnings,
-} from "../lib/mock-earnings.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
@@ -125,15 +121,8 @@ export const Route = createFileRoute("/")({
         const apiKeys = (apiKeysResult.data || []) as ApiKey[];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
-        // REMOVE BEFORE MERGE — design-only mock override (see lib/mock-earnings.ts).
-        const mockScenario = getMockEarningsScenario();
-        const mockToday = mockScenario
-            ? getMockTodayEarnings(mockScenario)
-            : null;
-        const paidWeek =
-            mockToday?.paidWeek ?? earningsTodayResult?.paidWeek ?? 0;
-        const tierWeek =
-            mockToday?.tierWeek ?? earningsTodayResult?.tierWeek ?? 0;
+        const paidWeek = earningsTodayResult?.paidWeek ?? 0;
+        const tierWeek = earningsTodayResult?.tierWeek ?? 0;
         // Prefer D1; session (KV-cached) may hold a stale username after relog.
         const sessionUser = context.user as
             | (typeof context.user & { githubUsername?: string | null })

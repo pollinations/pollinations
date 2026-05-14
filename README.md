@@ -48,16 +48,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-05-13** – **🗺️ Public Roadmap** The homepage now clearly splits what just shipped from what's coming next, plus better visibility for developer earnings. [View site](https://hello.pollinations.ai)
+- **2026-05-13** – **📖 Docs Cleanup** We stripped the marketing fluff out of the Pollen FAQ. Just straight answers about wallets and tiers now.
+- **2026-05-13** – **💳 Pollen Packs** Updated the Pollen pack tier structures and fixed some Stripe checkout metadata. Buying credits is now slightly more robust.
+- **2026-05-13** – **🎵 Cheaper Audio** ElevenLabs text-to-speech is now cheaper to generate. Scribe has moved to the paid tier because servers aren't free. [View API](https://gen.pollinations.ai/docs)
+- **2026-05-13** – **🧹 Community Polish** Trimmed the copy on the community page and unstyled some links. Less reading, more building. [Join Discord](https://chat.pollinations.ai)
 - **2026-05-12** – **🛠️ Pollenforge-CLI** A community-built CLI tool for wrangling Markdown into formatted output just dropped in the showcase. [View repo](https://github.com/ganya002/Pollenforge-CLI/tree/main) <!-- app -->
 - **2026-05-12** – **🎲 Storytale** Take turns building a shared narrative with friends in this new multiplayer storytelling game powered by our text models. [Try it](https://storytale.net) <!-- app -->
 - **2026-05-11** – **📈 Developer Earnings Dashboard** Track the Pollen your apps are generating. Visualize daily earnings, active users, and top-performing apps directly in the [Dashboard](https://enter.pollinations.ai).
 - **2026-05-08** – **🤖 Gemma 4 26B** The new 26B parameter Gemma model is now live on the text API. It brings multimodal support, tool use, and a 262k context window for when you really need to paste that entire codebase. [View models](https://gen.pollinations.ai/v1/models)
 - **2026-05-08** – **🚀 Command Line Canvas** Because leaving the terminal is overrated. Generate AI images directly from your command line with the new PollImage CLI tool. [Try it](https://www.npmjs.com/package/pollimage) <!-- app -->
-- **2026-05-08** – **🌟 Madlisten** The hive is cooking. A new community-built recipe browsing application joins the showcase. [Try it](https://madlisten.dk/) <!-- app -->
-- **2026-05-08** – **📱 QR Codes for Tiny Humans** Generate and print custom QR-enabled learning cards for screen-free toddler interaction. [Try it](https://toddler-read.netlify.app/) <!-- app -->
-- **2026-05-07** – **🧠 Text Embeddings API** You can now generate vector embeddings directly through the `/v1/embeddings` endpoint. Wire it up for semantic search or RAG without leaving the [Unified API](https://gen.pollinations.ai).
-- **2026-05-07** – **🎬 Seedance 2.0 Video Model** We wired up Replicate to bring you Seedance 2.0. Text-to-video, image-to-video, and frame interpolation are now live for your 720p generation needs.
-- **2026-05-07** – **🍯 Creator Rewards** App builders can now earn Pollen when users generate content through their apps. Opt-in via your API keys in the [Dashboard](https://enter.pollinations.ai) and watch the balance go up.
 ---
 
 ## 🌱 Introduction

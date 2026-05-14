@@ -6,7 +6,7 @@ on:
 
 permissions:
   issues: write
-  pull-requests: read
+  pull-requests: write
   contents: read
 
 env:
@@ -30,6 +30,8 @@ jobs:
       - name: Resolve linked quest
         id: linked
         uses: actions/github-script@v7
+        env:
+          QUEST_PAYOUT_FALLBACK: ${{ env.QUEST_PAYOUT_FALLBACK }}
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |

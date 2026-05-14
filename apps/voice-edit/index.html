@@ -318,22 +318,47 @@ function getKey() {
   return k;
 }
 
+let accountUser = "";
+let accountBalance = null;
+function renderAccount() {
+  const base = accountUser ? `connected as ${accountUser}` : "connected";
+  const bal = accountBalance == null ? "" : ` · ${accountBalance.toFixed(2)} pollen`;
+  accountEl.textContent = base + bal;
+}
+
+async function loadBalance() {
+  const k = localStorage.getItem(KEY_STORAGE);
+  if (!k) return;
+  try {
+    const r = await fetch(`${BASE}/account/balance`, { headers: { Authorization: `Bearer ${k}` } });
+    if (!r.ok) return;
+    const { balance } = await r.json();
+    accountBalance = balance;
+    renderAccount();
+  } catch {}
+}
+
 function refreshConnectionUI() {
   const k = localStorage.getItem(KEY_STORAGE);
   const canvasWrap = document.querySelector(".canvas-wrap");
   if (k) {
     connectBtn.classList.add("hidden");
     disconnectBtn.classList.remove("hidden");
-    accountEl.textContent = "connected";
+    accountUser = "";
+    accountBalance = null;
+    renderAccount();
     canvasWrap.classList.remove("locked");
     warmMic();
     fetch(`${ENTER}/api/device/userinfo`, { headers: { Authorization: `Bearer ${k}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(u => { if (u?.preferred_username) accountEl.textContent = `connected as ${u.preferred_username}`; })
+      .then(u => { if (u?.preferred_username) { accountUser = u.preferred_username; renderAccount(); } })
       .catch(() => {});
+    loadBalance();
   } else {
     connectBtn.classList.remove("hidden");
     disconnectBtn.classList.add("hidden");
+    accountUser = "";
+    accountBalance = null;
     accountEl.textContent = "not connected";
     canvasWrap.classList.add("locked");
     setStatus("not connected");
@@ -667,6 +692,7 @@ async function runQueue() {
       render();
     }
     setStatus("done");
+    loadBalance();
   } finally {
     queueRunning = false;
     render();

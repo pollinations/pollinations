@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { Button } from "../components/button.tsx";
 import {
     type DashboardPage,
     DashboardShell,
@@ -10,11 +9,12 @@ import {
     DASHBOARD_NAV_ITEMS,
     isDashboardPage,
 } from "../components/layout/dashboard-theme.ts";
-import { UpdatesPage } from "../components/layout/updates-page.tsx";
-import { Pricing } from "../components/pricing";
+import { Models } from "../components/models";
+import { NewsFaq } from "../components/news-faq";
+import { Button } from "../components/ui/button.tsx";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
-    "updates",
+    "news-faq",
     "models",
 ]);
 
@@ -25,9 +25,10 @@ const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
 function pageFromHash(hash: string): DashboardPage {
     const page = hash.replace(/^#/, "");
     if (isDashboardPage(page) && SIGNED_OUT_PAGES.has(page)) return page;
-    if (page === "news" || page === "faq") return "updates";
+    if (page === "news" || page === "faq" || page === "updates")
+        return "news-faq";
     if (page === "pricing") return "models";
-    return "updates";
+    return "news-faq";
 }
 
 export const Route = createFileRoute("/sign-in")({
@@ -108,8 +109,8 @@ function RouteComponent() {
                 />
             }
         >
-            {activePage === "updates" && <UpdatesPage />}
-            {activePage === "models" && <Pricing />}
+            {activePage === "news-faq" && <NewsFaq />}
+            {activePage === "models" && <Models />}
         </DashboardShell>
     );
 }
@@ -126,8 +127,7 @@ function SignedOutAccountArea({
             as="button"
             onClick={onSignIn}
             disabled={loading}
-            color="amber"
-            weight="light"
+            theme="amber"
             className="w-full justify-center text-center"
         >
             {loading ? "Signing in..." : "Sign in with GitHub"}

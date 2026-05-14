@@ -1,60 +1,119 @@
-# Voice Edit
+# voice-edit
 
-> Click-and-hold on an image, speak your edit, release. The clicked spot is edited.
+Voice-driven image editor. Click-and-hold on image, speak edit, release. Red ring burned at click point → uploaded → `/v1/images/edits` → canvas swap.
 
-A minimal clone of Google AI Studio's AI Pointer / Magic Pointer demo, built on Pollinations.
+- Single self-contained `index.html`. No build step.
+- Vanilla JS + Tailwind CDN.
+- BYOP auth via Pollinations OAuth (`enter.pollinations.ai`).
 
-## How to Use
+## stack
 
-1. Open `index.html` in a browser (mic + clipboard permissions required)
-2. Click "Load starter image" or paste a URL
-3. Press-and-hold on the part you want to change
-4. While holding, say what you want — e.g. "make this a tabby cat" or "add a lamp here"
-5. Release — transcript appears, then the edited image swaps in (~7s)
+| layer | choice | notes |
+|---|---|---|
+| auth | `enter.pollinations.ai/authorize` device flow | `api_key` in URL fragment → `localStorage["voice-edit:user-key"]` |
+| edit | `POST /v1/images/edits` (OpenAI-compat) | `{prompt, image: url, model, response_format: "url"}` |
+| STT | `POST /v1/audio/transcriptions`, model=`whisper` | OVH Whisper-large-v3. Tried `universal-2` (AssemblyAI) — worse on short utterances. |
+| upload | `POST media.pollinations.ai/upload` | annotated PNG before /edits |
+| default edit model | `nanobanana` | Gemini 2.5 Flash Image. Recommended: `nanobanana`, `p-image-edit`, `kontext`, `gpt-image-2`. |
+| starter image | Merian banana flower (PD) | `media.pollinations.ai/051ed82a46f5f85d` |
 
-## How It Works
+## marker
 
+Single gesture chooses shape by path length on `pointerup`:
+
+- **Click (path < 3% min(w,h))** → thin red outline ring at click point. Radius ~5% of min(w,h), stroke ~18% of radius, alpha 0.55.
+- **Drag (path ≥ 3% min(w,h))** → freehand red stroke live-painted during pointermove. Width ~1.5% of min(w,h), alpha 0.35, round caps/joins. Pin position = path centroid.
+- Canvas reset to source image immediately after snapshotting the annotation, so a stray stroke from gesture N never leaks into the snapshot for gesture N+1.
+- No fill, no text label, no multi-stroke aggregation. One pointerdown→up = one edit. Pointerdown is blocked while a previous edit is still running.
+- Speech and drawing run concurrently; pointerup ends both.
+- Prompt: `The red markings indicate the area the prompt is referring to. Prompt: {text}. Output without red markings.` Marker is deictic, `Prompt:` label disambiguates which part is the instruction, suppression suffix prevents bleed-through. Model decides whether instruction is local-edit / replace / reframe / reference. See `buildEditPrompt(text)`.
+
+## STT config (whisper, working)
+
+- **Pre-warm `getUserMedia` on connect**, keep mic stream alive. Without this, first 200-500ms cut off.
+- **Force MIME**: `audio/webm;codecs=opus` (Chrome) / `audio/mp4` (Safari). File extension must match codec.
+- **Pass `language` = `navigator.language.slice(0,2)`**. Whisper hallucinates language on short clips without it.
+- **Audio constraints**: `echoCancellation`, `noiseSuppression`, `autoGainControl` all true.
+- Latency ~1-2s post-release. Acceptable for this UX.
+
+## known issues / todos
+
+priority order:
+
+1. **[DONE 2026-05-15] Click + freehand region.** Click → auto-ring, drag → freehand stroke. Live-painted during pointermove, snapshotted at pointerup, canvas reset before transcription.
+2. **[DONE 2026-05-15] Pin positions stored as `{xPct, yPct}` fractions** of canvas at click time. Fixes drift when edit result returns at a different resolution. Still imperfect if model reframes the image content — true fix is to pass `size` to `/v1/images/edits` (gateway issue #10944).
+3. **[FEAT] Two-image pattern.** Send clean original + annotated copy, prompt "Image 2 marks edit region in Image 1." Research suggests biggest mitigation for marker bleed-through. Blocked: need to verify `/v1/images/edits` accepts multiple images. Deferred.
+4. **[FEAT] Multi-region labelling.** SoM-style numeric labels (1/2/3) on multiple strokes so user can say "make 1 a hat, 2 sunglasses". Speculative — SoM is proven on understanding models, not editing. Deferred.
+5. **[ENH] Mobile.** iOS Safari pointer events untested. Pinch-zoom + canvas interaction likely fragile.
+6. **[ENH] STT model selector.** UI dropdown to A/B `whisper` / `scribe` / `universal-2` / `universal-3-pro`.
+7. **[ENH] Deployment.** Not deployed. Currently localhost-only via `python3 -m http.server 8765`.
+
+## architecture
+
+- ~770 lines, single file, flat module scope.
+- State (module-level): `currentImage`, `currentImageURL`, `activeCapture`, `undoStack`, `redoStack`, `editQueue`, `queueRunning`, `micStream`.
+- `render()` — single function, called after every state mutation. Redraws pins + history button enabled state. Don't add ad-hoc DOM updates from mutation sites.
+- `pill({x, y, text, placeholder, visible})` — partial-state setter for cursor-anchored speech indicator.
+- `resetCanvas()` — synchronously redraws `currentImage` onto the canvas. Called at the *start* of each pointerdown so a stale marker from a prior gesture never leaks into the new gesture's snapshot. Async `loadImageFromURL` is not safe for this because the next pointerdown can fire before it resolves.
+- Pointer flow: down → block if `queueRunning || editQueue.length` → `resetCanvas()` → `startIntentCapture` (MediaRecorder) + show pill + init `capture.stroke = [point]` → move → live-paint stroke segment + push to `capture.stroke` → up → classify (click vs drag) → if click: `drawRing` → snapshot annotated canvas to dataURL → `stopIntentCapture` → `enqueueEdit({point, text, annotated})` → `runQueue` (upload snapshot → /v1/images/edits → swap canvas). Marker stays visible on-screen from pointerup through edit completion.
+
+## intentional non-changes
+
+Things that look redundant but are load-bearing. Don't simplify:
+
+- `pointercancel` handler — iOS fires on scroll interrupt; leaks `activeCapture` without it.
+- `setPointerCapture` on pointerdown — lets `pointerup` fire on canvas after dragging off (wrapped in try/catch for Playwright synth events).
+- `try { recorder.start() } catch` — MediaRecorder throws synchronously on permission issues.
+- `resetCanvas()` at pointerdown (not pointerup) — keeps marker visible during edit but still wipes before next snapshot.
+
+## research provenance
+
+| claim | source | strength |
+|---|---|---|
+| Red beats blue/purple/green | RedCircle, Shtedritski et al., ICCV 2023 (arxiv:2304.06712) Table 2 | **CLIP only**, not edit models |
+| Outline ring optimal at radius 12px / stroke 4px @ 224px | RedCircle Table 10, Fig 10 | CLIP only |
+| Labels improve grounding (84.4 → 89.2 adding boxes to num+mask) | Set-of-Marks, Yang et al., arxiv:2310.11441 Table 3 | **GPT-4V only**, understanding |
+| Scribbles/arrows/ellipses as visual prompts | ViP-LLaVA, Cai et al., CVPR 2024 (arxiv:2312.00784) | trained model, understanding |
+| FLUX Kontext "supports intuitive editing through visual cues, responding to geometric markers like red ellipses" | FLUX.1 Kontext §4.4 (arxiv:2506.15742) | **edit model**, no shape ablation |
+| Gemini app: freehand pen, single annotated image, no mask, multi-stroke OK | 9to5Google + Tom's Guide Dec 2025 teardowns | product, no paper |
+| Bleed-through is dominant failure | our May 13 empirical session ("HERE" labels bled through) | observation |
+
+No academic paper exists for DeepMind's "AI Pointer" (the inspiration). Product principles essay by Adrien Baranes + Rob Marchant; no arxiv.
+
+## refactor history
+
+5 simplifications applied 2026-05-14:
+
+- 4 pill helpers → 1 `pill(state)` setter
+- 2 annotate helpers + offscreen canvas → 1 `annotateAndCapture`
+- Module `clickPoint` baton → stored on capture object
+- 6 scattered render-calls → 1 `render()`
+- `loadLocalFile` + `loadImageFromURL` → unified `loadImage(File|URL)`
+
+## deploy
+
+Not deployed. Local:
+
+```bash
+cd apps/voice-edit
+python3 -m http.server 8765
+# http://localhost:8765/
 ```
-click+hold ── browser speech recognition or typed prompt
-          │
-          ▼
- annotate canvas (red circle at click pt)
-          │
-          ▼
- upload to media.pollinations.ai
-          │
-          ▼
- POST /v1/images/edits (kontext)
-          │
-          ▼
- swap canvas → result
-```
 
-The red circle burned into the pixels at the click point IS the spatial grounding signal — no bbox call needed. Kontext (FLUX.1 Kontext) respects the annotation reliably.
-
-## Models
-
-- **Edit**: `kontext` (fast, obeys the red-circle marker). Fallback: `nanobanana-2`.
-- **Voice input**: browser-native speech recognition, with typed prompt fallback. No server STT call is required.
-
-## API
-
-- `POST https://media.pollinations.ai/upload` — multipart `file`
-- `POST https://gen.pollinations.ai/v1/images/edits` — JSON `{prompt, image, model}`
-
-Auth: **BYOP** (Bring Your Own Pollen). On first use, the app redirects to `enter.pollinations.ai/authorize?client_id=pk_<voice_edit_app_key>` — the user approves and returns with a scoped `sk_user_*` key in the URL fragment. The key spends the user's Pollen, not ours. The `pk_` App Key in source is just an identifier; only the user's returned `sk_` is sensitive (stored in their browser's `localStorage`).
-
-### App key registration (one-time, by the app owner)
+OAuth `redirect_uri` = `location.origin + location.pathname`. Works on `localhost:*` and any origin registered with enter.pollinations.ai. To register an App Key set `CLIENT_ID` constant at top of script:
 
 ```bash
 curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Authorization: Bearer <your_sk_>' \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Voice Edit","type":"publishable","redirectUris":["https://voice-edit.pollinations.ai/"],"earningsEnabled":true,"models":["kontext","nanobanana-2"]}'
+  -d '{"name":"Voice Edit","type":"publishable","redirectUris":["https://voice-edit.pollinations.ai/"],"earningsEnabled":true,"models":["nanobanana","kontext"]}'
 ```
 
-Paste the returned `pk_…` into `CLIENT_ID` in `index.html`. With `earningsEnabled:true`, the app owner earns 25% of each user's spend in the app.
+`earningsEnabled:true` → app owner earns 25% of users' Pollen spend.
 
----
+## dev rules
 
-Made with pollinations.ai
+- No build step. Tailwind via CDN only.
+- Single file. Splitting → build step → no.
+- Test in browser before claiming a fix works.
+- Run `npx biome check --write index.html` before commit (repo AGENTS.md).

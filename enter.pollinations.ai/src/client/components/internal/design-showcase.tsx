@@ -1,5 +1,8 @@
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { cn } from "@/util.ts";
+import { Chart } from "../activity/chart.tsx";
+import { MultiSelect } from "../activity/multi-select.tsx";
+import type { DataPoint } from "../activity/types.ts";
 import { ModalityButton } from "../api-keys/modality-button.tsx";
 import { MODALITY_COLORS, type Modality } from "../api-keys/modality-ui.ts";
 import { Button } from "../button.tsx";
@@ -12,9 +15,6 @@ import { Surface } from "../ui/surface.tsx";
 import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
-import { Chart } from "../usage-analytics/chart.tsx";
-import { MultiSelect } from "../usage-analytics/multi-select.tsx";
-import type { DataPoint } from "../usage-analytics/types.ts";
 
 type Mode = "light" | "dark";
 
@@ -643,6 +643,7 @@ const SurfacesDemo: FC = () => (
 const TabsDemo: FC = () => {
     const [segmentActive, setSegmentActive] = useState("day");
     const [pillActive, setPillActive] = useState("image");
+    const [unifiedActive, setUnifiedActive] = useState("image");
     const segmentOptions = ["day", "week", "month"] as const;
     const pillOptions = [
         "image",
@@ -651,20 +652,25 @@ const TabsDemo: FC = () => {
         "text",
         "embedding",
     ] as const;
+    const unifiedOptions = pillOptions;
+    const segmentItemClass =
+        "px-4 pt-1.5 pb-2 text-base leading-normal min-h-0 capitalize";
+    const segmentGroupClass =
+        "flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full";
     return (
         <Section
             title="Tabs"
-            caption="Two tab styles. Segment = connected pill with internal dividers (date selector). Pills = separate bold pills (model selector)."
+            caption="Three tab styles. Segment = connected pill with internal dividers (date selector). Pills = separate bold pills (model selector). Unified segment = all buttons inside one rounded pill — gaps form the dividers, so the layout wraps cleanly into multiple rows on narrow viewports without breaking the container."
         >
             <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
                 <Field label="segment · activity date selector">
-                    <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
+                    <div className={segmentGroupClass}>
                         {segmentOptions.map((option) => (
                             <TabButton
                                 key={option}
                                 active={segmentActive === option}
                                 onClick={() => setSegmentActive(option)}
-                                className="px-4 pt-1.5 pb-2 text-base leading-normal min-h-0 capitalize"
+                                className={segmentItemClass}
                             >
                                 {option}
                             </TabButton>
@@ -684,6 +690,26 @@ const TabsDemo: FC = () => {
                                     {option}
                                 </span>
                             </TabButton>
+                        ))}
+                    </div>
+                </Field>
+                <Field label="unified segment · model selector pill (resize to wrap)">
+                    <div className="inline-flex max-w-full flex-wrap items-stretch self-start overflow-hidden rounded-3xl border border-theme-border">
+                        {unifiedOptions.map((option) => (
+                            <button
+                                key={option}
+                                type="button"
+                                onClick={() => setUnifiedActive(option)}
+                                aria-pressed={unifiedActive === option}
+                                className={cn(
+                                    "-ml-px -mt-px grow border-l border-t border-theme-border px-4 pt-1.5 pb-2 text-center text-base capitalize leading-normal transition-colors",
+                                    unifiedActive === option
+                                        ? "bg-theme-bg-active text-theme-text-strong"
+                                        : "text-theme-text-base hover:bg-theme-bg-active/40",
+                                )}
+                            >
+                                {option}
+                            </button>
                         ))}
                     </div>
                 </Field>

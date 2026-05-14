@@ -1,8 +1,8 @@
 import { type FC, useState } from "react";
+import { cn } from "@/util.ts";
 import { DashboardSection } from "../layout/dashboard-section.tsx";
 import { LinkButton } from "../ui/link-button.tsx";
 import { Surface } from "../ui/surface.tsx";
-import { TabButton } from "../ui/tab-button.tsx";
 import { getModelPrices } from "./data.ts";
 import {
     type SectionType,
@@ -60,18 +60,24 @@ export const Pricing: FC<PricingProps> = ({ tierBalance, packBalance }) => {
                     </div>
                 }
             >
-                <div className="mb-4 flex flex-wrap gap-1.5">
+                <div className="mb-4 inline-flex max-w-full flex-wrap items-stretch self-start overflow-hidden rounded-3xl border border-theme-border">
                     {availableSections.map((section) => (
-                        <TabButton
+                        <button
                             key={section}
-                            active={activeTab === section}
+                            type="button"
                             onClick={() => setActiveTab(section)}
-                            className="px-4 pt-1.5 pb-2 text-base"
+                            aria-pressed={activeTab === section}
+                            className={cn(
+                                "-ml-px -mt-px grow border-l border-t border-theme-border px-4 pt-1.5 pb-2 text-center text-base leading-normal transition-colors",
+                                activeTab === section
+                                    ? "bg-theme-bg-active text-theme-text-strong"
+                                    : "text-theme-text-base hover:bg-theme-bg-active/40",
+                            )}
                         >
                             <span className="font-bold">
                                 {sectionLabels[section]}
                             </span>
-                        </TabButton>
+                        </button>
                     ))}
                 </div>
                 <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

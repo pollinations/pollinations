@@ -1092,15 +1092,14 @@ export const audioRoutes = new Hono<Env>()
         },
     );
 
-// OVH returns usage as either {type:"duration", duration:N} or {type:"duration", seconds:N}.
 function extractWhisperUsage(responseBody: string, log: Logger): number {
     const json = JSON.parse(responseBody);
-    const duration = json.usage?.duration ?? json.usage?.seconds;
-    if (typeof duration !== "number" || duration <= 0) {
+    const seconds = json.usage?.seconds;
+    if (typeof seconds !== "number" || seconds <= 0) {
         throw new Error(
-            `Whisper response missing usage duration: ${JSON.stringify(json.usage)}`,
+            `Whisper response missing usage.seconds: ${JSON.stringify(json.usage)}`,
         );
     }
-    log.debug("Whisper usage: {duration}s", { duration });
-    return duration;
+    log.debug("Whisper usage: {seconds}s", { seconds });
+    return seconds;
 }

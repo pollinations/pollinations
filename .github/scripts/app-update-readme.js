@@ -37,7 +37,9 @@ const simplifiedRows = last10.map((row) => {
     const url = cols[2];
     const desc = cols[3];
     const github = cols[7];
-    const nameCell = url ? `[${emoji} ${name}](${url})` : `${emoji} ${name}`;
+    const repo = cols[9];
+    const nameCell =
+        url || repo ? `[${emoji} ${name}](${url || repo})` : `${emoji} ${name}`;
     const authorCell = github
         ? `[${github}](https://github.com/${github.replace("@", "")})`
         : "";
@@ -50,7 +52,7 @@ const recentAppsSection = `## 🆕 Recent Apps
 |------|-------------|--------|
 ${simplifiedRows.join("\n")}
 
-[View all apps →](apps/APPS.md)`;
+[Browse all apps →](apps/GREENHOUSE.md)`;
 
 // Update README
 let readme = fs.readFileSync(readmeFile, "utf8");

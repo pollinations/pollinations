@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-13",
+  "period_start": "2026-05-13",
+  "period_end": "2026-05-13",
+  "title": "Rewriting the map: clearer docs and a cleaner homepage",
+  "summary": "A day of spring cleaning: we stripped the marketing fluff from our docs, clarified the homepage, and made ElevenLabs text-to-speech cheaper.\n\nWe stripped the marketing fluff out of the FAQ and reworked the homepage copy. The focus is now squarely on what matters: how the platform works, developer earnings, and a clear split between what just shipped and what is coming next.\n\nWe aligned our ElevenLabs integration with their Scale plan, which means generating high-quality text-to-speech just got noticeably cheaper for everyone.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 10729,
+      "date": "2026-05-13"
+    },
+    {
+      "number": 10821,
+      "date": "2026-05-13"
+    },
+    {
+      "number": 10935,
+      "date": "2026-05-13"
+    }
+  ],
+  "generated_at": "2026-05-14T06:57:38.267738+00:00"
+}

@@ -15,7 +15,7 @@ body:
         3. Once assigned, open a PR against `main` referencing this issue (`Fixes #N`)
         4. On merge, the reward is credited to your [enter.pollinations.ai](https://enter.pollinations.ai) account
 
-        Need help? Drop a comment here or ask in [Discord #dev-quest](https://discord.gg/pollinations-ai-885844321461485618).
+        Need help? Drop a comment here or ask in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).
     validations:
       required: true
 

@@ -247,31 +247,33 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 </p>
                                 <Surface
                                     variant="card-themed"
-                                    className="mt-2 text-theme-text-strong"
+                                    className="mt-2 w-fit text-theme-text-strong"
                                 >
                                     <span className="font-body text-xs font-bold uppercase tracking-wide text-red-600 mr-1.5">
                                         New!
                                     </span>
                                     Turn on earnings to receive a share of
-                                    pollen users spend in your app.{" "}
-                                    <a
-                                        href={genDocsUrl(
-                                            "#tag/bring-your-own-pollen",
-                                        )}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-medium text-blue-700 hover:text-blue-900"
-                                    >
-                                        <span className="underline underline-offset-2">
-                                            Read the guide
-                                        </span>
-                                        <span
-                                            aria-hidden="true"
-                                            className="no-underline ml-0.5"
+                                    pollen users spend in your app.
+                                    <div className="mt-1">
+                                        <a
+                                            href={genDocsUrl(
+                                                "#tag/bring-your-own-pollen",
+                                            )}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-medium text-blue-700 hover:text-blue-900"
                                         >
-                                            ↗
-                                        </span>
-                                    </a>
+                                            <span className="underline underline-offset-2">
+                                                Read the guide
+                                            </span>
+                                            <span
+                                                aria-hidden="true"
+                                                className="no-underline ml-0.5"
+                                            >
+                                                ↗
+                                            </span>
+                                        </a>
+                                    </div>
                                 </Surface>
                             </div>
                             <ApiKeyDialog

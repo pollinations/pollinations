@@ -30,7 +30,7 @@ export const TabButton: FC<TabButtonProps> = ({
         aria-pressed={active}
         disabled={disabled}
         className={cn(
-            "inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
+            "inline-flex items-center justify-center rounded-full border px-4 pt-1.5 pb-2 text-base font-medium leading-normal transition-all duration-200",
             active
                 ? "bg-theme-bg-active text-theme-text-strong border-theme-border"
                 : "bg-theme-bg-subtle text-theme-text-base border-theme-border hover:bg-theme-bg-active",

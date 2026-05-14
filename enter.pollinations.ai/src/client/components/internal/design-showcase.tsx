@@ -565,7 +565,7 @@ const SurfacesDemo: FC = () => (
                     </Surface>
                     <Surface variant="card-themed">
                         <p className="text-xs font-mono uppercase tracking-wide text-theme-text-strong">
-                            inner · card-themed · bg-theme-bg-active
+                            inner · card-themed · bg-theme-bg-pale
                         </p>
                         <p className="mt-1 text-sm text-theme-text-strong">
                             Theme-tinted callout. Pinned news + earnings
@@ -651,7 +651,6 @@ const TabsDemo: FC = () => {
                                 key={option}
                                 active={pill === option}
                                 onClick={() => setPill(option)}
-                                className="px-4 pt-1.5 pb-2 text-base"
                             >
                                 <span className="font-bold capitalize">
                                     {option}

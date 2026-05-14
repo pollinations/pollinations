@@ -152,14 +152,13 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
             data-theme={theme}
             className="relative flex flex-wrap items-center gap-2"
         >
-            <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
+            <div className="flex flex-wrap gap-1.5">
                 {(["day", "week", "month"] as PeriodGranularity[]).map(
                     (granularity) => (
                         <TabButton
                             key={granularity}
                             active={value.granularity === granularity}
                             onClick={() => setGranularity(granularity)}
-                            className="px-4 pt-1.5 pb-2 text-base leading-normal min-h-0"
                         >
                             {granularity[0].toUpperCase() +
                                 granularity.slice(1)}

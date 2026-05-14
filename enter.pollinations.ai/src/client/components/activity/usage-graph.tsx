@@ -63,7 +63,7 @@ export const UsageGraph: FC<UsageGraphProps> = ({
         <DashboardSection title="Usage" theme={theme} framed action={action}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full">
+                    <div className="flex flex-wrap gap-1.5">
                         {(["requests", "pollen"] as Metric[]).map((m) => (
                             <TabButton
                                 key={m}

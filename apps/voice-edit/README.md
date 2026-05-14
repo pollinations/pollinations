@@ -12,7 +12,7 @@ Voice-driven image editor. Click-and-hold on image, speak edit, release. Red rin
 |---|---|---|
 | auth | `enter.pollinations.ai/authorize` device flow | `api_key` in URL fragment → `localStorage["voice-edit:user-key"]` |
 | edit | `POST /v1/images/edits` (OpenAI-compat) | `{prompt, image: url, model, response_format: "url"}` |
-| STT | `POST /v1/audio/transcriptions`, model=`whisper` | OVH Whisper-large-v3. Tried `universal-2` (AssemblyAI) — worse on short utterances. |
+| STT | `POST /v1/audio/transcriptions`, model=`scribe` | ElevenLabs Scribe v2. 1.6% WER on Artificial Analysis AA-AgentTalk (short voice-agent clips) vs ~2.3% Universal-3 Pro; Whisper-large-v3 ranks well below and hallucinates "Thank you / Thanks for watching" on silent or sub-second audio (documented YouTube-training-data artifact, arXiv:2501.11378). Tried `universal-2` earlier — worse on short clips. |
 | upload | `POST media.pollinations.ai/upload` | annotated PNG before /edits |
 | default edit model | `nanobanana` | Gemini 2.5 Flash Image. Recommended: `nanobanana`, `p-image-edit`, `kontext`, `gpt-image-2`. |
 | starter image | Merian banana flower (PD) | `media.pollinations.ai/051ed82a46f5f85d` |
@@ -21,20 +21,20 @@ Voice-driven image editor. Click-and-hold on image, speak edit, release. Red rin
 
 Single gesture chooses shape by path length on `pointerup`:
 
-- **Click (path < 3% min(w,h))** → thin red outline ring at click point. Radius ~5% of min(w,h), stroke ~18% of radius, alpha 0.55.
-- **Drag (path ≥ 3% min(w,h))** → freehand red stroke live-painted during pointermove. Width ~1.5% of min(w,h), alpha 0.35, round caps/joins. Pin position = path centroid.
+- **Click (path < 3% min(w,h))** → thin red outline ring at click point. Radius ~5% of min(w,h), stroke ~18% of radius, alpha 0.35.
+- **Drag (path ≥ 3% min(w,h))** → freehand red stroke live-painted during pointermove. Width ~1.5% of min(w,h), alpha 0.20, round caps/joins. Pin position = path centroid.
 - Canvas reset to source image immediately after snapshotting the annotation, so a stray stroke from gesture N never leaks into the snapshot for gesture N+1.
 - No fill, no text label, no multi-stroke aggregation. One pointerdown→up = one edit. Pointerdown is blocked while a previous edit is still running.
 - Speech and drawing run concurrently; pointerup ends both.
 - Prompt: `The red markings indicate the area the prompt is referring to. Prompt: {text}. Output without red markings.` Marker is deictic, `Prompt:` label disambiguates which part is the instruction, suppression suffix prevents bleed-through. Model decides whether instruction is local-edit / replace / reframe / reference. See `buildEditPrompt(text)`.
 
-## STT config (whisper, working)
+## STT config (scribe, working)
 
 - **Pre-warm `getUserMedia` on connect**, keep mic stream alive. Without this, first 200-500ms cut off.
 - **Force MIME**: `audio/webm;codecs=opus` (Chrome) / `audio/mp4` (Safari). File extension must match codec.
-- **Pass `language` = `navigator.language.slice(0,2)`**. Whisper hallucinates language on short clips without it.
+- **Pass `language` = `navigator.language.slice(0,2)`**.
 - **Audio constraints**: `echoCancellation`, `noiseSuppression`, `autoGainControl` all true.
-- Latency ~1-2s post-release. Acceptable for this UX.
+- Latency: Scribe v2 ~150ms p50 streaming; non-streaming call on a 1–3s clip lands ~1s post-release.
 
 ## known issues / todos
 

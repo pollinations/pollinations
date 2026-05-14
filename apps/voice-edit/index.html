@@ -138,7 +138,9 @@
   #pinLayer .pin { position: absolute; }
   .pin {
     position: absolute;
-    transform: translate(8px, -50%);
+    /* Anchor point is the dot center. Default: pin extends to the right.
+       Subtract: half-dot (≈0.275rem) + dot-border (1.5px) + padding (0.55rem) + small gap so the dot sits exactly on (xPct, yPct). */
+    transform: translate(calc(-0.55rem - 0.275rem - 1.5px), -50%);
     background: #fff;
     border: 2px solid var(--dark);
     border-right-width: 4px;
@@ -157,7 +159,9 @@
     align-items: center;
     gap: 0.4rem;
   }
-  .pin.flip { transform: translate(-100%, -50%) translateX(-8px); }
+  /* Flipped: pin extends to the left of the dot; dot is the *last* visual child.
+     Translate so the dot center is on the anchor: full pin width minus (half-dot + dot-border + right-padding). */
+  .pin.flip { flex-direction: row-reverse; transform: translate(calc(-100% + 0.55rem + 0.275rem + 1.5px), -50%); }
   .pin.processing { background: var(--accent); }
   .pin.queued { background: #fff; opacity: 0.85; }
   .pin .dot {
@@ -240,14 +244,16 @@ function renderPins() {
   for (let i = 0; i < editQueue.length; i++) {
     const job = editQueue[i];
     const pin = document.createElement("div");
-    const flip = job.xPct > 55;
-    pin.className = "pin " + (i === 0 && queueRunning ? "processing" : "queued") + (flip ? " flip" : "");
+    pin.className = `pin ${i === 0 && queueRunning ? "processing" : "queued"}`;
     const dot = document.createElement("span"); dot.className = "dot";
     const text = document.createElement("span"); text.textContent = job.intent;
     pin.append(dot, text);
     pin.style.left = `${job.xPct}%`;
     pin.style.top = `${job.yPct}%`;
     pinLayer.append(pin);
+    const pinBox = pin.getBoundingClientRect();
+    const layerBox = pinLayer.getBoundingClientRect();
+    pin.classList.toggle("flip", pinBox.right > layerBox.right);
   }
 }
 function render() {
@@ -273,7 +279,7 @@ const undoStack = [];
 let redoStack = [];
 const editQueue = [];
 let queueRunning = false;
-const STT_MODEL = "whisper";
+const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
   .find(m => window.MediaRecorder?.isTypeSupported?.(m)) || "";
@@ -447,12 +453,16 @@ function promptTypedEdit(clientX, clientY) {
 }
 
 const dropZone = document.querySelector(".canvas-wrap");
-["dragenter", "dragover"].forEach(ev => dropZone.addEventListener(ev, (e) => {
-  e.preventDefault(); dropZone.classList.add("drop");
-}));
-["dragleave", "drop"].forEach(ev => dropZone.addEventListener(ev, (e) => {
-  e.preventDefault(); dropZone.classList.remove("drop");
-}));
+["dragenter", "dragover"].forEach((ev) => {
+  dropZone.addEventListener(ev, (e) => {
+    e.preventDefault(); dropZone.classList.add("drop");
+  });
+});
+["dragleave", "drop"].forEach((ev) => {
+  dropZone.addEventListener(ev, (e) => {
+    e.preventDefault(); dropZone.classList.remove("drop");
+  });
+});
 dropZone.addEventListener("drop", (e) => {
   const file = e.dataTransfer?.files?.[0];
   if (file) safeLoad(file);
@@ -541,7 +551,7 @@ function strokeWidthFor(w, h) {
 function drawRing(targetCtx, p, w, h) {
   const r = Math.max(28, Math.round(Math.min(w, h) * 0.05));
   targetCtx.save();
-  targetCtx.globalAlpha = 0.55;
+  targetCtx.globalAlpha = 0.35;
   targetCtx.strokeStyle = "red";
   targetCtx.lineWidth = Math.max(4, Math.round(r * 0.18));
   targetCtx.beginPath(); targetCtx.arc(p.x, p.y, r, 0, Math.PI * 2); targetCtx.stroke();
@@ -549,7 +559,7 @@ function drawRing(targetCtx, p, w, h) {
 }
 function drawStrokeSegment(targetCtx, a, b, w, h) {
   targetCtx.save();
-  targetCtx.globalAlpha = 0.35;
+  targetCtx.globalAlpha = 0.2;
   targetCtx.strokeStyle = "red";
   targetCtx.lineWidth = strokeWidthFor(w, h);
   targetCtx.lineCap = "round";

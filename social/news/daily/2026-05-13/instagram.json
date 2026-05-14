@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-13",
+  "period_start": "2026-05-13",
+  "period_end": "2026-05-13",
+  "generated_at": "2026-05-14T06:57:38.267738+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-13/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-13/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-13/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Did some spring cleaning on the repo this week. We reworked the homepage so it actually makes sense on the first read, and simplified the Pollen FAQ so you don't need a decoder ring to figure out how credits work. We also aligned the ElevenLabs text-to-speech pricing—it's now much more affordable to give your apps a voice. Less friction, more building.\n\nCheck out the cleaner map at pollinations.ai\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #texttospeech #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

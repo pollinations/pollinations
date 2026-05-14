@@ -68,9 +68,8 @@ function SocialIcons() {
 
 const tertiaryBtn =
     "h-7 bg-[rgb(var(--tertiary-strong))] text-dark hover:!bg-[rgb(var(--tertiary-strong)/0.8)] hover:!text-dark hover:[&>*]:!text-dark";
-const labelCls = "font-headline text-[7px] font-black uppercase tracking-wider";
-const desktopFooterLabelCls =
-    "font-headline text-[9px] font-black uppercase tracking-wider";
+const labelCls = "font-body text-[11px] font-semibold";
+const desktopFooterLabelCls = "font-body text-xs font-semibold";
 
 function FooterLinks({
     layoutCopy,
@@ -271,7 +270,7 @@ function Layout() {
                         <div className="flex items-center justify-between gap-4">
                             {/* Left: Branding Text */}
                             <div className="text-left flex-shrink-0">
-                                <p className="font-headline text-[9px] font-black text-dark uppercase tracking-wider">
+                                <p className="font-body text-xs font-bold text-dark">
                                     {layoutCopy.footerBranding}
                                 </p>
                                 <p className="font-body text-[11px] text-dark">

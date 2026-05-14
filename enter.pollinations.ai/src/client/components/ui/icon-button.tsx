@@ -1,14 +1,22 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "@/util.ts";
 
-const iconButtonColors = {
-    blue: "bg-blue-50 hover:bg-blue-100 text-blue-400 hover:text-blue-600",
-    red: "bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600",
-    gray: "bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-600",
-} as const;
+/** IconButton only supports `danger` (delete icons). */
+type IconButtonIntent = "danger";
+
+const intentClasses: Record<IconButtonIntent, string> = {
+    danger:
+        "bg-intent-danger-bg-light hover:bg-[oklch(0.88_0.075_25)] " +
+        "text-intent-danger-text",
+};
+
+// Default (no intent): cascade-driven theme tile, deeper on hover.
+const defaultClasses =
+    "bg-theme-bg-active hover:bg-theme-bg-hover " +
+    "text-theme-text-soft hover:text-theme-text-strong";
 
 type IconButtonProps = {
-    color?: keyof typeof iconButtonColors;
+    intent?: IconButtonIntent;
     title?: string;
     onClick: () => void;
     children: ReactNode;
@@ -16,7 +24,7 @@ type IconButtonProps = {
 };
 
 export const IconButton: FC<IconButtonProps> = ({
-    color = "gray",
+    intent,
     title,
     onClick,
     children,
@@ -29,7 +37,7 @@ export const IconButton: FC<IconButtonProps> = ({
         aria-label={title}
         className={cn(
             "inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors",
-            iconButtonColors[color],
+            intent ? intentClasses[intent] : defaultClasses,
             className,
         )}
     >

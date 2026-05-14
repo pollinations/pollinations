@@ -67,14 +67,22 @@ export const Tooltip: FC<TooltipProps> = ({
         }
     };
 
+    // Universal cursor for every tooltip trigger across the app.
+    // `cursor-help` = standard "?" pointer that means "more info on hover".
     const triggerClassName = cn(
-        "relative cursor-pointer md:cursor-default text-left inline-flex items-center",
+        "relative cursor-help text-left inline-flex items-center",
         className,
     );
 
-    const cursorClass = displayContents
-        ? "contents"
-        : "md:cursor-default cursor-pointer";
+    const cursorClass = displayContents ? "contents" : "cursor-help";
+
+    // Thin theme-cascade popup. bg + border + text all follow the active
+    // page theme so the tooltip reads as "part of the page", not system
+    // chrome. Uses the pale theme bg (one step lighter than chip-bg) so
+    // it doesn't dominate. Same recipe on desktop and mobile —
+    // viewport-clamped via `tooltipPosition`.
+    const popupClasses =
+        "fixed w-max px-2 py-1 bg-theme-bg-pale text-theme-text-strong border border-theme-border text-xs rounded-md shadow-sm z-50 pointer-events-none transition-opacity whitespace-pre-line break-words";
 
     const contentNode = (
         <>
@@ -87,15 +95,7 @@ export const Tooltip: FC<TooltipProps> = ({
                 }}
                 className={`${
                     showTooltip ? "visible opacity-100" : "invisible opacity-0"
-                } hidden md:block fixed w-max px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200 z-50 pointer-events-none transition-opacity whitespace-pre-line break-words`}
-            >
-                {content}
-            </span>
-            <span
-                style={{ top: tooltipPosition.top }}
-                className={`${
-                    showTooltip ? "visible opacity-100" : "invisible opacity-0"
-                } md:hidden fixed left-1/2 -translate-x-1/2 px-4 py-3 bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 z-50 pointer-events-none transition-opacity max-w-[90vw] whitespace-pre-line break-words`}
+                } ${popupClasses}`}
             >
                 {content}
             </span>

@@ -12,7 +12,7 @@ body:
 
         1. Comment on this issue if you'd like to take it on — multiple devs can express interest
         2. A maintainer picks one dev and assigns the issue to them — please wait until you're assigned before starting work
-        3. Once assigned, open a PR against `main` referencing this issue (`Fixes #N`)
+        3. Once assigned, open a PR against `main` — **start the description with `Fixes #N`** so the payout bot finds your quest
         4. On merge, the reward is credited to your [enter.pollinations.ai](https://enter.pollinations.ai) account
 
         Need help? Drop a comment here or ask in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).

@@ -78,4 +78,8 @@ export const LINKS = {
         "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image-generation",
     docsAudio: "https://gen.pollinations.ai/docs#tag/-audio-generation",
     docsAuth: "https://gen.pollinations.ai/docs#description/-authentication",
+    highlightsSource:
+        "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md",
+    polliCli:
+        "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

@@ -174,14 +174,13 @@ html {
 
 /* ═══════════════ CRT OVERLAY ═══════════════ */
 
-/* Subtle CRT scanline texture — GPU-promoted for compositing */
+/* Subtle CRT scanline texture */
 body::after {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 9998;
-    will-change: transform;
     background: repeating-linear-gradient(
         0deg,
         transparent,

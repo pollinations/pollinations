@@ -10,7 +10,7 @@ export const HIGHLIGHTS_GITHUB_URL =
 const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
-    date: string;
+    date?: string;
     emoji: string;
     title: string;
     description: string;
@@ -22,7 +22,12 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
-        date: "2026-05-05",
+        emoji: "🌻",
+        title: "Pollen pack bonuses are stepping down",
+        description:
+            "As the service keeps improving, the bonus Pollen included with each pack is being reduced.",
+    },
+    {
         emoji: "🌻",
         title: "Developer earnings are live",
         description:
@@ -90,11 +95,6 @@ function formatNewsDate(date: string): string {
     });
 }
 
-type NewsItem = Highlight & {
-    key: string;
-    pinned: boolean;
-};
-
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
 
@@ -109,63 +109,55 @@ export const NewsBanner: FC = () => {
 
     if (highlights.length === 0 && PINNED_NEWS.length === 0) return null;
 
-    const items: NewsItem[] = [
-        ...PINNED_NEWS.map((item) => ({
-            ...item,
-            key: `pinned-${item.title}`,
-            pinned: true,
-        })),
-        ...highlights.map((item) => ({
-            ...item,
-            key: `${item.date}-${item.title}`,
-            pinned: false,
-        })),
-    ];
-
     return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {items.map((item) => (
-                <NewsCard key={item.key} item={item} />
-            ))}
+        <div className="flex flex-col gap-3">
+            {PINNED_NEWS.length > 0 && (
+                <Surface
+                    variant="card-themed"
+                    theme="violet"
+                    className="flex flex-col gap-4 text-base leading-relaxed"
+                >
+                    {PINNED_NEWS.map((item) => (
+                        <PinnedNews key={item.title} item={item} />
+                    ))}
+                </Surface>
+            )}
+            {highlights.length > 0 && (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {highlights.map((item) => (
+                        <DynamicNews
+                            key={`${item.date}-${item.title}`}
+                            item={item}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
 
-const NewsCard: FC<{ item: NewsItem }> = ({ item }) => (
+const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
+    <div className="min-w-0">
+        <div className="font-semibold text-gray-900 text-base sm:text-lg">
+            <span>{item.title}</span>
+            {item.emoji && <span className="ml-2">{item.emoji}</span>}
+        </div>
+        <p className="mt-1 text-gray-700">
+            {renderWithLinks(item.description)}
+        </p>
+    </div>
+);
+
+const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
     <Surface
-        variant={item.pinned ? "card-themed" : "card"}
-        theme={item.pinned ? "violet" : undefined}
-        className={cn(
-            "flex leading-relaxed",
-            item.pinned
-                ? "min-h-0 md:col-span-2 xl:col-span-3 text-base"
-                : "min-h-48 text-sm",
-        )}
+        variant="card"
+        className={cn("flex min-h-48 text-sm leading-relaxed")}
     >
-        <div
-            className={cn(
-                "flex min-h-0 flex-1 items-start gap-3",
-                item.pinned ? "flex-row" : "flex-col",
-            )}
-        >
-            {!item.pinned && (
-                <span className="shrink-0 text-2xl leading-none">
-                    {item.emoji}
-                </span>
-            )}
+        <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
+            <span className="shrink-0 text-2xl leading-none">{item.emoji}</span>
             <div className="min-w-0">
-                <div
-                    className={cn(
-                        "font-semibold text-gray-900",
-                        item.pinned && "text-base sm:text-lg",
-                    )}
-                >
-                    <span>{item.title}</span>
-                    {item.pinned && item.emoji && (
-                        <span className="ml-2">{item.emoji}</span>
-                    )}
-                </div>
-                {item.date && !item.pinned && (
+                <div className="font-semibold text-gray-900">{item.title}</div>
+                {item.date && (
                     <div className="mt-1 text-xs font-medium text-gray-400">
                         {formatNewsDate(item.date)}
                     </div>

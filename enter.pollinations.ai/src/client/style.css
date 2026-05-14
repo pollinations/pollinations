@@ -61,10 +61,6 @@
     --color-tier-pale: oklch(0.93 0.06 55);
     --color-tier-soft: oklch(0.83 0.13 55);
     --color-tier-deep: #7C3F1E;
-
-    /* Universal vars */
-    --color-surface-white-light: oklch(1 0 0 / 0.8);
-    --color-surface-white-dark: oklch(0.18 0.01 240 / 0.85);
 }
 
 /* ─── Layer 2: per-theme cascade (light defaults) ────────────── */
@@ -167,61 +163,6 @@
 
 }
 
-/* ─── Layer 2 dark overrides (skeletal — to be curated later) ── */
-html[data-mode="dark"] [data-theme="amber"] {
-    --theme-text-base:    var(--color-amber-100);
-    --theme-text-strong:  var(--color-amber-50);
-    --theme-bg-subtle:    oklch(from var(--color-amber-950) l c h / 0.3);
-    --theme-bg-active:    var(--color-amber-800);
-    --theme-bg-hover:     var(--color-amber-700);
-    --theme-border-idle:    var(--color-amber-700);
-}
-
-html[data-mode="dark"] [data-theme="blue"] {
-    --theme-text-base:    var(--color-blue-100);
-    --theme-text-strong:  var(--color-blue-50);
-    --theme-bg-subtle:    oklch(from var(--color-blue-950) l c h / 0.3);
-    --theme-bg-active:    var(--color-blue-800);
-    --theme-bg-hover:     var(--color-blue-700);
-    --theme-border-idle:    var(--color-blue-700);
-}
-
-html[data-mode="dark"] [data-theme="pink"] {
-    --theme-text-base:    var(--color-pink-100);
-    --theme-text-strong:  var(--color-pink-50);
-    --theme-bg-subtle:    oklch(from var(--color-pink-950) l c h / 0.3);
-    --theme-bg-active:    var(--color-pink-800);
-    --theme-bg-hover:     var(--color-pink-700);
-    --theme-border-idle:    var(--color-pink-700);
-}
-
-html[data-mode="dark"] [data-theme="teal"] {
-    --theme-text-base:    var(--color-teal-100);
-    --theme-text-strong:  var(--color-teal-50);
-    --theme-bg-subtle:    oklch(from var(--color-teal-950) l c h / 0.3);
-    --theme-bg-active:    var(--color-teal-800);
-    --theme-bg-hover:     var(--color-teal-700);
-    --theme-border-idle:    var(--color-teal-700);
-}
-
-html[data-mode="dark"] [data-theme="violet"] {
-    --theme-text-base:    var(--color-violet-100);
-    --theme-text-strong:  var(--color-violet-50);
-    --theme-bg-subtle:    oklch(from var(--color-violet-950) l c h / 0.3);
-    --theme-bg-active:    var(--color-violet-800);
-    --theme-bg-hover:     var(--color-violet-700);
-    --theme-border-idle:    var(--color-violet-700);
-}
-
-html[data-mode="dark"] [data-theme="green"] {
-    --theme-text-base:    var(--color-green-100);
-    --theme-text-strong:  var(--color-green-50);
-    --theme-bg-subtle:    oklch(from var(--color-green-950) l c h / 0.3);
-    --theme-bg-active:    var(--color-green-800);
-    --theme-bg-hover:     var(--color-green-700);
-    --theme-border-idle:    var(--color-green-700);
-}
-
 /* ─── Layer 2b: intent vars (semantic, theme-independent) ────── */
 :root {
     /* Danger — deeper than red-600 with reduced chroma so it reads as
@@ -238,11 +179,6 @@ html[data-mode="dark"] [data-theme="green"] {
     /* Paid + Tier intents reuse the canonical money colors above —
        Chip recipe = `bg-paid-soft text-paid-deep` (and same for tier).
        No duplicate intent vars; one source of truth lives in Layer 1. */
-}
-
-html[data-mode="dark"] {
-    --intent-danger-bg-light:    oklch(from var(--color-red-950) l c h / 0.4);
-    --intent-danger-text:        var(--color-red-300);
 }
 
 /* ─── Layer 3: Tailwind utility surface (`@theme inline`) ────── */
@@ -268,11 +204,7 @@ html[data-mode="dark"] {
 
 
 
-    --color-surface-white:             var(--color-surface-white-light);
-}
-
-html[data-mode="dark"] {
-    --color-surface-white: var(--color-surface-white-dark);
+    --color-surface-white:             oklch(1 0 0 / 0.8);
 }
 
 @layer base {

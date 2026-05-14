@@ -17,40 +17,17 @@ import { Switch, type SwitchStatus } from "../ui/switch.tsx";
 import { TabButton } from "../ui/tab-button.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 
-type Mode = "light" | "dark";
-
 /**
  * /internal/design — dev-only design system showcase.
  *
  * Each section documents one primitive in context. Every theme token is
  * surfaced through its primitive — there is no separate token catalog.
- * Use the header toggles to preview any theme + mode combination.
+ * Use the header toggle to preview any theme.
  *
  * Gated to DEV in `routes/internal.design.tsx`.
  */
 export const DesignShowcase: FC = () => {
-    const [mode, setMode] = useState<Mode>(() =>
-        document.documentElement.dataset.mode === "dark" ? "dark" : "light",
-    );
     const [themeOverride, setThemeOverride] = useState<ThemeName>("amber");
-
-    // Capture the mode that was on <html> before this page mounted, then
-    // restore it on unmount — otherwise navigating away leaves the rest of
-    // the app stuck in whatever mode the showcase toggle was last set to.
-    useEffect(() => {
-        const prev = document.documentElement.dataset.mode;
-        return () => {
-            if (prev === undefined) {
-                document.documentElement.removeAttribute("data-mode");
-            } else {
-                document.documentElement.dataset.mode = prev;
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        document.documentElement.dataset.mode = mode;
-    }, [mode]);
 
     useEffect(() => {
         document.documentElement.classList.add("dashboard-shell");
@@ -67,8 +44,6 @@ export const DesignShowcase: FC = () => {
             className="h-dvh overflow-y-auto bg-theme-bg-subtle text-theme-text-base"
         >
             <Header
-                mode={mode}
-                onModeChange={setMode}
                 themeOverride={themeOverride}
                 onThemeOverrideChange={setThemeOverride}
             />
@@ -93,18 +68,11 @@ export const DesignShowcase: FC = () => {
 // ─── Header ─────────────────────────────────────────────────
 
 type HeaderProps = {
-    mode: Mode;
-    onModeChange: (mode: Mode) => void;
     themeOverride: ThemeName;
     onThemeOverrideChange: (theme: ThemeName) => void;
 };
 
-const Header: FC<HeaderProps> = ({
-    mode,
-    onModeChange,
-    themeOverride,
-    onThemeOverrideChange,
-}) => (
+const Header: FC<HeaderProps> = ({ themeOverride, onThemeOverrideChange }) => (
     <header className="sticky top-0 z-10 border-b border-theme-border bg-theme-bg-subtle/90 px-6 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-[960px] flex-wrap items-end justify-between gap-x-6 gap-y-3">
             <div>
@@ -112,23 +80,15 @@ const Header: FC<HeaderProps> = ({
                     Design Showcase
                 </h1>
                 <p className="text-xs text-theme-text-soft">
-                    Single reference. Flip mode + theme to preview every state.
+                    Single reference. Flip theme to preview every state.
                 </p>
             </div>
-            <div className="flex flex-wrap items-end gap-6">
-                <ToggleGroup
-                    label="Mode"
-                    value={mode}
-                    options={["light", "dark"]}
-                    onChange={onModeChange}
-                />
-                <ToggleGroup
-                    label="Theme"
-                    value={themeOverride}
-                    options={themes}
-                    onChange={onThemeOverrideChange}
-                />
-            </div>
+            <ToggleGroup
+                label="Theme"
+                value={themeOverride}
+                options={themes}
+                onChange={onThemeOverrideChange}
+            />
         </div>
     </header>
 );
@@ -562,7 +522,7 @@ const SurfacesDemo: FC = () => (
                             inner · card · surface-white
                         </p>
                         <p className="mt-1 text-sm text-theme-text-soft">
-                            White inner block. Mode-aware (light/dark).
+                            White inner block, theme-independent.
                         </p>
                     </Surface>
                     <Surface variant="card-themed">

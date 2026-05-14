@@ -2,12 +2,12 @@
 // Activated via `?mockEarnings=<scenario>` (gated to dev + staging builds so it
 // can't reach prod), wired in:
 //   - src/client/routes/index.tsx (loader: paidWeek/tierWeek override)
-//   - src/client/components/usage-analytics/use-earnings-data.ts (fetch short-circuit)
+//   - src/client/components/activity/use-earnings-data.ts (fetch short-circuit)
 // Strip those call sites and delete this file once the design loop is finished.
 import type {
     DeveloperEarningsRow,
     EarningsFilterState,
-} from "../components/usage-analytics/use-earnings-data.ts";
+} from "../components/activity/use-earnings-data.ts";
 
 export type MockEarningsScenario =
     | "none"

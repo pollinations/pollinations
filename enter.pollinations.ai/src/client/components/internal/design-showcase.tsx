@@ -640,6 +640,50 @@ const SurfacesDemo: FC = () => (
 
 // ─── Tabs ───────────────────────────────────────────────────
 
+type SegmentOption = string;
+
+const SegmentItem: FC<{
+    active: boolean;
+    onClick: () => void;
+    basis: string;
+    children: ReactNode;
+}> = ({ active, onClick, basis, children }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        className={cn(
+            "-ml-px -mt-px grow border-l border-t border-theme-border px-4 pt-1.5 pb-2 text-center text-base capitalize leading-normal transition-colors",
+            basis,
+            active
+                ? "bg-theme-bg-active text-theme-text-strong"
+                : "text-theme-text-base hover:bg-theme-bg-active/40",
+        )}
+    >
+        {children}
+    </button>
+);
+
+const Segment: FC<{
+    options: readonly SegmentOption[];
+    active: SegmentOption;
+    onChange: (value: SegmentOption) => void;
+    itemBasis: string;
+}> = ({ options, active, onChange, itemBasis }) => (
+    <div className="@container inline-flex max-w-full flex-wrap items-stretch self-start overflow-hidden rounded-3xl border border-theme-border">
+        {options.map((option) => (
+            <SegmentItem
+                key={option}
+                active={active === option}
+                onClick={() => onChange(option)}
+                basis={itemBasis}
+            >
+                {option}
+            </SegmentItem>
+        ))}
+    </div>
+);
+
 const TabsDemo: FC = () => {
     const [segmentActive, setSegmentActive] = useState("day");
     const [pillActive, setPillActive] = useState("image");
@@ -652,32 +696,29 @@ const TabsDemo: FC = () => {
         "text",
         "embedding",
     ] as const;
-    const unifiedOptions = pillOptions;
-    const segmentItemClass =
-        "px-4 pt-1.5 pb-2 text-base leading-normal min-h-0 capitalize";
-    const segmentGroupClass =
-        "flex items-stretch [&>button]:rounded-none [&>button]:border-l-0 [&>button:first-child]:rounded-l-full [&>button:first-child]:border-l [&>button:last-child]:rounded-r-full";
     return (
         <Section
             title="Tabs"
-            caption="Three tab styles. Segment = connected pill with internal dividers (date selector). Pills = separate bold pills (model selector). Unified segment = all buttons inside one rounded pill — gaps form the dividers, so the layout wraps cleanly into multiple rows on narrow viewports without breaking the container."
+            caption="Two tab styles, one wrap-capable element. Segment = all buttons inside one rounded pill (used for both date and model selectors); the cascade keeps a minimum of items per row — 5 items wrap as 5 → 3+2 → fully stacked, never 4+1. Pills = separate bold pills, kept as an experimental variant."
         >
             <div className="flex flex-col gap-4 rounded-xl border border-theme-border bg-theme-bg-subtle p-4">
                 <Field label="segment · activity date selector">
-                    <div className={segmentGroupClass}>
-                        {segmentOptions.map((option) => (
-                            <TabButton
-                                key={option}
-                                active={segmentActive === option}
-                                onClick={() => setSegmentActive(option)}
-                                className={segmentItemClass}
-                            >
-                                {option}
-                            </TabButton>
-                        ))}
-                    </div>
+                    <Segment
+                        options={segmentOptions}
+                        active={segmentActive}
+                        onChange={setSegmentActive}
+                        itemBasis="basis-full @xs:basis-1/3"
+                    />
                 </Field>
-                <Field label="pills · model selector">
+                <Field label="segment · model selector (resize to cascade 5 → 3+2 → stacked)">
+                    <Segment
+                        options={pillOptions}
+                        active={unifiedActive}
+                        onChange={setUnifiedActive}
+                        itemBasis="basis-full @sm:basis-1/3 @lg:basis-1/5"
+                    />
+                </Field>
+                <Field label="pills · model selector (experimental)">
                     <div className="flex flex-wrap gap-1.5">
                         {pillOptions.map((option) => (
                             <TabButton
@@ -690,26 +731,6 @@ const TabsDemo: FC = () => {
                                     {option}
                                 </span>
                             </TabButton>
-                        ))}
-                    </div>
-                </Field>
-                <Field label="unified segment · model selector pill (resize to wrap)">
-                    <div className="inline-flex max-w-full flex-wrap items-stretch self-start overflow-hidden rounded-3xl border border-theme-border">
-                        {unifiedOptions.map((option) => (
-                            <button
-                                key={option}
-                                type="button"
-                                onClick={() => setUnifiedActive(option)}
-                                aria-pressed={unifiedActive === option}
-                                className={cn(
-                                    "-ml-px -mt-px grow border-l border-t border-theme-border px-4 pt-1.5 pb-2 text-center text-base capitalize leading-normal transition-colors",
-                                    unifiedActive === option
-                                        ? "bg-theme-bg-active text-theme-text-strong"
-                                        : "text-theme-text-base hover:bg-theme-bg-active/40",
-                                )}
-                            >
-                                {option}
-                            </button>
                         ))}
                     </div>
                 </Field>

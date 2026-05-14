@@ -15,7 +15,12 @@ export type ThemeName = (typeof themes)[number];
 // `danger`; Chip supports the four label intents (news/alpha/paid/tier).
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 
-export type DashboardPage = "updates" | "pollen" | "usage" | "keys" | "models";
+export type DashboardPage =
+    | "news-faq"
+    | "pollen"
+    | "activity"
+    | "keys"
+    | "models";
 
 export type DashboardTheme =
     | "amber"
@@ -31,19 +36,19 @@ export const DASHBOARD_NAV_ITEMS: {
     label: string;
     theme: ThemeName;
 }[] = [
-    { id: "updates", label: "News & FAQ", theme: "violet" },
+    { id: "news-faq", label: "News & FAQ", theme: "violet" },
     { id: "models", label: "Models", theme: "teal" },
     { id: "keys", label: "Keys", theme: "blue" },
     { id: "pollen", label: "Pollen", theme: "amber" },
-    { id: "usage", label: "Activity", theme: "pink" },
+    { id: "activity", label: "Activity", theme: "pink" },
 ];
 
 export const DASHBOARD_PAGES: DashboardPage[] = [
-    "updates",
+    "news-faq",
     "models",
     "keys",
     "pollen",
-    "usage",
+    "activity",
 ];
 
 // Page → theme lookup, derived from DASHBOARD_NAV_ITEMS.

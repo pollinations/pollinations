@@ -11,10 +11,10 @@ import {
     isDashboardPage,
 } from "../components/layout/dashboard-theme.ts";
 import { UpdatesPage } from "../components/layout/updates-page.tsx";
-import { Pricing } from "../components/pricing";
+import { Pricing } from "../components/models";
 
 const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
-    "updates",
+    "news-faq",
     "models",
 ]);
 
@@ -25,9 +25,10 @@ const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
 function pageFromHash(hash: string): DashboardPage {
     const page = hash.replace(/^#/, "");
     if (isDashboardPage(page) && SIGNED_OUT_PAGES.has(page)) return page;
-    if (page === "news" || page === "faq") return "updates";
+    if (page === "news" || page === "faq" || page === "updates")
+        return "news-faq";
     if (page === "pricing") return "models";
-    return "updates";
+    return "news-faq";
 }
 
 export const Route = createFileRoute("/sign-in")({
@@ -108,7 +109,7 @@ function RouteComponent() {
                 />
             }
         >
-            {activePage === "updates" && <UpdatesPage />}
+            {activePage === "news-faq" && <UpdatesPage />}
             {activePage === "models" && <Pricing />}
         </DashboardShell>
     );

@@ -5,7 +5,7 @@ import {
 } from "@shared/tier-config.ts";
 import type { FC, ReactNode } from "react";
 import { cn } from "@/util.ts";
-import { Tooltip } from "../pricing/Tooltip.tsx";
+import { Tooltip } from "../models/Tooltip.tsx";
 import { Surface } from "../ui/surface.tsx";
 
 const SeedTooltipContent = () => (

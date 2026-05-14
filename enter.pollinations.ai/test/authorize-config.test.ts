@@ -6,7 +6,7 @@ import {
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
-import { normalizeAllowedModelSelection } from "@/client/components/api-keys/model-selection.ts";
+import { normalizeAllowedModelSelection } from "@/client/components/keys/model-selection.ts";
 
 describe("normalizeAllowedModelSelection", () => {
     it("collapses fully selected model lists back to null", () => {

@@ -3,38 +3,38 @@ import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
-    type ApiKey,
-    ApiKeyList,
-    type CreateApiKey,
-    type CreateApiKeyResponse,
-} from "../components/api-keys";
-import {
-    BuyPollenPanel,
-    PollenBalance,
-    SidebarWallet,
-    TierPanel,
-} from "../components/balance";
-import { Button } from "../components/button.tsx";
-import { DashboardSection } from "../components/layout/dashboard-section.tsx";
-import {
-    type DashboardPage,
-    DashboardShell,
-} from "../components/layout/dashboard-shell.tsx";
-import {
-    type DashboardTheme,
-    dashboardThemeByPage,
-    isDashboardPage,
-} from "../components/layout/dashboard-theme.ts";
-import { UpdatesPage } from "../components/layout/updates-page.tsx";
-import { Pricing } from "../components/pricing";
-import {
     currentUsagePeriod,
     EarningsGraph,
     getEarningsEnabledApps,
     PeriodPicker,
     UsageGraph,
     type UsagePeriodSelection,
-} from "../components/usage-analytics";
+} from "../components/activity";
+import {
+    type ApiKey,
+    ApiKeyList,
+    type CreateApiKey,
+    type CreateApiKeyResponse,
+} from "../components/keys";
+import { DashboardSection } from "../components/layout/dashboard-section.tsx";
+import {
+    type DashboardPage,
+    DashboardShell,
+} from "../components/layout/dashboard-shell.tsx";
+import {
+    dashboardThemeByPage,
+    isDashboardPage,
+    type ThemeName,
+} from "../components/layout/dashboard-theme.ts";
+import { Models } from "../components/models";
+import { NewsFaq } from "../components/news-faq";
+import {
+    BuyPollenPanel,
+    PollenBalance,
+    SidebarWallet,
+    TierPanel,
+} from "../components/pollen";
+import { Button } from "../components/ui/button.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
@@ -43,14 +43,13 @@ function DownloadCsvButton({
     theme,
     onClick,
 }: {
-    theme: DashboardTheme;
+    theme: ThemeName;
     onClick: () => void;
 }) {
     return (
         <Button
             as="button"
-            color={theme}
-            weight="light"
+            theme={theme}
             onClick={onClick}
             className="flex items-center gap-1.5"
         >
@@ -78,13 +77,14 @@ function DownloadCsvButton({
 function pageFromHash(hash: string): DashboardPage {
     const page = hash.replace(/^#/, "");
     if (isDashboardPage(page)) return page;
-    if (page === "news" || page === "faq") return "updates";
+    if (page === "news" || page === "faq" || page === "updates")
+        return "news-faq";
     if (page === "buy-pollen") return "pollen";
     if (page === "pricing") return "models";
-    if (page === "earnings") return "usage";
-    // Kebab-case slugs are FAQ anchors — route to updates and let the
+    if (page === "earnings" || page === "usage") return "activity";
+    // Kebab-case slugs are FAQ anchors — route to news-faq and let the
     // FAQ component scroll/expand the matching question.
-    if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "updates";
+    if (page && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(page)) return "news-faq";
     return "pollen";
 }
 
@@ -312,7 +312,7 @@ function RouteComponent() {
                 />
             }
         >
-            {activePage === "updates" && <UpdatesPage />}
+            {activePage === "news-faq" && <NewsFaq />}
             {activePage === "pollen" && (
                 <div className="flex flex-col gap-6">
                     <DashboardSection title="Wallet" theme="amber" framed>
@@ -339,26 +339,25 @@ function RouteComponent() {
                     )}
                 </div>
             )}
-            {activePage === "usage" && (
+            {activePage === "activity" && (
                 <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-1">
                         <PeriodPicker
                             value={activityPeriod}
                             onChange={setActivityPeriod}
-                            theme={dashboardThemeByPage.usage}
+                            theme={dashboardThemeByPage.activity}
                         />
-                        <p className="text-[10px] text-gray-400">
+                        <p className="text-micro text-gray-400">
                             Data refreshes every hour. Times shown in UTC.
                         </p>
                     </div>
                     <UsageGraph
-                        tier={tierData?.active?.tier}
                         period={activityPeriod}
                         apiKeys={selectableKeys}
-                        theme={dashboardThemeByPage.usage}
+                        theme={dashboardThemeByPage.activity}
                         action={
                             <DownloadCsvButton
-                                theme={dashboardThemeByPage.usage}
+                                theme={dashboardThemeByPage.activity}
                                 onClick={downloadDetailedUsage}
                             />
                         }
@@ -367,7 +366,7 @@ function RouteComponent() {
                         <EarningsGraph
                             period={activityPeriod}
                             apps={earningsEnabledApps}
-                            theme={dashboardThemeByPage.usage}
+                            theme={dashboardThemeByPage.activity}
                         />
                     )}
                 </div>
@@ -381,7 +380,7 @@ function RouteComponent() {
                 />
             )}
             {activePage === "models" && (
-                <Pricing tierBalance={tierBalance} packBalance={packBalance} />
+                <Models tierBalance={tierBalance} packBalance={packBalance} />
             )}
         </DashboardShell>
     );

@@ -14,7 +14,7 @@ import { useScrollLock } from "../../hooks/use-scroll-lock.ts";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
-    dashboardThemeClasses,
+    dashboardThemeByPage,
 } from "./dashboard-theme.ts";
 import { User } from "./user.tsx";
 
@@ -177,7 +177,10 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     </div>
                 </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
+            <div
+                className="flex min-w-0 flex-1 flex-col md:ml-60"
+                data-theme={dashboardThemeByPage[activePage]}
+            >
                 <MobileHeader
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
@@ -250,7 +253,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         href={genDocsUrl()}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-[15px] font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
+                        className="flex items-center justify-between gap-2 rounded-full px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors hover:bg-white/60 hover:text-gray-950"
                     >
                         <span>API Reference</span>
                         <svg
@@ -282,7 +285,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                             menuItems={<AccountMenuLinks />}
                         />
                     ) : null)}
-                <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-[11px] leading-snug text-green-950/55">
+                <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-green-950/55">
                     <a
                         href="https://pollinations.ai/terms"
                         target="_blank"
@@ -308,7 +311,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         Refunds
                     </a>
                 </div>
-                <div className="px-3 text-[11px] leading-none text-green-950/45">
+                <div className="px-3 text-xs leading-none text-green-950/45">
                     © 2026 Myceli.AI
                 </div>
             </div>
@@ -326,20 +329,18 @@ const NavButton: FC<NavButtonProps> = ({ item, active, onClick }) => {
     return (
         <button
             type="button"
+            data-theme={item.theme}
             className={cn(
-                "flex items-center gap-2 rounded-full px-3 py-2 text-left text-[15px] font-medium transition-colors",
+                "flex items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-medium transition-colors",
                 active
-                    ? dashboardThemeClasses[item.theme].active
+                    ? "bg-theme-bg-active text-theme-text-strong"
                     : "text-gray-800 hover:bg-white/60 hover:text-gray-950",
             )}
             onClick={onClick}
             aria-current={active ? "page" : undefined}
         >
             <span
-                className={cn(
-                    "h-2.5 w-2.5 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]",
-                    dashboardThemeClasses[item.theme].dot,
-                )}
+                className="h-2.5 w-2.5 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] bg-theme-bg-hover"
                 aria-hidden="true"
             />
             {item.label}
@@ -427,12 +428,12 @@ const BrandChip: FC<{
         target="_blank"
         rel="noopener noreferrer"
         aria-label={label}
-        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pl-[7px] pr-[10px] text-[11px] font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
+        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-white/55 py-[3px] pl-[7px] pr-[10px] text-micro font-medium leading-none text-green-950/80 transition-colors hover:border-green-950/15 hover:bg-white hover:text-green-950"
     >
         <span className="h-[11px] w-[11px]">{icon}</span>
-        <span>{text}</span>
+        <span className="-translate-y-px">{text}</span>
         {count && (
-            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-[10px] text-green-950/55">
+            <span className="ml-0.5 border-l border-green-950/15 pl-1.5 font-mono text-micro text-green-950/55">
                 {count}
             </span>
         )}
@@ -467,7 +468,7 @@ const AccountIconLink: FC<{
         target="_blank"
         rel="noopener noreferrer"
         aria-label={ariaLabel ?? label}
-        className="flex items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
+        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 focus:outline-none focus-visible:bg-amber-300"
     >
         <span className="h-4 w-4 shrink-0" aria-hidden="true">
             {icon}

@@ -1,10 +1,16 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "@/util.ts";
-import { Panel } from "../ui/panel.tsx";
+import { Surface } from "../ui/surface.tsx";
 import {
     type DashboardTheme,
-    dashboardThemeClasses,
+    type ThemeName,
+    themes,
 } from "./dashboard-theme.ts";
+
+// `gray` is in DashboardTheme but not ThemeName; for the cascade it falls back
+// to the default `:root` (green). Drop it before passing to Surface.
+const asThemeName = (theme: DashboardTheme): ThemeName | undefined =>
+    themes.includes(theme as ThemeName) ? (theme as ThemeName) : undefined;
 
 type DashboardSectionProps = {
     title: string;
@@ -30,10 +36,8 @@ export const DashboardSection: FC<DashboardSectionProps> = ({
     <section id={id} className={cn("scroll-mt-10 space-y-2", className)}>
         <div className="flex flex-wrap items-center justify-between gap-3 px-1">
             <h2
-                className={cn(
-                    "text-left text-lg font-semibold sm:text-xl",
-                    dashboardThemeClasses[theme].title,
-                )}
+                data-theme={asThemeName(theme)}
+                className="text-left text-lg font-semibold sm:text-xl text-theme-text-strong"
             >
                 {title}
             </h2>
@@ -41,6 +45,12 @@ export const DashboardSection: FC<DashboardSectionProps> = ({
                 <div className={cn("shrink-0", actionClassName)}>{action}</div>
             )}
         </div>
-        {framed ? <Panel color={theme}>{children}</Panel> : children}
+        {framed ? (
+            <Surface variant="panel" theme={asThemeName(theme)}>
+                {children}
+            </Surface>
+        ) : (
+            children
+        )}
     </section>
 );

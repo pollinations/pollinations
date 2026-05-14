@@ -1,0 +1,34 @@
+{
+  "pr_number": 10936,
+  "title": "feat: add elevenlabs flash v2.5 tts model",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10936",
+  "merged_at": "2026-05-14T08:52:01Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fast talker",
+    "blurb": "We wired up ElevenLabs Flash v2.5 to the audio endpoint. It's incredibly fast, speaks 32 languages, and costs half as much as the v3 model. Talk is cheap, but now it's also quick.",
+    "summary": "Integrated the ElevenLabs Flash v2.5 text-to-speech model into the audio generation API.",
+    "impact": "Developers can now use the `elevenflash` model to generate ultra-low latency speech at half the credit cost of the standard ElevenLabs model.",
+    "keywords": [
+      "audio",
+      "tts",
+      "elevenlabs",
+      "models",
+      "api"
+    ],
+    "visual_concept": "The PR is about a fast, new text-to-speech model (ElevenLabs Flash v2.5). Key symbols: Lightning bolts, speed, audio waves, speakers, microphones. Characters: Polly the bee with headphones or a microphone, interacting with audio equipment.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny retro headphones and speaking into a vintage microphone, with glowing lime green (#ecf874) audio waves and small lightning bolts radiating outward. A chunky retro speaker sits nearby. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-14/PR-10936.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny retro headphones and speaking into a vintage microphone, with glowing lime green (#ecf874) audio waves and small lightning bolts radiating outward. A chunky retro speaker sits nearby. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-14T08:53:14.553286+00:00"
+}

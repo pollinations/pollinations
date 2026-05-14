@@ -1,3 +1,8 @@
+- **2026-05-13** – **🗺️ Public Roadmap** The homepage now clearly splits what just shipped from what's coming next, plus better visibility for developer earnings. [View site](https://hello.pollinations.ai)
+- **2026-05-13** – **📖 Docs Cleanup** We stripped the marketing fluff out of the Pollen FAQ. Just straight answers about wallets and tiers now.
+- **2026-05-13** – **💳 Pollen Packs** Updated the Pollen pack tier structures and fixed some Stripe checkout metadata. Buying credits is now slightly more robust.
+- **2026-05-13** – **🎵 Cheaper Audio** ElevenLabs text-to-speech is now cheaper to generate. Scribe has moved to the paid tier because servers aren't free. [View API](https://gen.pollinations.ai/docs)
+- **2026-05-13** – **🧹 Community Polish** Trimmed the copy on the community page and unstyled some links. Less reading, more building. [Join Discord](https://chat.pollinations.ai)
 - **2026-05-12** – **🛠️ Pollenforge-CLI** A community-built CLI tool for wrangling Markdown into formatted output just dropped in the showcase. [View repo](https://github.com/ganya002/Pollenforge-CLI/tree/main) <!-- app -->
 - **2026-05-12** – **🎲 Storytale** Take turns building a shared narrative with friends in this new multiplayer storytelling game powered by our text models. [Try it](https://storytale.net) <!-- app -->
 - **2026-05-11** – **📈 Developer Earnings Dashboard** Track the Pollen your apps are generating. Visualize daily earnings, active users, and top-performing apps directly in the [Dashboard](https://enter.pollinations.ai).

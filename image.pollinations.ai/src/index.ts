@@ -35,12 +35,16 @@ import { ImageParamsSchema, type ImageParams } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
 import {
+    buildPaymentRequirements,
     send402Challenge,
     settleAndStampHeader,
     verifyIncomingPayment,
     x402Enabled,
-    type VerifyOutcome,
 } from "./x402Handler.js";
+import type {
+    PaymentPayload,
+    PaymentRequirements,
+} from "x402/types";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
@@ -400,7 +404,10 @@ const checkCacheAndGenerate = async (
     // x402: if caller sent X-PAYMENT, verify before queueing. A valid payment
     // bypasses the per-IP rate limit; settlement happens after successful
     // generation so callers only pay for delivered images.
-    let paidContext: Extract<VerifyOutcome, { ok: true }> | null = null;
+    let paidContext: {
+        payload: PaymentPayload;
+        requirements: PaymentRequirements;
+    } | null = null;
     if (x402Enabled()) {
         const outcome = await verifyIncomingPayment(req);
         if (outcome?.ok === false) {
@@ -409,7 +416,10 @@ const checkCacheAndGenerate = async (
             return;
         }
         if (outcome && outcome.ok) {
-            paidContext = outcome;
+            paidContext = {
+                payload: outcome.payload,
+                requirements: outcome.requirements,
+            };
         }
     }
 

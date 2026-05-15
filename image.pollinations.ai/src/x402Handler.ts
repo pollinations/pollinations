@@ -1,87 +1,96 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { createPrivateKey } from "node:crypto";
 import { getAddress } from "viem";
-import {
-    HTTPFacilitatorClient,
-    decodePaymentSignatureHeader,
-    encodePaymentResponseHeader,
-} from "@x402/core/http";
-import type {
-    PaymentRequired,
-    PaymentRequirements,
-    PaymentPayload,
-} from "@x402/core/types";
+import { useFacilitator } from "x402/verify";
 import { facilitator as coinbaseFacilitator } from "@coinbase/x402";
+import { exact } from "x402/schemes";
+import {
+    processPriceToAtomicAmount,
+    findMatchingPaymentRequirements,
+    toJsonSafe,
+} from "x402/shared";
+import {
+    SupportedEVMNetworks,
+    settleResponseHeader,
+    type Network,
+    type PaymentPayload,
+    type PaymentRequirements,
+} from "x402/types";
 import debug from "debug";
 
 const log = debug("pollinations:x402");
 
-const X402_VERSION = 2;
-
-// Map our short network name to CAIP-2.
-const NETWORK_MAP: Record<string, { caip2: string; usdc: string }> = {
-    base: {
-        caip2: "eip155:8453",
-        usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    },
-    "base-sepolia": {
-        caip2: "eip155:84532",
-        usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-    },
-};
+const X402_VERSION = 1;
 
 const payToEnv = process.env.X402_PAY_TO;
-const networkKey = process.env.X402_NETWORK ?? "base-sepolia";
-const networkCfg = NETWORK_MAP[networkKey];
-// Price in atomic USDC (6 decimals). "100" = $0.0001.
-const priceAtomic = process.env.X402_PRICE_ATOMIC ?? "100";
+const network =
+    (process.env.X402_NETWORK as Network | undefined) ?? "base-sepolia";
+// Coinbase's mainnet facilitator rejects 100 atomic USDC ($0.0001) as an
+// invalid payload. Keep the default at the observed working minimum.
+const price = process.env.X402_PRICE ?? "0.001";
 const description =
     process.env.X402_DESCRIPTION ??
     "Pollinations legacy image — pay to bypass rate limit";
 
 // systemd's Environment= directive silently truncates multi-line values, so
-// PEM EC private keys can't be set directly. Accept the secret as base64 via
-// CDP_API_KEY_SECRET_B64 and inflate it here before the SDK reads env.
-if (
-    !process.env.CDP_API_KEY_SECRET &&
-    process.env.CDP_API_KEY_SECRET_B64
-) {
-    process.env.CDP_API_KEY_SECRET = Buffer.from(
+// PEM EC private keys (which contain literal newlines) can't be set directly.
+// Accept the secret as base64 via CDP_API_KEY_SECRET_B64 and inflate it here
+// before any reader of CDP_API_KEY_SECRET runs.
+if (!process.env.CDP_API_KEY_SECRET && process.env.CDP_API_KEY_SECRET_B64) {
+    const decodedSecret = Buffer.from(
         process.env.CDP_API_KEY_SECRET_B64,
         "base64",
     ).toString("utf8");
+    process.env.CDP_API_KEY_SECRET = decodedSecret.includes(
+        "-----BEGIN EC PRIVATE KEY-----",
+    )
+        ? createPrivateKey(decodedSecret)
+              .export({
+                  format: "pem",
+                  type: "pkcs8",
+              })
+              .toString()
+        : decodedSecret;
 }
 
 const hasCdpCreds =
     !!process.env.CDP_API_KEY_ID && !!process.env.CDP_API_KEY_SECRET;
-const needsCdpFacilitator = networkKey !== "base-sepolia";
+const needsCdpFacilitator = network !== "base-sepolia";
 
 let enabled = false;
 let payTo: `0x${string}` | null = null;
-let client: HTTPFacilitatorClient | null = null;
+let facilitator: ReturnType<typeof useFacilitator> | null = null;
+type FacilitatorConfig = NonNullable<Parameters<typeof useFacilitator>[0]>;
 
-if (!networkCfg) {
-    log(`[x402] disabled: unknown network ${networkKey}`);
-} else if (!payToEnv) {
-    log("[x402] X402_PAY_TO not set; x402 disabled");
-} else {
+if (payToEnv) {
     try {
         payTo = getAddress(payToEnv) as `0x${string}`;
-        if (needsCdpFacilitator && !hasCdpCreds) {
-            log(
-                "[x402] disabled: mainnet requires CDP_API_KEY_ID + CDP_API_KEY_SECRET",
-            );
+        // For Base mainnet (and any production network) we must use the
+        // authenticated Coinbase facilitator at api.cdp.coinbase.com. The
+        // default x402.org/facilitator is Base Sepolia-only and returns
+        // "unexpected_error" on mainnet payloads.
+        //
+        // CDP creds are read from CDP_API_KEY_ID + CDP_API_KEY_SECRET env.
+        // For testnet-only setups, leaving them unset still works against
+        // the free Sepolia facilitator below.
+        if (!needsCdpFacilitator && !hasCdpCreds) {
+            facilitator = useFacilitator();
+            log("[x402] facilitator: free x402.org (Sepolia only)");
         } else {
-            client = new HTTPFacilitatorClient(
-                needsCdpFacilitator ? coinbaseFacilitator : undefined,
+            facilitator = useFacilitator(
+                coinbaseFacilitator as unknown as FacilitatorConfig,
             );
-            enabled = true;
             log(
-                `[x402] enabled: payTo=${payTo} network=${networkCfg.caip2} price=${priceAtomic}`,
+                `[x402] facilitator: coinbase CDP (creds present=${hasCdpCreds})`,
             );
         }
+        enabled = true;
+        log(`[x402] enabled: payTo=${payTo} network=${network} price=${price}`);
     } catch (err) {
         log(`[x402] disabled: invalid X402_PAY_TO (${err})`);
     }
+} else {
+    log("[x402] X402_PAY_TO not set; x402 disabled");
 }
 
 export function x402Enabled(): boolean {
@@ -95,41 +104,59 @@ function resourceUrlFor(req: IncomingMessage): string {
         req.headers.host ??
         "image.pollinations.ai";
     const fwdProto = req.headers["x-forwarded-proto"];
-    const proto =
-        (Array.isArray(fwdProto) ? fwdProto[0] : fwdProto) ?? "https";
+    const proto = (Array.isArray(fwdProto) ? fwdProto[0] : fwdProto) ?? "https";
     return `${proto}://${host}${req.url ?? "/"}`;
 }
 
-export type PaymentPayloadV2 = PaymentPayload;
-
 export function buildPaymentRequirements(
     req: IncomingMessage,
-): PaymentRequirements {
-    if (!enabled || !payTo || !networkCfg) {
-        throw new Error("x402 not configured");
+): PaymentRequirements[] {
+    if (!enabled || !payTo) return [];
+    if (needsCdpFacilitator && !hasCdpCreds) {
+        throw new Error(
+            "x402 mainnet requires CDP_API_KEY_ID and CDP_API_KEY_SECRET on the origin",
+        );
     }
-    return {
-        scheme: "exact",
-        network: networkCfg.caip2 as `${string}:${string}`,
-        amount: priceAtomic,
-        asset: getAddress(networkCfg.usdc),
-        payTo: getAddress(payTo),
-        maxTimeoutSeconds: 60,
-        extra: null,
+    if (!SupportedEVMNetworks.includes(network)) {
+        throw new Error(`Unsupported x402 network: ${network}`);
+    }
+    const atomic = processPriceToAtomicAmount(price, network);
+    if ("error" in atomic) throw new Error(atomic.error);
+    const { maxAmountRequired, asset } = atomic;
+    if (
+        needsCdpFacilitator &&
+        network === "base" &&
+        BigInt(maxAmountRequired) < 1000n
+    ) {
+        throw new Error(
+            "X402_PRICE too low for Coinbase facilitator on Base; use at least 0.001 USDC",
+        );
+    }
+    const eip712Asset = asset as typeof asset & {
+        eip712: Record<string, string>;
     };
-}
 
-function buildChallenge(req: IncomingMessage, errorMsg: string): PaymentRequired {
-    return {
-        x402Version: X402_VERSION,
-        error: errorMsg,
-        resource: {
-            url: resourceUrlFor(req),
+    return [
+        {
+            scheme: "exact",
+            network,
+            maxAmountRequired,
+            resource: resourceUrlFor(req) as `${string}://${string}`,
             description,
             mimeType: "image/jpeg",
+            payTo: getAddress(payTo),
+            maxTimeoutSeconds: 60,
+            asset: getAddress(asset.address),
+            outputSchema: {
+                input: {
+                    type: "http",
+                    method: (req.method ?? "GET").toUpperCase(),
+                    discoverable: true,
+                },
+            },
+            extra: eip712Asset.eip712,
         },
-        accepts: [buildPaymentRequirements(req)],
-    };
+    ];
 }
 
 export type VerifyOutcome =
@@ -139,12 +166,12 @@ export type VerifyOutcome =
 export async function verifyIncomingPayment(
     req: IncomingMessage,
 ): Promise<VerifyOutcome | null> {
-    if (!enabled || !client) return null;
+    if (!enabled || !facilitator) return null;
     const header = req.headers["x-payment"];
     const paymentHeader = Array.isArray(header) ? header[0] : header;
     if (!paymentHeader) return null;
 
-    let requirements: PaymentRequirements;
+    let requirements: PaymentRequirements[];
     try {
         requirements = buildPaymentRequirements(req);
     } catch (err) {
@@ -164,7 +191,8 @@ export async function verifyIncomingPayment(
 
     let decoded: PaymentPayload;
     try {
-        decoded = decodePaymentSignatureHeader(paymentHeader);
+        decoded = exact.evm.decodePayment(paymentHeader);
+        decoded.x402Version = X402_VERSION;
     } catch (err) {
         return {
             ok: false,
@@ -175,20 +203,34 @@ export async function verifyIncomingPayment(
                     err instanceof Error
                         ? err.message
                         : "Invalid or malformed payment header",
-                accepts: [requirements],
+                accepts: toJsonSafe(requirements),
+            },
+        };
+    }
+
+    const selected = findMatchingPaymentRequirements(requirements, decoded);
+    if (!selected) {
+        return {
+            ok: false,
+            status: 402,
+            body: {
+                x402Version: X402_VERSION,
+                error: "Unable to find matching payment requirements",
+                accepts: toJsonSafe(requirements),
             },
         };
     }
 
     try {
         log(
-            "[x402] verify start: scheme=%s network=%s amount=%s asset=%s",
-            requirements.scheme,
-            requirements.network,
-            requirements.amount,
-            requirements.asset,
+            "[x402] verify start: payer=%s amount=%s asset=%s network=%s nonce=%s",
+            (decoded as any)?.payload?.authorization?.from,
+            (decoded as any)?.payload?.authorization?.value,
+            selected.asset,
+            selected.network,
+            (decoded as any)?.payload?.authorization?.nonce,
         );
-        const result = await client.verify(decoded, requirements);
+        const result = await facilitator.verify(decoded, selected);
         log("[x402] verify result: %o", result);
         if (!result.isValid) {
             return {
@@ -196,8 +238,8 @@ export async function verifyIncomingPayment(
                 status: 402,
                 body: {
                     x402Version: X402_VERSION,
-                    error: result.invalidReason ?? "verification_failed",
-                    accepts: [requirements],
+                    error: result.invalidReason,
+                    accepts: toJsonSafe(requirements),
                     payer: result.payer,
                 },
             };
@@ -213,12 +255,12 @@ export async function verifyIncomingPayment(
                     err instanceof Error
                         ? err.message
                         : "Payment verification failed",
-                accepts: [requirements],
+                accepts: toJsonSafe(requirements),
             },
         };
     }
 
-    return { ok: true, payload: decoded, requirements };
+    return { ok: true, payload: decoded, requirements: selected };
 }
 
 export function send402Challenge(
@@ -226,22 +268,23 @@ export function send402Challenge(
     res: ServerResponse,
     errorMsg: string,
 ): void {
-    let body: object;
+    let accepts: object[] = [];
+    let error = errorMsg;
     try {
-        body = buildChallenge(req, errorMsg) as unknown as object;
+        accepts = toJsonSafe(buildPaymentRequirements(req)) as object[];
     } catch (err) {
-        log("[x402] failed to build challenge: %o", err);
-        body = {
-            x402Version: X402_VERSION,
-            error:
-                err instanceof Error
-                    ? err.message
-                    : "x402 misconfigured on server",
-            accepts: [],
-        };
+        log(`failed to build accepts: ${err}`);
+        error =
+            err instanceof Error ? err.message : "x402 misconfigured on server";
     }
     res.writeHead(402, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(body));
+    res.end(
+        JSON.stringify({
+            x402Version: X402_VERSION,
+            error,
+            accepts,
+        }),
+    );
 }
 
 export async function settleAndStampHeader(
@@ -250,10 +293,10 @@ export async function settleAndStampHeader(
     requirements: PaymentRequirements,
     headers: Record<string, string | number>,
 ): Promise<{ ok: true } | { ok: false; status: 402; body: object }> {
-    if (!client) return { ok: true };
+    if (!facilitator) return { ok: true };
     try {
         log("[x402] settle start");
-        const settleResp = await client.settle(payload, requirements);
+        const settleResp = await facilitator.settle(payload, requirements);
         log("[x402] settle result: %o", settleResp);
         if (!settleResp.success) {
             return {
@@ -261,15 +304,14 @@ export async function settleAndStampHeader(
                 status: 402,
                 body: {
                     x402Version: X402_VERSION,
-                    error: settleResp.errorReason ?? "settlement_failed",
-                    accepts: [requirements],
+                    error: settleResp.errorReason,
+                    accepts: toJsonSafe([requirements]),
                 },
             };
         }
-        headers["X-PAYMENT-RESPONSE"] = encodePaymentResponseHeader(settleResp);
+        headers["X-PAYMENT-RESPONSE"] = settleResponseHeader(settleResp);
         return { ok: true };
     } catch (err) {
-        log("[x402] settle threw: %o", err);
         return {
             ok: false,
             status: 402,
@@ -279,7 +321,7 @@ export async function settleAndStampHeader(
                     err instanceof Error
                         ? err.message
                         : "Payment settlement failed",
-                accepts: [requirements],
+                accepts: toJsonSafe([requirements]),
             },
         };
     }

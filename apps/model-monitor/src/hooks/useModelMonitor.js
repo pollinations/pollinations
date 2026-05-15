@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AUDIO_SERVICES } from "../../../../shared/registry/audio.ts";
+import { EMBEDDING_SERVICES } from "../../../../shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "../../../../shared/registry/image.ts";
 import { TEXT_SERVICES } from "../../../../shared/registry/text.ts";
 
@@ -14,6 +15,7 @@ const MODEL_ENDPOINTS = {
     image: "https://gen.pollinations.ai/image/models",
     text: "https://gen.pollinations.ai/text/models",
     audio: "https://gen.pollinations.ai/audio/models",
+    embedding: "https://gen.pollinations.ai/embeddings/models",
 };
 
 // Minutes parameter for the parameterized model_health pipe
@@ -50,6 +52,8 @@ function registryServicesToModels(services, endpointType) {
         output_modalities: service.outputModalities,
         paid_only: service.paidOnly,
         hidden: Boolean(service.hidden),
+        provider: service.provider,
+        brand: service.brand,
         type: resolveDisplayType(
             { output_modalities: service.outputModalities },
             endpointType,
@@ -62,6 +66,7 @@ const ALL_REGISTERED_MODELS = [
     ...registryServicesToModels(TEXT_SERVICES, "text"),
     ...registryServicesToModels(IMAGE_SERVICES, "image"),
     ...registryServicesToModels(AUDIO_SERVICES, "audio"),
+    ...registryServicesToModels(EMBEDDING_SERVICES, "embedding"),
 ];
 
 const VISIBLE_REGISTERED_MODELS = ALL_REGISTERED_MODELS.filter(
@@ -149,6 +154,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         image: null,
         text: null,
         audio: null,
+        embedding: null,
     });
     const tinybirdConfigured = !!TINYBIRD_PUBLIC_READ_TOKEN;
     const intervalRef = useRef(null);
@@ -183,6 +189,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
             image: results.image?.ok ?? null,
             text: results.text?.ok ?? null,
             audio: results.audio?.ok ?? null,
+            embedding: results.embedding?.ok ?? null,
         });
 
         const allModels = Object.entries(results)

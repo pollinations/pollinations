@@ -86,45 +86,6 @@ function createApiError(
     return error;
 }
 
-type ContentFilterEntry = { filtered?: unknown; severity?: unknown };
-type ContentFilterResults = Record<string, ContentFilterEntry | undefined>;
-
-// Azure OpenAI returns prompt_filter_results / content_filter_results when its
-// safety pipeline blocks input or output. Returns the first category that was
-// flagged, or null if none were.
-function detectContentFilterCategory(
-    data: ChatCompletion,
-    choice: CompletionChoice,
-): string | null {
-    const candidates: ContentFilterResults[] = [];
-    const promptFilterResults = (data as { prompt_filter_results?: unknown[] })
-        .prompt_filter_results;
-    if (Array.isArray(promptFilterResults)) {
-        for (const entry of promptFilterResults) {
-            const results = (
-                entry as { content_filter_results?: ContentFilterResults }
-            ).content_filter_results;
-            if (results) candidates.push(results);
-        }
-    }
-    const choiceFilterResults = (
-        choice as { content_filter_results?: ContentFilterResults }
-    ).content_filter_results;
-    if (choiceFilterResults) candidates.push(choiceFilterResults);
-
-    // Only treat a category as blocking when Azure explicitly set filtered=true.
-    // severity is annotated even when nothing is blocked (e.g. filtered:false,
-    // severity:"low"), so trusting it alone misclassifies upstream failures as
-    // client errors.
-    for (const result of candidates) {
-        for (const [category, entry] of Object.entries(result)) {
-            if (!entry || typeof entry !== "object") continue;
-            if (entry.filtered === true) return category;
-        }
-    }
-    return null;
-}
-
 function isAbortLikeError(error: unknown): boolean {
     return (
         error instanceof DOMException &&
@@ -328,23 +289,16 @@ export async function genericOpenAIClient(
         if (!hasContent && !hasToolCalls && !hasTokens) {
             const finishReason =
                 originalChoice.finish_reason || formattedChoice.finish_reason;
-            const filterCategory = detectContentFilterCategory(
-                data,
-                originalChoice,
-            );
 
-            if (finishReason === "content_filter" || filterCategory) {
+            if (finishReason === "content_filter") {
                 errorLog(
-                    `[${requestId}] Content filter blocked completion: model=%s category=%s`,
+                    `[${requestId}] Content filter blocked completion: model=%s`,
                     modelName,
-                    filterCategory || "unspecified",
                 );
                 throw createApiError(
                     { status: 400, statusText: "Bad Request" },
                     {
-                        message: filterCategory
-                            ? `Request blocked by upstream content filter (${filterCategory})`
-                            : "Request blocked by upstream content filter",
+                        message: "Request blocked by upstream content filter",
                         model: modelName,
                     },
                     modelName,

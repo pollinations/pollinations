@@ -1,0 +1,35 @@
+{
+  "pr_number": 10975,
+  "title": "unhide seedream and seedream-pro",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10975",
+  "merged_at": "2026-05-15T15:50:10Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Removes `hidden: true` from `seedream` (v4.0) and `seedream-pro` (v4.5 Pro) in `shared/registry/image.ts`.\n\nBoth legacy models are still actively used by paying customers — `seedream-pro` did 1,186 successful calls in the past 7 days and `seedream` did 223, but neither appears in `/image/models` or the dashboard, so discovery is broken. Pricing/cost unchanged (50% margin on both). `paidOnly: true` stays.\n\n`seedream5` (v5.0 Lite) remains the recommended current model; this just makes the legacy SKUs visible to users who want the older photoreal look.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Classic dreams",
+    "blurb": "We've unhidden the legacy Seedream v4.0 and v4.5 Pro models in the API and dashboard. If you prefer that classic photoreal look, they're back on the menu.",
+    "summary": "The legacy `seedream` (v4.0) and `seedream-pro` (v4.5 Pro) image models are now visible in the `/image/models` endpoint and dashboard.",
+    "impact": "Users who prefer the older photoreal aesthetic can now easily discover and select these models, which remain available for paid tiers.",
+    "keywords": [
+      "models",
+      "image",
+      "seedream",
+      "api",
+      "dashboard"
+    ],
+    "visual_concept": "The pollinations bee mascot uncovering two glowing, classic seeds (representing the legacy seedream models) in a cozy garden shed.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot in a warm garden shed, wiping dust off two glowing, classic seeds on a wooden workbench. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10975.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot in a warm garden shed, wiping dust off two glowing, classic seeds on a wooden workbench. Soft lime green (#ecf874) and warm cream gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-15T15:51:10.573961+00:00"
+}

@@ -34,7 +34,17 @@ import {
 import { ImageParamsSchema, type ImageParams } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
-import { attachLegacyHandler, handleX402, x402Enabled } from "./x402Handler.js";
+import {
+    buildPaymentRequirements,
+    send402Challenge,
+    settleAndStampHeader,
+    verifyIncomingPayment,
+    x402Enabled,
+} from "./x402Handler.js";
+import type {
+    PaymentPayload,
+    PaymentRequirements,
+} from "x402/types";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
@@ -390,6 +400,28 @@ const checkCacheAndGenerate = async (
 
     let timingInfo = [];
 
+    // x402: if caller sent X-PAYMENT, verify before queueing. A valid payment
+    // bypasses the per-IP rate limit; settlement happens after successful
+    // generation so callers only pay for delivered images.
+    let paidContext: {
+        payload: PaymentPayload;
+        requirements: PaymentRequirements;
+    } | null = null;
+    if (x402Enabled()) {
+        const outcome = await verifyIncomingPayment(req);
+        if (outcome && !outcome.ok) {
+            res.writeHead(outcome.status, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(outcome.body));
+            return;
+        }
+        if (outcome && outcome.ok) {
+            paidContext = {
+                payload: outcome.payload,
+                requirements: outcome.requirements,
+            };
+        }
+    }
+
     try {
         // Call authentication ONCE and reuse the result
         const authResult = await handleAuthentication(req, requestId, logAuth);
@@ -459,6 +491,12 @@ const checkCacheAndGenerate = async (
                 queueConfig = QUEUE_CONFIG;
                 logAuth(`${modelName} model (anonymous) - 120 second interval, cap=1`);
 
+                // x402 paid callers skip the anonymous queue entirely.
+                if (paidContext) {
+                    progress.setProcessing(requestId);
+                    return generateImage();
+                }
+
                 // Use the shared queue utility - everyone goes through queue
                 const result = await enqueue(
                     req,
@@ -518,6 +556,24 @@ const checkCacheAndGenerate = async (
         logApi("===============================");
         Object.assign(headers, trackingHeaders);
 
+        // x402: settle the payment now that we have a valid image to return.
+        // If settle fails, return 402 instead of the image — caller didn't pay.
+        if (paidContext) {
+            const settleResult = await settleAndStampHeader(
+                res,
+                paidContext.payload,
+                paidContext.requirements,
+                headers as Record<string, string | number>,
+            );
+            if (!settleResult.ok) {
+                res.writeHead(settleResult.status, {
+                    "Content-Type": "application/json",
+                });
+                res.end(JSON.stringify(settleResult.body));
+                return;
+            }
+        }
+
         res.writeHead(200, headers);
         res.write(bufferAndMaturity.buffer);
         res.end();
@@ -542,6 +598,17 @@ const checkCacheAndGenerate = async (
                   : statusCode === 429
                     ? "Too Many Requests"
                     : "Internal Server Error";
+
+        // x402: rate-limited (429) requests without a valid payment get a
+        // 402 challenge so x402 clients can pay to bypass on the same URL.
+        if (statusCode === 429 && !paidContext && x402Enabled()) {
+            send402Challenge(
+                req,
+                res,
+                error.message || "Rate limit exceeded — pay to bypass",
+            );
+            return;
+        }
 
         // Return error images instead of JSON - more useful for embedded images
         // 429 = rate limit image, other errors = generic error image
@@ -608,24 +675,12 @@ const checkCacheAndGenerate = async (
     }
 };
 
-attachLegacyHandler(checkCacheAndGenerate);
-
 // Modify the server creation to set CORS headers for all requests
 const server = http.createServer((req, res) => {
     setCORSHeaders(res);
 
     const parsedUrl = parse(req.url, true);
     const pathname = parsedUrl.pathname;
-
-    if (pathname.startsWith("/paid/prompt/")) {
-        if (!x402Enabled()) {
-            res.writeHead(503, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "x402 not configured" }));
-            return;
-        }
-        handleX402(req, res);
-        return;
-    }
 
     if (
         pathname ===

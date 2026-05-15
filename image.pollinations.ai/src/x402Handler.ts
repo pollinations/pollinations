@@ -32,8 +32,10 @@ const NETWORK_MAP: Record<string, { caip2: string; usdc: string }> = {
 const payToEnv = process.env.X402_PAY_TO;
 const networkKey = process.env.X402_NETWORK ?? "base-sepolia";
 const networkCfg = NETWORK_MAP[networkKey];
-// Price in atomic USDC (6 decimals). "100" = $0.0001.
-const priceAtomic = process.env.X402_PRICE_ATOMIC ?? "100";
+// Price in atomic USDC (6 decimals). Coinbase's mainnet facilitator rejects
+// 100 ($0.0001) as invalid_payload; observed working minimum is "1000"
+// ($0.001).
+const priceAtomic = process.env.X402_PRICE_ATOMIC ?? "1000";
 const description =
     process.env.X402_DESCRIPTION ??
     "Pollinations legacy image — pay to bypass rate limit";

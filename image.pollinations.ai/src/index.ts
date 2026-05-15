@@ -113,10 +113,11 @@ const incrementIpViolations = (ip: string) => {
 const setCORSHeaders = (res: ServerResponse) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-PAYMENT");
     res.setHeader("Access-Control-Expose-Headers", [
         "X-Auth-Status",
         "X-Auth-Reason",
+        "X-PAYMENT-RESPONSE",
         "X-Debug-Token",
         "X-Debug-Token-Source",
         "X-Debug-Referrer",

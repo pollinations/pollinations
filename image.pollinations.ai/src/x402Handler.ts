@@ -27,6 +27,9 @@ const price = process.env.X402_PRICE ?? "$0.0001";
 const description =
     process.env.X402_DESCRIPTION ??
     "Pollinations legacy image — pay to bypass rate limit";
+const hasCdpCreds =
+    !!process.env.CDP_API_KEY_ID && !!process.env.CDP_API_KEY_SECRET;
+const needsCdpFacilitator = network !== "base-sepolia";
 
 let enabled = false;
 let payTo: `0x${string}` | null = null;
@@ -44,9 +47,7 @@ if (payToEnv) {
         // CDP creds are read from CDP_API_KEY_ID + CDP_API_KEY_SECRET env.
         // For testnet-only setups, leaving them unset still works against
         // the free Sepolia facilitator below.
-        const hasCdpCreds =
-            !!process.env.CDP_API_KEY_ID && !!process.env.CDP_API_KEY_SECRET;
-        if (network === "base-sepolia" && !hasCdpCreds) {
+        if (!needsCdpFacilitator && !hasCdpCreds) {
             facilitator = useFacilitator();
             log("[x402] facilitator: free x402.org (Sepolia only)");
         } else {
@@ -86,6 +87,11 @@ export function buildPaymentRequirements(
     req: IncomingMessage,
 ): PaymentRequirements[] {
     if (!enabled || !payTo) return [];
+    if (needsCdpFacilitator && !hasCdpCreds) {
+        throw new Error(
+            "x402 mainnet requires CDP_API_KEY_ID and CDP_API_KEY_SECRET on the origin",
+        );
+    }
     if (!SupportedEVMNetworks.includes(network)) {
         throw new Error(`Unsupported x402 network: ${network}`);
     }
@@ -229,16 +235,18 @@ export function send402Challenge(
     errorMsg: string,
 ): void {
     let accepts: object[] = [];
+    let error = errorMsg;
     try {
         accepts = toJsonSafe(buildPaymentRequirements(req)) as object[];
     } catch (err) {
         log(`failed to build accepts: ${err}`);
+        error = err instanceof Error ? err.message : "x402 misconfigured on server";
     }
     res.writeHead(402, { "Content-Type": "application/json" });
     res.end(
         JSON.stringify({
             x402Version: X402_VERSION,
-            error: errorMsg,
+            error,
             accepts,
         }),
     );

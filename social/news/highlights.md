@@ -1,3 +1,4 @@
+- **2026-05-14** – **⚡ ElevenLabs Flash v2.5** Ultra-low latency speech generation is here. Pass `elevenflash` to the [Audio API](https://gen.pollinations.ai/audio/{text}) for faster text-to-speech at half the credit cost.
 - **2026-05-13** – **🗺️ Public Roadmap** The homepage now clearly splits what just shipped from what's coming next, plus better visibility for developer earnings. [View site](https://hello.pollinations.ai)
 - **2026-05-13** – **📖 Docs Cleanup** We stripped the marketing fluff out of the Pollen FAQ. Just straight answers about wallets and tiers now.
 - **2026-05-13** – **💳 Pollen Packs** Updated the Pollen pack tier structures and fixed some Stripe checkout metadata. Buying credits is now slightly more robust.

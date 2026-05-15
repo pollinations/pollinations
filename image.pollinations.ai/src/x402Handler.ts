@@ -23,8 +23,11 @@ const log = debug("pollinations:x402");
 const X402_VERSION = 1;
 
 const payToEnv = process.env.X402_PAY_TO;
-const network = (process.env.X402_NETWORK as Network | undefined) ?? "base-sepolia";
-const price = process.env.X402_PRICE ?? "$0.0001";
+const network =
+    (process.env.X402_NETWORK as Network | undefined) ?? "base-sepolia";
+// Coinbase's mainnet facilitator rejects 100 atomic USDC ($0.0001) as an
+// invalid payload. Keep the default at the observed working minimum.
+const price = process.env.X402_PRICE ?? "0.001";
 const description =
     process.env.X402_DESCRIPTION ??
     "Pollinations legacy image — pay to bypass rate limit";
@@ -33,10 +36,7 @@ const description =
 // PEM EC private keys (which contain literal newlines) can't be set directly.
 // Accept the secret as base64 via CDP_API_KEY_SECRET_B64 and inflate it here
 // before any reader of CDP_API_KEY_SECRET runs.
-if (
-    !process.env.CDP_API_KEY_SECRET &&
-    process.env.CDP_API_KEY_SECRET_B64
-) {
+if (!process.env.CDP_API_KEY_SECRET && process.env.CDP_API_KEY_SECRET_B64) {
     const decodedSecret = Buffer.from(
         process.env.CDP_API_KEY_SECRET_B64,
         "base64",
@@ -44,10 +44,12 @@ if (
     process.env.CDP_API_KEY_SECRET = decodedSecret.includes(
         "-----BEGIN EC PRIVATE KEY-----",
     )
-        ? createPrivateKey(decodedSecret).export({
-              format: "pem",
-              type: "pkcs8",
-          }).toString()
+        ? createPrivateKey(decodedSecret)
+              .export({
+                  format: "pem",
+                  type: "pkcs8",
+              })
+              .toString()
         : decodedSecret;
 }
 
@@ -102,8 +104,7 @@ function resourceUrlFor(req: IncomingMessage): string {
         req.headers.host ??
         "image.pollinations.ai";
     const fwdProto = req.headers["x-forwarded-proto"];
-    const proto =
-        (Array.isArray(fwdProto) ? fwdProto[0] : fwdProto) ?? "https";
+    const proto = (Array.isArray(fwdProto) ? fwdProto[0] : fwdProto) ?? "https";
     return `${proto}://${host}${req.url ?? "/"}`;
 }
 
@@ -122,6 +123,15 @@ export function buildPaymentRequirements(
     const atomic = processPriceToAtomicAmount(price, network);
     if ("error" in atomic) throw new Error(atomic.error);
     const { maxAmountRequired, asset } = atomic;
+    if (
+        needsCdpFacilitator &&
+        network === "base" &&
+        BigInt(maxAmountRequired) < 1000n
+    ) {
+        throw new Error(
+            "X402_PRICE too low for Coinbase facilitator on Base; use at least 0.001 USDC",
+        );
+    }
     const eip712Asset = asset as typeof asset & {
         eip712: Record<string, string>;
     };
@@ -264,7 +274,8 @@ export function send402Challenge(
         accepts = toJsonSafe(buildPaymentRequirements(req)) as object[];
     } catch (err) {
         log(`failed to build accepts: ${err}`);
-        error = err instanceof Error ? err.message : "x402 misconfigured on server";
+        error =
+            err instanceof Error ? err.message : "x402 misconfigured on server";
     }
     res.writeHead(402, { "Content-Type": "application/json" });
     res.end(
@@ -307,7 +318,9 @@ export async function settleAndStampHeader(
             body: {
                 x402Version: X402_VERSION,
                 error:
-                    err instanceof Error ? err.message : "Payment settlement failed",
+                    err instanceof Error
+                        ? err.message
+                        : "Payment settlement failed",
                 accepts: toJsonSafe([requirements]),
             },
         };

@@ -19,14 +19,14 @@ Voice-driven image editor. Click-and-hold on image, speak edit, release. Red rin
 
 ## marker
 
-Single gesture chooses shape by path length on `pointerup`:
+Single gesture, freehand only. No ring fallback — if the user doesn't move the mouse the edit is **global** (no marker on the image, plain prompt).
 
-- **Click (path < 3% min(w,h))** → thin red outline ring at click point. Radius ~5% of min(w,h), stroke ~18% of radius, alpha 0.35.
-- **Drag (path ≥ 3% min(w,h))** → freehand red stroke live-painted during pointermove. Width ~1.5% of min(w,h), alpha 0.20, round caps/joins. Pin position = path centroid.
-- Canvas reset to source image immediately after snapshotting the annotation, so a stray stroke from gesture N never leaks into the snapshot for gesture N+1.
+- **No movement (path < 3% min(w,h))** → no marker painted; prompt is sent as-is, model interprets the text as a global instruction. Pin sits at the click point.
+- **Drag (path ≥ 3% min(w,h))** → freehand pure stroke in current `markerColor` (red / black / white, switchable via swatch picker in the toolbar). Width ~1.5% of min(w,h), fully opaque, `lineCap: round`, `lineJoin: round`. Pin position = path bbox `(maxX, midY)` so the label sits just past the rightmost mark point.
+- Canvas reset to source image at the *start* of each pointerdown so stray strokes from gesture N never leak into the snapshot for gesture N+1. Marker stays visible from pointerup through edit completion.
 - No fill, no text label, no multi-stroke aggregation. One pointerdown→up = one edit. Pointerdown is blocked while a previous edit is still running.
 - Speech and drawing run concurrently; pointerup ends both.
-- Prompt: `The red markings indicate the area the prompt is referring to. Prompt: {text}. Output without red markings.` Marker is deictic, `Prompt:` label disambiguates which part is the instruction, suppression suffix prevents bleed-through. Model decides whether instruction is local-edit / replace / reframe / reference. See `buildEditPrompt(text)`.
+- Prompts: marked → `"The {color} markings indicate the area the prompt is referring to. Prompt: {text}. Output without {color} markings."`; unmarked → bare `{text}`. See `buildEditPrompt(text, marked, color)`.
 
 ## STT config (scribe, working)
 

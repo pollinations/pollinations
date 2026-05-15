@@ -1,5 +1,5 @@
 import {
-    getActivePriceDefinition,
+    getPriceDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { type FC, type MouseEvent, useState } from "react";
@@ -58,7 +58,7 @@ const DEFAULT_DIR: Record<SortKey, SortDir> = {
 };
 
 const getInputSortValue = (modelName: string): number => {
-    const p = getActivePriceDefinition(modelName as ModelName);
+    const p = getPriceDefinition(modelName as ModelName);
     if (!p) return -1;
     const sum =
         (p.promptTextTokens ?? 0) +
@@ -71,7 +71,7 @@ const getInputSortValue = (modelName: string): number => {
 };
 
 const getOutputSortValue = (modelName: string): number => {
-    const p = getActivePriceDefinition(modelName as ModelName);
+    const p = getPriceDefinition(modelName as ModelName);
     if (!p) return -1;
     const sum =
         (p.completionTextTokens ?? 0) +

@@ -58,28 +58,10 @@ export const AUDIO_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-02-07").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                // ElevenLabs pricing: 1 credit = 1 character, ~$0.18 per 1000 chars
-                completionAudioTokens: 0.18 / 1000,
-            },
-            {
-                date: new Date("2026-05-13").getTime(),
-                // ElevenLabs Scale plan: 1 credit/char * $0.166/1k credits
-                completionAudioTokens: 0.166 / 1000,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionAudioTokens: 0.00027, // $0.27 per 1000 chars
-            },
-            {
-                date: new Date("2026-05-13").getTime(),
-                completionAudioTokens: (0.166 * 1.5) / 1000, // cost x 1.5
-            },
-        ],
+        cost: {
+            // ElevenLabs Scale plan: 1 credit/char * $0.166/1k credits
+            completionAudioTokens: 0.166 / 1000,
+        },
         description:
             "ElevenLabs v3 TTS - Expressive voices with emotions & audio tags",
         inputModalities: ["text"],
@@ -95,19 +77,10 @@ export const AUDIO_SERVICES = {
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-05-14").getTime(),
-        cost: [
-            {
-                date: new Date("2026-05-13").getTime(),
-                // ElevenLabs Scale plan: Flash v2.5 = 0.5 credit/char
-                completionAudioTokens: 0.083 / 1000,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-05-13").getTime(),
-                completionAudioTokens: (0.083 * 1.5) / 1000, // cost x 1.5
-            },
-        ],
+        cost: {
+            // ElevenLabs Scale plan: Flash v2.5 = 0.5 credit/char
+            completionAudioTokens: 0.083 / 1000,
+        },
         description:
             "ElevenLabs Flash v2.5 - Fast, low-latency TTS (~75ms, 32 languages)",
         inputModalities: ["text"],
@@ -123,20 +96,11 @@ export const AUDIO_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                // ElevenLabs Music: billed by output audio duration
-                // ~$0.30 per minute ≈ $0.005 per second (Scale plan pricing)
-                completionAudioSeconds: 0.005,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-02-07").getTime(),
-                completionAudioSeconds: 0.0075, // $0.45 per minute
-            },
-        ],
+        cost: {
+            // ElevenLabs Music: billed by output audio duration
+            // ~$0.30 per minute ≈ $0.005 per second (Scale plan pricing)
+            completionAudioSeconds: 0.005,
+        },
         description:
             "ElevenLabs Music - Generate studio-grade music from text prompts",
         inputModalities: ["text"],
@@ -150,13 +114,10 @@ export const AUDIO_SERVICES = {
         brand: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
-        cost: [
-            {
-                date: new Date("2026-02-08").getTime(),
-                // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
-                promptAudioSeconds: 0.0000445,
-            },
-        ],
+        cost: {
+            // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
+            promptAudioSeconds: 0.0000445,
+        },
         description: "Whisper Large V3 - Speech to text transcription",
         inputModalities: ["audio"],
         outputModalities: ["text"],
@@ -169,24 +130,10 @@ export const AUDIO_SERVICES = {
         brand: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-13").getTime(),
-        cost: [
-            {
-                date: new Date("2026-02-13").getTime(),
-                // ElevenLabs Scribe: $0.40/hour = $0.0001111/sec
-                promptAudioSeconds: 0.0001111,
-            },
-            {
-                date: new Date("2026-05-13").getTime(),
-                // ElevenLabs Scale plan: Scribe batch $0.22/hour
-                promptAudioSeconds: 0.22 / 3600,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-05-13").getTime(),
-                promptAudioSeconds: (0.22 * 1.5) / 3600, // cost x 1.5 = $0.33/hour
-            },
-        ],
+        cost: {
+            // ElevenLabs Scale plan: Scribe batch $0.22/hour
+            promptAudioSeconds: 0.22 / 3600,
+        },
         description:
             "ElevenLabs Scribe v2 - Speech to Text (90+ languages, diarization)",
         inputModalities: ["audio"],
@@ -199,13 +146,10 @@ export const AUDIO_SERVICES = {
         brand: "AssemblyAI",
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
-        cost: [
-            {
-                date: new Date("2026-05-02").getTime(),
-                // AssemblyAI Universal-2: $0.15/hour
-                promptAudioSeconds: 0.15 / 3600,
-            },
-        ],
+        cost: {
+            // AssemblyAI Universal-2: $0.15/hour
+            promptAudioSeconds: 0.15 / 3600,
+        },
         description:
             "AssemblyAI Universal-2 - Fast speech to text with 99-language support",
         inputModalities: ["audio"],
@@ -223,13 +167,11 @@ export const AUDIO_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-05-02").getTime(),
-                // AssemblyAI Universal-3 Pro: $0.21/hour
-                promptAudioSeconds: 0.21 / 3600,
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            // AssemblyAI Universal-3 Pro: $0.21/hour
+            promptAudioSeconds: 0.21 / 3600,
+        },
         description:
             "AssemblyAI Universal-3 Pro - High-accuracy speech to text with prompting",
         inputModalities: ["audio"],
@@ -242,12 +184,9 @@ export const AUDIO_SERVICES = {
         brand: "ACE-Step",
         category: "audio",
         addedDate: new Date("2026-04-03").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-02").getTime(),
-                completionAudioSeconds: 0.0005,
-            },
-        ],
+        cost: {
+            completionAudioSeconds: 0.0005,
+        },
         description:
             "ACE-Step 1.5 Turbo - Fast open-source music generation with lyrics support",
         inputModalities: ["text"],
@@ -261,19 +200,11 @@ export const AUDIO_SERVICES = {
         brand: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
-        cost: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                // DashScope Qwen3-TTS-Flash: ~$0.013 per 1K characters
-                completionAudioTokens: 0.013 / 1000,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                completionAudioTokens: 0.0000195, // $0.0195 per 1000 chars
-            },
-        ],
+        priceMultiplier: 1.5,
+        cost: {
+            // DashScope Qwen3-TTS-Flash: ~$0.013 per 1K characters
+            completionAudioTokens: 0.013 / 1000,
+        },
         description: "Qwen3-TTS Flash - Fast multilingual text-to-speech",
         inputModalities: ["text"],
         outputModalities: ["audio"],
@@ -286,18 +217,10 @@ export const AUDIO_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
-        cost: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                completionAudioTokens: 0.013 / 1000,
-            },
-        ],
-        price: [
-            {
-                date: new Date("2026-04-19").getTime(),
-                completionAudioTokens: 0.013 / 1000,
-            },
-        ],
+        priceMultiplier: 1,
+        cost: {
+            completionAudioTokens: 0.013 / 1000,
+        },
         description: "Qwen3-TTS Instruct - TTS with emotion & style control",
         inputModalities: ["text"],
         outputModalities: ["audio"],

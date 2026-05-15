@@ -1,0 +1,910 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`effective cost and price per model — snapshot 1`] = `
+{
+  "acestep": {
+    "cost": {
+      "completionAudioSeconds": 0.0005,
+    },
+    "price": {
+      "completionAudioSeconds": 0.0005,
+    },
+  },
+  "claude": {
+    "cost": {
+      "completionTextTokens": 0.0000165,
+      "promptCachedTokens": 3.3e-7,
+      "promptTextTokens": 0.0000032999999999999997,
+    },
+    "price": {
+      "completionTextTokens": 0.0000165,
+      "promptCachedTokens": 3.3e-7,
+      "promptTextTokens": 0.0000032999999999999997,
+    },
+  },
+  "claude-fast": {
+    "cost": {
+      "completionTextTokens": 0.0000055,
+      "promptCachedTokens": 1.1e-7,
+      "promptTextTokens": 0.0000011,
+    },
+    "price": {
+      "completionTextTokens": 0.0000055,
+      "promptCachedTokens": 1.1e-7,
+      "promptTextTokens": 0.0000011,
+    },
+  },
+  "claude-large": {
+    "cost": {
+      "completionTextTokens": 0.0000275,
+      "promptCachedTokens": 5.5e-7,
+      "promptTextTokens": 0.0000055,
+    },
+    "price": {
+      "completionTextTokens": 0.0000275,
+      "promptCachedTokens": 5.5e-7,
+      "promptTextTokens": 0.0000055,
+    },
+  },
+  "claude-opus-4.7": {
+    "cost": {
+      "completionTextTokens": 0.0000275,
+      "promptCachedTokens": 5.5e-7,
+      "promptTextTokens": 0.0000055,
+    },
+    "price": {
+      "completionTextTokens": 0.0000275,
+      "promptCachedTokens": 5.5e-7,
+      "promptTextTokens": 0.0000055,
+    },
+  },
+  "deepseek": {
+    "cost": {
+      "completionTextTokens": 2.52e-7,
+      "promptCachedTokens": 2.52e-8,
+      "promptTextTokens": 1.26e-7,
+    },
+    "price": {
+      "completionTextTokens": 2.52e-7,
+      "promptCachedTokens": 2.52e-8,
+      "promptTextTokens": 1.26e-7,
+    },
+  },
+  "deepseek-pro": {
+    "cost": {
+      "completionTextTokens": 0.00000348,
+      "promptCachedTokens": 1.4e-7,
+      "promptTextTokens": 0.00000174,
+    },
+    "price": {
+      "completionTextTokens": 0.00000348,
+      "promptCachedTokens": 1.4e-7,
+      "promptTextTokens": 0.00000174,
+    },
+  },
+  "elevenflash": {
+    "cost": {
+      "completionAudioTokens": 0.000083,
+    },
+    "price": {
+      "completionAudioTokens": 0.0001245,
+    },
+  },
+  "elevenlabs": {
+    "cost": {
+      "completionAudioTokens": 0.000166,
+    },
+    "price": {
+      "completionAudioTokens": 0.000249,
+    },
+  },
+  "elevenmusic": {
+    "cost": {
+      "completionAudioSeconds": 0.005,
+    },
+    "price": {
+      "completionAudioSeconds": 0.0075,
+    },
+  },
+  "flux": {
+    "cost": {
+      "completionImageTokens": 0.001,
+    },
+    "price": {
+      "completionImageTokens": 0.001,
+    },
+  },
+  "gemini": {
+    "cost": {
+      "completionTextTokens": 0.000003,
+      "promptAudioTokens": 5e-7,
+      "promptCachedTokens": 5.0000000000000004e-8,
+      "promptTextTokens": 5e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.0000045,
+      "promptAudioTokens": 7.5e-7,
+      "promptCachedTokens": 7.5e-8,
+      "promptTextTokens": 7.5e-7,
+    },
+  },
+  "gemini-2": {
+    "cost": {
+      "promptAudioTokens": 0.0000065,
+      "promptImageTokens": 4.5000000000000003e-7,
+      "promptTextTokens": 2.0000000000000002e-7,
+      "promptVideoTokens": 0.000012,
+    },
+    "price": {
+      "promptAudioTokens": 0.00000975,
+      "promptImageTokens": 6.75e-7,
+      "promptTextTokens": 3e-7,
+      "promptVideoTokens": 0.000018,
+    },
+  },
+  "gemini-fast": {
+    "cost": {
+      "completionTextTokens": 4.0000000000000003e-7,
+      "promptAudioTokens": 3e-7,
+      "promptCachedTokens": 1e-8,
+      "promptTextTokens": 1.0000000000000001e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptAudioTokens": 9e-7,
+      "promptCachedTokens": 3e-8,
+      "promptTextTokens": 3e-7,
+    },
+  },
+  "gemini-flash-lite-3.1": {
+    "cost": {
+      "completionTextTokens": 0.0000015,
+      "promptAudioTokens": 5e-7,
+      "promptCachedTokens": 2.5000000000000002e-8,
+      "promptTextTokens": 2.5e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.00000225,
+      "promptAudioTokens": 7.5e-7,
+      "promptCachedTokens": 3.75e-8,
+      "promptTextTokens": 3.75e-7,
+    },
+  },
+  "gemini-large": {
+    "cost": {
+      "completionTextTokens": 0.000012,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000018,
+      "promptCachedTokens": 3e-7,
+      "promptTextTokens": 0.000003,
+    },
+  },
+  "gemini-search": {
+    "cost": {
+      "completionTextTokens": 8.000000000000001e-7,
+      "promptAudioTokens": 2.0000000000000002e-7,
+      "promptCachedTokens": 2e-8,
+      "promptTextTokens": 2.0000000000000002e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptAudioTokens": 3e-7,
+      "promptCachedTokens": 3e-8,
+      "promptTextTokens": 3e-7,
+    },
+  },
+  "gemma": {
+    "cost": {
+      "completionTextTokens": 3.4000000000000003e-7,
+      "promptTextTokens": 7e-8,
+    },
+    "price": {
+      "completionTextTokens": 3.4000000000000003e-7,
+      "promptTextTokens": 7e-8,
+    },
+  },
+  "glm": {
+    "cost": {
+      "completionTextTokens": 0.0000032000000000000003,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000032000000000000003,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptTextTokens": 0.000001,
+    },
+  },
+  "gpt-5.4-mini": {
+    "cost": {
+      "completionTextTokens": 0.0000045,
+      "promptCachedTokens": 7.5e-8,
+      "promptTextTokens": 7.5e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.0000045,
+      "promptCachedTokens": 7.5e-8,
+      "promptTextTokens": 7.5e-7,
+    },
+  },
+  "gpt-5.5": {
+    "cost": {
+      "completionTextTokens": 0.00003,
+      "promptCachedTokens": 5e-7,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionTextTokens": 0.00003,
+      "promptCachedTokens": 5e-7,
+      "promptTextTokens": 0.000005,
+    },
+  },
+  "gpt-image-2": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+  },
+  "gptimage": {
+    "cost": {
+      "completionImageTokens": 0.000008,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptImageTokens": 0.0000025,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionImageTokens": 0.000008,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptImageTokens": 0.0000025,
+      "promptTextTokens": 0.000002,
+    },
+  },
+  "gptimage-large": {
+    "cost": {
+      "completionImageTokens": 0.000032,
+      "completionTextTokens": 0.00001,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.000032,
+      "completionTextTokens": 0.00001,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+  },
+  "grok": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+  },
+  "grok-imagine": {
+    "cost": {
+      "completionImageTokens": 0.02,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+    },
+  },
+  "grok-imagine-pro": {
+    "cost": {
+      "completionImageTokens": 0.07,
+    },
+    "price": {
+      "completionImageTokens": 0.105,
+    },
+  },
+  "grok-large": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 2.0000000000000002e-7,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+  },
+  "grok-video-pro": {
+    "cost": {
+      "completionVideoSeconds": 0.05,
+    },
+    "price": {
+      "completionVideoSeconds": 0.075,
+    },
+  },
+  "kimi": {
+    "cost": {
+      "completionTextTokens": 0.000003,
+      "promptCachedTokens": 1.0000000000000001e-7,
+      "promptTextTokens": 6e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.000003,
+      "promptCachedTokens": 1.0000000000000001e-7,
+      "promptTextTokens": 6e-7,
+    },
+  },
+  "kimi-k2.6": {
+    "cost": {
+      "completionTextTokens": 0.000004,
+      "promptCachedTokens": 1.6e-7,
+      "promptTextTokens": 9.499999999999999e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.000004,
+      "promptCachedTokens": 1.6e-7,
+      "promptTextTokens": 9.499999999999999e-7,
+    },
+  },
+  "klein": {
+    "cost": {
+      "completionImageTokens": 0.01,
+    },
+    "price": {
+      "completionImageTokens": 0.01,
+    },
+  },
+  "kontext": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.04,
+    },
+  },
+  "llama": {
+    "cost": {
+      "completionTextTokens": 7.1e-7,
+      "promptTextTokens": 7.1e-7,
+    },
+    "price": {
+      "completionTextTokens": 7.1e-7,
+      "promptTextTokens": 7.1e-7,
+    },
+  },
+  "llama-maverick": {
+    "cost": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 2.5e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 2.5e-7,
+    },
+  },
+  "llama-scout": {
+    "cost": {
+      "completionTextTokens": 3e-7,
+      "promptTextTokens": 8e-8,
+    },
+    "price": {
+      "completionTextTokens": 3e-7,
+      "promptTextTokens": 8e-8,
+    },
+  },
+  "ltx-2": {
+    "cost": {
+      "completionVideoSeconds": 0.005,
+    },
+    "price": {
+      "completionVideoSeconds": 0.005,
+    },
+  },
+  "midijourney": {
+    "cost": {
+      "completionTextTokens": 0.0000055,
+      "promptCachedTokens": 1.1e-7,
+      "promptTextTokens": 0.0000011,
+    },
+    "price": {
+      "completionTextTokens": 0.0000055,
+      "promptCachedTokens": 1.1e-7,
+      "promptTextTokens": 0.0000011,
+    },
+  },
+  "midijourney-large": {
+    "cost": {
+      "completionTextTokens": 0.0000275,
+      "promptCachedTokens": 5.5e-7,
+      "promptTextTokens": 0.0000055,
+    },
+    "price": {
+      "completionTextTokens": 0.0000275,
+      "promptCachedTokens": 5.5e-7,
+      "promptTextTokens": 0.0000055,
+    },
+  },
+  "minimax": {
+    "cost": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 6e-8,
+      "promptTextTokens": 3e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 6e-8,
+      "promptTextTokens": 3e-7,
+    },
+  },
+  "mistral": {
+    "cost": {
+      "completionTextTokens": 2.0000000000000002e-7,
+      "promptTextTokens": 7.5e-8,
+    },
+    "price": {
+      "completionTextTokens": 2.0000000000000002e-7,
+      "promptTextTokens": 7.5e-8,
+    },
+  },
+  "mistral-4": {
+    "cost": {
+      "completionTextTokens": 6e-7,
+      "promptTextTokens": 1.5e-7,
+    },
+    "price": {
+      "completionTextTokens": 6e-7,
+      "promptTextTokens": 1.5e-7,
+    },
+  },
+  "mistral-large": {
+    "cost": {
+      "completionTextTokens": 0.0000015,
+      "promptCachedTokens": 5.0000000000000004e-8,
+      "promptTextTokens": 5e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.0000015,
+      "promptCachedTokens": 5.0000000000000004e-8,
+      "promptTextTokens": 5e-7,
+    },
+  },
+  "nanobanana": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptImageTokens": 3e-7,
+      "promptTextTokens": 3e-7,
+    },
+    "price": {
+      "completionImageTokens": 0.00003,
+      "promptImageTokens": 3e-7,
+      "promptTextTokens": 3e-7,
+    },
+  },
+  "nanobanana-2": {
+    "cost": {
+      "completionImageTokens": 0.00006,
+      "completionTextTokens": 0.000003,
+      "promptImageTokens": 5e-7,
+      "promptTextTokens": 5e-7,
+    },
+    "price": {
+      "completionImageTokens": 0.00006,
+      "completionTextTokens": 0.000003,
+      "promptImageTokens": 5e-7,
+      "promptTextTokens": 5e-7,
+    },
+  },
+  "nanobanana-pro": {
+    "cost": {
+      "completionImageTokens": 0.00012,
+      "completionTextTokens": 0.000012,
+      "promptImageTokens": 0.00000125,
+      "promptTextTokens": 0.00000125,
+    },
+    "price": {
+      "completionImageTokens": 0.00012,
+      "completionTextTokens": 0.000012,
+      "promptImageTokens": 0.00000125,
+      "promptTextTokens": 0.00000125,
+    },
+  },
+  "nova": {
+    "cost": {
+      "completionTextTokens": 0.00000275,
+      "promptTextTokens": 3.3e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.00000275,
+      "promptTextTokens": 3.3e-7,
+    },
+  },
+  "nova-canvas": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.04,
+    },
+  },
+  "nova-fast": {
+    "cost": {
+      "completionTextTokens": 1.4e-7,
+      "promptTextTokens": 3.5e-8,
+    },
+    "price": {
+      "completionTextTokens": 1.4e-7,
+      "promptTextTokens": 3.5e-8,
+    },
+  },
+  "nova-reel": {
+    "cost": {
+      "completionVideoSeconds": 0.08,
+    },
+    "price": {
+      "completionVideoSeconds": 0.08,
+    },
+  },
+  "openai": {
+    "cost": {
+      "completionTextTokens": 0.00000125,
+      "promptCachedTokens": 2e-8,
+      "promptTextTokens": 2.0000000000000002e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.00000125,
+      "promptCachedTokens": 2e-8,
+      "promptTextTokens": 2.0000000000000002e-7,
+    },
+  },
+  "openai-3-large": {
+    "cost": {
+      "promptTextTokens": 1.3e-7,
+    },
+    "price": {
+      "promptTextTokens": 1.95e-7,
+    },
+  },
+  "openai-3-small": {
+    "cost": {
+      "promptTextTokens": 2e-8,
+    },
+    "price": {
+      "promptTextTokens": 3e-8,
+    },
+  },
+  "openai-audio": {
+    "cost": {
+      "completionAudioTokens": 0.00002,
+      "completionTextTokens": 0.0000024,
+      "promptAudioTokens": 0.00001,
+      "promptTextTokens": 6e-7,
+    },
+    "price": {
+      "completionAudioTokens": 0.00002,
+      "completionTextTokens": 0.0000024,
+      "promptAudioTokens": 0.00001,
+      "promptTextTokens": 6e-7,
+    },
+  },
+  "openai-audio-large": {
+    "cost": {
+      "completionAudioTokens": 0.00008,
+      "completionTextTokens": 0.00001,
+      "promptAudioTokens": 0.00004,
+      "promptTextTokens": 0.0000025,
+    },
+    "price": {
+      "completionAudioTokens": 0.00008,
+      "completionTextTokens": 0.00001,
+      "promptAudioTokens": 0.00004,
+      "promptTextTokens": 0.0000025,
+    },
+  },
+  "openai-fast": {
+    "cost": {
+      "completionTextTokens": 4.0000000000000003e-7,
+      "promptCachedTokens": 5e-9,
+      "promptTextTokens": 5.0000000000000004e-8,
+    },
+    "price": {
+      "completionTextTokens": 4.0000000000000003e-7,
+      "promptCachedTokens": 5e-9,
+      "promptTextTokens": 5.0000000000000004e-8,
+    },
+  },
+  "openai-large": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptCachedTokens": 2.5e-7,
+      "promptTextTokens": 0.0000025,
+    },
+    "price": {
+      "completionTextTokens": 0.000015,
+      "promptCachedTokens": 2.5e-7,
+      "promptTextTokens": 0.0000025,
+    },
+  },
+  "p-image": {
+    "cost": {
+      "completionImageTokens": 0.005,
+    },
+    "price": {
+      "completionImageTokens": 0.0075,
+    },
+  },
+  "p-image-edit": {
+    "cost": {
+      "completionImageTokens": 0.01,
+    },
+    "price": {
+      "completionImageTokens": 0.015,
+    },
+  },
+  "p-video": {
+    "cost": {
+      "completionVideoSeconds": 0.024,
+    },
+    "price": {
+      "completionVideoSeconds": 0.036,
+    },
+  },
+  "perplexity-fast": {
+    "cost": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+  },
+  "perplexity-reasoning": {
+    "cost": {
+      "completionTextTokens": 0.000008,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000008,
+      "promptTextTokens": 0.000002,
+    },
+  },
+  "polly": {
+    "cost": {},
+    "price": {},
+  },
+  "qwen-coder": {
+    "cost": {
+      "completionTextTokens": 2.2e-7,
+      "promptTextTokens": 6e-8,
+    },
+    "price": {
+      "completionTextTokens": 2.2e-7,
+      "promptTextTokens": 6e-8,
+    },
+  },
+  "qwen-coder-large": {
+    "cost": {
+      "completionTextTokens": 0.0000015,
+      "promptTextTokens": 3e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.00000225,
+      "promptTextTokens": 4.5e-7,
+    },
+  },
+  "qwen-image": {
+    "cost": {
+      "completionImageTokens": 0.03,
+    },
+    "price": {
+      "completionImageTokens": 0.045,
+    },
+  },
+  "qwen-large": {
+    "cost": {
+      "completionTextTokens": 0.000003,
+      "promptCachedTokens": 1.0000000000000001e-7,
+      "promptTextTokens": 5e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.000003,
+      "promptCachedTokens": 1.0000000000000001e-7,
+      "promptTextTokens": 5e-7,
+    },
+  },
+  "qwen-safety": {
+    "cost": {
+      "completionTextTokens": 1e-8,
+      "promptTextTokens": 1e-8,
+    },
+    "price": {
+      "completionTextTokens": 1e-8,
+      "promptTextTokens": 1e-8,
+    },
+  },
+  "qwen-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000013,
+    },
+    "price": {
+      "completionAudioTokens": 0.0000195,
+    },
+  },
+  "qwen-tts-instruct": {
+    "cost": {
+      "completionAudioTokens": 0.000013,
+    },
+    "price": {
+      "completionAudioTokens": 0.000013,
+    },
+  },
+  "qwen-vision": {
+    "cost": {
+      "completionTextTokens": 5.2e-7,
+      "promptTextTokens": 1.3e-7,
+    },
+    "price": {
+      "completionTextTokens": 5.2e-7,
+      "promptTextTokens": 1.3e-7,
+    },
+  },
+  "qwen-vision-pro": {
+    "cost": {
+      "completionTextTokens": 0.0000026,
+      "promptTextTokens": 2.6e-7,
+    },
+    "price": {
+      "completionTextTokens": 0.0000026,
+      "promptTextTokens": 2.6e-7,
+    },
+  },
+  "scribe": {
+    "cost": {
+      "promptAudioSeconds": 0.00006111111111111111,
+    },
+    "price": {
+      "promptAudioSeconds": 0.00006111111111111111,
+    },
+  },
+  "seedance": {
+    "cost": {
+      "completionVideoTokens": 0.0000018000000000000001,
+    },
+    "price": {
+      "completionVideoTokens": 0.0000027,
+    },
+  },
+  "seedance-2.0": {
+    "cost": {
+      "completionVideoSeconds": 0.18,
+    },
+    "price": {
+      "completionVideoSeconds": 0.27,
+    },
+  },
+  "seedance-pro": {
+    "cost": {
+      "completionVideoTokens": 0.000001,
+    },
+    "price": {
+      "completionVideoTokens": 0.0000015,
+    },
+  },
+  "seedream": {
+    "cost": {
+      "completionImageTokens": 0.03,
+    },
+    "price": {
+      "completionImageTokens": 0.045,
+    },
+  },
+  "seedream-pro": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.06,
+    },
+  },
+  "seedream5": {
+    "cost": {
+      "completionImageTokens": 0.035,
+    },
+    "price": {
+      "completionImageTokens": 0.0525,
+    },
+  },
+  "universal-2": {
+    "cost": {
+      "promptAudioSeconds": 0.000041666666666666665,
+    },
+    "price": {
+      "promptAudioSeconds": 0.000041666666666666665,
+    },
+  },
+  "universal-3-pro": {
+    "cost": {
+      "promptAudioSeconds": 0.00005833333333333333,
+    },
+    "price": {
+      "promptAudioSeconds": 0.00005833333333333333,
+    },
+  },
+  "veo": {
+    "cost": {
+      "completionVideoSeconds": 0.15,
+    },
+    "price": {
+      "completionVideoSeconds": 0.15,
+    },
+  },
+  "wan": {
+    "cost": {
+      "completionAudioSeconds": 0.05,
+      "completionVideoSeconds": 0.05,
+    },
+    "price": {
+      "completionAudioSeconds": 0.075,
+      "completionVideoSeconds": 0.075,
+    },
+  },
+  "wan-fast": {
+    "cost": {
+      "completionAudioSeconds": 0.01,
+      "completionVideoSeconds": 0.01,
+    },
+    "price": {
+      "completionAudioSeconds": 0.015,
+      "completionVideoSeconds": 0.015,
+    },
+  },
+  "wan-image": {
+    "cost": {
+      "completionImageTokens": 0.035,
+    },
+    "price": {
+      "completionImageTokens": 0.0525,
+    },
+  },
+  "wan-image-pro": {
+    "cost": {
+      "completionImageTokens": 0.075,
+    },
+    "price": {
+      "completionImageTokens": 0.1125,
+    },
+  },
+  "whisper": {
+    "cost": {
+      "promptAudioSeconds": 0.0000445,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000445,
+    },
+  },
+  "zimage": {
+    "cost": {
+      "completionImageTokens": 0.002,
+    },
+    "price": {
+      "completionImageTokens": 0.002,
+    },
+  },
+}
+`;

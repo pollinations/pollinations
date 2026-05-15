@@ -4,8 +4,8 @@ import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
     calculateCost,
     calculatePrice,
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
     resolveModelName,
 } from "@shared/registry/registry.js";
 import { TEXT_SERVICES } from "@shared/registry/text";
@@ -55,19 +55,21 @@ test("gemini-fast can expose a higher public price than provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         promptCachedTokens: 1_000_000,
+        promptAudioTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const priceDefinition = getActivePriceDefinition("gemini-fast");
+    const priceDefinition = getPriceDefinition("gemini-fast");
     const geminiFastCost = calculateCost("gemini-fast", usage);
     const geminiFastPrice = calculatePrice("gemini-fast", usage);
 
     expect(priceDefinition).toMatchObject({
         promptTextTokens: 0.0000003,
         promptCachedTokens: 0.00000003,
+        promptAudioTokens: 0.0000009,
         completionTextTokens: 0.0000012,
     });
-    expect(geminiFastCost.totalCost).toBeCloseTo(0.51, 8);
-    expect(geminiFastPrice.totalPrice).toBeCloseTo(1.53, 8);
+    expect(geminiFastCost.totalCost).toBeCloseTo(0.81, 8);
+    expect(geminiFastPrice.totalPrice).toBeCloseTo(2.43, 8);
     expect(geminiFastPrice.totalPrice).toBeGreaterThan(
         geminiFastCost.totalCost,
     );

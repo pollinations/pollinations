@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
-    getActivePriceDefinition,
     getModelDefinition,
+    getPriceDefinition,
     getVisibleAudioModels,
     getVisibleEmbeddingModels,
     getVisibleImageModels,
@@ -46,16 +46,14 @@ function toFixedPoint(n: number): string {
  */
 export function getModelInfo(modelName: ModelName): ModelInfo {
     const service = getModelDefinition(modelName);
-    const priceDefinition = getActivePriceDefinition(modelName);
+    const priceDefinition = getPriceDefinition(modelName);
     if (!priceDefinition) {
         throw new Error(`No price definition found for model: ${modelName}`);
     }
-    // Filter out date, zero, and undefined values from price definition
-    const { date: _date, ...priceFields } = priceDefinition;
     const pricing: Record<string, string> & { currency: "pollen" } = {
         currency: "pollen",
     };
-    for (const [key, value] of Object.entries(priceFields)) {
+    for (const [key, value] of Object.entries(priceDefinition)) {
         if (typeof value === "number" && value > 0) {
             pricing[key] = toFixedPoint(value);
         }

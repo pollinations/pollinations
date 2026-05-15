@@ -49,12 +49,9 @@ export type UsagePrice = Usage & {
 };
 
 // Conversion rates (dollars per usage unit) used to compute provider cost
-export type CostDefinition = {
-    date: number;
-} & { [K in UsageType]?: number };
+export type CostDefinition = { [K in UsageType]?: number };
 
-// Conversion rates used to compute user-facing price; must cover the same
-// usage keys as the cost definition at the same date (enforced at registry build).
+// Conversion rates used to compute user-facing price; derived from cost × multiplier
 export type PriceDefinition = CostDefinition;
 
 export type ModelId =
@@ -74,8 +71,10 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     provider: string;
     brand: string;
     category: Category;
-    cost: CostDefinition[];
-    price?: PriceDefinition[];
+    cost: CostDefinition;
+    // Per-model override for the cost→price multiplier. Defaults to 1.5 for
+    // paidOnly models and 1.0 for free models.
+    priceMultiplier?: number;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
     // User-facing metadata
@@ -94,11 +93,6 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     alpha?: boolean; // Experimental models with potential instability
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
 };
-
-/** Sorts the cost and price definitions by date, in descending order */
-function sortDefinitions<T extends CostDefinition>(definitions: T[]): T[] {
-    return definitions.sort((a, b) => b.date - a.date);
-}
 
 // Helper: Convert usage to dollar amounts
 function convertUsage(
@@ -126,58 +120,32 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-type ModelRegistryEntry = ModelDefinition & {
-    price: PriceDefinition[];
-};
-
-function usageKeys(def: CostDefinition): UsageType[] {
-    return Object.keys(def).filter((k): k is UsageType => k !== "date");
+function resolvePriceMultiplier(svc: ModelDefinition): number {
+    return svc.priceMultiplier ?? (svc.paidOnly ? 1.5 : 1.0);
 }
 
-/**
- * When a model defines `price`, each price entry must cover the same usage
- * keys as the cost entry with the same date — otherwise `calculatePrice` throws
- * at runtime for any usage type missing a conversion rate.
- */
-function validatePriceShape(
-    name: string,
-    cost: CostDefinition[],
-    price: PriceDefinition[],
-): void {
-    for (const priceDef of price) {
-        const matchingCost = cost.find((c) => c.date === priceDef.date);
-        if (!matchingCost) {
-            throw new Error(
-                `[registry:${name}] price entry at date=${priceDef.date} has no matching cost entry`,
-            );
-        }
-        const costKeys = new Set(usageKeys(matchingCost));
-        const priceKeysSet = new Set(usageKeys(priceDef));
-        const missing = [...costKeys].filter((k) => !priceKeysSet.has(k));
-        if (missing.length > 0) {
-            throw new Error(
-                `[registry:${name}] price entry at date=${priceDef.date} missing usage keys: ${missing.join(", ")}`,
-            );
-        }
-    }
+// Round derived rates to 15 decimals to suppress float-multiplication noise
+// (e.g. 0.05 * 1.5e-6 → 7.500000000000001e-8). Per-token rates can be as small
+// as 1e-9, so PRECISION=8 used elsewhere is too coarse here.
+const DERIVED_RATE_PRECISION = 15;
+
+function derivePrice(svc: ModelDefinition): PriceDefinition {
+    const m = resolvePriceMultiplier(svc);
+    if (m === 1) return svc.cost;
+    return Object.fromEntries(
+        Object.entries(svc.cost).map(([k, v]) => [
+            k,
+            safeRound((v as number) * m, DERIVED_RATE_PRECISION),
+        ]),
+    ) as PriceDefinition;
 }
 
-const MODEL_REGISTRY = Object.fromEntries(
-    Object.entries({
-        ...TEXT_SERVICES,
-        ...IMAGE_SERVICES,
-        ...AUDIO_SERVICES,
-        ...EMBEDDING_SERVICES,
-    }).map(([name, service]) => {
-        const cost = sortDefinitions([...service.cost]);
-        const explicitPrice = (service as ModelDefinition).price;
-        if (explicitPrice) {
-            validatePriceShape(name, cost, explicitPrice);
-        }
-        const price = sortDefinitions([...(explicitPrice ?? cost)]);
-        return [name, { ...service, cost, price } as ModelRegistryEntry];
-    }),
-) as Record<ModelName, ModelRegistryEntry>;
+const MODEL_REGISTRY = {
+    ...TEXT_SERVICES,
+    ...IMAGE_SERVICES,
+    ...AUDIO_SERVICES,
+    ...EMBEDDING_SERVICES,
+} as Record<ModelName, ModelDefinition>;
 
 /**
  * Resolve a model name from a canonical name or alias
@@ -256,7 +224,7 @@ export const getVisibleEmbeddingModels = () =>
 /**
  * Get a model definition by public model name
  */
-export function getModelDefinition(model: ModelName): ModelRegistryEntry {
+export function getModelDefinition(model: ModelName): ModelDefinition {
     const definition = MODEL_REGISTRY[model];
     if (!definition) {
         throw new Error(`Invalid model: "${model}"`);
@@ -273,40 +241,26 @@ export function getModelAliases(model: ModelName): readonly string[] {
 }
 
 /**
- * Get active cost definition for a public model name
+ * Get cost definition for a public model name
  */
-export function getActiveCostDefinition(
-    model: ModelName,
-    date: Date = new Date(),
-): CostDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[model]?.cost;
-    if (!modelDefinition) return null;
-    for (const definition of modelDefinition) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
+export function getCostDefinition(model: ModelName): CostDefinition | null {
+    return MODEL_REGISTRY[model]?.cost ?? null;
 }
 
 /**
- * Get active price definition for a public model name
+ * Get price definition for a public model name (cost × multiplier)
  */
-export function getActivePriceDefinition(
-    model: ModelName,
-    date: Date = new Date(),
-): PriceDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[model]?.price;
-    if (!modelDefinition) return null;
-    for (const definition of modelDefinition) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
+export function getPriceDefinition(model: ModelName): PriceDefinition | null {
+    const svc = MODEL_REGISTRY[model];
+    if (!svc) return null;
+    return derivePrice(svc);
 }
 
 /**
  * Calculate cost for a model based on usage
  */
 export function calculateCost(model: ModelName, usage: Usage): UsageCost {
-    const costDefinition = getActiveCostDefinition(model);
+    const costDefinition = getCostDefinition(model);
     if (!costDefinition)
         throw new Error(
             `Failed to get current cost for model: ${model.toString()}`,
@@ -326,7 +280,7 @@ export function calculateCost(model: ModelName, usage: Usage): UsageCost {
  * Calculate price for a model based on usage
  */
 export function calculatePrice(model: ModelName, usage: Usage): UsagePrice {
-    const priceDefinition = getActivePriceDefinition(model);
+    const priceDefinition = getPriceDefinition(model);
     if (!priceDefinition)
         throw new Error(
             `Failed to get current price for model: ${model.toString()}`,

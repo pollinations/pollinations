@@ -1,0 +1,35 @@
+{
+  "pr_number": 10978,
+  "title": "route qwen-vision to instruct variant (non-thinking)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10978",
+  "merged_at": "2026-05-15T16:27:53Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "PR #10969 added qwen-vision-pro (235b thinking) but left both qwen-vision sizes pointing to thinking variants. The first commit on that PR was originally going to swap the 30b to the instruct variant — that part got dropped.\n\nThis restores the intent: one fast non-thinking vision model + one deep thinking one.\n\n- `qwen-vision`: `qwen/qwen3-vl-30b-a3b-thinking` → `qwen/qwen3-vl-30b-a3b-instruct`\n- `qwen-vision-pro`: unchanged (235b thinking)\n- Registry updated: `reasoning: false`, completion cost $1.56→$0.52/M, contextLength 262144→131072, aliases + description\n\nBattle-tested upstream `qwen3-vl-30b-a3b-instruct`:\n- 0 reasoning tokens on math prompt (was 374 on thinking variant)\n- vision input + multi-image + tool calls all work\n- max_tokens=1 → finish=length, streaming → 18 SSE chunks\n- burst n=5/15/30 → 0 errors, p95 1.9-3s\n\nTests: aliases (186 passed), generation-vcr (12 passed).",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Less thinking, more seeing",
+    "blurb": "We've swapped the standard qwen-vision model to its lightning-fast instruct variant. Now you have a snappy option for quick visual tasks, while qwen-vision-pro handles the deep thinking.",
+    "summary": "Routed the standard qwen-vision endpoint to qwen/qwen3-vl-30b-a3b-instruct instead of the thinking variant, dropping completion costs from $1.56 to $0.52/M tokens and adjusting context length to 131k.",
+    "impact": "Users calling qwen-vision will get much faster, non-reasoning responses for standard visual tasks, while qwen-vision-pro remains available for complex, reasoning-heavy image analysis.",
+    "keywords": [
+      "qwen",
+      "vision",
+      "models",
+      "api",
+      "performance"
+    ],
+    "visual_concept": "Polly the bee organizing two different camera-bots. One is sleek and fast (instruct), the other is large and glowing with deep thought (pro).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's cap, organizing two chunky retro robots with camera lenses for eyes. One robot looks sleek and fast, while the other sits in a deep thinking pose with a glowing screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10978.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny director's cap, organizing two chunky retro robots with camera lenses for eyes. One robot looks sleek and fast, while the other sits in a deep thinking pose with a glowing screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-15T16:28:55.340486+00:00"
+}

@@ -61,6 +61,11 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "mistral-4",
+        config: portkeyConfig["mistral-small-2603"],
+        transform: stripCacheControl,
+    },
+    {
         name: "deepseek",
         config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash"],
     },

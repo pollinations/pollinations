@@ -124,13 +124,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/kimi-k2p6",
         }),
 
-    // -- OpenRouter (Mistral Small 3.1) --------------------------------------
-    // Moved off Azure: Mistral Small 3.1 is Marketplace SaaS pass-through on
-    // Azure (not credit-eligible). OpenRouter price is ~2.5× cheaper than
-    // Fireworks for the same SKU.
+    // -- OpenRouter (Mistral Small 3.2, Mistral Small 4) ---------------------
+    // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
+    // Azure (not credit-eligible). Bumped the 2503 alias from 3.1 → 3.2 since
+    // OpenRouter 3.2 is ~37% cheaper than the Azure 3.1 we were paying.
     "mistral-small-2503": () =>
         createOpenRouterModelConfig({
-            model: "mistralai/mistral-small-3.1-24b-instruct",
+            model: "mistralai/mistral-small-3.2-24b-instruct",
+        }),
+    "mistral-small-2603": () =>
+        createOpenRouterModelConfig({
+            model: "mistralai/mistral-small-2603",
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------

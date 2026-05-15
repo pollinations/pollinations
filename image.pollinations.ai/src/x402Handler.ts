@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { createPrivateKey } from "node:crypto";
 import { getAddress } from "viem";
 import { useFacilitator } from "x402/verify";
 import { facilitator as coinbaseFacilitator } from "@coinbase/x402";
@@ -36,10 +37,18 @@ if (
     !process.env.CDP_API_KEY_SECRET &&
     process.env.CDP_API_KEY_SECRET_B64
 ) {
-    process.env.CDP_API_KEY_SECRET = Buffer.from(
+    const decodedSecret = Buffer.from(
         process.env.CDP_API_KEY_SECRET_B64,
         "base64",
     ).toString("utf8");
+    process.env.CDP_API_KEY_SECRET = decodedSecret.includes(
+        "-----BEGIN EC PRIVATE KEY-----",
+    )
+        ? createPrivateKey(decodedSecret).export({
+              format: "pem",
+              type: "pkcs8",
+          }).toString()
+        : decodedSecret;
 }
 
 const hasCdpCreds =

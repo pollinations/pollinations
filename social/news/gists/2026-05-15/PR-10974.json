@@ -1,0 +1,35 @@
+{
+  "pr_number": 10974,
+  "title": "embeddings: route openai-3-small/large to direct OpenAI API",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10974",
+  "merged_at": "2026-05-15T15:37:59Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "The Azure S0 deployment in East US has been the sole source of `openai-3-large` errors. In the last 24h: 479 of 502 errors (14% of total traffic) were Azure rate-limit messages (`exceeded the call rate limit for your current AIServices S0 pricing tier`) — surfaced to users as 502s by the upstream-429→502 remap.\n\nDirect OpenAI has far higher rate-limit headroom and matches the existing per-token cost ($0.13/M for `text-embedding-3-large`, $0.02/M for `text-embedding-3-small`), so no registry pricing change.\n\n- Adds `api.openai.com/v1/embeddings` client mirroring the prior Azure client (Bearer auth via `OPENAI_API_KEY`, already a worker binding used by `gpt-image-2`).\n- Removes the Azure embeddings client — no other embedding model used it. `AZURE_MYCELI_PROD_API_KEY` is still consumed by text models, so the env var stays.\n- Updates `provider: \"azure\"` → `\"openai\"` for both `openai-3-small` and `openai-3-large`.\n- Updates the existing test suite to mock `api.openai.com` instead of the Azure host. All 16 embedding tests pass.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Unblocking the embeddings",
+    "blurb": "We've re-routed our openai-3-small and large embedding models directly to OpenAI to bypass some pesky Azure rate limits. Expect much smoother sailing and fewer 502 errors when generating embeddings!",
+    "summary": "Switched the provider for openai-3-small and openai-3-large embeddings from Azure to the direct OpenAI API to resolve frequent 502 rate-limit errors.",
+    "impact": "Users generating embeddings will experience significantly improved reliability and fewer failed requests, as the direct API offers much higher rate-limit headroom.",
+    "keywords": [
+      "embeddings",
+      "openai",
+      "bug-fix",
+      "reliability",
+      "api"
+    ],
+    "visual_concept": "Polly the bee acting as a network engineer, connecting a new, glowing data pipe. Nomnom eating the old 502 error logs.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, happily connecting a glowing lime green (#ecf874) data pipe labeled 'OPENAI'. The round tan Nomnom creature sits nearby, enthusiastically eating a pile of red '502 ERROR' papers. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, emotionally warm, and chunky retro sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10974.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, happily connecting a glowing lime green (#ecf874) data pipe labeled 'OPENAI'. The round tan Nomnom creature sits nearby, enthusiastically eating a pile of red '502 ERROR' papers. Soft pastel gradient background with warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic, emotionally warm, and chunky retro sprites."
+  },
+  "generated_at": "2026-05-15T15:39:04.675487+00:00"
+}

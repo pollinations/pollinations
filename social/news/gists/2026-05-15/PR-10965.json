@@ -1,0 +1,35 @@
+{
+  "pr_number": 10965,
+  "title": "classify upstream user-input errors as 4xx instead of 500",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10965",
+  "merged_at": "2026-05-15T14:13:16Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "Several user-input errors from image/audio upstreams currently surface as `500 INTERNAL_ERROR`. Verified against production with Nova Canvas maxLength, AssemblyAI non-audio upload, and malformed multipart cases; failures are unbilled, so this is UX/visibility cleanup.\n\nChanges:\n- Classifies image backend validation-style 400/422 responses as `400 BAD_REQUEST` while preserving the upstream reason.\n- Keeps validation formatting intentionally narrow: production-backed `ge`/`le` bounds plus `field: message` fallback.\n- Classifies Nova Canvas `ValidationException` / `ContentFilteredException` by structured Bedrock SDK name, with SDK 5xx still treated as server errors.\n- Classifies the production-observed AssemblyAI bad-audio processing messages as 400.\n- Returns sanitized tracked 400s for malformed image/audio multipart requests.\n- Rebased onto `main` after #10970 removed image backend retries; this PR does not reintroduce retries.\n\nVerified: focused Vitest suite passes (`novaCanvasModel`, `assemblyai-transcription`, `generation-vcr`).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "It's not me, it's you",
+    "blurb": "We've cleaned up how we handle upstream errors from image and audio models. If you send a bad prompt or malformed file, you'll now get a helpful 400 error instead of a generic 500 server crash.",
+    "summary": "Upstream user-input errors from Nova Canvas, AssemblyAI, and malformed multipart requests are now correctly classified as 400 Bad Request instead of 500 Internal Server Error.",
+    "impact": "Developers will receive accurate 400 status codes with preserved upstream reasons for validation failures, making it easier to debug malformed requests without assuming the API is down.",
+    "keywords": [
+      "api",
+      "error handling",
+      "http 400",
+      "nova canvas",
+      "assemblyai"
+    ],
+    "visual_concept": "The bee mascot acting as an inspector, sorting errors. Nomnom eating the old 500 errors while the bee holds up a 400 sign.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat, holding up a small sign that says '400' while inspecting a broken, glitchy piece of code. The round Nomnom creature sits nearby, happily eating a crumpled paper labeled '500'. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10965.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny detective hat, holding up a small sign that says '400' while inspecting a broken, glitchy piece of code. The round Nomnom creature sits nearby, happily eating a crumpled paper labeled '500'. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley."
+  },
+  "generated_at": "2026-05-15T14:14:17.775236+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 10970,
+  "title": "fix: drop retry loop in image backend dispatch",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10970",
+  "merged_at": "2026-05-15T13:40:03Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- Remove 3-attempt retry loop in `fetchFromLeastBusyServer`\n- Single fetch; throw `HttpError` on non-OK with status, body, and upstreamUrl\n- Caller already documents \"Single attempt - no retry logic\"\n- Unblocks #10965: 4xx classification now sees the structured `HttpError`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One and done",
+    "blurb": "We've streamlined the image backend dispatch by removing a redundant retry loop. Now it makes a single attempt and throws a clean error, paving the way for better error handling.",
+    "summary": "Removed the 3-attempt retry loop in fetchFromLeastBusyServer to rely on a single fetch attempt that throws a structured HttpError on failure.",
+    "impact": "This internal cleanup ensures upstream errors are passed through correctly, unblocking improved 4xx error classification.",
+    "keywords": [
+      "backend",
+      "error-handling",
+      "image-generation",
+      "refactor"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking at a single, clean, straight wire or code block, having removed a tangled loop. Represents the removal of the retry loop for a single, clean attempt.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot inspecting a single glowing lime green (#ecf874) code block on a retro terminal, having just untangled a messy loop of wires. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10970.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot inspecting a single glowing lime green (#ecf874) code block on a retro terminal, having just untangled a messy loop of wires. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-15T13:40:57.976438+00:00"
+}

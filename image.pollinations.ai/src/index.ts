@@ -409,7 +409,7 @@ const checkCacheAndGenerate = async (
     } | null = null;
     if (x402Enabled()) {
         const outcome = await verifyIncomingPayment(req);
-        if (outcome && !outcome.ok) {
+        if (outcome?.ok === false) {
             res.writeHead(outcome.status, { "Content-Type": "application/json" });
             res.end(JSON.stringify(outcome.body));
             return;
@@ -565,7 +565,7 @@ const checkCacheAndGenerate = async (
                 paidContext.requirements,
                 headers as Record<string, string | number>,
             );
-            if (!settleResult.ok) {
+            if (settleResult.ok === false) {
                 res.writeHead(settleResult.status, {
                     "Content-Type": "application/json",
                 });

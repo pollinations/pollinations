@@ -31,6 +31,7 @@ const description =
 let enabled = false;
 let payTo: `0x${string}` | null = null;
 let facilitator: ReturnType<typeof useFacilitator> | null = null;
+type FacilitatorConfig = NonNullable<Parameters<typeof useFacilitator>[0]>;
 
 if (payToEnv) {
     try {
@@ -49,7 +50,9 @@ if (payToEnv) {
             facilitator = useFacilitator();
             log("[x402] facilitator: free x402.org (Sepolia only)");
         } else {
-            facilitator = useFacilitator(coinbaseFacilitator);
+            facilitator = useFacilitator(
+                coinbaseFacilitator as unknown as FacilitatorConfig,
+            );
             log(
                 `[x402] facilitator: coinbase CDP (creds present=${hasCdpCreds})`,
             );
@@ -89,6 +92,9 @@ export function buildPaymentRequirements(
     const atomic = processPriceToAtomicAmount(price, network);
     if ("error" in atomic) throw new Error(atomic.error);
     const { maxAmountRequired, asset } = atomic;
+    const eip712Asset = asset as typeof asset & {
+        eip712: Record<string, string>;
+    };
 
     return [
         {
@@ -108,7 +114,7 @@ export function buildPaymentRequirements(
                     discoverable: true,
                 },
             },
-            extra: asset.eip712,
+            extra: eip712Asset.eip712,
         },
     ];
 }

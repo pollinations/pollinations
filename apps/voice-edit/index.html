@@ -64,6 +64,8 @@
     line-height: 1.3;
   }
   canvas { cursor: crosshair; touch-action: none; display: block; max-width: 100%; max-height: calc(100vh - 200px); width: auto; height: auto; margin: 0 auto; }
+  .swatch { width: 1.4rem; height: 1.4rem; border: 2px solid var(--dark); cursor: pointer; padding: 0; outline: 2px solid transparent; outline-offset: 1px; }
+  .swatch.active { outline-color: var(--accent); }
   .canvas-wrap { background: #fff; border: 2px solid var(--dark); border-right-width: 4px; border-bottom-width: 4px; padding: 0; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; width: 100%; }
   .canvas-stage { position: relative; display: inline-block; max-width: 100%; }
   .canvas-wrap.drop { outline: 4px dashed var(--accent); outline-offset: -8px; }
@@ -189,6 +191,11 @@
     <select id="modelSel" class="pollen-select text-sm">
       <option value="nanobanana">nanobanana</option>
     </select>
+    <div id="colorPicker" class="flex items-center gap-1 ml-1">
+      <button type="button" class="swatch" data-color="red" style="background:red"></button>
+      <button type="button" class="swatch" data-color="black" style="background:black"></button>
+      <button type="button" class="swatch" data-color="white" style="background:white"></button>
+    </div>
     <label class="ml-2 text-xs flex items-center gap-1 select-none">
       <input id="typeMode" type="checkbox"> type instead
     </label>
@@ -278,6 +285,7 @@ const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
   .find(m => window.MediaRecorder?.isTypeSupported?.(m)) || "";
 let micStream = null; // pre-warmed mic to eliminate startup cut-off
+let markerColor = "red";
 
 function setStatus(s) { statusEl.textContent = s; }
 function showError(message) {
@@ -378,6 +386,16 @@ disconnectBtn.onclick = () => {
   refreshConnectionUI();
 };
 refreshConnectionUI();
+
+(function setupColorPicker() {
+  const picker = document.getElementById("colorPicker");
+  const swatches = picker.querySelectorAll(".swatch");
+  const apply = () => {
+    for (const s of swatches) s.classList.toggle("active", s.dataset.color === markerColor);
+  };
+  for (const s of swatches) s.addEventListener("click", () => { markerColor = s.dataset.color; apply(); });
+  apply();
+})();
 
 (async function loadEditModels() {
   const modelSel = document.getElementById("modelSel");
@@ -567,22 +585,9 @@ async function stopIntentCapture(capture) {
 function strokeWidthFor(w, h) {
   return Math.max(6, Math.round(Math.min(w, h) * 0.015));
 }
-function ringRadius(w, h) {
-  return Math.max(28, Math.round(Math.min(w, h) * 0.05));
-}
-function drawRing(targetCtx, p, w, h) {
-  const r = ringRadius(w, h);
-  targetCtx.save();
-  targetCtx.globalAlpha = 0.35;
-  targetCtx.strokeStyle = "red";
-  targetCtx.lineWidth = Math.max(4, Math.round(r * 0.18));
-  targetCtx.beginPath(); targetCtx.arc(p.x, p.y, r, 0, Math.PI * 2); targetCtx.stroke();
-  targetCtx.restore();
-}
 function drawStrokeSegment(targetCtx, a, b, w, h) {
   targetCtx.save();
-  targetCtx.globalAlpha = 0.2;
-  targetCtx.strokeStyle = "red";
+  targetCtx.strokeStyle = markerColor;
   targetCtx.lineWidth = strokeWidthFor(w, h);
   targetCtx.lineCap = "round";
   targetCtx.lineJoin = "round";
@@ -656,13 +661,14 @@ async function runEdit(refURL, prompt, model) {
   throw new Error("no url or b64_json in response");
 }
 
-function buildEditPrompt(text) {
-  return `The red markings indicate the area the prompt is referring to. Prompt: ${text}. Output without red markings.`;
+function buildEditPrompt(text, marked, color) {
+  if (!marked) return text;
+  return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings.`;
 }
 
-function enqueueEdit({ point, text, annotated }) {
+function enqueueEdit({ point, text, annotated, marked }) {
   if (!text.trim()) throw new Error("Nothing heard. Type an edit if voice input is unavailable.");
-  const prompt = buildEditPrompt(text);
+  const prompt = buildEditPrompt(text, marked, markerColor);
   const model = document.getElementById("modelSel").value;
   const xPct = (point.x / canvas.width) * 100;
   const yPct = (point.y / canvas.height) * 100;
@@ -715,14 +721,10 @@ canvas.addEventListener("pointerdown", async (e) => {
   if (document.getElementById("typeMode").checked) {
     const text = await promptTypedEdit(e.clientX, e.clientY);
     if (text) {
-      drawRing(ctx, point, canvas.width, canvas.height);
       const annotated = canvas.toDataURL("image/png");
-      const r = ringRadius(canvas.width, canvas.height);
-      const pinPoint = { x: point.x + r, y: point.y };
-      try { enqueueEdit({ point: pinPoint, text, annotated }); }
+      try { enqueueEdit({ point, text, annotated, marked: false }); }
       catch (err) { showError(err.message); }
     } else {
-      resetCanvas();
       setStatus("ready");
     }
     return;
@@ -753,22 +755,21 @@ canvas.addEventListener("pointerup", async (e) => {
   const minLen = Math.min(canvas.width, canvas.height) * 0.03;
   const stroke = capture.stroke || [capture.point];
   const isDrag = pathLength(stroke) > minLen;
-  if (!isDrag) drawRing(ctx, capture.point, canvas.width, canvas.height);
+  // No drag → wipe back to clean source so no faint live-paint trace persists in the snapshot.
+  if (!isDrag) resetCanvas();
   const annotated = canvas.toDataURL("image/png");
-  // Pin always anchors at the rightmost edge of the marking, vertically centered on it.
   let pinPoint;
   if (isDrag) {
     const b = pathBounds(stroke);
     pinPoint = { x: b.maxX, y: (b.minY + b.maxY) / 2 };
   } else {
-    const r = ringRadius(canvas.width, canvas.height);
-    pinPoint = { x: capture.point.x + r, y: capture.point.y };
+    pinPoint = capture.point;
   }
   try {
     const { text, error } = await stopIntentCapture(capture);
     pill({ visible: false });
     if (!text.trim() && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
-    enqueueEdit({ point: pinPoint, text, annotated });
+    enqueueEdit({ point: pinPoint, text, annotated, marked: isDrag });
   } catch (err) {
     showError(err.message);
     resetCanvas();

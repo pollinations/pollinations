@@ -234,15 +234,5 @@ export function getNovaCanvasErrorStatus(error: unknown): 400 | 500 {
     // Trust the structured exception name when status is 4xx or absent.
     if (isValidationName) return 400;
 
-    const message = error instanceof Error ? error.message : String(error);
-    const normalized = `${name} ${message}`.toLowerCase();
-    if (
-        normalized.includes("malformed input request") ||
-        normalized.includes("expected maxlength") ||
-        normalized.includes("unsupported aspect ratio") ||
-        normalized.includes("invalid seed")
-    ) {
-        return 400;
-    }
     return 500;
 }

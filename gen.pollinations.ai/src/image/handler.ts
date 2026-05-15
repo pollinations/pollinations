@@ -301,47 +301,11 @@ function formatImageValidationDetail(detail: {
         .join(".");
     if (!detail.msg) return field || null;
     const ctx = detail.ctx || {};
-    if (field && ctx.ge !== undefined && ctx.le !== undefined) {
-        return `${field} must be between ${ctx.ge} and ${ctx.le}`;
-    }
-    if (field && ctx.gt !== undefined && ctx.lt !== undefined) {
-        return `${field} must be greater than ${ctx.gt} and less than ${ctx.lt}`;
-    }
     if (field && ctx.ge !== undefined) {
         return `${field} must be at least ${ctx.ge}`;
     }
-    if (field && ctx.gt !== undefined) {
-        return `${field} must be greater than ${ctx.gt}`;
-    }
     if (field && ctx.le !== undefined) {
         return `${field} must be at most ${ctx.le}`;
-    }
-    if (field && ctx.lt !== undefined) {
-        return `${field} must be less than ${ctx.lt}`;
-    }
-    if (field && ctx.min_length !== undefined && ctx.max_length !== undefined) {
-        return `${field} must be between ${ctx.min_length} and ${ctx.max_length} characters`;
-    }
-    if (field && ctx.min_length !== undefined) {
-        return `${field} must be at least ${ctx.min_length} characters`;
-    }
-    if (field && ctx.max_length !== undefined) {
-        return `${field} must be at most ${ctx.max_length} characters`;
-    }
-    if (field && typeof ctx.pattern === "string") {
-        return `${field} must match pattern ${ctx.pattern}`;
-    }
-    const enumChoices =
-        (Array.isArray(ctx.enum_values) && ctx.enum_values) ||
-        (Array.isArray(ctx.permitted) && ctx.permitted) ||
-        (Array.isArray(ctx.allowed) && ctx.allowed) ||
-        (Array.isArray(ctx.expected) && ctx.expected) ||
-        null;
-    if (field && enumChoices) {
-        return `${field} must be one of ${enumChoices.join(", ")}`;
-    }
-    if (field && typeof ctx.expected === "string") {
-        return `${field} must be ${ctx.expected}`;
     }
     return field ? `${field}: ${detail.msg}` : detail.msg;
 }

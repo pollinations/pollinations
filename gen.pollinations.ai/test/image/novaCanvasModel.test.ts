@@ -35,11 +35,11 @@ describe("getNovaCanvasErrorStatus", () => {
         bedrockMocks.send.mockReset();
     });
 
-    it("classifies Bedrock malformed input errors as client errors", () => {
+    it("classifies structured Bedrock validation exceptions as client errors", () => {
         expect(
-            getNovaCanvasErrorStatus(
-                "Malformed input request: #/textToImageParams/text: expected maxLength: 1024, actual: 1469, please reformat your input and try again.",
-            ),
+            getNovaCanvasErrorStatus({
+                name: "ValidationException",
+            }),
         ).toBe(400);
     });
 

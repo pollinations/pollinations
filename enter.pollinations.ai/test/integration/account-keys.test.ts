@@ -1,6 +1,77 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
+
+async function createByopAppAndChild(sessionToken: string, suffix: string) {
+    const redirectUri = `https://${suffix}.example/callback`;
+    const appResponse = await SELF.fetch("http://localhost:3000/api/api-keys", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            name: `${suffix}-app`,
+            type: "publishable",
+            metadata: {
+                redirectUris: [redirectUri],
+                earningsEnabled: true,
+            },
+        }),
+    });
+    expect(appResponse.status).toBe(200);
+    const appKey = (await appResponse.json()) as { id: string; key: string };
+
+    const childResponse = await SELF.fetch(
+        "http://localhost:3000/api/api-keys",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: `${suffix}-child`,
+                type: "secret",
+                metadata: {
+                    requestedClientId: appKey.key,
+                    redirectUri,
+                    redirectOrigin: `https://${suffix}.example`,
+                },
+            }),
+        },
+    );
+    expect(childResponse.status).toBe(200);
+    const childKey = (await childResponse.json()) as {
+        id: string;
+        key: string;
+        byopClientKeyId: string;
+    };
+    expect(childKey.byopClientKeyId).toBe(appKey.id);
+
+    return { appKey, childKey };
+}
+
+async function expectKeyDeleted(keyId: string, rawKey: string) {
+    const db = drizzle(env.DB, { schema });
+    const row = await db.query.apikey.findFirst({
+        where: eq(schema.apikey.id, keyId),
+    });
+    expect(row).toBeUndefined();
+
+    const verifyResp = await SELF.fetch(
+        "http://localhost:3000/api/account/key",
+        {
+            headers: {
+                Authorization: `Bearer ${rawKey}`,
+            },
+        },
+    );
+    expect(verifyResp.status).toBe(401);
+}
 
 describe("Account Key Management API", () => {
     describe("POST /api/account/keys (create)", () => {
@@ -352,6 +423,52 @@ describe("Account Key Management API", () => {
                 },
             );
             expect(verifyResp.status).toBe(401);
+        });
+
+        test("should revoke BYOP child keys when app key is deleted via account route", async ({
+            sessionToken,
+        }) => {
+            const { appKey, childKey } = await createByopAppAndChild(
+                sessionToken,
+                "account-delete-byop",
+            );
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${appKey.id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+            await expectKeyDeleted(childKey.id, childKey.key);
+        });
+
+        test("should revoke BYOP child keys when app key is deleted via auth route", async ({
+            sessionToken,
+        }) => {
+            const { appKey, childKey } = await createByopAppAndChild(
+                sessionToken,
+                "auth-delete-byop",
+            );
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/auth/api-key/delete",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({ keyId: appKey.id }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            await expectKeyDeleted(childKey.id, childKey.key);
         });
 
         test("should prevent self-revocation via API key", async ({

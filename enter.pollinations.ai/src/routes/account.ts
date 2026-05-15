@@ -1,4 +1,5 @@
 import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+import { deleteByopChildKeysForAppKey } from "@shared/auth/byop-key-cleanup.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
@@ -1352,7 +1353,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Revoke API Key",
             description:
-                "Delete/revoke an API key. Requires `account:keys` permission and a secret key (sk_). Cannot revoke the key used to authenticate the request.",
+                "Delete/revoke an API key. Deleting an app key also revokes BYOP child keys issued for that app. Requires `account:keys` permission and a secret key (sk_). Cannot revoke the key used to authenticate the request.",
             responses: {
                 200: { description: "Key revoked" },
                 400: { description: "Cannot revoke self" },
@@ -1393,6 +1394,9 @@ export const accountRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "API key not found" });
             }
 
+            // Revoke children before deleting the parent so a partial failure
+            // cannot leave active BYOP keys pointing at a deleted app key.
+            await deleteByopChildKeysForAppKey(db, key);
             await db.delete(apikeyTable).where(eq(apikeyTable.id, id));
 
             return c.json({ success: true });

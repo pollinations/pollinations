@@ -1,4 +1,8 @@
 import { createApiKeyPlugin } from "@shared/auth/api-key.ts";
+import {
+    deleteByopChildKeysForAppKey,
+    deleteByopChildKeysForUserApps,
+} from "@shared/auth/byop-key-cleanup.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import {
     account as accountTable,
@@ -13,7 +17,7 @@ import {
     type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -93,6 +97,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         },
         plugins: [
             adminPlugin,
+            byopKeyCleanupPlugin(env),
             apiKeyPlugin,
             tierPlugin(env, ctx),
             openAPIPlugin,
@@ -104,6 +109,97 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
 export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
+
+type ByopDeleteHookState = {
+    byopDeletedApiKey?: {
+        id: string;
+        prefix: string | null;
+    };
+};
+
+/**
+ * Better Auth owns the dashboard API-key delete endpoint. Keep Pollinations'
+ * BYOP references consistent when that endpoint deletes app keys, and when a
+ * user delete cascades app keys outside Better Auth's API-key delete route.
+ */
+function byopKeyCleanupPlugin(env: Cloudflare.Env): BetterAuthPlugin {
+    return {
+        id: "byop-key-cleanup",
+        init: () => {
+            const databaseHooks = {
+                user: {
+                    delete: {
+                        before: async (user: GenericUser) => {
+                            await deleteByopChildKeysForUserApps(
+                                drizzle(env.DB),
+                                user.id,
+                            );
+                        },
+                    },
+                },
+            } satisfies NonNullable<BetterAuthOptions["databaseHooks"]>;
+
+            return {
+                options: { databaseHooks } satisfies Partial<BetterAuthOptions>,
+            };
+        },
+        hooks: {
+            before: [
+                {
+                    matcher: (ctx) => ctx.path === "/api-key/delete",
+                    handler: createAuthMiddleware(async (ctx) => {
+                        const keyId = (
+                            ctx.body as { keyId?: unknown } | null | undefined
+                        )?.keyId;
+                        if (typeof keyId !== "string") return;
+
+                        const [apiKey] = await drizzle(env.DB)
+                            .select({
+                                id: betterAuthSchema.apikey.id,
+                                prefix: betterAuthSchema.apikey.prefix,
+                            })
+                            .from(betterAuthSchema.apikey)
+                            .where(eq(betterAuthSchema.apikey.id, keyId))
+                            .limit(1);
+
+                        if (!apiKey) return;
+
+                        return {
+                            context: {
+                                byopDeletedApiKey: {
+                                    id: apiKey.id,
+                                    prefix: apiKey.prefix,
+                                },
+                            } satisfies ByopDeleteHookState,
+                        };
+                    }),
+                },
+            ],
+            after: [
+                {
+                    matcher: (ctx) => ctx.path === "/api-key/delete",
+                    handler: createAuthMiddleware(async (ctx) => {
+                        const returned = ctx.context.returned as
+                            | { success?: unknown }
+                            | undefined;
+                        if (returned?.success !== true) return;
+
+                        // Better Auth merges before.context keys onto the
+                        // endpoint ctx before running the endpoint.
+                        const appKey = (ctx as typeof ctx & ByopDeleteHookState)
+                            .byopDeletedApiKey;
+                        if (!appKey) return;
+
+                        await deleteByopChildKeysForAppKey(
+                            drizzle(env.DB),
+                            appKey,
+                        );
+                    }),
+                },
+            ],
+        },
+    } satisfies BetterAuthPlugin;
+}
 
 /**
  * Plugin to initialize tier balance for new users in D1.

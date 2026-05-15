@@ -27,6 +27,21 @@ const price = process.env.X402_PRICE ?? "$0.0001";
 const description =
     process.env.X402_DESCRIPTION ??
     "Pollinations legacy image — pay to bypass rate limit";
+
+// systemd's Environment= directive silently truncates multi-line values, so
+// PEM EC private keys (which contain literal newlines) can't be set directly.
+// Accept the secret as base64 via CDP_API_KEY_SECRET_B64 and inflate it here
+// before any reader of CDP_API_KEY_SECRET runs.
+if (
+    !process.env.CDP_API_KEY_SECRET &&
+    process.env.CDP_API_KEY_SECRET_B64
+) {
+    process.env.CDP_API_KEY_SECRET = Buffer.from(
+        process.env.CDP_API_KEY_SECRET_B64,
+        "base64",
+    ).toString("utf8");
+}
+
 const hasCdpCreds =
     !!process.env.CDP_API_KEY_ID && !!process.env.CDP_API_KEY_SECRET;
 const needsCdpFacilitator = network !== "base-sepolia";

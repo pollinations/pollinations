@@ -49,9 +49,14 @@ export function x402Enabled(): boolean {
 }
 
 function resourceUrlFor(req: IncomingMessage): string {
-    const host = req.headers.host ?? "image.pollinations.ai";
+    const fwdHost = req.headers["x-forwarded-host"];
+    const host =
+        (Array.isArray(fwdHost) ? fwdHost[0] : fwdHost) ??
+        req.headers.host ??
+        "image.pollinations.ai";
+    const fwdProto = req.headers["x-forwarded-proto"];
     const proto =
-        (req.headers["x-forwarded-proto"] as string | undefined) ?? "https";
+        (Array.isArray(fwdProto) ? fwdProto[0] : fwdProto) ?? "https";
     return `${proto}://${host}${req.url ?? "/"}`;
 }
 
@@ -152,7 +157,16 @@ export async function verifyIncomingPayment(
     }
 
     try {
+        log(
+            "[x402] verify start: payer=%s amount=%s asset=%s network=%s nonce=%s",
+            (decoded as any)?.payload?.authorization?.from,
+            (decoded as any)?.payload?.authorization?.value,
+            selected.asset,
+            selected.network,
+            (decoded as any)?.payload?.authorization?.nonce,
+        );
         const result = await facilitator.verify(decoded, selected);
+        log("[x402] verify result: %o", result);
         if (!result.isValid) {
             return {
                 ok: false,
@@ -166,6 +180,7 @@ export async function verifyIncomingPayment(
             };
         }
     } catch (err) {
+        log("[x402] verify threw: %o", err);
         return {
             ok: false,
             status: 402,
@@ -212,7 +227,9 @@ export async function settleAndStampHeader(
 ): Promise<{ ok: true } | { ok: false; status: 402; body: object }> {
     if (!facilitator) return { ok: true };
     try {
+        log("[x402] settle start");
         const settleResp = await facilitator.settle(payload, requirements);
+        log("[x402] settle result: %o", settleResp);
         if (!settleResp.success) {
             return {
                 ok: false,

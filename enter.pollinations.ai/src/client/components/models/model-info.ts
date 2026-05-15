@@ -55,6 +55,17 @@ export const getModelDisplayName = (modelName: string): string | undefined => {
     return description.split(" - ")[0];
 };
 
+export const getModelDescriptionWithoutName = (
+    modelName: string,
+): string | undefined => {
+    const service = getModelDefinition(modelName as ModelName);
+    const description = service?.description;
+    if (!description) return undefined;
+    const parts = description.split(" - ");
+    if (parts.length < 2) return undefined;
+    return parts.slice(1).join(" - ").trim() || undefined;
+};
+
 export const getModelBrandLogoPath = (
     modelName: string,
 ): string | undefined => {

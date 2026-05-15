@@ -96,16 +96,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             "grok-4-20-reasoning",
         ),
 
-    // -- DeepInfra (DeepSeek) -------------------------------------------------
-    "deepseek-ai/DeepSeek-V4-Flash": () =>
-        createDeepInfraModelConfig({
-            model: "deepseek-ai/DeepSeek-V4-Flash",
-        }),
-
     // -- DeepInfra (Gemma) ----------------------------------------------------
     "google/gemma-4-26B-A4B-it": () =>
         createDeepInfraModelConfig({
             model: "google/gemma-4-26B-A4B-it",
+        }),
+
+    // -- OpenRouter (DeepSeek) -----------------------------------------------
+    "deepseek/deepseek-v4-flash": () =>
+        createOpenRouterModelConfig({
+            model: "deepseek/deepseek-v4-flash",
         }),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------

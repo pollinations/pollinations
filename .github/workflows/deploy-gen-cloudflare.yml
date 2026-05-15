@@ -19,6 +19,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: efdcb0933eaac64f27c0b295039b28f2
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

@@ -349,15 +349,14 @@ export const TEXT_SERVICES = {
             "deepseek-lite",
             "deepseek-flash",
         ],
-        modelId: "deepseek-ai/DeepSeek-V4-Flash",
-        provider: "deepinfra",
+        modelId: "accounts/fireworks/models/deepseek-v4-flash",
+        provider: "fireworks",
         brand: "DeepSeek",
         category: "text",
         cost: [
             {
-                date: new Date("2026-04-24").getTime(),
+                date: new Date("2026-05-15").getTime(),
                 promptTextTokens: perMillion(0.14),
-                promptCachedTokens: perMillion(0.028),
                 completionTextTokens: perMillion(0.28),
             },
         ],
@@ -368,7 +367,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
-        paidOnly: true,
     },
     "gemma": {
         aliases: [

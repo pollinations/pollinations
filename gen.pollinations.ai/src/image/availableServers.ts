@@ -1,4 +1,5 @@
 import debug from "debug";
+import { HttpError } from "./httpError.ts";
 
 const logServer = debug("pollinations:server");
 
@@ -100,51 +101,33 @@ export const fetchFromLeastBusyServer = async (
     type: ServerType = "flux",
     options: RequestInit,
 ): Promise<Response> => {
-    const maxRetries = 3;
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const serverUrl = await getNextServerUrl(type);
-
+    const serverUrl = await getNextServerUrl(type);
+    const response = await fetch(`${serverUrl}/generate`, options);
+    if (!response.ok) {
+        let errorBody = "";
         try {
-            const response = await fetch(`${serverUrl}/generate`, options);
-            if (!response.ok) {
-                let errorBody = "";
-                try {
-                    errorBody = await response.text();
-                } catch {
-                    errorBody = "Could not read error response body";
-                }
-
-                console.error(
-                    `[${type}] Server ${serverUrl} returned ${response.status}:`,
-                    {
-                        status: response.status,
-                        statusText: response.statusText,
-                        body: errorBody.substring(0, 500),
-                    },
-                );
-
-                throw new Error(
-                    `HTTP error! status: ${response.status}, body: ${errorBody.substring(0, 200)}`,
-                );
-            }
-            return response;
-        } catch (error) {
-            lastError = error as Error;
-
-            if ((error as Error).message?.includes("status: 500")) {
-                console.error(
-                    `[${type}] Attempt ${attempt + 1}/${maxRetries} failed with 500 error, trying different server...`,
-                );
-                continue;
-            }
-
-            throw error;
+            errorBody = await response.text();
+        } catch {
+            errorBody = "Could not read error response body";
         }
-    }
 
-    throw lastError || new Error("All server attempts failed");
+        console.error(
+            `[${type}] Server ${serverUrl} returned ${response.status}:`,
+            {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorBody,
+            },
+        );
+
+        throw new HttpError(
+            `Image backend rejected request with status ${response.status}`,
+            response.status,
+            { body: errorBody },
+            `${serverUrl}/generate`,
+        );
+    }
+    return response;
 };
 
 export const fetchFromLeastBusyFluxServer = (options: RequestInit) =>

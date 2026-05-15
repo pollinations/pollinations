@@ -1,0 +1,35 @@
+{
+  "pr_number": 10964,
+  "title": "economics: add BYOP+DevShare dashboard, split apps/dev views",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10964",
+  "merged_at": "2026-05-15T11:49:02Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Restructures the economics dashboards around clean BYOP signals (post `byop-client-key-id` migration) and the new DevShare rollout.\n\n**New** — `byop-devshare.json`\n- Clean BYOP: filter on `api_key_client_id != ''` (parent-pk tracked). Stats, daily Pollen split pack/tier, top apps + top developers with d1_apikey/d1_user joins, app growth, end-user tier composition.\n- DevShare: filter on `markup_rate > 0 AND total_price > dev_price`. Earnings stats, daily payout by meter, top earning devs/apps, eligible-but-not-earning opportunity table.\n- Legacy/Heuristic: minimal migration-health section (events without parent-pk tracking — should trend to zero).\n- Diagnostics: weekly clean-vs-legacy signal coverage.\n\n**New** — `developer-leaderboard.json`\n- All-platform developer ranking with apps-per-dev (one dev, many apps), pack/tier split, BYOP flag, SK/PK key counts.\n- Apps-per-dev distribution and a polymaths panel (devs ranked by app count, not money).\n\n**Refined** — `app-ecosystem.json`\n- Drops the BYOP user-count tiles (redundant with `byop-devshare`).\n- Adds **Top Apps by Pollen** (directory apps ranked, attribution via user_github_id = directory submitter).\n- Adds **BYOP-Detected Directory Apps** drill-down (attribution via `api_key_created_for_user_id → d1_user.github_id → app_directory.github_user_id`, which surfaces end-user spend correctly for BYOP).\n\n**Removed** — `app-leaderboard.json`\n- BYOP content moved to `byop-devshare`, dev content to `developer-leaderboard`. The remaining hybrid was redundant.\n\n**Conventions**\n- All three new/touched dashboards add a `${bucket}` template variable (Hourly / Daily / Weekly / Monthly, defaults to Daily) used in `toStartOfInterval(start_time, INTERVAL ${bucket})` across every timeseries.\n- All default to `now-7d`.\n- Standard banned-users CTE + Dec-30/Jan-8 data-gap exclusion preserved.\n\nAlready deployed to `economics.myceli.ai` via scp — this PR brings git in sync.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tracking the honey",
+    "blurb": "We've completely revamped our internal economics dashboards to track BYOP and the new DevShare rollout. Better visibility means better support for our developer ecosystem.",
+    "summary": "Restructured the internal economics dashboards to track BYOP and DevShare metrics, adding byop-devshare and developer-leaderboard views while refining the app-ecosystem dashboard.",
+    "impact": "This gives the core team clearer visibility into developer earnings, app growth, and BYOP adoption across the platform.",
+    "keywords": [
+      "dashboards",
+      "economics",
+      "byop",
+      "devshare",
+      "metrics"
+    ],
+    "visual_concept": "The bee mascot and monitor robot looking at glowing retro terminal screens displaying colorful bar charts and graphs, with small code-plants growing around the monitors.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at glowing retro terminal screens displaying colorful bar charts and graphs. Small code-plants and vines grow around the monitors. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10964.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at glowing retro terminal screens displaying colorful bar charts and graphs. Small code-plants and vines grow around the monitors. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-15T11:50:03.644748+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-14",
+  "period_start": "2026-05-14",
+  "period_end": "2026-05-14",
+  "generated_at": "2026-05-15T07:02:51.343772+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-14/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped some audio api upgrades. added elevenlabs flash v2.5 tts (it's fast), and fixed whisper metadata so your files actually keep their names. also unified the dashboard design system so it no longer looks like three different apps stacked in a trenchcoat."
+}

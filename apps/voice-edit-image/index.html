@@ -338,35 +338,39 @@ const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
 const DRAG_THRESHOLD = 0.03;
 const RECOMMENDED_MODELS = new Set(["p-image-edit", "nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
 
-const els = {
-  account: document.getElementById("account"),
-  status: document.getElementById("status"),
-  error: document.getElementById("error"),
-  frame: document.getElementById("frame"),
-  stage: document.getElementById("stage"),
-  imageCanvas: document.getElementById("imageCanvas"),
-  markCanvas: document.getElementById("markCanvas"),
-  pinLayer: document.getElementById("pinLayer"),
-  connect: document.getElementById("connectBtn"),
-  connectOverlay: document.getElementById("connectOverlayBtn"),
-  upload: document.getElementById("uploadBtn"),
-  file: document.getElementById("fileInput"),
-  model: document.getElementById("modelSel"),
-  typeMode: document.getElementById("typeMode"),
-  undo: document.getElementById("undoBtn"),
-  redo: document.getElementById("redoBtn"),
-  download: document.getElementById("downloadBtn"),
-  colorPicker: document.getElementById("colorPicker"),
-  pill: document.getElementById("cursorPill"),
-  pillText: document.getElementById("pillText"),
-};
+const $ = (id) => document.getElementById(id);
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const pairs = (items) => items.slice(1).map((item, i) => [items[i], item]);
+const distance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+const minCanvasSide = () => Math.min(els.markCanvas.width, els.markCanvas.height);
+
+const els = Object.fromEntries(Object.entries({
+  account: "account",
+  status: "status",
+  error: "error",
+  frame: "frame",
+  imageCanvas: "imageCanvas",
+  markCanvas: "markCanvas",
+  pinLayer: "pinLayer",
+  connect: "connectBtn",
+  connectOverlay: "connectOverlayBtn",
+  upload: "uploadBtn",
+  file: "fileInput",
+  model: "modelSel",
+  typeMode: "typeMode",
+  undo: "undoBtn",
+  redo: "redoBtn",
+  download: "downloadBtn",
+  colorPicker: "colorPicker",
+  pill: "cursorPill",
+  pillText: "pillText",
+}).map(([key, id]) => [key, $(id)]));
 const imageCtx = els.imageCanvas.getContext("2d");
 const markCtx = els.markCanvas.getContext("2d");
 
 const app = {
   image: null,
   imageURL: "",
-  current: null,
   history: [],
   historyIndex: -1,
   micStream: null,
@@ -399,13 +403,13 @@ function key() {
   return token;
 }
 
+const authHeaders = (extra = {}) => ({ Authorization: `Bearer ${key()}`, ...extra });
+
 function render() {
   const locked = app.busy || Boolean(app.active);
   els.undo.disabled = !mediaHistory.canUndo() || locked;
   els.redo.disabled = !mediaHistory.canRedo() || locked;
-  els.upload.disabled = locked;
-  els.model.disabled = locked;
-  els.typeMode.disabled = locked;
+  [els.upload, els.model, els.typeMode].forEach((el) => { el.disabled = locked; });
   renderPins();
 }
 
@@ -424,11 +428,17 @@ function renderAccount() {
   els.account.append(button);
 }
 
+function setMarkerColor(color) {
+  app.markerColor = color;
+  for (const button of els.colorPicker.querySelectorAll(".swatch")) {
+    button.classList.toggle("active", button.dataset.color === color);
+  }
+}
+
 function renderPins() {
-  els.pinLayer.innerHTML = "";
   const jobs = [app.currentJob, ...app.queue].filter(Boolean);
   const layerBox = els.pinLayer.getBoundingClientRect();
-  for (const job of jobs) {
+  els.pinLayer.replaceChildren(...jobs.map((job) => {
     const pin = document.createElement("div");
     pin.className = `pin ${job === app.currentJob ? "processing" : "queued"}`;
     const dot = document.createElement("span");
@@ -438,11 +448,11 @@ function renderPins() {
     pin.append(dot, text);
     pin.style.left = `${job.xPct}%`;
     pin.style.top = `${job.yPct}%`;
-    els.pinLayer.append(pin);
     const anchorX = layerBox.left + (layerBox.width * job.xPct / 100);
     const available = window.innerWidth - anchorX - 12;
-    pin.style.maxWidth = `${Math.min(256, Math.max(28, available))}px`;
-  }
+    pin.style.maxWidth = `${clamp(available, 28, 256)}px`;
+    return pin;
+  }));
 }
 
 function pill({ x, y, text, placeholder, visible }) {
@@ -501,7 +511,7 @@ function disconnect() {
 
 async function loadUser() {
   try {
-    const res = await fetch(`${ENTER}/api/device/userinfo`, { headers: { Authorization: `Bearer ${key()}` } });
+    const res = await fetch(`${ENTER}/api/device/userinfo`, { headers: authHeaders() });
     if (!res.ok) return;
     const user = await res.json();
     app.accountUser = user?.preferred_username || "";
@@ -511,7 +521,7 @@ async function loadUser() {
 
 async function loadBalance() {
   try {
-    const res = await fetch(`${BASE}/account/balance`, { headers: { Authorization: `Bearer ${key()}` } });
+    const res = await fetch(`${BASE}/account/balance`, { headers: authHeaders() });
     if (!res.ok) return;
     const { balance } = await res.json();
     app.accountBalance = Number(balance);
@@ -543,7 +553,6 @@ const mediaHistory = {
     app.history = app.history.slice(0, app.historyIndex + 1);
     app.history.push(frame);
     app.historyIndex = app.history.length - 1;
-    app.current = frame;
     render();
   },
   async go(index) {
@@ -551,16 +560,12 @@ const mediaHistory = {
     if (!frame) return;
     await renderFrame(frame);
     app.historyIndex = index;
-    app.current = frame;
     render();
   },
   async set(frame, { add = false } = {}) {
     await renderFrame(frame);
     if (add) mediaHistory.add(frame);
-    else {
-      app.current = frame;
-      render();
-    }
+    else render();
   },
 };
 
@@ -576,16 +581,12 @@ async function loadModels() {
         const rb = RECOMMENDED_MODELS.has(b.name) ? 0 : 1;
         return ra - rb || a.name.localeCompare(b.name);
       });
-    els.model.innerHTML = "";
-    for (const m of editModels) {
-      const option = document.createElement("option");
-      option.value = m.name;
+    els.model.replaceChildren(...editModels.map((m) => {
       const tags = [];
       if (RECOMMENDED_MODELS.has(m.name)) tags.push("*");
       if (m.paid_only) tags.push("paid");
-      option.textContent = tags.length ? `${m.name} (${tags.join(", ")})` : m.name;
-      els.model.append(option);
-    }
+      return new Option(tags.length ? `${m.name} (${tags.join(", ")})` : m.name, m.name);
+    }));
     if ([...els.model.options].some((option) => option.value === "nanobanana")) els.model.value = "nanobanana";
   } catch {}
 }
@@ -644,13 +645,13 @@ function pointerPoint(event) {
   const x = (event.clientX - rect.left) * (els.markCanvas.width / rect.width);
   const y = (event.clientY - rect.top) * (els.markCanvas.height / rect.height);
   return {
-    x: Math.max(0, Math.min(els.markCanvas.width, Math.round(x))),
-    y: Math.max(0, Math.min(els.markCanvas.height, Math.round(y))),
+    x: clamp(Math.round(x), 0, els.markCanvas.width),
+    y: clamp(Math.round(y), 0, els.markCanvas.height),
   };
 }
 
 function strokeWidth() {
-  return Math.max(6, Math.round(Math.min(els.markCanvas.width, els.markCanvas.height) * 0.015));
+  return Math.max(6, Math.round(minCanvasSide() * 0.015));
 }
 
 function drawSegment(from, to) {
@@ -667,33 +668,27 @@ function drawSegment(from, to) {
 }
 
 function pathLength(points) {
-  let total = 0;
-  for (let i = 1; i < points.length; i++) {
-    total += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
-  }
-  return total;
+  return pairs(points).reduce((total, [a, b]) => total + distance(a, b), 0);
 }
 
 function pathBounds(points) {
-  const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
-  for (const point of points) {
-    bounds.minX = Math.min(bounds.minX, point.x);
-    bounds.maxX = Math.max(bounds.maxX, point.x);
-    bounds.minY = Math.min(bounds.minY, point.y);
-    bounds.maxY = Math.max(bounds.maxY, point.y);
-  }
-  return bounds;
+  return points.reduce((bounds, point) => ({
+    minX: Math.min(bounds.minX, point.x),
+    maxX: Math.max(bounds.maxX, point.x),
+    minY: Math.min(bounds.minY, point.y),
+    maxY: Math.max(bounds.maxY, point.y),
+  }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
 }
 
-function markerFromGesture(gesture) {
-  const marked = pathLength(gesture.points) >= Math.min(els.markCanvas.width, els.markCanvas.height) * DRAG_THRESHOLD;
+function markerFromGesture({ points }) {
+  const marked = pathLength(points) >= minCanvasSide() * DRAG_THRESHOLD;
   if (!marked) clearMarks();
-  const marker = marked ? els.markCanvas.toDataURL("image/png") : "";
-  const bounds = marked ? pathBounds(gesture.points) : null;
-  const pinPoint = marked
-    ? { x: bounds.maxX, y: (bounds.minY + bounds.maxY) / 2 }
-    : gesture.points[0];
-  return { marked, marker, pinPoint };
+  const bounds = marked ? pathBounds(points) : null;
+  return {
+    marked,
+    marker: marked ? els.markCanvas.toDataURL("image/png") : "",
+    pinPoint: marked ? { x: bounds.maxX, y: (bounds.minY + bounds.maxY) / 2 } : points[0],
+  };
 }
 
 async function composeSnapshot(marker = "") {
@@ -788,7 +783,7 @@ async function stopAndTranscribe(capture) {
   try {
     const res = await fetch(`${BASE}/v1/audio/transcriptions`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key()}` },
+      headers: authHeaders(),
       body: form,
     });
     if (!res.ok) return { text: "", error: await friendlyError(res, "Transcription failed") };
@@ -832,7 +827,7 @@ async function uploadDataURL(dataURL, filename = "annot.png") {
   form.append("file", blob, filename);
   const res = await fetch("https://media.pollinations.ai/upload", {
     method: "POST",
-    headers: { Authorization: `Bearer ${key()}` },
+    headers: authHeaders(),
     body: form,
   });
   if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
@@ -843,7 +838,7 @@ async function uploadDataURL(dataURL, filename = "annot.png") {
 async function runEdit(imageURL, prompt, model) {
   const res = await fetch(`${BASE}/v1/images/edits`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ prompt, image: imageURL, model, response_format: "url" }),
   });
   if (!res.ok) throw new Error(await friendlyError(res, "Edit failed"));
@@ -993,37 +988,31 @@ els.file.addEventListener("change", () => {
 els.colorPicker.addEventListener("click", (event) => {
   const swatch = event.target.closest(".swatch");
   if (!swatch) return;
-  app.markerColor = swatch.dataset.color;
-  for (const button of els.colorPicker.querySelectorAll(".swatch")) {
-    button.classList.toggle("active", button === swatch);
-  }
+  setMarkerColor(swatch.dataset.color);
 });
 
-for (const eventName of ["dragenter", "dragover"]) {
-  els.frame.addEventListener(eventName, (event) => {
-    event.preventDefault();
-    els.frame.classList.add("drop");
-  });
-}
-for (const eventName of ["dragleave", "drop"]) {
-  els.frame.addEventListener(eventName, (event) => {
-    event.preventDefault();
-    els.frame.classList.remove("drop");
-  });
-}
+const setDrop = (drop) => (event) => {
+  event.preventDefault();
+  els.frame.classList.toggle("drop", drop);
+};
+["dragenter", "dragover"].forEach((eventName) => {
+  els.frame.addEventListener(eventName, setDrop(true));
+});
+["dragleave", "drop"].forEach((eventName) => {
+  els.frame.addEventListener(eventName, setDrop(false));
+});
 els.frame.addEventListener("drop", (event) => {
   const file = event.dataTransfer?.files?.[0];
   if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
 });
 
-els.undo.addEventListener("click", () => {
-  if (!mediaHistory.canUndo() || app.busy || app.active) return;
-  mediaHistory.go(app.historyIndex - 1).then(() => setStatus("undone")).catch((err) => showError(err.message));
-});
-els.redo.addEventListener("click", () => {
-  if (!mediaHistory.canRedo() || app.busy || app.active) return;
-  mediaHistory.go(app.historyIndex + 1).then(() => setStatus("redone")).catch((err) => showError(err.message));
-});
+const goHistory = (delta, label) => () => {
+  const canGo = delta < 0 ? mediaHistory.canUndo() : mediaHistory.canRedo();
+  if (!canGo || app.busy || app.active) return;
+  mediaHistory.go(app.historyIndex + delta).then(() => setStatus(label)).catch((err) => showError(err.message));
+};
+els.undo.addEventListener("click", goHistory(-1, "undone"));
+els.redo.addEventListener("click", goHistory(1, "redone"));
 els.download.addEventListener("click", () => {
   try {
     const link = document.createElement("a");
@@ -1039,9 +1028,7 @@ captureKeyFromFragment();
 refreshConnectionUI();
 loadModels();
 loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
-for (const button of els.colorPicker.querySelectorAll(".swatch")) {
-  button.classList.toggle("active", button.dataset.color === app.markerColor);
-}
+setMarkerColor(app.markerColor);
 </script>
 </body>
 </html>

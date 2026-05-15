@@ -22,12 +22,12 @@ Voice-driven image/video editor. Draw on an image, speak the edit, release. Mark
 - Drag path >= `3% * min(width,height)` = marked edit.
 - Drag marker is a pure opaque stroke in selected `markerColor`: red, black, or white.
 - No-drag click = no marker; prompt is sent as a global instruction.
-- Type mode = typed global prompt, no marker.
+- Type mode uses the same gesture: draw first, release, type prompt. No-drag remains global.
 - Completed gestures enqueue as FIFO jobs. Marked jobs store a transparent marker-overlay PNG; the front job composites that overlay onto the latest image offscreen before upload, so queued edits chain from prior results.
 - The visible marker layer is only for the live/current gesture; queued jobs use their stored overlay image.
 - Animate mode is global-only: no marker, clean current image -> MP4. The video replaces the canvas visually.
 - Switch back to edit mode and draw on a paused video to commit that frame into image history, then continue editing it as a normal image.
-- Undo/redo stores image and video states. Full authored-playback UI is deferred; the state shape keeps prompts/results needed for it.
+- Undo/redo is a linear media history of image/video frames. Editing from an older frame truncates later frames.
 
 ## prompt
 
@@ -41,7 +41,7 @@ Voice-driven image/video editor. Draw on an image, speak the edit, release. Mark
 - `stageVideo`: generated MP4 result, shown in the same stage as the canvas.
 - `pinLayer`: DOM label anchored to click point or rightmost mark edge.
 - `composeSnapshot(marker)`: offscreen PNG composition; draws a transparent marker overlay when present.
-- `app`: single state object for image/video, auth account data, mic stream, active gesture, FIFO queue, current job, undo/redo, marker color.
+- `app`: single state object for current media, linear history, auth account data, mic stream, active gesture, FIFO queue, current job, marker color.
 - Queue jobs store marker overlay image, prompt text, color, model, and normalized pin position. `runQueue()` composites each overlay with the current image just before upload.
 
 ## local

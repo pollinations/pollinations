@@ -1,9 +1,31 @@
 import { useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 
+// Admin mode: enabled when the URL path is /debug (SPA fallback serves index.html
+// for unknown paths, so this works without a router). Reveals the Provider column.
+function isAdminPath() {
+    if (typeof window === "undefined") return false;
+    const path = window.location.pathname.replace(/\/+$/, "");
+    return path === "/debug" || path.endsWith("/debug");
+}
+
+// Severity rank for the combined Status column sort.
+// Higher = surfaces to the top in descending sort.
+function statusSeverity(model) {
+    const health = computeHealthStatus(model.stats);
+    if (health === "off") return 6;
+    if (health === "degraded") return 5;
+    if (model.catalogStatus === "unregistered") return 4;
+    if (model.catalogStatus === "anomaly") return 3;
+    if (model.catalogStatus === "catalog-unavailable") return 2;
+    if (model.catalogStatus === "registry-only") return 1;
+    if (model.catalogStatus === "hidden") return 0.5;
+    return 0;
+}
+
 // ── Modality color map ──────────────────────────────────────────────
 // primary (lavender) = image, secondary (periwinkle) = text,
-// tertiary (mint) = audio, accent (lime) = video
+// tertiary (mint) = audio, accent (lime) = video, tan = embedding
 const TYPE_COLORS = {
     image: {
         badge: "bg-primary-light text-dark border border-primary-strong",
@@ -24,6 +46,11 @@ const TYPE_COLORS = {
         badge: "bg-accent-light text-dark border border-accent-strong",
         card: "bg-accent-light border-accent-strong",
         dot: "bg-accent-strong",
+    },
+    embedding: {
+        badge: "bg-tan text-dark border border-border",
+        card: "bg-tan border-border",
+        dot: "bg-border",
     },
 };
 
@@ -180,10 +207,11 @@ function GlobalHealthSummary({ models, typeFilter, onTypeFilter }) {
         { key: "image", title: "Image" },
         { key: "video", title: "Video" },
         { key: "audio", title: "Audio" },
+        { key: "embedding", title: "Embedding" },
     ];
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {types.map(({ key, title }) => {
                 const group = models.filter((m) => m.type === key);
                 if (group.length === 0) return null;
@@ -288,6 +316,7 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
 
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
+    const [adminMode] = useState(isAdminPath);
 
     const WINDOW_OPTIONS = [
         { key: "7d", label: "7d" },
@@ -413,6 +442,10 @@ function App() {
                 const bPct = (b.stats?.errors_4xx || 0) / bTotal;
                 return dir * (aPct - bPct);
             }
+            case "status":
+                return dir * (statusSeverity(a) - statusSeverity(b));
+            case "provider":
+                return dir * (a.provider || "").localeCompare(b.provider || "");
             default:
                 return 0;
         }
@@ -424,7 +457,9 @@ function App() {
 
     return (
         <div className="min-h-screen p-4 md:p-6 bg-cream">
-            <div className="max-w-5xl mx-auto space-y-4">
+            <div
+                className={`${adminMode ? "max-w-6xl" : "max-w-5xl"} mx-auto space-y-4`}
+            >
                 {/* Header */}
                 <header className="space-y-2">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-12 sm:mb-8">
@@ -608,11 +643,31 @@ function App() {
                         <thead className="bg-tan text-[10px] text-muted">
                             <tr>
                                 <SortableTh
+                                    label="Type"
+                                    sortKey="type"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                <SortableTh
                                     label="Model"
                                     sortKey="name"
                                     currentSort={sort}
                                     onSort={handleSort}
                                 />
+                                <SortableTh
+                                    label="Status"
+                                    sortKey="status"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                {adminMode && (
+                                    <SortableTh
+                                        label="Provider"
+                                        sortKey="provider"
+                                        currentSort={sort}
+                                        onSort={handleSort}
+                                    />
+                                )}
                                 <SortableTh
                                     label="Reqs (+4xx)"
                                     sortKey="requests"
@@ -661,7 +716,7 @@ function App() {
                             {filteredModels.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={7}
+                                        colSpan={adminMode ? 10 : 9}
                                         className="p-8 text-center text-subtle"
                                     >
                                         {lastUpdated
@@ -700,20 +755,17 @@ function App() {
                                             className={`hover:bg-cream/50 ${rowBg}`}
                                         >
                                             <td className="px-3 py-2">
+                                                <span
+                                                    className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${colors.badge}`}
+                                                >
+                                                    {model.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-2">
                                                 <div className="flex items-center gap-2">
-                                                    <span
-                                                        className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${colors.badge}`}
-                                                    >
-                                                        {model.type}
-                                                    </span>
                                                     <span className="text-dark font-medium">
                                                         {model.name}
                                                     </span>
-                                                    <CatalogStatusBadge
-                                                        status={
-                                                            model.catalogStatus
-                                                        }
-                                                    />
                                                     {model.description && (
                                                         <span className="text-subtle text-[11px]">
                                                             {
@@ -723,11 +775,25 @@ function App() {
                                                             }
                                                         </span>
                                                     )}
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <div className="flex items-center gap-1 flex-wrap">
                                                     <StatusBadge
                                                         stats={stats}
                                                     />
+                                                    <CatalogStatusBadge
+                                                        status={
+                                                            model.catalogStatus
+                                                        }
+                                                    />
                                                 </div>
                                             </td>
+                                            {adminMode && (
+                                                <td className="px-3 py-2 text-subtle text-xs">
+                                                    {model.provider || "—"}
+                                                </td>
+                                            )}
                                             <td className="px-3 py-2 text-right tabular-nums text-muted">
                                                 {total > 0 ? (
                                                     <>

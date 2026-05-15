@@ -36,6 +36,16 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 
 ---
 
+# Description Style
+
+Format: `<Model Name> - <what it does or what makes it distinct>`. Keep it under ~70 chars when possible.
+
+- Say what the model **does** or what makes it **different** (e.g. "Fast & affordable image generation", "Long-context MoE for retrieval", "Speech to text transcription"). Capability over branding.
+- **No provider/inference attribution** in the description — no "(OpenRouter)", "via DashScope", "ByteDance ARK", "OpenAI's", "Google's", "Bedrock", etc. The `provider` and `brand` fields already carry that.
+- **No filler.** "X - Image Generation Model" tells the reader nothing they didn't already get from the model name. If you can't say something specific, say less ("FLUX.2 Klein 4B - Fast image generation and editing" beats "FLUX.2 Klein 4B - Advanced Model").
+
+---
+
 # Quick Actions
 
 | Action | `.env` | Config/Handler | Registry |

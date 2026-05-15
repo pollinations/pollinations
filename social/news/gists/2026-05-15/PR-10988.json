@@ -1,0 +1,34 @@
+{
+  "pr_number": 10988,
+  "title": "inline polli-cli readme into api reference",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10988",
+  "merged_at": "2026-05-15T19:30:09Z",
+  "labels": [
+    "DEV-DOCS"
+  ],
+  "pr_body_excerpt": "Mirrors how BYOP is included in the API reference: source the full README via a Vite raw import instead of duplicating a handwritten snippet in docs.ts.\n\n- adds `import CLI_README from \"../../../packages/polli-cli/README.md?raw\"`\n- strips the leading h1 and the github user-attachments video line at inline time so the README stays as-is on GitHub\n- removes the hardcoded `CLI_DOCS` block\n\nNet: -14/+5 lines, single source of truth for CLI docs.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Single source of truth",
+    "blurb": "The API reference now pulls the polli-cli documentation directly from its source. No more out-of-sync instructions!",
+    "summary": "The API reference now dynamically imports the full polli-cli README via Vite instead of relying on a hardcoded snippet.",
+    "impact": "Developers reading the API docs will always see the most up-to-date command-line tool instructions directly from the source repository.",
+    "keywords": [
+      "docs",
+      "cli",
+      "api-reference",
+      "refactor"
+    ],
+    "visual_concept": "Polly the bee organizing documents, taking a single glowing master scroll and placing it into a larger reference book, representing the 'single source of truth' for documentation.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, carefully placing a glowing master scroll into a large, open reference book. A chunky retro monitor nearby displays clean text. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10988.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing tiny reading glasses, carefully placing a glowing master scroll into a large, open reference book. A chunky retro monitor nearby displays clean text. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-15T19:31:02.438935+00:00"
+}

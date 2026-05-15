@@ -99,13 +99,15 @@ async function enqueueLtx2Job(
     width: number,
     height: number,
     frameCount: number,
+    imageUrl?: string,
 ): Promise<string> {
-    const requestBody = {
+    const requestBody: Record<string, unknown> = {
         prompt,
         width,
         height,
         frame_count: frameCount,
     };
+    if (imageUrl) requestBody.image_url = imageUrl;
 
     logOps("Enqueuing LTX-2 job:", requestBody);
 
@@ -286,22 +288,35 @@ export const callLtx2API = async (
         safeParams.aspectRatio,
     );
 
+    const imageUrl = Array.isArray(safeParams.image)
+        ? safeParams.image[0]
+        : safeParams.image;
+
     logOps("Video params:", {
         durationSeconds,
         frameCount,
         width,
         height,
         aspectRatio: safeParams.aspectRatio,
+        hasImage: Boolean(imageUrl),
     });
 
     progress.updateBar(
         requestId,
         40,
         "Processing",
-        "Enqueuing video generation job...",
+        imageUrl
+            ? "Enqueuing image-to-video job..."
+            : "Enqueuing video generation job...",
     );
 
-    const promptId = await enqueueLtx2Job(prompt, width, height, frameCount);
+    const promptId = await enqueueLtx2Job(
+        prompt,
+        width,
+        height,
+        frameCount,
+        imageUrl,
+    );
 
     progress.updateBar(requestId, 50, "Processing", "Generating video...");
 

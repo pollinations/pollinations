@@ -1,6 +1,7 @@
 import { type FC, useState } from "react";
 import { cn } from "../../../util.ts";
 import { Chip } from "../ui/chip.tsx";
+import { InfoTip } from "../ui/info-tip.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import {
     calculatePerPollen,
@@ -11,6 +12,7 @@ import {
     getModelBrandLogoPath,
     getModelCapabilityIcons,
     getModelCapabilityLabel,
+    getModelDescriptionWithoutName,
     getModelDisplayName,
     getModelModalityIcons,
     getModelModalityLabel,
@@ -33,6 +35,7 @@ export const ModelRow: FC<ModelRowProps> = ({
     packBalance,
 }) => {
     const modelDisplayName = getModelDisplayName(model.name);
+    const modelDescription = getModelDescriptionWithoutName(model.name);
     const brandLogoPath = getModelBrandLogoPath(model.name);
     const modalityIcons = getModelModalityIcons(model.name);
     const modalityLabel = getModelModalityLabel(model.name);
@@ -172,8 +175,11 @@ export const ModelRow: FC<ModelRowProps> = ({
             {/* Model info — flexible width */}
             <div className="flex-1 min-w-0 pl-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
-                    <span className="text-base font-medium leading-none">
+                    <span className="inline-flex items-center text-base font-medium leading-none">
                         <span>{publicModelName}</span>
+                        {modelDescription && (
+                            <InfoTip text={modelDescription} />
+                        )}
                     </span>
                     <button
                         type="button"

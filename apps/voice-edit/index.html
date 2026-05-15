@@ -1,308 +1,446 @@
 <!doctype html>
+<html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Voice Edit | Pollinations</title>
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root {
     --dark: #110518;
-    --cream: #F3EBDE;
-    --tan: #e8e2d8;
-    --border: #cfc8b8;
-    --accent: #E8F372;
-    --primary: #C9A9E4;
-    --secondary: #A4B4DE;
-    --muted: #4a3f5c;
+    --paper: #f3ebde;
+    --card: #fffaf2;
+    --line: #110518;
+    --muted: #5b5265;
+    --accent: #e8f372;
+    --primary: #c9a9e4;
+    --danger-bg: #ffe1e1;
+    --danger-line: #a02020;
   }
+
+  * { box-sizing: border-box; }
   body {
-    background: var(--cream);
+    margin: 0;
+    min-height: 100vh;
+    background: var(--paper);
     color: var(--dark);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: "IBM Plex Mono", monospace;
   }
-  .pollen-card {
-    background: #fff;
-    border: 2px solid var(--dark);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
-    border-radius: 0;
+
+  button, input, select { font: inherit; color: inherit; }
+  button { touch-action: manipulation; }
+
+  .app {
+    width: min(100% - 24px, 1180px);
+    margin: 0 auto;
+    padding: 18px 0 24px;
+    display: grid;
+    gap: 12px;
   }
-  .pollen-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 700;
-    background: #fff;
-    color: var(--dark);
-    border: 2px solid var(--dark);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
-    padding: 0.45rem 0.9rem;
-    cursor: pointer;
-    transition: all 0.1s;
-    text-transform: lowercase;
-    letter-spacing: 0.02em;
+
+  .topbar, .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
   }
-  .pollen-btn:hover:not(:disabled) { transform: translate(1px, 1px); border-right-width: 3px; border-bottom-width: 3px; }
-  .pollen-btn:active:not(:disabled) { transform: translate(2px, 2px); border-right-width: 2px; border-bottom-width: 2px; }
-  .pollen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .pollen-btn-accent { background: var(--accent); }
-  .pollen-btn-primary { background: var(--primary); }
-  .pollen-input, .pollen-select {
-    font-family: 'IBM Plex Mono', monospace;
-    background: #fff;
-    color: var(--dark);
-    border: 2px solid var(--dark);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
-    border-radius: 0;
-    padding: 0.45rem 0.7rem;
-  }
-  .pollen-title {
-    font-family: 'Press Start 2P', monospace;
-    letter-spacing: -0.02em;
+
+  .brand {
+    margin: 0;
+    font-family: "Press Start 2P", monospace;
+    font-size: clamp(1rem, 3.4vw, 1.45rem);
     line-height: 1.3;
+    letter-spacing: 0;
   }
-  canvas { cursor: crosshair; touch-action: none; display: block; max-width: 100%; max-height: calc(100vh - 200px); width: auto; height: auto; margin: 0 auto; }
-  .swatch { width: 1.4rem; height: 1.4rem; border: 2px solid var(--dark); cursor: pointer; padding: 0; outline: 2px solid transparent; outline-offset: 1px; }
+
+  .tagline, .account, .status {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .account { margin-left: auto; text-align: right; }
+  .status { min-width: 8ch; text-align: right; }
+
+  .error {
+    display: none;
+    padding: 10px 12px;
+    background: var(--danger-bg);
+    border: 2px solid var(--danger-line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    font-size: 0.85rem;
+  }
+  .error.visible { display: block; }
+
+  .btn, .select {
+    min-height: 38px;
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-radius: 0;
+    font-weight: 700;
+  }
+  .btn {
+    padding: 0 12px;
+    cursor: pointer;
+    text-transform: lowercase;
+  }
+  .btn:hover:not(:disabled) { transform: translate(1px, 1px); border-right-width: 3px; border-bottom-width: 3px; }
+  .btn:active:not(:disabled) { transform: translate(2px, 2px); border-right-width: 2px; border-bottom-width: 2px; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn.accent { background: var(--accent); }
+  .select { padding: 0 10px; max-width: min(100%, 20rem); }
+
+  .type-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    user-select: none;
+  }
+  .history { margin-left: auto; }
+
+  .swatches {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .swatch {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 2px solid var(--line);
+    border-radius: 0;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    cursor: pointer;
+  }
   .swatch.active { outline-color: var(--accent); }
-  .canvas-wrap { background: #fff; border: 2px solid var(--dark); border-right-width: 4px; border-bottom-width: 4px; padding: 0; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; width: 100%; }
-  .canvas-stage { position: relative; display: inline-block; max-width: 100%; }
-  .canvas-wrap.drop { outline: 4px dashed var(--accent); outline-offset: -8px; }
-  .canvas-wrap.locked canvas { cursor: not-allowed; filter: grayscale(0.4) opacity(0.55); }
-  #connectOverlay {
-    position: absolute; inset: 0; z-index: 20;
-    display: none; align-items: center; justify-content: center;
+  .swatch[data-color="white"] { background: #fff; }
+  .swatch[data-color="black"] { background: #000; }
+  .swatch[data-color="red"] { background: red; }
+
+  .frame {
+    position: relative;
+    min-height: 280px;
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    overflow: auto;
+    display: grid;
+    place-items: center;
+  }
+  .frame.drop { outline: 4px dashed var(--accent); outline-offset: -10px; }
+  .stage {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    max-height: calc(100vh - 210px);
+    touch-action: none;
+  }
+  .stage canvas {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 210px);
+    width: auto;
+    height: auto;
+  }
+  #markCanvas, #pinLayer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  #markCanvas { cursor: crosshair; z-index: 2; touch-action: none; }
+  #pinLayer { z-index: 3; pointer-events: none; }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: none;
+    align-items: center;
+    justify-content: center;
     background: rgba(243, 235, 222, 0.88);
     backdrop-filter: blur(2px);
   }
-  .canvas-wrap.locked #connectOverlay { display: flex; }
-  #connectOverlay .panel {
-    background: #fff;
-    border: 2px solid var(--dark);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
-    padding: 1.2rem 1.4rem;
+  .frame.locked .overlay { display: flex; }
+  .overlay-panel {
+    width: min(22rem, calc(100% - 32px));
+    padding: 18px;
     text-align: center;
-    max-width: 22rem;
-  }
-  #connectOverlay .panel p { font-size: 0.9rem; margin-bottom: 0.9rem; }
-
-  /* Cursor-anchored speech pill */
-  #cursorPill {
-    position: fixed;
-    z-index: 50;
-    transform: translate(18px, -50%);
     background: #fff;
-    color: var(--dark);
-    border: 2px solid var(--dark);
+    border: 2px solid var(--line);
     border-right-width: 4px;
     border-bottom-width: 4px;
-    border-radius: 0;
-    padding: 0.5rem 0.8rem 0.5rem 0.5rem;
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 700;
-    font-size: 0.95rem;
-    max-width: 18rem;
-    display: none;
-    align-items: center;
-    gap: 0.55rem;
-    pointer-events: none;
-    white-space: normal;
-    overflow-wrap: anywhere;
   }
-  #cursorPill.visible { display: inline-flex; }
-  #cursorPill .mic {
-    flex: 0 0 auto;
-    width: 1.5rem;
-    height: 1.5rem;
-    background: var(--accent);
-    border: 2px solid var(--dark);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  #cursorPill .mic .bar {
-    width: 3px;
-    background: var(--dark);
-    margin: 0 1px;
-    animation: micbar 0.9s ease-in-out infinite;
-  }
-  #cursorPill .mic .bar:nth-child(1) { height: 6px; animation-delay: 0s; }
-  #cursorPill .mic .bar:nth-child(2) { height: 10px; animation-delay: .15s; }
-  #cursorPill .mic .bar:nth-child(3) { height: 6px; animation-delay: .3s; }
-  @keyframes micbar { 0%,100% { transform: scaleY(0.6); } 50% { transform: scaleY(1.2); } }
-  #cursorPill .text { min-width: 1ch; }
-  #cursorPill .text.placeholder { opacity: .55; font-style: italic; }
+  .overlay-panel p { margin: 0 0 12px; font-size: 0.9rem; }
 
-  /* Per-job pins anchored at the click point — sits over the canvas, same box */
-  #pinLayer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-  #pinLayer .pin { position: absolute; }
   .pin {
     position: absolute;
-    /* Anchor point is the dot center. Default: pin extends to the right.
-       Subtract: half-dot (≈0.275rem) + dot-border (1.5px) + padding (0.55rem) + small gap so the dot sits exactly on (xPct, yPct). */
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    max-width: min(16rem, 48vw);
+    width: max-content;
+    padding: 5px 9px;
     transform: translate(calc(-0.55rem - 0.275rem - 1.5px), -50%);
     background: #fff;
-    border: 2px solid var(--dark);
+    border: 2px solid var(--line);
     border-right-width: 4px;
     border-bottom-width: 4px;
-    padding: 0.35rem 0.55rem;
-    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.75rem;
-    line-height: 1.3;
-    min-width: 6rem;
-    max-width: 16rem;
-    width: max-content;
-    white-space: normal;
-    word-break: normal;
+    line-height: 1.25;
     overflow-wrap: break-word;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
   }
   .pin.processing { background: var(--accent); }
-  .pin.queued { background: #fff; opacity: 0.85; }
   .pin .dot {
     flex: 0 0 auto;
     width: 0.55rem;
     height: 0.55rem;
-    background: var(--dark);
-    border: 1.5px solid var(--dark);
+    background: var(--line);
+    border: 1.5px solid var(--line);
   }
-  .pin.processing .dot { background: var(--dark); animation: pulse 1s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .pin span:last-child { min-width: 0; }
+
+  .pill {
+    position: fixed;
+    z-index: 20;
+    display: none;
+    align-items: center;
+    gap: 9px;
+    max-width: min(18rem, calc(100vw - 24px));
+    padding: 8px 12px 8px 8px;
+    transform: translate(18px, -50%);
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    pointer-events: none;
+    overflow-wrap: anywhere;
+  }
+  .pill.visible { display: inline-flex; }
+  .pill .mic {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: var(--accent);
+    border: 2px solid var(--line);
+  }
+  .pill .bar {
+    width: 3px;
+    background: var(--line);
+    animation: micbar 0.9s ease-in-out infinite;
+  }
+  .pill .bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .pill .bar:nth-child(2) { height: 10px; animation-delay: 0.15s; }
+  .pill .bar:nth-child(3) { height: 6px; animation-delay: 0.3s; }
+  .pill .placeholder { opacity: 0.55; font-style: italic; }
+  @keyframes micbar { 0%,100% { transform: scaleY(0.6); } 50% { transform: scaleY(1.2); } }
+
+  @media (max-width: 720px) {
+    .app { width: min(100% - 14px, 1180px); padding-top: 10px; gap: 9px; }
+    .topbar { gap: 6px; }
+    .account { order: 3; width: 100%; margin-left: 0; text-align: left; }
+    .status { margin-left: auto; }
+    .toolbar { gap: 7px; }
+    .history { margin-left: 0; }
+    .btn, .select { min-height: 36px; }
+    .btn { padding: 0 9px; }
+    .frame { min-height: 240px; }
+    .stage, .stage canvas { max-height: calc(100vh - 260px); }
+    .pin { max-width: 62vw; }
+  }
+  .frame.locked .stage { filter: grayscale(0.35) opacity(0.55); }
 </style>
-<body class="min-h-screen p-4 md:p-6 flex flex-col items-center gap-4">
-  <div class="w-full max-w-5xl flex items-baseline gap-3">
-    <h1 class="pollen-title text-xl md:text-2xl">voice·edit</h1>
-    <span class="text-xs text-[var(--muted)]">point. talk. release.</span>
-    <span class="text-xs text-[var(--muted)] ml-auto" id="account"></span>
-    <span class="text-xs text-[var(--muted)]" id="status">ready</span>
-  </div>
 
-  <div id="error" class="hidden w-full max-w-5xl pollen-card px-4 py-3 text-sm" style="background:#ffe1e1;border-color:#a02020"></div>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1 class="brand">voice.edit</h1>
+      <span class="tagline">draw. talk. release.</span>
+      <span id="account" class="account"></span>
+      <span id="status" class="status">ready</span>
+    </header>
 
-  <div class="w-full max-w-5xl flex flex-wrap items-center gap-2 text-sm">
-    <button id="connectBtn" class="pollen-btn pollen-btn-accent">connect</button>
-    <button id="disconnectBtn" class="hidden pollen-btn">disconnect</button>
-    <button id="uploadBtn" class="pollen-btn">image</button>
-    <input id="fileInput" type="file" accept="image/*" class="hidden">
-    <select id="modelSel" class="pollen-select text-sm">
-      <option value="nanobanana">nanobanana</option>
-    </select>
-    <div id="colorPicker" class="flex items-center gap-1 ml-1">
-      <button type="button" class="swatch" data-color="red" style="background:red"></button>
-      <button type="button" class="swatch" data-color="black" style="background:black"></button>
-      <button type="button" class="swatch" data-color="white" style="background:white"></button>
-    </div>
-    <label class="ml-2 text-xs flex items-center gap-1 select-none">
-      <input id="typeMode" type="checkbox"> type instead
-    </label>
-    <button id="undoBtn" class="pollen-btn ml-auto" disabled title="undo">↶</button>
-    <button id="redoBtn" class="pollen-btn" disabled title="redo">↷</button>
-    <button id="downloadBtn" class="pollen-btn" title="download">↓</button>
-  </div>
+    <div id="error" class="error"></div>
 
-  <div class="relative w-full max-w-5xl canvas-wrap">
-    <div class="canvas-stage">
-      <canvas id="canvas" width="1024" height="768" class="bg-white"></canvas>
-      <div id="pinLayer"></div>
-    </div>
-    <div id="connectOverlay">
-      <div class="panel">
-        <p>connect to pollinations to start editing</p>
-        <button id="connectOverlayBtn" class="pollen-btn pollen-btn-accent">connect</button>
+    <section class="toolbar" aria-label="tools">
+      <button id="connectBtn" class="btn accent">connect</button>
+      <button id="disconnectBtn" class="btn" hidden>disconnect</button>
+      <button id="uploadBtn" class="btn">image</button>
+      <input id="fileInput" type="file" accept="image/*" hidden>
+      <select id="modelSel" class="select" aria-label="image model">
+        <option value="nanobanana">nanobanana</option>
+      </select>
+      <div id="colorPicker" class="swatches" aria-label="marker color">
+        <button type="button" class="swatch" data-color="red" aria-label="red marker"></button>
+        <button type="button" class="swatch" data-color="black" aria-label="black marker"></button>
+        <button type="button" class="swatch" data-color="white" aria-label="white marker"></button>
       </div>
-    </div>
-  </div>
+      <label class="type-mode"><input id="typeMode" type="checkbox"> type instead</label>
+      <button id="undoBtn" class="btn history" disabled title="undo">undo</button>
+      <button id="redoBtn" class="btn" disabled title="redo">redo</button>
+      <button id="downloadBtn" class="btn" title="download">save</button>
+    </section>
 
-  <div id="cursorPill" aria-hidden="true">
+    <section id="frame" class="frame">
+      <div id="stage" class="stage">
+        <canvas id="imageCanvas" width="1024" height="768"></canvas>
+        <canvas id="markCanvas" width="1024" height="768"></canvas>
+        <div id="pinLayer"></div>
+      </div>
+      <div class="overlay">
+        <div class="overlay-panel">
+          <p>connect to pollinations to start editing</p>
+          <button id="connectOverlayBtn" class="btn accent">connect</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="cursorPill" class="pill" aria-hidden="true">
     <span class="mic"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span>
-    <span class="text placeholder">listening…</span>
+    <span id="pillText" class="placeholder">listening...</span>
   </div>
 
 <script>
 const KEY_STORAGE = "voice-edit:user-key";
-// Optional App Key — register at enter.pollinations.ai → /authorize will fall back to hostname if blank
 const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
-
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const statusEl = document.getElementById("status");
-const errorEl = document.getElementById("error");
-const connectBtn = document.getElementById("connectBtn");
-const disconnectBtn = document.getElementById("disconnectBtn");
-const accountEl = document.getElementById("account");
-const undoBtn = document.getElementById("undoBtn");
-const redoBtn = document.getElementById("redoBtn");
-const pillEl = document.getElementById("cursorPill");
-const pillText = pillEl.querySelector(".text");
-const pinLayer = document.getElementById("pinLayer");
-
-function renderPins() {
-  pinLayer.innerHTML = "";
-  for (let i = 0; i < editQueue.length; i++) {
-    const job = editQueue[i];
-    const pin = document.createElement("div");
-    pin.className = `pin ${i === 0 && queueRunning ? "processing" : "queued"}`;
-    const dot = document.createElement("span"); dot.className = "dot";
-    const text = document.createElement("span"); text.textContent = job.intent;
-    pin.append(dot, text);
-    pin.style.left = `${job.xPct}%`;
-    pin.style.top = `${job.yPct}%`;
-    pinLayer.append(pin);
-  }
-}
-function render() {
-  renderPins();
-  undoBtn.disabled = undoStack.length === 0;
-  redoBtn.disabled = redoStack.length === 0;
-}
-
-function pill({ x, y, text, placeholder, visible }) {
-  if (x != null) pillEl.style.left = `${x}px`;
-  if (y != null) pillEl.style.top = `${y}px`;
-  if (text !== undefined) {
-    pillText.textContent = text;
-    pillText.classList.toggle("placeholder", !!placeholder);
-  }
-  if (visible !== undefined) pillEl.classList.toggle("visible", visible);
-}
-
-let currentImage = null;
-let currentImageURL = "";
-let activeCapture = null;
-const undoStack = [];
-let redoStack = [];
-const editQueue = [];
-let queueRunning = false;
 const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
-  .find(m => window.MediaRecorder?.isTypeSupported?.(m)) || "";
-let micStream = null; // pre-warmed mic to eliminate startup cut-off
-let markerColor = "red";
+  .find((m) => window.MediaRecorder?.isTypeSupported?.(m)) || "";
+const DRAG_THRESHOLD = 0.03;
+const RECOMMENDED_MODELS = new Set(["p-image-edit", "nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
 
-function setStatus(s) { statusEl.textContent = s; }
+const els = {
+  account: document.getElementById("account"),
+  status: document.getElementById("status"),
+  error: document.getElementById("error"),
+  frame: document.getElementById("frame"),
+  stage: document.getElementById("stage"),
+  imageCanvas: document.getElementById("imageCanvas"),
+  markCanvas: document.getElementById("markCanvas"),
+  pinLayer: document.getElementById("pinLayer"),
+  connect: document.getElementById("connectBtn"),
+  disconnect: document.getElementById("disconnectBtn"),
+  connectOverlay: document.getElementById("connectOverlayBtn"),
+  upload: document.getElementById("uploadBtn"),
+  file: document.getElementById("fileInput"),
+  model: document.getElementById("modelSel"),
+  typeMode: document.getElementById("typeMode"),
+  undo: document.getElementById("undoBtn"),
+  redo: document.getElementById("redoBtn"),
+  download: document.getElementById("downloadBtn"),
+  colorPicker: document.getElementById("colorPicker"),
+  pill: document.getElementById("cursorPill"),
+  pillText: document.getElementById("pillText"),
+};
+const imageCtx = els.imageCanvas.getContext("2d");
+const markCtx = els.markCanvas.getContext("2d");
+
+const app = {
+  image: null,
+  imageURL: "",
+  micStream: null,
+  active: null,
+  busy: false,
+  queue: [],
+  currentJob: null,
+  undo: [],
+  redo: [],
+  markerColor: "red",
+  accountUser: "",
+  accountBalance: null,
+};
+
+function setStatus(text) {
+  els.status.textContent = text;
+}
+
 function showError(message) {
-  errorEl.textContent = message;
-  errorEl.classList.remove("hidden");
+  els.error.textContent = message;
+  els.error.classList.add("visible");
   setStatus("error");
 }
-function clearError() { errorEl.classList.add("hidden"); }
 
-function pushUndo() {
-  if (!currentImageURL) return;
-  undoStack.push(currentImageURL);
-  redoStack = [];
-  render();
+function clearError() {
+  els.error.classList.remove("visible");
 }
 
-(function captureKeyFromFragment() {
+function key() {
+  const token = localStorage.getItem(KEY_STORAGE);
+  if (!token) throw new Error("not connected - click Connect");
+  return token;
+}
+
+function render() {
+  const locked = app.busy || Boolean(app.active);
+  els.undo.disabled = app.undo.length === 0 || locked;
+  els.redo.disabled = app.redo.length === 0 || locked;
+  els.upload.disabled = locked;
+  els.model.disabled = locked;
+  els.typeMode.disabled = locked;
+  renderPins();
+}
+
+function renderAccount() {
+  if (!localStorage.getItem(KEY_STORAGE)) {
+    els.account.textContent = "not connected";
+    return;
+  }
+  const user = app.accountUser ? `connected as ${app.accountUser}` : "connected";
+  const balance = app.accountBalance == null ? "" : ` · ${app.accountBalance.toFixed(2)} pollen`;
+  els.account.textContent = user + balance;
+}
+
+function renderPins() {
+  els.pinLayer.innerHTML = "";
+  const jobs = [app.currentJob, ...app.queue].filter(Boolean);
+  const layerBox = els.pinLayer.getBoundingClientRect();
+  for (const job of jobs) {
+    const pin = document.createElement("div");
+    pin.className = `pin ${job === app.currentJob ? "processing" : "queued"}`;
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    const text = document.createElement("span");
+    text.textContent = job.text;
+    pin.append(dot, text);
+    pin.style.left = `${job.xPct}%`;
+    pin.style.top = `${job.yPct}%`;
+    els.pinLayer.append(pin);
+    const anchorX = layerBox.left + (layerBox.width * job.xPct / 100);
+    const available = window.innerWidth - anchorX - 12;
+    pin.style.maxWidth = `${Math.min(256, Math.max(28, available))}px`;
+  }
+}
+
+function pill({ x, y, text, placeholder, visible }) {
+  if (x != null) els.pill.style.left = `${x}px`;
+  if (y != null) els.pill.style.top = `${y}px`;
+  if (text !== undefined) {
+    els.pillText.textContent = text;
+    els.pillText.classList.toggle("placeholder", !!placeholder);
+  }
+  if (visible !== undefined) els.pill.classList.toggle("visible", visible);
+}
+
+function captureKeyFromFragment() {
   if (!location.hash) return;
   const params = new URLSearchParams(location.hash.slice(1));
   const apiKey = params.get("api_key");
@@ -312,59 +450,24 @@ function pushUndo() {
   } else if (params.get("error")) {
     showError(`Authorization failed: ${params.get("error")}`);
   }
-})();
-
-function getKey() {
-  const k = localStorage.getItem(KEY_STORAGE);
-  if (!k) throw new Error("not connected — click Connect Pollinations");
-  return k;
-}
-
-let accountUser = "";
-let accountBalance = null;
-function renderAccount() {
-  const base = accountUser ? `connected as ${accountUser}` : "connected";
-  const bal = accountBalance == null ? "" : ` · ${accountBalance.toFixed(2)} pollen`;
-  accountEl.textContent = base + bal;
-}
-
-async function loadBalance() {
-  const k = localStorage.getItem(KEY_STORAGE);
-  if (!k) return;
-  try {
-    const r = await fetch(`${BASE}/account/balance`, { headers: { Authorization: `Bearer ${k}` } });
-    if (!r.ok) return;
-    const { balance } = await r.json();
-    accountBalance = balance;
-    renderAccount();
-  } catch {}
 }
 
 function refreshConnectionUI() {
-  const k = localStorage.getItem(KEY_STORAGE);
-  const canvasWrap = document.querySelector(".canvas-wrap");
-  if (k) {
-    connectBtn.classList.add("hidden");
-    disconnectBtn.classList.remove("hidden");
-    accountUser = "";
-    accountBalance = null;
+  const connected = !!localStorage.getItem(KEY_STORAGE);
+  els.connect.hidden = connected;
+  els.disconnect.hidden = !connected;
+  els.frame.classList.toggle("locked", !connected);
+  if (!connected) {
+    app.accountUser = "";
+    app.accountBalance = null;
     renderAccount();
-    canvasWrap.classList.remove("locked");
-    warmMic();
-    fetch(`${ENTER}/api/device/userinfo`, { headers: { Authorization: `Bearer ${k}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(u => { if (u?.preferred_username) { accountUser = u.preferred_username; renderAccount(); } })
-      .catch(() => {});
-    loadBalance();
-  } else {
-    connectBtn.classList.remove("hidden");
-    disconnectBtn.classList.add("hidden");
-    accountUser = "";
-    accountBalance = null;
-    accountEl.textContent = "not connected";
-    canvasWrap.classList.add("locked");
     setStatus("not connected");
+    return;
   }
+  renderAccount();
+  warmMic();
+  loadUser();
+  loadBalance();
 }
 
 function startConnect() {
@@ -375,440 +478,516 @@ function startConnect() {
   if (CLIENT_ID) params.set("client_id", CLIENT_ID);
   location.href = `${ENTER}/authorize?${params}`;
 }
-connectBtn.onclick = startConnect;
-document.getElementById("connectOverlayBtn").onclick = startConnect;
-disconnectBtn.onclick = () => {
+
+function disconnect() {
   localStorage.removeItem(KEY_STORAGE);
-  if (micStream) {
-    for (const t of micStream.getTracks()) t.stop();
-    micStream = null;
-  }
+  stopMic();
   refreshConnectionUI();
-};
-refreshConnectionUI();
+}
 
-(function setupColorPicker() {
-  const picker = document.getElementById("colorPicker");
-  const swatches = picker.querySelectorAll(".swatch");
-  const apply = () => {
-    for (const s of swatches) s.classList.toggle("active", s.dataset.color === markerColor);
-  };
-  for (const s of swatches) s.addEventListener("click", () => { markerColor = s.dataset.color; apply(); });
-  apply();
-})();
-
-(async function loadEditModels() {
-  const modelSel = document.getElementById("modelSel");
-  const DEFAULT_MODEL = "nanobanana";
-  // Models known to obey the burned-in red-circle annotation well
-  const RECOMMENDED = new Set(["p-image-edit", "nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
+async function loadUser() {
   try {
-    const r = await fetch(`${BASE}/image/models`);
-    if (!r.ok) return;
-    const all = await r.json();
-    const edits = all.filter(m =>
-      m.input_modalities?.includes("image") && m.output_modalities?.includes("image"),
-    );
-    edits.sort((a, b) => {
-      const ra = RECOMMENDED.has(a.name) ? 0 : 1;
-      const rb = RECOMMENDED.has(b.name) ? 0 : 1;
-      return ra - rb || a.name.localeCompare(b.name);
-    });
-    modelSel.innerHTML = "";
-    for (const m of edits) {
-      const opt = document.createElement("option");
-      opt.value = m.name;
-      const tags = [];
-      if (RECOMMENDED.has(m.name)) tags.push("★");
-      if (m.paid_only) tags.push("paid");
-      opt.textContent = tags.length ? `${m.name} (${tags.join(" · ")})` : m.name;
-      modelSel.append(opt);
-    }
-    if ([...modelSel.options].some(o => o.value === DEFAULT_MODEL)) modelSel.value = DEFAULT_MODEL;
-  } catch {
-    // network blip — leave the hardcoded option in place
-  }
-})();
-
-async function loadImageFromURL(url, opts = {}) {
-  clearError();
-  if (opts.pushHistory) pushUndo();
-  setStatus("loading image…");
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  await new Promise((res, rej) => {
-    img.onload = res;
-    img.onerror = () => rej(new Error("could not load image; try another URL"));
-    img.src = url;
-  });
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  ctx.drawImage(img, 0, 0);
-  currentImage = img;
-  currentImageURL = url;
-  render();
-  setStatus("ready");
+    const res = await fetch(`${ENTER}/api/device/userinfo`, { headers: { Authorization: `Bearer ${key()}` } });
+    if (!res.ok) return;
+    const user = await res.json();
+    app.accountUser = user?.preferred_username || "";
+    renderAccount();
+  } catch {}
 }
 
-async function loadImage(src, opts) {
-  if (src instanceof File) {
-    if (!src.type.startsWith("image/")) throw new Error("Drop or pick an image file.");
-    src = await new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result);
-      r.onerror = () => rej(new Error("Could not read file."));
-      r.readAsDataURL(src);
-    });
-  }
-  return loadImageFromURL(src, opts);
-}
-const safeLoad = (src) => loadImage(src, { pushHistory: true }).catch(err => showError(err.message));
-document.getElementById("uploadBtn").onclick = () => document.getElementById("fileInput").click();
-document.getElementById("fileInput").onchange = (e) => { const f = e.target.files?.[0]; if (f) safeLoad(f); };
-
-function promptTypedEdit(clientX, clientY) {
-  pill({ x: clientX, y: clientY, text: "", placeholder: true, visible: true });
-  const input = document.createElement("input");
-  input.type = "text";
-  input.placeholder = "type edit, press enter";
-  input.style.cssText = "border:none;outline:none;background:transparent;font:inherit;width:14rem;color:var(--dark);";
-  pillText.replaceWith(input);
-  input.focus();
-  setStatus("typing…");
-  return new Promise((resolve) => {
-    const finish = (text) => {
-      input.replaceWith(pillText);
-      pill({ visible: false });
-      resolve(text);
-    };
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); finish(input.value.trim()); }
-      if (e.key === "Escape") { e.preventDefault(); finish(""); }
-    });
-    input.addEventListener("blur", () => finish(input.value.trim()));
-  });
-}
-
-const dropZone = document.querySelector(".canvas-wrap");
-["dragenter", "dragover"].forEach((ev) => {
-  dropZone.addEventListener(ev, (e) => {
-    e.preventDefault(); dropZone.classList.add("drop");
-  });
-});
-["dragleave", "drop"].forEach((ev) => {
-  dropZone.addEventListener(ev, (e) => {
-    e.preventDefault(); dropZone.classList.remove("drop");
-  });
-});
-dropZone.addEventListener("drop", (e) => {
-  const file = e.dataTransfer?.files?.[0];
-  if (file) safeLoad(file);
-});
-function canvasPointFromEvent(e) {
-  const rect = canvas.getBoundingClientRect();
-  const sx = canvas.width / rect.width;
-  const sy = canvas.height / rect.height;
-  return {
-    x: Math.round((e.clientX - rect.left) * sx),
-    y: Math.round((e.clientY - rect.top) * sy),
-    rectX: e.clientX - rect.left,
-    rectY: e.clientY - rect.top,
-  };
+async function loadBalance() {
+  try {
+    const res = await fetch(`${BASE}/account/balance`, { headers: { Authorization: `Bearer ${key()}` } });
+    if (!res.ok) return;
+    const { balance } = await res.json();
+    app.accountBalance = Number(balance);
+    renderAccount();
+  } catch {}
 }
 
 async function warmMic() {
-  if (micStream || !navigator.mediaDevices?.getUserMedia) return;
+  if (app.micStream || !navigator.mediaDevices?.getUserMedia) return;
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({
+    app.micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
   } catch (err) {
-    showError(`Microphone unavailable (${err?.message || "denied"}). Use 'type instead'.`);
+    showError(`Microphone unavailable (${err?.message || "denied"}). Use type instead.`);
   }
 }
 
-function startIntentCapture(clientX, clientY) {
-  clearError();
-  if (!window.MediaRecorder) {
-    showError("Voice input is not available in this browser. Use 'type instead'.");
-    return null;
-  }
-  const capture = { chunks: [], error: "", recorder: null };
-  if (!micStream) {
-    capture.error = "microphone not ready — click the page once, then try again";
-    warmMic();
-    return capture; // pointerup will surface the error
-  }
+function stopMic() {
+  if (!app.micStream) return;
+  for (const track of app.micStream.getTracks()) track.stop();
+  app.micStream = null;
+}
+
+async function loadModels() {
   try {
-    capture.recorder = new MediaRecorder(micStream, STT_MIME ? { mimeType: STT_MIME } : undefined);
-    capture.recorder.ondataavailable = (e) => { if (e.data?.size) capture.chunks.push(e.data); };
+    const res = await fetch(`${BASE}/image/models`);
+    if (!res.ok) return;
+    const models = await res.json();
+    const editModels = models
+      .filter((m) => m.input_modalities?.includes("image") && m.output_modalities?.includes("image"))
+      .sort((a, b) => {
+        const ra = RECOMMENDED_MODELS.has(a.name) ? 0 : 1;
+        const rb = RECOMMENDED_MODELS.has(b.name) ? 0 : 1;
+        return ra - rb || a.name.localeCompare(b.name);
+      });
+    els.model.innerHTML = "";
+    for (const m of editModels) {
+      const option = document.createElement("option");
+      option.value = m.name;
+      const tags = [];
+      if (RECOMMENDED_MODELS.has(m.name)) tags.push("*");
+      if (m.paid_only) tags.push("paid");
+      option.textContent = tags.length ? `${m.name} (${tags.join(", ")})` : m.name;
+      els.model.append(option);
+    }
+    if ([...els.model.options].some((option) => option.value === "nanobanana")) els.model.value = "nanobanana";
+  } catch {}
+}
+
+function pushUndo() {
+  if (!app.imageURL) return;
+  app.undo.push(app.imageURL);
+  app.redo = [];
+  render();
+}
+
+async function loadImage(src, { pushHistory = false } = {}) {
+  clearError();
+  if (src instanceof File) src = await readImageFile(src);
+  if (pushHistory) pushUndo();
+  setStatus("loading image...");
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = () => reject(new Error("could not load image"));
+    img.src = src;
+  });
+  app.image = img;
+  app.imageURL = src;
+  resizeCanvases(img.naturalWidth, img.naturalHeight);
+  imageCtx.drawImage(img, 0, 0);
+  clearMarks();
+  setStatus("ready");
+  render();
+}
+
+function readImageFile(file) {
+  if (!file?.type?.startsWith("image/")) throw new Error("Drop or pick an image file.");
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Could not read file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function resizeCanvases(width, height) {
+  for (const canvas of [els.imageCanvas, els.markCanvas]) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+}
+
+function clearMarks() {
+  markCtx.clearRect(0, 0, els.markCanvas.width, els.markCanvas.height);
+}
+
+function pointerPoint(event) {
+  const rect = els.markCanvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (els.markCanvas.width / rect.width);
+  const y = (event.clientY - rect.top) * (els.markCanvas.height / rect.height);
+  return {
+    x: Math.max(0, Math.min(els.markCanvas.width, Math.round(x))),
+    y: Math.max(0, Math.min(els.markCanvas.height, Math.round(y))),
+  };
+}
+
+function strokeWidth() {
+  return Math.max(6, Math.round(Math.min(els.markCanvas.width, els.markCanvas.height) * 0.015));
+}
+
+function drawSegment(from, to) {
+  markCtx.save();
+  markCtx.strokeStyle = app.markerColor;
+  markCtx.lineWidth = strokeWidth();
+  markCtx.lineCap = "round";
+  markCtx.lineJoin = "round";
+  markCtx.beginPath();
+  markCtx.moveTo(from.x, from.y);
+  markCtx.lineTo(to.x, to.y);
+  markCtx.stroke();
+  markCtx.restore();
+}
+
+function pathLength(points) {
+  let total = 0;
+  for (let i = 1; i < points.length; i++) {
+    total += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+  }
+  return total;
+}
+
+function pathBounds(points) {
+  const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+  for (const point of points) {
+    bounds.minX = Math.min(bounds.minX, point.x);
+    bounds.maxX = Math.max(bounds.maxX, point.x);
+    bounds.minY = Math.min(bounds.minY, point.y);
+    bounds.maxY = Math.max(bounds.maxY, point.y);
+  }
+  return bounds;
+}
+
+async function composeSnapshot(marker = "") {
+  const out = document.createElement("canvas");
+  out.width = els.imageCanvas.width;
+  out.height = els.imageCanvas.height;
+  const outCtx = out.getContext("2d");
+  outCtx.drawImage(els.imageCanvas, 0, 0);
+  if (marker) {
+    const markerImage = await loadImageElement(marker);
+    outCtx.drawImage(markerImage, 0, 0, out.width, out.height);
+  }
+  return out.toDataURL("image/png");
+}
+
+function buildPrompt(text, marked, color) {
+  if (!marked) return text;
+  return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings.`;
+}
+
+function pinPct(point) {
+  return {
+    xPct: (point.x / els.markCanvas.width) * 100,
+    yPct: (point.y / els.markCanvas.height) * 100,
+  };
+}
+
+function loadImageElement(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("could not load marker"));
+    img.src = src;
+  });
+}
+
+function enqueueEdit({ text, marked, marker, pinPoint, color }) {
+  if (!text.trim()) throw new Error("Nothing heard. Type an edit if voice input is unavailable.");
+  const pin = pinPct(pinPoint);
+  app.queue.push({
+    text,
+    marked,
+    marker,
+    color,
+    model: els.model.value,
+    xPct: pin.xPct,
+    yPct: pin.yPct,
+  });
+  render();
+  runQueue();
+}
+
+function beginRecording(clientX, clientY) {
+  clearError();
+  if (!window.MediaRecorder) return { error: "Voice input is not available in this browser. Use type instead." };
+  if (!app.micStream) {
+    warmMic();
+    return { error: "microphone not ready - click once, allow access, then try again" };
+  }
+  const capture = { chunks: [], recorder: null, error: "" };
+  try {
+    capture.recorder = new MediaRecorder(app.micStream, STT_MIME ? { mimeType: STT_MIME } : undefined);
+    capture.recorder.ondataavailable = (event) => {
+      if (event.data?.size) capture.chunks.push(event.data);
+    };
     capture.recorder.start();
   } catch (err) {
     capture.error = err?.message || "could not start recording";
     return capture;
   }
-  pill({ x: clientX, y: clientY, text: "listening…", placeholder: true, visible: true });
-  setStatus("listening…");
+  pill({ x: clientX, y: clientY, text: "listening...", placeholder: true, visible: true });
+  setStatus("listening...");
   return capture;
 }
 
-async function stopIntentCapture(capture) {
+async function stopAndTranscribe(capture) {
   if (capture.error || !capture.recorder) return { text: "", error: capture.error };
-  setStatus("transcribing…");
-  pill({ text: "transcribing…", placeholder: true });
+  setStatus("transcribing...");
+  pill({ text: "transcribing...", placeholder: true });
   const stopped = new Promise((resolve) => { capture.recorder.onstop = resolve; });
-  try { capture.recorder.stop(); } catch {}
+  capture.recorder.stop();
   await stopped;
   const type = capture.recorder.mimeType || "audio/webm";
   const ext = type.includes("mp4") ? "mp4" : "webm";
   const blob = new Blob(capture.chunks, { type });
-  if (blob.size < 1000) return { text: "", error: "no audio captured — hold and speak" };
-  const fd = new FormData();
-  fd.append("file", blob, `voice.${ext}`);
-  fd.append("model", STT_MODEL);
-  fd.append("language", STT_LANG);
-  fd.append("response_format", "json");
+  if (blob.size < 1000) return { text: "", error: "no audio captured - hold and speak" };
+  const form = new FormData();
+  form.append("file", blob, `voice.${ext}`);
+  form.append("model", STT_MODEL);
+  form.append("language", STT_LANG);
+  form.append("response_format", "json");
   try {
-    const r = await fetch(`${BASE}/v1/audio/transcriptions`, {
+    const res = await fetch(`${BASE}/v1/audio/transcriptions`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${getKey()}` },
-      body: fd,
+      headers: { Authorization: `Bearer ${key()}` },
+      body: form,
     });
-    if (!r.ok) return { text: "", error: await friendlyError(r, "Transcription failed") };
-    const j = await r.json();
-    return { text: (j.text || "").trim(), error: "" };
+    if (!res.ok) return { text: "", error: await friendlyError(res, "Transcription failed") };
+    const json = await res.json();
+    return { text: (json.text || "").trim(), error: "" };
   } catch (err) {
     return { text: "", error: err?.message || "transcription failed" };
   }
 }
 
-function strokeWidthFor(w, h) {
-  return Math.max(6, Math.round(Math.min(w, h) * 0.015));
-}
-function drawStrokeSegment(targetCtx, a, b, w, h) {
-  targetCtx.save();
-  targetCtx.strokeStyle = markerColor;
-  targetCtx.lineWidth = strokeWidthFor(w, h);
-  targetCtx.lineCap = "round";
-  targetCtx.lineJoin = "round";
-  targetCtx.beginPath(); targetCtx.moveTo(a.x, a.y); targetCtx.lineTo(b.x, b.y); targetCtx.stroke();
-  targetCtx.restore();
-}
-function pathLength(points) {
-  let total = 0;
-  for (let i = 1; i < points.length; i++) {
-    const dx = points[i].x - points[i - 1].x, dy = points[i].y - points[i - 1].y;
-    total += Math.hypot(dx, dy);
-  }
-  return total;
-}
-function pathBounds(points) {
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  for (const p of points) {
-    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
-    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
-  }
-  return { minX, maxX, minY, maxY };
-}
-
-async function friendlyError(response, label) {
-  let details = "";
-  try {
-    const text = await response.text();
-    const json = JSON.parse(text);
-    details = json.error?.message || json.message || text;
-  } catch {
-    details = response.statusText || "request failed";
-  }
-  if (response.status === 401 || response.status === 403) {
-    localStorage.removeItem(KEY_STORAGE);
-    refreshConnectionUI();
-    return `${label}: authorization expired. Connect Pollinations again.`;
-  }
-  if (response.status === 402) return `${label}: add Pollen credits, then try again.`;
-  if (response.status === 429) return `${label}: rate limited. Wait a moment or switch models.`;
-  return `${label}: ${response.status} ${details}`;
+async function promptTypedEdit(clientX, clientY) {
+  pill({ x: clientX, y: clientY, text: "", placeholder: true, visible: true });
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "type edit, press enter";
+  input.style.cssText = "border:none;outline:none;background:transparent;font:inherit;width:14rem;color:var(--dark);";
+  els.pillText.replaceWith(input);
+  input.focus();
+  setStatus("typing...");
+  return new Promise((resolve) => {
+    const finish = (text) => {
+      input.replaceWith(els.pillText);
+      pill({ visible: false });
+      resolve(text.trim());
+    };
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") { event.preventDefault(); finish(input.value); }
+      if (event.key === "Escape") { event.preventDefault(); finish(""); }
+    });
+    input.addEventListener("blur", () => finish(input.value));
+  });
 }
 
 async function uploadDataURL(dataURL) {
-  setStatus("uploading…");
+  setStatus("uploading...");
   const blob = await (await fetch(dataURL)).blob();
-  const fd = new FormData();
-  fd.append("file", blob, "annot.png");
-  const r = await fetch("https://media.pollinations.ai/upload", {
+  const form = new FormData();
+  form.append("file", blob, "annot.png");
+  const res = await fetch("https://media.pollinations.ai/upload", {
     method: "POST",
-    headers: { Authorization: `Bearer ${getKey()}` },
-    body: fd,
+    headers: { Authorization: `Bearer ${key()}` },
+    body: form,
   });
-  if (!r.ok) throw new Error(await friendlyError(r, "Upload failed"));
-  const j = await r.json();
-  return j.url || `https://media.pollinations.ai/${j.id}`;
+  if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
+  const json = await res.json();
+  return json.url || `https://media.pollinations.ai/${json.id}`;
 }
 
-async function runEdit(refURL, prompt, model) {
-  if (!model) model = document.getElementById("modelSel").value;
-  const r = await fetch(`${BASE}/v1/images/edits`, {
+async function runEdit(imageURL, prompt, model) {
+  const res = await fetch(`${BASE}/v1/images/edits`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${getKey()}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, image: refURL, model, response_format: "url" }),
+    headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, image: imageURL, model, response_format: "url" }),
   });
-  if (!r.ok) throw new Error(await friendlyError(r, "Edit failed"));
-  const j = await r.json();
-  const item = j.data?.[0];
+  if (!res.ok) throw new Error(await friendlyError(res, "Edit failed"));
+  const json = await res.json();
+  const item = json.data?.[0];
   if (!item) throw new Error("no image in response");
   if (item.url) return item.url;
   if (item.b64_json) return `data:image/png;base64,${item.b64_json}`;
   throw new Error("no url or b64_json in response");
 }
 
-function buildEditPrompt(text, marked, color) {
-  if (!marked) return text;
-  return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings.`;
-}
-
-function enqueueEdit({ point, text, annotated, marked }) {
-  if (!text.trim()) throw new Error("Nothing heard. Type an edit if voice input is unavailable.");
-  const prompt = buildEditPrompt(text, marked, markerColor);
-  const model = document.getElementById("modelSel").value;
-  const xPct = (point.x / canvas.width) * 100;
-  const yPct = (point.y / canvas.height) * 100;
-  editQueue.push({ xPct, yPct, intent: text, prompt, model, annotated });
-  render();
-  runQueue();
+async function friendlyError(response, label) {
+  let details = response.statusText || "request failed";
+  try {
+    const text = await response.text();
+    const json = JSON.parse(text);
+    details = json.error?.message || json.message || text;
+  } catch {}
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem(KEY_STORAGE);
+    refreshConnectionUI();
+    return `${label}: authorization expired. Connect again.`;
+  }
+  if (response.status === 402) return `${label}: add Pollen credits, then try again.`;
+  if (response.status === 429) return `${label}: rate limited. Wait a moment or switch models.`;
+  return `${label}: ${response.status} ${details}`;
 }
 
 async function runQueue() {
-  if (queueRunning) return;
-  queueRunning = true;
+  if (app.busy) return;
+  app.busy = true;
+  render();
   try {
-    while (editQueue.length) {
-      const job = editQueue[0];
+    while (app.queue.length) {
+      const job = app.queue.shift();
+      app.currentJob = job;
       render();
-      setStatus(`editing… (${editQueue.length} in queue)`);
+      setStatus(`editing... (${app.queue.length + 1} in queue)`);
       try {
-        const annotURL = await uploadDataURL(job.annotated);
-        const resultURL = await runEdit(annotURL, job.prompt, job.model);
+        const snapshot = await composeSnapshot(job.marker);
+        const uploaded = await uploadDataURL(snapshot);
+        const prompt = buildPrompt(job.text, job.marked, job.color);
+        const result = await runEdit(uploaded, prompt, job.model);
         pushUndo();
-        await loadImageFromURL(resultURL);
+        await loadImage(result);
+        await loadBalance();
       } catch (err) {
         showError(err.message);
-        if (currentImageURL) await loadImageFromURL(currentImageURL).catch(() => {});
+      } finally {
+        app.currentJob = null;
+        render();
       }
-      editQueue.shift();
-      render();
     }
     setStatus("done");
-    loadBalance();
   } finally {
-    queueRunning = false;
+    app.busy = false;
+    app.currentJob = null;
     render();
   }
 }
 
-function resetCanvas() {
-  if (!currentImage) return;
-  canvas.width = currentImage.naturalWidth;
-  canvas.height = currentImage.naturalHeight;
-  ctx.drawImage(currentImage, 0, 0);
+function cancelGesture() {
+  if (app.active?.capture?.recorder?.state === "recording") {
+    try { app.active.capture.recorder.stop(); } catch {}
+  }
+  app.active = null;
+  clearMarks();
+  pill({ visible: false });
+  setStatus(app.busy ? "editing..." : "ready");
+  render();
 }
 
-canvas.addEventListener("pointerdown", async (e) => {
-  if (!currentImage) { showError("Load an image first."); return; }
-  if (queueRunning || editQueue.length) { showError("Wait for the current edit to finish."); return; }
-  e.preventDefault();
-  resetCanvas(); // wipe any leftover markings from the prior gesture
-  const point = canvasPointFromEvent(e);
-  if (document.getElementById("typeMode").checked) {
-    const text = await promptTypedEdit(e.clientX, e.clientY);
-    if (text) {
-      const annotated = canvas.toDataURL("image/png");
-      try { enqueueEdit({ point, text, annotated, marked: false }); }
-      catch (err) { showError(err.message); }
-    } else {
-      setStatus("ready");
+els.markCanvas.addEventListener("pointerdown", async (event) => {
+  if (!app.image) { showError("Load an image first."); return; }
+  if (app.active) return;
+  event.preventDefault();
+  clearError();
+  clearMarks();
+  const start = pointerPoint(event);
+
+  if (els.typeMode.checked) {
+    app.active = { typing: true };
+    render();
+    const text = await promptTypedEdit(event.clientX, event.clientY);
+    app.active = null;
+    render();
+    if (!text) { setStatus(app.busy ? "editing..." : "ready"); return; }
+    try {
+      enqueueEdit({ text, marked: false, marker: "", pinPoint: start, color: app.markerColor });
+    } catch (err) {
+      showError(err.message);
     }
     return;
   }
-  try { canvas.setPointerCapture(e.pointerId); } catch {}
-  activeCapture = startIntentCapture(e.clientX, e.clientY);
-  if (activeCapture) {
-    activeCapture.point = point;
-    activeCapture.stroke = [point];
-  }
+
+  const capture = beginRecording(event.clientX, event.clientY);
+  app.active = { pointerId: event.pointerId, points: [start], capture, color: app.markerColor };
+  try { els.markCanvas.setPointerCapture(event.pointerId); } catch {}
 });
 
-canvas.addEventListener("pointermove", (e) => {
-  if (!activeCapture) return;
-  pill({ x: e.clientX, y: e.clientY });
-  if (!activeCapture.stroke) return;
-  const p = canvasPointFromEvent(e);
-  const prev = activeCapture.stroke[activeCapture.stroke.length - 1];
-  drawStrokeSegment(ctx, prev, p, canvas.width, canvas.height);
-  activeCapture.stroke.push(p);
+els.markCanvas.addEventListener("pointermove", (event) => {
+  const gesture = app.active;
+  if (!gesture) return;
+  event.preventDefault();
+  pill({ x: event.clientX, y: event.clientY });
+  const point = pointerPoint(event);
+  const prev = gesture.points[gesture.points.length - 1];
+  drawSegment(prev, point);
+  gesture.points.push(point);
 });
 
-canvas.addEventListener("pointerup", async (e) => {
-  if (!activeCapture) return;
-  e.preventDefault();
-  const capture = activeCapture;
-  activeCapture = null;
-  const minLen = Math.min(canvas.width, canvas.height) * 0.03;
-  const stroke = capture.stroke || [capture.point];
-  const isDrag = pathLength(stroke) > minLen;
-  // No drag → wipe back to clean source so no faint live-paint trace persists in the snapshot.
-  if (!isDrag) resetCanvas();
-  const annotated = canvas.toDataURL("image/png");
-  let pinPoint;
-  if (isDrag) {
-    const b = pathBounds(stroke);
-    pinPoint = { x: b.maxX, y: (b.minY + b.maxY) / 2 };
-  } else {
-    pinPoint = capture.point;
-  }
+els.markCanvas.addEventListener("pointerup", async (event) => {
+  const gesture = app.active;
+  if (!gesture) return;
+  event.preventDefault();
+  app.active = null;
+  const length = pathLength(gesture.points);
+  const marked = length >= Math.min(els.markCanvas.width, els.markCanvas.height) * DRAG_THRESHOLD;
+  if (!marked) clearMarks();
+  const marker = marked ? els.markCanvas.toDataURL("image/png") : "";
+  const bounds = marked ? pathBounds(gesture.points) : null;
+  const pinPoint = marked
+    ? { x: bounds.maxX, y: (bounds.minY + bounds.maxY) / 2 }
+    : gesture.points[0];
   try {
-    const { text, error } = await stopIntentCapture(capture);
+    const { text, error } = await stopAndTranscribe(gesture.capture);
     pill({ visible: false });
-    if (!text.trim() && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
-    enqueueEdit({ point: pinPoint, text, annotated, marked: isDrag });
+    if (!text && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
+    enqueueEdit({ text, marked, marker, pinPoint, color: gesture.color });
   } catch (err) {
     showError(err.message);
-    resetCanvas();
+    clearMarks();
   }
 });
 
-canvas.addEventListener("pointercancel", () => {
-  if (activeCapture) {
-    try { activeCapture.recorder?.stop(); } catch {}
-  }
-  activeCapture = null;
-  pill({ visible: false });
-  resetCanvas();
-  setStatus("ready");
+els.markCanvas.addEventListener("pointercancel", cancelGesture);
+
+els.connect.addEventListener("click", startConnect);
+els.connectOverlay.addEventListener("click", startConnect);
+els.disconnect.addEventListener("click", disconnect);
+els.upload.addEventListener("click", () => els.file.click());
+els.file.addEventListener("change", () => {
+  const file = els.file.files?.[0];
+  if (file) loadImage(file, { pushHistory: true }).catch((err) => showError(err.message));
 });
 
-undoBtn.onclick = () => {
-  if (!undoStack.length) return;
-  redoStack.push(currentImageURL);
-  loadImageFromURL(undoStack.pop()).then(() => setStatus("undone")).catch(err => showError(err.message));
-};
+els.colorPicker.addEventListener("click", (event) => {
+  const swatch = event.target.closest(".swatch");
+  if (!swatch) return;
+  app.markerColor = swatch.dataset.color;
+  for (const button of els.colorPicker.querySelectorAll(".swatch")) {
+    button.classList.toggle("active", button === swatch);
+  }
+});
 
-redoBtn.onclick = () => {
-  if (!redoStack.length) return;
-  undoStack.push(currentImageURL);
-  loadImageFromURL(redoStack.pop()).then(() => setStatus("redone")).catch(err => showError(err.message));
-};
+for (const eventName of ["dragenter", "dragover"]) {
+  els.frame.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    els.frame.classList.add("drop");
+  });
+}
+for (const eventName of ["dragleave", "drop"]) {
+  els.frame.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    els.frame.classList.remove("drop");
+  });
+}
+els.frame.addEventListener("drop", (event) => {
+  const file = event.dataTransfer?.files?.[0];
+  if (file) loadImage(file, { pushHistory: true }).catch((err) => showError(err.message));
+});
 
-document.getElementById("downloadBtn").onclick = () => {
+els.undo.addEventListener("click", () => {
+  if (!app.undo.length || app.busy || app.active) return;
+  app.redo.push(app.imageURL);
+  loadImage(app.undo.pop()).then(() => setStatus("undone")).catch((err) => showError(err.message));
+});
+els.redo.addEventListener("click", () => {
+  if (!app.redo.length || app.busy || app.active) return;
+  app.undo.push(app.imageURL);
+  loadImage(app.redo.pop()).then(() => setStatus("redone")).catch((err) => showError(err.message));
+});
+els.download.addEventListener("click", () => {
   try {
-    const a = document.createElement("a");
-    a.href = canvas.toDataURL("image/png");
-    a.download = "voice-edit.png";
-    a.click();
+    const link = document.createElement("a");
+    link.href = els.imageCanvas.toDataURL("image/png");
+    link.download = "voice-edit.png";
+    link.click();
   } catch {
-    if (currentImageURL) window.open(currentImageURL, "_blank", "noopener");
+    if (app.imageURL) window.open(app.imageURL, "_blank", "noopener");
   }
-};
+});
 
-loadImageFromURL(STARTER).catch(err => showError(err.message));
+captureKeyFromFragment();
+refreshConnectionUI();
+loadModels();
+loadImage(STARTER).catch((err) => showError(err.message));
+for (const button of els.colorPicker.querySelectorAll(".swatch")) {
+  button.classList.toggle("active", button.dataset.color === app.markerColor);
+}
 </script>
 </body>
+</html>

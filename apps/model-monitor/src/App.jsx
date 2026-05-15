@@ -643,6 +643,12 @@ function App() {
                         <thead className="bg-tan text-[10px] text-muted">
                             <tr>
                                 <SortableTh
+                                    label="Type"
+                                    sortKey="type"
+                                    currentSort={sort}
+                                    onSort={handleSort}
+                                />
+                                <SortableTh
                                     label="Model"
                                     sortKey="name"
                                     currentSort={sort}
@@ -710,7 +716,7 @@ function App() {
                             {filteredModels.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={adminMode ? 9 : 8}
+                                        colSpan={adminMode ? 10 : 9}
                                         className="p-8 text-center text-subtle"
                                     >
                                         {lastUpdated
@@ -749,12 +755,14 @@ function App() {
                                             className={`hover:bg-cream/50 ${rowBg}`}
                                         >
                                             <td className="px-3 py-2">
+                                                <span
+                                                    className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${colors.badge}`}
+                                                >
+                                                    {model.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-2">
                                                 <div className="flex items-center gap-2">
-                                                    <span
-                                                        className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${colors.badge}`}
-                                                    >
-                                                        {model.type}
-                                                    </span>
                                                     <span className="text-dark font-medium">
                                                         {model.name}
                                                     </span>

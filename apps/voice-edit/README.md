@@ -12,7 +12,7 @@ Voice-driven image/video editor. Draw on an image, speak the edit, release. Mark
 | balance | `GET /account/balance` | shown in header, refreshed after successful edit |
 | STT | `POST /v1/audio/transcriptions`, `model=scribe` | ElevenLabs Scribe v2; replaced Whisper after short-utterance/silence issues |
 | edit | `POST /v1/images/edits` | OpenAI-compatible `{ prompt, image, model, response_format: "url" }` |
-| video | `GET /video/{prompt}`, `model=wan-fast` | clean current image as `image=`, blocking MP4 response |
+| video | `GET /video/{prompt}`, `model=wan-fast` | clean current image as `image=`; authenticated fetch fills cache, token-free URL is stored/rendered |
 | upload | `POST media.pollinations.ai/upload` | uploads composed PNG snapshot |
 | starter | detailed human-cell render | `media.pollinations.ai/10efdd0c1cfc65fa` |
 

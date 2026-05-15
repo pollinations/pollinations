@@ -960,12 +960,13 @@ async function runVideo(imageURL, prompt, model) {
     duration: VIDEO_DURATION,
     image: imageURL,
   });
-  const res = await fetch(`${BASE}/video/${encodeURIComponent(prompt)}?${params}`, {
+  const url = `${BASE}/video/${encodeURIComponent(prompt)}?${params}`;
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${key()}` },
   });
   if (!res.ok) throw new Error(await friendlyError(res, "Video failed"));
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
+  await res.arrayBuffer();
+  return url;
 }
 
 async function friendlyError(response, label) {

@@ -409,16 +409,15 @@ const markCtx = els.markCanvas.getContext("2d");
 const app = {
   image: null,
   imageURL: "",
-  videoURL: "",
-  videoPrompt: "",
+  current: null,
+  history: [],
+  historyIndex: -1,
   mode: "edit",
   micStream: null,
   active: null,
   busy: false,
   queue: [],
   currentJob: null,
-  undo: [],
-  redo: [],
   markerColor: "red",
   accountUser: "",
   accountBalance: null,
@@ -446,18 +445,19 @@ function key() {
 
 function render() {
   const locked = app.busy || Boolean(app.active);
-  els.undo.disabled = (app.undo.length === 0 && !app.videoURL) || locked;
-  els.redo.disabled = app.redo.length === 0 || locked;
+  const video = app.current?.kind === "video";
+  els.undo.disabled = !canUndo() || locked;
+  els.redo.disabled = !canRedo() || locked;
   els.upload.disabled = locked;
   els.model.disabled = locked || app.mode === "animate";
   els.model.hidden = app.mode === "animate";
   els.videoModel.hidden = app.mode !== "animate";
   els.colorPicker.hidden = app.mode === "animate";
   els.typeMode.disabled = locked;
-  els.stage.classList.toggle("video", !!app.videoURL);
+  els.stage.classList.toggle("video", video);
   els.stage.classList.toggle("edit", app.mode === "edit");
   els.stage.classList.toggle("animate", app.mode === "animate");
-  els.stageVideo.hidden = !app.videoURL;
+  els.stageVideo.hidden = !video;
   for (const button of els.modePicker.querySelectorAll("button")) {
     button.disabled = locked;
     button.classList.toggle("active", button.dataset.mode === app.mode);
@@ -596,19 +596,38 @@ function stopMic() {
   app.micStream = null;
 }
 
-function currentState() {
-  if (app.videoURL) return { kind: "video", url: app.videoURL, prompt: app.videoPrompt, imageURL: app.imageURL };
-  if (app.imageURL) return { kind: "image", url: app.imageURL };
-  return null;
+function canUndo() {
+  return app.historyIndex > 0;
 }
 
-async function restoreState(state) {
-  if (!state) return;
-  if (state.kind === "video") {
-    await loadImage(state.imageURL);
-    showVideo(state.url, state.prompt);
+function canRedo() {
+  return app.historyIndex >= 0 && app.historyIndex < app.history.length - 1;
+}
+
+function addFrame(frame) {
+  app.history = app.history.slice(0, app.historyIndex + 1);
+  app.history.push(frame);
+  app.historyIndex = app.history.length - 1;
+  app.current = frame;
+  render();
+}
+
+async function goToFrame(index) {
+  const frame = app.history[index];
+  if (!frame) return;
+  await renderFrame(frame);
+  app.historyIndex = index;
+  app.current = frame;
+  render();
+}
+
+async function setFrame(frame, { addToHistory = false } = {}) {
+  await renderFrame(frame);
+  if (addToHistory) {
+    addFrame(frame);
   } else {
-    await loadImage(state.url);
+    app.current = frame;
+    render();
   }
 }
 
@@ -638,19 +657,26 @@ async function loadModels() {
   } catch {}
 }
 
-function pushUndo() {
-  const state = currentState();
-  if (!state) return;
-  app.undo.push(state);
-  app.redo = [];
-  render();
-}
-
-async function loadImage(src, { pushHistory = false } = {}) {
+async function loadImage(src, { addToHistory = false } = {}) {
   clearError();
   if (src instanceof File) src = await readImageFile(src);
-  if (pushHistory) pushUndo();
-  hideVideo();
+  await setFrame({ kind: "image", url: src }, { addToHistory });
+}
+
+async function renderFrame(frame) {
+  clearError();
+  if (frame.kind === "video") {
+    if (frame.imageURL) await drawImage(frame.imageURL);
+    showVideoElement(frame.url);
+  } else {
+    hideVideoElement();
+    await drawImage(frame.url);
+  }
+  clearMarks();
+  setStatus("ready");
+}
+
+async function drawImage(src) {
   setStatus("loading image...");
   const img = new Image();
   img.crossOrigin = "anonymous";
@@ -663,9 +689,6 @@ async function loadImage(src, { pushHistory = false } = {}) {
   app.imageURL = src;
   resizeCanvases(img.naturalWidth, img.naturalHeight);
   imageCtx.drawImage(img, 0, 0);
-  clearMarks();
-  setStatus("ready");
-  render();
 }
 
 function readImageFile(file) {
@@ -689,38 +712,29 @@ function clearMarks() {
   markCtx.clearRect(0, 0, els.markCanvas.width, els.markCanvas.height);
 }
 
-function showVideo(url, prompt = "") {
-  hideVideo();
-  clearMarks();
-  app.videoURL = url;
-  app.videoPrompt = prompt;
+function showVideoElement(url) {
+  hideVideoElement();
+  els.stageVideo.hidden = false;
   els.stageVideo.src = url;
   els.stageVideo.play().catch(() => {});
-  render();
 }
 
-function hideVideo() {
-  if (!app.videoURL) return;
-  app.videoURL = "";
-  app.videoPrompt = "";
+function hideVideoElement() {
+  els.stageVideo.hidden = true;
   els.stageVideo.pause();
   els.stageVideo.removeAttribute("src");
   els.stageVideo.load();
-  render();
 }
 
 async function commitVideoFrame() {
-  if (!app.videoURL) return;
+  if (app.current?.kind !== "video") return;
   const video = els.stageVideo;
   if (!video.videoWidth || !video.videoHeight) throw new Error("video frame is not ready yet");
   const frame = document.createElement("canvas");
   frame.width = video.videoWidth;
   frame.height = video.videoHeight;
   frame.getContext("2d").drawImage(video, 0, 0);
-  const dataURL = frame.toDataURL("image/png");
-  pushUndo();
-  hideVideo();
-  await loadImage(dataURL);
+  await setFrame({ kind: "image", url: frame.toDataURL("image/png") }, { addToHistory: true });
 }
 
 function pointerPoint(event) {
@@ -987,13 +1001,11 @@ async function runQueue() {
         const uploaded = await uploadDataURL(snapshot, job.kind === "video" ? "source.png" : "annot.png");
         if (job.kind === "video") {
           const videoURL = await runVideo(uploaded, job.text, job.model);
-          pushUndo();
-          showVideo(videoURL, job.text);
+          await setFrame({ kind: "video", url: videoURL, prompt: job.text, imageURL: app.imageURL }, { addToHistory: true });
         } else {
           const prompt = buildPrompt(job.text, job.marked, job.color);
           const result = await runEdit(uploaded, prompt, job.model);
-          pushUndo();
-          await loadImage(result);
+          await setFrame({ kind: "image", url: result }, { addToHistory: true });
         }
         await loadBalance();
       } catch (err) {
@@ -1027,7 +1039,7 @@ els.markCanvas.addEventListener("pointerdown", async (event) => {
   if (app.active) return;
   event.preventDefault();
   clearError();
-  if (app.videoURL && app.mode === "edit") {
+  if (app.current?.kind === "video") {
     try {
       await commitVideoFrame();
     } catch (err) {
@@ -1116,7 +1128,7 @@ els.disconnect.addEventListener("click", disconnect);
 els.upload.addEventListener("click", () => els.file.click());
 els.file.addEventListener("change", () => {
   const file = els.file.files?.[0];
-  if (file) loadImage(file, { pushHistory: true }).catch((err) => showError(err.message));
+  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
 });
 
 els.modePicker.addEventListener("click", (event) => {
@@ -1148,27 +1160,23 @@ for (const eventName of ["dragleave", "drop"]) {
 }
 els.frame.addEventListener("drop", (event) => {
   const file = event.dataTransfer?.files?.[0];
-  if (file) loadImage(file, { pushHistory: true }).catch((err) => showError(err.message));
+  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
 });
 
 els.undo.addEventListener("click", () => {
-  if ((!app.undo.length && !app.videoURL) || app.busy || app.active) return;
-  const current = currentState();
-  if (current) app.redo.push(current);
-  const previous = app.videoURL && !app.undo.length ? { kind: "image", url: app.imageURL } : app.undo.pop();
-  restoreState(previous).then(() => setStatus("undone")).catch((err) => showError(err.message));
+  if (!canUndo() || app.busy || app.active) return;
+  goToFrame(app.historyIndex - 1).then(() => setStatus("undone")).catch((err) => showError(err.message));
 });
 els.redo.addEventListener("click", () => {
-  if (!app.redo.length || app.busy || app.active) return;
-  const current = currentState();
-  if (current) app.undo.push(current);
-  restoreState(app.redo.pop()).then(() => setStatus("redone")).catch((err) => showError(err.message));
+  if (!canRedo() || app.busy || app.active) return;
+  goToFrame(app.historyIndex + 1).then(() => setStatus("redone")).catch((err) => showError(err.message));
 });
 els.download.addEventListener("click", () => {
   try {
     const link = document.createElement("a");
-    link.href = app.videoURL || els.imageCanvas.toDataURL("image/png");
-    link.download = app.videoURL ? "voice-edit.mp4" : "voice-edit.png";
+    const video = app.current?.kind === "video";
+    link.href = video ? app.current.url : els.imageCanvas.toDataURL("image/png");
+    link.download = video ? "voice-edit.mp4" : "voice-edit.png";
     link.click();
   } catch {
     if (app.imageURL) window.open(app.imageURL, "_blank", "noopener");
@@ -1178,7 +1186,7 @@ els.download.addEventListener("click", () => {
 captureKeyFromFragment();
 refreshConnectionUI();
 loadModels();
-loadImage(STARTER).catch((err) => showError(err.message));
+loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
 for (const button of els.colorPicker.querySelectorAll(".swatch")) {
   button.classList.toggle("active", button.dataset.color === app.markerColor);
 }

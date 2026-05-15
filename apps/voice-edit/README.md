@@ -1,6 +1,6 @@
 # voice-edit
 
-Voice-driven image editor. Draw on an image, speak the edit, release. A marked drag uploads `image + marker` to `/v1/images/edits`; a no-drag click sends a clean/global edit.
+Voice-driven image/video editor. Draw on an image, speak the edit, release. Marked image edits upload `image + marker`; animate mode sends the clean current image to `/video/{prompt}`.
 
 ## stack
 
@@ -12,6 +12,7 @@ Voice-driven image editor. Draw on an image, speak the edit, release. A marked d
 | balance | `GET /account/balance` | shown in header, refreshed after successful edit |
 | STT | `POST /v1/audio/transcriptions`, `model=scribe` | ElevenLabs Scribe v2; replaced Whisper after short-utterance/silence issues |
 | edit | `POST /v1/images/edits` | OpenAI-compatible `{ prompt, image, model, response_format: "url" }` |
+| video | `GET /video/{prompt}`, `model=wan-fast` | clean current image as `image=`, blocking MP4 response |
 | upload | `POST media.pollinations.ai/upload` | uploads composed PNG snapshot |
 | starter | detailed human-cell render | `media.pollinations.ai/10efdd0c1cfc65fa` |
 
@@ -24,6 +25,9 @@ Voice-driven image editor. Draw on an image, speak the edit, release. A marked d
 - Type mode = typed global prompt, no marker.
 - Completed gestures enqueue as FIFO jobs. Marked jobs store a transparent marker-overlay PNG; the front job composites that overlay onto the latest image offscreen before upload, so queued edits chain from prior results.
 - The visible marker layer is only for the live/current gesture; queued jobs use their stored overlay image.
+- Animate mode is global-only: no marker, clean current image -> MP4. The video replaces the canvas visually.
+- Switch back to edit mode and draw on a paused video to commit that frame into image history, then continue editing it as a normal image.
+- Undo/redo stores image and video states. Full authored-playback UI is deferred; the state shape keeps prompts/results needed for it.
 
 ## prompt
 
@@ -34,9 +38,10 @@ Voice-driven image editor. Draw on an image, speak the edit, release. A marked d
 
 - `imageCanvas`: clean current image.
 - `markCanvas`: live freehand drawing only.
+- `stageVideo`: generated MP4 result, shown in the same stage as the canvas.
 - `pinLayer`: DOM label anchored to click point or rightmost mark edge.
-- `composeSnapshot(marked)`: offscreen PNG composition; draws marker layer only for marked edits.
-- `app`: single state object for image, auth account data, mic stream, active gesture, FIFO queue, current job, undo/redo, marker color.
+- `composeSnapshot(marker)`: offscreen PNG composition; draws a transparent marker overlay when present.
+- `app`: single state object for image/video, auth account data, mic stream, active gesture, FIFO queue, current job, undo/redo, marker color.
 - Queue jobs store marker overlay image, prompt text, color, model, and normalized pin position. `runQueue()` composites each overlay with the current image just before upload.
 
 ## local
@@ -52,4 +57,5 @@ python3 -m http.server 8765
 - Verify Scribe latency/accuracy on mobile microphones.
 - Test iOS Safari pointer capture + `touch-action: none`.
 - Consider a model selector for STT only if Scribe underperforms.
+- Add optional fast authored playback: prompts + marks + video clips + selected frames, using stored history states and no API wait times.
 - Two-image pattern remains deferred: clean image + marked image may reduce marker bleed-through if `/v1/images/edits` supports multiple images.

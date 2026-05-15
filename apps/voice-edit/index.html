@@ -102,6 +102,36 @@
   }
   .history { margin-left: auto; }
 
+  .mode {
+    display: inline-flex;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    background: #fff;
+  }
+  .mode button {
+    min-height: 34px;
+    padding: 0 10px;
+    border: 0;
+    background: transparent;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .mode button.active { background: var(--accent); }
+  .mode button + button { border-left: 2px solid var(--line); }
+  .video-model {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
   .swatches {
     display: inline-flex;
     align-items: center;
@@ -141,13 +171,19 @@
     max-height: calc(100vh - 210px);
     touch-action: none;
   }
-  .stage canvas {
+  .stage canvas, .stage video {
     display: block;
     max-width: 100%;
     max-height: calc(100vh - 210px);
     width: auto;
     height: auto;
   }
+  .stage video {
+    background: #000;
+    max-width: 100%;
+  }
+  .stage.video #imageCanvas { display: none; }
+  #stageVideo[hidden] { display: none; }
   #markCanvas, #pinLayer {
     position: absolute;
     inset: 0;
@@ -155,6 +191,10 @@
     height: 100%;
   }
   #markCanvas { cursor: crosshair; z-index: 2; touch-action: none; }
+  .stage.video.animate #markCanvas {
+    pointer-events: none;
+    cursor: default;
+  }
   #pinLayer { z-index: 3; pointer-events: none; }
 
   .overlay {
@@ -281,9 +321,14 @@
       <button id="disconnectBtn" class="btn" hidden>disconnect</button>
       <button id="uploadBtn" class="btn">image</button>
       <input id="fileInput" type="file" accept="image/*" hidden>
+      <div id="modePicker" class="mode" aria-label="mode">
+        <button type="button" data-mode="edit" class="active">edit</button>
+        <button type="button" data-mode="animate">animate</button>
+      </div>
       <select id="modelSel" class="select" aria-label="image model">
         <option value="nanobanana">nanobanana</option>
       </select>
+      <span id="videoModelLabel" class="video-model" hidden>wan-fast video</span>
       <div id="colorPicker" class="swatches" aria-label="marker color">
         <button type="button" class="swatch" data-color="red" aria-label="red marker"></button>
         <button type="button" class="swatch" data-color="black" aria-label="black marker"></button>
@@ -299,6 +344,7 @@
       <div id="stage" class="stage">
         <canvas id="imageCanvas" width="1024" height="768"></canvas>
         <canvas id="markCanvas" width="1024" height="768"></canvas>
+        <video id="stageVideo" hidden controls autoplay loop muted playsinline></video>
         <div id="pinLayer"></div>
       </div>
       <div class="overlay">
@@ -308,6 +354,7 @@
         </div>
       </div>
     </section>
+
   </main>
 
   <div id="cursorPill" class="pill" aria-hidden="true">
@@ -321,6 +368,8 @@ const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
+const VIDEO_MODEL = "wan-fast";
+const VIDEO_DURATION = "5";
 const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
@@ -336,12 +385,15 @@ const els = {
   stage: document.getElementById("stage"),
   imageCanvas: document.getElementById("imageCanvas"),
   markCanvas: document.getElementById("markCanvas"),
+  stageVideo: document.getElementById("stageVideo"),
   pinLayer: document.getElementById("pinLayer"),
   connect: document.getElementById("connectBtn"),
   disconnect: document.getElementById("disconnectBtn"),
   connectOverlay: document.getElementById("connectOverlayBtn"),
   upload: document.getElementById("uploadBtn"),
   file: document.getElementById("fileInput"),
+  modePicker: document.getElementById("modePicker"),
+  videoModel: document.getElementById("videoModelLabel"),
   model: document.getElementById("modelSel"),
   typeMode: document.getElementById("typeMode"),
   undo: document.getElementById("undoBtn"),
@@ -357,6 +409,9 @@ const markCtx = els.markCanvas.getContext("2d");
 const app = {
   image: null,
   imageURL: "",
+  videoURL: "",
+  videoPrompt: "",
+  mode: "edit",
   micStream: null,
   active: null,
   busy: false,
@@ -391,11 +446,22 @@ function key() {
 
 function render() {
   const locked = app.busy || Boolean(app.active);
-  els.undo.disabled = app.undo.length === 0 || locked;
+  els.undo.disabled = (app.undo.length === 0 && !app.videoURL) || locked;
   els.redo.disabled = app.redo.length === 0 || locked;
   els.upload.disabled = locked;
-  els.model.disabled = locked;
+  els.model.disabled = locked || app.mode === "animate";
+  els.model.hidden = app.mode === "animate";
+  els.videoModel.hidden = app.mode !== "animate";
+  els.colorPicker.hidden = app.mode === "animate";
   els.typeMode.disabled = locked;
+  els.stage.classList.toggle("video", !!app.videoURL);
+  els.stage.classList.toggle("edit", app.mode === "edit");
+  els.stage.classList.toggle("animate", app.mode === "animate");
+  els.stageVideo.hidden = !app.videoURL;
+  for (const button of els.modePicker.querySelectorAll("button")) {
+    button.disabled = locked;
+    button.classList.toggle("active", button.dataset.mode === app.mode);
+  }
   renderPins();
 }
 
@@ -419,7 +485,7 @@ function renderPins() {
     const dot = document.createElement("span");
     dot.className = "dot";
     const text = document.createElement("span");
-    text.textContent = job.text;
+    text.textContent = job.kind === "video" ? `animate: ${job.text}` : job.text;
     pin.append(dot, text);
     pin.style.left = `${job.xPct}%`;
     pin.style.top = `${job.yPct}%`;
@@ -428,6 +494,14 @@ function renderPins() {
     const available = window.innerWidth - anchorX - 12;
     pin.style.maxWidth = `${Math.min(256, Math.max(28, available))}px`;
   }
+}
+
+function setMode(mode) {
+  app.mode = mode;
+  clearError();
+  clearMarks();
+  setStatus(mode === "animate" ? "animate mode" : "ready");
+  render();
 }
 
 function pill({ x, y, text, placeholder, visible }) {
@@ -522,6 +596,22 @@ function stopMic() {
   app.micStream = null;
 }
 
+function currentState() {
+  if (app.videoURL) return { kind: "video", url: app.videoURL, prompt: app.videoPrompt, imageURL: app.imageURL };
+  if (app.imageURL) return { kind: "image", url: app.imageURL };
+  return null;
+}
+
+async function restoreState(state) {
+  if (!state) return;
+  if (state.kind === "video") {
+    await loadImage(state.imageURL);
+    showVideo(state.url, state.prompt);
+  } else {
+    await loadImage(state.url);
+  }
+}
+
 async function loadModels() {
   try {
     const res = await fetch(`${BASE}/image/models`);
@@ -549,8 +639,9 @@ async function loadModels() {
 }
 
 function pushUndo() {
-  if (!app.imageURL) return;
-  app.undo.push(app.imageURL);
+  const state = currentState();
+  if (!state) return;
+  app.undo.push(state);
   app.redo = [];
   render();
 }
@@ -559,6 +650,7 @@ async function loadImage(src, { pushHistory = false } = {}) {
   clearError();
   if (src instanceof File) src = await readImageFile(src);
   if (pushHistory) pushUndo();
+  hideVideo();
   setStatus("loading image...");
   const img = new Image();
   img.crossOrigin = "anonymous";
@@ -595,6 +687,40 @@ function resizeCanvases(width, height) {
 
 function clearMarks() {
   markCtx.clearRect(0, 0, els.markCanvas.width, els.markCanvas.height);
+}
+
+function showVideo(url, prompt = "") {
+  hideVideo();
+  clearMarks();
+  app.videoURL = url;
+  app.videoPrompt = prompt;
+  els.stageVideo.src = url;
+  els.stageVideo.play().catch(() => {});
+  render();
+}
+
+function hideVideo() {
+  if (!app.videoURL) return;
+  app.videoURL = "";
+  app.videoPrompt = "";
+  els.stageVideo.pause();
+  els.stageVideo.removeAttribute("src");
+  els.stageVideo.load();
+  render();
+}
+
+async function commitVideoFrame() {
+  if (!app.videoURL) return;
+  const video = els.stageVideo;
+  if (!video.videoWidth || !video.videoHeight) throw new Error("video frame is not ready yet");
+  const frame = document.createElement("canvas");
+  frame.width = video.videoWidth;
+  frame.height = video.videoHeight;
+  frame.getContext("2d").drawImage(video, 0, 0);
+  const dataURL = frame.toDataURL("image/png");
+  pushUndo();
+  hideVideo();
+  await loadImage(dataURL);
 }
 
 function pointerPoint(event) {
@@ -677,15 +803,16 @@ function loadImageElement(src) {
   });
 }
 
-function enqueueEdit({ text, marked, marker, pinPoint, color }) {
+function enqueueJob({ kind, text, marked = false, marker = "", pinPoint, color }) {
   if (!text.trim()) throw new Error("Nothing heard. Type an edit if voice input is unavailable.");
   const pin = pinPct(pinPoint);
   app.queue.push({
+    kind,
     text,
     marked,
     marker,
     color,
-    model: els.model.value,
+    model: kind === "video" ? VIDEO_MODEL : els.model.value,
     xPct: pin.xPct,
     yPct: pin.yPct,
   });
@@ -769,11 +896,11 @@ async function promptTypedEdit(clientX, clientY) {
   });
 }
 
-async function uploadDataURL(dataURL) {
+async function uploadDataURL(dataURL, filename = "annot.png") {
   setStatus("uploading...");
   const blob = await (await fetch(dataURL)).blob();
   const form = new FormData();
-  form.append("file", blob, "annot.png");
+  form.append("file", blob, filename);
   const res = await fetch("https://media.pollinations.ai/upload", {
     method: "POST",
     headers: { Authorization: `Bearer ${key()}` },
@@ -797,6 +924,20 @@ async function runEdit(imageURL, prompt, model) {
   if (item.url) return item.url;
   if (item.b64_json) return `data:image/png;base64,${item.b64_json}`;
   throw new Error("no url or b64_json in response");
+}
+
+async function runVideo(imageURL, prompt, model) {
+  const params = new URLSearchParams({
+    model,
+    duration: VIDEO_DURATION,
+    image: imageURL,
+  });
+  const res = await fetch(`${BASE}/video/${encodeURIComponent(prompt)}?${params}`, {
+    headers: { Authorization: `Bearer ${key()}` },
+  });
+  if (!res.ok) throw new Error(await friendlyError(res, "Video failed"));
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
 }
 
 async function friendlyError(response, label) {
@@ -825,14 +966,20 @@ async function runQueue() {
       const job = app.queue.shift();
       app.currentJob = job;
       render();
-      setStatus(`editing... (${app.queue.length + 1} in queue)`);
+      setStatus(`${job.kind === "video" ? "animating" : "editing"}... (${app.queue.length + 1} in queue)`);
       try {
-        const snapshot = await composeSnapshot(job.marker);
-        const uploaded = await uploadDataURL(snapshot);
-        const prompt = buildPrompt(job.text, job.marked, job.color);
-        const result = await runEdit(uploaded, prompt, job.model);
-        pushUndo();
-        await loadImage(result);
+        const snapshot = await composeSnapshot(job.kind === "video" ? "" : job.marker);
+        const uploaded = await uploadDataURL(snapshot, job.kind === "video" ? "source.png" : "annot.png");
+        if (job.kind === "video") {
+          const videoURL = await runVideo(uploaded, job.text, job.model);
+          pushUndo();
+          showVideo(videoURL, job.text);
+        } else {
+          const prompt = buildPrompt(job.text, job.marked, job.color);
+          const result = await runEdit(uploaded, prompt, job.model);
+          pushUndo();
+          await loadImage(result);
+        }
         await loadBalance();
       } catch (err) {
         showError(err.message);
@@ -865,8 +1012,17 @@ els.markCanvas.addEventListener("pointerdown", async (event) => {
   if (app.active) return;
   event.preventDefault();
   clearError();
+  if (app.videoURL && app.mode === "edit") {
+    try {
+      await commitVideoFrame();
+    } catch (err) {
+      showError(err.message);
+      return;
+    }
+  }
   clearMarks();
   const start = pointerPoint(event);
+  const kind = app.mode === "animate" ? "video" : "edit";
 
   if (els.typeMode.checked) {
     app.active = { typing: true };
@@ -876,7 +1032,7 @@ els.markCanvas.addEventListener("pointerdown", async (event) => {
     render();
     if (!text) { setStatus(app.busy ? "editing..." : "ready"); return; }
     try {
-      enqueueEdit({ text, marked: false, marker: "", pinPoint: start, color: app.markerColor });
+      enqueueJob({ kind, text, pinPoint: start, color: app.markerColor });
     } catch (err) {
       showError(err.message);
     }
@@ -884,7 +1040,7 @@ els.markCanvas.addEventListener("pointerdown", async (event) => {
   }
 
   const capture = beginRecording(event.clientX, event.clientY);
-  app.active = { pointerId: event.pointerId, points: [start], capture, color: app.markerColor };
+  app.active = { kind, pointerId: event.pointerId, points: [start], capture, color: app.markerColor };
   try { els.markCanvas.setPointerCapture(event.pointerId); } catch {}
 });
 
@@ -893,6 +1049,7 @@ els.markCanvas.addEventListener("pointermove", (event) => {
   if (!gesture) return;
   event.preventDefault();
   pill({ x: event.clientX, y: event.clientY });
+  if (gesture.kind === "video") return;
   const point = pointerPoint(event);
   const prev = gesture.points[gesture.points.length - 1];
   drawSegment(prev, point);
@@ -904,6 +1061,17 @@ els.markCanvas.addEventListener("pointerup", async (event) => {
   if (!gesture) return;
   event.preventDefault();
   app.active = null;
+  if (gesture.kind === "video") {
+    try {
+      const { text, error } = await stopAndTranscribe(gesture.capture);
+      pill({ visible: false });
+      if (!text && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
+      enqueueJob({ kind: "video", text, pinPoint: gesture.points[0], color: gesture.color });
+    } catch (err) {
+      showError(err.message);
+    }
+    return;
+  }
   const length = pathLength(gesture.points);
   const marked = length >= Math.min(els.markCanvas.width, els.markCanvas.height) * DRAG_THRESHOLD;
   if (!marked) clearMarks();
@@ -916,7 +1084,7 @@ els.markCanvas.addEventListener("pointerup", async (event) => {
     const { text, error } = await stopAndTranscribe(gesture.capture);
     pill({ visible: false });
     if (!text && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
-    enqueueEdit({ text, marked, marker, pinPoint, color: gesture.color });
+    enqueueJob({ kind: "edit", text, marked, marker, pinPoint, color: gesture.color });
   } catch (err) {
     showError(err.message);
     clearMarks();
@@ -932,6 +1100,12 @@ els.upload.addEventListener("click", () => els.file.click());
 els.file.addEventListener("change", () => {
   const file = els.file.files?.[0];
   if (file) loadImage(file, { pushHistory: true }).catch((err) => showError(err.message));
+});
+
+els.modePicker.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-mode]");
+  if (!button || button.disabled) return;
+  setMode(button.dataset.mode);
 });
 
 els.colorPicker.addEventListener("click", (event) => {
@@ -961,20 +1135,23 @@ els.frame.addEventListener("drop", (event) => {
 });
 
 els.undo.addEventListener("click", () => {
-  if (!app.undo.length || app.busy || app.active) return;
-  app.redo.push(app.imageURL);
-  loadImage(app.undo.pop()).then(() => setStatus("undone")).catch((err) => showError(err.message));
+  if ((!app.undo.length && !app.videoURL) || app.busy || app.active) return;
+  const current = currentState();
+  if (current) app.redo.push(current);
+  const previous = app.videoURL && !app.undo.length ? { kind: "image", url: app.imageURL } : app.undo.pop();
+  restoreState(previous).then(() => setStatus("undone")).catch((err) => showError(err.message));
 });
 els.redo.addEventListener("click", () => {
   if (!app.redo.length || app.busy || app.active) return;
-  app.undo.push(app.imageURL);
-  loadImage(app.redo.pop()).then(() => setStatus("redone")).catch((err) => showError(err.message));
+  const current = currentState();
+  if (current) app.undo.push(current);
+  restoreState(app.redo.pop()).then(() => setStatus("redone")).catch((err) => showError(err.message));
 });
 els.download.addEventListener("click", () => {
   try {
     const link = document.createElement("a");
-    link.href = els.imageCanvas.toDataURL("image/png");
-    link.download = "voice-edit.png";
+    link.href = app.videoURL || els.imageCanvas.toDataURL("image/png");
+    link.download = app.videoURL ? "voice-edit.mp4" : "voice-edit.png";
     link.click();
   } catch {
     if (app.imageURL) window.open(app.imageURL, "_blank", "noopener");

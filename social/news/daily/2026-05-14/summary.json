@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-14",
+  "period_start": "2026-05-14",
+  "period_end": "2026-05-14",
+  "title": "Faster speech and stabler ears for the Audio API",
+  "summary": "A unified dashboard UI, ultra-low latency text-to-speech, and solid fixes for audio transcription.\n\nWe wired up the ElevenLabs Flash v2.5 model (`elevenflash`) for ultra-low latency text-to-speech at half the usual credit cost. On the listening side, we patched OVH Whisper transcription so it stops throwing 500 errors over file extensions and duration metadata.\n\nThe enter.pollinations.ai dashboard got a structural refactor. We replaced fragmented styles with a unified design system and shared UI primitives. Managing your API keys and models is now a visually consistent, much cleaner experience.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 10912,
+      "date": "2026-05-14"
+    },
+    {
+      "number": 10934,
+      "date": "2026-05-14"
+    },
+    {
+      "number": 10936,
+      "date": "2026-05-14"
+    }
+  ],
+  "generated_at": "2026-05-15T07:02:51.343772+00:00"
+}

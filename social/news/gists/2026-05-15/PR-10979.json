@@ -1,0 +1,34 @@
+{
+  "pr_number": 10979,
+  "title": "add description tooltip next to model name in models list",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10979",
+  "merged_at": "2026-05-15T16:25:43Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds a small \"i\" tooltip badge next to each model's display name in the models list. Hovering it shows the model's description with the leading name stripped (since the display name is already shown next to the badge).\n\n- New `getModelDescriptionWithoutName` helper in `model-info.ts` — mirrors `getModelDisplayName` (which takes the part before `\" - \"`) by returning the part after.\n- Reuses the existing `<InfoTip>` (`ui/info-tip.tsx`) and `<Tooltip>` primitives — no new components or styles.\n- Badge only renders when a description exists for the model.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Hover for details",
+    "blurb": "Added a handy little info tooltip next to models in the list. Hover over it to see exactly what each model is best at without cluttering the screen!",
+    "summary": "Added an info tooltip next to each model's display name in the models list that reveals the model's description on hover.",
+    "impact": "Users can now quickly read model descriptions directly from the models list without navigating away or dealing with a cluttered UI.",
+    "keywords": [
+      "ui",
+      "models",
+      "tooltip",
+      "frontend"
+    ],
+    "visual_concept": "Polly the bee looking at a glowing 'i' info bubble popping out of a retro menu board or list.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, hovering next to a chunky retro menu board. A glowing lime green (#ecf874) 'i' info bubble pops up from the board. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10979.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, hovering next to a chunky retro menu board. A glowing lime green (#ecf874) 'i' info bubble pops up from the board. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-15T16:26:44.437749+00:00"
+}

@@ -366,6 +366,7 @@ const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
+const HISTORY_KEYWORD = "pollinations:voice-edit:history";
 const DEFAULT_VIDEO_MODEL = "seedance-pro";
 const VIDEO_DURATION = "6";
 const STT_MODEL = "scribe";
@@ -706,6 +707,109 @@ async function loadImage(src, { addToHistory = false } = {}) {
   clearError();
   if (src instanceof File) src = await readImageFile(src);
   await mediaHistory.set(media.image(src), { add: addToHistory });
+}
+
+// PNG tEXt chunk helpers — pure JS, no deps.
+const PNG_SIG = [137, 80, 78, 71, 13, 10, 26, 10];
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function readUint32(view, offset) { return view.getUint32(offset, false); }
+function writeUint32(view, offset, value) { view.setUint32(offset, value >>> 0, false); }
+function isValidPng(bytes) {
+  if (bytes.length < 8) return false;
+  for (let i = 0; i < 8; i++) if (bytes[i] !== PNG_SIG[i]) return false;
+  return true;
+}
+function readTextChunk(bytes, keyword) {
+  if (!isValidPng(bytes)) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let pos = 8;
+  const dec = new TextDecoder("latin1");
+  while (pos + 12 <= bytes.length) {
+    const length = readUint32(view, pos);
+    const type = dec.decode(bytes.subarray(pos + 4, pos + 8));
+    const dataStart = pos + 8;
+    const dataEnd = dataStart + length;
+    if (type === "IEND") return null;
+    if (type === "tEXt" && dataEnd <= bytes.length) {
+      const data = bytes.subarray(dataStart, dataEnd);
+      const sep = data.indexOf(0);
+      if (sep > 0) {
+        const k = dec.decode(data.subarray(0, sep));
+        if (k === keyword) return dec.decode(data.subarray(sep + 1));
+      }
+    }
+    pos = dataEnd + 4;
+  }
+  return null;
+}
+function injectTextChunk(bytes, keyword, text) {
+  if (!isValidPng(bytes)) throw new Error("not a PNG");
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let iendOffset = -1;
+  let pos = 8;
+  const dec = new TextDecoder("latin1");
+  while (pos + 12 <= bytes.length) {
+    const length = readUint32(view, pos);
+    const type = dec.decode(bytes.subarray(pos + 4, pos + 8));
+    if (type === "IEND") { iendOffset = pos; break; }
+    pos = pos + 8 + length + 4;
+  }
+  if (iendOffset < 0) throw new Error("PNG missing IEND");
+  const enc = new TextEncoder();
+  const kw = enc.encode(keyword);
+  const tx = enc.encode(text);
+  const data = new Uint8Array(kw.length + 1 + tx.length);
+  data.set(kw, 0);
+  data[kw.length] = 0;
+  data.set(tx, kw.length + 1);
+  const chunk = new Uint8Array(4 + 4 + data.length + 4);
+  const chunkView = new DataView(chunk.buffer);
+  writeUint32(chunkView, 0, data.length);
+  chunk.set([0x74, 0x45, 0x58, 0x74], 4); // "tEXt"
+  chunk.set(data, 8);
+  const crcInput = chunk.subarray(4, 8 + data.length);
+  writeUint32(chunkView, 8 + data.length, crc32(crcInput));
+  const out = new Uint8Array(bytes.length + chunk.length);
+  out.set(bytes.subarray(0, iendOffset), 0);
+  out.set(chunk, iendOffset);
+  out.set(bytes.subarray(iendOffset), iendOffset + chunk.length);
+  return out;
+}
+async function bytesFromBlob(blob) { return new Uint8Array(await blob.arrayBuffer()); }
+async function bytesFromUrl(url) {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`fetch ${url} ${res.status}`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+async function restoreHistoryFromBytes(bytes) {
+  const text = isValidPng(bytes) ? readTextChunk(bytes, HISTORY_KEYWORD) : null;
+  if (!text) return false;
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { return false; }
+  if (!parsed || !Array.isArray(parsed.history) || parsed.history.length === 0) return false;
+  app.history = parsed.history;
+  app.historyIndex = Math.max(0, Math.min(parsed.historyIndex ?? parsed.history.length - 1, parsed.history.length - 1));
+  await mediaHistory.go(app.historyIndex);
+  setStatus(`restored ${app.history.length} frames`);
+  return true;
+}
+async function loadImageWithHistory(fileOrBlob) {
+  const bytes = await bytesFromBlob(fileOrBlob);
+  if (await restoreHistoryFromBytes(bytes)) return;
+  await loadImage(fileOrBlob, { addToHistory: true });
 }
 
 async function renderFrame(frame) {
@@ -1188,7 +1292,7 @@ els.connectOverlay.addEventListener("click", startConnect);
 els.upload.addEventListener("click", () => els.file.click());
 els.file.addEventListener("change", () => {
   const file = els.file.files?.[0];
-  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
+  if (file) loadImageWithHistory(file).catch((err) => showError(err.message));
 });
 
 els.modePicker.addEventListener("click", (event) => {
@@ -1220,7 +1324,7 @@ for (const eventName of ["dragleave", "drop"]) {
 }
 els.frame.addEventListener("drop", (event) => {
   const file = event.dataTransfer?.files?.[0];
-  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
+  if (file) loadImageWithHistory(file).catch((err) => showError(err.message));
 });
 
 els.undo.addEventListener("click", () => {
@@ -1231,14 +1335,29 @@ els.redo.addEventListener("click", () => {
   if (!mediaHistory.canRedo() || app.busy || app.active) return;
   mediaHistory.go(app.historyIndex + 1).then(() => setStatus("redone")).catch((err) => showError(err.message));
 });
-els.download.addEventListener("click", () => {
+els.download.addEventListener("click", async () => {
   try {
+    if (media.isVideo()) {
+      const link = document.createElement("a");
+      link.href = app.current.url;
+      link.download = "voice-edit.mp4";
+      link.click();
+      return;
+    }
+    const blob = await new Promise((resolve, reject) => {
+      els.imageCanvas.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas toBlob failed"))), "image/png");
+    });
+    const bytes = await bytesFromBlob(blob);
+    const payload = JSON.stringify({ v: 1, history: app.history, historyIndex: app.historyIndex });
+    const out = injectTextChunk(bytes, HISTORY_KEYWORD, payload);
     const link = document.createElement("a");
-    const video = media.isVideo();
-    link.href = video ? app.current.url : els.imageCanvas.toDataURL("image/png");
-    link.download = video ? "voice-edit.mp4" : "voice-edit.png";
+    link.href = URL.createObjectURL(new Blob([out], { type: "image/png" }));
+    link.download = `voice-edit-${Date.now()}.png`;
     link.click();
-  } catch {
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    setStatus(`saved with ${app.history.length} frames`);
+  } catch (err) {
+    showError(err.message);
     if (app.imageURL) window.open(app.imageURL, "_blank", "noopener");
   }
 });
@@ -1246,7 +1365,21 @@ els.download.addEventListener("click", () => {
 captureKeyFromFragment();
 refreshConnectionUI();
 loadModels();
-loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
+(async () => {
+  const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const startUrl = params.get("start");
+  if (startUrl) {
+    try {
+      const bytes = await bytesFromUrl(startUrl);
+      if (await restoreHistoryFromBytes(bytes)) return;
+      await loadImage(startUrl, { addToHistory: true });
+      return;
+    } catch (err) {
+      showError(`couldn't load #start: ${err.message}`);
+    }
+  }
+  await loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
+})();
 for (const button of els.colorPicker.querySelectorAll(".swatch")) {
   button.classList.toggle("active", button.dataset.color === app.markerColor);
 }

@@ -1,0 +1,35 @@
+{
+  "pr_number": 10969,
+  "title": "route qwen-vision + qwen-vision-pro via openrouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10969",
+  "merged_at": "2026-05-15T14:37:14Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "The Fireworks deployment for `qwen3-vl-30b-a3b-thinking` was retired on 2026-05-14 and our `qwen-vision` traffic started 404ing in production (24.6% error rate over the last 24h, confirmed via `firectl model get`). All 6 Qwen3-VL variants in Fireworks' catalog were verified unavailable on the serverless tier with our key.\n\nThis PR moves both `qwen-vision` and `qwen-vision-pro` to OpenRouter, which serves the full Qwen3-VL family on a serverless plan, including the Thinking variants. `createOpenRouterModelConfig` was already in `providerConfigs.ts`; this just wires it up.\n\n**Wiring:**\n- `qwen-vision` → `qwen/qwen3-vl-30b-a3b-thinking` ($0.13 in / $1.56 out per 1M tokens)\n- `qwen-vision-pro` → `qwen/qwen3-vl-235b-a22b-thinking` ($0.26 in / $2.60 out per 1M tokens)\n- `cost` only — no `price` (price defaults to cost since there's no markup)\n- Both keep `reasoning: true` (thinking variants preserved)\n- Both stay on the **free tier** (no `paidOnly` flag)\n\n**Battle-tested locally** against `wrangler dev` with a seeded paid key. All matrices clean for both models:\n- modalities: text, single image, multi-image, tool calls, streaming, max_tokens=1\n- error paths: unreachable image, malformed URL, out-of-range temperature, invalid tool schema, empty messages — all return BAD_REQUEST 400, no opaque 5xx\n- burst at n=5/15/30 concurrent: 0 5xx, 0 429s; the few timeouts at exactly 90s are our worker's `DEFAULT_UPSTREAM_TIMEOUT_MS`, not OpenRouter throttling\n\n**Skill update:** `.claude/skills/model-management/SKILL.md` now requires this same battle-test (modalities + error matrix + burst) before opening any PR that adds or modifies a model endpoint, and documents the local TEXT-CACHE gotcha that masked real upstream latency on my first burst run.\n\n**Files changed:**\n- `shared/registry/text.ts` — both entries: provider `openrouter`, modelIds, cost\n- `gen.pollinations.ai/src/text/configs/modelConfigs.ts` — Fireworks entries replaced with OpenRouter ones\n- `gen.pollinations.ai/src/text/",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Qwen gets its glasses back",
+    "blurb": "Our Qwen Vision models hit a snag when their old host retired them, but we've re-routed the wiring. Both qwen-vision and qwen-vision-pro are back online, thinking clearly, and still completely free.",
+    "summary": "Re-routed qwen-vision and qwen-vision-pro to OpenRouter (using qwen3-vl-30b-a3b-thinking and qwen3-vl-235b-a22b-thinking) after Fireworks retired the previous deployments.",
+    "impact": "Users can once again use the qwen-vision and qwen-vision-pro endpoints on the free tier without encountering 404 errors.",
+    "keywords": [
+      "qwen",
+      "vision",
+      "openrouter",
+      "bugfix",
+      "models"
+    ],
+    "visual_concept": "The pollinations bee acting as a technician, fixing a glowing robotic eye or monitor. Swapping a broken wire for a new glowing lime green one to represent the new OpenRouter connection.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a glowing lime green (#ecf874) cable into a chunky retro monitor displaying a large pixelated eye. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10969.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny tool belt, plugging a glowing lime green (#ecf874) cable into a chunky retro monitor displaying a large pixelated eye. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-15T14:38:12.575325+00:00"
+}

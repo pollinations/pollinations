@@ -1,49 +1,69 @@
 # voice-edit-remix
 
-Image-only voice editor that can save itself as a remix: a new HTML file
-with the current image and history embedded. Open the file and you land
-on the same gallery.
+Image-only voice editor where **the image IS the share unit**. Click save
+and you get a PNG with your full edit history embedded in a `tEXt` chunk.
+Drop that PNG back onto the app — or onto any other instance of the app —
+and the gallery rehydrates.
 
-Same edit mechanics as `voice-edit-image`. The only addition is the
-**remix** button.
+## flow
 
-## the remix mechanic
+1. Open the app, edit images.
+2. Click **save** → downloads `voice-edit-<ts>.png`. The file is a normal
+   PNG of the current frame. It also carries the full history JSON in a
+   PNG `tEXt` chunk under keyword `pollinations:voice-edit:history`.
+3. Share the PNG. Drop it on the app (or anyone's copy of the app) — the
+   embedded chunk is read on drop, history restores, the latest frame
+   renders.
 
-1. Click **remix**.
-2. The page reads its own DOM via `document.documentElement.outerHTML`.
-3. Two sentinels in the source get rewritten:
-   - `const STARTER = "..."` -> current image URL.
-   - `const INITIAL_HISTORY = [...]; const INITIAL_HISTORY_INDEX = ...` -> populated.
-4. The resulting HTML is downloaded as `voice-edit-remix-<ts>.html`.
-5. Opening that file boots into the embedded gallery instead of the default starter.
+Alternate entry: `?…#start=<image-url>` boots from that URL instead of the
+default starter. If the URL points at a PNG with our `tEXt` chunk, history
+is restored from there.
 
-No source-doubling. No `<template id="self">`. The remix file is the same
-size as the canonical app plus a few hundred bytes of state. Image bytes
-are never embedded — only Pollinations URLs, which are content-addressed
-and cached server-side.
+## why this shape
 
-## sentinels
+- The PNG is the canonical artifact — one file, not two.
+- Pollinations URLs are deterministic and server-cached, so embedding URL
+  strings (not bytes) keeps the overhead tiny. A session of 50 frames adds
+  ~3 KB to the PNG.
+- PNGs share natively everywhere (Discord, iMessage, AirDrop, Slack).
+  `media.pollinations.ai` preserves `tEXt` chunks on upload, so uploading
+  a saved PNG and sharing its URL is the same as sharing the file.
+- No HTML self-modification, no quine tricks, no source doubling. The app
+  HTML stays canonical at its hosted URL.
 
-These three lines must stay as a single, well-defined block — the remix
-serializer regex-matches them:
+## stack
+
+| layer | choice | notes |
+|---|---|---|
+| app | single `index.html` | no build step, no React |
+| state transport | PNG `tEXt` chunk | keyword `pollinations:voice-edit:history`, value is JSON `{v, history, historyIndex}` |
+| starter override | URL fragment `#start=<url>` | optional; default starter is the cell render |
+| auth | Pollinations OAuth, `localStorage["voice-edit:user-key"]` | not embedded in saved PNG |
+
+## tEXt chunk format
+
+PNG ancillary chunk per [PNG spec §11.3.4.3](https://www.w3.org/TR/PNG/#11tEXt).
+Inserted before `IEND`. Keyword and text are latin-1 / UTF-8 ASCII-safe.
+CRC32 over `type || data`. Pure JS, no deps.
 
 ```js
-const STARTER = "https://media.pollinations.ai/...";
-const INITIAL_HISTORY = [];
-const INITIAL_HISTORY_INDEX = -1;
+const payload = {
+  v: 1,
+  history: [{ url: "..." }, { url: "..." }],
+  historyIndex: 1,
+};
 ```
 
-Don't reformat them, don't move them apart, don't change the constant
-names without updating the regex in the remix handler.
+`v` is the schema version. Bump it if the payload shape changes.
 
 ## auth
 
-A remix file holds no user token. Tokens live in `localStorage` under
-`voice-edit:user-key`. The serializer also refuses to download if any
-`pk_*` or `sk_*` string is found anywhere in the source.
+Tokens never enter the PNG. They live only in `localStorage`. The
+recipient of a shared PNG opens it in their copy of the app and connects
+their own Pollinations account.
 
-Recipient must connect their own Pollinations account before editing.
-The cached gallery loads without auth — generation URLs are public.
+The cached gallery (history URLs) loads without auth — generation URLs
+are public.
 
 ## local
 

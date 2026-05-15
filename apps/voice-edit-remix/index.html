@@ -287,8 +287,7 @@
       <label class="type-mode"><input id="typeMode" type="checkbox"> type instead</label>
       <button id="undoBtn" class="btn history" disabled title="undo">undo</button>
       <button id="redoBtn" class="btn" disabled title="redo">redo</button>
-      <button id="downloadBtn" class="btn" title="download current image as PNG">save</button>
-      <button id="remixBtn" class="btn" title="download this app as a remixable HTML file with your session embedded">remix</button>
+      <button id="downloadBtn" class="btn" title="download image with embedded history — drop the image back onto the app to restore">save</button>
     </section>
 
     <section id="frame" class="frame">
@@ -318,8 +317,7 @@ const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
-const INITIAL_HISTORY = [];
-const INITIAL_HISTORY_INDEX = -1;
+const HISTORY_KEYWORD = "pollinations:voice-edit:history";
 const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
@@ -350,7 +348,6 @@ const els = Object.fromEntries(Object.entries({
   undo: "undoBtn",
   redo: "redoBtn",
   download: "downloadBtn",
-  remix: "remixBtn",
   colorPicker: "colorPicker",
   pill: "cursorPill",
   pillText: "pillText",
@@ -361,8 +358,8 @@ const markCtx = els.markCanvas.getContext("2d");
 const app = {
   image: null,
   imageURL: "",
-  history: INITIAL_HISTORY.slice(),
-  historyIndex: INITIAL_HISTORY_INDEX,
+  history: [],
+  historyIndex: -1,
   micStream: null,
   active: null,
   busy: false,
@@ -972,7 +969,7 @@ els.connectOverlay.addEventListener("click", startConnect);
 els.upload.addEventListener("click", () => els.file.click());
 els.file.addEventListener("change", () => {
   const file = els.file.files?.[0];
-  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
+  if (file) loadImageWithHistory(file).catch((err) => showError(err.message));
 });
 
 els.colorPicker.addEventListener("click", (event) => {
@@ -993,8 +990,119 @@ const setDrop = (drop) => (event) => {
 });
 els.frame.addEventListener("drop", (event) => {
   const file = event.dataTransfer?.files?.[0];
-  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
+  if (file) loadImageWithHistory(file).catch((err) => showError(err.message));
 });
+
+// PNG tEXt chunk helpers — pure JS, no deps.
+const PNG_SIG = [137, 80, 78, 71, 13, 10, 26, 10];
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function readUint32(view, offset) {
+  return view.getUint32(offset, false);
+}
+function writeUint32(view, offset, value) {
+  view.setUint32(offset, value >>> 0, false);
+}
+function isValidPng(bytes) {
+  if (bytes.length < 8) return false;
+  for (let i = 0; i < 8; i++) if (bytes[i] !== PNG_SIG[i]) return false;
+  return true;
+}
+function readTextChunk(bytes, keyword) {
+  if (!isValidPng(bytes)) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let pos = 8;
+  const dec = new TextDecoder("latin1");
+  while (pos + 12 <= bytes.length) {
+    const length = readUint32(view, pos);
+    const type = dec.decode(bytes.subarray(pos + 4, pos + 8));
+    const dataStart = pos + 8;
+    const dataEnd = dataStart + length;
+    if (type === "IEND") return null;
+    if (type === "tEXt" && dataEnd <= bytes.length) {
+      const data = bytes.subarray(dataStart, dataEnd);
+      const sep = data.indexOf(0);
+      if (sep > 0) {
+        const k = dec.decode(data.subarray(0, sep));
+        if (k === keyword) return dec.decode(data.subarray(sep + 1));
+      }
+    }
+    pos = dataEnd + 4;
+  }
+  return null;
+}
+function injectTextChunk(bytes, keyword, text) {
+  if (!isValidPng(bytes)) throw new Error("not a PNG");
+  // Find IEND so we can insert before it.
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let iendOffset = -1;
+  let pos = 8;
+  const dec = new TextDecoder("latin1");
+  while (pos + 12 <= bytes.length) {
+    const length = readUint32(view, pos);
+    const type = dec.decode(bytes.subarray(pos + 4, pos + 8));
+    if (type === "IEND") { iendOffset = pos; break; }
+    pos = pos + 8 + length + 4;
+  }
+  if (iendOffset < 0) throw new Error("PNG missing IEND");
+  // Build tEXt chunk: <length:4><type:4>"tEXt"<keyword>\0<text><crc:4>
+  const enc = new TextEncoder();
+  const kw = enc.encode(keyword);
+  const tx = enc.encode(text);
+  const data = new Uint8Array(kw.length + 1 + tx.length);
+  data.set(kw, 0);
+  data[kw.length] = 0;
+  data.set(tx, kw.length + 1);
+  const chunk = new Uint8Array(4 + 4 + data.length + 4);
+  const chunkView = new DataView(chunk.buffer);
+  writeUint32(chunkView, 0, data.length);
+  chunk.set([0x74, 0x45, 0x58, 0x74], 4); // "tEXt"
+  chunk.set(data, 8);
+  const crcInput = chunk.subarray(4, 8 + data.length);
+  writeUint32(chunkView, 8 + data.length, crc32(crcInput));
+  // Splice into PNG before IEND.
+  const out = new Uint8Array(bytes.length + chunk.length);
+  out.set(bytes.subarray(0, iendOffset), 0);
+  out.set(chunk, iendOffset);
+  out.set(bytes.subarray(iendOffset), iendOffset + chunk.length);
+  return out;
+}
+async function bytesFromBlob(blob) {
+  return new Uint8Array(await blob.arrayBuffer());
+}
+async function bytesFromUrl(url) {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`fetch ${url} ${res.status}`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+async function loadImageWithHistory(fileOrBlob) {
+  const bytes = await bytesFromBlob(fileOrBlob);
+  const text = isValidPng(bytes) ? readTextChunk(bytes, HISTORY_KEYWORD) : null;
+  if (text) {
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = null; }
+    if (parsed && Array.isArray(parsed.history) && parsed.history.length > 0) {
+      app.history = parsed.history;
+      app.historyIndex = Math.max(0, Math.min(parsed.historyIndex ?? parsed.history.length - 1, parsed.history.length - 1));
+      await mediaHistory.go(app.historyIndex);
+      setStatus(`restored ${app.history.length} frames`);
+      return;
+    }
+  }
+  await loadImage(fileOrBlob, { addToHistory: true });
+}
 
 const goHistory = (delta, label) => () => {
   const canGo = delta < 0 ? mediaHistory.canUndo() : mediaHistory.canRedo();
@@ -1003,56 +1111,58 @@ const goHistory = (delta, label) => () => {
 };
 els.undo.addEventListener("click", goHistory(-1, "undone"));
 els.redo.addEventListener("click", goHistory(1, "redone"));
-els.download.addEventListener("click", () => {
+els.download.addEventListener("click", async () => {
   try {
+    const blob = await new Promise((resolve, reject) => {
+      els.imageCanvas.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas toBlob failed"))), "image/png");
+    });
+    const bytes = await bytesFromBlob(blob);
+    const payload = JSON.stringify({
+      v: 1,
+      history: app.history,
+      historyIndex: app.historyIndex,
+    });
+    const out = injectTextChunk(bytes, HISTORY_KEYWORD, payload);
     const link = document.createElement("a");
-    link.href = els.imageCanvas.toDataURL("image/png");
-    link.download = "voice-edit-image.png";
+    link.href = URL.createObjectURL(new Blob([out], { type: "image/png" }));
+    link.download = `voice-edit-${Date.now()}.png`;
     link.click();
-  } catch {
-    if (app.imageURL) window.open(app.imageURL, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    setStatus(`saved with ${app.history.length} frames`);
+  } catch (err) {
+    showError(err.message);
   }
 });
 
 captureKeyFromFragment();
 refreshConnectionUI();
 loadModels();
-if (INITIAL_HISTORY.length > 0 && INITIAL_HISTORY_INDEX >= 0) {
-  app.history = INITIAL_HISTORY.slice();
-  app.historyIndex = INITIAL_HISTORY_INDEX;
-  mediaHistory.go(INITIAL_HISTORY_INDEX).catch((err) => showError(err.message));
-} else {
-  loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
-}
-setMarkerColor(app.markerColor);
-
-els.remix.addEventListener("click", () => {
-  try {
-    let source = "<!doctype html>\n" + document.documentElement.outerHTML;
-    const starterUrl = app.history[app.historyIndex]?.url || STARTER;
-    const historyJson = JSON.stringify(app.history);
-    source = source.replace(
-      /const STARTER = "[^"]*";/,
-      `const STARTER = ${JSON.stringify(starterUrl)};`,
-    );
-    source = source.replace(
-      /const INITIAL_HISTORY = \[[\s\S]*?\];\nconst INITIAL_HISTORY_INDEX = -?\d+;/,
-      `const INITIAL_HISTORY = ${historyJson};\nconst INITIAL_HISTORY_INDEX = ${app.historyIndex};`,
-    );
-    if (/(pk_|sk_)[A-Za-z0-9_-]+/.test(source)) {
-      throw new Error("refusing to download: api key found in source");
+(async () => {
+  const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const startUrl = params.get("start");
+  if (startUrl) {
+    try {
+      const bytes = await bytesFromUrl(startUrl);
+      const text = isValidPng(bytes) ? readTextChunk(bytes, HISTORY_KEYWORD) : null;
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.history) && parsed.history.length > 0) {
+          app.history = parsed.history;
+          app.historyIndex = Math.max(0, Math.min(parsed.historyIndex ?? parsed.history.length - 1, parsed.history.length - 1));
+          await mediaHistory.go(app.historyIndex);
+          setStatus(`restored ${app.history.length} frames`);
+          return;
+        }
+      }
+      await loadImage(startUrl, { addToHistory: true });
+      return;
+    } catch (err) {
+      showError(`couldn't load #start: ${err.message}`);
     }
-    const blob = new Blob([source], { type: "text/html" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `voice-edit-remix-${Date.now()}.html`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-    setStatus("remix downloaded");
-  } catch (err) {
-    showError(err.message);
   }
-});
+  await loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
+})();
+setMarkerColor(app.markerColor);
 </script>
 </body>
 </html>

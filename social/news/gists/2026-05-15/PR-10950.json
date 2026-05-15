@@ -1,0 +1,34 @@
+{
+  "pr_number": 10950,
+  "title": "fix(quest): drop post-merge miss-comment from payout resolver",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10950",
+  "merged_at": "2026-05-15T03:28:52Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- Drop the post-merge \\\"no quest linked\\\" fallback ping from #10948.\n- Revert workflow's \\`pull-requests: write\\` back to \\`read\\` (no longer needed).\n\n## Why\nCodex review on #10948 flagged it: the ping fires on every non-quest merge (it fired on #10948 itself). Post-merge nag is also closing the barn door after the horse — payout is gone, idempotency means no replay.\n\nPrevention belongs pre-merge in the maintainer triage habit (glance at PR sidebar, click \\\"Link an issue\\\" if missing). Recovery stays the manual back-fill we just used for CloudCompile/#10920. Keeps everything simple.\n\n## Test plan\n- [x] Resolver still returns the linked quest when `Fixes #N` or sidebar link is present.\n- [x] On miss, workflow ends green like it did before #10948.\n- [x] \\`npx biome check\\` clean.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Quiet in the hive",
+    "blurb": "We've silenced an overeager bot that was pinging on every single merged PR. Peace and quiet has been restored to the repository.",
+    "summary": "Removed an overly aggressive post-merge fallback comment from the quest payout resolver and reverted the workflow's write permissions.",
+    "impact": "Maintainers will no longer receive unnecessary 'no quest linked' pings on non-quest PR merges.",
+    "keywords": [
+      "github-actions",
+      "workflow",
+      "bug-fix",
+      "quests"
+    ],
+    "visual_concept": "Polly the bee silencing a noisy alarm or terminal, representing the removal of the annoying post-merge bot ping.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny earmuffs and gently pressing a 'mute' button on a retro terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10950.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing tiny earmuffs and gently pressing a 'mute' button on a retro terminal. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-15T03:29:43.835388+00:00"
+}

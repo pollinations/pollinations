@@ -445,9 +445,9 @@ function key() {
 
 function render() {
   const locked = app.busy || Boolean(app.active);
-  const video = app.current?.kind === "video";
-  els.undo.disabled = !canUndo() || locked;
-  els.redo.disabled = !canRedo() || locked;
+  const video = media.isVideo();
+  els.undo.disabled = !mediaHistory.canUndo() || locked;
+  els.redo.disabled = !mediaHistory.canRedo() || locked;
   els.upload.disabled = locked;
   els.model.disabled = locked || app.mode === "animate";
   els.model.hidden = app.mode === "animate";
@@ -596,40 +596,39 @@ function stopMic() {
   app.micStream = null;
 }
 
-function canUndo() {
-  return app.historyIndex > 0;
-}
+const media = {
+  image: (url) => ({ kind: "image", url }),
+  video: (url, prompt, imageURL = app.imageURL) => ({ kind: "video", url, prompt, imageURL }),
+  isVideo: (frame = app.current) => frame?.kind === "video",
+};
 
-function canRedo() {
-  return app.historyIndex >= 0 && app.historyIndex < app.history.length - 1;
-}
-
-function addFrame(frame) {
-  app.history = app.history.slice(0, app.historyIndex + 1);
-  app.history.push(frame);
-  app.historyIndex = app.history.length - 1;
-  app.current = frame;
-  render();
-}
-
-async function goToFrame(index) {
-  const frame = app.history[index];
-  if (!frame) return;
-  await renderFrame(frame);
-  app.historyIndex = index;
-  app.current = frame;
-  render();
-}
-
-async function setFrame(frame, { addToHistory = false } = {}) {
-  await renderFrame(frame);
-  if (addToHistory) {
-    addFrame(frame);
-  } else {
+const mediaHistory = {
+  canUndo: () => app.historyIndex > 0,
+  canRedo: () => app.historyIndex >= 0 && app.historyIndex < app.history.length - 1,
+  add(frame) {
+    app.history = app.history.slice(0, app.historyIndex + 1);
+    app.history.push(frame);
+    app.historyIndex = app.history.length - 1;
     app.current = frame;
     render();
-  }
-}
+  },
+  async go(index) {
+    const frame = app.history[index];
+    if (!frame) return;
+    await renderFrame(frame);
+    app.historyIndex = index;
+    app.current = frame;
+    render();
+  },
+  async set(frame, { add = false } = {}) {
+    await renderFrame(frame);
+    if (add) mediaHistory.add(frame);
+    else {
+      app.current = frame;
+      render();
+    }
+  },
+};
 
 async function loadModels() {
   try {
@@ -660,12 +659,12 @@ async function loadModels() {
 async function loadImage(src, { addToHistory = false } = {}) {
   clearError();
   if (src instanceof File) src = await readImageFile(src);
-  await setFrame({ kind: "image", url: src }, { addToHistory });
+  await mediaHistory.set(media.image(src), { add: addToHistory });
 }
 
 async function renderFrame(frame) {
   clearError();
-  if (frame.kind === "video") {
+  if (media.isVideo(frame)) {
     if (frame.imageURL) await drawImage(frame.imageURL);
     showVideoElement(frame.url);
   } else {
@@ -727,14 +726,14 @@ function hideVideoElement() {
 }
 
 async function commitVideoFrame() {
-  if (app.current?.kind !== "video") return;
+  if (!media.isVideo()) return;
   const video = els.stageVideo;
   if (!video.videoWidth || !video.videoHeight) throw new Error("video frame is not ready yet");
   const frame = document.createElement("canvas");
   frame.width = video.videoWidth;
   frame.height = video.videoHeight;
   frame.getContext("2d").drawImage(video, 0, 0);
-  await setFrame({ kind: "image", url: frame.toDataURL("image/png") }, { addToHistory: true });
+  await mediaHistory.set(media.image(frame.toDataURL("image/png")), { add: true });
 }
 
 function pointerPoint(event) {
@@ -1001,11 +1000,11 @@ async function runQueue() {
         const uploaded = await uploadDataURL(snapshot, job.kind === "video" ? "source.png" : "annot.png");
         if (job.kind === "video") {
           const videoURL = await runVideo(uploaded, job.text, job.model);
-          await setFrame({ kind: "video", url: videoURL, prompt: job.text, imageURL: app.imageURL }, { addToHistory: true });
+          await mediaHistory.set(media.video(videoURL, job.text), { add: true });
         } else {
           const prompt = buildPrompt(job.text, job.marked, job.color);
           const result = await runEdit(uploaded, prompt, job.model);
-          await setFrame({ kind: "image", url: result }, { addToHistory: true });
+          await mediaHistory.set(media.image(result), { add: true });
         }
         await loadBalance();
       } catch (err) {
@@ -1039,7 +1038,7 @@ els.markCanvas.addEventListener("pointerdown", async (event) => {
   if (app.active) return;
   event.preventDefault();
   clearError();
-  if (app.current?.kind === "video") {
+  if (media.isVideo()) {
     try {
       await commitVideoFrame();
     } catch (err) {
@@ -1164,17 +1163,17 @@ els.frame.addEventListener("drop", (event) => {
 });
 
 els.undo.addEventListener("click", () => {
-  if (!canUndo() || app.busy || app.active) return;
-  goToFrame(app.historyIndex - 1).then(() => setStatus("undone")).catch((err) => showError(err.message));
+  if (!mediaHistory.canUndo() || app.busy || app.active) return;
+  mediaHistory.go(app.historyIndex - 1).then(() => setStatus("undone")).catch((err) => showError(err.message));
 });
 els.redo.addEventListener("click", () => {
-  if (!canRedo() || app.busy || app.active) return;
-  goToFrame(app.historyIndex + 1).then(() => setStatus("redone")).catch((err) => showError(err.message));
+  if (!mediaHistory.canRedo() || app.busy || app.active) return;
+  mediaHistory.go(app.historyIndex + 1).then(() => setStatus("redone")).catch((err) => showError(err.message));
 });
 els.download.addEventListener("click", () => {
   try {
     const link = document.createElement("a");
-    const video = app.current?.kind === "video";
+    const video = media.isVideo();
     link.href = video ? app.current.url : els.imageCanvas.toDataURL("image/png");
     link.download = video ? "voice-edit.mp4" : "voice-edit.png";
     link.click();

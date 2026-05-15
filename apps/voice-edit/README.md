@@ -41,6 +41,8 @@ Voice-driven image/video editor. Draw on an image, speak the edit, release. Mark
 - `stageVideo`: generated MP4 result, shown in the same stage as the canvas.
 - `pinLayer`: DOM label anchored to click point or rightmost mark edge.
 - `composeSnapshot(marker)`: offscreen PNG composition; draws a transparent marker overlay when present.
+- `media`: tiny frame factory/predicate (`image`, `video`, `isVideo`) so image/video shape stays centralized.
+- `mediaHistory`: linear frame history (`add`, `go`, `set`, `canUndo`, `canRedo`). Editing from an older frame truncates later frames here, not in gesture code.
 - `app`: single state object for current media, linear history, auth account data, mic stream, active gesture, FIFO queue, current job, marker color.
 - Queue jobs store marker overlay image, prompt text, color, model, and normalized pin position. `runQueue()` composites each overlay with the current image just before upload.
 

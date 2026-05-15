@@ -1043,7 +1043,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
-        paidOnly: true,
     },
     "qwen-vision-pro": {
         aliases: [
@@ -1078,7 +1077,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
-        paidOnly: true,
     },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],

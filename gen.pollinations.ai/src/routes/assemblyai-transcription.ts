@@ -29,7 +29,6 @@ interface AssemblyAiTranscriptResponse {
     id?: string;
     status?: "queued" | "processing" | "completed" | "error";
     error?: string;
-    error_code?: string | null;
     text?: string | null;
     audio_duration?: number | null;
     language_code?: string | null;
@@ -237,12 +236,9 @@ async function pollAssemblyAiTranscript(opts: {
         if (transcript.status === "error") {
             const message =
                 transcript.error || "AssemblyAI transcription failed";
-            throw new UpstreamError(
-                getAssemblyAiErrorStatus(message, transcript.error_code, log),
-                {
-                    message,
-                },
-            );
+            throw new UpstreamError(getAssemblyAiErrorStatus(message), {
+                message,
+            });
         }
 
         log.debug(
@@ -333,32 +329,7 @@ function normalizeAssemblyAiLanguage(language: string): string {
     return normalized === "en" ? "en_us" : normalized;
 }
 
-const ASSEMBLYAI_CLIENT_ERROR_CODES = new Set([
-    "audio_too_short",
-    "invalid_audio",
-    "no_audio",
-    "no_audio_found",
-    "no_speech",
-    "transcoding_failed",
-    "unsupported_file",
-]);
-
-function getAssemblyAiErrorStatus(
-    message: string,
-    errorCode?: string | null,
-    log?: Logger,
-): 400 | 500 {
-    const normalizedCode = errorCode?.trim().toLowerCase();
-    if (normalizedCode && ASSEMBLYAI_CLIENT_ERROR_CODES.has(normalizedCode)) {
-        return 400;
-    }
-    if (normalizedCode) {
-        log?.warn(
-            "Unrecognized AssemblyAI error_code={code}; defaulting to message-based classification. Add to ASSEMBLYAI_CLIENT_ERROR_CODES if this is a client error.",
-            { code: normalizedCode },
-        );
-    }
-
+function getAssemblyAiErrorStatus(message: string): 400 | 500 {
     const normalized = message.toLowerCase();
     if (
         normalized.includes("no spoken audio") ||

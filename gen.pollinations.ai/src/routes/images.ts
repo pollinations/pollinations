@@ -4,7 +4,6 @@
  * POST /v1/images/edits — edit images with text prompts + source images
  */
 
-import type { Logger } from "@logtape/logtape";
 import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
@@ -87,12 +86,6 @@ function collectPassthrough(
     return result;
 }
 
-function logMultipartParseError(c: Context, error: unknown): void {
-    const message = error instanceof Error ? error.message : String(error);
-    const log = c.get("log") as Logger | undefined;
-    log?.warn("Invalid multipart form data: {message}", { message });
-}
-
 /** Parse edits input from multipart or JSON. */
 async function parseEditInput(c: Context): Promise<{
     prompt: string;
@@ -109,8 +102,7 @@ async function parseEditInput(c: Context): Promise<{
         let formData: FormData;
         try {
             formData = c.get("formData") || (await c.req.formData());
-        } catch (error) {
-            logMultipartParseError(c, error);
+        } catch {
             throw new UpstreamError(400 as ContentfulStatusCode, {
                 message: "Invalid multipart form data",
             });

@@ -116,26 +116,13 @@ describe("transcribeWithAssemblyAi", () => {
 
     it("classifies bad audio AssemblyAI failures as client errors", async () => {
         const clientErrorMessages = [
-            {
-                message:
-                    "language_detection cannot be performed on files with no spoken audio.",
-            },
-            {
-                message:
-                    "Transcoding failed. File does not appear to contain audio. File type is text/plain (ASCII text).",
-            },
-            { message: "Audio duration is too short." },
-            {
-                message:
-                    "No audio stream found in the file. File type is video/mp4.",
-            },
-            {
-                message: "Provider wording changed.",
-                error_code: "no_audio",
-            },
+            "language_detection cannot be performed on files with no spoken audio.",
+            "Transcoding failed. File does not appear to contain audio. File type is text/plain (ASCII text).",
+            "Audio duration is too short.",
+            "No audio stream found in the file. File type is video/mp4.",
         ];
 
-        for (const { message, error_code } of clientErrorMessages) {
+        for (const message of clientErrorMessages) {
             const fetchMock = vi
                 .fn()
                 .mockResolvedValueOnce(
@@ -150,7 +137,6 @@ describe("transcribeWithAssemblyAi", () => {
                         id: "transcript-id",
                         status: "error",
                         error: message,
-                        error_code,
                     }),
                 );
             vi.stubGlobal("fetch", fetchMock);

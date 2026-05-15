@@ -1,4 +1,4 @@
-import { getLogger, type Logger } from "@logtape/logtape";
+import type { Logger } from "@logtape/logtape";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { APIError } from "better-auth";
 import type { Context } from "hono";
@@ -172,13 +172,7 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
     err: Error,
     c: Context<TEnv>,
 ) {
-    const ctxLog = c.get("log") as Logger | undefined;
-    const log = ctxLog ?? getLogger(["hono"]);
-    if (!ctxLog) {
-        log.warn(
-            "handleError: context logger missing; falling back to root logger. Check that the logging middleware ran for this request.",
-        );
-    }
+    const log = c.get("log");
     const timestamp = new Date().toISOString();
 
     // Set the error on the context for it to be tracked

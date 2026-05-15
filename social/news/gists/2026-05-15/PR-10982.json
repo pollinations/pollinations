@@ -1,0 +1,35 @@
+{
+  "pr_number": 10982,
+  "title": "fix new label on dashboard with dedicated addedDate field",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10982",
+  "merged_at": "2026-05-15T17:17:49Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "The NEW chip on the model list wasn't firing because `isNewModel` was reading `cost[0].date`, which nearly every model sets to `COST_START_DATE` (2025-08-01) — the global cost-tracking epoch, not when the model was added. So new additions like GPT-5.4 Mini never lit up.\n\n- Added required `addedDate: number` on `ModelDefinition`. Set once when a model is added, never updated.\n- `isNewModel` now reads `addedDate` with a 7-day window.\n- Backfilled `addedDate` on all 88 models using each entry's git first-appearance date.\n- Also fixed `qwen-vision` description (\"Fast vision-language model for image understanding\") — no `\" - \"` separator meant `getModelDisplayName` returned the whole string and the description disappeared. Audited all other models, none had the same issue.\n- Updated the model-management skill so future additions set `addedDate` and never touch it on price/provider changes.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Spotting the new arrivals",
+    "blurb": "The 'NEW' badge on the model dashboard is back in action! We added a dedicated timestamp so fresh models actually light up for their first 7 days.",
+    "summary": "Added a dedicated addedDate field to all 88 models in the registry so the dashboard's 'NEW' badge correctly highlights models added within the last 7 days, and fixed a missing description for qwen-vision.",
+    "impact": "Users will now easily spot fresh models on the dashboard with the 'NEW' chip, and qwen-vision displays its correct description.",
+    "keywords": [
+      "dashboard",
+      "models",
+      "ui",
+      "bugfix",
+      "registry"
+    ],
+    "visual_concept": "The bee mascot (Polly) and the Monitor Robot looking at a shiny new model/box on a shelf. The box has a glowing 'NEW' sticker on it. The robot is pointing at it excitedly, discovering the new arrival.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing a wooden shelf of glowing digital boxes. The robot excitedly points to a fresh box with a bright glowing 'NEW' sticker on it. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10982.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot organizing a wooden shelf of glowing digital boxes. The robot excitedly points to a fresh box with a bright glowing 'NEW' sticker on it. Soft lime green (#ecf874) and pastel peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-15T17:18:45.420130+00:00"
+}

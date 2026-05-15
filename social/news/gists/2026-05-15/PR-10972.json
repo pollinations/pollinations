@@ -1,0 +1,35 @@
+{
+  "pr_number": 10972,
+  "title": "move mistral to small 3.2, add mistral-4, move llama-4-scout to openrouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10972",
+  "merged_at": "2026-05-15T14:56:36Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Both Mistral Small 3.1 and Llama 4 Scout were billed on Azure as Marketplace SaaS pass-through (`publisherType: Marketplace`, `isAzureCreditEligible: false`), so they cost real money regardless of credit-pool attachment. The public Retail Prices catalog confirms no first-party `Azure Mistral Models - Small` or `Azure Llama Models - Scout` SKU exists.\n\n## Changes\n\n| Model alias | Before | After | Effective rate (per 1M, in/out) | vs current |\n|---|---|---|---|---|\n| `mistral` / `mistral-small-2503` | Azure Mistral Small 3.1 | OpenRouter `mistralai/mistral-small-3.2-24b-instruct` | $0.075 / $0.200 | **−37%** |\n| `mistral-4` (NEW) | — | OpenRouter `mistralai/mistral-small-2603` | $0.150 / $0.600 | new |\n| `llama-scout` / `Llama-4-Scout-17B-16E-Instruct` | Azure Llama 4 Scout | OpenRouter `meta-llama/llama-4-scout` | $0.080 / $0.300 | **−64%** |\n\nThe `mistral-small-2503` alias keeps the same public name but the backing model bumps from 3.1 → 3.2 (newer, cheaper, same 128k context). The registry already exposed `mistral-small-3.2` aliases pointing at this id.\n\nRegistry costs updated to match OpenRouter pricing; no separate `price` set so users pay cost (default behavior). `paidOnly` not set — free for all tiers, same as before.\n\n`OPENROUTER_API_KEY` is already configured as a Cloudflare worker secret on prod.\n\n## Estimated savings\n\nMay 1-15 spend baseline: €114 Mistral 3.1 + €40 Llama 4 Scout = €154/2-weeks on Azure (~€308/mo).\nAfter: ~€80 Mistral 3.2 + €14 Llama 4 Scout = €94/2-weeks (~€188/mo). **~€120/mo saved** + Mistral 4 available as new option.\n\n## Test plan\n- `curl gen.pollinations.ai/v1/chat/completions` with `model: mistral-small-2503` → expect 200\n- same with `model: mistral-4` → expect 200\n- same with `model: Llama-4-Scout-17B-16E-Instruct` → expect 200",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Mistral 4 joins the hive",
+    "blurb": "We've added the brand new Mistral 4 model to our text generation API, and bumped our default Mistral up to version 3.2. More models, more magic, still free!",
+    "summary": "Upgraded the default `mistral` alias from Small 3.1 to 3.2, added the new `mistral-4` (Small 2603) model, and migrated Llama 4 Scout to OpenRouter.",
+    "impact": "Users can now generate text with Mistral 4 and the upgraded Mistral 3.2, with all models remaining fully accessible on the free tier.",
+    "keywords": [
+      "mistral",
+      "llama-4",
+      "models",
+      "text-generation",
+      "api"
+    ],
+    "visual_concept": "Polly the bee upgrading server components. A wind/breeze motif for Mistral and a small llama reference for Llama 4 Scout. The robot companion helping out.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny engineer's hat, slotting a glowing lime green (#ecf874) cartridge labeled 'M4' into a retro server console. A chunky pixel robot with a monitor head stands nearby holding a tiny pixelated llama. Soft pastel lavender and mint gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10972.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny engineer's hat, slotting a glowing lime green (#ecf874) cartridge labeled 'M4' into a retro server console. A chunky pixel robot with a monitor head stands nearby holding a tiny pixelated llama. Soft pastel lavender and mint gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Cozy pixel art, 8-bit aesthetic, chunky sprites."
+  },
+  "generated_at": "2026-05-15T14:57:41.279758+00:00"
+}

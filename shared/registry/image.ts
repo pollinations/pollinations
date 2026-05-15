@@ -131,7 +131,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.045, // per image
             },
         ],
-        description: "Seedream 4.0 - ByteDance ARK (legacy)",
+        description: "Seedream 4.0 (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -155,7 +155,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.06, // per image
             },
         ],
-        description: "Seedream 4.5 Pro - ByteDance ARK (legacy)",
+        description: "Seedream 4.5 Pro (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -174,7 +174,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(8), // per 1M tokens
             },
         ],
-        description: "GPT Image 1 Mini - OpenAI's image generation model",
+        description: "GPT Image 1 Mini - Image Generation Model",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -195,7 +195,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(32), // per 1M tokens
             },
         ],
-        description: "GPT Image 1.5 - OpenAI's advanced image generation model",
+        description: "GPT Image 1.5 - Advanced Image Generation Model",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -215,7 +215,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(30), // per 1M tokens
             },
         ],
-        description: "GPT Image 2 - OpenAI's next-gen image generation model",
+        description: "GPT Image 2 - Next-Gen Image Generation Model",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -264,7 +264,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.15, // per sec
             },
         ],
-        description: "Veo 3.1 Fast - Google's video generation model (preview)",
+        description: "Veo 3.1 Fast - Video Generation Model (preview)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
@@ -490,7 +490,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.03, // per image
             },
         ],
-        description: "Grok Imagine - xAI official image generation",
+        description: "Grok Imagine - Image Generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -660,7 +660,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // per image
             },
         ],
-        description: "Nova Canvas - Bedrock Image Generation & Editing",
+        description: "Nova Canvas - Image Generation & Editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -676,7 +676,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.08, // per sec
             },
         ],
-        description: "Nova Reel - Bedrock Video Generation (6-120s, 720p)",
+        description: "Nova Reel - Video Generation (6-120s, 720p)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

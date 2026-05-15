@@ -11,7 +11,7 @@ export type PollenPack = {
 };
 
 const CHECKOUT_IMAGE_URL =
-    "https://enter.pollinations.ai/checkout/pollen-pack.png";
+    "https://enter.myceli.ai/checkout/pollen-pack.png";
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 

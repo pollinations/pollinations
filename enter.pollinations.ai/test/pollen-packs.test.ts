@@ -35,7 +35,7 @@ test("pack descriptions stay aligned with the shared catalog", () => {
         "We’re still in beta, so this pack includes 1 extra Pollen when you buy 5.",
     );
     expect(POLLEN_PACKS[0]?.checkoutImageUrl).toBe(
-        "https://enter.pollinations.ai/checkout/pollen-pack.png",
+        "https://enter.myceli.ai/checkout/pollen-pack.png",
     );
     expect(POLLEN_PACKS[0]?.taxCode).toBe("txcd_10103001");
     expect(POLLEN_PACKS[0]?.checkoutDescription).toContain(

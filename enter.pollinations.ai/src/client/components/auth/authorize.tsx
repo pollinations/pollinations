@@ -429,7 +429,7 @@ export function Authorize() {
             <AuthModalHeader>
                 <div className="flex items-center gap-3 min-w-0">
                     <a
-                        href="https://enter.pollinations.ai"
+                        href="https://enter.myceli.ai"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 min-w-0"
@@ -452,7 +452,7 @@ export function Authorize() {
                             </span>
                         )}
                         <a
-                            href="https://enter.pollinations.ai/#buy-pollen"
+                            href="https://enter.myceli.ai/#buy-pollen"
                             target="_blank"
                             rel="noopener noreferrer"
                             className={cn(

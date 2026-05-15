@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Edit | Pollinations</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark: #110518;
+    --paper: #f3ebde;
+    --card: #fffaf2;
+    --line: #110518;
+    --muted: #5b5265;
+    --accent: #e8f372;
+    --primary: #c9a9e4;
+    --danger-bg: #ffe1e1;
+    --danger-line: #a02020;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--dark);
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  button, input, select { font: inherit; color: inherit; }
+  button { touch-action: manipulation; }
+
+  .app {
+    width: min(100% - 24px, 1180px);
+    margin: 0 auto;
+    padding: 18px 0 24px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .topbar, .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    margin: 0;
+    font-family: "Press Start 2P", monospace;
+    font-size: clamp(1rem, 3.4vw, 1.45rem);
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+
+  .tagline, .account, .status {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .account { margin-left: auto; text-align: right; }
+  .account button {
+    margin-left: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .status { min-width: 8ch; text-align: right; }
+
+  .error {
+    display: none;
+    padding: 10px 12px;
+    background: var(--danger-bg);
+    border: 2px solid var(--danger-line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    font-size: 0.85rem;
+  }
+  .error.visible { display: block; }
+
+  .btn, .select {
+    min-height: 38px;
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-radius: 0;
+    font-weight: 700;
+  }
+  .btn {
+    padding: 0 12px;
+    cursor: pointer;
+    text-transform: lowercase;
+  }
+  .btn:hover:not(:disabled) { transform: translate(1px, 1px); border-right-width: 3px; border-bottom-width: 3px; }
+  .btn:active:not(:disabled) { transform: translate(2px, 2px); border-right-width: 2px; border-bottom-width: 2px; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn.accent { background: var(--accent); }
+  .select { padding: 0 10px; max-width: min(100%, 20rem); }
+
+  .type-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    user-select: none;
+  }
+  .history { margin-left: auto; }
+
+  .swatches {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .swatch {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 2px solid var(--line);
+    border-radius: 0;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    cursor: pointer;
+  }
+  .swatch.active { outline-color: var(--accent); }
+  .swatch[data-color="white"] { background: #fff; }
+  .swatch[data-color="black"] { background: #000; }
+  .swatch[data-color="red"] { background: red; }
+
+  .frame {
+    position: relative;
+    min-height: 280px;
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    overflow: auto;
+    display: grid;
+    place-items: center;
+  }
+  .frame.drop { outline: 4px dashed var(--accent); outline-offset: -10px; }
+  .stage {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    max-height: calc(100vh - 210px);
+    touch-action: none;
+  }
+  .stage canvas {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 210px);
+    width: auto;
+    height: auto;
+  }
+  #markCanvas, #pinLayer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  #markCanvas { cursor: crosshair; z-index: 2; touch-action: none; }
+  #pinLayer { z-index: 3; pointer-events: none; }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(243, 235, 222, 0.88);
+    backdrop-filter: blur(2px);
+  }
+  .frame.locked .overlay { display: flex; }
+  .overlay-panel {
+    width: min(22rem, calc(100% - 32px));
+    padding: 18px;
+    text-align: center;
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+  }
+  .overlay-panel p { margin: 0 0 12px; font-size: 0.9rem; }
+
+  .pin {
+    position: absolute;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    max-width: min(16rem, 48vw);
+    width: max-content;
+    padding: 5px 9px;
+    transform: translate(calc(-0.55rem - 0.275rem - 1.5px), -50%);
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    overflow-wrap: break-word;
+  }
+  .pin.processing { background: var(--accent); }
+  .pin .dot {
+    flex: 0 0 auto;
+    width: 0.55rem;
+    height: 0.55rem;
+    background: var(--line);
+    border: 1.5px solid var(--line);
+  }
+  .pin span:last-child { min-width: 0; }
+
+  .pill {
+    position: fixed;
+    z-index: 20;
+    display: none;
+    align-items: center;
+    gap: 9px;
+    max-width: min(18rem, calc(100vw - 24px));
+    padding: 8px 12px 8px 8px;
+    transform: translate(18px, -50%);
+    background: #fff;
+    border: 2px solid var(--line);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    pointer-events: none;
+    overflow-wrap: anywhere;
+  }
+  .pill.visible { display: inline-flex; }
+  .pill .mic {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: var(--accent);
+    border: 2px solid var(--line);
+  }
+  .pill .bar {
+    width: 3px;
+    background: var(--line);
+    animation: micbar 0.9s ease-in-out infinite;
+  }
+  .pill .bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .pill .bar:nth-child(2) { height: 10px; animation-delay: 0.15s; }
+  .pill .bar:nth-child(3) { height: 6px; animation-delay: 0.3s; }
+  .pill .placeholder { opacity: 0.55; font-style: italic; }
+  @keyframes micbar { 0%,100% { transform: scaleY(0.6); } 50% { transform: scaleY(1.2); } }
+
+  @media (max-width: 720px) {
+    .app { width: min(100% - 14px, 1180px); padding-top: 10px; gap: 9px; }
+    .topbar { gap: 6px; }
+    .account { order: 3; width: 100%; margin-left: 0; text-align: left; }
+    .status { margin-left: auto; }
+    .toolbar { gap: 7px; }
+    .history { margin-left: 0; }
+    .btn, .select { min-height: 36px; }
+    .btn { padding: 0 9px; }
+    .frame { min-height: 240px; }
+    .stage, .stage canvas { max-height: calc(100vh - 260px); }
+    .pin { max-width: 62vw; }
+  }
+  .frame.locked .stage { filter: grayscale(0.35) opacity(0.55); }
+</style>
+
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1 class="brand">voice.edit</h1>
+      <span class="tagline">draw. talk. release.</span>
+      <span id="account" class="account"></span>
+      <span id="status" class="status">ready</span>
+    </header>
+
+    <div id="error" class="error"></div>
+
+    <section class="toolbar" aria-label="tools">
+      <button id="connectBtn" class="btn accent">connect</button>
+      <button id="uploadBtn" class="btn">image</button>
+      <input id="fileInput" type="file" accept="image/*" hidden>
+      <select id="modelSel" class="select" aria-label="image model">
+        <option value="nanobanana">nanobanana</option>
+      </select>
+      <div id="colorPicker" class="swatches" aria-label="marker color">
+        <button type="button" class="swatch" data-color="red" aria-label="red marker"></button>
+        <button type="button" class="swatch" data-color="black" aria-label="black marker"></button>
+        <button type="button" class="swatch" data-color="white" aria-label="white marker"></button>
+      </div>
+      <label class="type-mode"><input id="typeMode" type="checkbox"> type instead</label>
+      <button id="undoBtn" class="btn history" disabled title="undo">undo</button>
+      <button id="redoBtn" class="btn" disabled title="redo">redo</button>
+      <button id="downloadBtn" class="btn" title="download">save</button>
+    </section>
+
+    <section id="frame" class="frame">
+      <div id="stage" class="stage">
+        <canvas id="imageCanvas" width="1024" height="768"></canvas>
+        <canvas id="markCanvas" width="1024" height="768"></canvas>
+        <div id="pinLayer"></div>
+      </div>
+      <div class="overlay">
+        <div class="overlay-panel">
+          <p>connect to pollinations to start editing</p>
+          <button id="connectOverlayBtn" class="btn accent">connect</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="cursorPill" class="pill" aria-hidden="true">
+    <span class="mic"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span>
+    <span id="pillText" class="placeholder">listening...</span>
+  </div>
+
+<script>
+const KEY_STORAGE = "voice-edit:user-key";
+const CLIENT_ID = "";
+const ENTER = "https://enter.pollinations.ai";
+const BASE = "https://gen.pollinations.ai";
+const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
+const STT_MODEL = "scribe";
+const STT_LANG = (navigator.language || "en").slice(0, 2);
+const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
+  .find((m) => window.MediaRecorder?.isTypeSupported?.(m)) || "";
+const DRAG_THRESHOLD = 0.03;
+const RECOMMENDED_MODELS = new Set(["p-image-edit", "nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
+
+const els = {
+  account: document.getElementById("account"),
+  status: document.getElementById("status"),
+  error: document.getElementById("error"),
+  frame: document.getElementById("frame"),
+  stage: document.getElementById("stage"),
+  imageCanvas: document.getElementById("imageCanvas"),
+  markCanvas: document.getElementById("markCanvas"),
+  pinLayer: document.getElementById("pinLayer"),
+  connect: document.getElementById("connectBtn"),
+  connectOverlay: document.getElementById("connectOverlayBtn"),
+  upload: document.getElementById("uploadBtn"),
+  file: document.getElementById("fileInput"),
+  model: document.getElementById("modelSel"),
+  typeMode: document.getElementById("typeMode"),
+  undo: document.getElementById("undoBtn"),
+  redo: document.getElementById("redoBtn"),
+  download: document.getElementById("downloadBtn"),
+  colorPicker: document.getElementById("colorPicker"),
+  pill: document.getElementById("cursorPill"),
+  pillText: document.getElementById("pillText"),
+};
+const imageCtx = els.imageCanvas.getContext("2d");
+const markCtx = els.markCanvas.getContext("2d");
+
+const app = {
+  image: null,
+  imageURL: "",
+  current: null,
+  history: [],
+  historyIndex: -1,
+  micStream: null,
+  active: null,
+  busy: false,
+  queue: [],
+  currentJob: null,
+  markerColor: "red",
+  accountUser: "",
+  accountBalance: null,
+};
+
+function setStatus(text) {
+  els.status.textContent = text;
+}
+
+function showError(message) {
+  els.error.textContent = message;
+  els.error.classList.add("visible");
+  setStatus("error");
+}
+
+function clearError() {
+  els.error.classList.remove("visible");
+}
+
+function key() {
+  const token = localStorage.getItem(KEY_STORAGE);
+  if (!token) throw new Error("not connected - click Connect");
+  return token;
+}
+
+function render() {
+  const locked = app.busy || Boolean(app.active);
+  els.undo.disabled = !mediaHistory.canUndo() || locked;
+  els.redo.disabled = !mediaHistory.canRedo() || locked;
+  els.upload.disabled = locked;
+  els.model.disabled = locked;
+  els.typeMode.disabled = locked;
+  renderPins();
+}
+
+function renderAccount() {
+  if (!localStorage.getItem(KEY_STORAGE)) {
+    els.account.textContent = "not connected";
+    return;
+  }
+  const user = app.accountUser ? `connected as ${app.accountUser}` : "connected";
+  const balance = app.accountBalance == null ? "" : ` · ${app.accountBalance.toFixed(2)} pollen`;
+  els.account.textContent = `${user}${balance} · `;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "disconnect";
+  button.addEventListener("click", disconnect);
+  els.account.append(button);
+}
+
+function renderPins() {
+  els.pinLayer.innerHTML = "";
+  const jobs = [app.currentJob, ...app.queue].filter(Boolean);
+  const layerBox = els.pinLayer.getBoundingClientRect();
+  for (const job of jobs) {
+    const pin = document.createElement("div");
+    pin.className = `pin ${job === app.currentJob ? "processing" : "queued"}`;
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    const text = document.createElement("span");
+    text.textContent = job.text;
+    pin.append(dot, text);
+    pin.style.left = `${job.xPct}%`;
+    pin.style.top = `${job.yPct}%`;
+    els.pinLayer.append(pin);
+    const anchorX = layerBox.left + (layerBox.width * job.xPct / 100);
+    const available = window.innerWidth - anchorX - 12;
+    pin.style.maxWidth = `${Math.min(256, Math.max(28, available))}px`;
+  }
+}
+
+function pill({ x, y, text, placeholder, visible }) {
+  if (x != null) els.pill.style.left = `${x}px`;
+  if (y != null) els.pill.style.top = `${y}px`;
+  if (text !== undefined) {
+    els.pillText.textContent = text;
+    els.pillText.classList.toggle("placeholder", !!placeholder);
+  }
+  if (visible !== undefined) els.pill.classList.toggle("visible", visible);
+}
+
+function captureKeyFromFragment() {
+  if (!location.hash) return;
+  const params = new URLSearchParams(location.hash.slice(1));
+  const apiKey = params.get("api_key");
+  if (apiKey) {
+    localStorage.setItem(KEY_STORAGE, apiKey);
+    history.replaceState(null, "", location.pathname + location.search);
+  } else if (params.get("error")) {
+    showError(`Authorization failed: ${params.get("error")}`);
+  }
+}
+
+function refreshConnectionUI() {
+  const connected = !!localStorage.getItem(KEY_STORAGE);
+  els.connect.hidden = connected;
+  els.frame.classList.toggle("locked", !connected);
+  if (!connected) {
+    app.accountUser = "";
+    app.accountBalance = null;
+    renderAccount();
+    setStatus("not connected");
+    return;
+  }
+  renderAccount();
+  warmMic();
+  loadUser();
+  loadBalance();
+}
+
+function startConnect() {
+  const params = new URLSearchParams({
+    redirect_uri: location.origin + location.pathname,
+    scope: "generate",
+  });
+  if (CLIENT_ID) params.set("client_id", CLIENT_ID);
+  location.href = `${ENTER}/authorize?${params}`;
+}
+
+function disconnect() {
+  localStorage.removeItem(KEY_STORAGE);
+  stopMic();
+  refreshConnectionUI();
+}
+
+async function loadUser() {
+  try {
+    const res = await fetch(`${ENTER}/api/device/userinfo`, { headers: { Authorization: `Bearer ${key()}` } });
+    if (!res.ok) return;
+    const user = await res.json();
+    app.accountUser = user?.preferred_username || "";
+    renderAccount();
+  } catch {}
+}
+
+async function loadBalance() {
+  try {
+    const res = await fetch(`${BASE}/account/balance`, { headers: { Authorization: `Bearer ${key()}` } });
+    if (!res.ok) return;
+    const { balance } = await res.json();
+    app.accountBalance = Number(balance);
+    renderAccount();
+  } catch {}
+}
+
+async function warmMic() {
+  if (app.micStream || !navigator.mediaDevices?.getUserMedia) return;
+  try {
+    app.micStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+  } catch (err) {
+    showError(`Microphone unavailable (${err?.message || "denied"}). Use type instead.`);
+  }
+}
+
+function stopMic() {
+  if (!app.micStream) return;
+  for (const track of app.micStream.getTracks()) track.stop();
+  app.micStream = null;
+}
+
+const mediaHistory = {
+  canUndo: () => app.historyIndex > 0,
+  canRedo: () => app.historyIndex >= 0 && app.historyIndex < app.history.length - 1,
+  add(frame) {
+    app.history = app.history.slice(0, app.historyIndex + 1);
+    app.history.push(frame);
+    app.historyIndex = app.history.length - 1;
+    app.current = frame;
+    render();
+  },
+  async go(index) {
+    const frame = app.history[index];
+    if (!frame) return;
+    await renderFrame(frame);
+    app.historyIndex = index;
+    app.current = frame;
+    render();
+  },
+  async set(frame, { add = false } = {}) {
+    await renderFrame(frame);
+    if (add) mediaHistory.add(frame);
+    else {
+      app.current = frame;
+      render();
+    }
+  },
+};
+
+async function loadModels() {
+  try {
+    const res = await fetch(`${BASE}/image/models`);
+    if (!res.ok) return;
+    const models = await res.json();
+    const editModels = models
+      .filter((m) => m.input_modalities?.includes("image") && m.output_modalities?.includes("image"))
+      .sort((a, b) => {
+        const ra = RECOMMENDED_MODELS.has(a.name) ? 0 : 1;
+        const rb = RECOMMENDED_MODELS.has(b.name) ? 0 : 1;
+        return ra - rb || a.name.localeCompare(b.name);
+      });
+    els.model.innerHTML = "";
+    for (const m of editModels) {
+      const option = document.createElement("option");
+      option.value = m.name;
+      const tags = [];
+      if (RECOMMENDED_MODELS.has(m.name)) tags.push("*");
+      if (m.paid_only) tags.push("paid");
+      option.textContent = tags.length ? `${m.name} (${tags.join(", ")})` : m.name;
+      els.model.append(option);
+    }
+    if ([...els.model.options].some((option) => option.value === "nanobanana")) els.model.value = "nanobanana";
+  } catch {}
+}
+
+async function loadImage(src, { addToHistory = false } = {}) {
+  clearError();
+  if (src instanceof File) src = await readImageFile(src);
+  await mediaHistory.set({ url: src }, { add: addToHistory });
+}
+
+async function renderFrame(frame) {
+  clearError();
+  await drawImage(frame.url);
+  clearMarks();
+  setStatus("ready");
+}
+
+async function drawImage(src) {
+  setStatus("loading image...");
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = () => reject(new Error("could not load image"));
+    img.src = src;
+  });
+  app.image = img;
+  app.imageURL = src;
+  resizeCanvases(img.naturalWidth, img.naturalHeight);
+  imageCtx.drawImage(img, 0, 0);
+}
+
+function readImageFile(file) {
+  if (!file?.type?.startsWith("image/")) throw new Error("Drop or pick an image file.");
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Could not read file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function resizeCanvases(width, height) {
+  for (const canvas of [els.imageCanvas, els.markCanvas]) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+}
+
+function clearMarks() {
+  markCtx.clearRect(0, 0, els.markCanvas.width, els.markCanvas.height);
+}
+
+function pointerPoint(event) {
+  const rect = els.markCanvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (els.markCanvas.width / rect.width);
+  const y = (event.clientY - rect.top) * (els.markCanvas.height / rect.height);
+  return {
+    x: Math.max(0, Math.min(els.markCanvas.width, Math.round(x))),
+    y: Math.max(0, Math.min(els.markCanvas.height, Math.round(y))),
+  };
+}
+
+function strokeWidth() {
+  return Math.max(6, Math.round(Math.min(els.markCanvas.width, els.markCanvas.height) * 0.015));
+}
+
+function drawSegment(from, to) {
+  markCtx.save();
+  markCtx.strokeStyle = app.markerColor;
+  markCtx.lineWidth = strokeWidth();
+  markCtx.lineCap = "round";
+  markCtx.lineJoin = "round";
+  markCtx.beginPath();
+  markCtx.moveTo(from.x, from.y);
+  markCtx.lineTo(to.x, to.y);
+  markCtx.stroke();
+  markCtx.restore();
+}
+
+function pathLength(points) {
+  let total = 0;
+  for (let i = 1; i < points.length; i++) {
+    total += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+  }
+  return total;
+}
+
+function pathBounds(points) {
+  const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+  for (const point of points) {
+    bounds.minX = Math.min(bounds.minX, point.x);
+    bounds.maxX = Math.max(bounds.maxX, point.x);
+    bounds.minY = Math.min(bounds.minY, point.y);
+    bounds.maxY = Math.max(bounds.maxY, point.y);
+  }
+  return bounds;
+}
+
+function markerFromGesture(gesture) {
+  const marked = pathLength(gesture.points) >= Math.min(els.markCanvas.width, els.markCanvas.height) * DRAG_THRESHOLD;
+  if (!marked) clearMarks();
+  const marker = marked ? els.markCanvas.toDataURL("image/png") : "";
+  const bounds = marked ? pathBounds(gesture.points) : null;
+  const pinPoint = marked
+    ? { x: bounds.maxX, y: (bounds.minY + bounds.maxY) / 2 }
+    : gesture.points[0];
+  return { marked, marker, pinPoint };
+}
+
+async function composeSnapshot(marker = "") {
+  const out = document.createElement("canvas");
+  out.width = els.imageCanvas.width;
+  out.height = els.imageCanvas.height;
+  const outCtx = out.getContext("2d");
+  outCtx.drawImage(els.imageCanvas, 0, 0);
+  if (marker) {
+    const markerImage = await loadImageElement(marker);
+    outCtx.drawImage(markerImage, 0, 0, out.width, out.height);
+  }
+  return out.toDataURL("image/png");
+}
+
+function buildPrompt(text, marked, color) {
+  if (!marked) return text;
+  return `The ${color} markings indicate the area the prompt is referring to. Prompt: ${text}. Output without ${color} markings.`;
+}
+
+function pinPct(point) {
+  return {
+    xPct: (point.x / els.markCanvas.width) * 100,
+    yPct: (point.y / els.markCanvas.height) * 100,
+  };
+}
+
+function loadImageElement(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("could not load marker"));
+    img.src = src;
+  });
+}
+
+function enqueueJob({ text, marked = false, marker = "", pinPoint, color }) {
+  if (!text.trim()) throw new Error("Nothing heard. Type an edit if voice input is unavailable.");
+  const pin = pinPct(pinPoint);
+  app.queue.push({
+    text,
+    marked,
+    marker,
+    color,
+    model: els.model.value,
+    xPct: pin.xPct,
+    yPct: pin.yPct,
+  });
+  render();
+  runQueue();
+}
+
+function beginRecording(clientX, clientY) {
+  clearError();
+  if (!window.MediaRecorder) return { error: "Voice input is not available in this browser. Use type instead." };
+  if (!app.micStream) {
+    warmMic();
+    return { error: "microphone not ready - click once, allow access, then try again" };
+  }
+  const capture = { chunks: [], recorder: null, error: "" };
+  try {
+    capture.recorder = new MediaRecorder(app.micStream, STT_MIME ? { mimeType: STT_MIME } : undefined);
+    capture.recorder.ondataavailable = (event) => {
+      if (event.data?.size) capture.chunks.push(event.data);
+    };
+    capture.recorder.start();
+  } catch (err) {
+    capture.error = err?.message || "could not start recording";
+    return capture;
+  }
+  pill({ x: clientX, y: clientY, text: "listening...", placeholder: true, visible: true });
+  setStatus("listening...");
+  return capture;
+}
+
+async function stopAndTranscribe(capture) {
+  if (capture.error || !capture.recorder) return { text: "", error: capture.error };
+  setStatus("transcribing...");
+  pill({ text: "transcribing...", placeholder: true });
+  const stopped = new Promise((resolve) => { capture.recorder.onstop = resolve; });
+  capture.recorder.stop();
+  await stopped;
+  const type = capture.recorder.mimeType || "audio/webm";
+  const ext = type.includes("mp4") ? "mp4" : "webm";
+  const blob = new Blob(capture.chunks, { type });
+  if (blob.size < 1000) return { text: "", error: "no audio captured - hold and speak" };
+  const form = new FormData();
+  form.append("file", blob, `voice.${ext}`);
+  form.append("model", STT_MODEL);
+  form.append("language", STT_LANG);
+  form.append("response_format", "json");
+  try {
+    const res = await fetch(`${BASE}/v1/audio/transcriptions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key()}` },
+      body: form,
+    });
+    if (!res.ok) return { text: "", error: await friendlyError(res, "Transcription failed") };
+    const json = await res.json();
+    return { text: (json.text || "").trim(), error: "" };
+  } catch (err) {
+    return { text: "", error: err?.message || "transcription failed" };
+  }
+}
+
+async function promptTypedEdit(clientX, clientY) {
+  pill({ x: clientX, y: clientY, text: "", placeholder: true, visible: true });
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "type edit, press enter";
+  input.style.cssText = "border:none;outline:none;background:transparent;font:inherit;width:14rem;color:var(--dark);";
+  els.pillText.replaceWith(input);
+  input.focus();
+  setStatus("typing...");
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (text) => {
+      if (done) return;
+      done = true;
+      input.replaceWith(els.pillText);
+      pill({ visible: false });
+      resolve(text.trim());
+    };
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") { event.preventDefault(); finish(input.value); }
+      if (event.key === "Escape") { event.preventDefault(); finish(""); }
+    });
+    input.addEventListener("blur", () => finish(input.value));
+  });
+}
+
+async function uploadDataURL(dataURL, filename = "annot.png") {
+  setStatus("uploading...");
+  const blob = await (await fetch(dataURL)).blob();
+  const form = new FormData();
+  form.append("file", blob, filename);
+  const res = await fetch("https://media.pollinations.ai/upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key()}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
+  const json = await res.json();
+  return json.url || `https://media.pollinations.ai/${json.id}`;
+}
+
+async function runEdit(imageURL, prompt, model) {
+  const res = await fetch(`${BASE}/v1/images/edits`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, image: imageURL, model, response_format: "url" }),
+  });
+  if (!res.ok) throw new Error(await friendlyError(res, "Edit failed"));
+  const json = await res.json();
+  const item = json.data?.[0];
+  if (!item) throw new Error("no image in response");
+  if (item.url) return item.url;
+  if (item.b64_json) return `data:image/png;base64,${item.b64_json}`;
+  throw new Error("no url or b64_json in response");
+}
+
+async function friendlyError(response, label) {
+  let details = response.statusText || "request failed";
+  try {
+    const text = await response.text();
+    const json = JSON.parse(text);
+    details = json.error?.message || json.message || text;
+  } catch {}
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem(KEY_STORAGE);
+    refreshConnectionUI();
+    return `${label}: authorization expired. Connect again.`;
+  }
+  if (response.status === 402) return `${label}: add Pollen credits, then try again.`;
+  if (response.status === 429) return `${label}: rate limited. Wait a moment or switch models.`;
+  return `${label}: ${response.status} ${details}`;
+}
+
+async function runQueue() {
+  if (app.busy) return;
+  app.busy = true;
+  render();
+  try {
+    while (app.queue.length) {
+      const job = app.queue.shift();
+      app.currentJob = job;
+      render();
+      setStatus(`editing... (${app.queue.length + 1} in queue)`);
+      try {
+        const snapshot = await composeSnapshot(job.marker);
+        const uploaded = await uploadDataURL(snapshot, "annot.png");
+        const prompt = buildPrompt(job.text, job.marked, job.color);
+        const result = await runEdit(uploaded, prompt, job.model);
+        await mediaHistory.set({ url: result }, { add: true });
+        await loadBalance();
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        app.currentJob = null;
+        render();
+      }
+    }
+    setStatus("done");
+  } finally {
+    app.busy = false;
+    app.currentJob = null;
+    render();
+  }
+}
+
+function cancelGesture() {
+  if (app.active?.capture?.recorder?.state === "recording") {
+    try { app.active.capture.recorder.stop(); } catch {}
+  }
+  app.active = null;
+  clearMarks();
+  pill({ visible: false });
+  setStatus(app.busy ? "editing..." : "ready");
+  render();
+}
+
+els.markCanvas.addEventListener("pointerdown", async (event) => {
+  if (!app.image) { showError("Load an image first."); return; }
+  if (app.active) return;
+  event.preventDefault();
+  clearError();
+  clearMarks();
+  const start = pointerPoint(event);
+
+  if (els.typeMode.checked) {
+    app.active = { pointerId: event.pointerId, points: [start], typing: true, color: app.markerColor };
+    render();
+    try { els.markCanvas.setPointerCapture(event.pointerId); } catch {}
+    return;
+  }
+
+  const capture = beginRecording(event.clientX, event.clientY);
+  app.active = { pointerId: event.pointerId, points: [start], capture, color: app.markerColor };
+  try { els.markCanvas.setPointerCapture(event.pointerId); } catch {}
+});
+
+els.markCanvas.addEventListener("pointermove", (event) => {
+  const gesture = app.active;
+  if (!gesture) return;
+  event.preventDefault();
+  pill({ x: event.clientX, y: event.clientY });
+  const point = pointerPoint(event);
+  const prev = gesture.points[gesture.points.length - 1];
+  drawSegment(prev, point);
+  gesture.points.push(point);
+});
+
+els.markCanvas.addEventListener("pointerup", async (event) => {
+  const gesture = app.active;
+  if (!gesture) return;
+  event.preventDefault();
+  app.active = null;
+  if (gesture.typing) {
+    const annotation = markerFromGesture(gesture);
+    render();
+    const text = await promptTypedEdit(event.clientX, event.clientY);
+    if (!text) {
+      clearMarks();
+      setStatus(app.busy ? "editing..." : "ready");
+      return;
+    }
+    try {
+      enqueueJob({ text, ...annotation, color: gesture.color });
+    } catch (err) {
+      showError(err.message);
+      clearMarks();
+    }
+    return;
+  }
+  const annotation = markerFromGesture(gesture);
+  try {
+    const { text, error } = await stopAndTranscribe(gesture.capture);
+    pill({ visible: false });
+    if (!text && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
+    enqueueJob({ text, ...annotation, color: gesture.color });
+  } catch (err) {
+    showError(err.message);
+    clearMarks();
+  }
+});
+
+els.markCanvas.addEventListener("pointercancel", cancelGesture);
+
+els.connect.addEventListener("click", startConnect);
+els.connectOverlay.addEventListener("click", startConnect);
+els.upload.addEventListener("click", () => els.file.click());
+els.file.addEventListener("change", () => {
+  const file = els.file.files?.[0];
+  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
+});
+
+els.colorPicker.addEventListener("click", (event) => {
+  const swatch = event.target.closest(".swatch");
+  if (!swatch) return;
+  app.markerColor = swatch.dataset.color;
+  for (const button of els.colorPicker.querySelectorAll(".swatch")) {
+    button.classList.toggle("active", button === swatch);
+  }
+});
+
+for (const eventName of ["dragenter", "dragover"]) {
+  els.frame.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    els.frame.classList.add("drop");
+  });
+}
+for (const eventName of ["dragleave", "drop"]) {
+  els.frame.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    els.frame.classList.remove("drop");
+  });
+}
+els.frame.addEventListener("drop", (event) => {
+  const file = event.dataTransfer?.files?.[0];
+  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
+});
+
+els.undo.addEventListener("click", () => {
+  if (!mediaHistory.canUndo() || app.busy || app.active) return;
+  mediaHistory.go(app.historyIndex - 1).then(() => setStatus("undone")).catch((err) => showError(err.message));
+});
+els.redo.addEventListener("click", () => {
+  if (!mediaHistory.canRedo() || app.busy || app.active) return;
+  mediaHistory.go(app.historyIndex + 1).then(() => setStatus("redone")).catch((err) => showError(err.message));
+});
+els.download.addEventListener("click", () => {
+  try {
+    const link = document.createElement("a");
+    link.href = els.imageCanvas.toDataURL("image/png");
+    link.download = "voice-edit-image.png";
+    link.click();
+  } catch {
+    if (app.imageURL) window.open(app.imageURL, "_blank", "noopener");
+  }
+});
+
+captureKeyFromFragment();
+refreshConnectionUI();
+loadModels();
+loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
+for (const button of els.colorPicker.querySelectorAll(".swatch")) {
+  button.classList.toggle("active", button.dataset.color === app.markerColor);
+}
+</script>
+</body>
+</html>

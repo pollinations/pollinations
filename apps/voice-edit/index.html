@@ -336,6 +336,7 @@
       <button id="undoBtn" class="btn history" disabled title="undo">undo</button>
       <button id="redoBtn" class="btn" disabled title="redo">redo</button>
       <button id="downloadBtn" class="btn" title="download">save</button>
+      <button id="shareBtn" class="btn" title="copy share link">share</button>
     </section>
 
     <section id="frame" class="frame">
@@ -397,6 +398,7 @@ const els = {
   undo: document.getElementById("undoBtn"),
   redo: document.getElementById("redoBtn"),
   download: document.getElementById("downloadBtn"),
+  share: document.getElementById("shareBtn"),
   colorPicker: document.getElementById("colorPicker"),
   pill: document.getElementById("cursorPill"),
   pillText: document.getElementById("pillText"),
@@ -462,6 +464,7 @@ function render() {
     button.classList.toggle("active", button.dataset.mode === app.mode);
   }
   renderPins();
+  syncHashToCurrent();
 }
 
 function renderAccount() {
@@ -810,6 +813,40 @@ async function loadImageWithHistory(fileOrBlob) {
   const bytes = await bytesFromBlob(fileOrBlob);
   if (await restoreHistoryFromBytes(bytes)) return;
   await loadImage(fileOrBlob, { addToHistory: true });
+}
+
+async function uploadBytesPng(bytes, filename = "frame.png") {
+  const form = new FormData();
+  form.append("file", new Blob([bytes], { type: "image/png" }), filename);
+  const res = await fetch("https://media.pollinations.ai/upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key()}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
+  const json = await res.json();
+  return json.url || `https://media.pollinations.ai/${json.id}`;
+}
+
+async function rewriteResultWithHistory(resultURL) {
+  try {
+    const bytes = await bytesFromUrl(resultURL);
+    if (!isValidPng(bytes)) return resultURL;
+    const payload = JSON.stringify({ v: 1, history: app.history, historyIndex: app.historyIndex });
+    const out = injectTextChunk(bytes, HISTORY_KEYWORD, payload);
+    return await uploadBytesPng(out, "voice-edit-frame.png");
+  } catch (err) {
+    console.warn("rewriteResultWithHistory failed", err);
+    return resultURL;
+  }
+}
+
+function syncHashToCurrent() {
+  const frame = app.current;
+  if (!frame || frame.kind === "video") return;
+  if (!frame.url) return;
+  const next = `#start=${encodeURIComponent(frame.url)}`;
+  if (location.hash !== next) history.replaceState(null, "", next);
 }
 
 async function renderFrame(frame) {
@@ -1164,6 +1201,17 @@ async function runQueue() {
           const prompt = buildPrompt(job.text, job.marked, job.color);
           const result = await runEdit(uploaded, prompt, job.model);
           await mediaHistory.set(media.image(result), { add: true });
+          setStatus("packaging share link...");
+          const rewritten = await rewriteResultWithHistory(result);
+          if (rewritten !== result) {
+            const frame = app.history[app.historyIndex];
+            if (frame && frame.url === result) {
+              frame.url = rewritten;
+              app.imageURL = rewritten;
+              syncHashToCurrent();
+              render();
+            }
+          }
         }
         await loadBalance();
       } catch (err) {
@@ -1359,6 +1407,16 @@ els.download.addEventListener("click", async () => {
   } catch (err) {
     showError(err.message);
     if (app.imageURL) window.open(app.imageURL, "_blank", "noopener");
+  }
+});
+
+els.share.addEventListener("click", async () => {
+  try {
+    syncHashToCurrent();
+    await navigator.clipboard.writeText(location.href);
+    setStatus("share link copied");
+  } catch (err) {
+    showError(err.message);
   }
 });
 

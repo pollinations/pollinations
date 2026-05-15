@@ -5,6 +5,7 @@ import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { downloadUserImage } from "../utils/imageDownload.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 // Logger
@@ -99,15 +100,23 @@ async function enqueueLtx2Job(
     width: number,
     height: number,
     frameCount: number,
+    initImage?: { base64: string; mimeType: string },
 ): Promise<string> {
-    const requestBody = {
+    const requestBody: Record<string, unknown> = {
         prompt,
         width,
         height,
         frame_count: frameCount,
     };
+    if (initImage) {
+        requestBody.image_b64 = initImage.base64;
+        requestBody.image_mime = initImage.mimeType;
+    }
 
-    logOps("Enqueuing LTX-2 job:", requestBody);
+    logOps("Enqueuing LTX-2 job:", {
+        ...requestBody,
+        image_b64: initImage ? `<${initImage.base64.length} chars>` : undefined,
+    });
 
     const enqueueUrl = `${getLtx2BaseUrl()}/enqueue`;
     const response = await fetchUpstream(enqueueUrl, {
@@ -286,22 +295,45 @@ export const callLtx2API = async (
         safeParams.aspectRatio,
     );
 
+    const imageUrl = safeParams.image?.[0];
+
     logOps("Video params:", {
         durationSeconds,
         frameCount,
         width,
         height,
         aspectRatio: safeParams.aspectRatio,
+        hasImage: Boolean(imageUrl),
     });
+
+    let initImage: { base64: string; mimeType: string } | undefined;
+    if (imageUrl) {
+        progress.updateBar(
+            requestId,
+            38,
+            "Processing",
+            "Downloading init image...",
+        );
+        const { buffer, mimeType } = await downloadUserImage(imageUrl);
+        initImage = { base64: buffer.toString("base64"), mimeType };
+    }
 
     progress.updateBar(
         requestId,
         40,
         "Processing",
-        "Enqueuing video generation job...",
+        imageUrl
+            ? "Enqueuing image-to-video job..."
+            : "Enqueuing video generation job...",
     );
 
-    const promptId = await enqueueLtx2Job(prompt, width, height, frameCount);
+    const promptId = await enqueueLtx2Job(
+        prompt,
+        width,
+        height,
+        frameCount,
+        initImage,
+    );
 
     progress.updateBar(requestId, 50, "Processing", "Generating video...");
 

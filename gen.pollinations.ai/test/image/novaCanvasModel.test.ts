@@ -17,12 +17,9 @@ vi.mock("@smithy/fetch-http-handler", () => ({
 }));
 
 import { syncImageEnv } from "../../src/image/env.ts";
-import {
-    callNovaCanvasAPI,
-    getNovaCanvasErrorStatus,
-} from "../../src/image/models/novaCanvasModel.ts";
+import { callNovaCanvasAPI } from "../../src/image/models/novaCanvasModel.ts";
 
-describe("getNovaCanvasErrorStatus", () => {
+describe("callNovaCanvasAPI", () => {
     beforeEach(() => {
         syncImageEnv(
             {
@@ -33,18 +30,6 @@ describe("getNovaCanvasErrorStatus", () => {
             ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION"],
         );
         bedrockMocks.send.mockReset();
-    });
-
-    it("classifies structured Bedrock validation exceptions as client errors", () => {
-        expect(
-            getNovaCanvasErrorStatus({
-                name: "ValidationException",
-            }),
-        ).toBe(400);
-    });
-
-    it("keeps unknown Nova Canvas failures as server errors", () => {
-        expect(getNovaCanvasErrorStatus("Internal service error")).toBe(500);
     });
 
     it("wraps Bedrock validation exceptions as client errors", async () => {

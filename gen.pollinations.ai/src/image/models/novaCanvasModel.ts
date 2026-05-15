@@ -218,7 +218,7 @@ type BedrockErrorLike = {
     };
 };
 
-export function getNovaCanvasErrorStatus(error: unknown): 400 | 500 {
+function getNovaCanvasErrorStatus(error: unknown): 400 | 500 {
     const errorLike =
         typeof error === "object" && error !== null
             ? (error as BedrockErrorLike)

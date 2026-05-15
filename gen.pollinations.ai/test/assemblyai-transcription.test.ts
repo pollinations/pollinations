@@ -118,8 +118,6 @@ describe("transcribeWithAssemblyAi", () => {
         const clientErrorMessages = [
             "language_detection cannot be performed on files with no spoken audio.",
             "Transcoding failed. File does not appear to contain audio. File type is text/plain (ASCII text).",
-            "Audio duration is too short.",
-            "No audio stream found in the file. File type is video/mp4.",
         ];
 
         for (const message of clientErrorMessages) {

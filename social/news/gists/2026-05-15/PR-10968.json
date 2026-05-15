@@ -1,0 +1,35 @@
+{
+  "pr_number": 10968,
+  "title": "pass through successful empty upstream completions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10968",
+  "merged_at": "2026-05-15T17:15:35Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "`genericOpenAIClient` used to convert successful upstream chat completions with no content, no tool calls, and no completion tokens into `502 Bad Gateway`.\n\nThat is not thin-client behavior: if the upstream returned `200 OK`, we should pass the completion through and let clients inspect `finish_reason`, `usage`, and message content themselves.\n\nChanges:\n- Removes the empty-completion error guard from `genericOpenAIClient`.\n- Keeps the existing `!response.ok` path unchanged, so real upstream 4xx/5xx responses still propagate as errors.\n- Makes `/text` treat `message.content: \"\"` as text content, returning a 200 text/plain empty body instead of falling through to JSON serialization.\n- Adds focused tests for OpenAI-compatible and `/text` empty completion pass-through.\n\nTests:\n- `npx vitest run test/text/genericOpenAIClient.test.ts test/generation-vcr.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Silence is golden",
+    "blurb": "We fixed a bug where empty but successful AI responses were throwing 502 errors. Now, if a model has nothing to say, we'll pass that silence right along to you.",
+    "summary": "The genericOpenAIClient now correctly passes through successful empty upstream completions (200 OK) instead of converting them into 502 Bad Gateway errors.",
+    "impact": "API clients will now receive the actual empty response and finish reasons from the upstream model, and the `/text` endpoint will correctly return an empty text/plain body.",
+    "keywords": [
+      "api",
+      "bug-fix",
+      "text-generation",
+      "openai-client",
+      "error-handling"
+    ],
+    "visual_concept": "Polly the bee holding a blank piece of paper with a green checkmark, showing that an empty response is perfectly fine and successful.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding up a blank piece of paper with a glowing green checkmark on it. A retro terminal in the background displays a '200 OK' message. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10968.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding up a blank piece of paper with a glowing green checkmark on it. A retro terminal in the background displays a '200 OK' message. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-15T17:16:32.961659+00:00"
+}

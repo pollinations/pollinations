@@ -26,7 +26,7 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextModelName]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
-        aliases: ["gpt-5.4-nano", "gpt-5-mini"],
+        aliases: ["gpt-5.4-nano"],
         modelId: "gpt-5.4-nano",
         provider: "azure",
         brand: "OpenAI",
@@ -92,6 +92,27 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        contextLength: 400000,
+        isSpecialized: false,
+    },
+    "gpt-5.4-mini": {
+        aliases: ["gpt-5-mini", "openai-mini"],
+        modelId: "gpt-5.4-mini",
+        provider: "azure",
+        brand: "OpenAI",
+        category: "text",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.75),
+                promptCachedTokens: perMillion(0.075),
+                completionTextTokens: perMillion(4.5),
+            },
+        ],
+        description: "GPT-5.4 Mini - Balanced Speed & Cost",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
         contextLength: 400000,
         isSpecialized: false,
     },

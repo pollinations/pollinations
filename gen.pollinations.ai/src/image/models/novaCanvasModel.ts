@@ -200,6 +200,39 @@ export async function callNovaCanvasAPI(
         if (error instanceof HttpError) throw error;
         const message = error instanceof Error ? error.message : String(error);
         logError("Nova Canvas API call failed:", message);
-        throw new HttpError(`Nova Canvas generation failed: ${message}`, 500);
+        const status = getNovaCanvasErrorStatus(error);
+        throw new HttpError(
+            `Nova Canvas generation failed: ${message}`,
+            status,
+            status === 400
+                ? { validation: true, body: JSON.stringify({ message }) }
+                : { body: JSON.stringify({ message }) },
+        );
     }
+}
+
+type BedrockErrorLike = {
+    name?: string;
+    $metadata?: {
+        httpStatusCode?: number;
+    };
+};
+
+function getNovaCanvasErrorStatus(error: unknown): 400 | 500 {
+    const errorLike =
+        typeof error === "object" && error !== null
+            ? (error as BedrockErrorLike)
+            : {};
+    const name = errorLike.name || "";
+    const status = errorLike.$metadata?.httpStatusCode;
+    const isValidationName =
+        name === "ValidationException" || name === "ContentFilteredException";
+
+    // Bedrock SDK errors with a 5xx status are server errors regardless of name.
+    if (status && status >= 500) return 500;
+
+    // Trust the structured exception name when status is 4xx or absent.
+    if (isValidationName) return 400;
+
+    return 500;
 }

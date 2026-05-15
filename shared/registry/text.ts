@@ -1028,13 +1028,6 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.56),
             },
         ],
-        price: [
-            {
-                date: new Date("2026-05-15").getTime(),
-                promptTextTokens: perMillion(0.13),
-                completionTextTokens: perMillion(1.56),
-            },
-        ],
         description:
             "Qwen3 VL 30B A3B Thinking - Vision-Language Reasoning (OpenRouter)",
         inputModalities: ["text", "image"],
@@ -1056,13 +1049,6 @@ export const TEXT_SERVICES = {
         brand: "Qwen",
         category: "text",
         cost: [
-            {
-                date: new Date("2026-05-15").getTime(),
-                promptTextTokens: perMillion(0.26),
-                completionTextTokens: perMillion(2.6),
-            },
-        ],
-        price: [
             {
                 date: new Date("2026-05-15").getTime(),
                 promptTextTokens: perMillion(0.26),

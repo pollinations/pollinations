@@ -769,6 +769,18 @@ function pathBounds(points) {
   return bounds;
 }
 
+function markerFromGesture(gesture) {
+  const marked = gesture.kind === "edit" &&
+    pathLength(gesture.points) >= Math.min(els.markCanvas.width, els.markCanvas.height) * DRAG_THRESHOLD;
+  if (!marked) clearMarks();
+  const marker = marked ? els.markCanvas.toDataURL("image/png") : "";
+  const bounds = marked ? pathBounds(gesture.points) : null;
+  const pinPoint = marked
+    ? { x: bounds.maxX, y: (bounds.minY + bounds.maxY) / 2 }
+    : gesture.points[0];
+  return { marked, marker, pinPoint };
+}
+
 async function composeSnapshot(marker = "") {
   const out = document.createElement("canvas");
   out.width = els.imageCanvas.width;
@@ -883,7 +895,10 @@ async function promptTypedEdit(clientX, clientY) {
   input.focus();
   setStatus("typing...");
   return new Promise((resolve) => {
+    let done = false;
     const finish = (text) => {
+      if (done) return;
+      done = true;
       input.replaceWith(els.pillText);
       pill({ visible: false });
       resolve(text.trim());
@@ -1025,17 +1040,9 @@ els.markCanvas.addEventListener("pointerdown", async (event) => {
   const kind = app.mode === "animate" ? "video" : "edit";
 
   if (els.typeMode.checked) {
-    app.active = { typing: true };
+    app.active = { kind, pointerId: event.pointerId, points: [start], typing: true, color: app.markerColor };
     render();
-    const text = await promptTypedEdit(event.clientX, event.clientY);
-    app.active = null;
-    render();
-    if (!text) { setStatus(app.busy ? "editing..." : "ready"); return; }
-    try {
-      enqueueJob({ kind, text, pinPoint: start, color: app.markerColor });
-    } catch (err) {
-      showError(err.message);
-    }
+    try { els.markCanvas.setPointerCapture(event.pointerId); } catch {}
     return;
   }
 
@@ -1061,6 +1068,23 @@ els.markCanvas.addEventListener("pointerup", async (event) => {
   if (!gesture) return;
   event.preventDefault();
   app.active = null;
+  if (gesture.typing) {
+    const annotation = markerFromGesture(gesture);
+    render();
+    const text = await promptTypedEdit(event.clientX, event.clientY);
+    if (!text) {
+      clearMarks();
+      setStatus(app.busy ? "editing..." : "ready");
+      return;
+    }
+    try {
+      enqueueJob({ kind: gesture.kind, text, ...annotation, color: gesture.color });
+    } catch (err) {
+      showError(err.message);
+      clearMarks();
+    }
+    return;
+  }
   if (gesture.kind === "video") {
     try {
       const { text, error } = await stopAndTranscribe(gesture.capture);
@@ -1072,19 +1096,12 @@ els.markCanvas.addEventListener("pointerup", async (event) => {
     }
     return;
   }
-  const length = pathLength(gesture.points);
-  const marked = length >= Math.min(els.markCanvas.width, els.markCanvas.height) * DRAG_THRESHOLD;
-  if (!marked) clearMarks();
-  const marker = marked ? els.markCanvas.toDataURL("image/png") : "";
-  const bounds = marked ? pathBounds(gesture.points) : null;
-  const pinPoint = marked
-    ? { x: bounds.maxX, y: (bounds.minY + bounds.maxY) / 2 }
-    : gesture.points[0];
+  const annotation = markerFromGesture(gesture);
   try {
     const { text, error } = await stopAndTranscribe(gesture.capture);
     pill({ visible: false });
     if (!text && error) throw new Error(`Voice input failed (${error}). Type an edit instead.`);
-    enqueueJob({ kind: "edit", text, marked, marker, pinPoint, color: gesture.color });
+    enqueueJob({ kind: "edit", text, ...annotation, color: gesture.color });
   } catch (err) {
     showError(err.message);
     clearMarks();

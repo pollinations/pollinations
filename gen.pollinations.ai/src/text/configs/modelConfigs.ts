@@ -237,9 +237,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),
 
     // -- OpenRouter (Qwen VL) -------------------------------------------------
-    "qwen/qwen3-vl-30b-a3b-thinking": () =>
+    "qwen/qwen3-vl-30b-a3b-instruct": () =>
         createOpenRouterModelConfig({
-            model: "qwen/qwen3-vl-30b-a3b-thinking",
+            model: "qwen/qwen3-vl-30b-a3b-instruct",
         }),
     "qwen/qwen3-vl-235b-a22b-thinking": () =>
         createOpenRouterModelConfig({

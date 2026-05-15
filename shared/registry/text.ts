@@ -109,7 +109,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(4.5),
             },
         ],
-        description: "GPT-5.4 Mini - Balanced",
+        description: "GPT-5.4 Mini - Balanced Speed & Cost",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

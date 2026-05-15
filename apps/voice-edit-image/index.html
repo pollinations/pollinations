@@ -288,6 +288,7 @@
       <button id="undoBtn" class="btn history" disabled title="undo">undo</button>
       <button id="redoBtn" class="btn" disabled title="redo">redo</button>
       <button id="downloadBtn" class="btn" title="download">save</button>
+      <button id="shareBtn" class="btn" title="upload PNG with embedded history and copy link">share</button>
     </section>
 
     <section id="frame" class="frame">
@@ -317,6 +318,7 @@ const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
+const HISTORY_KEYWORD = "pollinations:voice-edit:history";
 const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
@@ -347,6 +349,7 @@ const els = Object.fromEntries(Object.entries({
   undo: "undoBtn",
   redo: "redoBtn",
   download: "downloadBtn",
+  share: "shareBtn",
   colorPicker: "colorPicker",
   pill: "cursorPill",
   pillText: "pillText",
@@ -395,7 +398,7 @@ function render() {
   const locked = app.busy || Boolean(app.active);
   els.undo.disabled = !mediaHistory.canUndo() || locked;
   els.redo.disabled = !mediaHistory.canRedo() || locked;
-  [els.upload, els.model, els.typeMode].forEach((el) => { el.disabled = locked; });
+  [els.upload, els.model, els.typeMode, els.share].forEach((el) => { el.disabled = locked; });
   renderPins();
 }
 
@@ -482,7 +485,7 @@ function refreshConnectionUI() {
 
 function startConnect() {
   const params = new URLSearchParams({
-    redirect_uri: location.origin + location.pathname,
+    redirect_uri: location.origin + location.pathname + location.search,
     scope: "generate",
   });
   if (CLIENT_ID) params.set("client_id", CLIENT_ID);
@@ -579,7 +582,15 @@ async function loadModels() {
 
 async function loadImage(src, { addToHistory = false } = {}) {
   clearError();
-  if (src instanceof File) src = await readImageFile(src);
+  if (src instanceof Blob) {
+    const remix = await readRemixState(src);
+    const dataURL = await readImageFile(src);
+    if (remix) {
+      await restoreRemix(remix, dataURL);
+      return;
+    }
+    src = dataURL;
+  }
   await mediaHistory.set({ url: src }, { add: addToHistory });
 }
 
@@ -606,13 +617,143 @@ async function drawImage(src) {
 }
 
 function readImageFile(file) {
-  if (!file?.type?.startsWith("image/")) throw new Error("Drop or pick an image file.");
+  if (file?.type && !file.type.startsWith("image/")) throw new Error("Drop or pick an image file.");
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(new Error("Could not read file."));
     reader.readAsDataURL(file);
   });
+}
+
+const PNG_SIG = [137, 80, 78, 71, 13, 10, 26, 10];
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c;
+  }
+  return table;
+})();
+
+const bytesFromBlob = async (blob) => new Uint8Array(await blob.arrayBuffer());
+const readUint32 = (view, offset) => view.getUint32(offset, false);
+const writeUint32 = (view, offset, value) => view.setUint32(offset, value >>> 0, false);
+
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function isPng(bytes) {
+  return bytes.length >= PNG_SIG.length && PNG_SIG.every((b, i) => bytes[i] === b);
+}
+
+function readTextChunk(bytes, keyword) {
+  if (!isPng(bytes)) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const decoder = new TextDecoder();
+  let pos = PNG_SIG.length;
+  while (pos + 12 <= bytes.length) {
+    const length = readUint32(view, pos);
+    const type = decoder.decode(bytes.subarray(pos + 4, pos + 8));
+    const dataStart = pos + 8;
+    const dataEnd = dataStart + length;
+    if (dataEnd + 4 > bytes.length || type === "IEND") return null;
+    if (type === "tEXt") {
+      const data = bytes.subarray(dataStart, dataEnd);
+      const sep = data.indexOf(0);
+      if (sep > 0 && decoder.decode(data.subarray(0, sep)) === keyword) {
+        return decoder.decode(data.subarray(sep + 1));
+      }
+    }
+    pos = dataEnd + 4;
+  }
+  return null;
+}
+
+function injectTextChunk(bytes, keyword, text) {
+  if (!isPng(bytes)) throw new Error("not a PNG");
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const decoder = new TextDecoder();
+  let iend = -1;
+  for (let pos = PNG_SIG.length; pos + 12 <= bytes.length;) {
+    const length = readUint32(view, pos);
+    const type = decoder.decode(bytes.subarray(pos + 4, pos + 8));
+    if (type === "IEND") { iend = pos; break; }
+    pos += 8 + length + 4;
+  }
+  if (iend < 0) throw new Error("PNG missing IEND");
+
+  const encoder = new TextEncoder();
+  const keyBytes = encoder.encode(keyword);
+  const textBytes = encoder.encode(text);
+  const data = new Uint8Array(keyBytes.length + 1 + textBytes.length);
+  data.set(keyBytes);
+  data.set(textBytes, keyBytes.length + 1);
+
+  const chunk = new Uint8Array(12 + data.length);
+  const chunkView = new DataView(chunk.buffer);
+  writeUint32(chunkView, 0, data.length);
+  chunk.set([0x74, 0x45, 0x58, 0x74], 4); // tEXt
+  chunk.set(data, 8);
+  writeUint32(chunkView, 8 + data.length, crc32(chunk.subarray(4, 8 + data.length)));
+
+  const out = new Uint8Array(bytes.length + chunk.length);
+  out.set(bytes.subarray(0, iend));
+  out.set(chunk, iend);
+  out.set(bytes.subarray(iend), iend + chunk.length);
+  return out;
+}
+
+async function readRemixState(blob) {
+  const bytes = await bytesFromBlob(blob);
+  const text = readTextChunk(bytes, HISTORY_KEYWORD);
+  if (!text) return null;
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed?.history) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function scrubURL(url) {
+  if (!url || String(url).startsWith("data:") || String(url).startsWith("blob:")) return "";
+  try {
+    const clean = new URL(url, location.href);
+    for (const param of ["token", "key", "api_key", "apikey"]) clean.searchParams.delete(param);
+    return clean.href;
+  } catch {
+    return "";
+  }
+}
+
+function cleanHistoryFrames(frames) {
+  return frames
+    .map((frame) => ({ url: scrubURL(frame?.url || frame) }))
+    .filter((frame) => frame.url);
+}
+
+async function restoreRemix(state, fallbackURL) {
+  const frames = cleanHistoryFrames(state.history);
+  if (!frames.length) {
+    await mediaHistory.set({ url: fallbackURL }, { add: true });
+    return;
+  }
+  app.history = frames;
+  app.historyIndex = clamp(state.historyIndex ?? frames.length - 1, 0, frames.length - 1);
+  try {
+    await mediaHistory.go(app.historyIndex);
+    setStatus(`restored ${frames.length} frames`);
+  } catch (err) {
+    app.history = [];
+    app.historyIndex = -1;
+    await mediaHistory.set({ url: fallbackURL }, { add: true });
+    showError(`History URLs unavailable; loaded image only. ${err.message}`);
+  }
 }
 
 function resizeCanvases(width, height) {
@@ -807,8 +948,12 @@ async function promptTypedEdit(clientX, clientY) {
 }
 
 async function uploadDataURL(dataURL, filename = "annot.png") {
-  setStatus("uploading...");
   const blob = await (await fetch(dataURL)).blob();
+  return uploadBlob(blob, filename);
+}
+
+async function uploadBlob(blob, filename) {
+  setStatus("uploading...");
   const form = new FormData();
   form.append("file", blob, filename);
   const res = await fetch("https://media.pollinations.ai/upload", {
@@ -819,6 +964,50 @@ async function uploadDataURL(dataURL, filename = "annot.png") {
   if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
   const json = await res.json();
   return json.url || `https://media.pollinations.ai/${json.id}`;
+}
+
+function canvasBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("canvas toBlob failed"))), "image/png");
+  });
+}
+
+function remixPayload() {
+  const history = cleanHistoryFrames(app.history);
+  const current = scrubURL(app.history[app.historyIndex]?.url);
+  const found = history.findIndex((frame) => frame.url === current);
+  const historyIndex = found >= 0 ? found : history.length - 1;
+  return JSON.stringify({
+    v: 1,
+    app: "voice-edit-image",
+    history,
+    historyIndex,
+  });
+}
+
+async function remixPNGBlob() {
+  const bytes = await bytesFromBlob(await canvasBlob(els.imageCanvas));
+  const png = injectTextChunk(bytes, HISTORY_KEYWORD, remixPayload());
+  return new Blob([png], { type: "image/png" });
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function loadStartImage(url) {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    await loadImage(await res.blob(), { addToHistory: true });
+  } catch {
+    await loadImage(url, { addToHistory: true });
+  }
 }
 
 async function runEdit(imageURL, prompt, model) {
@@ -999,21 +1188,39 @@ const goHistory = (delta, label) => () => {
 };
 els.undo.addEventListener("click", goHistory(-1, "undone"));
 els.redo.addEventListener("click", goHistory(1, "redone"));
-els.download.addEventListener("click", () => {
+els.download.addEventListener("click", async () => {
   try {
-    const link = document.createElement("a");
-    link.href = els.imageCanvas.toDataURL("image/png");
-    link.download = "voice-edit-image.png";
-    link.click();
-  } catch {
-    if (app.imageURL) window.open(app.imageURL, "_blank", "noopener");
+    downloadBlob(await remixPNGBlob(), `voice-edit-${Date.now()}.png`);
+    setStatus(`saved with ${cleanHistoryFrames(app.history).length} frames`);
+  } catch (err) {
+    showError(err.message);
+  }
+});
+els.share.addEventListener("click", async () => {
+  try {
+    const mediaURL = await uploadBlob(await remixPNGBlob(), `voice-edit-${Date.now()}.png`);
+    const shareURL = new URL(location.href);
+    shareURL.searchParams.set("start", mediaURL);
+    shareURL.hash = "";
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(shareURL.href);
+      setStatus("share link copied");
+    } else {
+      window.prompt("share link", shareURL.href);
+      setStatus("share link ready");
+    }
+  } catch (err) {
+    showError(err.message);
   }
 });
 
 captureKeyFromFragment();
 refreshConnectionUI();
 loadModels();
-loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
+const startURL = new URLSearchParams(location.search).get("start")
+  || new URLSearchParams(location.hash.slice(1)).get("start");
+(startURL ? loadStartImage(startURL) : loadImage(STARTER, { addToHistory: true }))
+  .catch((err) => showError(err.message));
 setMarkerColor(app.markerColor);
 </script>
 </body>

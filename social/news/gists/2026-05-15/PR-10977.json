@@ -1,0 +1,35 @@
+{
+  "pr_number": 10977,
+  "title": "move deepseek-v4-flash to openrouter, remove paid-only",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10977",
+  "merged_at": "2026-05-15T16:16:44Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Migrates `deepseek` (V4 Flash) from DeepInfra to OpenRouter and removes the `paidOnly` gate so it's available on free tier.\n\n## Pricing (per 1M tokens)\n\n| Provider | Input | Output | Cached |\n|---|---|---|---|\n| DeepInfra (was) | $0.14 | $0.28 | $0.028 |\n| **OpenRouter (now)** | **$0.126** | **$0.252** | **$0.0252** |\n| Azure AI Foundry | $1.03 | $4.12 | — |\n| Fireworks | n/a (not hosted) | — | — |\n\nOpenRouter is ~10% cheaper across the board and currently routes V4 Flash via Novita.\n\n## Notes\n- Original issue suggested Azure — that's 7–15× more expensive, defeats the free-tier goal.\n- Fireworks doesn't host V4 Flash (only V4 Pro). Initial commit on this branch attempted Fireworks and was reverted after live API probe returned 404.\n- Updated `aliases.test.ts` to reflect new provider + cost (0.4032 for 1M+1M+1M usage).\n\n## Validation\n- Live OpenRouter probe: HTTP 200, model resolved to `deepseek-v4-flash-20260423` via Novita.\n- Local worker boots, `/v1/models` lists `deepseek` with tools+reasoning, 1M context.\n- `vitest run test/aliases.test.ts` — 186/186 passing.\n\nFixes #10810",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "DeepSeek Flash is Free",
+    "blurb": "We've re-routed DeepSeek V4 Flash to a new provider, making it cheaper to run and completely free for everyone to use. No pollen credits required to start buzzing with this one.",
+    "summary": "Migrated the deepseek (V4 Flash) model from DeepInfra to OpenRouter, reducing provider costs by 10% and removing the paid-only restriction.",
+    "impact": "Free tier users can now access deepseek-v4-flash without needing pollen credits.",
+    "keywords": [
+      "deepseek",
+      "models",
+      "free-tier",
+      "openrouter",
+      "api"
+    ],
+    "visual_concept": "The pollinations bee and the monitor robot opening a glowing treasure chest or unlocking a gate, symbolizing the model being made freely available. A 'FREE' sign highlights the removal of the paid gate.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot opening a glowing lime green (#ecf874) treasure chest. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'FREE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10977.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot opening a glowing lime green (#ecf874) treasure chest. Soft pastel gradient background. Warm lighting, lo-fi vibes like Stardew Valley. Text in pixel font: 'FREE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-15T16:17:44.045089+00:00"
+}

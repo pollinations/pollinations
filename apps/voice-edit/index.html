@@ -223,19 +223,21 @@
     align-items: center;
     gap: 7px;
     min-width: 0;
-    max-width: min(16rem, 48vw);
+    max-width: min(22rem, 50vw);
     width: max-content;
-    padding: 5px 9px;
+    padding: 8px 12px;
     transform: translate(calc(-0.55rem - 0.275rem - 1.5px), -50%);
     background: #fff;
     border: 2px solid var(--line);
     border-right-width: 4px;
     border-bottom-width: 4px;
-    font-size: 0.75rem;
-    line-height: 1.25;
+    font-size: 1.15rem;
+    line-height: 1.3;
     overflow-wrap: break-word;
   }
   .pin.processing { background: var(--accent); }
+  .pin.history { background: var(--paper); opacity: 0.85; }
+  .pin.history .dot { background: var(--line); border-radius: 50%; }
   .pin .dot {
     flex: 0 0 auto;
     width: 0.55rem;
@@ -340,7 +342,7 @@
       <div id="stage" class="stage">
         <canvas id="imageCanvas" width="1024" height="768"></canvas>
         <canvas id="markCanvas" width="1024" height="768"></canvas>
-        <video id="stageVideo" hidden controls autoplay loop muted playsinline></video>
+        <video id="stageVideo" hidden controls autoplay loop muted playsinline crossorigin="anonymous"></video>
         <div id="pinLayer"></div>
       </div>
       <div class="overlay">
@@ -365,7 +367,7 @@ const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
 const DEFAULT_VIDEO_MODEL = "seedance-pro";
-const VIDEO_DURATION = "5";
+const VIDEO_DURATION = "6";
 const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
@@ -479,22 +481,45 @@ function renderAccount() {
 function renderPins() {
   els.pinLayer.innerHTML = "";
   const jobs = [app.currentJob, ...app.queue].filter(Boolean);
+  const items = jobs.length
+    ? jobs.map((job) => ({
+        cls: job === app.currentJob ? "processing" : "queued",
+        text: job.kind === "video" ? `animate: ${job.text}` : job.text,
+        xPct: job.xPct,
+        yPct: job.yPct,
+      }))
+    : pinForCurrentFrame();
   const layerBox = els.pinLayer.getBoundingClientRect();
-  for (const job of jobs) {
+  for (const item of items) {
     const pin = document.createElement("div");
-    pin.className = `pin ${job === app.currentJob ? "processing" : "queued"}`;
+    pin.className = `pin ${item.cls}`;
     const dot = document.createElement("span");
     dot.className = "dot";
     const text = document.createElement("span");
-    text.textContent = job.kind === "video" ? `animate: ${job.text}` : job.text;
+    text.textContent = item.text;
     pin.append(dot, text);
-    pin.style.left = `${job.xPct}%`;
-    pin.style.top = `${job.yPct}%`;
+    pin.style.left = `${item.xPct}%`;
+    pin.style.top = `${item.yPct}%`;
     els.pinLayer.append(pin);
-    const anchorX = layerBox.left + (layerBox.width * job.xPct / 100);
-    const available = window.innerWidth - anchorX - 12;
-    pin.style.maxWidth = `${Math.min(256, Math.max(28, available))}px`;
+    const anchorX = layerBox.left + (layerBox.width * item.xPct / 100);
+    const available = window.innerWidth - anchorX - 16;
+    pin.style.maxWidth = `${Math.min(352, Math.max(80, available))}px`;
+    const len = (item.text || "").length;
+    const t = Math.min(1, Math.max(0, (len - 30) / 90));
+    pin.style.fontSize = `${(1.4 - t * 0.5).toFixed(2)}rem`;
   }
+}
+
+function pinForCurrentFrame() {
+  const frame = app.current;
+  if (!media.isPrep(frame)) return [];
+  if (frame.xPct == null || frame.yPct == null) return [];
+  return [{
+    cls: "history",
+    text: frame.kind === "prep" && frame.promptText ? frame.promptText : "",
+    xPct: frame.xPct,
+    yPct: frame.yPct,
+  }];
 }
 
 function setMode(mode) {
@@ -599,7 +624,9 @@ function stopMic() {
 const media = {
   image: (url) => ({ kind: "image", url }),
   video: (url, prompt, imageURL = app.imageURL) => ({ kind: "video", url, prompt, imageURL }),
+  prep: (baseURL, meta) => ({ kind: "prep", url: baseURL, ...meta }),
   isVideo: (frame = app.current) => frame?.kind === "video",
+  isPrep: (frame = app.current) => frame?.kind === "prep",
 };
 
 const mediaHistory = {
@@ -611,6 +638,11 @@ const mediaHistory = {
     app.historyIndex = app.history.length - 1;
     app.current = frame;
     render();
+  },
+  addSilent(frame) {
+    app.history = app.history.slice(0, app.historyIndex + 1);
+    app.history.push(frame);
+    app.historyIndex = app.history.length - 1;
   },
   async go(index) {
     const frame = app.history[index];
@@ -1013,6 +1045,14 @@ async function runQueue() {
       try {
         const snapshot = await composeSnapshot(job.kind === "video" ? "" : job.marker);
         const uploaded = await uploadDataURL(snapshot, job.kind === "video" ? "source.png" : "annot.png");
+        const prepMeta = {
+          promptText: job.text,
+          marked: job.marked,
+          color: job.color,
+          xPct: job.xPct,
+          yPct: job.yPct,
+        };
+        mediaHistory.addSilent(media.prep(uploaded, prepMeta));
         if (job.kind === "video") {
           const videoURL = await runVideo(uploaded, job.text, job.model);
           await mediaHistory.set(media.video(videoURL, job.text), { add: true });
@@ -1053,6 +1093,13 @@ els.markCanvas.addEventListener("pointerdown", async (event) => {
   if (app.active) return;
   event.preventDefault();
   clearError();
+  if (media.isPrep()) {
+    // editing from a prep frame should fork from the result, not the annotated input
+    const nextIdx = app.historyIndex + 1;
+    if (nextIdx < app.history.length) {
+      try { await mediaHistory.go(nextIdx); } catch (err) { showError(err.message); return; }
+    }
+  }
   if (media.isVideo()) {
     try {
       await commitVideoFrame();

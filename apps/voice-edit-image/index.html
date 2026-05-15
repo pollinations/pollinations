@@ -11,13 +11,15 @@
   :root {
     --dark: #110518;
     --paper: #f3ebde;
-    --card: #fffaf2;
+    --surface: #fff;
     --line: #110518;
     --muted: #5b5265;
     --accent: #e8f372;
-    --primary: #c9a9e4;
     --danger-bg: #ffe1e1;
     --danger-line: #a02020;
+    --border: 2px solid var(--line);
+    --raise: 2px 2px 0 var(--line);
+    --stage-max: calc(100vh - 210px);
   }
 
   * { box-sizing: border-box; }
@@ -77,18 +79,19 @@
     padding: 10px 12px;
     background: var(--danger-bg);
     border: 2px solid var(--danger-line);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
+    box-shadow: 2px 2px 0 var(--danger-line);
     font-size: 0.85rem;
   }
   .error.visible { display: block; }
 
+  .btn, .select, .frame, .overlay-panel, .pin, .pill {
+    background: var(--surface);
+    border: var(--border);
+    box-shadow: var(--raise);
+  }
+
   .btn, .select {
     min-height: 38px;
-    background: #fff;
-    border: 2px solid var(--line);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
     border-radius: 0;
     font-weight: 700;
   }
@@ -97,15 +100,17 @@
     cursor: pointer;
     text-transform: lowercase;
   }
-  .btn:hover:not(:disabled) { transform: translate(1px, 1px); border-right-width: 3px; border-bottom-width: 3px; }
-  .btn:active:not(:disabled) { transform: translate(2px, 2px); border-right-width: 2px; border-bottom-width: 2px; }
+  .btn:hover:not(:disabled) { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--line); }
+  .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
   .btn:disabled { opacity: 0.45; cursor: not-allowed; }
   .btn.accent { background: var(--accent); }
   .select { padding: 0 10px; max-width: min(100%, 20rem); }
 
-  .type-mode {
+  .type-mode, .swatches {
     display: inline-flex;
     align-items: center;
+  }
+  .type-mode {
     gap: 6px;
     font-size: 0.78rem;
     user-select: none;
@@ -113,15 +118,13 @@
   .history { margin-left: auto; }
 
   .swatches {
-    display: inline-flex;
-    align-items: center;
     gap: 5px;
   }
   .swatch {
     width: 24px;
     height: 24px;
     padding: 0;
-    border: 2px solid var(--line);
+    border: var(--border);
     border-radius: 0;
     outline: 2px solid transparent;
     outline-offset: 2px;
@@ -135,10 +138,6 @@
   .frame {
     position: relative;
     min-height: 280px;
-    background: #fff;
-    border: 2px solid var(--line);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
     overflow: auto;
     display: grid;
     place-items: center;
@@ -148,13 +147,13 @@
     position: relative;
     display: inline-block;
     max-width: 100%;
-    max-height: calc(100vh - 210px);
+    max-height: var(--stage-max);
     touch-action: none;
   }
   .stage canvas {
     display: block;
     max-width: 100%;
-    max-height: calc(100vh - 210px);
+    max-height: var(--stage-max);
     width: auto;
     height: auto;
   }
@@ -182,10 +181,6 @@
     width: min(22rem, calc(100% - 32px));
     padding: 18px;
     text-align: center;
-    background: #fff;
-    border: 2px solid var(--line);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
   }
   .overlay-panel p { margin: 0 0 12px; font-size: 0.9rem; }
 
@@ -200,10 +195,6 @@
     width: max-content;
     padding: 5px 9px;
     transform: translate(calc(-0.55rem - 0.275rem - 1.5px), -50%);
-    background: #fff;
-    border: 2px solid var(--line);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
     font-size: 0.75rem;
     line-height: 1.25;
     overflow-wrap: break-word;
@@ -227,10 +218,6 @@
     max-width: min(18rem, calc(100vw - 24px));
     padding: 8px 12px 8px 8px;
     transform: translate(18px, -50%);
-    background: #fff;
-    border: 2px solid var(--line);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
     font-size: 0.9rem;
     font-weight: 700;
     pointer-events: none;
@@ -246,7 +233,7 @@
     justify-content: center;
     gap: 2px;
     background: var(--accent);
-    border: 2px solid var(--line);
+    border: var(--border);
   }
   .pill .bar {
     width: 3px;
@@ -260,7 +247,7 @@
   @keyframes micbar { 0%,100% { transform: scaleY(0.6); } 50% { transform: scaleY(1.2); } }
 
   @media (max-width: 720px) {
-    .app { width: min(100% - 14px, 1180px); padding-top: 10px; gap: 9px; }
+    .app { --stage-max: calc(100vh - 260px); width: min(100% - 14px, 1180px); padding-top: 10px; gap: 9px; }
     .topbar { gap: 6px; }
     .account { order: 3; width: 100%; margin-left: 0; text-align: left; }
     .status { margin-left: auto; }
@@ -269,7 +256,6 @@
     .btn, .select { min-height: 36px; }
     .btn { padding: 0 9px; }
     .frame { min-height: 240px; }
-    .stage, .stage canvas { max-height: calc(100vh - 260px); }
     .pin { max-width: 62vw; }
   }
   .frame.locked .stage { filter: grayscale(0.35) opacity(0.55); }

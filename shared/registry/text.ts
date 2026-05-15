@@ -367,7 +367,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.34),
             },
         ],
-        description: "Gemma 4 26B A4B - Open Multimodal MoE Model",
+        description:
+            "Gemma 4 26B A4B - Open-source multimodal MoE for fast inference",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -830,7 +831,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.71),
             },
         ],
-        description: "Meta Llama 3.3 70B Instruct",
+        description:
+            "Meta Llama 3.3 70B - Open-source dense model for general chat",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -855,7 +857,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.0),
             },
         ],
-        description: "Meta Llama 4 Maverick 17B 128E Instruct",
+        description:
+            "Meta Llama 4 Maverick - Open-source multimodal MoE with vision",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -880,7 +883,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.64),
             },
         ],
-        description: "Meta Llama 4 Scout 17B 16E Instruct",
+        description:
+            "Meta Llama 4 Scout - Open-source MoE for long context & retrieval",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,

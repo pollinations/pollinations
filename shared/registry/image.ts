@@ -39,7 +39,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
             },
         ],
-        description: "NanoBanana - Gemini 2.5 Flash Image",
+        description: "NanoBanana - Fast image generation & editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -60,7 +60,8 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
             },
         ],
-        description: "NanoBanana 2 - Gemini 3.1 Flash Image",
+        description:
+            "NanoBanana 2 - Image generation & editing with sharper detail",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -107,7 +108,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description:
-            "Seedream 5.0 Lite - ByteDance ARK (web search, reasoning)",
+            "Seedream 5.0 Lite - Image generation with web search & reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -131,7 +132,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.045, // per image
             },
         ],
-        description: "Seedream 4.0 (legacy)",
+        description: "Seedream 4.0 - Photorealistic image generation (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -155,7 +156,8 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.06, // per image
             },
         ],
-        description: "Seedream 4.5 Pro (legacy)",
+        description:
+            "Seedream 4.5 Pro - Premium photorealistic image generation (legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -174,7 +176,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(8), // per 1M tokens
             },
         ],
-        description: "GPT Image 1 Mini - Image Generation Model",
+        description: "GPT Image 1 Mini - Fast & affordable image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -195,7 +197,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(32), // per 1M tokens
             },
         ],
-        description: "GPT Image 1.5 - Advanced Image Generation Model",
+        description: "GPT Image 1.5 - High-fidelity image generation & editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -215,7 +217,8 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(30), // per 1M tokens
             },
         ],
-        description: "GPT Image 2 - Next-Gen Image Generation Model",
+        description:
+            "GPT Image 2 - Premium high-resolution image generation & editing",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -264,7 +267,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.15, // per sec
             },
         ],
-        description: "Veo 3.1 Fast - Video Generation Model (preview)",
+        description: "Veo 3.1 Fast - Fast text-to-video with audio (preview)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
@@ -490,7 +493,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.03, // per image
             },
         ],
-        description: "Grok Imagine - Image Generation",
+        description: "Grok Imagine - Photorealistic image generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -660,7 +663,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // per image
             },
         ],
-        description: "Nova Canvas - Image Generation & Editing",
+        description: "Nova Canvas - Image generation, editing & inpainting",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

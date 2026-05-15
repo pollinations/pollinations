@@ -153,8 +153,7 @@ export const AUDIO_SERVICES = {
                 promptAudioSeconds: 0.0000445,
             },
         ],
-        description:
-            "Whisper Large V3 - Speech to Text Transcription (OVHcloud)",
+        description: "Whisper Large V3 - Speech to text transcription",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         alpha: true,
@@ -266,8 +265,7 @@ export const AUDIO_SERVICES = {
                 completionAudioTokens: 0.0000195, // $0.0195 per 1000 chars
             },
         ],
-        description:
-            "Qwen3-TTS Flash - Multilingual text-to-speech via DashScope",
+        description: "Qwen3-TTS Flash - Fast multilingual text-to-speech",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
@@ -290,8 +288,7 @@ export const AUDIO_SERVICES = {
                 completionAudioTokens: 0.013 / 1000,
             },
         ],
-        description:
-            "Qwen3-TTS Instruct - TTS with emotion & style control via DashScope",
+        description: "Qwen3-TTS Instruct - TTS with emotion & style control",
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },

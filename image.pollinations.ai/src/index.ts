@@ -336,15 +336,9 @@ const imageGen = async ({
         progress.errorBar(requestId, "Generation failed");
         progress.stop();
 
-        // Log detailed error information
-        console.error("Image generation failed:", {
-            error: error.message,
-            stack: error.stack,
-            requestId,
-            prompt: originalPrompt,
-            params: safeParams,
-            referrer,
-        });
+        logError(
+            `Image generation failed reqId=${requestId} model=${safeParams?.model || "unknown"} error=${error.message}`,
+        );
 
         // Send error telemetry to Tinybird
         const endTime = new Date();

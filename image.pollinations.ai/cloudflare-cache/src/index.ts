@@ -88,7 +88,7 @@ app.all("*", setConnectingIp, async (c) => {
     const pathname = url.pathname;
 
     // Known utility paths pass through directly
-    const utilityPaths = ["/models", "/about", "/register", "/feed", "/crossdomain.xml", "/.well-known"];
+    const utilityPaths = ["/models", "/about", "/register", "/feed", "/crossdomain.xml", "/.well-known", "/paid"];
     const isUtility = utilityPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
     // Everything else gets rewritten to /prompt/

@@ -82,7 +82,9 @@ def heartbeat_loop():
     url = "%s?port=%s&ip=%s&type=%s&token=%s" % (REGISTER_URL, port, PUBLIC_IP, SERVICE_TYPE, PLN_TOKEN)
     while True:
         try:
-            urllib.request.urlopen(url, timeout=5)
+            # Cloudflare blocks the default Python-urllib UA on gen.pollinations.ai.
+            req = urllib.request.Request(url, headers={"User-Agent": "pollinations-ltx2/1.0"})
+            urllib.request.urlopen(req, timeout=5)
             log.debug("Heartbeat sent")
         except Exception as e:
             log.warning("Heartbeat failed: %s", e)

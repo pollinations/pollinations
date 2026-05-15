@@ -1,0 +1,35 @@
+{
+  "pr_number": 10956,
+  "title": "chore: update app metrics 2026-05-15",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/10956",
+  "merged_at": "2026-05-15T05:28:14Z",
+  "labels": [
+    "API",
+    ".QUESTION"
+  ],
+  "pr_body_excerpt": "Daily automated update of app metrics, health checks, and greenhouse",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Daily Greenhouse Check",
+    "blurb": "Our automated bot just watered the plants, updating the daily app metrics and greenhouse stats.",
+    "summary": "Automated daily update of community app metrics, health checks, and greenhouse listings in the repository.",
+    "impact": "Keeps the community app directory and greenhouse statistics up to date with the latest health and usage data.",
+    "keywords": [
+      "metrics",
+      "apps",
+      "greenhouse",
+      "automated"
+    ],
+    "visual_concept": "The pollinations bee (Polly) and the robot companion checking on a digital greenhouse. The robot is holding a clipboard with metrics, while Polly waters some code-plants.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot watering glowing code-plants in a digital greenhouse. A chunky pixel robot with a CRT monitor head stands nearby holding a tiny clipboard with charts. Soft lime green (#ecf874) and warm peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10956.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot watering glowing code-plants in a digital greenhouse. A chunky pixel robot with a CRT monitor head stands nearby holding a tiny clipboard with charts. Soft lime green (#ecf874) and warm peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-15T05:29:09.088338+00:00"
+}

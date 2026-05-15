@@ -17,15 +17,27 @@ const log = debug("pollinations:x402");
 
 const X402_VERSION = 2;
 
-// Map our short network name to CAIP-2.
-const NETWORK_MAP: Record<string, { caip2: string; usdc: string }> = {
+// Map our short network name to CAIP-2 + USDC EIP-712 domain hint.
+// The `extra` field is what the facilitator uses to reconstruct the domain
+// separator for signature verification, so it must match the deployed
+// contract exactly (`name()` and `version()` confirmed on-chain).
+const NETWORK_MAP: Record<
+    string,
+    {
+        caip2: string;
+        usdc: string;
+        extra: { name: string; version: string };
+    }
+> = {
     base: {
         caip2: "eip155:8453",
         usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        extra: { name: "USD Coin", version: "2" },
     },
     "base-sepolia": {
         caip2: "eip155:84532",
         usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        extra: { name: "USDC", version: "2" },
     },
 };
 
@@ -117,7 +129,7 @@ export function buildPaymentRequirements(
         asset: getAddress(networkCfg.usdc),
         payTo: getAddress(payTo),
         maxTimeoutSeconds: 60,
-        extra: null,
+        extra: networkCfg.extra,
     };
 }
 

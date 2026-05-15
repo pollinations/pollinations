@@ -34,6 +34,7 @@ import {
 import { ImageParamsSchema, type ImageParams } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
+import { attachLegacyHandler, handleX402, x402Enabled } from "./x402Handler.js";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
@@ -613,12 +614,24 @@ const checkCacheAndGenerate = async (
     }
 };
 
+attachLegacyHandler(checkCacheAndGenerate);
+
 // Modify the server creation to set CORS headers for all requests
 const server = http.createServer((req, res) => {
     setCORSHeaders(res);
 
     const parsedUrl = parse(req.url, true);
     const pathname = parsedUrl.pathname;
+
+    if (pathname.startsWith("/paid/prompt/")) {
+        if (!x402Enabled()) {
+            res.writeHead(503, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "x402 not configured" }));
+            return;
+        }
+        handleX402(req, res);
+        return;
+    }
 
     if (
         pathname ===

@@ -13,6 +13,7 @@ export const IMAGE_SERVICES = {
         provider: "azure",
         brand: "Black Forest Labs",
         category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -29,6 +30,7 @@ export const IMAGE_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
         cost: [
             // Gemini 2.5 Flash Image via Vertex AI
@@ -49,6 +51,7 @@ export const IMAGE_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "image",
+        addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
         cost: [
             // Gemini 3.1 Flash Image via Vertex AI
@@ -71,6 +74,7 @@ export const IMAGE_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "image",
+        addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
         cost: [
             // Gemini 3 Pro Image via Vertex AI
@@ -94,6 +98,7 @@ export const IMAGE_SERVICES = {
         provider: "bytedance",
         brand: "ByteDance",
         category: "image",
+        addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -118,6 +123,7 @@ export const IMAGE_SERVICES = {
         provider: "bytedance",
         brand: "ByteDance",
         category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -141,6 +147,7 @@ export const IMAGE_SERVICES = {
         provider: "bytedance",
         brand: "ByteDance",
         category: "image",
+        addedDate: new Date("2025-12-04").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -165,6 +172,7 @@ export const IMAGE_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "image",
+        addedDate: new Date("2025-10-10").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -184,6 +192,7 @@ export const IMAGE_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "image",
+        addedDate: new Date("2025-12-23").getTime(),
         cost: [
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             {
@@ -205,6 +214,7 @@ export const IMAGE_SERVICES = {
         provider: "openai",
         brand: "OpenAI",
         category: "image",
+        addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -226,6 +236,7 @@ export const IMAGE_SERVICES = {
         provider: "runpod",
         brand: "Black Forest Labs",
         category: "image",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -242,6 +253,7 @@ export const IMAGE_SERVICES = {
         provider: "runpod",
         brand: "Alibaba",
         category: "image",
+        addedDate: new Date("2025-12-08").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -258,6 +270,7 @@ export const IMAGE_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "video",
+        addedDate: new Date("2025-11-27").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -275,6 +288,7 @@ export const IMAGE_SERVICES = {
         provider: "bytedance",
         brand: "ByteDance",
         category: "video",
+        addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
         cost: [
             // Token formula: (height × width × FPS × duration) / 1024
@@ -300,6 +314,7 @@ export const IMAGE_SERVICES = {
         provider: "bytedance",
         brand: "ByteDance",
         category: "video",
+        addedDate: new Date("2025-12-04").getTime(),
         paidOnly: true,
         cost: [
             // Token formula: (height × width × FPS × duration) / 1024
@@ -325,6 +340,7 @@ export const IMAGE_SERVICES = {
         provider: "replicate",
         brand: "ByteDance",
         category: "video",
+        addedDate: new Date("2026-05-07").getTime(),
         paidOnly: true,
         // non_video_in tier @ 720p; see provider-billing/providers/replicate.md
         cost: [
@@ -350,6 +366,7 @@ export const IMAGE_SERVICES = {
         provider: "alibaba",
         brand: "Alibaba",
         category: "video",
+        addedDate: new Date("2026-01-21").getTime(),
         paidOnly: true,
         cost: [
             // Using I2V+audio rate as base since T2V also generates audio; audio cost split out separately for tracking
@@ -377,6 +394,7 @@ export const IMAGE_SERVICES = {
         provider: "alibaba",
         brand: "Alibaba",
         category: "video",
+        addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -403,6 +421,7 @@ export const IMAGE_SERVICES = {
         provider: "alibaba",
         brand: "Alibaba",
         category: "image",
+        addedDate: new Date("2026-04-02").getTime(),
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),
@@ -426,6 +445,7 @@ export const IMAGE_SERVICES = {
         provider: "alibaba",
         brand: "Alibaba",
         category: "image",
+        addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -455,6 +475,7 @@ export const IMAGE_SERVICES = {
         provider: "alibaba",
         brand: "Qwen",
         category: "image",
+        addedDate: new Date("2026-03-23").getTime(),
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -478,6 +499,7 @@ export const IMAGE_SERVICES = {
         provider: "xai",
         brand: "xAI",
         category: "image",
+        addedDate: new Date("2026-02-25").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -501,6 +523,7 @@ export const IMAGE_SERVICES = {
         provider: "xai",
         brand: "xAI",
         category: "image",
+        addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -525,6 +548,7 @@ export const IMAGE_SERVICES = {
         provider: "xai",
         brand: "xAI",
         category: "video",
+        addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -549,6 +573,7 @@ export const IMAGE_SERVICES = {
         provider: "runpod",
         brand: "Black Forest Labs",
         category: "image",
+        addedDate: new Date("2026-01-17").getTime(),
         alpha: true,
         cost: [
             {
@@ -566,6 +591,7 @@ export const IMAGE_SERVICES = {
         provider: "lambda",
         brand: "Lightricks",
         category: "video",
+        addedDate: new Date("2026-02-06").getTime(),
         alpha: true,
         cost: [
             {
@@ -583,6 +609,7 @@ export const IMAGE_SERVICES = {
         provider: "pruna",
         brand: "Pruna",
         category: "image",
+        addedDate: new Date("2026-03-14").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -606,6 +633,7 @@ export const IMAGE_SERVICES = {
         provider: "pruna",
         brand: "Pruna",
         category: "image",
+        addedDate: new Date("2026-03-14").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -629,6 +657,7 @@ export const IMAGE_SERVICES = {
         provider: "pruna",
         brand: "Pruna",
         category: "video",
+        addedDate: new Date("2026-03-14").getTime(),
         paidOnly: true,
         cost: [
             // $0.12 per run / 5s default = $0.024/sec
@@ -654,6 +683,7 @@ export const IMAGE_SERVICES = {
         provider: "aws",
         brand: "Amazon",
         category: "image",
+        addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -671,6 +701,7 @@ export const IMAGE_SERVICES = {
         provider: "aws",
         brand: "Amazon",
         category: "video",
+        addedDate: new Date("2026-03-23").getTime(),
         cost: [
             {
                 date: COST_START_DATE,

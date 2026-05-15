@@ -76,6 +76,8 @@ export type ModelDefinition<TModelId extends string = ModelId> = {
     category: Category;
     cost: CostDefinition[];
     price?: PriceDefinition[];
+    // Date the model was added to the registry (ms epoch). Set once, never updated.
+    addedDate: number;
     // User-facing metadata
     description?: string;
     inputModalities?: string[];

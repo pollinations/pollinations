@@ -21,6 +21,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         provider: "google",
         brand: "Google",
         category: "embedding",
+        addedDate: new Date("2026-05-08").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -52,6 +53,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         provider: "openai",
         brand: "OpenAI",
         category: "embedding",
+        addedDate: new Date("2026-05-08").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -76,6 +78,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         provider: "openai",
         brand: "OpenAI",
         category: "embedding",
+        addedDate: new Date("2026-05-08").getTime(),
         cost: [
             {
                 date: COST_START_DATE,

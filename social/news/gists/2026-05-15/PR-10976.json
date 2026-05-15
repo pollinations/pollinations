@@ -1,0 +1,35 @@
+{
+  "pr_number": 10976,
+  "title": "ci: set CLOUDFLARE_ACCOUNT_ID for wrangler in production deploys",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10976",
+  "merged_at": "2026-05-15T15:58:17Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "Production Cloudflare deploys have been failing all day (since ~14:55 UTC) at the wrangler migrate step:\n\n```\nERROR: More than one account available but unable to select one in non-interactive mode.\n```\n\nThe CLOUDFLARE_API_TOKEN GitHub secret now has access to two CF accounts, so wrangler can't auto-pick. No top-level account_id is set in either wrangler.toml (only in [vars], which is worker-runtime, not wrangler-CLI).\n\nSetting CLOUDFLARE_ACCOUNT_ID at the job level in both deploy workflows so every wrangler step (migrate, push-secrets, apply-lifecycle, deploy) targets the right account.\n\nAccount ID is not a secret — it's already hardcoded in [vars] of both wrangler.toml files and bundled into the deployed worker.\n\nUnblocks #10972 (mistral-small-3.2 + mistral-4) which is on production branch but hasn't deployed.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Unblocking the deploy pipeline",
+    "blurb": "Fixed a Cloudflare deployment hiccup by explicitly setting our account ID in the CI workflows. The spice must flow!",
+    "summary": "Explicitly set the CLOUDFLARE_ACCOUNT_ID in GitHub Actions workflows to fix a Wrangler deployment failure caused by multiple accessible accounts.",
+    "impact": "Unblocks production deployments for the enter and gen workers, allowing pending model updates to ship.",
+    "keywords": [
+      "ci",
+      "cloudflare",
+      "wrangler",
+      "infrastructure",
+      "github-actions"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot fixing a glowing pipeline or server rack, representing CI/CD infrastructure repair.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny hardhat, working with a chunky monitor-headed robot to connect a glowing lime green (#ecf874) cable to a retro server rack. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10976.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny hardhat, working with a chunky monitor-headed robot to connect a glowing lime green (#ecf874) cable to a retro server rack. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-15T15:59:12.724342+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 10981,
+  "title": "add gpt-5.4-mini",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10981",
+  "merged_at": "2026-05-15T16:52:04Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- adds `gpt-5.4-mini` as a new text model (free tier, not paid-only)\n- pricing matches OpenAI: $0.75 / $0.075 / $4.50 per 1M (in / cached / out), 400k ctx\n- routes through Azure eastus deployment `gpt-5.4-mini` at 15000 TPM (just created)\n- moves `gpt-5-mini` alias from `openai` (nano) to the new mini — fixes misleading routing where \"mini\" callers landed on nano\n- adds `openai-mini` alias to the new mini\n\ngpt-5.5-pro was considered but isn't available on Azure OpenAI in any region yet, so it's not included.\n\nbattle-tested locally: text/image/tools/streaming all 200, error matrix returns clean 400s, burst at n=30 had 0 failures with p95 ~1.2s, alias routing verified, `enter` aliases.test.ts 187/187 pass.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new mini enters the chat",
+    "blurb": "We've added GPT-5.4-Mini to our text models, available for everyone on the free tier. Plus, we've rewired the 'mini' aliases so they point to the right place!",
+    "summary": "Added gpt-5.4-mini as a new free-tier text model routed through Azure, and updated the gpt-5-mini and openai-mini aliases to point to it instead of the nano model.",
+    "impact": "Users can now access OpenAI's gpt-5.4-mini model directly or via the updated gpt-5-mini and openai-mini aliases, with full support for text, images, tools, and streaming.",
+    "keywords": [
+      "models",
+      "gpt-5.4-mini",
+      "openai",
+      "text-generation",
+      "aliases"
+    ],
+    "visual_concept": "The pollinations bee welcoming a new, smaller, but powerful robot companion (representing the 'mini' AI model). The tiny robot represents the new GPT-5.4-Mini model joining the existing cast.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot welcoming a tiny, energetic robot companion with a glowing blue CRT screen head. The tiny robot is holding a small glowing text scroll. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10981.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot welcoming a tiny, energetic robot companion with a glowing blue CRT screen head. The tiny robot is holding a small glowing text scroll. Soft lime green (#ecf874) and pastel blue gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-15T16:53:02.476390+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 10961,
+  "title": "fix(model-monitor): register embeddings, split status into its own column",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10961",
+  "merged_at": "2026-05-15T09:38:59Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "The model monitor was showing embedding models (`openai-3-large`, `gemini-2`) as \"Unknown / Unregistered model\" because the hook only knew about text/image/audio catalogs. Tinybird emits `generate.embedding` traffic for those, so they fell through to the unregistered branch.\n\n- Import `EMBEDDING_SERVICES` and include it in `ALL_REGISTERED_MODELS` so `generate.embedding` rows merge with registry metadata\n- Fetch `/embeddings/models` alongside the other catalogs and track its endpoint status (drives the fallback banner)\n- Add an \"Embedding\" health-summary card using the existing `tan` tones — no new palette tokens\n- Pull `StatusBadge` (OFF/DEGRADED) and `CatalogStatusBadge` (UNKNOWN/ANOMALY/UNVERIFIED/REGISTRY/HIDDEN) out of the Model cell into a sortable **Status** column, ranked by severity (off > degraded > unknown > anomaly > unverified > registry > hidden) so problems bubble to the top\n\nHidden models left untouched.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Embeddings join the watch",
+    "blurb": "The model monitor now tracks embedding models properly and features a brand new sortable status column to bubble up issues faster.",
+    "summary": "The model monitor now registers embedding models like openai-3-large and gemini-2 to prevent them from showing as unknown, and extracts model status into a dedicated, severity-ranked column.",
+    "impact": "Developers checking the monitor will now see accurate health cards for embedding models and can sort by status to quickly spot degraded or offline services.",
+    "keywords": [
+      "model-monitor",
+      "embeddings",
+      "status",
+      "dashboard",
+      "health"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot looking at a dashboard/screen. The screen shows a list with a new 'Status' column and a tan-colored 'Embeddings' card. The robot is happy to see the new data.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing retro dashboard screen. The screen displays a neat list with a highlighted 'Status' column and a tan-colored 'Embeddings' card. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10961.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot looking at a glowing retro dashboard screen. The screen displays a neat list with a highlighted 'Status' column and a tan-colored 'Embeddings' card. Soft lime green (#ecf874) and warm peach gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-15T09:40:04.290210+00:00"
+}

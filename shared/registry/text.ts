@@ -1012,31 +1012,38 @@ export const TEXT_SERVICES = {
     "qwen-vision": {
         aliases: [
             "qwen3-vl",
-            "qwen3-vl-30b-a3b-instruct",
             "qwen3-vl-30b-a3b-thinking",
             "qwen3-vl-thinking",
             "qwen3-vl-plus",
             "qwen-vl",
         ],
-        modelId: "accounts/fireworks/models/qwen3-vl-30b-a3b-instruct",
-        provider: "fireworks",
+        modelId: "qwen/qwen3-vl-30b-a3b-thinking",
+        provider: "openrouter",
         brand: "Qwen",
         category: "text",
         cost: [
             {
-                date: new Date("2026-04-19").getTime(),
-                promptTextTokens: perMillion(0.15),
-                promptCachedTokens: perMillion(0.08),
-                completionTextTokens: perMillion(0.6),
+                date: new Date("2026-05-15").getTime(),
+                promptTextTokens: perMillion(0.13),
+                completionTextTokens: perMillion(1.56),
             },
         ],
-        description: "Qwen3 VL 30B A3B Instruct - Vision-Language (Fireworks)",
+        price: [
+            {
+                date: new Date("2026-05-15").getTime(),
+                promptTextTokens: perMillion(0.13),
+                completionTextTokens: perMillion(1.56),
+            },
+        ],
+        description:
+            "Qwen3 VL 30B A3B Thinking - Vision-Language Reasoning (OpenRouter)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        reasoning: false,
+        reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
+        paidOnly: true,
     },
     "qwen-vision-pro": {
         aliases: [
@@ -1045,29 +1052,33 @@ export const TEXT_SERVICES = {
             "qwen3-vl-235b-a22b-thinking",
             "qwen-vl-pro",
         ],
-        modelId: "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking",
-        provider: "fireworks",
+        modelId: "qwen/qwen3-vl-235b-a22b-thinking",
+        provider: "openrouter",
         brand: "Qwen",
         category: "text",
         cost: [
             {
-                // Pricing not published on Fireworks pricing page; using
-                // OpenRouter list price as a conservative proxy. Re-verify
-                // once Fireworks publishes a per-1M-token rate.
                 date: new Date("2026-05-15").getTime(),
                 promptTextTokens: perMillion(0.26),
-                promptCachedTokens: perMillion(0.13),
+                completionTextTokens: perMillion(2.6),
+            },
+        ],
+        price: [
+            {
+                date: new Date("2026-05-15").getTime(),
+                promptTextTokens: perMillion(0.26),
                 completionTextTokens: perMillion(2.6),
             },
         ],
         description:
-            "Qwen3 VL 235B A22B Thinking - Vision-Language Reasoning (Fireworks)",
+            "Qwen3 VL 235B A22B Thinking - Vision-Language Reasoning (OpenRouter)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
+        paidOnly: true,
     },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],

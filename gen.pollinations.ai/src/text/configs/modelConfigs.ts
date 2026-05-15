@@ -5,6 +5,7 @@ import {
     createDashScopeModelConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createOpenRouterModelConfig,
     createOVHcloudMistralConfig,
     createOVHcloudModelConfig,
     createPerplexityModelConfig,
@@ -230,14 +231,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3-coder-next": () =>
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),
 
-    // -- Fireworks AI (Qwen VL) -----------------------------------------------
-    "accounts/fireworks/models/qwen3-vl-30b-a3b-instruct": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3-vl-30b-a3b-instruct",
+    // -- OpenRouter (Qwen VL) -------------------------------------------------
+    "qwen/qwen3-vl-30b-a3b-thinking": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-vl-30b-a3b-thinking",
         }),
-    "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking",
+    "qwen/qwen3-vl-235b-a22b-thinking": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-vl-235b-a22b-thinking",
         }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------

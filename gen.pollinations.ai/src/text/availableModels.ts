@@ -51,15 +51,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-vision",
-        config: portkeyConfig[
-            "accounts/fireworks/models/qwen3-vl-30b-a3b-instruct"
-        ],
+        config: portkeyConfig["qwen/qwen3-vl-30b-a3b-thinking"],
     },
     {
         name: "qwen-vision-pro",
-        config: portkeyConfig[
-            "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking"
-        ],
+        config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
     },
     {
         name: "mistral",

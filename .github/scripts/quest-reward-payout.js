@@ -43,11 +43,6 @@ async function resolveLinkedQuest({ github, context, core }) {
     if (!issue) {
         core.setOutput("quest", "");
         core.info("Linked POLLEN-QUEST issue: (none)");
-        await github.rest.issues.createComment({
-            ...repo(context),
-            issue_number: pr.number,
-            body: `@${process.env.QUEST_PAYOUT_FALLBACK} this PR merged with no linked \`POLLEN-QUEST\` issue. If it was a quest, link the issue via the PR sidebar or add \`Fixes #N\` to the body, then back-fill manually with \`enter.pollinations.ai/src/tier-progression/shared/quest-grant-pollen.ts\`.`,
-        });
         return;
     }
 

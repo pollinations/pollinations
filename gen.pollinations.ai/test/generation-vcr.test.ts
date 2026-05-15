@@ -144,6 +144,13 @@ async function fakePortkeyResponse(request: Request) {
             completionTokens: 5,
         },
         {
+            matches: prompt.includes("vcr empty text"),
+            content: "",
+            promptTokens: 5,
+            completionTokens: 0,
+            finishReason: "content_filter",
+        },
+        {
             matches: prompt.includes("vcr slash/inside"),
             content: "snapshot slash response",
             promptTokens: 9,
@@ -203,9 +210,9 @@ async function fakePortkeyResponse(request: Request) {
                     index: 0,
                     message: {
                         role: "assistant",
-                        content: selectedCase?.content || "snapshot response",
+                        content: selectedCase?.content ?? "snapshot response",
                     },
-                    finish_reason: "stop",
+                    finish_reason: selectedCase?.finishReason || "stop",
                 },
             ],
             usage: {
@@ -390,6 +397,38 @@ test("POST /text returns assistant content directly", async ({
         requestPath: "/text",
         tokenCountPromptText: 8,
         tokenCountCompletionText: 5,
+        isBilledUsage: true,
+    });
+});
+
+test("POST /text passes through empty assistant content", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/text", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [{ role: "user", content: "vcr empty text" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/plain");
+    await expect(response.text()).resolves.toBe("");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        requestPath: "/text",
+        tokenCountPromptText: 5,
         isBilledUsage: true,
     });
 });

@@ -223,7 +223,7 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 429 });
     });
 
-    it("classifies content_filter empty completions as 400", async () => {
+    it("passes through successful empty completions", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({
                 id: "chatcmpl_test",
@@ -240,74 +240,17 @@ describe("genericOpenAIClient", () => {
             }),
         );
 
-        await expect(
-            genericOpenAIClient(
-                [{ role: "user", content: "blocked prompt" }],
-                { model: "provider-model" },
-                { endpoint: "https://portkey.test/chat" },
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining("content filter"),
-        });
-    });
-
-    it("classifies finish_reason=length with zero tokens as 400", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({
-                id: "chatcmpl_test",
-                object: "chat.completion",
-                model: "provider-model",
-                choices: [
-                    {
-                        index: 0,
-                        message: { role: "assistant", content: "" },
-                        finish_reason: "length",
-                    },
-                ],
-                usage: { prompt_tokens: 5, completion_tokens: 0 },
-            }),
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "blocked prompt" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
         );
 
-        await expect(
-            genericOpenAIClient(
-                [{ role: "user", content: "hi" }],
-                { model: "provider-model", max_tokens: 1 },
-                { endpoint: "https://portkey.test/chat" },
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining("max_tokens"),
+        expect(completion.choices[0]).toMatchObject({
+            message: { role: "assistant", content: "" },
+            finish_reason: "content_filter",
         });
-    });
-
-    it("keeps unexplained empty completions as 502 and includes finish_reason in message", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({
-                id: "chatcmpl_test",
-                object: "chat.completion",
-                model: "provider-model",
-                choices: [
-                    {
-                        index: 0,
-                        message: { role: "assistant", content: "" },
-                        finish_reason: "stop",
-                    },
-                ],
-                usage: { prompt_tokens: 5, completion_tokens: 0 },
-            }),
-        );
-
-        await expect(
-            genericOpenAIClient(
-                [{ role: "user", content: "hello" }],
-                { model: "provider-model" },
-                { endpoint: "https://portkey.test/chat" },
-            ),
-        ).rejects.toMatchObject({
-            status: 502,
-            message: expect.stringContaining("finish_reason=stop"),
-        });
+        expect(completion.usage?.completion_tokens).toBe(0);
     });
 
     it("appends a DONE event when an upstream SSE stream omits it", async () => {

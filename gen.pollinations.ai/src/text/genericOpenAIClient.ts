@@ -281,63 +281,6 @@ export async function genericOpenAIClient(
             formattedChoice.finish_reason = "tool_calls";
         }
 
-        // Reject empty completions from unstable upstream providers.
-        const hasContent = !!formattedChoice.message?.content;
-        const hasToolCalls = !!formattedChoice.message?.tool_calls?.length;
-        const hasTokens = (data.usage?.completion_tokens ?? 0) > 0;
-
-        if (!hasContent && !hasToolCalls && !hasTokens) {
-            const finishReason =
-                originalChoice.finish_reason || formattedChoice.finish_reason;
-
-            if (finishReason === "content_filter") {
-                errorLog(
-                    `[${requestId}] Content filter blocked completion: model=%s`,
-                    modelName,
-                );
-                throw createApiError(
-                    { status: 400, statusText: "Bad Request" },
-                    {
-                        message: "Request blocked by upstream content filter",
-                        model: modelName,
-                    },
-                    modelName,
-                );
-            }
-
-            if (finishReason === "length") {
-                errorLog(
-                    `[${requestId}] Empty completion with finish_reason=length: model=%s`,
-                    modelName,
-                );
-                throw createApiError(
-                    { status: 400, statusText: "Bad Request" },
-                    {
-                        message:
-                            "Upstream stopped before generating any tokens; increase max_tokens",
-                        model: modelName,
-                    },
-                    modelName,
-                );
-            }
-
-            errorLog(
-                `[${requestId}] Empty completion from upstream: model=%s finish_reason=%s`,
-                modelName,
-                finishReason || "none",
-            );
-            throw createApiError(
-                { status: 502, statusText: "Bad Gateway" },
-                {
-                    message: finishReason
-                        ? `Upstream provider returned an empty completion (finish_reason=${finishReason})`
-                        : "Upstream provider returned an empty completion",
-                    model: modelName,
-                },
-                modelName,
-            );
-        }
-
         return {
             ...data,
             id: data.id || `genericopenai-${requestId}`,

@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { getAddress } from "viem";
 import { useFacilitator } from "x402/verify";
+import { facilitator as coinbaseFacilitator } from "@coinbase/x402";
 import { exact } from "x402/schemes";
 import {
     processPriceToAtomicAmount,
@@ -34,14 +35,32 @@ let facilitator: ReturnType<typeof useFacilitator> | null = null;
 if (payToEnv) {
     try {
         payTo = getAddress(payToEnv) as `0x${string}`;
-        facilitator = useFacilitator();
+        // For Base mainnet (and any production network) we must use the
+        // authenticated Coinbase facilitator at api.cdp.coinbase.com. The
+        // default x402.org/facilitator is Base Sepolia-only and returns
+        // "unexpected_error" on mainnet payloads.
+        //
+        // CDP creds are read from CDP_API_KEY_ID + CDP_API_KEY_SECRET env.
+        // For testnet-only setups, leaving them unset still works against
+        // the free Sepolia facilitator below.
+        const hasCdpCreds =
+            !!process.env.CDP_API_KEY_ID && !!process.env.CDP_API_KEY_SECRET;
+        if (network === "base-sepolia" && !hasCdpCreds) {
+            facilitator = useFacilitator();
+            log("[x402] facilitator: free x402.org (Sepolia only)");
+        } else {
+            facilitator = useFacilitator(coinbaseFacilitator);
+            log(
+                `[x402] facilitator: coinbase CDP (creds present=${hasCdpCreds})`,
+            );
+        }
         enabled = true;
-        log(`x402 enabled: payTo=${payTo} network=${network} price=${price}`);
+        log(`[x402] enabled: payTo=${payTo} network=${network} price=${price}`);
     } catch (err) {
-        log(`x402 disabled: invalid X402_PAY_TO (${err})`);
+        log(`[x402] disabled: invalid X402_PAY_TO (${err})`);
     }
 } else {
-    log("X402_PAY_TO not set; x402 disabled");
+    log("[x402] X402_PAY_TO not set; x402 disabled");
 }
 
 export function x402Enabled(): boolean {

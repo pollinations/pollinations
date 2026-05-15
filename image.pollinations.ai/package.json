@@ -18,6 +18,7 @@
         "@azure-rest/ai-content-safety": "^1.0.1",
         "@azure/core-auth": "^1.9.0",
         "@azure/identity": "^4.10.0",
+        "@coinbase/x402": "^2.1.0",
         "@google-cloud/translate": "^7.2.1",
         "@gradio/client": "^0.19.4",
         "@types/debug": "^4.1.12",

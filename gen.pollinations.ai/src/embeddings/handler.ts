@@ -1,12 +1,12 @@
 import type { ModelDefinition, Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
-import { callAzureEmbed, extractAzureUsage } from "./azure.ts";
 import {
     badRequest,
     inputToGeminiParts,
     inputToText,
     normalizeInputs,
 } from "./input.ts";
+import { callOpenAIEmbed, extractOpenAIUsage } from "./openai.ts";
 import type { EmbeddingRequest } from "./types.ts";
 import {
     callGeminiEmbed,
@@ -20,7 +20,7 @@ type EmbeddingData = {
     index: number;
 };
 
-const AZURE_MAX_DIMENSIONS: Record<string, number> = {
+const OPENAI_MAX_DIMENSIONS: Record<string, number> = {
     "text-embedding-3-small": 1536,
     "text-embedding-3-large": 3072,
 };
@@ -35,8 +35,8 @@ export async function generateEmbeddings(
         return await generateGeminiEmbeddings(env, request, responseModel);
     }
 
-    if (serviceDef.provider === "azure") {
-        return await generateAzureEmbeddings(env, request, responseModel);
+    if (serviceDef.provider === "openai") {
+        return await generateOpenAIEmbeddings(env, request, responseModel);
     }
 
     throw new Error(`Unsupported embeddings provider: ${serviceDef.provider}`);
@@ -78,7 +78,7 @@ async function generateGeminiEmbeddings(
     return embeddingsResponse(responseModel, data, aggregatedUsage);
 }
 
-async function generateAzureEmbeddings(
+async function generateOpenAIEmbeddings(
     env: CloudflareBindings,
     request: EmbeddingRequest,
     responseModel: string,
@@ -87,7 +87,7 @@ async function generateAzureEmbeddings(
         badRequest("task_type is only supported by Gemini embedding models");
     }
 
-    validateAzureDimensions(request, responseModel);
+    validateOpenAIDimensions(request, responseModel);
 
     const inputs = normalizeInputs(request.input);
     const textInputs = inputs.map(inputToText);
@@ -96,13 +96,13 @@ async function generateAzureEmbeddings(
         return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
     }
 
-    const result = await callAzureEmbed(
+    const result = await callOpenAIEmbed(
         env,
         request.model,
         textInputs,
         request.dimensions,
     );
-    const usage = extractAzureUsage(result);
+    const usage = extractOpenAIUsage(result);
 
     const data = [...result.data]
         .sort((a, b) => a.index - b.index)
@@ -115,13 +115,13 @@ async function generateAzureEmbeddings(
     return embeddingsResponse(responseModel, data, usage);
 }
 
-function validateAzureDimensions(
+function validateOpenAIDimensions(
     request: EmbeddingRequest,
     responseModel: string,
 ) {
     if (!request.dimensions) return;
 
-    const maxDimensions = AZURE_MAX_DIMENSIONS[request.model];
+    const maxDimensions = OPENAI_MAX_DIMENSIONS[request.model];
 
     if (maxDimensions && request.dimensions > maxDimensions) {
         badRequest(

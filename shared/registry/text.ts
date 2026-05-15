@@ -31,6 +31,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -52,6 +53,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -79,6 +81,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -101,6 +104,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "text",
+        addedDate: new Date("2026-05-15").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -122,6 +126,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "text",
+        addedDate: new Date("2026-05-02").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -145,6 +150,7 @@ export const TEXT_SERVICES = {
         provider: "ovhcloud",
         brand: "Qwen",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: new Date("2026-01-05").getTime(),
@@ -171,6 +177,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Mistral",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -192,6 +199,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Mistral",
         category: "text",
+        addedDate: new Date("2026-05-15").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -217,6 +225,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -240,6 +249,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "OpenAI",
         category: "text",
+        addedDate: new Date("2026-04-02").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -263,6 +273,7 @@ export const TEXT_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -301,6 +312,7 @@ export const TEXT_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "text",
+        addedDate: new Date("2026-04-03").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -335,6 +347,7 @@ export const TEXT_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "text",
+        addedDate: new Date("2025-12-18").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -374,6 +387,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "DeepSeek",
         category: "text",
+        addedDate: new Date("2025-10-10").getTime(),
         cost: [
             {
                 date: new Date("2026-05-15").getTime(),
@@ -399,6 +413,7 @@ export const TEXT_SERVICES = {
         ],
         modelId: "google/gemma-4-26B-A4B-it",
         provider: "deepinfra",
+        addedDate: new Date("2026-05-08").getTime(),
         brand: "Google",
         category: "text",
         cost: [
@@ -424,6 +439,7 @@ export const TEXT_SERVICES = {
         provider: "fireworks",
         brand: "DeepSeek",
         category: "text",
+        addedDate: new Date("2026-04-24").getTime(),
         cost: [
             {
                 date: new Date("2026-04-24").getTime(),
@@ -456,6 +472,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "xAI",
         category: "text",
+        addedDate: new Date("2025-11-10").getTime(),
         cost: [
             {
                 date: new Date("2026-04-27").getTime(),
@@ -483,6 +500,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "xAI",
         category: "text",
+        addedDate: new Date("2026-04-09").getTime(),
         cost: [
             {
                 date: new Date("2026-04-27").getTime(),
@@ -508,6 +526,7 @@ export const TEXT_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "text",
+        addedDate: new Date("2025-10-10").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -542,6 +561,7 @@ export const TEXT_SERVICES = {
         provider: "bedrock",
         brand: "Pollinations",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -562,6 +582,7 @@ export const TEXT_SERVICES = {
         provider: "bedrock",
         brand: "Pollinations",
         category: "text",
+        addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -583,6 +604,7 @@ export const TEXT_SERVICES = {
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
+        addedDate: new Date("2025-12-01").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -604,6 +626,7 @@ export const TEXT_SERVICES = {
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
+        addedDate: new Date("2025-11-05").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -626,6 +649,7 @@ export const TEXT_SERVICES = {
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
+        addedDate: new Date("2025-11-10").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -648,6 +672,7 @@ export const TEXT_SERVICES = {
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
+        addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -670,6 +695,7 @@ export const TEXT_SERVICES = {
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
+        addedDate: new Date("2025-11-04").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -691,6 +717,7 @@ export const TEXT_SERVICES = {
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
+        addedDate: new Date("2025-11-04").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -721,6 +748,7 @@ export const TEXT_SERVICES = {
         provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
+        addedDate: new Date("2026-01-10").getTime(),
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -744,6 +772,7 @@ export const TEXT_SERVICES = {
         provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
+        addedDate: new Date("2026-04-22").getTime(),
         cost: [
             {
                 date: new Date("2026-04-21").getTime(),
@@ -767,6 +796,7 @@ export const TEXT_SERVICES = {
         provider: "google",
         brand: "Google",
         category: "text",
+        addedDate: new Date("2025-11-19").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -801,6 +831,7 @@ export const TEXT_SERVICES = {
         provider: "bedrock",
         brand: "Amazon",
         category: "text",
+        addedDate: new Date("2025-10-07").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -821,6 +852,7 @@ export const TEXT_SERVICES = {
         provider: "bedrock",
         brand: "Amazon",
         category: "text",
+        addedDate: new Date("2026-03-23").getTime(),
         cost: [
             {
                 date: COST_START_DATE,
@@ -842,6 +874,7 @@ export const TEXT_SERVICES = {
         provider: "fireworks",
         brand: "Z.ai",
         category: "text",
+        addedDate: new Date("2026-01-06").getTime(),
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -865,6 +898,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "Meta",
         category: "text",
+        addedDate: new Date("2026-05-01").getTime(),
         cost: [
             {
                 date: new Date("2026-01-01").getTime(),
@@ -891,6 +925,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "Meta",
         category: "text",
+        addedDate: new Date("2026-05-04").getTime(),
         cost: [
             {
                 date: new Date("2025-06-01").getTime(),
@@ -917,6 +952,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Meta",
         category: "text",
+        addedDate: new Date("2026-05-04").getTime(),
         cost: [
             {
                 date: new Date("2025-04-01").getTime(),
@@ -943,6 +979,7 @@ export const TEXT_SERVICES = {
         provider: "fireworks",
         brand: "MiniMax",
         category: "text",
+        addedDate: new Date("2026-01-06").getTime(),
         cost: [
             {
                 date: new Date("2026-04-19").getTime(),
@@ -965,6 +1002,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         brand: "Mistral",
         category: "text",
+        addedDate: new Date("2026-04-09").getTime(),
         cost: [
             {
                 date: new Date("2026-04-08").getTime(),
@@ -987,6 +1025,7 @@ export const TEXT_SERVICES = {
         provider: "community",
         brand: "Pollinations",
         category: "text",
+        addedDate: new Date("2026-02-24").getTime(),
         cost: [
             {
                 date: new Date("2026-02-23").getTime(),
@@ -1009,6 +1048,7 @@ export const TEXT_SERVICES = {
         provider: "alibaba",
         brand: "Qwen",
         category: "text",
+        addedDate: new Date("2026-03-22").getTime(),
         cost: [
             {
                 date: new Date("2026-03-22").getTime(),
@@ -1037,6 +1077,7 @@ export const TEXT_SERVICES = {
         provider: "fireworks",
         brand: "Qwen",
         category: "text",
+        addedDate: new Date("2026-03-22").getTime(),
         cost: [
             {
                 date: new Date("2026-04-12").getTime(),
@@ -1066,6 +1107,7 @@ export const TEXT_SERVICES = {
         provider: "openrouter",
         brand: "Qwen",
         category: "text",
+        addedDate: new Date("2026-03-22").getTime(),
         cost: [
             {
                 date: new Date("2026-05-15").getTime(),
@@ -1073,7 +1115,7 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.52),
             },
         ],
-        description: "Fast vision-language model for image understanding",
+        description: "Qwen3 VL 30B A3B Instruct - Fast vision-language model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -1091,6 +1133,7 @@ export const TEXT_SERVICES = {
         modelId: "qwen/qwen3-vl-235b-a22b-thinking",
         provider: "openrouter",
         brand: "Qwen",
+        addedDate: new Date("2026-05-15").getTime(),
         category: "text",
         cost: [
             {
@@ -1113,6 +1156,7 @@ export const TEXT_SERVICES = {
         provider: "ovhcloud",
         brand: "Qwen",
         category: "text",
+        addedDate: new Date("2026-02-15").getTime(),
         cost: [
             {
                 date: new Date("2026-02-15").getTime(),

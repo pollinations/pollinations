@@ -156,13 +156,14 @@ export const isPersona = (modelName: string): boolean => {
 };
 
 /**
- * Check if a model is "new" (added within the last 30 days)
+ * Check if a model is "new" (added within the last 7 days).
+ * Uses the `addedDate` field, which is set once on creation and never updated.
  */
 export const isNewModel = (modelName: string): boolean => {
     const service = getModelDefinition(modelName as ModelName);
-    if (!service?.cost?.[0]?.date) return false;
-    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    return service.cost[0].date > thirtyDaysAgo;
+    if (!service?.addedDate) return false;
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return service.addedDate > sevenDaysAgo;
 };
 
 /**

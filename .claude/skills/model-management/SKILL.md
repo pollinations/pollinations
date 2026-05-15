@@ -7,10 +7,12 @@ description: "Add, update, or remove text/image/video models. Handles any provid
 
 1. Update `.env` and `secrets/env.json` (sops) with credentials
 2. Update config/handler with model routing
-3. Update registry with **pricing** and **provider**
+3. Update registry with **pricing**, **provider**, and **`addedDate`**
 4. Run tests (see [Testing](#testing) below)
 
 > ⚠️ **Pricing depends on BOTH model AND provider.** Always verify pricing on the provider's website.
+
+> ⚠️ **`addedDate` is set once and NEVER updated.** It drives the NEW chip on the dashboard (7-day window). Use `new Date("YYYY-MM-DD").getTime()` with today's date. Do not touch it when changing pricing, endpoint, or provider later — only the cost array gets new entries.
 
 ---
 

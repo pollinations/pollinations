@@ -56,6 +56,7 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
+        addedDate: new Date("2026-02-07").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -93,6 +94,7 @@ export const AUDIO_SERVICES = {
         brand: "ElevenLabs",
         category: "audio",
         paidOnly: true,
+        addedDate: new Date("2026-05-14").getTime(),
         cost: [
             {
                 date: new Date("2026-05-13").getTime(),
@@ -119,6 +121,7 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
+        addedDate: new Date("2026-02-08").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -146,6 +149,7 @@ export const AUDIO_SERVICES = {
         provider: "ovhcloud",
         brand: "OpenAI",
         category: "audio",
+        addedDate: new Date("2026-02-08").getTime(),
         cost: [
             {
                 date: new Date("2026-02-08").getTime(),
@@ -164,6 +168,7 @@ export const AUDIO_SERVICES = {
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
+        addedDate: new Date("2026-02-13").getTime(),
         cost: [
             {
                 date: new Date("2026-02-13").getTime(),
@@ -193,6 +198,7 @@ export const AUDIO_SERVICES = {
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
+        addedDate: new Date("2026-05-02").getTime(),
         cost: [
             {
                 date: new Date("2026-05-02").getTime(),
@@ -215,6 +221,7 @@ export const AUDIO_SERVICES = {
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
+        addedDate: new Date("2026-05-02").getTime(),
         paidOnly: true,
         cost: [
             {
@@ -234,6 +241,7 @@ export const AUDIO_SERVICES = {
         provider: "lambda",
         brand: "ACE-Step",
         category: "audio",
+        addedDate: new Date("2026-04-03").getTime(),
         cost: [
             {
                 date: new Date("2026-04-02").getTime(),
@@ -252,6 +260,7 @@ export const AUDIO_SERVICES = {
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
+        addedDate: new Date("2026-04-22").getTime(),
         cost: [
             {
                 date: new Date("2026-04-19").getTime(),
@@ -275,6 +284,7 @@ export const AUDIO_SERVICES = {
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
+        addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
         cost: [
             {

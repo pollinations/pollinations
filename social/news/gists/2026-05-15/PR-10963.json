@@ -1,0 +1,35 @@
+{
+  "pr_number": 10963,
+  "title": "fix: set Cloudflare account for frontend deploy",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10963",
+  "merged_at": "2026-05-15T10:12:30Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "- Adds `CLOUDFLARE_ACCOUNT_ID` to the `pollinations.ai` production deploy workflow.\n- Fixes Wrangler failing in GitHub Actions when the token can access multiple Cloudflare accounts.\n- Validated YAML parsing and `git diff --check`; Biome ignores workflow YAML in this repo.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Wrangling the Wrangler",
+    "blurb": "Fixed a tiny hiccup in our automated deployment pipeline. The frontend now knows exactly which Cloudflare account to call home.",
+    "summary": "Added the CLOUDFLARE_ACCOUNT_ID to the frontend production deployment workflow to resolve Wrangler authentication failures in GitHub Actions.",
+    "impact": "This ensures reliable, automated deployments for the main pollinations.ai website by explicitly targeting the correct Cloudflare account.",
+    "keywords": [
+      "infrastructure",
+      "cloudflare",
+      "github-actions",
+      "deploy",
+      "wrangler"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny hard hat, fixing a glowing orange/blue pipe (representing Cloudflare/CI pipeline) with a wrench, while the Monitor Robot holds a clipboard with a green checkmark.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, using a small wrench to tighten a glowing orange and blue pipe. A chunky pixel robot with a CRT monitor head stands nearby holding a clipboard with a green checkmark. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10963.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny yellow hard hat, using a small wrench to tighten a glowing orange and blue pipe. A chunky pixel robot with a CRT monitor head stands nearby holding a clipboard with a green checkmark. Soft lime green (#ecf874) and pastel blue gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites."
+  },
+  "generated_at": "2026-05-15T10:13:21.468732+00:00"
+}

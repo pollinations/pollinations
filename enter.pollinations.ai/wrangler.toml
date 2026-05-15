@@ -2,6 +2,7 @@ name = "pollinations-enter"
 main = "src/index.ts"
 compatibility_date = "2025-11-01"
 compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
+account_id = "b6ec751c0862027ba269faf7029b2501"
 
 [dev]
 port = 3000
@@ -14,13 +15,13 @@ run_worker_first = [ "/api/*" ]
 [[d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
-database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
 [[kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
-id = "aa0d0aceb6bd45de93032270c7adf4ab"
+id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -34,7 +35,7 @@ remote = true
 
 [vars]
 ENVIRONMENT = "development"
-CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
+CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
@@ -54,13 +55,13 @@ STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
 [[env.local.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
-database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
 [[env.local.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
-id = "aa0d0aceb6bd45de93032270c7adf4ab"
+id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [[env.local.r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -73,7 +74,7 @@ bucket_name = "pollinations-text-enter"
 [env.local.vars]
 ENVIRONMENT = "local"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; local dashboard usage data
-CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
+CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
@@ -97,20 +98,20 @@ enabled = true
 head_sampling_rate = 1
 
 [[env.production.routes]]
-pattern = "enter.pollinations.ai"
-zone_name = "pollinations.ai"
+pattern = "enter.myceli.ai"
+zone_name = "myceli.ai"
 custom_domain = true
 
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"
 database_name = "production-pollinations-enter-db"
-database_id = "f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3"
+database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "drizzle"
 
 [[env.production.kv_namespaces]]
 binding = "KV"
-id = "eb4ea5149a5a413db53902bf2b8c1d95"
+id = "a621f17ad3e34000971cffa616675c5b"
 
 [[env.production.r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -126,13 +127,9 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.production.migrations]]
-tag = "remove-pollen-rate-limiter"
-deleted_classes = ["PollenRateLimiter"]
-
 [env.production.vars]
 ENVIRONMENT = "production"
-CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
+CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
@@ -142,7 +139,7 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 POLLEN_REFILL_PER_HOUR = 1
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
-STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
+STRIPE_SUCCESS_URL = "https://enter.myceli.ai"
 # Stripe Payment Method Configurations (live)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 STRIPE_BUY_POLLEN_PMC_ID = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
@@ -153,20 +150,20 @@ STRIPE_BUY_POLLEN_PMC_ID = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 crons = ["*/15 * * * *"]
 
 [[env.staging.routes]]
-pattern = "staging.enter.pollinations.ai"
-zone_name = "pollinations.ai"
+pattern = "staging.enter.myceli.ai"
+zone_name = "myceli.ai"
 custom_domain = true
 
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "bd0ef469-d727-4ff4-9118-bd7e6e7985ae"
+database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
 migrations_dir = "drizzle"
 
 [[env.staging.kv_namespaces]]
 # staging-pollinations-enter-kv
 binding = "KV"
-id = "eb4ea5149a5a413db53902bf2b8c1d95"
+id = "ba22195551794751b9792e4e67eb074a"
 
 [[env.staging.r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -182,13 +179,9 @@ name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10000, period = 10 }
 
-[[env.staging.migrations]]
-tag = "remove-pollen-rate-limiter"
-deleted_classes = ["PollenRateLimiter"]
-
 [env.staging.vars]
 ENVIRONMENT = "staging"
-CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
+CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
@@ -197,27 +190,27 @@ TINYBIRD_TIER_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?n
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments: sandbox mode for staging
 STRIPE_MODE = "sandbox"
-STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
+STRIPE_SUCCESS_URL = "https://staging.enter.myceli.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
 
 [env.dev]
 
 [[env.dev.routes]]
-pattern = "dev.enter.pollinations.ai"
-zone_name = "pollinations.ai"
+pattern = "dev.enter.myceli.ai"
+zone_name = "myceli.ai"
 custom_domain = true
 
 [[env.dev.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
-database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
 [[env.dev.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
-id = "aa0d0aceb6bd45de93032270c7adf4ab"
+id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [[env.dev.r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -232,7 +225,7 @@ remote = true
 [env.dev.vars]
 ENVIRONMENT = "dev"
 USAGE_DEBUG_USER_ID = "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh" # pollen@myceli.ai; dev dashboard usage data
-CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
+CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
@@ -243,7 +236,7 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 # Currently using prod services for simplicity
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
-STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
+STRIPE_SUCCESS_URL = "https://dev.enter.myceli.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
 
@@ -252,13 +245,13 @@ STRIPE_BUY_POLLEN_PMC_ID = "pmc_1TUpoC6O03AauPe8gaFzZxyM"
 [[env.test.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
-database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
 [[env.test.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
-id = "aa0d0aceb6bd45de93032270c7adf4ab"
+id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [[env.test.r2_buckets]]
 binding = "IMAGE_BUCKET"
@@ -276,7 +269,7 @@ simple = { limit = 10000, period = 10 }
 
 [env.test.vars]
 ENVIRONMENT = "test"
-CLOUDFLARE_ACCOUNT_ID = "efdcb0933eaac64f27c0b295039b28f2"
+CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = true

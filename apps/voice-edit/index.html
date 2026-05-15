@@ -129,19 +129,6 @@
   }
   .mode button.active { background: var(--accent); }
   .mode button + button { border-left: 2px solid var(--line); }
-  .video-model {
-    min-height: 38px;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 10px;
-    background: #fff;
-    border: 2px solid var(--line);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
-    font-size: 0.78rem;
-    font-weight: 700;
-  }
-
   .swatches {
     display: inline-flex;
     align-items: center;
@@ -337,7 +324,7 @@
       <select id="modelSel" class="select" aria-label="image model">
         <option value="nanobanana">nanobanana</option>
       </select>
-      <span id="videoModelLabel" class="video-model" hidden>wan-fast video</span>
+      <select id="videoModelSel" class="select" aria-label="video model" hidden></select>
       <div id="colorPicker" class="swatches" aria-label="marker color">
         <button type="button" class="swatch" data-color="red" aria-label="red marker"></button>
         <button type="button" class="swatch" data-color="black" aria-label="black marker"></button>
@@ -377,7 +364,7 @@ const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
 const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
-const VIDEO_MODEL = "wan-fast";
+const DEFAULT_VIDEO_MODEL = "seedance-pro";
 const VIDEO_DURATION = "5";
 const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
@@ -401,7 +388,7 @@ const els = {
   upload: document.getElementById("uploadBtn"),
   file: document.getElementById("fileInput"),
   modePicker: document.getElementById("modePicker"),
-  videoModel: document.getElementById("videoModelLabel"),
+  videoModel: document.getElementById("videoModelSel"),
   model: document.getElementById("modelSel"),
   typeMode: document.getElementById("typeMode"),
   undo: document.getElementById("undoBtn"),
@@ -460,6 +447,7 @@ function render() {
   els.model.disabled = locked || app.mode === "animate";
   els.model.hidden = app.mode === "animate";
   els.videoModel.hidden = app.mode !== "animate";
+  els.videoModel.disabled = locked || app.mode !== "animate";
   els.colorPicker.hidden = app.mode === "animate";
   els.typeMode.disabled = locked;
   els.stage.classList.toggle("video", video);
@@ -665,6 +653,20 @@ async function loadModels() {
       els.model.append(option);
     }
     if ([...els.model.options].some((option) => option.value === "nanobanana")) els.model.value = "nanobanana";
+
+    const videoModels = models
+      .filter((m) => m.output_modalities?.includes("video") && m.input_modalities?.includes("image"))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    els.videoModel.innerHTML = "";
+    for (const m of videoModels) {
+      const option = document.createElement("option");
+      option.value = m.name;
+      option.textContent = m.paid_only ? `${m.name} (paid)` : m.name;
+      els.videoModel.append(option);
+    }
+    if ([...els.videoModel.options].some((o) => o.value === DEFAULT_VIDEO_MODEL)) {
+      els.videoModel.value = DEFAULT_VIDEO_MODEL;
+    }
   } catch {}
 }
 
@@ -849,7 +851,7 @@ function enqueueJob({ kind, text, marked = false, marker = "", pinPoint, color }
     marked,
     marker,
     color,
-    model: kind === "video" ? VIDEO_MODEL : els.model.value,
+    model: kind === "video" ? els.videoModel.value : els.model.value,
     xPct: pin.xPct,
     yPct: pin.yPct,
   });

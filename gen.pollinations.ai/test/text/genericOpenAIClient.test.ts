@@ -246,7 +246,7 @@ describe("genericOpenAIClient", () => {
             { endpoint: "https://portkey.test/chat" },
         );
 
-        expect(completion.choices[0]).toMatchObject({
+        expect(completion.choices?.[0]).toMatchObject({
             message: { role: "assistant", content: "" },
             finish_reason: "content_filter",
         });

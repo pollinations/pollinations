@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-14",
+  "period_start": "2026-05-14",
+  "period_end": "2026-05-14",
+  "generated_at": "2026-05-15T07:02:51.343772+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-14/images/reddit.jpg"
+    }
+  ],
+  "title": "Added ElevenLabs Flash v2.5 TTS and unified the dashboard design system",
+  "text": "Merged 3 PRs today focusing on the audio endpoints and some long-overdue dashboard cleanup.\n\nFirst, we added the ElevenLabs Flash v2.5 model to the TTS endpoint (PR #10936). If you're building real-time conversational agents, the latency drop on Flash v2.5 is noticeable compared to the older models. It's live now, just pass the model parameter in your HTTP call.\n\nOn the transcription side, PR #10934 fixes a couple of annoying bugs with the OVH Whisper implementation. We're now properly preserving the original filenames through the pipeline and correctly parsing usage.seconds from the response. If your usage metrics were looking weirdly flat or you were losing track of which file was which in batch jobs, this should sort it out.\n\nFinally, PR #10912 unifies the dashboard design system. We had a lot of fragmented UI components that made maintaining the frontend a headache. It's a standard refactor—less code, more consistent components, easier to maintain moving forward. You probably won't notice a massive visual difference as an end user, but it makes shipping new features significantly faster for us.\n\nCode is open as always. You can check the implementation details or grab the API docs at github.com/pollinations/pollinations."
+}

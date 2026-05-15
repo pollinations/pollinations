@@ -9,10 +9,15 @@ import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import type { Env } from "@/env.ts";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
+import CLI_README from "../../../packages/polli-cli/README.md?raw";
 
 type OpenApiSchema = Record<string, unknown>;
 
 const BYOP_DOCS = BYOP_MD.trim();
+
+const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "")
+    .replace(/^https:\/\/github\.com\/user-attachments\/assets\/[^\n]+\n+/m, "")
+    .trim();
 const ERRORS_DOCS = [
     "All errors return JSON with a consistent shape:",
     "",
@@ -59,20 +64,6 @@ const SAFETY_DOCS = [
     "",
     'Blocked requests return `400` with `error.type: "safety_error"`. Safety service failures return `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.',
 ].join("\n");
-const CLI_DOCS = [
-    "`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.",
-    "",
-    "```bash",
-    "npm install -g @pollinations_ai/cli",
-    "polli auth login",
-    'polli gen image "a cat in space" --model flux --output cat.png',
-    'polli gen text "summarize this" < notes.md',
-    "polli models --type image",
-    "```",
-    "",
-    "Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)",
-].join("\n");
-
 const IMAGE_ALIASES = new Set(
     Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
 );

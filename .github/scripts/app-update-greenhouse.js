@@ -52,7 +52,7 @@ function parseApps() {
             cols.pop();
             if (cols.length < 15) return null;
 
-            const starsCol = cols[9];
+            const starsCol = cols[10];
             let stars = 0;
             const m = starsCol.match(/⭐([\d.]+)(k)?/);
             if (m) {
@@ -67,12 +67,12 @@ function parseApps() {
                 url: cols[2],
                 description: cols[3],
                 category: cols[5].toLowerCase(),
-                github: cols[6],
-                repo: cols[8],
+                github: cols[7],
+                repo: cols[9],
                 stars,
-                approvedDate: cols[14] || "",
-                byop: cols.length > 15 && cols[15] === "true",
-                requests24h: cols.length > 16 ? parseInt(cols[16], 10) || 0 : 0,
+                approvedDate: cols[15] || "",
+                byop: cols.length > 16 && cols[16] === "true",
+                requests24h: cols.length > 17 ? parseInt(cols[17], 10) || 0 : 0,
             };
         })
         .filter(Boolean);

@@ -9,8 +9,9 @@ type AuthModalProps = {
     tone?: "default" | "error";
 };
 
-// Backdrop uses `items-start` + `my-auto` on the card so short dialogs center
-// vertically and tall dialogs scroll the page. One variant fits both cases.
+// Whole screen locks to the amber theme via `data-theme="amber"` on the
+// outer wrapper — the backdrop and the card both read from the amber
+// cascade. Outer is amber-pale (soft wash); card stays subtle for contrast.
 export function AuthModal({
     children,
     dialog,
@@ -27,11 +28,16 @@ export function AuthModal({
           }
         : {};
     const borderClass =
-        tone === "error" ? "border-red-300" : "border-amber-300";
+        tone === "error"
+            ? "border-intent-danger-border"
+            : "border-theme-border";
     return (
-        <div className="fixed inset-0 flex items-start justify-center p-4 overflow-y-auto bg-green-950/50">
+        <div
+            data-theme="amber"
+            className="fixed inset-0 flex items-start justify-center overflow-y-auto bg-theme-bg-pale p-4"
+        >
             <div
-                className={`bg-amber-50 border-4 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
+                className={`bg-surface-white border-2 ${borderClass} rounded-lg shadow-lg max-w-xl w-full my-auto`}
                 {...dialogProps}
             >
                 {children}
@@ -78,7 +84,7 @@ export function AuthModalLoading() {
         <AuthModal>
             <AuthModalHeader />
             <div className="px-8 pb-8 pt-2 text-center">
-                <p className="text-gray-900">Loading...</p>
+                <p className="text-theme-text-strong">Loading...</p>
             </div>
         </AuthModal>
     );
@@ -86,8 +92,8 @@ export function AuthModalLoading() {
 
 export function ErrorBanner({ children }: { children: ReactNode }) {
     return (
-        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-            <p className="text-red-800 text-sm">{children}</p>
+        <div className="bg-intent-danger-bg-light border-2 border-intent-danger-border rounded-lg p-4">
+            <p className="text-intent-danger-text text-sm">{children}</p>
         </div>
     );
 }
@@ -104,10 +110,10 @@ export function AuthInfoCard({
     children,
 }: AuthInfoCardProps) {
     return (
-        <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-4">
+        <div className="bg-theme-bg-pale border-2 border-theme-border rounded-lg p-4">
             <p
                 id={titleId}
-                className="font-body text-xs font-semibold text-amber-800 tracking-wide mb-2"
+                className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-2"
             >
                 {title}
             </p>

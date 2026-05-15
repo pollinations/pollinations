@@ -1,0 +1,35 @@
+{
+  "pr_number": 10962,
+  "title": "add sync-production skill",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10962",
+  "merged_at": "2026-05-15T09:59:30Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Adds `.claude/skills/sync-production/` for merging `main` into `production` via the GitHub merges API — no local checkout, no working tree changes.\n\nPre-checks for conflicts with `git merge-tree` before calling the API. If the merge would conflict, the script lists the conflicting paths and exits non-zero so the agent can surface the reason in chat instead of forcing it through.\n\nRun with:\n```\n.claude/skills/sync-production/scripts/sync-production.sh\n```\n\nExit codes: `0` success/no-op, `2` would-conflict, `3` API rejected.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Claude learns to ship",
+    "blurb": "We taught our AI agents a new trick: merging main to production directly via the GitHub API. No local checkouts, no messy working trees, just clean deployments.",
+    "summary": "Added a new Claude skill that merges the main branch into production using the GitHub merges API, including pre-checks for conflicts via git merge-tree.",
+    "impact": "Agents can now safely sync production branches without altering local working trees, surfacing clear error codes if merge conflicts are detected.",
+    "keywords": [
+      "claude",
+      "skills",
+      "github-api",
+      "deployment",
+      "git"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny construction hard hat, working alongside the monitor robot at a retro terminal. They are pressing a glowing 'MERGE' button to ship code, representing the automated GitHub API merge process.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny construction hard hat, hovering next to a chunky monitor robot at a retro terminal. The robot is pressing a glowing lime green (#ecf874) 'MERGE' button. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-15/PR-10962.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny construction hard hat, hovering next to a chunky monitor robot at a retro terminal. The robot is pressing a glowing lime green (#ecf874) 'MERGE' button. Soft pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-15T10:00:22.063793+00:00"
+}

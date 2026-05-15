@@ -223,6 +223,36 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 429 });
     });
 
+    it("passes through successful empty completions", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "" },
+                        finish_reason: "content_filter",
+                    },
+                ],
+                usage: { prompt_tokens: 5, completion_tokens: 0 },
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "blocked prompt" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.choices?.[0]).toMatchObject({
+            message: { role: "assistant", content: "" },
+            finish_reason: "content_filter",
+        });
+        expect(completion.usage?.completion_tokens).toBe(0);
+    });
+
     it("appends a DONE event when an upstream SSE stream omits it", async () => {
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () => {
             const encoder = new TextEncoder();

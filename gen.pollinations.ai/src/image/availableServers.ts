@@ -1,4 +1,5 @@
 import debug from "debug";
+import { HttpError } from "./httpError.ts";
 
 const logServer = debug("pollinations:server");
 
@@ -125,8 +126,11 @@ export const fetchFromLeastBusyServer = async (
                     },
                 );
 
-                throw new Error(
-                    `HTTP error! status: ${response.status}, body: ${errorBody.substring(0, 200)}`,
+                throw new HttpError(
+                    `Image backend rejected request with status ${response.status}`,
+                    response.status,
+                    { body: errorBody.substring(0, 500) },
+                    `${serverUrl}/generate`,
                 );
             }
             return response;

@@ -51,7 +51,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-vision",
-        config: portkeyConfig["qwen/qwen3-vl-30b-a3b-thinking"],
+        config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
     },
     {
         name: "qwen-vision-pro",

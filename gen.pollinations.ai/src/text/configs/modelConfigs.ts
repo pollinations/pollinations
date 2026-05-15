@@ -231,9 +231,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDashScopeModelConfig({ model: "qwen3-coder-next" }),
 
     // -- Fireworks AI (Qwen VL) -----------------------------------------------
-    "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking": () =>
+    "accounts/fireworks/models/qwen3-vl-30b-a3b-instruct": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
+            model: "accounts/fireworks/models/qwen3-vl-30b-a3b-instruct",
+        }),
+    "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking",
         }),
 
     // -- OVHcloud (Qwen) ------------------------------------------------------

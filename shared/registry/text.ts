@@ -1012,12 +1012,13 @@ export const TEXT_SERVICES = {
     "qwen-vision": {
         aliases: [
             "qwen3-vl",
+            "qwen3-vl-30b-a3b-instruct",
             "qwen3-vl-30b-a3b-thinking",
             "qwen3-vl-thinking",
             "qwen3-vl-plus",
             "qwen-vl",
         ],
-        modelId: "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking",
+        modelId: "accounts/fireworks/models/qwen3-vl-30b-a3b-instruct",
         provider: "fireworks",
         brand: "Qwen",
         category: "text",
@@ -1029,8 +1030,38 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.6),
             },
         ],
+        description: "Qwen3 VL 30B A3B Instruct - Vision-Language (Fireworks)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "qwen-vision-pro": {
+        aliases: [
+            "qwen3-vl-pro",
+            "qwen3-vl-235b",
+            "qwen3-vl-235b-a22b-thinking",
+            "qwen-vl-pro",
+        ],
+        modelId: "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking",
+        provider: "fireworks",
+        brand: "Qwen",
+        category: "text",
+        cost: [
+            {
+                // Pricing not published on Fireworks pricing page; using
+                // OpenRouter list price as a conservative proxy. Re-verify
+                // once Fireworks publishes a per-1M-token rate.
+                date: new Date("2026-05-15").getTime(),
+                promptTextTokens: perMillion(0.26),
+                promptCachedTokens: perMillion(0.13),
+                completionTextTokens: perMillion(2.6),
+            },
+        ],
         description:
-            "Qwen3 VL 30B A3B Thinking - Vision-Language Reasoning (Fireworks)",
+            "Qwen3 VL 235B A22B Thinking - Vision-Language Reasoning (Fireworks)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

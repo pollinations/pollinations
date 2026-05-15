@@ -178,7 +178,7 @@ async function submitAssemblyAiTranscript(opts: {
         format_text: true,
     };
     if (language) {
-        transcriptRequest.language_code = normalizeAssemblyAiLanguage(language);
+        transcriptRequest.language_code = toAssemblyAiLanguageCode(language);
     } else {
         transcriptRequest.language_detection = true;
     }
@@ -234,8 +234,10 @@ async function pollAssemblyAiTranscript(opts: {
         }
 
         if (transcript.status === "error") {
-            throw new UpstreamError(500 as ContentfulStatusCode, {
-                message: transcript.error || "AssemblyAI transcription failed",
+            const message =
+                transcript.error || "AssemblyAI transcription failed";
+            throw new UpstreamError(getAssemblyAiErrorStatus(message), {
+                message,
             });
         }
 
@@ -322,9 +324,20 @@ function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function normalizeAssemblyAiLanguage(language: string): string {
-    const normalized = language.trim().toLowerCase().replace("-", "_");
-    return normalized === "en" ? "en_us" : normalized;
+function toAssemblyAiLanguageCode(language: string): string {
+    const code = language.trim().toLowerCase().replace("-", "_");
+    return code === "en" ? "en_us" : code;
+}
+
+function getAssemblyAiErrorStatus(message: string): 400 | 500 {
+    const normalized = message.toLowerCase();
+    if (
+        normalized.includes("no spoken audio") ||
+        normalized.includes("does not appear to contain audio")
+    ) {
+        return 400;
+    }
+    return 500;
 }
 
 function getAssemblyAiRegistryModel(

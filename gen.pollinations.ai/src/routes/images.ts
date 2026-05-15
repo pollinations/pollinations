@@ -99,7 +99,14 @@ async function parseEditInput(c: Context): Promise<{
     const contentType = c.req.header("content-type") || "";
 
     if (contentType.includes("multipart/form-data")) {
-        const formData = c.get("formData") || (await c.req.formData());
+        let formData: FormData;
+        try {
+            formData = c.get("formData") || (await c.req.formData());
+        } catch {
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: "Invalid multipart form data",
+            });
+        }
         const prompt = formData.get("prompt") as string;
         if (!prompt)
             throw new UpstreamError(400 as ContentfulStatusCode, {

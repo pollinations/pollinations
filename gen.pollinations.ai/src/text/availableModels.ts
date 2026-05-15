@@ -32,6 +32,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.4"],
     },
     {
+        name: "gpt-5.4-mini",
+        config: portkeyConfig["gpt-5.4-mini"],
+    },
+    {
         name: "gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
     },
@@ -51,9 +55,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-vision",
-        config: portkeyConfig[
-            "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking"
-        ],
+        config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
+    },
+    {
+        name: "qwen-vision-pro",
+        config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
     },
     {
         name: "mistral",
@@ -61,8 +67,13 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
+        name: "mistral-4",
+        config: portkeyConfig["mistral-small-2603"],
+        transform: stripCacheControl,
+    },
+    {
         name: "deepseek",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash"],
+        config: portkeyConfig["deepseek/deepseek-v4-flash"],
     },
     {
         name: "gemma",

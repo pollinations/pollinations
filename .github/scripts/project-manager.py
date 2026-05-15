@@ -463,8 +463,8 @@ def main():
         else:
             log_error("Tier project not configured")
             return
-    if "POLLEN-QUEST" in existing_labels:
-        log_debug("Found POLLEN-QUEST label; Quest project auto-add owns quest routing")
+    if "POLLEN-QUEST" in existing_labels or "DRAFT-QUEST" in existing_labels:
+        log_debug("Found quest label; Quest project auto-add owns routing")
         return
 
     if "NEWS" in existing_labels:

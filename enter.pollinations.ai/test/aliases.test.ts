@@ -107,7 +107,7 @@ test("GPT-5.5 requires paid balance", () => {
     expect(definition.paidOnly).toBe(true);
 });
 
-test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
+test("DeepSeek V4 models are billed at provider cost", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         promptCachedTokens: 1_000_000,
@@ -115,12 +115,16 @@ test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
     };
 
     const expectedCosts = {
-        deepseek: 0.448,
+        deepseek: 0.4032,
         "deepseek-pro": 5.36,
     } as const;
     const expectedProviders = {
-        deepseek: "deepinfra",
+        deepseek: "openrouter",
         "deepseek-pro": "fireworks",
+    } as const;
+    const expectedPaidOnly = {
+        deepseek: undefined,
+        "deepseek-pro": true,
     } as const;
 
     for (const model of ["deepseek", "deepseek-pro"] as const) {
@@ -129,7 +133,7 @@ test("DeepSeek V4 models are paid-only and billed at provider cost", () => {
         const price = calculatePrice(model, usage);
 
         expect(definition.provider).toBe(expectedProviders[model]);
-        expect(definition.paidOnly).toBe(true);
+        expect(definition.paidOnly).toBe(expectedPaidOnly[model]);
         expect(cost.totalCost).toBeCloseTo(expectedCosts[model], 8);
         expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
     }

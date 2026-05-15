@@ -119,7 +119,6 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "image",
         paidOnly: true,
-        hidden: true,
         cost: [
             {
                 date: COST_START_DATE,
@@ -143,7 +142,6 @@ export const IMAGE_SERVICES = {
         brand: "ByteDance",
         category: "image",
         paidOnly: true,
-        hidden: true,
         cost: [
             {
                 date: COST_START_DATE,

@@ -223,6 +223,172 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 429 });
     });
 
+    it("classifies content_filter empty completions as 400", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "" },
+                        finish_reason: "content_filter",
+                    },
+                ],
+                usage: { prompt_tokens: 5, completion_tokens: 0 },
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "blocked prompt" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("content filter"),
+        });
+    });
+
+    it("classifies Azure prompt_filter_results as 400", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                prompt_filter_results: [
+                    {
+                        prompt_index: 0,
+                        content_filter_results: {
+                            sexual: { filtered: true, severity: "high" },
+                            hate: { filtered: false, severity: "safe" },
+                        },
+                    },
+                ],
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { prompt_tokens: 5, completion_tokens: 0 },
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "blocked prompt" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("sexual"),
+        });
+    });
+
+    it("does not flag Azure annotations when filtered=false", async () => {
+        // Azure attaches severity annotations (e.g. low/medium) without
+        // blocking content. These should not be misread as client-side
+        // content_filter rejections.
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                prompt_filter_results: [
+                    {
+                        prompt_index: 0,
+                        content_filter_results: {
+                            sexual: { filtered: false, severity: "low" },
+                            hate: { filtered: false, severity: "medium" },
+                        },
+                    },
+                ],
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { prompt_tokens: 5, completion_tokens: 0 },
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "borderline prompt" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: expect.stringContaining("finish_reason=stop"),
+        });
+    });
+
+    it("classifies finish_reason=length with zero tokens as 400", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "" },
+                        finish_reason: "length",
+                    },
+                ],
+                usage: { prompt_tokens: 5, completion_tokens: 0 },
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hi" }],
+                { model: "provider-model", max_tokens: 1 },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("max_tokens"),
+        });
+    });
+
+    it("keeps unexplained empty completions as 502 and includes finish_reason in message", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { prompt_tokens: 5, completion_tokens: 0 },
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: expect.stringContaining("finish_reason=stop"),
+        });
+    });
+
     it("appends a DONE event when an upstream SSE stream omits it", async () => {
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () => {
             const encoder = new TextEncoder();

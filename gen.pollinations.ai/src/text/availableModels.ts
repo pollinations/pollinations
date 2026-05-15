@@ -69,7 +69,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash"],
+        config: portkeyConfig["deepseek/deepseek-v4-flash"],
     },
     {
         name: "gemma",

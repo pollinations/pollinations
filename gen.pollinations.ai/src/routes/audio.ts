@@ -979,7 +979,18 @@ export const audioRoutes = new Hono<Env>()
             await requireGenerationAccess(c.var, c.env);
 
             // Get formData from middleware or parse it
-            const formData = c.get("formData") || (await c.req.formData());
+            let formData: FormData;
+            try {
+                formData = c.get("formData") || (await c.req.formData());
+            } catch (error) {
+                log.warn("Invalid multipart form data: {message}", {
+                    message:
+                        error instanceof Error ? error.message : String(error),
+                });
+                throw new UpstreamError(400 as ContentfulStatusCode, {
+                    message: "Invalid multipart form data",
+                });
+            }
 
             const file = formData.get("file") as File;
             const language = formData.get("language") as string | null;

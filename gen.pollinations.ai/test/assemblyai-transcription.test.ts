@@ -113,4 +113,45 @@ describe("transcribeWithAssemblyAi", () => {
             "https://api.assemblyai.com/v2/transcript/transcript-id/vtt",
         );
     });
+
+    it("classifies bad audio AssemblyAI failures as client errors", async () => {
+        const clientErrorMessages = [
+            "language_detection cannot be performed on files with no spoken audio.",
+            "Transcoding failed. File does not appear to contain audio. File type is text/plain (ASCII text).",
+        ];
+
+        for (const message of clientErrorMessages) {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce(
+                    jsonResponse({
+                        upload_url:
+                            "https://cdn.assemblyai.com/upload/test-audio",
+                    }),
+                )
+                .mockResolvedValueOnce(jsonResponse({ id: "transcript-id" }))
+                .mockResolvedValueOnce(
+                    jsonResponse({
+                        id: "transcript-id",
+                        status: "error",
+                        error: message,
+                    }),
+                );
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                transcribeWithAssemblyAi({
+                    file: new File(["audio"], "audio.mp3", {
+                        type: "audio/mpeg",
+                    }),
+                    model: "universal-2",
+                    apiKey: "test-key",
+                    log,
+                }),
+            ).rejects.toMatchObject({
+                status: 400,
+                message,
+            });
+        }
+    });
 });

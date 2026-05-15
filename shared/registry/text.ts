@@ -349,16 +349,16 @@ export const TEXT_SERVICES = {
             "deepseek-lite",
             "deepseek-flash",
         ],
-        modelId: "deepseek-ai/DeepSeek-V4-Flash",
-        provider: "deepinfra",
+        modelId: "deepseek/deepseek-v4-flash",
+        provider: "openrouter",
         brand: "DeepSeek",
         category: "text",
         cost: [
             {
-                date: new Date("2026-04-24").getTime(),
-                promptTextTokens: perMillion(0.14),
-                promptCachedTokens: perMillion(0.028),
-                completionTextTokens: perMillion(0.28),
+                date: new Date("2026-05-15").getTime(),
+                promptTextTokens: perMillion(0.126),
+                promptCachedTokens: perMillion(0.0252),
+                completionTextTokens: perMillion(0.252),
             },
         ],
         description: "DeepSeek V4 Flash (Lite) - Fast Reasoning & Coding",
@@ -368,7 +368,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
-        paidOnly: true,
     },
     "gemma": {
         aliases: [

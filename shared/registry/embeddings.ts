@@ -49,7 +49,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
     "openai-3-small": {
         aliases: ["embedding-small"],
         modelId: "text-embedding-3-small",
-        provider: "azure",
+        provider: "openai",
         brand: "OpenAI",
         category: "embedding",
         cost: [
@@ -73,7 +73,7 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
     "openai-3-large": {
         aliases: ["embedding-large"],
         modelId: "text-embedding-3-large",
-        provider: "azure",
+        provider: "openai",
         brand: "OpenAI",
         category: "embedding",
         cost: [

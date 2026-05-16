@@ -9,6 +9,8 @@ from typing import Optional
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
+TINYBIRD_READ_TOKEN = os.getenv("TINYBIRD_READ_TOKEN")
+TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
 GITHUB_EVENT_JSON = os.getenv("GITHUB_EVENT", "{}")
 try:
     GITHUB_EVENT = json.loads(GITHUB_EVENT_JSON)
@@ -27,6 +29,7 @@ ISSUE_NUMBER = ITEM_DATA.get("number")
 ISSUE_TITLE = ITEM_DATA.get("title", "")
 ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
+ISSUE_AUTHOR_ID = ITEM_DATA.get("user", {}).get("id")
 ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
 ISSUE_CREATED_AT = ITEM_DATA.get("created_at", "")
 GITHUB_API = "https://api.github.com"
@@ -79,7 +82,6 @@ CONFIG = {
             "priority_options": {
                 "Urgent": "5b4c403c",
                 "High": "509f6cf1",
-                "Medium": "ce60ee16",
                 "Low": "ca5161be",
             },
             "opened_field_id": "PVTF_lADOBS76fs4BLr1Hzg7WCHY",
@@ -124,6 +126,45 @@ def is_org_member(username: str) -> bool:
     is_member = username.lower() in [m.lower() for m in CONFIG["org_members"]]
     log_debug(f"Checked {username} org membership: {is_member}")
     return is_member
+
+
+_PAID_CUSTOMER_IDS: Optional[set] = None
+
+
+def fetch_paid_customer_ids() -> set:
+    """Return the set of GitHub numeric user IDs that have ever completed a paid
+    Stripe checkout. Cached for the lifetime of the process."""
+    global _PAID_CUSTOMER_IDS
+    if _PAID_CUSTOMER_IDS is not None:
+        return _PAID_CUSTOMER_IDS
+    if not TINYBIRD_READ_TOKEN:
+        log_debug("TINYBIRD_READ_TOKEN not set; skipping paid-customer lookup")
+        _PAID_CUSTOMER_IDS = set()
+        return _PAID_CUSTOMER_IDS
+    try:
+        r = requests.get(
+            f"{TINYBIRD_API}/v0/pipes/paid_customers.json",
+            headers={"Authorization": f"Bearer {TINYBIRD_READ_TOKEN}"},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            log_error(f"Tinybird paid_customers HTTP {r.status_code}: {r.text[:200]}")
+            _PAID_CUSTOMER_IDS = set()
+            return _PAID_CUSTOMER_IDS
+        rows = r.json().get("data", [])
+        _PAID_CUSTOMER_IDS = {row["github_id"] for row in rows if row.get("github_id") is not None}
+        log_debug(f"Loaded {len(_PAID_CUSTOMER_IDS)} paid-customer GitHub IDs from Tinybird")
+        return _PAID_CUSTOMER_IDS
+    except (requests.RequestException, ValueError) as e:
+        log_error(f"Failed to fetch paid customers: {e}")
+        _PAID_CUSTOMER_IDS = set()
+        return _PAID_CUSTOMER_IDS
+
+
+def is_paid_customer(github_id) -> bool:
+    if github_id is None:
+        return False
+    return github_id in fetch_paid_customer_ids()
 
 def get_script_dir() -> str:
     return os.path.dirname(os.path.abspath(__file__))
@@ -262,10 +303,10 @@ Body: {ISSUE_BODY[:2000]}
 
             priority = raw.get("priority")
             if project == "support":
-                valid_priorities = {"Urgent", "High", "Medium", "Low"}
+                valid_priorities = {"High", "Low"}
                 if priority not in valid_priorities:
                     log_error(f"AI returned invalid priority: {priority}")
-                    priority = "Medium"
+                    priority = "Low"
             else:
                 priority = None
 
@@ -498,7 +539,10 @@ def main():
         log_debug(f"Project 'dev' is internal-only, but author {ISSUE_AUTHOR} is external. Reassigning to support.")
         project_key = "support"
     
-    priority = classification.get("priority", "Medium")
+    priority = classification.get("priority", "Low")
+    if project_key == "support" and is_paid_customer(ISSUE_AUTHOR_ID):
+        log_debug(f"Author {ISSUE_AUTHOR} (id={ISSUE_AUTHOR_ID}) is a paid customer; overriding priority to Urgent")
+        priority = "Urgent"
     log_debug(f"Classified: project={project_key}, priority={priority}")
     project = CONFIG["projects"].get(project_key)
     if not project:

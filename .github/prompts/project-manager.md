@@ -6,7 +6,7 @@ Classify this GitHub issue/PR. Return JSON only.
 {
   "is_app_submission": true | false,
   "project": "dev" | "support",
-  "priority": "Urgent" | "High" | "Medium" | "Low" | null,
+  "priority": "High" | "Low" | null,
   "labels": ["LABEL"],
   "reasoning": "brief explanation"
 }
@@ -51,14 +51,16 @@ Classify this GitHub issue/PR. Return JSON only.
 - `BILLING`: Payments, invoices, pricing
 - `ACCOUNT`: Account access, API keys, login issues
 
-## Priority (dev and support)
+## Priority (support only)
 
-- `Urgent`: Service outage, security issue, data loss, critical blocker
-- `High`: Bugs breaking functionality, blocking issues, billing problems
-- `Medium`: Features, enhancements, bugs with workarounds, integration help
-- `Low`: Minor issues, cosmetic bugs, general questions, documentation
+Pick exactly one of `High` or `Low`. Do **not** return `Urgent` or `Medium`:
 
-**Note for dev:** DEV-TRACKING and DEV-VOTING issues can have priority `null` as they are meta/tracking items.
+- `High`: Bugs breaking functionality, blocking issues, billing problems, outages
+- `Low`: Minor issues, cosmetic bugs, general questions, documentation, feature requests, integration help
+
+`Urgent` is reserved for paid customers and is applied automatically downstream — never return it.
+
+**Note for dev:** Always return `null` for priority. Dev priority is set manually.
 
 ## Rules
 

@@ -83,21 +83,11 @@ export async function callSeedanceV2API(
         Math.min(15, Math.floor(safeParams.duration ?? 5)),
     );
 
+    // Positional image[] contract:
+    //   length=1 → first-frame only (I2V)
+    //   length=2 → image[0] first frame, image[1] last frame
+    //   length>2 → image[0] first frame, image[1] last frame, image[2..] reference images
     const images = safeParams.image ?? [];
-    const lastFrameImage = safeParams.last_frame_image;
-
-    if (lastFrameImage && images.length === 0) {
-        throw new HttpError(
-            "last_frame_image requires image (first frame) to also be provided",
-            400,
-        );
-    }
-    if (lastFrameImage && images.length > 1) {
-        throw new HttpError(
-            "last_frame_image cannot combine with multiple images. Pass exactly one image alongside last_frame_image, or omit last_frame_image to use multiple reference images.",
-            400,
-        );
-    }
 
     const input: SeedanceV2Input = {
         prompt,
@@ -109,11 +99,10 @@ export async function callSeedanceV2API(
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         input.seed = safeParams.seed;
     }
-    if (images.length === 1) {
-        input.image = images[0];
-        if (lastFrameImage) input.last_frame_image = lastFrameImage;
-    } else if (images.length > 1) {
-        input.reference_images = images.slice(0, 9);
+    if (images.length >= 1) input.image = images[0];
+    if (images.length >= 2) input.last_frame_image = images[1];
+    if (images.length > 2) {
+        input.reference_images = images.slice(2, 11); // up to 9 refs
     }
 
     logOps("Seedance 2.0 input:", {

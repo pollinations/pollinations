@@ -18,6 +18,8 @@ const DASHSCOPE_API_BASE = "https://dashscope-intl.aliyuncs.com/api/v1";
 interface WanModelConfig {
     t2vModel: string;
     i2vModel: string;
+    /** Optional first-and-last-frame-to-video model id. Undefined = no kf2v support. */
+    kf2vModel?: string;
     minDuration: number;
     maxDuration: number;
     defaultDuration: number;
@@ -29,6 +31,7 @@ interface WanModelConfig {
 const WAN_26_CONFIG: WanModelConfig = {
     t2vModel: "wan2.6-t2v",
     i2vModel: "wan2.6-i2v-flash",
+    // Wan 2.6 has no documented kf2v variant — image[1] silently dropped.
     minDuration: 2,
     maxDuration: 15,
     defaultDuration: 5,
@@ -40,6 +43,7 @@ const WAN_26_CONFIG: WanModelConfig = {
 const WAN_22_CONFIG: WanModelConfig = {
     t2vModel: "wan2.2-t2v-plus",
     i2vModel: "wan2.2-i2v-flash",
+    kf2vModel: "wan2.2-kf2v-flash",
     minDuration: 5,
     maxDuration: 5,
     defaultDuration: 5,
@@ -47,6 +51,10 @@ const WAN_22_CONFIG: WanModelConfig = {
     trackingName: "wan-fast",
     displayName: "Wan 2.2",
 };
+
+// kf2v uses a different DashScope endpoint than i2v/t2v
+const DASHSCOPE_KF2V_PATH = "/services/aigc/image2video/video-synthesis";
+const DASHSCOPE_VIDEO_PATH = "/services/aigc/video-generation/video-synthesis";
 
 // Polling configuration for Alibaba DashScope
 const POLL_MAX_ATTEMPTS = 60; // 5 minutes max
@@ -97,12 +105,17 @@ interface WanTaskResult {
 
 interface DashScopeRequest {
     model: string;
-    input: { prompt: string; img_url?: string };
+    input: {
+        prompt: string;
+        img_url?: string;
+        first_frame_url?: string;
+        last_frame_url?: string;
+    };
     parameters: {
         resolution: string;
         duration: number;
         prompt_extend: boolean;
-        audio: boolean;
+        audio?: boolean;
     };
 }
 
@@ -143,17 +156,21 @@ export async function callWanFastAPI(
 }
 
 /**
- * Prepare video generation parameters with resolution calculation
+ * Prepare video generation parameters with resolution calculation.
+ * kf2v has fixed 5s duration and does not produce audio.
  */
 function prepareVideoParameters(
     safeParams: ImageParams,
     config: WanModelConfig,
+    useKf2v = false,
 ) {
     const rawDuration = safeParams.duration || config.defaultDuration;
-    const durationSeconds = Math.max(
-        config.minDuration,
-        Math.min(config.maxDuration, rawDuration),
-    );
+    const durationSeconds = useKf2v
+        ? 5
+        : Math.max(
+              config.minDuration,
+              Math.min(config.maxDuration, rawDuration),
+          );
 
     const { aspectRatio, resolution } = calculateVideoResolution({
         width: safeParams.width,
@@ -166,16 +183,21 @@ function prepareVideoParameters(
         durationSeconds,
         resolution,
         aspectRatio,
-        generateAudio: safeParams.audio !== false,
+        generateAudio: !useKf2v && safeParams.audio !== false,
     };
 }
 
 /**
- * Extract the first image from params if available
+ * Extract start/end frame URLs from positional image[] param.
+ * image[0] = start frame, image[1] = end frame.
  */
-function extractFirstImage(image: ImageParams["image"]): string | undefined {
-    if (!image) return undefined;
-    return Array.isArray(image) ? image[0] : image;
+function extractFrames(image: ImageParams["image"]): {
+    first?: string;
+    last?: string;
+} {
+    if (!image) return {};
+    const arr = Array.isArray(image) ? image : [image];
+    return { first: arr[0], last: arr[1] };
 }
 
 /**
@@ -246,16 +268,21 @@ async function callWanAlibabaAPI(
         );
     }
 
-    const videoParams = prepareVideoParameters(safeParams, config);
-    const rawImageUrl = extractFirstImage(safeParams.image);
-    const mode = rawImageUrl ? "I2V" : "T2V";
+    const { first: firstFrameUrl, last: lastFrameUrl } = extractFrames(
+        safeParams.image,
+    );
+    // kf2v is only used when the model variant supports it AND we have both frames.
+    const useKf2v = !!(config.kf2vModel && firstFrameUrl && lastFrameUrl);
+    const videoParams = prepareVideoParameters(safeParams, config, useKf2v);
+    const mode = useKf2v ? "KF2V" : firstFrameUrl ? "I2V" : "T2V";
 
     logOps(
         `Calling ${config.displayName} API (DashScope ${mode}) with params:`,
         {
             prompt,
             ...videoParams,
-            hasImage: !!rawImageUrl,
+            hasFirstFrame: !!firstFrameUrl,
+            hasLastFrame: !!lastFrameUrl,
         },
     );
 
@@ -266,21 +293,26 @@ async function callWanAlibabaAPI(
         `Starting video generation with ${config.displayName} (${mode})...`,
     );
 
-    // Download image and convert to base64 data URI for reliability
+    // Download image(s) and convert to base64 data URI for reliability
     // (DashScope can't fetch URLs that redirect or require special headers)
-    let imageDataUri: string | undefined;
-    if (rawImageUrl) {
-        logOps("Downloading image for base64 encoding:", rawImageUrl);
-        const { buffer, mimeType } = await downloadUserImage(rawImageUrl);
-        imageDataUri = `data:${mimeType};base64,${buffer.toString("base64")}`;
-        logOps("Image downloaded and encoded, mimeType:", mimeType);
-    }
+    const toDataUri = async (url: string): Promise<string> => {
+        logOps("Downloading image for base64 encoding:", url);
+        const { buffer, mimeType } = await downloadUserImage(url);
+        return `data:${mimeType};base64,${buffer.toString("base64")}`;
+    };
+    const firstDataUri = firstFrameUrl
+        ? await toDataUri(firstFrameUrl)
+        : undefined;
+    const lastDataUri =
+        useKf2v && lastFrameUrl ? await toDataUri(lastFrameUrl) : undefined;
 
     const requestBody = buildDashScopeRequest(
         prompt,
-        imageDataUri,
+        firstDataUri,
+        lastDataUri,
         videoParams,
         config,
+        useKf2v,
     );
     logRequestSafely(requestBody);
 
@@ -289,6 +321,7 @@ async function callWanAlibabaAPI(
         requestBody,
         progress,
         requestId,
+        useKf2v,
     );
     const result = await pollWanTask(taskId, apiKey, progress, requestId);
     return createVideoResult(
@@ -300,18 +333,42 @@ async function callWanAlibabaAPI(
 }
 
 /**
- * Build request body for DashScope API (T2V or I2V)
+ * Build request body for DashScope API (T2V, I2V, or KF2V)
  */
 function buildDashScopeRequest(
     prompt: string,
-    imageUrl: string | undefined,
+    firstFrameUrl: string | undefined,
+    lastFrameUrl: string | undefined,
     videoParams: ReturnType<typeof prepareVideoParameters>,
     config: WanModelConfig,
+    useKf2v: boolean,
 ): DashScopeRequest {
+    if (useKf2v) {
+        // kf2v requires both frames, fixed 5s duration, and does not accept `audio`
+        if (!config.kf2vModel || !firstFrameUrl || !lastFrameUrl) {
+            throw new HttpError(
+                `${config.displayName} does not support first+last frame mode`,
+                400,
+            );
+        }
+        return {
+            model: config.kf2vModel,
+            input: {
+                prompt,
+                first_frame_url: prepareImageUrl(firstFrameUrl),
+                last_frame_url: prepareImageUrl(lastFrameUrl),
+            },
+            parameters: {
+                resolution: videoParams.resolution,
+                duration: videoParams.durationSeconds,
+                prompt_extend: true,
+            },
+        };
+    }
     return {
-        model: imageUrl ? config.i2vModel : config.t2vModel,
-        input: imageUrl
-            ? { prompt, img_url: prepareImageUrl(imageUrl) }
+        model: firstFrameUrl ? config.i2vModel : config.t2vModel,
+        input: firstFrameUrl
+            ? { prompt, img_url: prepareImageUrl(firstFrameUrl) }
             : { prompt },
         parameters: {
             resolution: videoParams.resolution,
@@ -343,13 +400,15 @@ function prepareImageUrl(imageUrl: string): string {
  * Log request safely (hide base64 data)
  */
 function logRequestSafely(requestBody: DashScopeRequest): void {
+    const mask = (url?: string) =>
+        url?.startsWith("data:") ? "[base64]" : url;
     const safeRequest = {
         ...requestBody,
         input: {
             ...requestBody.input,
-            img_url: requestBody.input.img_url?.startsWith("data:")
-                ? "[base64]"
-                : requestBody.input.img_url,
+            img_url: mask(requestBody.input.img_url),
+            first_frame_url: mask(requestBody.input.first_frame_url),
+            last_frame_url: mask(requestBody.input.last_frame_url),
         },
     };
     logOps("DashScope API request:", JSON.stringify(safeRequest, null, 2));
@@ -363,6 +422,7 @@ async function createDashScopeTask(
     requestBody: DashScopeRequest,
     progress: ProgressManager,
     requestId: string,
+    useKf2v = false,
 ): Promise<string> {
     progress.updateBar(
         requestId,
@@ -371,7 +431,8 @@ async function createDashScopeTask(
         "Initiating video generation...",
     );
 
-    const submitUrl = `${DASHSCOPE_API_BASE}/services/aigc/video-generation/video-synthesis`;
+    const path = useKf2v ? DASHSCOPE_KF2V_PATH : DASHSCOPE_VIDEO_PATH;
+    const submitUrl = `${DASHSCOPE_API_BASE}${path}`;
     const response = await fetchUpstream(submitUrl, {
         method: "POST",
         headers: {

@@ -138,7 +138,7 @@
   .frame {
     position: relative;
     min-height: 280px;
-    overflow: auto;
+    overflow: visible;
     display: grid;
     place-items: center;
   }
@@ -164,7 +164,7 @@
     height: 100%;
   }
   #markCanvas { cursor: crosshair; z-index: 2; touch-action: none; }
-  #pinLayer { z-index: 3; pointer-events: none; }
+  #pinLayer { z-index: 4; pointer-events: none; overflow: visible; }
 
   .overlay {
     position: absolute;
@@ -201,6 +201,10 @@
   }
   .pin.processing { background: var(--accent); }
   .pin.history { background: var(--paper); opacity: 0.85; }
+  .pin.flip {
+    flex-direction: row-reverse;
+    transform: translate(calc(-100% + 0.55rem + 0.275rem + 1.5px), -50%);
+  }
   .pin .dot {
     flex: 0 0 auto;
     width: 0.55rem;
@@ -457,8 +461,11 @@ function renderPins() {
     pin.style.left = `${item.xPct}%`;
     pin.style.top = `${item.yPct}%`;
     const anchorX = layerBox.left + (layerBox.width * item.xPct / 100);
-    const available = window.innerWidth - anchorX - 12;
-    pin.style.maxWidth = `${clamp(available, 28, 256)}px`;
+    const rightSpace = window.innerWidth - anchorX - 16;
+    const leftSpace = anchorX - 16;
+    const flip = rightSpace < 140 && leftSpace > rightSpace;
+    pin.classList.toggle("flip", flip);
+    pin.style.maxWidth = `${clamp(flip ? leftSpace : rightSpace, 40, 256)}px`;
     return pin;
   }));
 }

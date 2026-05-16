@@ -1,0 +1,34 @@
+{
+  "pr_number": 11011,
+  "title": "route PRs to Dev project, drop EXTERNAL label, add fisventurous",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11011",
+  "merged_at": "2026-05-16T14:46:33Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "PRs always route to Dev #20 now, regardless of author. Support project stays issues-only.\n\n- `project-manager.py`: PRs override AI's project pick → `dev`. App-submission PRs (branch `auto/app-N-*`) short-circuit to Apps #23 before the AI call. `fisventurous` added to `org_members`.\n- `project-manager.md`: rule 1 sends every PR to dev with one `DEV-*` label; app-pipeline PR exception still routes to Apps.\n- `TRIAGE.md`: removed stale `EXTERNAL` label references (never actually applied in code) and updated flow diagrams.\n- `project-backfill-labels.py`: new `--issues N,N` filter and `--migrate-to dev` mode for moving items between projects; `remove_project_labels` now also strips stale cross-project labels (e.g. leftover SERVICE labels on Dev items).\n\nAlready executed against live state with the local script: 32 PRs migrated Support → Dev, 22 unassigned Dev issues assigned to their creators, all 36 open Dev issues backfilled with single `DEV-*` labels, fisventurous's #8449 migrated.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Routing the Swarm",
+    "blurb": "Updated our internal project routing so pull requests automatically land in the Dev project, keeping our boards clean and organized.",
+    "summary": "Updated the GitHub project manager script to route all pull requests to the Dev project, added fisventurous to org members, and enhanced the backfill script with migration capabilities.",
+    "impact": "Internal project boards will be more organized, with PRs automatically separated from support issues.",
+    "keywords": [
+      "github",
+      "triage",
+      "automation",
+      "infrastructure"
+    ],
+    "visual_concept": "The bee mascot acting as a traffic controller or sorting mail/files into different colored folders (Dev, Apps).",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny mail carrier hat, sorting glowing digital folders into a lime green (#ecf874) 'DEV' inbox. A chunky retro robot helps carry a stack of code printouts. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11011.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny mail carrier hat, sorting glowing digital folders into a lime green (#ecf874) 'DEV' inbox. A chunky retro robot helps carry a stack of code printouts. Soft pastel gradient background, warm lighting, lo-fi 8-bit aesthetic like Stardew Valley."
+  },
+  "generated_at": "2026-05-16T14:47:41.794825+00:00"
+}

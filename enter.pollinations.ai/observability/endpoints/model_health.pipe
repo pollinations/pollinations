@@ -18,6 +18,8 @@ SQL >
         countIf(response_status >= 200 AND response_status < 300) as status_2xx,
         countIf(response_status >= 400 AND response_status < 500) as errors_4xx,
         countIf(response_status >= 500) as errors_5xx,
+        round(sumIf(total_price, selected_meter_slug = 'v1:meter:pack' AND response_status >= 200 AND response_status < 300), 4) as paid_revenue,
+        round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier' AND response_status >= 200 AND response_status < 300), 4) as tier_value,
         maxIf(start_time, response_status >= 500) as last_error_at,
         round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,

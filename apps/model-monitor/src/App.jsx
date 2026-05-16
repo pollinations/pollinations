@@ -80,6 +80,15 @@ function get2xxColor(ok2xx, total, excludedUserErrors = 0) {
     return "text-dark font-medium";
 }
 
+// Format a Pollen amount (1 Pollen ≈ $1) for the revenue/value columns.
+function formatPollen(value) {
+    if (!value || value <= 0) return null;
+    if (value < 0.01) return "<0.01";
+    if (value < 100) return value.toFixed(2);
+    if (value < 1000) return value.toFixed(0);
+    return `${(value / 1000).toFixed(1)}k`;
+}
+
 function getLatencyColor(latencySec) {
     if (latencySec < 2) return "text-secondary-strong";
     if (latencySec < 5) return "text-tertiary-strong";
@@ -321,6 +330,7 @@ function App() {
     const WINDOW_OPTIONS = [
         { key: "7d", label: "7d" },
         { key: "24h", label: "24h" },
+        { key: "4h", label: "4h" },
         { key: "60m", label: "1h" },
         { key: "5m", label: "5m" },
     ];
@@ -442,6 +452,17 @@ function App() {
                 const bPct = (b.stats?.errors_4xx || 0) / bTotal;
                 return dir * (aPct - bPct);
             }
+            case "paidRevenue":
+                return (
+                    dir *
+                    ((a.stats?.paid_revenue || 0) -
+                        (b.stats?.paid_revenue || 0))
+                );
+            case "tierValue":
+                return (
+                    dir *
+                    ((a.stats?.tier_value || 0) - (b.stats?.tier_value || 0))
+                );
             case "status":
                 return dir * (statusSeverity(a) - statusSeverity(b));
             case "provider":
@@ -675,6 +696,24 @@ function App() {
                                     onSort={handleSort}
                                     align="right"
                                 />
+                                {adminMode && (
+                                    <>
+                                        <SortableTh
+                                            label="Paid"
+                                            sortKey="paidRevenue"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                        <SortableTh
+                                            label="Tier"
+                                            sortKey="tierValue"
+                                            currentSort={sort}
+                                            onSort={handleSort}
+                                            align="right"
+                                        />
+                                    </>
+                                )}
                                 <SortableTh
                                     label="Success"
                                     sortKey="ok2xx"
@@ -716,7 +755,7 @@ function App() {
                             {filteredModels.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={adminMode ? 10 : 9}
+                                        colSpan={adminMode ? 12 : 9}
                                         className="p-8 text-center text-subtle"
                                     >
                                         {lastUpdated
@@ -812,6 +851,34 @@ function App() {
                                                     "—"
                                                 )}
                                             </td>
+                                            {adminMode && (
+                                                <>
+                                                    <td className="px-3 py-2 text-right tabular-nums">
+                                                        {formatPollen(
+                                                            stats?.paid_revenue,
+                                                        ) ? (
+                                                            <span className="text-dark font-medium">
+                                                                {formatPollen(
+                                                                    stats?.paid_revenue,
+                                                                )}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-border">
+                                                                —
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right tabular-nums text-subtle">
+                                                        {formatPollen(
+                                                            stats?.tier_value,
+                                                        ) || (
+                                                            <span className="text-border">
+                                                                —
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                </>
+                                            )}
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
                                                     stats?.status_2xx || 0,

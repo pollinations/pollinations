@@ -186,7 +186,7 @@ function throwImageError(error: unknown, c: ImageContext): never {
             requestUrl:
                 safeUpstreamUrl(error.upstreamUrl) ?? new URL(c.req.url),
             upstreamStatus: error.status,
-            responseBody: JSON.stringify(error.details || {}),
+            responseBody: imageResponseBody(error),
             cause: error,
         });
     }
@@ -202,6 +202,23 @@ type ParsedUpstreamBody = {
     kind: "validation" | "message" | "none";
     text: string | null;
 };
+
+/**
+ * Build the responseBody to thread through UpstreamError so clients see a real
+ * error message instead of `"{}"`. Prefer the upstream provider's raw body
+ * (already in details.body), then the HttpError message, then a JSON-encoded
+ * details bag as last resort.
+ */
+function imageResponseBody(error: HttpError): string {
+    const detailsBody = error.details?.body;
+    if (typeof detailsBody === "string" && detailsBody.length > 0) {
+        return detailsBody;
+    }
+    if (error.message) {
+        return JSON.stringify({ message: error.message });
+    }
+    return JSON.stringify(error.details || {});
+}
 
 function classifyImageHttpError(error: HttpError): {
     status: ContentfulStatusCode;
@@ -232,10 +249,11 @@ function classifyImageHttpError(error: HttpError): {
     }
 
     if (error.status >= 400 && error.status < 500) {
+        const text = parsed.text || error.message;
         return {
             status: remapUpstreamStatus(error.status),
-            message: parsed.text
-                ? `Image provider error: ${parsed.text}`
+            message: text
+                ? `Image provider error: ${text}`
                 : "Image provider error",
         };
     }

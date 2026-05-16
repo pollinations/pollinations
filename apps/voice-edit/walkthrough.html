@@ -72,7 +72,7 @@
     border: var(--border);
     box-shadow: var(--raise);
   }
-  .btn, .input, .select {
+  .btn, .select {
     min-height: 38px;
     border-radius: 0;
   }
@@ -86,11 +86,6 @@
   .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
   .btn:disabled { opacity: 0.45; cursor: not-allowed; }
   .btn.accent { background: var(--accent); }
-  .input {
-    flex: 1 1 24rem;
-    min-width: min(100%, 16rem);
-    padding: 0 10px;
-  }
   .select { padding: 0 10px; }
 
   .error {
@@ -157,7 +152,7 @@
     .account { order: 3; width: 100%; margin-left: 0; text-align: left; }
     .status { margin-left: auto; }
     .toolbar { gap: 7px; }
-    .btn, .input, .select { min-height: 36px; }
+    .btn, .select { min-height: 36px; }
     .btn { padding: 0 9px; }
     .panel { min-height: 240px; }
     .panel img, .panel video { max-height: calc(100vh - 340px); }
@@ -177,8 +172,8 @@
 
     <section class="toolbar" aria-label="walkthrough controls">
       <button id="connectBtn" class="btn accent">connect</button>
-      <input id="sourceInput" class="input" type="url" placeholder="media.pollinations.ai image with remix history">
-      <button id="loadBtn" class="btn">load</button>
+      <button id="loadBtn" class="btn" title="upload an image from disk">load</button>
+      <input id="fileInput" type="file" accept="image/*" hidden>
       <select id="modelSel" class="select" aria-label="video model">
         <option value="veo">veo start+end</option>
         <option value="seedance-2.0">seedance 2 start+end</option>
@@ -206,8 +201,8 @@ const els = Object.fromEntries(Object.entries({
   status: "status",
   error: "error",
   connect: "connectBtn",
-  source: "sourceInput",
   load: "loadBtn",
+  file: "fileInput",
   model: "modelSel",
   make: "makeBtn",
   viewer: "viewer",
@@ -296,6 +291,7 @@ function refreshConnectionUI() {
     loadUser();
     loadBalance();
   }
+  render();
 }
 
 async function loadUser() {
@@ -385,16 +381,30 @@ async function loadSource(url) {
   app.currentFrame = Math.max(0, Math.min(index, frames.length - 1));
   app.clips = [];
   app.currentClip = -1;
-  els.source.value = source;
   setHash(source, app.currentFrame);
   render();
   setStatus(state ? `loaded ${frames.length} frames` : "loaded image");
 }
 
+async function uploadBlob(blob, filename) {
+  setStatus("uploading...");
+  const form = new FormData();
+  form.append("file", blob, filename);
+  const res = await fetch("https://media.pollinations.ai/upload", {
+    method: "POST",
+    headers: authHeaders(),
+    body: form,
+  });
+  if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
+  const json = await res.json();
+  return json.url || `https://media.pollinations.ai/${json.id}`;
+}
+
 function render() {
-  const locked = app.busy || app.history.length < 2 || !localStorage.getItem(KEY_STORAGE);
+  const connected = !!localStorage.getItem(KEY_STORAGE);
+  const locked = app.busy || app.history.length < 2 || !connected;
   els.make.disabled = locked;
-  els.load.disabled = app.busy;
+  els.load.disabled = app.busy || !connected;
   els.model.disabled = app.busy;
   renderViewer();
   renderFrames();
@@ -561,16 +571,19 @@ async function readRemixState(blob) {
 }
 
 els.connect.addEventListener("click", startConnect);
-els.load.addEventListener("click", () => {
-  const source = scrubURL(els.source.value);
-  if (!source) return showError("Enter a public image URL");
-  setHash(source);
-  loadSource(source).catch((err) => showError(err.message));
-});
-els.source.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter") return;
-  event.preventDefault();
-  els.load.click();
+els.load.addEventListener("click", () => els.file.click());
+els.file.addEventListener("change", async () => {
+  const file = els.file.files?.[0];
+  if (!file) return;
+  try {
+    const mediaURL = await uploadBlob(file, file.name || "image");
+    setHash(mediaURL);
+    await loadSource(mediaURL);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    els.file.value = "";
+  }
 });
 els.make.addEventListener("click", () => {
   makeWalkthrough().catch((err) => {

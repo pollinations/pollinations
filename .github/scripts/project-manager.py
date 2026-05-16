@@ -84,14 +84,9 @@ CONFIG = {
             },
             "opened_field_id": "PVTF_lADOBS76fs4BLr1Hzg7WCHY",
         },
-        "news": {
-            "id": "PVT_kwDOBS76fs4BLtD8",
-            "name": "News",
-            "internal_only": False,
-        },
-        "tier": {
+        "apps": {
             "id": "PVT_kwDOBS76fs4BLtE_",
-            "name": "Tier",
+            "name": "Apps",
             "internal_only": False,
         },
     },
@@ -150,7 +145,6 @@ VALID_LABELS = {
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
     },
-    "news": set()
 }
 
 SUPPORT_TYPE_LABELS = {".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION"}
@@ -262,7 +256,7 @@ Body: {ISSUE_BODY[:2000]}
             is_app_submission = raw.get("is_app_submission", False)
 
             project = raw.get("project", "").lower()
-            if project not in ["dev", "support", "news"]:
+            if project not in ["dev", "support"]:
                 log_error(f"AI returned invalid project: {project}")
                 return get_fallback_classification(is_internal)
 
@@ -453,32 +447,24 @@ def main():
     existing_labels = get_existing_labels()
     tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
     if tier_labels:
-        log_debug(f"Found TIER labels: {tier_labels}, routing to Tier project")
-        project = CONFIG["projects"].get("tier")
+        log_debug(f"Found TIER labels: {tier_labels}, routing to Apps project")
+        project = CONFIG["projects"].get("apps")
         if project:
             item_id = add_to_project(project["id"])
             if item_id:
-                log_debug(f"Added to Tier project successfully")
+                log_debug(f"Added to Apps project successfully")
             return
         else:
-            log_error("Tier project not configured")
+            log_error("Apps project not configured")
             return
     if "POLLEN-QUEST" in existing_labels or "DRAFT-QUEST" in existing_labels:
         log_debug("Found quest label; Quest project auto-add owns routing")
         return
 
     if "NEWS" in existing_labels:
-        log_debug("Found NEWS label, routing to News project (skipping AI)")
-        project = CONFIG["projects"].get("news")
-        if project:
-            item_id = add_to_project(project["id"])
-            if item_id:
-                log_debug("Added to News project successfully")
-            return
-        else:
-            log_error("News project not configured")
-            return
-    
+        log_debug("Found NEWS label, skipping (used by social pipeline, no project routing)")
+        return
+
     real_author = get_real_author()
     is_internal = is_org_member(real_author)
     log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}) is internal: {is_internal}")
@@ -489,17 +475,17 @@ def main():
     classification = classify_with_ai(is_internal)
     
     if classification.get("is_app_submission"):
-        log_debug("AI detected app submission, routing to Tier project")
-        project = CONFIG["projects"].get("tier")
+        log_debug("AI detected app submission, routing to Apps project")
+        project = CONFIG["projects"].get("apps")
         if project:
             item_id = add_to_project(project["id"])
             if item_id:
-                log_debug("Added to Tier project successfully")
+                log_debug("Added to Apps project successfully")
             else:
-                log_error("Failed to add app submission to Tier project")
+                log_error("Failed to add app submission to Apps project")
             return
         else:
-            log_error("Tier project not configured")
+            log_error("Apps project not configured")
             return
 
     if not classification.get("project"):

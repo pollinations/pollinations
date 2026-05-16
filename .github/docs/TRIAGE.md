@@ -41,7 +41,7 @@ flowchart TD
 
 ## Project Management
 
-- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/News/Tier projects with priority.
+- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/Apps projects with priority.
 - **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project (hourly).
 - **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
 
@@ -53,17 +53,16 @@ Routes issues and PRs to the appropriate project board using AI classification:
 | ------- | --- | ------------- | ----------------------------------- |
 | Dev     | 20  | Internal only | Features, refactors, infrastructure |
 | Support | 21  | Everyone      | User help, bugs, API questions      |
-| News    | 22  | Everyone      | Releases, announcements             |
-| Tier    | 23  | External      | App submissions, code contributions |
+| Apps    | 23  | External      | App submissions                     |
 
 **Features:**
 
-- **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Tier project
+- **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Apps project
+- **NEWS skip**: Items with `NEWS` label are skipped entirely (label is used by the social pipeline, not project routing)
 - AI classification via `gen.pollinations.ai` with retry + random seed
 - Sets Priority field (Urgent/High/Medium/Low) in project
-- Sets Status field (Backlog/In Progress/Review/Todo/Done/Discarded)
-- Adds labels (DEV-_ for dev, SUPPORT-_ for support, none for news)
-- Enforces internal-only rule for Dev project
+- Adds labels (`DEV-*` for dev, `.TYPE` + `SERVICE` for support)
+- Enforces internal-only rule for Dev project (external authors classified as dev get reassigned to support)
 - Fallback classification if AI fails
 
 ## Flow Diagrams
@@ -74,16 +73,13 @@ Routes issues and PRs to the appropriate project board using AI classification:
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
     A[Issue/PR Opened] --> AA{Has TIER-* label?}
-    AA -->|Yes| AB[Add to Tier #23]
+    AA -->|Yes| AB[Add to Apps #23]
     AB --> AC[Done - skip AI]
-    AA -->|No| B{Check Author}
-    B --> C[is_org_member?]
-    C -->|Config list| D{In list?}
-    C -->|API fallback| E{/orgs/members/}
-    D -->|Yes| F[INTERNAL]
-    D -->|No| E
-    E -->|204| F
-    E -->|404| G[EXTERNAL]
+    AA -->|No| AN{Has NEWS label?}
+    AN -->|Yes| AX[Skip - social pipeline only]
+    AN -->|No| B[is_org_member?]
+    B -->|Yes| F[INTERNAL]
+    B -->|No| G[EXTERNAL]
 
     F --> H[AI Classification]
     G --> H
@@ -94,22 +90,16 @@ flowchart TD
     J --> L[project, priority, labels]
     K --> L
 
-    L --> M{Internal + Dev?}
+    L --> IAS{is_app_submission?}
+    IAS -->|Yes| AP[Add to Apps #23]
+    IAS -->|No| M{project=dev + internal?}
     M -->|Yes| N[Add to Dev #20]
-    M -->|No, External| O{News content?}
-    O -->|Yes| P[Add to News #22]
-    O -->|No| Q[Add to Support #21]
-    L -->|Internal + Support| Q
-    L -->|Internal + News| P
+    M -->|No| Q[Add to Support #21]
 
-    N --> R[Set Status: Backlog]
-    Q --> S[Set Status: Review]
-    P --> T[Set Status: Todo]
-
-    R --> U[Set Priority Field]
-    S --> U
-    T --> V[Done]
-    U --> V
+    Q --> U[Set Priority Field]
+    U --> V[Done]
+    N --> V
+    AP --> V
 ```
 
 ### PR Assignment
@@ -120,7 +110,7 @@ flowchart TD
     A[PR opened] --> B[pr-assign-author.yml]
     B --> C[Author assigned]
     C --> D[project-manager.yml]
-    D --> E[Routed to Dev/Support/News/Tier]
+    D --> E[Routed to Dev/Support/Apps]
 ```
 
 ### AI Assistant (Polly)
@@ -158,17 +148,17 @@ flowchart TD
 
 ## Label System
 
-### Tier Labels (App Submissions)
+### Apps Project Labels (App Submissions)
 
-| Label                 | Purpose                           | Applied by                  |
-| --------------------- | --------------------------------- | --------------------------- |
-| `TIER-APP`            | New app submission                | Issue template              |
-| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml` |
-| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `app-review-submission.yml` |
-| `TIER-APP-APPROVED`   | Maintainer approved, PR created   | Maintainer (manual)         |
-| `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml` |
+Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 
-**Code Contributions** _(future)_: `TIER-CODE`, `TIER-CODE-REVIEW-PR`, `TIER-CODE-COMPLETE`, `TIER-CODE-REJECTED` planned.
+| Label                 | Purpose                           | Applied by                                         |
+| --------------------- | --------------------------------- | -------------------------------------------------- |
+| `TIER-APP`            | New app submission                | Issue template                                     |
+| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml`                        |
+| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `app-review-submission.yml` (stripped on approval) |
+| `TIER-APP-APPROVED`   | Maintainer approved, PR created   | Maintainer (manual)                                |
+| `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml`                        |
 
 ### Dev Labels
 
@@ -211,6 +201,8 @@ flowchart TD
 
 ### News Labels
 
-| Label  | Purpose                | Applied by                 |
-| ------ | ---------------------- | -------------------------- |
-| `NEWS` | News/social content PR | News & Instagram workflows |
+The `NEWS` label is used by the social pipeline (`social/` workflows), not by Project Manager routing. Issues/PRs carrying it are skipped by `project-manager.py` and don't land on any project board.
+
+| Label  | Purpose                | Applied by                                          |
+| ------ | ---------------------- | --------------------------------------------------- |
+| `NEWS` | News/social content PR | `readme-daily-update.yml`, `NEWS_summary.yml`, etc. |

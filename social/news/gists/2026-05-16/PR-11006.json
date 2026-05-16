@@ -1,0 +1,34 @@
+{
+  "pr_number": 11006,
+  "title": "support label cleanup: TIER service + drop custom Opened field",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11006",
+  "merged_at": "2026-05-16T13:27:05Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Two small support-project cleanups.\n\n## 1. TIER as a SERVICE label\nAdds `TIER` to the support SERVICE label set so the classifier can apply it when a user asks about their tier (spore/seed/flower/nectar/upgrade). Treated identically to IMAGE/TEXT/AUDIO/etc. — exactly one SERVICE per issue.\n\n(Unrelated to `TIER-APP-*`, which is the app-submission workflow.)\n\n- `VALID_LABELS` + `SUPPORT_SERVICE_LABELS` include TIER\n- prompt lists TIER under SERVICE\n- TRIAGE.md SERVICE table includes TIER\n- backfill's remove-set + `has_project_labels` heuristic include TIER\n\n## 2. Drop the custom \"Opened\" date field\nGitHub Projects v2 now has built-in Created/Updated date columns, making the custom Opened field redundant.\n\n- remove `opened_field_id` from CONFIG (Dev + Support)\n- remove `set_date_field` and its call site in `project-manager.py:main`\n- strip the date pipeline from `project-backfill-labels.py` (GraphQL fragment, `--skip-dates` flag, `needs_date` branch, `ISSUE_CREATED_AT`)\n\n## Out-of-band after merge\n- Delete the \"Opened\" custom field from the Dev and Support project boards in the GitHub Projects UI.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the triage board",
+    "blurb": "Cleaned up our support issue classifier to better handle tier-related questions and dropped some redundant date fields.",
+    "summary": "Added a new TIER service label to the support issue classifier and removed the custom Opened date field in favor of GitHub's built-in columns.",
+    "impact": "Internal project boards are cleaner and the automated triage system can now properly categorize questions about user tiers.",
+    "keywords": [
+      "triage",
+      "github-actions",
+      "labels",
+      "support"
+    ],
+    "visual_concept": "Polly the bee organizing files or labels on a retro computer monitor. A cute robot helper holding a 'TIER' label. Cozy office/workspace setting.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot organizing colorful pixelated folders on a retro computer terminal. A chunky robot with a CRT monitor head holds up a glowing lime green (#ecf874) label that says 'TIER'. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11006.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot organizing colorful pixelated folders on a retro computer terminal. A chunky robot with a CRT monitor head holds up a glowing lime green (#ecf874) label that says 'TIER'. Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-05-16T13:28:04.363883+00:00"
+}

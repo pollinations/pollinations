@@ -376,6 +376,7 @@ const markCtx = els.markCanvas.getContext("2d");
 const app = {
   image: null,
   imageURL: "",
+  stateURL: "",
   history: [],
   historyIndex: -1,
   micStream: null,
@@ -606,6 +607,14 @@ const mediaHistory = {
       render();
     }
   },
+  async reset(frame, stateURL = frame.url) {
+    app.history = [frame];
+    app.historyIndex = 0;
+    app.stateURL = scrubURL(stateURL) || scrubURL(frame.url);
+    await renderFrame(frame);
+    syncStartToFrame(frame, { force: true });
+    render();
+  },
 };
 
 async function loadModels() {
@@ -630,20 +639,6 @@ async function loadModels() {
   } catch {}
 }
 
-async function loadImage(src, { addToHistory = false } = {}) {
-  clearError();
-  if (src instanceof Blob) {
-    const remix = await readRemixState(src);
-    const dataURL = await readImageFile(src);
-    if (remix) {
-      await restoreRemix(remix, dataURL);
-      return;
-    }
-    src = dataURL;
-  }
-  await mediaHistory.set({ url: src }, { add: addToHistory });
-}
-
 async function renderFrame(frame) {
   clearError();
   await drawImage(frame.url);
@@ -664,16 +659,6 @@ async function drawImage(src) {
   app.imageURL = src;
   resizeCanvases(img.naturalWidth, img.naturalHeight);
   imageCtx.drawImage(img, 0, 0);
-}
-
-function readImageFile(file) {
-  if (file?.type && !file.type.startsWith("image/")) throw new Error("Drop or pick an image file.");
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error("Could not read file."));
-    reader.readAsDataURL(file);
-  });
 }
 
 function resizeCanvases(width, height) {
@@ -956,7 +941,8 @@ async function runQueue() {
           if (frame?.url === result) {
             frame.url = packaged;
             app.imageURL = packaged;
-            syncStartToCurrent();
+            app.stateURL = packaged;
+            syncStartToCurrent({ force: true });
             render();
           }
         }
@@ -1247,20 +1233,23 @@ function cleanHistoryFrame(frame) {
 async function restoreRemix(state, fallbackURL, sourceURL = "") {
   const frames = cleanHistoryFrames(state.history);
   if (!frames.length) {
-    await mediaHistory.set({ url: fallbackURL }, { add: true });
+    await mediaHistory.reset({ url: fallbackURL }, sourceURL || fallbackURL);
     return;
   }
   const source = scrubURL(sourceURL);
+  const sourceIndex = clamp(state.historyIndex ?? frames.length - 1, 0, frames.length - 1);
   app.history = frames;
-  app.historyIndex = clamp(state.historyIndex ?? frames.length - 1, 0, frames.length - 1);
-  if (source) app.history[app.historyIndex].url = source;
+  app.historyIndex = clamp(startIndexFromLocation() ?? sourceIndex, 0, frames.length - 1);
+  app.stateURL = source || scrubURL(fallbackURL);
+  if (source) app.history[sourceIndex].url = source;
   try {
     await mediaHistory.go(app.historyIndex);
     setStatus(`restored ${frames.length} frames`);
   } catch (err) {
     app.history = [];
     app.historyIndex = -1;
-    await mediaHistory.set({ url: fallbackURL }, { add: true });
+    app.stateURL = "";
+    await mediaHistory.reset({ url: fallbackURL }, sourceURL || fallbackURL);
     showError(`History URLs unavailable; loaded image only. ${err.message}`);
   }
 }
@@ -1305,7 +1294,7 @@ async function loadStartImage(url) {
   } catch {
     // Fall through to URL loading; the browser may still be able to render it.
   }
-  await loadImage(url, { addToHistory: true });
+  await mediaHistory.reset({ url }, url);
 }
 
 function pickStarter() {
@@ -1313,21 +1302,25 @@ function pickStarter() {
   return candidates[Math.floor(Math.random() * candidates.length)] || STARTERS[0];
 }
 
-function startLink(mediaURL) {
+function startLink(mediaURL, index = 0) {
   const url = new URL(location.href);
   url.searchParams.delete("start");
-  url.hash = `start=${encodeURIComponent(mediaURL)}`;
+  const params = new URLSearchParams({ start: mediaURL });
+  if (index > 0) params.set("index", String(index));
+  url.hash = params.toString();
   return url;
 }
 
-function syncStartToFrame(frame) {
-  const url = frame?.url || app.imageURL;
+function syncStartToFrame(frame, { force = false } = {}) {
+  if (app.busy && !force) return;
+  const url = app.stateURL || frame?.url || app.imageURL;
   if (!url || String(url).startsWith("data:") || String(url).startsWith("blob:")) return;
-  window.history.replaceState(null, "", startLink(url));
+  const index = app.stateURL && app.history.length > 1 ? app.historyIndex : 0;
+  window.history.replaceState(null, "", startLink(url, index));
 }
 
-function syncStartToCurrent() {
-  syncStartToFrame(app.history[app.historyIndex] || { url: app.imageURL });
+function syncStartToCurrent(options = {}) {
+  syncStartToFrame(app.history[app.historyIndex] || { url: app.imageURL }, options);
 }
 
 function startURLFromLocation() {
@@ -1335,18 +1328,28 @@ function startURLFromLocation() {
     || new URLSearchParams(location.search).get("start");
 }
 
+function startIndexFromLocation() {
+  const params = new URLSearchParams(location.hash.slice(1));
+  const value = params.get("index");
+  if (value == null) return null;
+  const index = Number(value);
+  return Number.isInteger(index) && index >= 0 ? index : null;
+}
+
 async function loadFromLocation() {
   const startURL = startURLFromLocation();
   if (startURL) {
     await loadStartImage(startURL);
   } else {
-    await loadImage(STARTER, { addToHistory: true });
+    await mediaHistory.reset({ url: STARTER }, STARTER);
   }
 }
 
 async function followLocationStart() {
   const startURL = startURLFromLocation();
-  if (!startURL || scrubURL(startURL) === scrubURL(app.history[app.historyIndex]?.url)) return;
+  const startIndex = startIndexFromLocation();
+  const currentURL = scrubURL(app.stateURL || app.history[app.historyIndex]?.url);
+  if (!startURL || (scrubURL(startURL) === currentURL && (startIndex == null || startIndex === app.historyIndex))) return;
   if (app.busy || app.active) return;
   await loadStartImage(startURL);
 }
@@ -1390,7 +1393,8 @@ els.share.addEventListener("click", async () => {
     if (frame) {
       frame.url = mediaURL;
       app.imageURL = mediaURL;
-      syncStartToFrame(frame);
+      app.stateURL = mediaURL;
+      syncStartToFrame(frame, { force: true });
     }
     const shareURL = startLink(mediaURL);
     if (navigator.clipboard) {

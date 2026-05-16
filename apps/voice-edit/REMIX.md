@@ -30,9 +30,9 @@ and the gallery rehydrates.
 Alternate entry: `#start=<image-url>` boots from that URL instead of the
 default starter; old `?start=<image-url>` links still work. If the URL
 points at a PNG with our `tEXt` chunk, that PNG is the source of truth:
-history is restored from it and the current frame is anchored to the URL
-that was opened. Changing the fragment later reloads that URL the same
-way; internal app changes project the current frame back to `#start=`.
+history is restored from it. If there is no chunk, the app starts a fresh
+one-frame history from that image. Undo/redo can use `index=<n>` in the
+fragment while keeping `start` pointed at the same metadata carrier.
 Load and shuffle use the same path: they first put a media URL into
 `#start=`, then the app initializes from that URL. Plain images become a
 one-frame history; remix PNGs restore their embedded history.

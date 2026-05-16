@@ -5,7 +5,7 @@
 
 ## Introduction
 
-Generate text, images, video, and audio with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
+Generate text, images, video, audio, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
 
 **Base URL:** `https://gen.pollinations.ai`
 
@@ -56,20 +56,6 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
   -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
 ```
 
-## 🖥️ CLI
-
-`@pollinations_ai/cli` wraps this API for terminals and agents. Structured `--json` output, deterministic exit codes, friendly 402 balance hints, stdin piping.
-
-```bash
-npm install -g @pollinations_ai/cli
-polli auth login
-polli gen image "a cat in space" --model flux --output cat.png
-polli gen text "summarize this" < notes.md
-polli models --type image
-```
-
-Source: [github.com/pollinations/pollinations/tree/main/packages/polli-cli](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
-
 ## 🔐 Authentication
 
 All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.
@@ -93,29 +79,6 @@ curl "https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY"
 
 > **Warning:** Never expose secret keys (`sk_`) in client-side code. Use publishable keys (`pk_`) for frontend apps.
 
-## ❌ Errors
-
-All errors return JSON with a consistent format:
-
-```json
-{
-  "status": 400,
-  "success": false,
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Description of what went wrong"
-  }
-}
-```
-
-| Status | Meaning                                 |
-| ------ | --------------------------------------- |
-| `400`  | Invalid parameters or malformed request |
-| `401`  | Missing or invalid API key              |
-| `402`  | Insufficient pollen balance             |
-| `403`  | API key lacks required permission       |
-| `500`  | Internal server error                   |
-
 ## Servers
 
 - **URL:** `https://gen.pollinations.ai`
@@ -128,21 +91,13 @@ All errors return JSON with a consistent format:
 - **Path:** `/account/profile`
 - **Tags:** 👤 Account
 
-Returns your account profile including name, email, tier level, and account creation date. Requires `account:profile` permission when using API keys.
+Returns your account profile. GitHub username, profile image, current tier, and next pollen refill timestamp are always returned. Name and email are returned only when the API key has the `account:profile` permission.
 
 #### Responses
 
 ##### Status: 200 User profile
 
 ###### Content-Type: application/json
-
-- **`createdAt` (required)**
-
-  `string`, format: `date-time` — Account creation timestamp (ISO 8601)
-
-- **`email` (required)**
-
-  `object` — User's email address
 
 - **`githubUsername` (required)**
 
@@ -152,17 +107,21 @@ Returns your account profile including name, email, tier level, and account crea
 
   `object` — Profile picture URL (e.g. GitHub avatar)
 
-- **`name` (required)**
-
-  `object` — User's display name
-
 - **`nextResetAt` (required)**
 
-  `object` — Next pollen refill timestamp (ISO 8601)
+  `object` — Next pollen refill timestamp (ISO 8601). \`null\` for tiers with no refill.
 
 - **`tier` (required)**
 
   `string`, possible values: `"anonymous", "microbe", "spore", "seed", "flower", "nectar", "router"` — User's current tier level
+
+- **`email`**
+
+  `object` — User's email address (only returned when the key has \`account:profile\`)
+
+- **`name`**
+
+  `object` — User's display name (only returned when the key has \`account:profile\`)
 
 **Example:**
 
@@ -178,7 +137,7 @@ Returns your account profile including name, email, tier level, and account crea
 - **Path:** `/account/balance`
 - **Tags:** 👤 Account
 
-Returns your current pollen balance. If the API key has a budget limit, returns the key's remaining budget instead. Requires `account:balance` permission when using API keys.
+Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Session auth or API keys with the `account:usage` scope see the full account balance.
 
 #### Responses
 
@@ -188,7 +147,7 @@ Returns your current pollen balance. If the API key has a budget limit, returns 
 
 - **`balance` (required)**
 
-  `number` — Remaining pollen balance (combines tier, pack, and crypto balances)
+  `number` — Remaining pollen balance (sum of tier balance + paid balance)
 
 **Example:**
 
@@ -204,7 +163,7 @@ Returns your current pollen balance. If the API key has a budget limit, returns 
 - **Path:** `/account/usage`
 - **Tags:** 👤 Account
 
-Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, and supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.
+Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` for cursor-based pagination. Requires `account:usage` permission when using API keys.
 
 #### Responses
 
@@ -252,7 +211,7 @@ Returns your request history with per-request details: model used, token counts,
 
   - **`meter_source` (required)**
 
-    `object` — Billing source ('tier', 'pack', 'crypto')
+    `object` — Billing source: 'tier' = tier balance, 'pack' = paid balance
 
   - **`model` (required)**
 
@@ -314,7 +273,7 @@ Returns your request history with per-request details: model used, token counts,
 - **Path:** `/account/usage/daily`
 - **Tags:** 👤 Account
 
-Returns daily aggregated usage for the requested time window (max 90 days), grouped by date and model. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.
+Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. Requires `account:usage` permission when using API keys.
 
 #### Responses
 
@@ -342,7 +301,7 @@ Returns daily aggregated usage for the requested time window (max 90 days), grou
 
   - **`meter_source` (required)**
 
-    `object` — Billing source ('tier', 'pack', 'crypto')
+    `object` — Billing source: 'tier' = tier balance, 'pack' = paid balance
 
   - **`model` (required)**
 
@@ -352,14 +311,6 @@ Returns daily aggregated usage for the requested time window (max 90 days), grou
 
     `number` — Number of requests
 
-  - **`api_key_names`**
-
-    `array` — API key names included in this bucket. Present for dashboard usage data.
-
-    **Items:**
-
-    `string`
-
 **Example:**
 
 ```json
@@ -367,13 +318,125 @@ Returns daily aggregated usage for the requested time window (max 90 days), grou
   "usage": [
     {
       "requests": 1,
-      "cost_usd": 1,
-      "api_key_names": [
-        ""
-      ]
+      "cost_usd": 1
     }
   ],
   "count": 1
+}
+```
+
+### Get Developer Earnings
+
+- **Method:** `GET`
+- **Path:** `/account/earnings`
+- **Tags:** 👤 Account
+
+Returns developer earnings (BYOP markup) in one response: per-(date, app) buckets, per-app rollups, and the global rollup across all apps. Earnings = total\_price − dev\_price. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. Requires `account:usage` permission when using API keys.
+
+#### Responses
+
+##### Status: 200 Combined earnings buckets and rollups
+
+###### Content-Type: application/json
+
+- **`daily` (required)**
+
+  `array` — Per-(date, app) buckets for the period
+
+  **Items:**
+
+  - **`app_key_id` (required)**
+
+    `string` — BYOP app key id; empty string on the global rollup row
+
+  - **`app_name` (required)**
+
+    `string` — App display name
+
+  - **`date` (required)**
+
+    `string` — Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows
+
+  - **`markup_rate` (required)**
+
+    `number` — Average markup rate applied
+
+  - **`pollen_earned` (required)**
+
+    `number` — Pollen earned (markup take)
+
+  - **`requests` (required)**
+
+    `number` — Number of billed requests
+
+  - **`unique_users` (required)**
+
+    `number` — Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').
+
+- **`global` (required)**
+
+  `object` — Global rollup across all apps for the period
+
+- **`perApp` (required)**
+
+  `array` — Per-app rollups for the period
+
+  **Items:**
+
+  - **`app_key_id` (required)**
+
+    `string` — BYOP app key id; empty string on the global rollup row
+
+  - **`app_name` (required)**
+
+    `string` — App display name
+
+  - **`date` (required)**
+
+    `string` — Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows
+
+  - **`markup_rate` (required)**
+
+    `number` — Average markup rate applied
+
+  - **`pollen_earned` (required)**
+
+    `number` — Pollen earned (markup take)
+
+  - **`requests` (required)**
+
+    `number` — Number of billed requests
+
+  - **`unique_users` (required)**
+
+    `number` — Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').
+
+**Example:**
+
+```json
+{
+  "daily": [
+    {
+      "requests": 1,
+      "pollen_earned": 1,
+      "markup_rate": 1,
+      "unique_users": 1
+    }
+  ],
+  "perApp": [
+    {
+      "requests": 1,
+      "pollen_earned": 1,
+      "markup_rate": 1,
+      "unique_users": 1
+    }
+  ],
+  "global": {
+    "requests": 1,
+    "pollen_earned": 1,
+    "markup_rate": 1,
+    "unique_users": 1
+  }
 }
 ```
 
@@ -395,7 +458,7 @@ List all API keys for the current user. Requires `account:keys` permission when 
 - **Path:** `/account/keys`
 - **Tags:** 👤 Account
 
-Create a new API key. Requires `account:keys` permission and a secret key (sk\_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.
+Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission and a secret key (sk\_). The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.
 
 #### Request Body
 
@@ -407,11 +470,15 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
 
 - **`accountPermissions`**
 
-  `object` — Account permissions (e.g. \["balance", "usage"]). "keys" is auto-stripped.
+  `object` — Account permissions (e.g. \["usage"]). "keys" is auto-stripped.
 
 - **`allowedModels`**
 
   `object` — Model IDs this key can access. null = all models
+
+- **`earningsEnabled`**
+
+  `boolean` — Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.
 
 - **`expiresIn`**
 
@@ -421,9 +488,17 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
 
   `object` — Pollen budget cap. null = unlimited
 
+- **`redirectUris`**
+
+  `array` — Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.
+
+  **Items:**
+
+  `string`
+
 - **`type`**
 
-  `string`, possible values: `"secret", "publishable"`, default: `"secret"` — Key type: secret (sk\_) or publishable (pk\_)
+  `string`, possible values: `"secret", "publishable"`, default: `"secret"` — Key type: secret (sk\_) or publishable app key (pk\_). Use publishable to create an app key.
 
 **Example:**
 
@@ -437,7 +512,11 @@ Create a new API key. Requires `account:keys` permission and a secret key (sk\_)
   "pollenBudget": 1,
   "accountPermissions": [
     ""
-  ]
+  ],
+  "redirectUris": [
+    ""
+  ],
+  "earningsEnabled": true
 }
 ```
 
@@ -531,13 +610,303 @@ Returns information about the API key used in the request: validity, type (secre
 }
 ```
 
+### Get API Key Usage
+
+- **Method:** `GET`
+- **Path:** `/account/key/usage`
+- **Tags:** 👤 Account
+
+Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. For account-wide usage across all keys, use `/account/usage` with the `account:usage` scope.
+
+#### Responses
+
+##### Status: 200 Usage records for this key
+
+###### Content-Type: application/json
+
+- **`count` (required)**
+
+  `number` — Number of records returned
+
+- **`usage` (required)**
+
+  `array` — Array of usage records
+
+  **Items:**
+
+  - **`api_key` (required)**
+
+    `object` — API key identifier used (masked)
+
+  - **`api_key_type` (required)**
+
+    `object` — Type of API key ('secret', 'publishable')
+
+  - **`cost_usd` (required)**
+
+    `number` — Cost in USD for this request
+
+  - **`input_audio_tokens` (required)**
+
+    `number` — Number of input audio tokens
+
+  - **`input_cached_tokens` (required)**
+
+    `number` — Number of cached input tokens
+
+  - **`input_image_tokens` (required)**
+
+    `number` — Number of input image tokens
+
+  - **`input_text_tokens` (required)**
+
+    `number` — Number of input text tokens
+
+  - **`meter_source` (required)**
+
+    `object` — Billing source: 'tier' = tier balance, 'pack' = paid balance
+
+  - **`model` (required)**
+
+    `object` — Model used for generation
+
+  - **`output_audio_tokens` (required)**
+
+    `number` — Number of output audio tokens
+
+  - **`output_image_tokens` (required)**
+
+    `number` — Number of output image tokens (1 per image)
+
+  - **`output_reasoning_tokens` (required)**
+
+    `number` — Number of reasoning tokens (for models with chain-of-thought)
+
+  - **`output_text_tokens` (required)**
+
+    `number` — Number of output text tokens
+
+  - **`response_time_ms` (required)**
+
+    `object` — Response time in milliseconds
+
+  - **`timestamp` (required)**
+
+    `string` — Request timestamp (YYYY-MM-DD HH:mm:ss format)
+
+  - **`type` (required)**
+
+    `string` — Request type (e.g., 'generate.image', 'generate.text')
+
+**Example:**
+
+```json
+{
+  "usage": [
+    {
+      "input_text_tokens": 1,
+      "input_cached_tokens": 1,
+      "input_audio_tokens": 1,
+      "input_image_tokens": 1,
+      "output_text_tokens": 1,
+      "output_reasoning_tokens": 1,
+      "output_audio_tokens": 1,
+      "output_image_tokens": 1,
+      "cost_usd": 1,
+      "response_time_ms": 1
+    }
+  ],
+  "count": 1
+}
+```
+
+### Text to Speech (OpenAI-compatible)
+
+- **Method:** `POST`
+- **Path:** `/v1/audio/speech`
+- **Tags:** 🔊 Audio Generation
+
+Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.
+
+Set `model` to `elevenmusic` to generate music instead of speech.
+
+**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+**Output formats:** mp3 (default), opus, aac, flac, wav, pcm
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`input` (required)**
+
+  `string` — The text to generate audio for. Maximum 4096 characters.
+
+- **`duration`**
+
+  `number` — Music duration in seconds, 3-300 (elevenmusic/acestep)
+
+- **`instruct`**
+
+  `string` — Emotion/style instruction (qwen-tts-instruct only). e.g. 'excited and cheerful'.
+
+- **`instrumental`**
+
+  `boolean` — If true, guarantees instrumental output (elevenmusic only)
+
+- **`model`**
+
+  `string`
+
+- **`response_format`**
+
+  `string`, possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`, default: `"mp3"` — The audio format for the output. Qwen TTS currently returns WAV regardless of this setting.
+
+- **`safe`**
+
+  `object` — Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off.
+
+- **`seed`**
+
+  `integer` — Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.
+
+- **`speed`**
+
+  `number`, default: `1` — The speed of the generated audio. 0.25 to 4.0, default 1.0.
+
+- **`style`**
+
+  `string` — Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.
+
+- **`voice`**
+
+  `string`, default: `"alloy"` — The voice to use. Can be any preset name (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill) OR a custom ElevenLabs voice ID (UUID from your dashboard).
+
+**Example:**
+
+```json
+{
+  "input": "Hello, welcome to Pollinations!",
+  "voice": "rachel",
+  "response_format": "mp3",
+  "speed": 1,
+  "duration": 30,
+  "instrumental": false,
+  "seed": 42,
+  "style": "brazilian berimbau instrumental",
+  "instruct": "speak softly and warmly"
+}
+```
+
+#### Responses
+
+##### Status: 200 Success - Returns audio data
+
+###### Content-Type: audio/mpeg
+
+`string`, format: `binary`
+
+**Example:**
+
+###### Content-Type: audio/opus
+
+`string`, format: `binary`
+
+**Example:**
+
+###### Content-Type: audio/aac
+
+`string`, format: `binary`
+
+**Example:**
+
+###### Content-Type: audio/flac
+
+`string`, format: `binary`
+
+**Example:**
+
+###### Content-Type: audio/wav
+
+`string`, format: `binary`
+
+**Example:**
+
+### Transcribe Audio
+
+- **Method:** `POST`
+- **Path:** `/v1/audio/transcriptions`
+- **Tags:** 🔊 Audio Generation
+
+Transcribe audio files to text. Compatible with the OpenAI Whisper API.
+
+**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm
+
+**Models:**
+
+- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud
+- `whisper-1` — Alias for whisper-large-v3
+- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)
+- `universal-2` — AssemblyAI Universal-2 (99 languages)
+- `universal-3-pro` — AssemblyAI Universal-3 Pro (highest accuracy, prompting)
+
+#### Request Body
+
+##### Content-Type: multipart/form-data
+
+- **`file` (required)**
+
+  `string`, format: `binary` — The audio file to transcribe. Supported formats: mp3, mp4, mpeg, mpga, m4a, wav, webm.
+
+- **`language`**
+
+  `string` — Language of the audio in ISO-639-1 format (e.g. \`en\`, \`fr\`). Improves accuracy.
+
+- **`model`**
+
+  `string`, default: `"whisper-large-v3"` — The model to use. Options: \`whisper-large-v3\`, \`whisper-1\`, \`scribe\`, \`universal-2\`, \`universal-3-pro\`.
+
+- **`prompt`**
+
+  `string` — Optional text to guide the model's style or continue a previous segment.
+
+- **`response_format`**
+
+  `string`, possible values: `"json", "text", "srt", "verbose_json", "vtt"`, default: `"json"` — The format of the transcript output.
+
+- **`temperature`**
+
+  `number` — Sampling temperature between 0 and 1. Lower is more deterministic.
+
+**Example:**
+
+```json
+{
+  "model": "whisper-large-v3",
+  "response_format": "json",
+  "temperature": 1
+}
+```
+
+#### Responses
+
+##### Status: 200 Success - Returns transcription
+
+###### Content-Type: application/json
+
+- **`text`**
+
+  `string`
+
+**Example:**
+
 ### List Models (OpenAI-compatible)
 
 - **Method:** `GET`
 - **Path:** `/v1/models`
 - **Tags:** 🤖 Models
 
-Returns available models (text, image, audio) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, or `/audio/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+Returns available models (text, image, audio, embeddings) in the OpenAI-compatible format (`{object: "list", data: [...]}`). Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -629,6 +998,24 @@ Returns available models (text, image, audio) in the OpenAI-compatible format (`
 }
 ```
 
+### List Models
+
+- **Method:** `GET`
+- **Path:** `/models`
+- **Tags:** 🤖 Models
+
+Returns all available text, image, video, audio, and embedding models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+
+#### Responses
+
+##### Status: 200 Success
+
+###### Content-Type: application/json
+
+**Array of:**
+
+**Example:**
+
 ### List Image & Video Models
 
 - **Method:** `GET`
@@ -672,6 +1059,24 @@ Returns all available text generation models with pricing, capabilities, and met
 - **Tags:** 🤖 Models
 
 Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
+
+#### Responses
+
+##### Status: 200 Success
+
+###### Content-Type: application/json
+
+**Array of:**
+
+**Example:**
+
+### List Embedding Models
+
+- **Method:** `GET`
+- **Path:** `/embeddings/models`
+- **Tags:** 🔢 Embeddings
+
+Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance.
 
 #### Responses
 
@@ -921,6 +1326,10 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
   `object`
 
+- **`safe`**
+
+  `object` — Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off.
+
 - **`seed`**
 
   `object`
@@ -939,7 +1348,7 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
 - **`temperature`**
 
-  `object`, default: `1`
+  `object`
 
 - **`thinking`**
 
@@ -995,7 +1404,7 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
 - **`top_p`**
 
-  `object`, default: `1`
+  `object`
 
 - **`user`**
 
@@ -1041,8 +1450,8 @@ Supports streaming, function calling, vision (image input), structured outputs, 
   },
   "reasoning_effort": "none",
   "thinking_budget": 0,
-  "temperature": 1,
-  "top_p": 1,
+  "temperature": 0,
+  "top_p": 0,
   "tools": [
     {
       "type": "function",
@@ -1063,7 +1472,8 @@ Supports streaming, function calling, vision (image input), structured outputs, 
         "propertyName*": "anything"
       }
     }
-  ]
+  ],
+  "propertyName*": "anything"
 }
 ```
 
@@ -1321,6 +1731,516 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 }
 ```
 
+### Create Embeddings
+
+- **Method:** `POST`
+- **Path:** `/v1/embeddings`
+- **Tags:** 🔢 Embeddings
+
+Generate vector embeddings with an OpenAI-compatible response format.
+
+**Models:** `gemini-2` supports text, image, audio, and video inputs. `openai-3-small` and `openai-3-large` are text-only models.
+
+**Input:** Pass a string, an array of up to 32 strings, or Gemini multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.
+
+**Task types:** `task_type` is Gemini-only. For example, use `RETRIEVAL_QUERY` or `CLASSIFICATION` with `gemini-2`.
+
+**Dimensions:** Defaults are model-specific. `gemini-2` and `openai-3-large` support up to 3072 dimensions; `openai-3-small` supports up to 1536.
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`input` (required)**
+
+  `object` — Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image\_url, input\_audio, video\_url). Multimodal content parts are supported by Gemini embedding models only.
+
+- **`dimensions`**
+
+  `integer` — Output embedding dimensions (128-3072). Model-specific limits apply; openai-3-small supports up to 1536.
+
+- **`encoding_format`**
+
+  `string`, possible values: `"float", "base64"`, default: `"float"` — Output encoding for the embedding vector. \`base64\` packs Float32 little-endian like OpenAI.
+
+- **`model`**
+
+  `string`, default: `"openai-3-small"` — Embedding model to use
+
+- **`task_type`**
+
+  `string`, possible values: `"SEMANTIC_SIMILARITY", "CLASSIFICATION", "CLUSTERING", "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY", "CODE_RETRIEVAL_QUERY", "QUESTION_ANSWERING", "FACT_VERIFICATION"` — Gemini-specific task type hint for optimized embeddings
+
+**Example:**
+
+```json
+{
+  "model": "gemini-2",
+  "input": "Hello world",
+  "dimensions": 768,
+  "task_type": "RETRIEVAL_QUERY",
+  "encoding_format": "float"
+}
+```
+
+#### Responses
+
+##### Status: 200 Success
+
+###### Content-Type: application/json
+
+- **`data` (required)**
+
+  `array`
+
+  **Items:**
+
+  - **`embedding` (required)**
+
+    `object` — Embedding vector — array of floats, or base64-encoded Float32 (little-endian) when \`encoding\_format=base64\`.
+
+  - **`index` (required)**
+
+    `integer` — Index of the embedding in the list
+
+  - **`object` (required)**
+
+    `string`
+
+- **`model` (required)**
+
+  `string`
+
+- **`object` (required)**
+
+  `string`
+
+- **`usage` (required)**
+
+  `object`
+
+  - **`prompt_tokens` (required)**
+
+    `integer`
+
+  - **`total_tokens` (required)**
+
+    `integer`
+
+**Example:**
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [
+        1
+      ],
+      "index": -9007199254740991
+    }
+  ],
+  "usage": {
+    "prompt_tokens": -9007199254740991,
+    "total_tokens": -9007199254740991
+  }
+}
+```
+
+### Text Generation With Messages
+
+- **Method:** `POST`
+- **Path:** `/text`
+- **Tags:** ✍️ Text Generation
+
+Generate text from an OpenAI-style messages array and return the assistant content directly.
+
+Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.
+
+#### Request Body
+
+##### Content-Type: application/json
+
+- **`messages` (required)**
+
+  `array`
+
+  **Items:**
+
+  **Any of:**
+
+  - **`content` (required)**
+
+    `object`
+
+  - **`role` (required)**
+
+    `string`
+
+  - **`cache_control`**
+
+    `object`
+
+    - **`type` (required)**
+
+      `string`, possible values: `"ephemeral"`
+
+  - **`name`**
+
+    `string`
+
+  * **`content` (required)**
+
+    `object`
+
+  * **`role` (required)**
+
+    `string`
+
+  * **`cache_control`**
+
+    `object`
+
+    - **`type` (required)**
+
+      `string`, possible values: `"ephemeral"`
+
+  * **`name`**
+
+    `string`
+
+  - **`content` (required)**
+
+    `object`
+
+  - **`role` (required)**
+
+    `string`
+
+  - **`name`**
+
+    `string`
+
+  * **`role` (required)**
+
+    `string`
+
+  * **`cache_control`**
+
+    `object`
+
+    - **`type` (required)**
+
+      `string`, possible values: `"ephemeral"`
+
+  * **`content`**
+
+    `object`
+
+  * **`function_call`**
+
+    `object`
+
+  * **`name`**
+
+    `string`
+
+  * **`tool_calls`**
+
+    `array`
+
+    **Items:**
+
+    - **`function` (required)**
+
+      `object`
+
+      - **`arguments` (required)**
+
+        `string`
+
+      - **`name` (required)**
+
+        `string`
+
+    - **`id` (required)**
+
+      `string`
+
+    - **`type` (required)**
+
+      `string`
+
+  - **`content` (required)**
+
+    `object`
+
+  - **`role` (required)**
+
+    `string`
+
+  - **`tool_call_id` (required)**
+
+    `string`
+
+  - **`cache_control`**
+
+    `object`
+
+    - **`type` (required)**
+
+      `string`, possible values: `"ephemeral"`
+
+  * **`content` (required)**
+
+    `object`
+
+  * **`name` (required)**
+
+    `string`
+
+  * **`role` (required)**
+
+    `string`
+
+- **`audio`**
+
+  `object`
+
+  - **`format` (required)**
+
+    `string`, possible values: `"wav", "mp3", "flac", "opus", "pcm16"`
+
+  - **`voice` (required)**
+
+    `string`, possible values: `"alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"`
+
+- **`frequency_penalty`**
+
+  `object`, default: `0`
+
+- **`function_call`**
+
+  `object`
+
+- **`functions`**
+
+  `array`
+
+  **Items:**
+
+  - **`name` (required)**
+
+    `string`
+
+  - **`description`**
+
+    `string`
+
+  - **`parameters`**
+
+    `object`
+
+- **`logit_bias`**
+
+  `object`, default: `null`
+
+- **`logprobs`**
+
+  `object`, default: `false`
+
+- **`max_tokens`**
+
+  `object`
+
+- **`modalities`**
+
+  `array`
+
+  **Items:**
+
+  `string`, possible values: `"text", "audio"`
+
+- **`model`**
+
+  `string`, default: `"openai"` — AI model for text generation. See /v1/models for full list.
+
+- **`parallel_tool_calls`**
+
+  `boolean`, default: `true`
+
+- **`presence_penalty`**
+
+  `object`, default: `0`
+
+- **`reasoning_effort`**
+
+  `string`, possible values: `"none", "minimal", "low", "medium", "high", "xhigh"`
+
+- **`repetition_penalty`**
+
+  `object`
+
+- **`response_format`**
+
+  `object`
+
+- **`safe`**
+
+  `object` — Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off.
+
+- **`seed`**
+
+  `object`
+
+- **`stop`**
+
+  `object`
+
+- **`stream`**
+
+  `object`, default: `false`
+
+- **`stream_options`**
+
+  `object`
+
+- **`temperature`**
+
+  `object`
+
+- **`thinking`**
+
+  `object`
+
+- **`thinking_budget`**
+
+  `integer`
+
+- **`tool_choice`**
+
+  `object`
+
+- **`tools`**
+
+  `array`
+
+  **Items:**
+
+  **Any of:**
+
+  - **`function` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`description`**
+
+      `string`
+
+    - **`parameters`**
+
+      `object`
+
+    - **`strict`**
+
+      `object`, default: `false`
+
+  - **`type` (required)**
+
+    `string`
+
+  * **`type` (required)**
+
+    `string`, possible values: `"code_execution", "google_search", "google_maps", "url_context", "computer_use", "file_search"`
+
+- **`top_logprobs`**
+
+  `object`
+
+- **`top_p`**
+
+  `object`
+
+- **`user`**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "cache_control": {
+        "type": "ephemeral"
+      }
+    }
+  ],
+  "model": "openai",
+  "modalities": [
+    "text"
+  ],
+  "audio": {
+    "voice": "alloy",
+    "format": "wav"
+  },
+  "frequency_penalty": 0,
+  "repetition_penalty": 0,
+  "logprobs": false,
+  "top_logprobs": 0,
+  "max_tokens": 0,
+  "presence_penalty": 0,
+  "response_format": {
+    "type": "text"
+  },
+  "seed": -1,
+  "stream": false,
+  "stream_options": {
+    "include_usage": true
+  },
+  "thinking": {
+    "type": "disabled",
+    "budget_tokens": 1
+  },
+  "reasoning_effort": "none",
+  "thinking_budget": 0,
+  "temperature": 0,
+  "top_p": 0,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "parameters": {
+          "propertyName*": "anything"
+        },
+        "strict": false
+      }
+    }
+  ],
+  "tool_choice": "none",
+  "parallel_tool_calls": true,
+  "function_call": "none",
+  "functions": [
+    {
+      "parameters": {
+        "propertyName*": "anything"
+      }
+    }
+  ],
+  "propertyName*": "anything"
+}
+```
+
+#### Responses
+
+##### Status: 200 Generated text response, audio bytes, JSON message object, or SSE when stream=true
+
 ### Simple Text Generation
 
 - **Method:** `GET`
@@ -1353,7 +2273,7 @@ true
 
 Generate an image from a text prompt. Returns JPEG or PNG.
 
-**Available models:** `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-pro`, `seedream5`, `seedream`, `seedream-pro`, `gptimage`, `gptimage-large`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
+**Available models:** `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-pro`, `seedream5`, `seedream`, `seedream-pro`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `wan-image`, `wan-image-pro`, `qwen-image`, `grok-imagine`, `grok-imagine-pro`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -1381,7 +2301,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `seedance`, `seedance-pro`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
+**Available models:** `veo`, `seedance`, `seedance-pro`, `seedance-2.0`, `wan`, `wan-fast`, `grok-video-pro`, `ltx-2`, `p-video`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` to enable soundtrack generation.
 
@@ -1464,6 +2384,10 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
 - **`response_format`**
 
   `string`, possible values: `"url", "b64_json"`, default: `"b64_json"` — Return format. "url" returns a pollinations.ai URL, "b64\_json" returns base64-encoded image data
+
+- **`safe`**
+
+  `object` — Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off.
 
 - **`size`**
 
@@ -1570,177 +2494,13 @@ Edit images using a text prompt and one or more source images. Accepts JSON with
 }
 ```
 
-### Text to Speech (OpenAI-compatible)
-
-- **Method:** `POST`
-- **Path:** `/v1/audio/speech`
-- **Tags:** 🔊 Audio Generation
-
-Generate speech or music from text. Compatible with the OpenAI TTS API — use any OpenAI SDK.
-
-Set `model` to `elevenmusic` to generate music instead of speech.
-
-**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
-
-**Output formats:** mp3 (default), opus, aac, flac, wav, pcm
-
-#### Request Body
-
-##### Content-Type: application/json
-
-- **`input` (required)**
-
-  `string` — The text to generate audio for. Maximum 4096 characters.
-
-- **`duration`**
-
-  `number` — Music duration in seconds, 3-300 (elevenmusic/acestep)
-
-- **`instrumental`**
-
-  `boolean` — If true, guarantees instrumental output (elevenmusic only)
-
-- **`model`**
-
-  `string`
-
-- **`response_format`**
-
-  `string`, possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`, default: `"mp3"` — The audio format for the output.
-
-- **`speed`**
-
-  `number`, default: `1` — The speed of the generated audio. 0.25 to 4.0, default 1.0.
-
-- **`style`**
-
-  `string` — Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.
-
-- **`voice`**
-
-  `string`, default: `"alloy"` — The voice to use. Can be any preset name (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill) OR a custom ElevenLabs voice ID (UUID from your dashboard).
-
-**Example:**
-
-```json
-{
-  "input": "Hello, welcome to Pollinations!",
-  "voice": "rachel",
-  "response_format": "mp3",
-  "speed": 1,
-  "duration": 30,
-  "instrumental": false,
-  "style": "brazilian berimbau instrumental"
-}
-```
-
-#### Responses
-
-##### Status: 200 Success - Returns audio data
-
-###### Content-Type: audio/mpeg
-
-`string`, format: `binary`
-
-**Example:**
-
-###### Content-Type: audio/opus
-
-`string`, format: `binary`
-
-**Example:**
-
-###### Content-Type: audio/aac
-
-`string`, format: `binary`
-
-**Example:**
-
-###### Content-Type: audio/flac
-
-`string`, format: `binary`
-
-**Example:**
-
-###### Content-Type: audio/wav
-
-`string`, format: `binary`
-
-**Example:**
-
-### Transcribe Audio
-
-- **Method:** `POST`
-- **Path:** `/v1/audio/transcriptions`
-- **Tags:** 🔊 Audio Generation
-
-Transcribe audio files to text. Compatible with the OpenAI Whisper API.
-
-**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm
-
-**Models:**
-
-- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud
-- `whisper-1` — Alias for whisper-large-v3
-- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)
-
-#### Request Body
-
-##### Content-Type: multipart/form-data
-
-- **`file` (required)**
-
-  `string`, format: `binary` — The audio file to transcribe. Supported formats: mp3, mp4, mpeg, mpga, m4a, wav, webm.
-
-- **`language`**
-
-  `string` — Language of the audio in ISO-639-1 format (e.g. \`en\`, \`fr\`). Improves accuracy.
-
-- **`model`**
-
-  `string`, default: `"whisper-large-v3"` — The model to use. Options: \`whisper-large-v3\`, \`whisper-1\`, \`scribe\`.
-
-- **`prompt`**
-
-  `string` — Optional text to guide the model's style or continue a previous segment.
-
-- **`response_format`**
-
-  `string`, possible values: `"json", "text", "srt", "verbose_json", "vtt"`, default: `"json"` — The format of the transcript output.
-
-- **`temperature`**
-
-  `number` — Sampling temperature between 0 and 1. Lower is more deterministic.
-
-**Example:**
-
-```json
-{
-  "model": "whisper-large-v3",
-  "response_format": "json",
-  "temperature": 1
-}
-```
-
-#### Responses
-
-##### Status: 200 Success - Returns transcription
-
-###### Content-Type: application/json
-
-- **`text`**
-
-  `string`
-
-**Example:**
-
 ### Upload media
 
 - **Method:** `POST`
 - **Path:** `/upload`
 - **Tags:** 📦 Media Storage
 
-Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. Duplicate files return the existing hash.
+Upload an image, audio, or video file. Supports multipart/form-data, raw binary, or base64 JSON. Returns a content-addressed hash URL. The hash includes the filename, so the same content with different filenames gets different URLs. Files are retained for 30 days; re-uploading resets the timer.
 
 #### Responses
 
@@ -1806,25 +2566,38 @@ Check existence and metadata without downloading the file.
 
 ##### Status: 200 File exists (headers include Content-Type, Content-Length, X-Content-Hash)
 
-### Delete media
+### SERVERS /{hash}
 
-- **Method:** `DELETE`
+- **Method:** `SERVERS`
 - **Path:** `/{hash}`
+
+### Get file metadata
+
+- **Method:** `GET`
+- **Path:** `/{hash}/metadata`
 - **Tags:** 📦 Media Storage
 
-Delete a file by its content hash. Only the original uploader can delete their own files.
+Return file metadata (hash, content type, size, upload timestamp) as JSON without downloading the file body.
 
 #### Responses
 
-##### Status: 200 File deleted
+##### Status: 200 File metadata
 
 ###### Content-Type: application/json
 
-- **`deleted` (required)**
+- **`contentType` (required)**
 
-  `boolean`
+  `string`
 
-- **`id` (required)**
+- **`hash` (required)**
+
+  `string`
+
+- **`size` (required)**
+
+  `integer`
+
+- **`uploadedAt`**
 
   `string`
 
@@ -1832,16 +2605,51 @@ Delete a file by its content hash. Only the original uploader can delete their o
 
 ```json
 {
-  "deleted": true
+  "size": 1
 }
 ```
 
-### SERVERS /{hash}
+### SERVERS /{hash}/metadata
 
 - **Method:** `SERVERS`
-- **Path:** `/{hash}`
+- **Path:** `/{hash}/metadata`
 
 ## Schemas
+
+### ValidationErrorDetails
+
+- **Type:**`object`
+
+* **`fieldErrors` (required)**
+
+  `object`
+
+* **`formErrors` (required)**
+
+  `array`
+
+  **Items:**
+
+  `string`
+
+* **`name` (required)**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "formErrors": [
+    ""
+  ],
+  "fieldErrors": {
+    "propertyName*": [
+      ""
+    ]
+  }
+}
+```
 
 ### ErrorDetails
 
@@ -1851,11 +2659,89 @@ Delete a file by its content hash. Only the original uploader can delete their o
 
   `string`
 
-* **`stack`**
+* **`upstreamBody`**
 
   `string`
 
+* **`upstreamHost`**
+
+  `string`
+
+* **`upstreamStatus`**
+
+  `integer`
+
 **Example:**
+
+```json
+{
+  "upstreamStatus": -9007199254740991
+}
+```
+
+### CreateSpeechRequest
+
+- **Type:**`object`
+
+* **`input` (required)**
+
+  `string` — The text to generate audio for. Maximum 4096 characters.
+
+* **`duration`**
+
+  `number` — Music duration in seconds, 3-300 (elevenmusic/acestep)
+
+* **`instruct`**
+
+  `string` — Emotion/style instruction (qwen-tts-instruct only). e.g. 'excited and cheerful'.
+
+* **`instrumental`**
+
+  `boolean` — If true, guarantees instrumental output (elevenmusic only)
+
+* **`model`**
+
+  `string`
+
+* **`response_format`**
+
+  `string`, possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`, default: `"mp3"` — The audio format for the output. Qwen TTS currently returns WAV regardless of this setting.
+
+* **`safe`**
+
+  `object` — Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off.
+
+* **`seed`**
+
+  `integer` — Seed for deterministic output. Same seed + params = best-effort return of the same cached result. Omit for random.
+
+* **`speed`**
+
+  `number`, default: `1` — The speed of the generated audio. 0.25 to 4.0, default 1.0.
+
+* **`style`**
+
+  `string` — Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.
+
+* **`voice`**
+
+  `string`, default: `"alloy"` — The voice to use. Can be any preset name (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill) OR a custom ElevenLabs voice ID (UUID from your dashboard).
+
+**Example:**
+
+```json
+{
+  "input": "Hello, welcome to Pollinations!",
+  "voice": "rachel",
+  "response_format": "mp3",
+  "speed": 1,
+  "duration": 30,
+  "instrumental": false,
+  "seed": 42,
+  "style": "brazilian berimbau instrumental",
+  "instruct": "speak softly and warmly"
+}
+```
 
 ### CacheControl
 
@@ -2046,50 +2932,110 @@ Delete a file by its content hash. Only the original uploader can delete their o
 }
 ```
 
-### ValidationErrorDetails
-
-- **Type:**`object`
-
-* **`fieldErrors` (required)**
-
-  `object`
-
-* **`formErrors` (required)**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-* **`name` (required)**
-
-  `string`
-
-* **`stack`**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "formErrors": [
-    ""
-  ],
-  "fieldErrors": {
-    "propertyName*": [
-      ""
-    ]
-  }
-}
-```
-
 ### MessageContentPart
 
 - **Type:**
 
 **Example:**
+
+### CreateEmbeddingResponse
+
+- **Type:**`object`
+
+* **`data` (required)**
+
+  `array`
+
+  **Items:**
+
+  - **`embedding` (required)**
+
+    `object` — Embedding vector — array of floats, or base64-encoded Float32 (little-endian) when \`encoding\_format=base64\`.
+
+  - **`index` (required)**
+
+    `integer` — Index of the embedding in the list
+
+  - **`object` (required)**
+
+    `string`
+
+* **`model` (required)**
+
+  `string`
+
+* **`object` (required)**
+
+  `string`
+
+* **`usage` (required)**
+
+  `object`
+
+  - **`prompt_tokens` (required)**
+
+    `integer`
+
+  - **`total_tokens` (required)**
+
+    `integer`
+
+**Example:**
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [
+        1
+      ],
+      "index": -9007199254740991
+    }
+  ],
+  "usage": {
+    "prompt_tokens": -9007199254740991,
+    "total_tokens": -9007199254740991
+  }
+}
+```
+
+### CreateEmbeddingRequest
+
+- **Type:**`object`
+
+* **`input` (required)**
+
+  `object` — Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image\_url, input\_audio, video\_url). Multimodal content parts are supported by Gemini embedding models only.
+
+* **`dimensions`**
+
+  `integer` — Output embedding dimensions (128-3072). Model-specific limits apply; openai-3-small supports up to 1536.
+
+* **`encoding_format`**
+
+  `string`, possible values: `"float", "base64"`, default: `"float"` — Output encoding for the embedding vector. \`base64\` packs Float32 little-endian like OpenAI.
+
+* **`model`**
+
+  `string`, default: `"openai-3-small"` — Embedding model to use
+
+* **`task_type`**
+
+  `string`, possible values: `"SEMANTIC_SIMILARITY", "CLASSIFICATION", "CLUSTERING", "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY", "CODE_RETRIEVAL_QUERY", "QUESTION_ANSWERING", "FACT_VERIFICATION"` — Gemini-specific task type hint for optimized embeddings
+
+**Example:**
+
+```json
+{
+  "model": "gemini-2",
+  "input": "Hello world",
+  "dimensions": 768,
+  "task_type": "RETRIEVAL_QUERY",
+  "encoding_format": "float"
+}
+```
 
 ### CreateImageResponse
 
@@ -2153,6 +3099,10 @@ Delete a file by its content hash. Only the original uploader can delete their o
 
   `string`, possible values: `"url", "b64_json"`, default: `"b64_json"` — Return format. "url" returns a pollinations.ai URL, "b64\_json" returns base64-encoded image data
 
+* **`safe`**
+
+  `object` — Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off.
+
 * **`size`**
 
   `string`, default: `"1024x1024"` — Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)
@@ -2171,56 +3121,6 @@ Delete a file by its content hash. Only the original uploader can delete their o
   "quality": "medium",
   "response_format": "b64_json",
   "propertyName*": "anything"
-}
-```
-
-### CreateSpeechRequest
-
-- **Type:**`object`
-
-* **`input` (required)**
-
-  `string` — The text to generate audio for. Maximum 4096 characters.
-
-* **`duration`**
-
-  `number` — Music duration in seconds, 3-300 (elevenmusic/acestep)
-
-* **`instrumental`**
-
-  `boolean` — If true, guarantees instrumental output (elevenmusic only)
-
-* **`model`**
-
-  `string`
-
-* **`response_format`**
-
-  `string`, possible values: `"mp3", "opus", "aac", "flac", "wav", "pcm"`, default: `"mp3"` — The audio format for the output.
-
-* **`speed`**
-
-  `number`, default: `1` — The speed of the generated audio. 0.25 to 4.0, default 1.0.
-
-* **`style`**
-
-  `string` — Style/genre tags for music generation (acestep only). If omitted, style is auto-detected from the input text.
-
-* **`voice`**
-
-  `string`, default: `"alloy"` — The voice to use. Can be any preset name (alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill) OR a custom ElevenLabs voice ID (UUID from your dashboard).
-
-**Example:**
-
-```json
-{
-  "input": "Hello, welcome to Pollinations!",
-  "voice": "rachel",
-  "response_format": "mp3",
-  "speed": 1,
-  "duration": 30,
-  "instrumental": false,
-  "style": "brazilian berimbau instrumental"
 }
 ```
 

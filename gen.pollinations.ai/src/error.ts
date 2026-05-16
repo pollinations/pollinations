@@ -12,6 +12,7 @@ import {
     type TinybirdErrorEvent,
 } from "@/events.ts";
 import { getRoutePath } from "@/util.ts";
+import { redactSecrets } from "@/utils/secret-redaction.ts";
 import type { ErrorVariables } from "./env.ts";
 import type { LoggerVariables } from "./middleware/logger.ts";
 
@@ -38,12 +39,24 @@ export class UpstreamError extends HTTPException {
     public readonly responseBody?: string;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
-        super(status, options);
+        super(status, options && redactUpstreamErrorOptions(options));
         this.requestUrl = options?.requestUrl;
-        this.requestBody = options?.requestBody;
+        this.requestBody = redactSecrets(options?.requestBody);
         this.upstreamStatus = options?.upstreamStatus;
-        this.responseBody = options?.responseBody;
+        this.responseBody = redactSecrets(options?.responseBody);
     }
+}
+
+function redactUpstreamErrorOptions(
+    options: UpstreamErrorOptions,
+): UpstreamErrorOptions {
+    return {
+        ...options,
+        message: redactSecrets(options.message),
+        requestBody: redactSecrets(options.requestBody),
+        responseBody: redactSecrets(options.responseBody),
+        cause: redactSecrets(options.cause),
+    };
 }
 
 export async function ensureUpstreamOk(
@@ -231,11 +244,13 @@ function createErrorResponse(
     return {
         success: false,
         error: {
-            message: error.message || getDefaultErrorMessage(status),
+            message: redactSecrets(
+                error.message || getDefaultErrorMessage(status),
+            ),
             code: getErrorCode(status),
             timestamp,
-            ...(details && { details }),
-            ...(!!error.cause && { cause: error.cause }),
+            ...(details && { details: redactSecrets(details) }),
+            ...(!!error.cause && { cause: redactSecrets(error.cause) }),
         },
         status,
     };
@@ -371,11 +386,13 @@ function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
         requestStartedAt: number;
     }>;
     const message =
-        truncateString(
-            error.message || getDefaultErrorMessage(status),
-            MAX_ERROR_MESSAGE_LENGTH,
+        redactSecrets(
+            truncateString(
+                error.message || getDefaultErrorMessage(status),
+                MAX_ERROR_MESSAGE_LENGTH,
+            ) || getDefaultErrorMessage(status),
         ) || getDefaultErrorMessage(status);
-    const stack = truncateString(error.stack, MAX_STACK_LENGTH);
+    const stack = redactSecrets(truncateString(error.stack, MAX_STACK_LENGTH));
     const resolvedRoutePath = getRoutePath(c);
 
     return {
@@ -403,7 +420,12 @@ function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             error instanceof UpstreamError ? error.upstreamStatus : undefined,
         upstreamBody:
             error instanceof UpstreamError
-                ? truncateString(error.responseBody, MAX_UPSTREAM_BODY_LENGTH)
+                ? redactSecrets(
+                      truncateString(
+                          error.responseBody,
+                          MAX_UPSTREAM_BODY_LENGTH,
+                      ),
+                  )
                 : undefined,
         modelRequested: vars.model?.requested,
         resolvedModelRequested: vars.model?.resolved,

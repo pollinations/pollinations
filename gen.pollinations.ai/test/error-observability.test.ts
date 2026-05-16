@@ -106,4 +106,73 @@ describe("error observability", () => {
             resolved_model_requested: "openai",
         });
     });
+
+    it("redacts secrets from upstream errors and error events", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.use("*", requestId());
+        app.use("*", logger);
+        app.post("/v1/chat/completions", (c) => {
+            c.set("model", {
+                requested: "openai",
+                resolved: "openai",
+            });
+            throw new UpstreamError(502, {
+                message:
+                    "Provider echoed Authorization: Bearer sk_live_abcdefghi",
+                requestUrl: new URL("https://portkey.test/v1/chat/completions"),
+                upstreamStatus: 400,
+                responseBody: JSON.stringify({
+                    error: {
+                        message:
+                            "bad request contained sk_live_abcdefghi and pk_live_abcdefghi",
+                    },
+                }),
+            });
+        });
+        app.onError(handleError);
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        const body = JSON.stringify(await response.json());
+        expect(body).toContain("Bearer {BEARER_TOKEN}");
+        expect(body).toContain("{PUBLIC_KEY}");
+        expect(body).not.toContain("sk_live_abcdefghi");
+        expect(body).not.toContain("pk_live_abcdefghi");
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = JSON.stringify(await tinybirdRequests[0].json());
+        expect(event).toContain("Bearer {BEARER_TOKEN}");
+        expect(event).toContain("{PUBLIC_KEY}");
+        expect(event).not.toContain("sk_live_abcdefghi");
+        expect(event).not.toContain("pk_live_abcdefghi");
+    });
 });

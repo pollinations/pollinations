@@ -11,6 +11,10 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { remapUpstreamStatus, UpstreamError } from "@/error.ts";
+import {
+    createSecretRedactionStream,
+    redactSecrets,
+} from "@/utils/secret-redaction.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
@@ -134,12 +138,14 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
-        JSON.stringify({
-            ...completion,
-            id: completion.id || generatePollinationsId(),
-            object: completion.object || "chat.completion",
-            created: completion.created || Date.now(),
-        }),
+        JSON.stringify(
+            redactSecrets({
+                ...completion,
+                id: completion.id || generatePollinationsId(),
+                object: completion.object || "chat.completion",
+                created: completion.created || Date.now(),
+            }),
+        ),
         { headers },
     );
 }
@@ -159,7 +165,7 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
 
     if (typeof message !== "object" || !message) {
         headers.set("Content-Type", "text/plain; charset=utf-8");
-        return new Response(String(message), { headers });
+        return new Response(redactSecrets(String(message)), { headers });
     }
 
     const audio = message.audio as Record<string, unknown> | undefined;
@@ -178,12 +184,14 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
             content += "\n";
         }
         headers.set("Content-Type", "text/plain; charset=utf-8");
-        return new Response(content, { headers });
+        return new Response(redactSecrets(content), { headers });
     }
 
     if (Object.keys(message).length > 0) {
         headers.set("Content-Type", "application/json; charset=utf-8");
-        return new Response(JSON.stringify(message), { headers });
+        return new Response(JSON.stringify(redactSecrets(message)), {
+            headers,
+        });
     }
 
     headers.set("Content-Type", "text/plain; charset=utf-8");
@@ -198,12 +206,20 @@ function sendTextStreamResponse(completion: ChatCompletion): Response {
     });
 
     if (completion.responseStream instanceof ReadableStream) {
-        return new Response(completion.responseStream, { headers });
+        return new Response(
+            completion.responseStream.pipeThrough(
+                createSecretRedactionStream(),
+            ),
+            { headers },
+        );
     }
 
-    return new Response(asyncIterableToStream(completion.responseStream), {
-        headers,
-    });
+    return new Response(
+        asyncIterableToStream(completion.responseStream).pipeThrough(
+            createSecretRedactionStream(),
+        ),
+        { headers },
+    );
 }
 
 function asyncIterableToStream(
@@ -240,7 +256,7 @@ function asyncIterableToStream(
                         : "Streaming response failed";
                 controller.enqueue(
                     encoder.encode(
-                        `data: ${JSON.stringify({ error: { message } })}\n\n`,
+                        `data: ${JSON.stringify({ error: { message: redactSecrets(message) } })}\n\n`,
                     ),
                 );
             }

@@ -321,8 +321,9 @@ function startURLFromLocation() {
 
 function startIndexFromLocation() {
   const value = new URLSearchParams(location.hash.slice(1)).get("index");
+  if (value == null) return null;
   const index = Number(value);
-  return Number.isInteger(index) && index >= 0 ? index : 0;
+  return Number.isInteger(index) && index >= 0 ? index : null;
 }
 
 function scrubURL(url) {
@@ -341,7 +342,11 @@ function frameURL(frame) {
 }
 
 function cleanHistoryFrames(frames) {
-  return frames.map((frame) => frameURL(frame)).filter(Boolean).map((url) => ({ url }));
+  return frames.map((frame) => {
+    const url = frameURL(frame);
+    if (!url) return null;
+    return { url, kind: typeof frame === "string" ? undefined : frame?.kind };
+  }).filter(Boolean);
 }
 
 function setHash(start, index = 0) {
@@ -362,10 +367,22 @@ async function loadSource(url) {
   const frames = state ? cleanHistoryFrames(state.history) : [{ url: source }];
   if (!frames.length) throw new Error("No history frames found");
   const sourceIndex = state ? Math.max(0, Math.min(state.historyIndex ?? frames.length - 1, frames.length - 1)) : 0;
-  if (state) frames[sourceIndex].url = source;
+  const requestedIndex = startIndexFromLocation();
+  let currentIndex = sourceIndex;
+  if (state) {
+    if (frames[sourceIndex]?.kind === "prep") {
+      frames.splice(sourceIndex + 1, 0, { url: source });
+      currentIndex = sourceIndex + 1;
+    } else {
+      frames[sourceIndex].url = source;
+    }
+  }
+  const index = requestedIndex == null || (currentIndex !== sourceIndex && requestedIndex === sourceIndex)
+    ? currentIndex
+    : requestedIndex;
   app.sourceURL = source;
   app.history = frames;
-  app.currentFrame = Math.max(0, Math.min(startIndexFromLocation(), frames.length - 1));
+  app.currentFrame = Math.max(0, Math.min(index, frames.length - 1));
   app.clips = [];
   app.currentClip = -1;
   els.source.value = source;

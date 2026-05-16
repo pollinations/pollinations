@@ -1280,10 +1280,22 @@ async function restoreRemix(state, fallbackURL, sourceURL = "") {
   }
   const source = scrubURL(sourceURL);
   const sourceIndex = clamp(state.historyIndex ?? frames.length - 1, 0, frames.length - 1);
+  const requestedIndex = startIndexFromLocation();
+  let currentIndex = sourceIndex;
+  if (source) {
+    if (frames[sourceIndex]?.kind === "prep") {
+      frames.splice(sourceIndex + 1, 0, { url: source });
+      currentIndex = sourceIndex + 1;
+    } else {
+      frames[sourceIndex].url = source;
+    }
+  }
+  const index = requestedIndex == null || (currentIndex !== sourceIndex && requestedIndex === sourceIndex)
+    ? currentIndex
+    : requestedIndex;
   app.history = frames;
-  app.historyIndex = clamp(startIndexFromLocation() ?? sourceIndex, 0, frames.length - 1);
+  app.historyIndex = clamp(index, 0, frames.length - 1);
   app.stateURL = source || scrubURL(fallbackURL);
-  if (source) app.history[sourceIndex].url = source;
   try {
     await mediaHistory.go(app.historyIndex);
     setStatus(`restored ${frames.length} frames`);

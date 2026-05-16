@@ -185,11 +185,13 @@ VALID_LABELS = {
     "support": {
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
+        "TIER",
     },
 }
 
 SUPPORT_TYPE_LABELS = {".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION"}
 SUPPORT_SERVICE_LABELS = {"IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT"}
+SUPPORT_TOPIC_LABELS = {"TIER"}
 
 PROTECTED_LABELS = {
     "dev": {"DEV-TRACKING", "DEV-VOTING"},
@@ -212,7 +214,8 @@ def normalize_labels(project: str, labels: list) -> list:
     if project == "support":
         type_label = next((l for l in incoming if l in SUPPORT_TYPE_LABELS), None)
         service_label = next((l for l in incoming if l in SUPPORT_SERVICE_LABELS), None)
-        return [l for l in (type_label, service_label) if l]
+        topic_label = next((l for l in incoming if l in SUPPORT_TOPIC_LABELS), None)
+        return [l for l in (type_label, service_label, topic_label) if l]
 
     return []
 

@@ -191,6 +191,8 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         # Current SERVICE labels
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
+        # TOPIC label
+        "TIER",
         # Old labels to clean up during migration
         "BUG", "OUTAGE", "QUESTION", "REQUEST", "DOCS", "INTEGRATION",
         "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",

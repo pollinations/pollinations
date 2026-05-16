@@ -76,9 +76,6 @@ Priority is only set on Support items. The AI picks one of two values; `Urgent` 
 | `Low`    | AI | Minor issues, cosmetic bugs, questions, docs, feature requests, integration help |
 
 `Medium` is no longer used. The paid-customer lookup joins `stripe_event.user_id → d1_user.id → d1_user.github_id` filtered to the latest `synced_at`. GitHub IDs are used instead of usernames so the flag survives username changes.
-
-## Flow Diagrams
-
 ### Project Manager (Auto-Kanban)
 
 ```mermaid
@@ -210,6 +207,14 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | `CREDITS` | Pollen balance issues | `project-manager.py` |
 | `BILLING` | Payment/credit card   | `project-manager.py` |
 | `ACCOUNT` | Account/login/auth    | `project-manager.py` |
+
+**TOPIC (optional, at most 1):**
+
+| Label  | Purpose                                                       | Applied by           |
+| ------ | ------------------------------------------------------------- | -------------------- |
+| `TIER` | User questions about tiers (spore/seed/flower/nectar/upgrade) | `project-manager.py` |
+
+Unrelated to the `TIER-APP-*` family used for app submissions.
 
 ### News Labels
 

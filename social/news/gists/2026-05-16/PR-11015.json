@@ -1,0 +1,34 @@
+{
+  "pr_number": 11015,
+  "title": "fix(ci): reset apidocs-sync branch to main + enable auto-merge",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11015",
+  "merged_at": "2026-05-16T15:38:08Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "The `docs/apidocs-sync` branch was treated as long-lived and only fast-forwarded — but humans do edit `APIDOCS.md` directly on main (#10772, #10422, #10395, #10255, #10167, etc.), so the regen PR (#11008) ended up with a months-old merge-base and a conflict.\n\nChanges:\n- Reset `docs/apidocs-sync` to current `origin/main` each run, then force-push the regen on top. The branch carries no history worth preserving — the regen output is fully derived from the live spec.\n- Enable auto-merge (`--squash`) on the PR so it lands once required checks pass instead of sitting open.\n\nAfter this merges, the existing #11008 will likely need a one-time reset (or close + let the next deploy recreate it cleanly).",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Self-healing docs",
+    "blurb": "Taught our API docs generator to automatically resolve its own merge conflicts and auto-merge when ready. Less manual clicking, more up-to-date docs.",
+    "summary": "Updated the API docs regeneration workflow to reset the docs/apidocs-sync branch to main before running and enabled auto-merge for the resulting PRs.",
+    "impact": "This prevents merge conflicts when humans manually edit APIDOCS.md and ensures automated spec updates land immediately without manual intervention.",
+    "keywords": [
+      "ci",
+      "github-actions",
+      "docs",
+      "automation"
+    ],
+    "visual_concept": "The Monitor Robot automatically organizing and stamping documents (API docs), while Polly the bee watches happily, representing automated CI/CD workflows.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head automatically stamping a neat stack of documents. The cute bee mascot hovers nearby wearing a tiny construction hard hat, giving a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11015.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head automatically stamping a neat stack of documents. The cute bee mascot hovers nearby wearing a tiny construction hard hat, giving a thumbs up. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-16T15:39:02.259451+00:00"
+}

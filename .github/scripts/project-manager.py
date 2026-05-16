@@ -31,6 +31,7 @@ ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
 ISSUE_AUTHOR_ID = ITEM_DATA.get("user", {}).get("id")
 ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
+PR_HEAD_REF = ITEM_DATA.get("head", {}).get("ref", "") if IS_PULL_REQUEST else ""
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
@@ -93,7 +94,8 @@ CONFIG = {
         "voodoohop",
         "ElliotEtag",
         "Circuit-Overtime",
-        "Itachi-1824"
+        "Itachi-1824",
+        "fisventurous"
     ],
     "discord_uid_to_github": {
         "304378879705874432": "voodoohop",
@@ -225,14 +227,16 @@ def get_fallback_classification(_: bool) -> dict:
 
 def classify_with_ai(is_internal: bool) -> dict:
     base_prompt = read_prompt_file()
-    
+    item_kind = "pull request" if IS_PULL_REQUEST else "issue"
+
     system_prompt = f"""{base_prompt}
 
 ---
-**Context:** Author type is {"internal" if is_internal else "external"}
+**Context:** This is a {item_kind}. Author type is {"internal" if is_internal else "external"}
 """
 
     user_prompt = f"""
+Item Type: {item_kind}
 Author: {ISSUE_AUTHOR}
 Author Type: {"Internal" if is_internal else "External"}
 Title: {ISSUE_TITLE}
@@ -475,6 +479,17 @@ def main():
         log_debug("Found NEWS label, skipping (used by social pipeline, no project routing)")
         return
 
+    if IS_PULL_REQUEST and re.match(r"^auto/app-\d+-", PR_HEAD_REF):
+        log_debug(f"App-submission PR (branch {PR_HEAD_REF}), routing to Apps project")
+        project = CONFIG["projects"].get("apps")
+        if project:
+            item_id = add_to_project(project["id"])
+            if item_id:
+                log_debug("Added to Apps project successfully")
+        else:
+            log_error("Apps project not configured")
+        return
+
     real_author = get_real_author()
     is_internal = is_org_member(real_author)
     log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}) is internal: {is_internal}")
@@ -503,8 +518,12 @@ def main():
         return
     
     project_key = classification["project"].lower()
-    
-    if project_key == "dev" and not is_internal:
+
+    if IS_PULL_REQUEST:
+        if project_key != "dev":
+            log_debug(f"PR #{ISSUE_NUMBER}: overriding project '{project_key}' -> 'dev' (PRs always route to dev)")
+        project_key = "dev"
+    elif project_key == "dev" and not is_internal:
         log_debug(f"Project 'dev' is internal-only, but author {ISSUE_AUTHOR} is external. Reassigning to support.")
         project_key = "support"
     

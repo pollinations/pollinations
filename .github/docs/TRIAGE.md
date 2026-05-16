@@ -77,10 +77,9 @@ flowchart TD
     AB --> AC[Done - skip AI]
     AA -->|No| AN{Has NEWS label?}
     AN -->|Yes| AX[Skip - social pipeline only]
-    AN -->|No| B{Check Author}
-    B --> C[is_org_member?]
-    D -->|Yes| F[INTERNAL]
-    D -->|No| G[EXTERNAL]
+    AN -->|No| B[is_org_member?]
+    B -->|Yes| F[INTERNAL]
+    B -->|No| G[EXTERNAL]
 
     F --> H[AI Classification]
     G --> H

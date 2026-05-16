@@ -1,3 +1,4 @@
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -59,7 +60,7 @@ export const stripeRoutes = new Hono<Env>()
 
         // Determine success URL based on environment
         const successUrl =
-            c.env.STRIPE_SUCCESS_URL || "https://enter.pollinations.ai";
+            c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const cancelUrl = successUrl;
 
         try {

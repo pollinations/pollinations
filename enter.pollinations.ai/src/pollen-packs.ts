@@ -1,3 +1,5 @@
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
+
 export type PollenPackAmount = "2" | "5" | "10" | "20" | "50" | "100";
 
 export type PollenPack = {
@@ -10,8 +12,7 @@ export type PollenPack = {
     taxCode: string;
 };
 
-const CHECKOUT_IMAGE_URL =
-    "https://enter.myceli.ai/checkout/pollen-pack.png";
+const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack.png`;
 const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 

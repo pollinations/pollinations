@@ -8,6 +8,7 @@ import {
     apikey as apikeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     calculateCost,
@@ -328,7 +329,7 @@ async function triggerAutoTopUp(
 ): Promise<void> {
     try {
         const response = await env.ENTER.fetch(
-            "https://enter.pollinations.ai/api/stripe/auto-top-up/trigger",
+            `${PUBLIC_URLS.enter.production}/api/stripe/auto-top-up/trigger`,
             {
                 method: "POST",
                 headers: {

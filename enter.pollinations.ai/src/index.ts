@@ -55,6 +55,13 @@ function redirectLegacyDocs(c: Context<Env>): Response {
     return c.redirect(url.toString(), 301);
 }
 
+function getCurrentGenOrigin(c: Context<Env>): string {
+    const url = new URL(c.req.url);
+    url.protocol = "https:";
+    url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
+    return url.origin;
+}
+
 const app = new Hono<Env>()
     // Permissive CORS for all API endpoints (all require API keys for auth)
     .use(
@@ -87,7 +94,7 @@ const app = new Hono<Env>()
         c.header("Deprecation", "true");
         c.header(
             "Link",
-            '<https://gen.pollinations.ai>; rel="successor-version"',
+            `<${getCurrentGenOrigin(c)}>; rel="successor-version"`,
         );
         return c.redirect(url.toString(), 308);
     })

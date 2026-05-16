@@ -1,0 +1,35 @@
+{
+  "pr_number": 11012,
+  "title": "model-monitor: 4h window + move per-model revenue to a private pipe",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11012",
+  "merged_at": "2026-05-16T15:09:43Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Two small unrelated changes:\n\n**4h aggregation window** between `24h` and `1h`. Useful for catching multi-hour traffic dips that the 1h view misses and the 24h view smooths over.\n\n**Per-model revenue moved off the public token.** An earlier commit on this branch added `paid_revenue` / `tier_value` to `model_health.pipe`, which is granted the public read token — that exposed per-model monetization data to anyone who can read the model monitor's bundle. Reverted on the public pipe; the same aggregates now live in a new `model_revenue.pipe` that is granted `tinybird_read` (private) only. The frontend columns are reverted along with this — they need a separate authenticated path before they can render private data, which is a follow-up.\n\nVerification:\n- public pipe response no longer contains the revenue fields\n- public token → private pipe returns HTTP 403\n- admin token → private pipe returns the data\n- Tinybird deployments: #109 (initial — landed the leak) then #110 (revert + private pipe)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Securing the Hive's Metrics",
+    "blurb": "Added a 4-hour aggregation window to our internal model monitor and secured per-model revenue data in a private pipeline.",
+    "summary": "Added a 4-hour aggregation window to the model monitor and moved per-model revenue data to a private Tinybird pipeline (model_revenue.pipe) to secure monetization metrics.",
+    "impact": "Internal dashboards now provide better mid-range traffic visibility while ensuring sensitive revenue data remains restricted to admin access.",
+    "keywords": [
+      "observability",
+      "tinybird",
+      "monitoring",
+      "security",
+      "metrics"
+    ],
+    "visual_concept": "Polly the bee as a data analyst/security guard looking at a dashboard with a 4-hour chart, with a locked safe representing the secured revenue data.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, standing next to a retro computer monitor displaying a glowing 4-hour chart. A small, chunky pixel art safe sits securely under the desk. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11012.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny security guard hat, standing next to a retro computer monitor displaying a glowing 4-hour chart. A small, chunky pixel art safe sits securely under the desk. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-16T15:10:40.351061+00:00"
+}

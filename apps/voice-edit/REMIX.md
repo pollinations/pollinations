@@ -11,7 +11,8 @@ and the gallery rehydrates.
 2. Click **load** to load an image from disk, or **shuffle** for a random
    copyright-friendly starter image: cell render,
    public-domain octopus illustration, public-domain Grand Prismatic
-   Spring, NASA Cosmic Cliffs, NASA Mars rover, or a surreal room.
+   Spring, NASA Cosmic Cliffs, NASA Mars rover, relativity stairs,
+   or a surreal room.
 3. Each edit adds two history frames: the prompted/annotated input state,
    then the generated result. Undo once from a result shows the prompt state.
 4. Each generated result is repacked as a PNG with current history metadata

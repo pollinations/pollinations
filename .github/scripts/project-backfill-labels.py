@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-Backfill labels, dates, and priority for issues/PRs in a GitHub project.
+Backfill labels and priority for issues/PRs in a GitHub project.
 
 Usage:
     # Full backfill (replace all)
     python project-backfill-labels.py --project dev
-    
+
     # Only fill missing fields (don't replace existing)
     python project-backfill-labels.py --project dev --only-missing
-    
+
     # Include priority updates
     python project-backfill-labels.py --project dev --with-priority --only-missing
-    
-    # Skip specific updates
+
+    # Skip labels (useful for priority-only runs)
     python project-backfill-labels.py --project dev --skip-labels --with-priority
-    
+
     # Process PRs
     python project-backfill-labels.py --project dev --include-prs
     python project-backfill-labels.py --project dev --prs-only
@@ -24,8 +24,7 @@ Options:
     --dry-run        Preview changes without applying
     --with-priority  Also update priority field (dev/support only)
     --only-missing   Only fill missing fields, don't replace existing values
-    --skip-labels    Skip label updates (useful for priority/date only)
-    --skip-dates     Skip date (Opened) updates
+    --skip-labels    Skip label updates
     --include-prs    Include PRs along with issues
     --prs-only       Process only PRs, not issues
 
@@ -36,6 +35,7 @@ Notes:
 Environment:
     GITHUB_TOKEN        GitHub token with repo/project access
     POLLINATIONS_TOKEN  pollinations.ai API key for classification
+    TINYBIRD_READ_TOKEN Tinybird token for paid-customer lookup (support only)
 """
 
 import argparse
@@ -67,14 +67,13 @@ read_prompt_file = pm.read_prompt_file
 normalize_labels = pm.normalize_labels
 graphql_request = pm.graphql_request
 set_project_field = pm.set_project_field
-set_date_field = pm.set_date_field
 is_paid_customer = pm.is_paid_customer
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 
 
-def get_project_issues(project_id: str, include_prs: bool = False, priority_field_id: str = None, opened_field_id: str = None) -> list:
+def get_project_issues(project_id: str, include_prs: bool = False, priority_field_id: str = None) -> list:
     """Fetch all open issues (and optionally PRs) in a project with their project item IDs."""
     query = """
     query($projectId: ID!, $cursor: String) {
@@ -89,10 +88,6 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
                                 ... on ProjectV2ItemFieldSingleSelectValue {
                                     field { ... on ProjectV2SingleSelectField { id } }
                                     name
-                                }
-                                ... on ProjectV2ItemFieldDateValue {
-                                    field { ... on ProjectV2Field { id } }
-                                    date
                                 }
                             }
                         }
@@ -130,15 +125,15 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
         }
     }
     """
-    
+
     all_items = []
     cursor = None
-    
+
     while True:
         data = graphql_request(query, {"projectId": project_id, "cursor": cursor})
         node = data.get("node", {})
         items = node.get("items", {})
-        
+
         for item in items.get("nodes", []):
             content = item.get("content")
             if not content or content.get("state") != "OPEN":
@@ -147,19 +142,13 @@ def get_project_issues(project_id: str, include_prs: bool = False, priority_fiel
             if typename == "Issue" or (include_prs and typename == "PullRequest"):
                 content["_item_id"] = item.get("id")
                 content["_is_pr"] = typename == "PullRequest"
-                # Extract current field values
                 current_priority = None
-                current_opened = None
                 for fv in item.get("fieldValues", {}).get("nodes", []):
                     field = fv.get("field", {})
                     field_id = field.get("id")
                     if field_id == priority_field_id and fv.get("name"):
                         current_priority = fv.get("name")
-                    if field_id == opened_field_id and fv.get("date"):
-                        current_opened = fv.get("date")
                 content["_current_priority"] = current_priority
-                content["_current_opened"] = current_opened
-                # Store existing labels from GraphQL response
                 content["_current_labels"] = [l.get("name") for l in content.get("labels", {}).get("nodes", [])]
                 all_items.append(content)
         
@@ -191,6 +180,8 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         # Current SERVICE labels
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
+        # TOPIC label
+        "TIER",
         # Old labels to clean up during migration
         "BUG", "OUTAGE", "QUESTION", "REQUEST", "DOCS", "INTEGRATION",
         "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
@@ -322,24 +313,22 @@ def main():
     parser.add_argument("--prs-only", action="store_true", help="Process only PRs, not issues")
     parser.add_argument("--include-prs", action="store_true", help="Include PRs along with issues")
     # Control what to update
-    parser.add_argument("--only-missing", action="store_true", 
-                        help="Only fill missing fields, don't replace existing (applies to labels, dates, priority)")
+    parser.add_argument("--only-missing", action="store_true",
+                        help="Only fill missing fields, don't replace existing (applies to labels and priority)")
     parser.add_argument("--skip-labels", action="store_true", help="Skip label updates")
-    parser.add_argument("--skip-dates", action="store_true", help="Skip date updates")
     args = parser.parse_args()
-    
+
     project_key = args.project
     project = CONFIG["projects"].get(project_key)
-    
+
     if not project:
         log_error(f"Unknown project: {project_key}")
         sys.exit(1)
-    
+
     include_prs = args.include_prs or args.prs_only
     priority_field_id = project.get("priority_field_id")
-    opened_field_id = project.get("opened_field_id")
     log_debug(f"Fetching open items from {project['name']} project (include_prs={include_prs})...")
-    items = get_project_issues(project["id"], include_prs=include_prs, priority_field_id=priority_field_id, opened_field_id=opened_field_id)
+    items = get_project_issues(project["id"], include_prs=include_prs, priority_field_id=priority_field_id)
     
     if args.prs_only:
         items = [i for i in items if i.get("_is_pr")]
@@ -359,15 +348,12 @@ def main():
         current_labels = issue.get("_current_labels", [])
         current_labels_upper = [l.upper() for l in current_labels]
         current_priority = issue.get("_current_priority")
-        current_opened = issue.get("_current_opened")
         protected = PROTECTED_LABELS.get(project_key, set())
         has_protected = protected & set(current_labels_upper)
-        
-        # Check what needs to be done
-        has_project_labels = any(l.upper().startswith(("DEV-", ".")) or l.upper() in ("IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT") for l in current_labels)
+
+        has_project_labels = any(l.upper().startswith(("DEV-", ".")) or l.upper() in ("IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT", "TIER") for l in current_labels)
         needs_labels = not args.skip_labels and (not args.only_missing or not has_project_labels)
         needs_priority = args.with_priority and project_key in ("dev", "support") and (not args.only_missing or not current_priority)
-        needs_date = not args.skip_dates and (not args.only_missing or not current_opened)
         
         classification = None
         
@@ -419,22 +405,7 @@ def main():
                         log_debug(f"Set priority to {priority} for #{issue_number}")
         elif current_priority:
             log_debug(f"Priority already set to '{current_priority}' for #{issue_number}, skipping")
-        
-        # Date processing
-        if needs_date:
-            item_id = issue.get("_item_id")
-            created_at = issue.get("createdAt")
-            opened_fid = project.get("opened_field_id")
-            if item_id and created_at and opened_fid:
-                if args.dry_run:
-                    log_debug(f"[DRY-RUN] Would set Opened to {created_at[:10]} for #{issue_number}")
-                else:
-                    set_date_field(project["id"], item_id, opened_fid, created_at)
-                    log_debug(f"Set Opened to {created_at[:10]} for #{issue_number}")
-        elif current_opened:
-            log_debug(f"Opened date already set to '{current_opened}' for #{issue_number}, skipping")
-        
-        # Rate limit
+
         time.sleep(1)
     
     log_debug(f"\nDone! Processed {len(items)} items.")

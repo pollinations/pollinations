@@ -322,7 +322,7 @@ const BASE = "https://gen.pollinations.ai";
 const STARTERS = [
   { name: "cell", url: "https://media.pollinations.ai/10efdd0c1cfc65fa" },
   { name: "octopus", url: "https://media.pollinations.ai/73775b7374f9b864" },
-  { name: "earthrise", url: "https://media.pollinations.ai/00e93bef4b45bb17" },
+  { name: "grand prismatic", url: "https://media.pollinations.ai/98280006f6099cb0" },
   { name: "cosmic cliffs", url: "https://media.pollinations.ai/d05180b3bf21c01c" },
   { name: "mars rover", url: "https://media.pollinations.ai/9a138c75c377d84a" },
   { name: "surreal room", url: "https://media.pollinations.ai/fbc6c13d37c55f0b" },
@@ -1056,13 +1056,22 @@ els.connectOverlay.addEventListener("click", startConnect);
 els.upload.addEventListener("click", () => els.file.click());
 els.shuffle.addEventListener("click", () => {
   const starter = pickStarter();
-  loadImage(starter.url, { addToHistory: true })
+  openStartURL(starter.url)
     .then(() => setStatus(`loaded ${starter.name}`))
     .catch((err) => showError(err.message));
 });
-els.file.addEventListener("change", () => {
+els.file.addEventListener("change", async () => {
   const file = els.file.files?.[0];
-  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
+  if (!file) return;
+  try {
+    const mediaURL = await uploadBlob(file, file.name || "image");
+    await openStartURL(mediaURL);
+    setStatus(`loaded ${file.name || "image"}`);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    els.file.value = "";
+  }
 });
 
 els.colorPicker.addEventListener("click", (event) => {
@@ -1083,7 +1092,11 @@ const setDrop = (drop) => (event) => {
 });
 els.frame.addEventListener("drop", (event) => {
   const file = event.dataTransfer?.files?.[0];
-  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
+  if (!file) return;
+  uploadBlob(file, file.name || "image")
+    .then((mediaURL) => openStartURL(mediaURL))
+    .then(() => setStatus(`loaded ${file.name || "image"}`))
+    .catch((err) => showError(err.message));
 });
 
 // PNG tEXt chunk helpers — pure JS, no deps.
@@ -1328,6 +1341,11 @@ async function followLocationStart() {
   if (!startURL || scrubURL(startURL) === scrubURL(app.history[app.historyIndex]?.url)) return;
   if (app.busy || app.active) return;
   await loadStartImage(startURL);
+}
+
+async function openStartURL(mediaURL) {
+  window.history.pushState(null, "", startLink(mediaURL));
+  await followLocationStart();
 }
 
 async function rewriteResultWithHistory(resultURL) {

@@ -10,8 +10,8 @@ and the gallery rehydrates.
 1. Open the app, edit images.
 2. Click **load** to load an image from disk, or **shuffle** for a random
    copyright-friendly starter image: cell render,
-   public-domain octopus illustration, NASA Earthrise, NASA Cosmic Cliffs,
-   or NASA Mars rover.
+   public-domain octopus illustration, public-domain Grand Prismatic
+   Spring, NASA Cosmic Cliffs, NASA Mars rover, or a surreal room.
 3. Each edit adds two history frames: the prompted/annotated input state,
    then the generated result. Undo once from a result shows the prompt state.
 4. Each generated result is repacked as a PNG with current history metadata
@@ -32,6 +32,9 @@ points at a PNG with our `tEXt` chunk, that PNG is the source of truth:
 history is restored from it and the current frame is anchored to the URL
 that was opened. Changing the fragment later reloads that URL the same
 way; internal app changes project the current frame back to `#start=`.
+Load and shuffle use the same path: they first put a media URL into
+`#start=`, then the app initializes from that URL. Plain images become a
+one-frame history; remix PNGs restore their embedded history.
 
 ## why this shape
 

@@ -8,10 +8,18 @@ and the gallery rehydrates.
 ## flow
 
 1. Open the app, edit images.
-2. Click **save** → downloads `voice-edit-<ts>.png`. The file is a normal
+2. Click **load** for a random copyright-friendly starter image: cell render,
+   public-domain octopus illustration, NASA Earthrise, NASA Cosmic Cliffs,
+   or NASA Mars rover.
+3. Each generated result is repacked as a PNG with current history metadata
+   and uploaded back to `media.pollinations.ai`; the current `?start=` URL
+   points at that repacked image.
+4. Click **save** → downloads `voice-edit-<ts>.png`. The file is a normal
    PNG of the current frame. It also carries the full history JSON in a
    PNG `tEXt` chunk under keyword `pollinations:voice-edit:history`.
-3. Share the PNG. Drop it on the app (or anyone's copy of the app) — the
+5. Click **share** → uploads the same metadata PNG if needed and copies an
+   app link with `?start=<media-url>`.
+6. Share the PNG or link. Drop the PNG on the app (or open the link) — the
    embedded chunk is read on drop, history restores, the latest frame
    renders.
 
@@ -28,6 +36,8 @@ is restored from there.
 - PNGs share natively everywhere (Discord, iMessage, AirDrop, Slack).
   `media.pollinations.ai` preserves `tEXt` chunks on upload, so uploading
   a saved PNG and sharing its URL is the same as sharing the file.
+- Generated results are repacked once, immediately after the edit returns,
+  so the live media URL already contains the remix metadata.
 - No HTML self-modification, no quine tricks, no source doubling. The app
   HTML stays canonical at its hosted URL.
 

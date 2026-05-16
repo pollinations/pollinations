@@ -275,6 +275,7 @@
     <section class="toolbar" aria-label="tools">
       <button id="connectBtn" class="btn accent">connect</button>
       <button id="uploadBtn" class="btn">image</button>
+      <button id="loadBtn" class="btn" title="load a copyright-friendly starter image">load</button>
       <input id="fileInput" type="file" accept="image/*" hidden>
       <select id="modelSel" class="select" aria-label="image model">
         <option value="nanobanana">nanobanana</option>
@@ -287,7 +288,8 @@
       <label class="type-mode"><input id="typeMode" type="checkbox"> type instead</label>
       <button id="undoBtn" class="btn history" disabled title="undo">undo</button>
       <button id="redoBtn" class="btn" disabled title="redo">redo</button>
-      <button id="downloadBtn" class="btn" title="download image with embedded history — drop the image back onto the app to restore">save</button>
+      <button id="downloadBtn" class="btn" title="download image with embedded history - drop it back onto the app to restore">save</button>
+      <button id="shareBtn" class="btn" title="upload PNG with embedded history and copy link">share</button>
     </section>
 
     <section id="frame" class="frame">
@@ -316,7 +318,14 @@ const KEY_STORAGE = "voice-edit:user-key";
 const CLIENT_ID = "";
 const ENTER = "https://enter.pollinations.ai";
 const BASE = "https://gen.pollinations.ai";
-const STARTER = "https://media.pollinations.ai/10efdd0c1cfc65fa";
+const STARTERS = [
+  { name: "cell", url: "https://media.pollinations.ai/10efdd0c1cfc65fa" },
+  { name: "octopus", url: "https://media.pollinations.ai/73775b7374f9b864" },
+  { name: "earthrise", url: "https://media.pollinations.ai/00e93bef4b45bb17" },
+  { name: "cosmic cliffs", url: "https://media.pollinations.ai/d05180b3bf21c01c" },
+  { name: "mars rover", url: "https://media.pollinations.ai/9a138c75c377d84a" },
+];
+const STARTER = STARTERS[0].url;
 const HISTORY_KEYWORD = "pollinations:voice-edit:history";
 const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
@@ -342,12 +351,14 @@ const els = Object.fromEntries(Object.entries({
   connect: "connectBtn",
   connectOverlay: "connectOverlayBtn",
   upload: "uploadBtn",
+  load: "loadBtn",
   file: "fileInput",
   model: "modelSel",
   typeMode: "typeMode",
   undo: "undoBtn",
   redo: "redoBtn",
   download: "downloadBtn",
+  share: "shareBtn",
   colorPicker: "colorPicker",
   pill: "cursorPill",
   pillText: "pillText",
@@ -396,7 +407,7 @@ function render() {
   const locked = app.busy || Boolean(app.active);
   els.undo.disabled = !mediaHistory.canUndo() || locked;
   els.redo.disabled = !mediaHistory.canRedo() || locked;
-  [els.upload, els.model, els.typeMode].forEach((el) => { el.disabled = locked; });
+  [els.upload, els.load, els.model, els.typeMode, els.share].forEach((el) => { el.disabled = locked; });
   renderPins();
 }
 
@@ -483,7 +494,7 @@ function refreshConnectionUI() {
 
 function startConnect() {
   const params = new URLSearchParams({
-    redirect_uri: location.origin + location.pathname,
+    redirect_uri: location.origin + location.pathname + location.search,
     scope: "generate",
   });
   if (CLIENT_ID) params.set("client_id", CLIENT_ID);
@@ -580,7 +591,15 @@ async function loadModels() {
 
 async function loadImage(src, { addToHistory = false } = {}) {
   clearError();
-  if (src instanceof File) src = await readImageFile(src);
+  if (src instanceof Blob) {
+    const remix = await readRemixState(src);
+    const dataURL = await readImageFile(src);
+    if (remix) {
+      await restoreRemix(remix, dataURL);
+      return;
+    }
+    src = dataURL;
+  }
   await mediaHistory.set({ url: src }, { add: addToHistory });
 }
 
@@ -607,7 +626,7 @@ async function drawImage(src) {
 }
 
 function readImageFile(file) {
-  if (!file?.type?.startsWith("image/")) throw new Error("Drop or pick an image file.");
+  if (file?.type && !file.type.startsWith("image/")) throw new Error("Drop or pick an image file.");
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
@@ -808,8 +827,12 @@ async function promptTypedEdit(clientX, clientY) {
 }
 
 async function uploadDataURL(dataURL, filename = "annot.png") {
-  setStatus("uploading...");
   const blob = await (await fetch(dataURL)).blob();
+  return uploadBlob(blob, filename);
+}
+
+async function uploadBlob(blob, filename) {
+  setStatus("uploading...");
   const form = new FormData();
   form.append("file", blob, filename);
   const res = await fetch("https://media.pollinations.ai/upload", {
@@ -820,6 +843,12 @@ async function uploadDataURL(dataURL, filename = "annot.png") {
   if (!res.ok) throw new Error(await friendlyError(res, "Upload failed"));
   const json = await res.json();
   return json.url || `https://media.pollinations.ai/${json.id}`;
+}
+
+function canvasBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("canvas toBlob failed"))), "image/png");
+  });
 }
 
 async function runEdit(imageURL, prompt, model) {
@@ -870,6 +899,17 @@ async function runQueue() {
         const prompt = buildPrompt(job.text, job.marked, job.color);
         const result = await runEdit(uploaded, prompt, job.model);
         await mediaHistory.set({ url: result }, { add: true });
+        setStatus("packaging share link...");
+        const packaged = await rewriteResultWithHistory(result);
+        if (packaged !== result) {
+          const frame = app.history[app.historyIndex];
+          if (frame?.url === result) {
+            frame.url = packaged;
+            app.imageURL = packaged;
+            syncStartToCurrent();
+            render();
+          }
+        }
         await loadBalance();
       } catch (err) {
         showError(err.message);
@@ -967,9 +1007,15 @@ els.markCanvas.addEventListener("pointercancel", cancelGesture);
 els.connect.addEventListener("click", startConnect);
 els.connectOverlay.addEventListener("click", startConnect);
 els.upload.addEventListener("click", () => els.file.click());
+els.load.addEventListener("click", () => {
+  const starter = pickStarter();
+  loadImage(starter.url, { addToHistory: true })
+    .then(() => setStatus(`loaded ${starter.name}`))
+    .catch((err) => showError(err.message));
+});
 els.file.addEventListener("change", () => {
   const file = els.file.files?.[0];
-  if (file) loadImageWithHistory(file).catch((err) => showError(err.message));
+  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
 });
 
 els.colorPicker.addEventListener("click", (event) => {
@@ -990,7 +1036,7 @@ const setDrop = (drop) => (event) => {
 });
 els.frame.addEventListener("drop", (event) => {
   const file = event.dataTransfer?.files?.[0];
-  if (file) loadImageWithHistory(file).catch((err) => showError(err.message));
+  if (file) loadImage(file, { addToHistory: true }).catch((err) => showError(err.message));
 });
 
 // PNG tEXt chunk helpers — pure JS, no deps.
@@ -1087,21 +1133,119 @@ async function bytesFromUrl(url) {
   if (!res.ok) throw new Error(`fetch ${url} ${res.status}`);
   return new Uint8Array(await res.arrayBuffer());
 }
-async function loadImageWithHistory(fileOrBlob) {
-  const bytes = await bytesFromBlob(fileOrBlob);
+
+async function readRemixState(blob) {
+  const bytes = await bytesFromBlob(blob);
   const text = isValidPng(bytes) ? readTextChunk(bytes, HISTORY_KEYWORD) : null;
-  if (text) {
-    let parsed;
-    try { parsed = JSON.parse(text); } catch { parsed = null; }
-    if (parsed && Array.isArray(parsed.history) && parsed.history.length > 0) {
-      app.history = parsed.history;
-      app.historyIndex = Math.max(0, Math.min(parsed.historyIndex ?? parsed.history.length - 1, parsed.history.length - 1));
-      await mediaHistory.go(app.historyIndex);
-      setStatus(`restored ${app.history.length} frames`);
-      return;
-    }
+  if (!text) return null;
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed?.history) ? parsed : null;
+  } catch {
+    return null;
   }
-  await loadImage(fileOrBlob, { addToHistory: true });
+}
+
+function scrubURL(url) {
+  if (!url || String(url).startsWith("data:") || String(url).startsWith("blob:")) return "";
+  try {
+    const clean = new URL(url, location.href);
+    for (const param of ["token", "key", "api_key", "apikey"]) clean.searchParams.delete(param);
+    return clean.href;
+  } catch {
+    return "";
+  }
+}
+
+function cleanHistoryFrames(frames) {
+  return frames
+    .map((frame) => ({ url: scrubURL(frame?.url || frame) }))
+    .filter((frame) => frame.url);
+}
+
+async function restoreRemix(state, fallbackURL) {
+  const frames = cleanHistoryFrames(state.history);
+  if (!frames.length) {
+    await mediaHistory.set({ url: fallbackURL }, { add: true });
+    return;
+  }
+  app.history = frames;
+  app.historyIndex = clamp(state.historyIndex ?? frames.length - 1, 0, frames.length - 1);
+  try {
+    await mediaHistory.go(app.historyIndex);
+    setStatus(`restored ${frames.length} frames`);
+  } catch (err) {
+    app.history = [];
+    app.historyIndex = -1;
+    await mediaHistory.set({ url: fallbackURL }, { add: true });
+    showError(`History URLs unavailable; loaded image only. ${err.message}`);
+  }
+}
+
+function remixPayload() {
+  const history = cleanHistoryFrames(app.history);
+  const current = scrubURL(app.history[app.historyIndex]?.url);
+  const found = history.findIndex((frame) => frame.url === current);
+  return JSON.stringify({
+    v: 1,
+    app: "voice-edit-remix",
+    history,
+    historyIndex: found >= 0 ? found : history.length - 1,
+  });
+}
+
+async function remixPNGBlob() {
+  const bytes = await bytesFromBlob(await canvasBlob(els.imageCanvas));
+  const png = injectTextChunk(bytes, HISTORY_KEYWORD, remixPayload());
+  return new Blob([png], { type: "image/png" });
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function loadStartImage(url) {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    await loadImage(await res.blob(), { addToHistory: true });
+  } catch {
+    await loadImage(url, { addToHistory: true });
+  }
+}
+
+function pickStarter() {
+  const candidates = STARTERS.filter((starter) => starter.url !== app.imageURL);
+  return candidates[Math.floor(Math.random() * candidates.length)] || STARTERS[0];
+}
+
+function startLink(mediaURL) {
+  const url = new URL(location.href);
+  url.searchParams.set("start", mediaURL);
+  url.hash = "";
+  return url;
+}
+
+function syncStartToCurrent() {
+  if (!app.imageURL || app.imageURL.startsWith("data:")) return;
+  window.history.replaceState(null, "", startLink(app.imageURL));
+}
+
+async function rewriteResultWithHistory(resultURL) {
+  try {
+    const bytes = await bytesFromUrl(resultURL);
+    if (!isValidPng(bytes)) return resultURL;
+    const out = injectTextChunk(bytes, HISTORY_KEYWORD, remixPayload());
+    return uploadBlob(new Blob([out], { type: "image/png" }), "voice-edit-frame.png");
+  } catch (err) {
+    console.warn("rewriteResultWithHistory failed", err);
+    return resultURL;
+  }
 }
 
 const goHistory = (delta, label) => () => {
@@ -1113,22 +1257,23 @@ els.undo.addEventListener("click", goHistory(-1, "undone"));
 els.redo.addEventListener("click", goHistory(1, "redone"));
 els.download.addEventListener("click", async () => {
   try {
-    const blob = await new Promise((resolve, reject) => {
-      els.imageCanvas.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas toBlob failed"))), "image/png");
-    });
-    const bytes = await bytesFromBlob(blob);
-    const payload = JSON.stringify({
-      v: 1,
-      history: app.history,
-      historyIndex: app.historyIndex,
-    });
-    const out = injectTextChunk(bytes, HISTORY_KEYWORD, payload);
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([out], { type: "image/png" }));
-    link.download = `voice-edit-${Date.now()}.png`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-    setStatus(`saved with ${app.history.length} frames`);
+    downloadBlob(await remixPNGBlob(), `voice-edit-${Date.now()}.png`);
+    setStatus(`saved with ${cleanHistoryFrames(app.history).length} frames`);
+  } catch (err) {
+    showError(err.message);
+  }
+});
+els.share.addEventListener("click", async () => {
+  try {
+    const mediaURL = await uploadBlob(await remixPNGBlob(), `voice-edit-${Date.now()}.png`);
+    const shareURL = startLink(mediaURL);
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(shareURL.href);
+      setStatus("share link copied");
+    } else {
+      window.prompt("share link", shareURL.href);
+      setStatus("share link ready");
+    }
   } catch (err) {
     showError(err.message);
   }
@@ -1137,31 +1282,10 @@ els.download.addEventListener("click", async () => {
 captureKeyFromFragment();
 refreshConnectionUI();
 loadModels();
-(async () => {
-  const params = new URLSearchParams(location.hash.replace(/^#/, ""));
-  const startUrl = params.get("start");
-  if (startUrl) {
-    try {
-      const bytes = await bytesFromUrl(startUrl);
-      const text = isValidPng(bytes) ? readTextChunk(bytes, HISTORY_KEYWORD) : null;
-      if (text) {
-        const parsed = JSON.parse(text);
-        if (Array.isArray(parsed.history) && parsed.history.length > 0) {
-          app.history = parsed.history;
-          app.historyIndex = Math.max(0, Math.min(parsed.historyIndex ?? parsed.history.length - 1, parsed.history.length - 1));
-          await mediaHistory.go(app.historyIndex);
-          setStatus(`restored ${app.history.length} frames`);
-          return;
-        }
-      }
-      await loadImage(startUrl, { addToHistory: true });
-      return;
-    } catch (err) {
-      showError(`couldn't load #start: ${err.message}`);
-    }
-  }
-  await loadImage(STARTER, { addToHistory: true }).catch((err) => showError(err.message));
-})();
+const startURL = new URLSearchParams(location.search).get("start")
+  || new URLSearchParams(location.hash.slice(1)).get("start");
+(startURL ? loadStartImage(startURL) : loadImage(STARTER, { addToHistory: true }))
+  .catch((err) => showError(err.message));
 setMarkerColor(app.markerColor);
 </script>
 </body>

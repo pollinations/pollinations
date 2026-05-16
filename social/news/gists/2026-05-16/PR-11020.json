@@ -1,0 +1,35 @@
+{
+  "pr_number": 11020,
+  "title": "Add MoodCanvas AI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11020",
+  "merged_at": "2026-05-16T17:28:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [MoodCanvas AI](https://moodcanvasai.netlify.app/) to image\n- Generate aesthetic mood boards in MoodCanvas AI from a single concept or theme. Uses the Pollinations Image API to create visual collections.\n\nFixes #11010",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Curating the hive's mood",
+    "blurb": "MoodCanvas AI just sprouted in the greenhouse! Now you can generate entire aesthetic mood boards from a single concept using the Pollinations Image API.",
+    "summary": "Added MoodCanvas AI to the community showcase, a new app that generates aesthetic mood boards from a single concept using the Pollinations Image API.",
+    "impact": "Creators can now use MoodCanvas AI to instantly generate cohesive visual collections and mood boards powered by our infrastructure.",
+    "keywords": [
+      "community",
+      "app",
+      "moodboard",
+      "image-generation",
+      "showcase"
+    ],
+    "visual_concept": "Polly the bee wearing a tiny painter's beret, pinning small glowing pixel images to a cork mood board. A chunky retro monitor nearby displays a color palette.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, pinning small glowing pixel images to a wooden mood board. A chunky retro monitor nearby displays a color palette. Soft lime green (#ecf874) and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11020.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, pinning small glowing pixel images to a wooden mood board. A chunky retro monitor nearby displays a color palette. Soft lime green (#ecf874) and peach pastel gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-16T17:29:42.244353+00:00",
+  "app_name": "MoodCanvas AI",
+  "app_url": "https://moodcanvasai.netlify.app/"
+}

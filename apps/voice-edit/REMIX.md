@@ -12,7 +12,7 @@ and the gallery rehydrates.
    copyright-friendly starter images: cell render,
    public-domain octopus illustration, public-domain Grand Prismatic
    Spring, NASA Cosmic Cliffs, NASA Mars rover, relativity stairs,
-   or a surreal room.
+   Da Vinci, or a surreal room.
 3. Each edit adds two history frames: the prompted/annotated input state,
    then the generated result. Undo once from a result shows the prompt state.
 4. Each generated result is repacked as a PNG with current history metadata

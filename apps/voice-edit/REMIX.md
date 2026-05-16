@@ -8,7 +8,8 @@ and the gallery rehydrates.
 ## flow
 
 1. Open the app, edit images.
-2. Click **load** for a random copyright-friendly starter image: cell render,
+2. Click **load** to load an image from disk, or **shuffle** for a random
+   copyright-friendly starter image: cell render,
    public-domain octopus illustration, NASA Earthrise, NASA Cosmic Cliffs,
    or NASA Mars rover.
 3. Each generated result is repacked as a PNG with current history metadata

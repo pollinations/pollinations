@@ -274,8 +274,8 @@
 
     <section class="toolbar" aria-label="tools">
       <button id="connectBtn" class="btn accent">connect</button>
-      <button id="uploadBtn" class="btn">image</button>
-      <button id="loadBtn" class="btn" title="load a copyright-friendly starter image">load</button>
+      <button id="uploadBtn" class="btn" title="load an image from disk">load</button>
+      <button id="shuffleBtn" class="btn" title="shuffle preset images">shuffle</button>
       <input id="fileInput" type="file" accept="image/*" hidden>
       <select id="modelSel" class="select" aria-label="image model">
         <option value="nanobanana">nanobanana</option>
@@ -352,7 +352,7 @@ const els = Object.fromEntries(Object.entries({
   connect: "connectBtn",
   connectOverlay: "connectOverlayBtn",
   upload: "uploadBtn",
-  load: "loadBtn",
+  shuffle: "shuffleBtn",
   file: "fileInput",
   model: "modelSel",
   typeMode: "typeMode",
@@ -408,7 +408,7 @@ function render() {
   const locked = app.busy || Boolean(app.active);
   els.undo.disabled = !mediaHistory.canUndo() || locked;
   els.redo.disabled = !mediaHistory.canRedo() || locked;
-  [els.upload, els.load, els.model, els.typeMode, els.share].forEach((el) => { el.disabled = locked; });
+  [els.upload, els.shuffle, els.model, els.typeMode, els.share].forEach((el) => { el.disabled = locked; });
   renderPins();
 }
 
@@ -1008,7 +1008,7 @@ els.markCanvas.addEventListener("pointercancel", cancelGesture);
 els.connect.addEventListener("click", startConnect);
 els.connectOverlay.addEventListener("click", startConnect);
 els.upload.addEventListener("click", () => els.file.click());
-els.load.addEventListener("click", () => {
+els.shuffle.addEventListener("click", () => {
   const starter = pickStarter();
   loadImage(starter.url, { addToHistory: true })
     .then(() => setStatus(`loaded ${starter.name}`))

@@ -599,8 +599,9 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.005,
             },
         ],
-        description: "LTX-2.3 - Fast text-to-video generation with upscaler",
-        inputModalities: ["text"],
+        description:
+            "LTX-2.3 - Fast text/image-to-video generation with upscaler",
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "p-image": {

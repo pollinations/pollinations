@@ -357,13 +357,17 @@ export async function generateImageWithVertexAI(
             // Check if content and parts exist before iterating
             // When safety blocks content, candidate.content or parts may be undefined
             if (candidate.content?.parts) {
+                const textParts: string[] = [];
                 for (const part of candidate.content.parts) {
                     if (part.inlineData) {
                         imageData = part.inlineData.data;
                         mimeType = part.inlineData.mimeType;
                     } else if (part.text) {
-                        textResponse = part.text;
+                        textParts.push(part.text);
                     }
+                }
+                if (textParts.length > 0) {
+                    textResponse = textParts.join("\n");
                 }
             }
         }

@@ -252,7 +252,9 @@ function classifyImageHttpError(error: HttpError): {
         const text = parsed.text || error.message;
         return {
             status: remapUpstreamStatus(error.status),
-            message: text ? `Image provider error: ${text}` : "Image provider error",
+            message: text
+                ? `Image provider error: ${text}`
+                : "Image provider error",
         };
     }
 

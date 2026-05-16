@@ -31,7 +31,6 @@ ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
 ISSUE_AUTHOR_ID = ITEM_DATA.get("user", {}).get("id")
 ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
-ISSUE_CREATED_AT = ITEM_DATA.get("created_at", "")
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
@@ -65,7 +64,6 @@ CONFIG = {
             "id": "PVT_kwDOBS76fs4AwCAM",
             "name": "Dev",
             "internal_only": True,
-            "opened_field_id": "PVTF_lADOBS76fs4AwCAMzg7fXzc",
             "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
             "priority_options": {
                 "Urgent": "0f53228f",
@@ -84,7 +82,6 @@ CONFIG = {
                 "High": "509f6cf1",
                 "Low": "ca5161be",
             },
-            "opened_field_id": "PVTF_lADOBS76fs4BLr1Hzg7WCHY",
         },
         "apps": {
             "id": "PVT_kwDOBS76fs4BLtE_",
@@ -409,34 +406,6 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         log_error(f"Failed to set project field: field_id={field_id}")
 
 
-def set_date_field(project_id: str, item_id: str, field_id: str, date_value: str):
-    mutation = """
-    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
-        updateProjectV2ItemFieldValue(input: {
-            projectId: $projectId,
-            itemId: $itemId,
-            fieldId: $fieldId,
-            value: { date: $date }
-        }) {
-            projectV2Item { id }
-        }
-    }
-    """
-    date_only = date_value[:10] if date_value else None
-    if not date_only:
-        return
-    data = graphql_request(mutation, {
-        "projectId": project_id,
-        "itemId": item_id,
-        "fieldId": field_id,
-        "date": date_only,
-    })
-    if data.get("updateProjectV2ItemFieldValue"):
-        log_debug(f"Set date field: field_id={field_id}, date={date_only}")
-    else:
-        log_error(f"Failed to set date field: field_id={field_id}")
-
-
 def add_labels(labels: list):
     if not labels:
         log_debug("No labels to add")
@@ -565,14 +534,6 @@ def main():
                 project["priority_field_id"],
                 priority_option,
             )
-    if project.get("opened_field_id") and ISSUE_CREATED_AT:
-        set_date_field(
-            project["id"],
-            item_id,
-            project["opened_field_id"],
-            ISSUE_CREATED_AT,
-        )
-    
     protected = PROTECTED_LABELS.get(project_key, set())
     if protected & set(existing_labels):
         log_debug(f"Issue has protected labels {protected & set(existing_labels)}, skipping label update")

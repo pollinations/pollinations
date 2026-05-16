@@ -1,0 +1,34 @@
+{
+  "pr_number": 10992,
+  "title": "fix(image): surface real fetch error when user image URL fails",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10992",
+  "merged_at": "2026-05-16T10:18:49Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "- `downloadUserImage` failures (user-provided `image=` URL returns 4xx, DNS fails, etc.) were surfacing as the generic `Image provider error` with body `{}` — actual cause hidden from the caller\n- Root: `HttpError(..., 400)` had no `details`, so the classifier treated it as a non-validation 4xx and stripped the message\n- Fix: include the failing URL in the message and mark `details: { validation: true }` so the classifier preserves it as `Invalid image request: Failed to fetch image <URL>: 503 Service Unavailable`\n- Affects every model that takes a user image (kontext, gptimage, seedream, klein, nanobanana, all i2v video models)\n\n## Test plan\n- [x] `npx vitest run test/video-error-classification.test.ts test/image/seedreamModel.test.ts` → 32/32 pass\n- [ ] Manual: hit `/image/x?model=ltx-2&image=<broken-url>` and confirm the response body contains the real upstream status + URL",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more mystery errors",
+    "blurb": "When an image URL you provide fails to load, we now tell you exactly why instead of throwing a generic error. Debugging your prompts just got a whole lot easier!",
+    "summary": "Image generation requests that fail to download a user-provided image URL now return the specific upstream HTTP status and URL instead of a generic 'Image provider error'.",
+    "impact": "Developers can now easily debug broken image inputs across all image-to-image and image-to-video models without guessing why the fetch failed.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "debugging",
+      "image-generation"
+    ],
+    "visual_concept": "Polly the bee acting as a detective, using a magnifying glass to inspect a broken picture frame or a piece of paper with a URL on it, discovering the real error code.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny detective hat, using a magnifying glass to inspect a broken picture frame with a '404' error code inside. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-10992.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny detective hat, using a magnifying glass to inspect a broken picture frame with a '404' error code inside. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-16T10:19:42.029357+00:00"
+}

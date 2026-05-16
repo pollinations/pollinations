@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **741** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **742** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -27,6 +27,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧑‍🏫 KelasWeb](https://arekgresik.my.id/) | KelasWeb is an Indonesian educational platform for beginners to learn web development using AI. It provides guided instruction to help users master core web skills. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [🎨 MoodCanvas AI](https://moodcanvasai.netlify.app/) | Generate aesthetic mood boards in MoodCanvas AI from a single concept or theme. Uses the Pollinations Image API to create visual collections. | [@Shuqie22](https://github.com/Shuqie22) |  | 🫧 |
 | [🧭 Navaro — AI Trip Planner](https://navaro-ai.netlify.app) | Navaro is an AI-powered trip planner that generates personalized day-by-day itineraries for any destination in seconds. Users pick a city, travel duration, and interests — the app builds a full itiner | [@HomerOff](https://github.com/HomerOff) |  | 🫧 |
 | [🤖 PromptArt](https://t.me/promptart_ai_bot) | PromptArt is a Telegram bot for AI image generation aimed at non-technical users. Users describe an image in plain English, optionally pick a style preset (photorealistic / anime / cyberpunk / oil pai | [@zFannur](https://github.com/zFannur) | 1 | 🫧 |
@@ -36,7 +37,6 @@
 | [⛪ The Stream Church Webapp](https://thestreamchurch.org/) | Stream services and manage live events with The Stream Church Webapp, using Pollinations.ais API for asset generation and rapid web project deployment. | [@titosoriano](https://github.com/titosoriano) |  | 🫧 |
 | [🎨 AI Art Gallery](https://juanrivera126.github.io/Gallery-Pollinations/) | AI Art Gallery uses Galera Pollinations to generate images from text prompts, create image variations, and download generated artwork. | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🫧 |
 | [🏗️ anyproject (beta)](https://alkonsafe.ct.ws/anyproject/beta) | anyproject is a platform where people can play and share ai generated sites with each other! it uses pollinations in the backend with node.js's native fetch() to gen.pollinations.ai where the ai retur | [@alkonsafe](https://github.com/alkonsafe) |  | 🫧 |
-| [🤖 AI Chat](https://github.com/JoJoGamer2020/AI-Chat) | AI Chat is an Android conversational app that provides free access to 16+ AI models via the Pollinations.ai API. | [@JoJoGamer2020](https://github.com/JoJoGamer2020) |  | 🫧 |
 
 ---
 
@@ -595,7 +595,7 @@
 | [🤖 Discord Bot Tutorial](https://gist.github.com/Tolerable/9908e626147689fe72cdab8f2e1e6743) | Guide developers through building Discord bots with Pollinations.ai covering text generation with context, image and voice/TTS generation, error handling, and rate limit best practices. | [@Tolerable](https://github.com/Tolerable) |  | 🐝 |
 | [🧩 Connect Pollinations with Open Web UI tutorial](https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI) | Step-by-step guide to integrate Pollinations APIs into Open Web UI | [@cloph-dsp](https://github.com/cloph-dsp) | 17 |  |
 
-<details><summary>Show all 57 apps</summary>
+<details><summary>Show all 58 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -603,6 +603,7 @@
 | [🤖 AI homework solver](https://github.com/The-Lazybone/ONLUYEN-HOMEWORK-AUTO-SOLVER) | Browser-based automation tool that solves MCQ, short answers, true/false, and blanks. | [@The-Lazybone](https://github.com/The-Lazybone) | 4 |  |
 | [🎨 Ecoverse AI](https://ecoverse.cc) | Identify and classify waste from user photos using multi-model analysis and Pollinations models, and return disposal guidance. | [@achyuthhq](https://github.com/achyuthhq) | 4 |  |
 | [🧠 G-Pai](https://g-pai.vercel.app/) | G-Pai is an app for students with some glitches. The developer is working to fix issues. | [@Harhsit](https://github.com/Harhsit) | 1 | 🫧 |
+| [🧑‍🏫 KelasWeb](https://arekgresik.my.id/) | KelasWeb is an Indonesian educational platform for beginners to learn web development using AI. It provides guided instruction to help users master core web skills. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [🗓️ Primbon Jawa & Kalender Pasaran Jawa](https://jawidigital.my.id) | Menyediakan Kalender Jawa modern, perhitungan Weton, ramalan Primbon, serta konversi Aksara Jawa. | [@arekgresikid](https://github.com/arekgresikid) |  | 🫧 |
 | [💻 Opticode](https://www.opticode.tech/) | OptiCode is an AI-powered collaborative coding platform designed to help programmers learn and improve their coding skills. It provides a real-time pair programming environment where a mentor and ment | [@FalahZKhan](https://github.com/FalahZKhan) |  | 🫧 |
 | [🩺 Viatosis](https://www.viatosis.tech) | Viatosis is a specialized medical e-learning platform that leverages Pollinations.ai to simplify the learning experience for students. We integrate AI-generated illustrations to explain complex medica | [@hhkuy](https://github.com/hhkuy) |  | 🫧 |

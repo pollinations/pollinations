@@ -1,0 +1,34 @@
+{
+  "pr_number": 10999,
+  "title": "drop TIER-APP-COMPLETE from kpi worker",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10999",
+  "merged_at": "2026-05-16T11:49:01Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- legacy app-submission completion label is being retired\n- all ~270 historical `TIER-APP-COMPLETE` issues have been migrated to `TIER-APP-APPROVED` so the KPI worker still finds them via the existing `TIER-APP-APPROVED` query\n- remove `TIER-APP-COMPLETE` from the query list in [apps/operation/kpi/src/worker/index.ts](apps/operation/kpi/src/worker/index.ts)\n- the label itself will be deleted from the repo after this merges",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Spring Cleaning the KPIs",
+    "blurb": "We've retired the legacy TIER-APP-COMPLETE label and migrated historical issues to keep our KPI tracking clean and tidy.",
+    "summary": "Removed the legacy TIER-APP-COMPLETE label from the KPI worker query after migrating 270 historical issues to TIER-APP-APPROVED.",
+    "impact": "This simplifies internal tracking for app submissions without affecting historical data.",
+    "keywords": [
+      "kpi",
+      "chore",
+      "labels",
+      "cleanup"
+    ],
+    "visual_concept": "The bee (Polly) and Nomnom creature cleaning up old labels/tags. Nomnom eating old 'COMPLETE' tags while Polly holds a shiny new 'APPROVED' stamp.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature doing spring cleaning in a digital garden. Nomnom is happily eating old dusty pixelated tags, while the bee holds a shiny new stamp. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-10999.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and the round tan Nomnom creature doing spring cleaning in a digital garden. Nomnom is happily eating old dusty pixelated tags, while the bee holds a shiny new stamp. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-16T11:49:56.721528+00:00"
+}

@@ -1,0 +1,71 @@
+{
+  "date": "2026-05-15",
+  "period_start": "2026-05-15",
+  "period_end": "2026-05-15",
+  "title": "GPT-5.4-mini, Mistral 4, and a free DeepSeek V4 Flash",
+  "summary": "A heavy day for the model roster with GPT-5.4-mini and Mistral 4, plus a lot of API error handling cleanup.\n\nA massive update to the model roster. We added OpenAI's new gpt-5.4-mini and mistral-4 to the free tier, upgraded the default Mistral alias to 3.2, and migrated deepseek-v4-flash to OpenRouter, which removes its paid-only restriction. We also fixed the qwen-vision endpoints by re-routing them, switching the standard vision model to a non-thinking instruct variant for much faster responses. Finally, the legacy seedream models are visible again for those who miss the old photoreal aesthetic.\n\nWe cleaned up how the API handles upstream weirdness. User-input errors from providers like Nova Canvas are now correctly passed back as 400 Bad Request instead of throwing a generic 500. We also stopped converting successful empty completions into 502 Bad Gateway errors. For embeddings, we bypassed Azure and routed openai-3 models directly to OpenAI's API to eliminate frequent rate-limit 502s.\n\nThe dashboard got some much-needed quality of life tweaks. We added a dedicated addedDate field to the registry so the \"NEW\" badge actually means new, and added hover tooltips for model descriptions so you don't have to click away. The model monitor now properly tracks embedding models and extracts health status into a sortable column.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 10961,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10965,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10968,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10969,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10972,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10974,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10975,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10977,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10978,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10979,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10981,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10982,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10986,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10987,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10988,
+      "date": "2026-05-15"
+    }
+  ],
+  "generated_at": "2026-05-16T06:45:30.298497+00:00"
+}

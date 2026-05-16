@@ -5,7 +5,7 @@ Classify this GitHub issue/PR. Return JSON only.
 ```json
 {
   "is_app_submission": true | false,
-  "project": "dev" | "support" | "news",
+  "project": "dev" | "support",
   "priority": "Urgent" | "High" | "Medium" | "Low" | null,
   "labels": ["LABEL"],
   "reasoning": "brief explanation"
@@ -16,7 +16,6 @@ Classify this GitHub issue/PR. Return JSON only.
 
 - `dev`: Internal team only. Infrastructure, CI/CD, refactors, features, internal tooling.
 - `support`: External users. API help, bugs, billing, integration questions.
-- `news`: Announcements, releases, social media content, blog posts.
 
 ## Labels
 
@@ -52,18 +51,12 @@ Classify this GitHub issue/PR. Return JSON only.
 - `BILLING`: Payments, invoices, pricing
 - `ACCOUNT`: Account access, API keys, login issues
 
-### news
-
-No labels needed.
-
 ## Priority (dev and support)
 
 - `Urgent`: Service outage, security issue, data loss, critical blocker
 - `High`: Bugs breaking functionality, blocking issues, billing problems
 - `Medium`: Features, enhancements, bugs with workarounds, integration help
 - `Low`: Minor issues, cosmetic bugs, general questions, documentation
-
-For `news`: set priority to `null`
 
 **Note for dev:** DEV-TRACKING and DEV-VOTING issues can have priority `null` as they are meta/tracking items.
 

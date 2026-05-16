@@ -78,13 +78,18 @@ export async function downloadUserImage(
         imageResponse = await fetch(imageUrl, { signal });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(`Failed to fetch image: ${message}`, 400);
+        throw new HttpError(
+            `Failed to fetch image ${imageUrl}: ${message}`,
+            400,
+            { validation: true },
+        );
     }
 
     if (!imageResponse.ok) {
         throw new HttpError(
-            `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`,
+            `Failed to fetch image ${imageUrl}: ${imageResponse.status} ${imageResponse.statusText}`,
             400,
+            { validation: true },
         );
     }
 

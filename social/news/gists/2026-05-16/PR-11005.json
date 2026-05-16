@@ -1,0 +1,34 @@
+{
+  "pr_number": 11005,
+  "title": "fix(ci): clean working tree before switching to apidocs-sync branch",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11005",
+  "merged_at": "2026-05-16T12:58:04Z",
+  "labels": [
+    "DEV-INFRA"
+  ],
+  "pr_body_excerpt": "The `Regenerate API Docs` workflow has been failing at the `Create or update docs PR` step with:\n\n```\nerror: Your local changes to the following files would be overwritten by checkout:\n\tAPIDOCS.md\n```\n\nThe step regenerates `APIDOCS.md` on the `main` checkout, copies it to `/tmp/APIDOCS.md.new`, then runs `git checkout -B docs/apidocs-sync origin/docs/apidocs-sync`. When the remote sync branch's `APIDOCS.md` differs from `main`'s, git refuses the checkout to avoid clobbering the uncommitted regeneration.\n\nFix: `git checkout -- APIDOCS.md` right after the `/tmp` copy, so the working tree is clean before the branch switch. The freshly generated content is re-applied from `/tmp/APIDOCS.md.new` after checkout, as before.\n\nFailing run: https://github.com/pollinations/pollinations/actions/runs/25961789713",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Clean tree, happy CI",
+    "blurb": "Fixed a snag in our automated API docs pipeline so the robots can get back to writing our manuals without tripping over their own files.",
+    "summary": "Resolved a git checkout conflict in the API docs regeneration workflow by cleaning the working tree before switching to the sync branch.",
+    "impact": "Automated API documentation updates will now successfully create PRs without failing on uncommitted changes to APIDOCS.md.",
+    "keywords": [
+      "ci",
+      "github-actions",
+      "docs",
+      "automation"
+    ],
+    "visual_concept": "A chunky robot sweeping up messy papers (uncommitted changes) to clean up a workspace, while the bee holds a fresh, clean 'DOCS' manual.",
+    "image_prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head sweeping up messy papers from the floor with a broom. The cute bee mascot hovers nearby holding a pristine, glowing book. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11005.jpg",
+    "prompt": "Cozy pixel art scene of a chunky robot with a CRT monitor head sweeping up messy papers from the floor with a broom. The cute bee mascot hovers nearby holding a pristine, glowing book. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-05-16T12:58:53.548506+00:00"
+}

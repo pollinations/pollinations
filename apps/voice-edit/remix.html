@@ -106,14 +106,32 @@
   .btn.accent { background: var(--accent); }
   .select { padding: 0 10px; max-width: min(100%, 20rem); }
 
-  .type-mode, .swatches {
+  .mode-toggle, .swatches {
     display: inline-flex;
     align-items: center;
   }
-  .type-mode {
-    gap: 6px;
-    font-size: 0.78rem;
-    user-select: none;
+  .mode-toggle {
+    gap: 0;
+  }
+  .mode-toggle button {
+    width: 38px;
+    height: 38px;
+    border: var(--border);
+    background: var(--surface);
+    font: inherit;
+    font-size: 1.05rem;
+    cursor: pointer;
+  }
+  .mode-toggle button + button {
+    margin-left: -3px;
+  }
+  .mode-toggle button.active {
+    background: var(--accent);
+    z-index: 1;
+  }
+  .mode-toggle button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
   }
   .history { margin-left: auto; }
 
@@ -290,7 +308,10 @@
         <button type="button" class="swatch" data-color="black" aria-label="black marker"></button>
         <button type="button" class="swatch" data-color="white" aria-label="white marker"></button>
       </div>
-      <label class="type-mode"><input id="typeMode" type="checkbox"> type instead</label>
+      <div id="inputMode" class="mode-toggle" aria-label="input mode">
+        <button type="button" data-mode="mic" aria-label="use microphone">🎙️</button>
+        <button type="button" data-mode="type" aria-label="type prompt">⌨️</button>
+      </div>
       <button id="undoBtn" class="btn history" disabled title="undo">undo</button>
       <button id="redoBtn" class="btn" disabled title="redo">redo</button>
       <button id="downloadBtn" class="btn" title="download image with embedded history - drop it back onto the app to restore">save</button>
@@ -338,6 +359,7 @@ const STT_MODEL = "scribe";
 const STT_LANG = (navigator.language || "en").slice(0, 2);
 const STT_MIME = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
   .find((m) => window.MediaRecorder?.isTypeSupported?.(m)) || "";
+const CAN_RECORD = Boolean(window.MediaRecorder && navigator.mediaDevices?.getUserMedia);
 const DRAG_THRESHOLD = 0.03;
 const RECOMMENDED_MODELS = new Set(["p-image-edit", "nanobanana", "nanobanana-2", "kontext", "gpt-image-2"]);
 
@@ -361,7 +383,7 @@ const els = Object.fromEntries(Object.entries({
   shuffle: "shuffleBtn",
   file: "fileInput",
   model: "modelSel",
-  typeMode: "typeMode",
+  inputMode: "inputMode",
   undo: "undoBtn",
   redo: "redoBtn",
   download: "downloadBtn",
@@ -385,6 +407,8 @@ const app = {
   queue: [],
   currentJob: null,
   markerColor: "red",
+  inputMode: CAN_RECORD ? "mic" : "type",
+  micAvailable: CAN_RECORD,
   accountUser: "",
   accountBalance: null,
 };
@@ -415,8 +439,23 @@ function render() {
   const locked = app.busy || Boolean(app.active);
   els.undo.disabled = !mediaHistory.canUndo() || locked;
   els.redo.disabled = !mediaHistory.canRedo() || locked;
-  [els.upload, els.shuffle, els.model, els.typeMode, els.share].forEach((el) => { el.disabled = locked; });
+  [els.upload, els.shuffle, els.model, els.share].forEach((el) => { el.disabled = locked; });
+  renderInputMode(locked);
   renderPins();
+}
+
+function renderInputMode(locked = false) {
+  for (const button of els.inputMode.querySelectorAll("button")) {
+    const mode = button.dataset.mode;
+    button.classList.toggle("active", app.inputMode === mode);
+    button.disabled = locked || (mode === "mic" && !app.micAvailable);
+  }
+}
+
+function setInputMode(mode) {
+  if (mode === "mic" && !app.micAvailable) return;
+  app.inputMode = mode;
+  render();
 }
 
 function renderAccount() {
@@ -558,12 +597,15 @@ async function loadBalance() {
 }
 
 async function warmMic() {
-  if (app.micStream || !navigator.mediaDevices?.getUserMedia) return;
+  if (app.micStream || !app.micAvailable) return;
   try {
     app.micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
   } catch (err) {
+    app.micAvailable = false;
+    app.inputMode = "type";
+    render();
     showError(`Microphone unavailable (${err?.message || "denied"}). Use type instead.`);
   }
 }
@@ -775,7 +817,7 @@ function enqueueJob({ text, marked = false, marker = "", pinPoint, color }) {
 
 function beginRecording(clientX, clientY) {
   clearError();
-  if (!window.MediaRecorder) return { error: "Voice input is not available in this browser. Use type instead." };
+  if (!app.micAvailable) return { error: "Voice input is not available in this browser. Use type instead." };
   if (!app.micStream) {
     warmMic();
     return { error: "microphone not ready - click once, allow access, then try again" };
@@ -979,7 +1021,7 @@ els.markCanvas.addEventListener("pointerdown", async (event) => {
   clearMarks();
   const start = pointerPoint(event);
 
-  if (els.typeMode.checked) {
+  if (app.inputMode === "type") {
     app.active = { pointerId: event.pointerId, points: [start], typing: true, color: app.markerColor };
     render();
     try { els.markCanvas.setPointerCapture(event.pointerId); } catch {}
@@ -1046,6 +1088,10 @@ document.addEventListener("keydown", (event) => {
 els.connect.addEventListener("click", startConnect);
 els.connectOverlay.addEventListener("click", startConnect);
 els.upload.addEventListener("click", () => els.file.click());
+els.inputMode.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (button) setInputMode(button.dataset.mode);
+});
 els.shuffle.addEventListener("click", () => {
   const starter = nextStarter();
   openStartURL(starter.url)

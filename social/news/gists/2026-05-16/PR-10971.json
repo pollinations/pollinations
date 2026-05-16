@@ -1,0 +1,35 @@
+{
+  "pr_number": 10971,
+  "title": "feat(ltx-2): i2v — gateway downloads image, backend takes base64",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/10971",
+  "merged_at": "2026-05-16T01:48:10Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Alternative to #10953 — same LTX-2 i2v capability, but image download stays on the gateway like every other model.\n\n## Changes\n- Gateway: download init image with shared `downloadUserImage` (used by klein/wan/qwen/seedance/veo), send `image_b64` + `image_mime` to `/enqueue`\n- GH200 wrapper: accept base64, write to ComfyUI input dir, splice `LoadImage` + `LTXVImgToVideo` at the `EmptyLTXVLatentVideo` (177:116) seam, rewire latent + conditioning consumers\n- Registry: `ltx-2` `inputModalities` → `[\"text\", \"image\"]`\n\n## Why\n- Single image-fetch boundary on the gateway (auth, SSRF, future safety/tracking hooks)\n- No new `urllib` download helper on the GPU box — reuses the existing convention\n- Same splice logic as #10953, only the transport changed\n\n## Test plan\n- [ ] Deploy gateway + GH200 wrapper\n- [ ] `gen.pollinations.ai/image/...?model=ltx-2&image=<url>` end-to-end\n- [ ] Verify t2v path (no `image` param) still works\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "LTX-2 learns to see",
+    "blurb": "The LTX-2 video model now supports image-to-video generation. Just pass an image URL and watch your static pixels come to life.",
+    "summary": "Added image-to-video support for the LTX-2 model by allowing the gateway to fetch initial images and pass them as base64 to the ComfyUI backend.",
+    "impact": "Users can now generate videos from starting images using the ltx-2 model by passing an image=<url> parameter to the API.",
+    "keywords": [
+      "video",
+      "ltx-2",
+      "image-to-video",
+      "api",
+      "comfyui"
+    ],
+    "visual_concept": "The bee mascot (Polly) holding a static photograph, handing it to the Monitor Robot who is turning it into a glowing, moving film strip. Represents image-to-video transformation.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot holding a small static photograph, handing it to a chunky robot with a CRT monitor head. The robot is processing the photo and projecting a glowing film strip out of its screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-10971.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot holding a small static photograph, handing it to a chunky robot with a CRT monitor head. The robot is processing the photo and projecting a glowing film strip out of its screen. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-05-16T01:49:08.663128+00:00"
+}

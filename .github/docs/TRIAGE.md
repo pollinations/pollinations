@@ -57,13 +57,14 @@ Routes issues and PRs to the appropriate project board using AI classification:
 
 **Features:**
 
+- **PRs always go to Dev**: Every pull request routes to Dev #20 regardless of author. Gets a single `DEV-*` label.
 - **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Apps project
 - **NEWS skip**: Items with `NEWS` label are skipped entirely (label is used by the social pipeline, not project routing)
 - AI classification via `gen.pollinations.ai` with retry + random seed
 - Sets Priority field on Support items (see [Priority Rules](#priority-rules))
 - Adds labels (`DEV-*` for dev, `.TYPE` + `SERVICE` for support)
-- Enforces internal-only rule for Dev project (external authors classified as dev get reassigned to support)
-- Fallback classification if AI fails
+- Issues: internal-only rule for Dev (external-author issues classified as dev get reassigned to Support)
+- Fallback: skip (no project assignment) if AI fails
 
 ### Priority Rules
 
@@ -86,12 +87,10 @@ flowchart TD
     AB --> AC[Done - skip AI]
     AA -->|No| AN{Has NEWS label?}
     AN -->|Yes| AX[Skip - social pipeline only]
-    AN -->|No| B[is_org_member?]
-    B -->|Yes| F[INTERNAL]
-    B -->|No| G[EXTERNAL]
-
-    F --> H[AI Classification]
-    G --> H
+    AN -->|No| PR{Is a PR?}
+    PR -->|Yes| H[AI Classification]
+    PR -->|No| B{is_org_member?}
+    B -->|Yes/No| H
 
     H --> I[gen.pollinations.ai]
     I -->|Success| J{Parse Response}
@@ -101,8 +100,10 @@ flowchart TD
 
     L --> IAS{is_app_submission?}
     IAS -->|Yes| AP[Add to Apps #23]
-    IAS -->|No| M{project=dev + internal?}
-    M -->|Yes| N[Add to Dev #20]
+    IAS -->|No| ISPR{Is a PR?}
+    ISPR -->|Yes| N[Add to Dev #20]
+    ISPR -->|No| M{project=dev + internal?}
+    M -->|Yes| N
     M -->|No| Q[Add to Support #21]
 
     Q --> U[Set Priority Field]
@@ -119,7 +120,7 @@ flowchart TD
     A[PR opened] --> B[pr-assign-author.yml]
     B --> C[Author assigned]
     C --> D[project-manager.yml]
-    D --> E[Routed to Dev/Support/Apps]
+    D --> E[Always routed to Dev #20]
 ```
 
 ### AI Assistant (Polly)
@@ -146,7 +147,8 @@ flowchart TD
 
 - Retry: 3 attempts with exponential backoff + random seed
 - Timeout: 5 minutes for AI, 30s for GraphQL
-- Fallback: Internal→Dev, External→Support with EXTERNAL label
+- Routing: PRs → Dev (always). Issues: internal author → Dev, external author → Support
+- Fallback: AI failure → skip (no project assignment)
 
 **pr_comment_review.py details:**
 
@@ -207,7 +209,7 @@ Any `TIER-*` labeled issue routes to the Apps project (#23). The state machine:
 | `CREDITS` | Pollen balance issues | `project-manager.py` |
 | `BILLING` | Payment/credit card   | `project-manager.py` |
 | `ACCOUNT` | Account/login/auth    | `project-manager.py` |
-| `TIER`    | User tier questions   | `project-manager.py` |
+| `TIER`    | User tier questions (spore/seed/flower/nectar/upgrade) | `project-manager.py` |
 
 (`TIER` is unrelated to the `TIER-APP-*` family used for app submissions.)
 

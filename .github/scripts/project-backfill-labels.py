@@ -187,11 +187,13 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
         "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
         "S-IMAGE", "S-TEXT", "S-AUDIO", "S-VIDEO", "S-API", "S-WEB", "S-CREDITS", "S-BILLING", "S-ACCOUNT",
     }
+    dev_labels = {"DEV-BUG", "DEV-FEATURE", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE", "DEV-VOTING"}
     if project_key == "dev":
-        to_remove = [l for l in current_labels if l.startswith("DEV-")]
+        # Strip stale DEV-* (to be re-applied) and stale support labels (left over from past Support membership)
+        to_remove = [l for l in current_labels if l.startswith("DEV-") or l in support_labels or l.upper() in support_labels]
     elif project_key == "support":
-        # Match both exact and uppercase (for old labels)
-        to_remove = [l for l in current_labels if l in support_labels or l.upper() in support_labels]
+        # Strip support labels (to be re-applied) and any stray DEV-* (Support items should not have DEV-*)
+        to_remove = [l for l in current_labels if l in support_labels or l.upper() in support_labels or l.upper() in dev_labels]
     else:
         to_remove = []
     
@@ -217,17 +219,19 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
     return [l for l in current_labels if l not in to_remove]
 
 
-def classify_issue(title: str, body: str, author: str, is_internal: bool) -> dict:
-    """Classify an issue using the AI (same as project-manager.py)."""
+def classify_issue(title: str, body: str, author: str, is_internal: bool, is_pr: bool = False) -> dict:
+    """Classify an issue or PR using the AI (same as project-manager.py)."""
     base_prompt = read_prompt_file()
-    
+    item_kind = "pull request" if is_pr else "issue"
+
     system_prompt = f"""{base_prompt}
 
 ---
-**Context:** Author type is {"internal" if is_internal else "external"}
+**Context:** This is a {item_kind}. Author type is {"internal" if is_internal else "external"}
 """
 
     user_prompt = f"""
+Item Type: {item_kind}
 Author: {author}
 Author Type: {"Internal" if is_internal else "External"}
 Title: {title}
@@ -268,6 +272,31 @@ Body: {(body or "")[:2000]}
             time.sleep(2 ** attempt)
     
     return {}
+
+
+def add_to_project(project_id: str, content_node_id: str) -> str:
+    """Add an issue/PR to a project. Returns new project item id."""
+    mutation = """
+    mutation($projectId: ID!, $contentId: ID!) {
+        addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+            item { id }
+        }
+    }
+    """
+    data = graphql_request(mutation, {"projectId": project_id, "contentId": content_node_id})
+    return data.get("addProjectV2ItemById", {}).get("item", {}).get("id")
+
+
+def delete_from_project(project_id: str, item_id: str) -> bool:
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!) {
+        deleteProjectV2Item(input: { projectId: $projectId, itemId: $itemId }) {
+            deletedItemId
+        }
+    }
+    """
+    data = graphql_request(mutation, {"projectId": project_id, "itemId": item_id})
+    return bool(data.get("deleteProjectV2Item", {}).get("deletedItemId"))
 
 
 def add_labels(issue_number: int, labels: list, dry_run: bool):
@@ -316,6 +345,8 @@ def main():
     parser.add_argument("--only-missing", action="store_true",
                         help="Only fill missing fields, don't replace existing (applies to labels and priority)")
     parser.add_argument("--skip-labels", action="store_true", help="Skip label updates")
+    parser.add_argument("--issues", help="Comma-separated issue numbers to process (filters project items to just these)")
+    parser.add_argument("--migrate-to", choices=["dev"], help="Migrate items from --project into the named project (currently only 'dev' supported, intended for moving PRs Support -> Dev)")
     args = parser.parse_args()
 
     project_key = args.project
@@ -335,7 +366,64 @@ def main():
         log_debug(f"Found {len(items)} open PRs")
     else:
         log_debug(f"Found {len(items)} open items")
-    
+
+    if args.issues:
+        wanted = {int(n.strip()) for n in args.issues.split(",") if n.strip()}
+        items = [i for i in items if i["number"] in wanted]
+        log_debug(f"Filtered to {len(items)} items matching --issues {sorted(wanted)}")
+
+    if args.migrate_to == "dev":
+        if project_key == "dev":
+            log_error("--migrate-to dev requires --project to be the source (e.g. support), not dev")
+            sys.exit(1)
+        dev_project = CONFIG["projects"]["dev"]
+        log_debug(f"Migration mode: {len(items)} items from {project['name']} -> {dev_project['name']}")
+        for issue in items:
+            issue_number = issue["number"]
+            title = issue["title"]
+            body = issue.get("body", "") or ""
+            author = (issue.get("author") or {}).get("login", "")
+            is_pr = issue.get("_is_pr", False)
+            content_node_id = issue.get("id")
+            source_item_id = issue.get("_item_id")
+
+            log_debug(f"\n--- Migrating #{issue_number} ({'PR' if is_pr else 'issue'}): {title[:60]}...")
+
+            real_author = get_real_author(author, body)
+            is_internal = pm.is_org_member(real_author)
+            classification = classify_issue(title, body, real_author, is_internal, is_pr=is_pr)
+            if not classification:
+                log_error(f"Failed to classify #{issue_number}; skipping migration")
+                time.sleep(1)
+                continue
+
+            # Force dev labels regardless of AI's project choice (the new rule for PRs)
+            raw_labels = classification.get("labels", [])
+            dev_label = next(
+                (l.upper() for l in raw_labels if l.upper() in VALID_LABELS["dev"]),
+                "DEV-CHORE",  # safe default
+            )
+
+            if args.dry_run:
+                log_debug(f"[DRY-RUN] Would strip support labels from #{issue_number}")
+                log_debug(f"[DRY-RUN] Would add label {dev_label} to #{issue_number}")
+                log_debug(f"[DRY-RUN] Would add #{issue_number} to Dev project")
+                log_debug(f"[DRY-RUN] Would remove #{issue_number} from {project['name']} project")
+            else:
+                remove_project_labels(issue_number, project_key, dry_run=False)
+                add_labels(issue_number, [dev_label], dry_run=False)
+                new_item_id = add_to_project(dev_project["id"], content_node_id)
+                if new_item_id:
+                    log_debug(f"Added #{issue_number} to Dev project: item_id={new_item_id}")
+                    if source_item_id:
+                        deleted = delete_from_project(project["id"], source_item_id)
+                        log_debug(f"{'Removed' if deleted else 'FAILED to remove'} #{issue_number} from {project['name']}")
+                else:
+                    log_error(f"Failed to add #{issue_number} to Dev; not removing from source")
+            time.sleep(1)
+        log_debug(f"\nDone! Migrated {len(items)} items.")
+        return
+
     for issue in items:
         issue_number = issue["number"]
         title = issue["title"]

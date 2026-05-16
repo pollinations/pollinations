@@ -1,0 +1,35 @@
+{
+  "pr_number": 11004,
+  "title": "prioritize paid customers as urgent in support",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/11004",
+  "merged_at": "2026-05-16T12:26:51Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "Routes support issues from paid Stripe customers to Urgent priority automatically. AI now picks between High/Low only; Urgent is owned by the paid-customer override; Medium is dropped.\n\n## What\n- New Tinybird endpoint `paid_customers.pipe` — `SELECT DISTINCT u.github_id FROM stripe_event s INNER JOIN d1_user u ON s.user_id = u.id WHERE event_type='checkout.session.completed' AND payment_status='paid' AND livemode=1 AND synced_at = max(synced_at)`. Uses `github_id` (numeric, stable) instead of username so the flag survives renames.\n- `project-manager.py` — fetches paid IDs from Tinybird (cached for process lifetime), overrides support priority to Urgent when `issue.user.id` matches.\n- `project-backfill-labels.py` — same override; GraphQL query now pulls `author.databaseId`.\n- Prompt — schema is `\"priority\": \"High\" | \"Low\" | null`; explicit rule that AI must not return Urgent.\n- Workflow — passes `TINYBIRD_READ_TOKEN` secret.\n- TRIAGE.md — new Priority Rules table.\n\n## Out-of-band after merge\n- Deploy the Tinybird pipe: from `enter.pollinations.ai/observability/`, `tb --cloud deploy --wait`.\n- Add `TINYBIRD_READ_TOKEN` repo secret if not already present.\n- Delete the `Medium` option from the Support project Priority field in the GitHub Project UI.\n- Optional: run the backfill against existing Support issues to apply Urgent to paid customers retroactively.\n\n## Why github_id over username\nGitHub usernames can change. Joining on the stable numeric `github_id` keeps the flag attached after a rename.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The VIP lane",
+    "blurb": "We've rewired our support triage to automatically flag issues from paid supporters as Urgent. Just a little thank you for keeping the servers humming!",
+    "summary": "Support issues from paid Stripe customers are now automatically routed to Urgent priority using a new Tinybird endpoint that matches stable GitHub IDs.",
+    "impact": "Paid supporters get faster triage times, while the AI project manager now strictly categorizes remaining issues as High or Low.",
+    "keywords": [
+      "support",
+      "triage",
+      "tinybird",
+      "stripe",
+      "automation"
+    ],
+    "visual_concept": "Polly the bee acting as a VIP concierge, holding a clipboard and opening a velvet rope for the monitor robot. A tiny bird (representing Tinybird) sits on the clipboard, symbolizing the data pipeline that identifies paid supporters.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny concierge hat, holding a clipboard and opening a velvet rope for a chunky monitor robot. A small pixelated bird sits on the clipboard. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11004.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny concierge hat, holding a clipboard and opening a velvet rope for a chunky monitor robot. A small pixelated bird sits on the clipboard. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-16T12:27:47.069143+00:00"
+}

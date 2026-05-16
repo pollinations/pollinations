@@ -20,7 +20,7 @@ Usage:
     python project-backfill-labels.py --project dev --prs-only
 
 Options:
-    --project        Required. Project to process: dev, support, news, tier
+    --project        Required. Project to process: dev, support, apps
     --dry-run        Preview changes without applying
     --with-priority  Also update priority field (dev/support only)
     --only-missing   Only fill missing fields, don't replace existing values
@@ -314,7 +314,7 @@ def get_real_author(author: str, body: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="Backfill labels for project issues")
-    parser.add_argument("--project", required=True, choices=["dev", "support", "news", "tier"],
+    parser.add_argument("--project", required=True, choices=["dev", "support", "apps"],
                         help="Project to process")
     parser.add_argument("--dry-run", action="store_true", help="Preview without applying")
     parser.add_argument("--with-priority", action="store_true", help="Also update priority (dev/support)")

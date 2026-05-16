@@ -1,0 +1,35 @@
+{
+  "pr_number": 11019,
+  "title": "Add Navaro — AI Trip Planner to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11019",
+  "merged_at": "2026-05-16T17:16:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Navaro — AI Trip Planner](https://navaro-ai.netlify.app) to business\n- Navaro is an AI-powered trip planner that generates personalized day-by-day itineraries for any destination in seconds. Users pick a city, travel duration, and interests — the app builds a full itiner\n\nFixes #10682",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pack your digital bags",
+    "blurb": "Navaro just landed in the community showcase. It's an AI-powered trip planner that whips up personalized, day-by-day itineraries for your next adventure in seconds.",
+    "summary": "Added Navaro, an AI-powered trip planner that generates personalized day-by-day itineraries based on destination, duration, and interests, to the community showcase.",
+    "impact": "Users can now discover Navaro in the apps directory to instantly generate custom travel plans.",
+    "keywords": [
+      "community",
+      "app",
+      "travel",
+      "showcase",
+      "itinerary"
+    ],
+    "visual_concept": "Travel and exploration theme. Polly the bee acting as a tourist or travel agent. Key symbols: maps, luggage, globes, tickets. The robot companion getting excited about a trip.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny pilot hat, looking at a glowing digital world map with a chunky pixel robot companion who is holding a tiny retro suitcase. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11019.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny pilot hat, looking at a glowing digital world map with a chunky pixel robot companion who is holding a tiny retro suitcase. Soft lime green (#ecf874) and peach gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-16T17:17:42.945799+00:00",
+  "app_name": "Navaro — AI Trip Planner",
+  "app_url": "https://navaro-ai.netlify.app"
+}

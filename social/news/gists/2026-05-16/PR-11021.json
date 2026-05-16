@@ -1,0 +1,35 @@
+{
+  "pr_number": 11021,
+  "title": "Add KelasWeb to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11021",
+  "merged_at": "2026-05-16T17:32:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [KelasWeb](https://arekgresik.my.id/) to learn\n- KelasWeb is an Indonesian educational platform for beginners to learn web development using AI. It provides guided instruction to help users master core web skills.\n\nFixes #10993",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "KelasWeb joins the greenhouse",
+    "blurb": "KelasWeb just sprouted in our community showcase! It's a fantastic Indonesian educational platform helping beginners master web development with AI.",
+    "summary": "Added KelasWeb, an Indonesian educational platform for learning web development using AI, to the community apps showcase.",
+    "impact": "Users can now discover KelasWeb in the community directory and use it to learn core web development skills with AI guidance.",
+    "keywords": [
+      "community",
+      "showcase",
+      "education",
+      "web-development",
+      "kelasweb"
+    ],
+    "visual_concept": "Polly the bee in a greenhouse setting, representing the GREENHOUSE.md addition, reading or learning about web development. A retro monitor showing web code.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, watering a glowing code-plant inside a lush digital greenhouse. A retro computer monitor nearby displays a web page layout. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11021.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing tiny reading glasses, watering a glowing code-plant inside a lush digital greenhouse. A retro computer monitor nearby displays a web page layout. Soft lime green (#ecf874) and warm peach gradient background. Chunky pixels, warm lighting, lo-fi aesthetic like Stardew Valley. Emotionally warm, nostalgic but beautiful."
+  },
+  "generated_at": "2026-05-16T17:33:34.335438+00:00",
+  "app_name": "KelasWeb",
+  "app_url": "https://arekgresik.my.id/"
+}

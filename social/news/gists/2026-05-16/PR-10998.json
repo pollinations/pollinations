@@ -1,0 +1,35 @@
+{
+  "pr_number": 10998,
+  "title": "simplify project manager routing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/10998",
+  "merged_at": "2026-05-16T11:32:07Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- drop News project routing; NEWS-labeled items now skip the manager (label stays for social pipeline use)\n- rename `tier` → `apps` in project-manager config (project ID unchanged)\n- strip TIER-APP-REVIEW when approving to avoid stacked labels with TIER-APP-APPROVED\n- update TRIAGE.md to match\n\nOut-of-band follow-ups (not in this PR): rename ProjectV2 #23 title `Tier` → `Apps`, delete the unused `TIER-APP-REVIEW-PR` label.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tidying the triage desk",
+    "blurb": "Cleaned up our internal GitHub project routing. Less label clutter means we can review community apps even faster.",
+    "summary": "Simplified GitHub project routing by dropping the News project manager, renaming the tier config to apps, and automatically stripping the TIER-APP-REVIEW label upon approval.",
+    "impact": "Internal triage is now cleaner and faster, preventing stacked labels and streamlining the community app review process.",
+    "keywords": [
+      "github",
+      "triage",
+      "labels",
+      "automation",
+      "infrastructure"
+    ],
+    "visual_concept": "Polly the bee and the monitor robot organizing files or labels at a cozy triage desk, representing the cleanup of internal project routing.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot organizing glowing digital folders on a wooden desk. Soft lime green (#ecf874) and lavender gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-10998.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-headed robot organizing glowing digital folders on a wooden desk. Soft lime green (#ecf874) and lavender gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-05-16T11:32:59.064648+00:00"
+}

@@ -935,16 +935,14 @@ async function runQueue() {
         const result = await runEdit(uploaded, prompt, job.model);
         await mediaHistory.set({ url: result }, { add: true });
         setStatus("packaging share link...");
-        const packaged = await rewriteResultWithHistory(result);
-        if (packaged !== result) {
-          const frame = app.history[app.historyIndex];
-          if (frame?.url === result) {
-            frame.url = packaged;
-            app.imageURL = packaged;
-            app.stateURL = packaged;
-            syncStartToCurrent({ force: true });
-            render();
-          }
+        const packaged = await packageCurrentFrameWithHistory();
+        const frame = app.history[app.historyIndex];
+        if (frame?.url === result) {
+          frame.url = packaged;
+          app.imageURL = packaged;
+          app.stateURL = packaged;
+          syncStartToCurrent({ force: true });
+          render();
         }
         await loadBalance();
       } catch (err) {
@@ -1182,12 +1180,6 @@ function injectTextChunk(bytes, keyword, text) {
 async function bytesFromBlob(blob) {
   return new Uint8Array(await blob.arrayBuffer());
 }
-async function bytesFromUrl(url) {
-  const res = await fetch(url, { mode: "cors" });
-  if (!res.ok) throw new Error(`fetch ${url} ${res.status}`);
-  return new Uint8Array(await res.arrayBuffer());
-}
-
 async function readRemixState(blob) {
   const bytes = await bytesFromBlob(blob);
   const text = isValidPng(bytes) ? readTextChunk(bytes, HISTORY_KEYWORD) : null;
@@ -1360,16 +1352,8 @@ async function openStartURL(mediaURL) {
   await followLocationStart();
 }
 
-async function rewriteResultWithHistory(resultURL) {
-  try {
-    const bytes = await bytesFromUrl(resultURL);
-    if (!isValidPng(bytes)) return resultURL;
-    const out = injectTextChunk(bytes, HISTORY_KEYWORD, remixPayload());
-    return uploadBlob(new Blob([out], { type: "image/png" }), "voice-edit-frame.png");
-  } catch (err) {
-    console.warn("rewriteResultWithHistory failed", err);
-    return resultURL;
-  }
+async function packageCurrentFrameWithHistory() {
+  return uploadBlob(await remixPNGBlob(), "voice-edit-frame.png");
 }
 
 const goHistory = (delta, label) => () => {

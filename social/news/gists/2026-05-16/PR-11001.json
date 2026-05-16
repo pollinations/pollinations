@@ -1,0 +1,34 @@
+{
+  "pr_number": 11001,
+  "title": "fix(image): surface real error on upstream 400 instead of \"{}\"",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/11001",
+  "merged_at": "2026-05-16T12:02:05Z",
+  "labels": [
+    "DEV-BUG"
+  ],
+  "pr_body_excerpt": "## Summary\n- `/v1/images/edits` (and `/image/*`) was returning `upstreamBody: \"{}\"` and a generic `\"Image provider error\"` whenever an `HttpError` was thrown without a `details.body` (e.g. `nanobanana-2` failing in `vertexAIImageGenerator.buildNoImageDataError`).\n- Now the real `HttpError.message` is preserved on both `responseBody` and the user-facing `message`, so clients see something like `\"Image provider error: Gemini: <reason>\"` instead of an empty `{}`.\n- Existing tracked-400 flow (provider body with `message`/`detail`) is unchanged — covered by the existing tests.\n\n## Why\nWhile debugging a `nanobanana-2` image-edit failure, the only signal from the gateway was `upstreamBody: \"{}\"`. That's not actionable — the underlying Gemini text/finish-reason was already being attached to the `HttpError` but discarded by `throwImageError` and `classifyImageHttpError`.\n\n## Changes\n- `gen.pollinations.ai/src/image/handler.ts`\n  - `throwImageError` now uses `imageResponseBody(error)` which prefers `details.body`, then `error.message`, then a JSON details fallback — never raw `\"{}\"` when a message exists.\n  - `classifyImageHttpError` falls back to `error.message` when the upstream body can't be parsed for 4xx errors.\n- `gen.pollinations.ai/test/generation-vcr.test.ts`\n  - Adds a regression case: upstream 400 with empty body now surfaces `\"Image provider error: Image backend rejected request with status 400\"` rather than `\"Image provider error\"`.\n\n## Test plan\n- [x] `npx vitest run test/generation-vcr.test.ts` — 13/13 pass\n- [x] `npx vitest run test/error-observability.test.ts` — 1/1 pass\n- [x] `npx biome check` clean on touched files\n- [ ] After deploy, verify a failing `nanobanana-2` edit returns the underlying Gemini reason (currently masked as `\"{}\"`).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more empty apologies",
+    "blurb": "We fixed a bug where image generation errors were returning a mysterious empty object. Now, if an upstream provider fails, you'll actually get the real error message telling you why.",
+    "summary": "The image generation endpoints (`/v1/images/edits` and `/image/*`) now surface the actual upstream error message (such as Gemini failure reasons) instead of a generic `upstreamBody: \"{}\"` on 400 errors.",
+    "impact": "Developers debugging failed image requests will now receive actionable error details instead of empty JSON objects.",
+    "keywords": [
+      "api",
+      "error-handling",
+      "debugging",
+      "images"
+    ],
+    "visual_concept": "Polly the bee and the Monitor Robot examining a glowing error log printout that is now clearly legible, replacing a previously blank or confusing document.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot examining a glowing lime green (#ecf874) error log printout that is finally readable. The robot looks excited with square pixel eyes. Soft lavender and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-16/PR-11001.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot and a chunky monitor-head robot examining a glowing lime green (#ecf874) error log printout that is finally readable. The robot looks excited with square pixel eyes. Soft lavender and peach pastel gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, chunky retro sprites."
+  },
+  "generated_at": "2026-05-16T12:02:58.128214+00:00"
+}

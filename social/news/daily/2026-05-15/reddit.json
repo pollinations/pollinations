@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-15",
+  "period_start": "2026-05-15",
+  "period_end": "2026-05-15",
+  "generated_at": "2026-05-16T06:45:30.298497+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-15/images/reddit.jpg"
+    }
+  ],
+  "title": "Added GPT-5.4-mini, Mistral 4, and fixed upstream 500 errors",
+  "text": "Merged 15 PRs today. Main changes are model additions and fixing how we handle upstream errors.\n\nModels:\n- Added gpt-5.4-mini and mistral-4.\n- Moved deepseek-v4-flash to openrouter and removed the paid-only restriction, so it's on the free tier now.\n- Unhid seedream and seedream-pro.\n- Routed qwen-vision to the non-thinking instruct variant.\n\nInfrastructure & Error Handling:\n- We were previously throwing 500s for upstream user-input errors. These are now properly classified and returned as 4xx.\n- Passing through successful empty upstream completions instead of failing them.\n- Routing openai-3-small/large embeddings directly to the OpenAI API for better stability.\n\nUI & Docs:\n- Added a description tooltip next to model names in the list.\n- Fixed the 'NEW' label on the dashboard by adding a dedicated addedDate field to the monitor.\n- Inlined the polli-cli readme into the API reference so the docs are actually in one place.\n\nYou can hit the new models via the standard text endpoint. Code and docs are at https://github.com/pollinations/pollinations"
+}

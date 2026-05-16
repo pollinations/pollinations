@@ -587,18 +587,17 @@ app.get("/api/kpi/app-submissions", async (c) => {
     };
     if (token) headers.Authorization = `token ${token}`;
 
-    // Fetch all TIER-APP issues (submissions) and TIER-APP-COMPLETE issues (approved)
-    // GitHub Search API lets us get created/closed dates with labels in one call
+    // Fetch all TIER-APP issues (submissions) across the full app-review state machine.
+    // GitHub Search API lets us get created/closed dates with labels in one call.
     const repo = c.env.GITHUB_REPO;
     const since = DATA_START_DATE;
 
-    // TIER-APP label gets replaced as issues progress, so search each label separately
-    // GitHub Search API treats comma-separated labels as AND, not OR
+    // TIER-APP label gets replaced as issues progress, so search each label separately.
+    // GitHub Search API treats comma-separated labels as AND, not OR.
     const labels = [
         "TIER-APP",
         "TIER-APP-REVIEW",
         "TIER-APP-APPROVED",
-        "TIER-APP-COMPLETE",
         "TIER-APP-REJECTED",
         "TIER-APP-INCOMPLETE",
     ];

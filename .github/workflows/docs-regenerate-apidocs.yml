@@ -107,6 +107,9 @@ jobs:
 
           # Save the regenerated file so we can re-apply it after switching branches
           cp APIDOCS.md /tmp/APIDOCS.md.new
+          # Discard the working-tree change so `git checkout` to the sync branch
+          # doesn't bail with "local changes would be overwritten"
+          git checkout -- APIDOCS.md
 
           git fetch origin "$BRANCH" || true
 

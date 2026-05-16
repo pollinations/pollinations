@@ -109,6 +109,10 @@ jobs:
 
           # Save the regenerated file so we can re-apply it after resetting the branch
           cp APIDOCS.md /tmp/APIDOCS.md.new
+          # Discard the dirty worktree change so the upcoming checkout to
+          # origin/main can't fail with "local changes would be overwritten"
+          # when main has advanced (or the input ref differs from main).
+          git checkout -- APIDOCS.md
 
           # Reset the sync branch to current main so the PR can never conflict
           # with human edits to APIDOCS.md that landed on main since last run.
@@ -140,6 +144,8 @@ jobs:
             echo "PR #$EXISTING already open — updated in place."
           fi
 
-          gh pr merge --auto --squash "$EXISTING" || echo "Could not enable auto-merge for PR #$EXISTING"
+          # Fail loud if auto-merge can't be enabled — otherwise the docs PR
+          # could sit open indefinitely while the workflow reports success.
+          gh pr merge --auto --squash "$EXISTING"
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}

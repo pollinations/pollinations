@@ -316,6 +316,7 @@
       <button id="redoBtn" class="btn" disabled title="redo">redo</button>
       <button id="downloadBtn" class="btn" title="download image with embedded history - drop it back onto the app to restore">save</button>
       <button id="shareBtn" class="btn" title="upload PNG with embedded history and copy link">share</button>
+      <button id="walkthroughBtn" class="btn" title="open this remix history as a video walkthrough">walkthrough</button>
     </section>
 
     <section id="frame" class="frame">
@@ -390,6 +391,7 @@ const els = Object.fromEntries(Object.entries({
   redo: "redoBtn",
   download: "downloadBtn",
   share: "shareBtn",
+  walkthrough: "walkthroughBtn",
   colorPicker: "colorPicker",
   pill: "cursorPill",
   pillText: "pillText",
@@ -441,7 +443,7 @@ function render() {
   const locked = app.busy || Boolean(app.active);
   els.undo.disabled = !mediaHistory.canUndo() || locked;
   els.redo.disabled = !mediaHistory.canRedo() || locked;
-  [els.upload, els.shuffle, els.model, els.share].forEach((el) => { el.disabled = locked; });
+  [els.upload, els.shuffle, els.model, els.share, els.walkthrough].forEach((el) => { el.disabled = locked; });
   renderInputMode(locked);
   renderPins();
 }
@@ -1440,6 +1442,13 @@ els.share.addEventListener("click", async () => {
   } catch (err) {
     showError(err.message);
   }
+});
+els.walkthrough.addEventListener("click", () => {
+  const url = app.stateURL || app.history[app.historyIndex]?.url || app.imageURL;
+  if (!url) return;
+  const params = new URLSearchParams({ start: url });
+  if (app.history.length > 1) params.set("index", String(app.historyIndex));
+  location.href = `walkthrough.html#${params}`;
 });
 
 captureKeyFromFragment();

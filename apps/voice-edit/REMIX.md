@@ -8,8 +8,8 @@ and the gallery rehydrates.
 ## flow
 
 1. Open the app, edit images.
-2. Click **load** to load an image from disk, or **shuffle** for a random
-   copyright-friendly starter image: cell render,
+2. Click **load** to load an image from disk, or **sample** to step through
+   copyright-friendly starter images: cell render,
    public-domain octopus illustration, public-domain Grand Prismatic
    Spring, NASA Cosmic Cliffs, NASA Mars rover, relativity stairs,
    or a surreal room.
@@ -33,7 +33,7 @@ points at a PNG with our `tEXt` chunk, that PNG is the source of truth:
 history is restored from it. If there is no chunk, the app starts a fresh
 one-frame history from that image. Undo/redo can use `index=<n>` in the
 fragment while keeping `start` pointed at the same metadata carrier.
-Load and shuffle use the same path: they first put a media URL into
+Load and sample use the same path: they first put a media URL into
 `#start=`, then the app initializes from that URL. Plain images become a
 one-frame history; remix PNGs restore their embedded history.
 

@@ -280,7 +280,7 @@
     <section class="toolbar" aria-label="tools">
       <button id="connectBtn" class="btn accent">connect</button>
       <button id="uploadBtn" class="btn" title="load an image from disk">load</button>
-      <button id="shuffleBtn" class="btn" title="shuffle preset images">shuffle</button>
+      <button id="shuffleBtn" class="btn" title="next sample image">sample</button>
       <input id="fileInput" type="file" accept="image/*" hidden>
       <select id="modelSel" class="select" aria-label="image model">
         <option value="nanobanana">nanobanana</option>
@@ -1049,7 +1049,7 @@ els.connect.addEventListener("click", startConnect);
 els.connectOverlay.addEventListener("click", startConnect);
 els.upload.addEventListener("click", () => els.file.click());
 els.shuffle.addEventListener("click", () => {
-  const starter = pickStarter();
+  const starter = nextStarter();
   openStartURL(starter.url)
     .then(() => setStatus(`loaded ${starter.name}`))
     .catch((err) => showError(err.message));
@@ -1297,9 +1297,10 @@ async function loadStartImage(url) {
   await mediaHistory.reset({ url }, url);
 }
 
-function pickStarter() {
-  const candidates = STARTERS.filter((starter) => starter.url !== app.imageURL);
-  return candidates[Math.floor(Math.random() * candidates.length)] || STARTERS[0];
+function nextStarter() {
+  const current = scrubURL(app.stateURL || app.imageURL);
+  const index = STARTERS.findIndex((starter) => scrubURL(starter.url) === current);
+  return STARTERS[(index + 1) % STARTERS.length] || STARTERS[0];
 }
 
 function startLink(mediaURL, index = 0) {

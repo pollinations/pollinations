@@ -402,6 +402,9 @@ def main():
             
             if classification:
                 priority = classification.get("priority")
+                if project_key == "support" and priority not in {"High", "Low"}:
+                    log_debug(f"Backfill: AI returned non-{{High,Low}} priority '{priority}' for #{issue_number}; clamping to Low")
+                    priority = "Low"
                 author_id = (issue.get("author") or {}).get("databaseId")
                 if project_key == "support" and is_paid_customer(author_id):
                     log_debug(f"Author {author} (id={author_id}) is a paid customer; overriding priority to Urgent for #{issue_number}")

@@ -12,21 +12,26 @@ and the gallery rehydrates.
    copyright-friendly starter image: cell render,
    public-domain octopus illustration, NASA Earthrise, NASA Cosmic Cliffs,
    or NASA Mars rover.
-3. Each generated result is repacked as a PNG with current history metadata
-   and uploaded back to `media.pollinations.ai`; the current `?start=` URL
-   points at that repacked image.
-4. Click **save** → downloads `voice-edit-<ts>.png`. The file is a normal
+3. Each edit adds two history frames: the prompted/annotated input state,
+   then the generated result. Undo once from a result shows the prompt state.
+4. Each generated result is repacked as a PNG with current history metadata
+   and uploaded back to `media.pollinations.ai`; the current `#start=` URL
+   fragment points at that repacked image.
+5. Click **save** → downloads `voice-edit-<ts>.png`. The file is a normal
    PNG of the current frame. It also carries the full history JSON in a
    PNG `tEXt` chunk under keyword `pollinations:voice-edit:history`.
-5. Click **share** → uploads the same metadata PNG if needed and copies an
-   app link with `?start=<media-url>`.
-6. Share the PNG or link. Drop the PNG on the app (or open the link) — the
+6. Click **share** → uploads the same metadata PNG if needed and copies an
+   app link with `#start=<media-url>`.
+7. Share the PNG or link. Drop the PNG on the app (or open the link) — the
    embedded chunk is read on drop, history restores, the latest frame
    renders.
 
-Alternate entry: `?…#start=<image-url>` boots from that URL instead of the
-default starter. If the URL points at a PNG with our `tEXt` chunk, history
-is restored from there.
+Alternate entry: `#start=<image-url>` boots from that URL instead of the
+default starter; old `?start=<image-url>` links still work. If the URL
+points at a PNG with our `tEXt` chunk, that PNG is the source of truth:
+history is restored from it and the current frame is anchored to the URL
+that was opened. Changing the fragment later reloads that URL the same
+way; internal app changes project the current frame back to `#start=`.
 
 ## why this shape
 

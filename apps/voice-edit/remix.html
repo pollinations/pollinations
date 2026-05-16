@@ -200,6 +200,7 @@
     overflow-wrap: break-word;
   }
   .pin.processing { background: var(--accent); }
+  .pin.history { background: var(--paper); opacity: 0.85; }
   .pin .dot {
     flex: 0 0 auto;
     width: 0.55rem;
@@ -436,22 +437,41 @@ function setMarkerColor(color) {
 
 function renderPins() {
   const jobs = [app.currentJob, ...app.queue].filter(Boolean);
+  const items = jobs.length
+    ? jobs.map((job) => ({
+      cls: job === app.currentJob ? "processing" : "queued",
+      text: job.text,
+      xPct: job.xPct,
+      yPct: job.yPct,
+    }))
+    : pinForCurrentFrame();
   const layerBox = els.pinLayer.getBoundingClientRect();
-  els.pinLayer.replaceChildren(...jobs.map((job) => {
+  els.pinLayer.replaceChildren(...items.map((item) => {
     const pin = document.createElement("div");
-    pin.className = `pin ${job === app.currentJob ? "processing" : "queued"}`;
+    pin.className = `pin ${item.cls}`;
     const dot = document.createElement("span");
     dot.className = "dot";
     const text = document.createElement("span");
-    text.textContent = job.text;
+    text.textContent = item.text;
     pin.append(dot, text);
-    pin.style.left = `${job.xPct}%`;
-    pin.style.top = `${job.yPct}%`;
-    const anchorX = layerBox.left + (layerBox.width * job.xPct / 100);
+    pin.style.left = `${item.xPct}%`;
+    pin.style.top = `${item.yPct}%`;
+    const anchorX = layerBox.left + (layerBox.width * item.xPct / 100);
     const available = window.innerWidth - anchorX - 12;
     pin.style.maxWidth = `${clamp(available, 28, 256)}px`;
     return pin;
   }));
+}
+
+function pinForCurrentFrame() {
+  const frame = app.history[app.historyIndex];
+  if (frame?.kind !== "prep" || frame.xPct == null || frame.yPct == null) return [];
+  return [{
+    cls: "history",
+    text: frame.promptText || "",
+    xPct: frame.xPct,
+    yPct: frame.yPct,
+  }];
 }
 
 function pill({ x, y, text, placeholder, visible }) {
@@ -552,6 +572,14 @@ const mediaHistory = {
     app.history = app.history.slice(0, app.historyIndex + 1);
     app.history.push(frame);
     app.historyIndex = app.history.length - 1;
+    syncStartToFrame(frame);
+    render();
+  },
+  addSilent(frame) {
+    app.history = app.history.slice(0, app.historyIndex + 1);
+    app.history.push(frame);
+    app.historyIndex = app.history.length - 1;
+    syncStartToFrame(frame);
     render();
   },
   async go(index) {
@@ -559,12 +587,16 @@ const mediaHistory = {
     if (!frame) return;
     await renderFrame(frame);
     app.historyIndex = index;
+    syncStartToFrame(frame);
     render();
   },
   async set(frame, { add = false } = {}) {
     await renderFrame(frame);
     if (add) mediaHistory.add(frame);
-    else render();
+    else {
+      syncStartToFrame(frame);
+      render();
+    }
   },
 };
 
@@ -897,6 +929,15 @@ async function runQueue() {
       try {
         const snapshot = await composeSnapshot(job.marker);
         const uploaded = await uploadDataURL(snapshot, "annot.png");
+        mediaHistory.addSilent({
+          kind: "prep",
+          url: uploaded,
+          promptText: job.text,
+          marked: job.marked,
+          color: job.color,
+          xPct: job.xPct,
+          yPct: job.yPct,
+        });
         const prompt = buildPrompt(job.text, job.marked, job.color);
         const result = await runEdit(uploaded, prompt, job.model);
         await mediaHistory.set({ url: result }, { add: true });
@@ -1165,18 +1206,33 @@ function scrubURL(url) {
 
 function cleanHistoryFrames(frames) {
   return frames
-    .map((frame) => ({ url: scrubURL(frame?.url || frame) }))
+    .map((frame) => cleanHistoryFrame(frame))
     .filter((frame) => frame.url);
 }
 
-async function restoreRemix(state, fallbackURL) {
+function cleanHistoryFrame(frame) {
+  const source = typeof frame === "string" ? { url: frame } : (frame || {});
+  const clean = { url: scrubURL(source.url) };
+  if (!clean.url) return clean;
+  if (source.kind === "prep") clean.kind = "prep";
+  if (source.promptText) clean.promptText = String(source.promptText);
+  if (source.marked != null) clean.marked = Boolean(source.marked);
+  if (source.color) clean.color = String(source.color);
+  if (Number.isFinite(source.xPct)) clean.xPct = source.xPct;
+  if (Number.isFinite(source.yPct)) clean.yPct = source.yPct;
+  return clean;
+}
+
+async function restoreRemix(state, fallbackURL, sourceURL = "") {
   const frames = cleanHistoryFrames(state.history);
   if (!frames.length) {
     await mediaHistory.set({ url: fallbackURL }, { add: true });
     return;
   }
+  const source = scrubURL(sourceURL);
   app.history = frames;
   app.historyIndex = clamp(state.historyIndex ?? frames.length - 1, 0, frames.length - 1);
+  if (source) app.history[app.historyIndex].url = source;
   try {
     await mediaHistory.go(app.historyIndex);
     setStatus(`restored ${frames.length} frames`);
@@ -1219,10 +1275,16 @@ async function loadStartImage(url) {
   try {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    await loadImage(await res.blob(), { addToHistory: true });
+    const blob = await res.blob();
+    const remix = await readRemixState(blob);
+    if (remix) {
+      await restoreRemix(remix, url, url);
+      return;
+    }
   } catch {
-    await loadImage(url, { addToHistory: true });
+    // Fall through to URL loading; the browser may still be able to render it.
   }
+  await loadImage(url, { addToHistory: true });
 }
 
 function pickStarter() {
@@ -1232,14 +1294,40 @@ function pickStarter() {
 
 function startLink(mediaURL) {
   const url = new URL(location.href);
-  url.searchParams.set("start", mediaURL);
-  url.hash = "";
+  url.searchParams.delete("start");
+  url.hash = `start=${encodeURIComponent(mediaURL)}`;
   return url;
 }
 
+function syncStartToFrame(frame) {
+  const url = frame?.url || app.imageURL;
+  if (!url || String(url).startsWith("data:") || String(url).startsWith("blob:")) return;
+  window.history.replaceState(null, "", startLink(url));
+}
+
 function syncStartToCurrent() {
-  if (!app.imageURL || app.imageURL.startsWith("data:")) return;
-  window.history.replaceState(null, "", startLink(app.imageURL));
+  syncStartToFrame(app.history[app.historyIndex] || { url: app.imageURL });
+}
+
+function startURLFromLocation() {
+  return new URLSearchParams(location.hash.slice(1)).get("start")
+    || new URLSearchParams(location.search).get("start");
+}
+
+async function loadFromLocation() {
+  const startURL = startURLFromLocation();
+  if (startURL) {
+    await loadStartImage(startURL);
+  } else {
+    await loadImage(STARTER, { addToHistory: true });
+  }
+}
+
+async function followLocationStart() {
+  const startURL = startURLFromLocation();
+  if (!startURL || scrubURL(startURL) === scrubURL(app.history[app.historyIndex]?.url)) return;
+  if (app.busy || app.active) return;
+  await loadStartImage(startURL);
 }
 
 async function rewriteResultWithHistory(resultURL) {
@@ -1272,6 +1360,12 @@ els.download.addEventListener("click", async () => {
 els.share.addEventListener("click", async () => {
   try {
     const mediaURL = await uploadBlob(await remixPNGBlob(), `voice-edit-${Date.now()}.png`);
+    const frame = app.history[app.historyIndex];
+    if (frame) {
+      frame.url = mediaURL;
+      app.imageURL = mediaURL;
+      syncStartToFrame(frame);
+    }
     const shareURL = startLink(mediaURL);
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(shareURL.href);
@@ -1288,10 +1382,9 @@ els.share.addEventListener("click", async () => {
 captureKeyFromFragment();
 refreshConnectionUI();
 loadModels();
-const startURL = new URLSearchParams(location.search).get("start")
-  || new URLSearchParams(location.hash.slice(1)).get("start");
-(startURL ? loadStartImage(startURL) : loadImage(STARTER, { addToHistory: true }))
-  .catch((err) => showError(err.message));
+window.addEventListener("hashchange", () => followLocationStart().catch((err) => showError(err.message)));
+window.addEventListener("popstate", () => followLocationStart().catch((err) => showError(err.message)));
+loadFromLocation().catch((err) => showError(err.message));
 setMarkerColor(app.markerColor);
 </script>
 </body>

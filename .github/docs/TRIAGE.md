@@ -60,10 +60,22 @@ Routes issues and PRs to the appropriate project board using AI classification:
 - **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Apps project
 - **NEWS skip**: Items with `NEWS` label are skipped entirely (label is used by the social pipeline, not project routing)
 - AI classification via `gen.pollinations.ai` with retry + random seed
-- Sets Priority field (Urgent/High/Medium/Low) in project
+- Sets Priority field on Support items (see [Priority Rules](#priority-rules))
 - Adds labels (`DEV-*` for dev, `.TYPE` + `SERVICE` for support)
 - Enforces internal-only rule for Dev project (external authors classified as dev get reassigned to support)
 - Fallback classification if AI fails
+
+### Priority Rules
+
+Priority is only set on Support items. The AI picks one of two values; `Urgent` is applied automatically when the author is a paid Stripe customer.
+
+| Priority | Who applies it | When |
+| -------- | -------------- | ---- |
+| `Urgent` | `project-manager.py` (override) | Issue author's GitHub ID matches a paid Stripe customer (`paid_customers.json` Tinybird endpoint) |
+| `High`   | AI | Bugs breaking functionality, blocking issues, billing problems, outages |
+| `Low`    | AI | Minor issues, cosmetic bugs, questions, docs, feature requests, integration help |
+
+`Medium` is no longer used. The paid-customer lookup joins `stripe_event.user_id → d1_user.id → d1_user.github_id` filtered to the latest `synced_at`. GitHub IDs are used instead of usernames so the flag survives username changes.
 
 ## Flow Diagrams
 

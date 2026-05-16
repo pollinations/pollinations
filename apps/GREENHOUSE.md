@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **739** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **740** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -27,6 +27,7 @@
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🧭 Navaro — AI Trip Planner](https://navaro-ai.netlify.app) | Navaro is an AI-powered trip planner that generates personalized day-by-day itineraries for any destination in seconds. Users pick a city, travel duration, and interests — the app builds a full itiner | [@HomerOff](https://github.com/HomerOff) |  | 🫧 |
 | [🤖 PromptArt](https://t.me/promptart_ai_bot) | PromptArt is a Telegram bot for AI image generation aimed at non-technical users. Users describe an image in plain English, optionally pick a style preset (photorealistic / anime / cyberpunk / oil pai | [@zFannur](https://github.com/zFannur) | 1 | 🫧 |
 | [📖 Storytale](https://storytale.net) | Storytale is a multiplayer storytelling game where friends take turns adding sentences to a shared story. Pollinations powers three surfaces: | [@jmeijer19-glitch](https://github.com/jmeijer19-glitch) |  | 🐝 🫧 |
 | [🛠️ Pollenforge-CLI](https://github.com/ganya002/Pollenforge-CLI/tree/main) | Convert Markdown content to a formatted output using Pollenforge-CLI. | [@ganya002](https://github.com/ganya002) |  | 🫧 |
@@ -36,7 +37,6 @@
 | [🏗️ anyproject (beta)](https://alkonsafe.ct.ws/anyproject/beta) | anyproject is a platform where people can play and share ai generated sites with each other! it uses pollinations in the backend with node.js's native fetch() to gen.pollinations.ai where the ai retur | [@alkonsafe](https://github.com/alkonsafe) |  | 🫧 |
 | [🤖 AI Chat](https://github.com/JoJoGamer2020/AI-Chat) | AI Chat is an Android conversational app that provides free access to 16+ AI models via the Pollinations.ai API. | [@JoJoGamer2020](https://github.com/JoJoGamer2020) |  | 🫧 |
 | [💬 Compliment Generator](https://www.craygen.com/compliments/) | Upload an image to Compliment Generator to receive free compliments in various styles. | [@craygen9](https://github.com/craygen9) |  | 🐝 🫧 |
-| [🦖 Oráculo de la Era Salvaje · IA Bestias y Monstruos](https://dragonprimordial12-netizen.github.io/DragonP_Oraculo_de_la_Era_Salvaje/) | Chat con IA épico del juego Bestias y Monstruos en Roblox. Los jugadores pueden preguntar sobre bestias, jefes, estrategias y lore del mundo salvaje. Usa la API de texto de Pollinations con el modelo | [@dragonprimordial12-netizen](https://github.com/dragonprimordial12-netizen) | 1 | 🫧 |
 
 ---
 
@@ -860,7 +860,7 @@
 | [🍎 AI Food Guide and Track Calories](https://nutri.selfhost.io.vn/) | Provides AI-powered nutrition guidance and calorie tracking in a web application with food analysis and logging features. | [@newnol](https://github.com/newnol) | 208 |  |
 | [🏃 Spix - Personal Fitness Companion](https://github.com/LuckyTheCookie/FitTrack) | Track workouts, activity, and health metrics with Spix - Personal Fitness Companion, built with React Native 0.81 Expo TypeScript and designed to keep your data local and private. | [@LuckyTheCookie](https://github.com/LuckyTheCookie) | 12 |  |
 
-<details><summary>Show all 46 apps</summary>
+<details><summary>Show all 47 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -869,6 +869,7 @@
 | [🕹️ Pollinations AIGC Control Console](https://jfliu3265.github.io/pollinations-aigc-public/) | Manage AIGC workflows in Pollinations AIGC Control Console, a web-based dashboard powered by pollinations.ai, with a unified interface for multiple generative AI capabilities. | [@jfliu3265](https://github.com/jfliu3265) | 1 | 🫧 |
 | [🗞️ Akhbaar](https://akhbaar.hoxlabs.com/) | Akhbaar turns daily tech reports into structured insights by converting daily PDFs into structured JSON and providing a live news feed. | [@niteshmandall](https://github.com/niteshmandall) | 1 | 🫧 |
 | [🧾 Transport Document OCR](https://xfynder99-byte.github.io/OCR/) | Standalone web app extracting product data from images and PDFs via AI OCR. | [@xfynder99-byte](https://github.com/xfynder99-byte) | 1 |  |
+| [🧭 Navaro — AI Trip Planner](https://navaro-ai.netlify.app) | Navaro is an AI-powered trip planner that generates personalized day-by-day itineraries for any destination in seconds. Users pick a city, travel duration, and interests — the app builds a full itiner | [@HomerOff](https://github.com/HomerOff) |  | 🫧 |
 | [⛪ The Stream Church Webapp](https://thestreamchurch.org/) | Stream services and manage live events with The Stream Church Webapp, using Pollinations.ais API for asset generation and rapid web project deployment. | [@titosoriano](https://github.com/titosoriano) |  | 🫧 |
 | [📈 Quent](https://quent.kro.kr/) | Automate trading and indicator analysis with Quent using AI agent-based strategies. | [@mindungil](https://github.com/mindungil) |  | 🫧 |
 | [🧾 Madlisten](https://madlisten.dk/) | Use Madlisten to browse and view recipes. | [@SamuelHauptmannvanDam](https://github.com/SamuelHauptmannvanDam) |  | 🫧 |

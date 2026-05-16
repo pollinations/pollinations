@@ -86,6 +86,9 @@ async function fakeImageBackendResponse(request: Request) {
             { status: 400 },
         );
     }
+    if (prompt.includes("empty body 400")) {
+        return new Response("", { status: 400 });
+    }
 
     if (body.height && body.height < 256) {
         return Response.json(
@@ -707,6 +710,27 @@ test("image backend validation errors return client-facing 400", async ({
         modelRequested: "zimage",
         responseStatus: 400,
     });
+
+    // Upstream 400 with empty body must still surface a useful message via
+    // HttpError.message, not collapse to a generic "Image provider error".
+    const { response: emptyBody400Response, wait: waitEmptyBody400 } =
+        await fetchWorker(
+            "/image/empty%20body%20400?model=zimage&width=280&height=280&seed=42",
+            {
+                headers: { authorization: `Bearer ${paidApiKey}` },
+            },
+        );
+
+    expect(emptyBody400Response.status).toBe(400);
+    await expect(emptyBody400Response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                "Image provider error: Image backend rejected request with status 400",
+        },
+    });
+    await waitEmptyBody400();
 });
 
 test("malformed image edit multipart bodies return tracked 400", async ({

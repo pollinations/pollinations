@@ -1,0 +1,35 @@
+{
+  "pr_number": 11057,
+  "title": "Add LND Ai text to image to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11057",
+  "merged_at": "2026-05-17T16:26:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [LND Ai text to image](https://www.namansoni.in/text-to-image) to image\n- Generate images from text with LND Ai text to image using z image turbo by pollination ai; free to use with no signup.\n\nFixes #9196",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "LND AI joins the greenhouse",
+    "blurb": "Another beautiful app blooms in our community garden! LND AI is a slick new text-to-image generator powered by Pollinations, completely free with no signup needed.",
+    "summary": "Added the community-built LND AI text-to-image generator to the apps showcase and greenhouse directories.",
+    "impact": "Users can now discover LND AI in the community directory, offering free, no-signup image generation powered by Pollinations.",
+    "keywords": [
+      "community",
+      "apps",
+      "showcase",
+      "text-to-image",
+      "greenhouse"
+    ],
+    "visual_concept": "Polly the bee welcoming a new addition to the greenhouse. Since it's a text-to-image app, Polly could be wearing a painter's beret and painting on a digital canvas next to a retro computer.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, happily painting a landscape on a digital canvas easel inside a lush greenhouse. A chunky retro computer monitor nearby displays text prompts. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11057.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee wearing a tiny painter's beret, happily painting a landscape on a digital canvas easel inside a lush greenhouse. A chunky retro computer monitor nearby displays text prompts. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley, emotionally warm and inviting."
+  },
+  "generated_at": "2026-05-17T16:27:41.840471+00:00",
+  "app_name": "LND Ai text to image",
+  "app_url": "https://www.namansoni.in/text-to-image"
+}

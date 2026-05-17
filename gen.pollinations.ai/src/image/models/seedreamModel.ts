@@ -26,10 +26,10 @@ interface SeedreamResponse {
     };
 }
 
-// Seedream model versions
+// Seedream model versions (legacy hidden variants only — seedream5 now routes
+// through Replicate via seedream5ReplicateModel.ts).
 const SEEDREAM_4_0 = "seedream-4-0-250828"; // 4.0 - legacy (hidden)
 const SEEDREAM_4_5 = "seedream-4-5-251128"; // 4.5 - legacy (hidden)
-const SEEDREAM_5_0 = "seedream-5-0-260128"; // 5.0 Lite - web search, reasoning
 
 interface SeedreamModelConfig {
     version: string;
@@ -41,13 +41,6 @@ interface SeedreamModelConfig {
 }
 
 const SEEDREAM_CONFIGS: Record<string, SeedreamModelConfig> = {
-    seedream5: {
-        version: SEEDREAM_5_0,
-        maxImages: 14,
-        scaleKey: "seedream5",
-        displayName: "Seedream 5.0",
-        modelName: "seedream5",
-    },
     seedream: {
         version: SEEDREAM_4_0,
         maxImages: 10,
@@ -128,22 +121,6 @@ async function callSeedreamModelAPI(
             `${config.displayName} API generation failed: ${error.message}`,
         );
     }
-}
-
-/** Seedream 5.0 Lite - supports text-to-image, image-to-image, web search, and deep reasoning */
-export function callSeedream5API(
-    prompt: string,
-    safeParams: ImageParams,
-    progress: ProgressManager,
-    requestId: string,
-): Promise<ImageGenerationResult> {
-    return callSeedreamModelAPI(
-        "seedream5",
-        prompt,
-        safeParams,
-        progress,
-        requestId,
-    );
 }
 
 /** Seedream 4.0 - hidden legacy, calls the real 4.0 endpoint */

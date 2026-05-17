@@ -13,8 +13,8 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
-    callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
 } from "./models/seedreamModel.ts";

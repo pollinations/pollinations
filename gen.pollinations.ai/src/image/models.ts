@@ -30,9 +30,9 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1024,
     },
 
-    // ByteDance ARK Seedream 5.0 Lite - web search, reasoning
+    // ByteDance Seedream 5.0 Lite via Replicate
     seedream5: {
-        type: "seedream5",
+        type: "replicate-seedream5",
         enhance: false,
         defaultSideLength: 2048,
         minPixels: 3686400, // Seedream 5.0 requires at least 1920x1920 pixels
@@ -106,9 +106,9 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // BytePlus Seedance Lite - Video generation (default, better quality)
+    // ByteDance Seedance Lite via Replicate (was BytePlus ARK)
     seedance: {
-        type: "bytedance-ark-video",
+        type: "replicate-seedance",
         enhance: false,
         isVideo: true,
         defaultDuration: 5,
@@ -116,9 +116,9 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // BytePlus Seedance Pro-Fast - Video generation (better prompt adherence)
+    // ByteDance Seedance Pro-Fast via Replicate (was BytePlus ARK)
     "seedance-pro": {
-        type: "bytedance-ark-video-pro",
+        type: "replicate-seedance-pro",
         enhance: false,
         isVideo: true,
         defaultDuration: 5,

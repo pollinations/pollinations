@@ -95,11 +95,13 @@ export const IMAGE_SERVICES = {
     "seedream5": {
         aliases: [],
         modelId: "seedream5",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
+        // Replicate bytedance/seedream-5-lite is flat $0.035/image — same per-image
+        // cost as the prior BytePlus path, so user-facing price is unchanged.
         cost: [
             {
                 date: COST_START_DATE,
@@ -286,26 +288,28 @@ export const IMAGE_SERVICES = {
     "seedance": {
         aliases: [],
         modelId: "seedance",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
+        // Replicate bytedance/seedance-1-lite is per-second tiered by resolution
+        // (480p $0.018, 720p $0.036, 1080p $0.072). We lock the handler to 720p
+        // for billing accuracy without a tiered-pricing registry change.
         cost: [
-            // Token formula: (height × width × FPS × duration) / 1024
             {
                 date: COST_START_DATE,
-                completionVideoTokens: perMillion(1.8), // per 1M tokens
+                completionVideoSeconds: 0.036, // per sec at 720p
             },
         ],
         price: [
             {
                 date: COST_START_DATE,
-                completionVideoTokens: perMillion(2.7), // per 1M tokens
+                completionVideoSeconds: 0.054, // per sec at 720p
             },
         ],
         description:
-            "Seedance Lite - BytePlus video generation (better quality)",
+            "Seedance Lite - Text/image-to-video (720p, start + end frame)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
@@ -313,26 +317,28 @@ export const IMAGE_SERVICES = {
     "seedance-pro": {
         aliases: [],
         modelId: "seedance-pro",
-        provider: "bytedance",
+        provider: "replicate",
         brand: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         paidOnly: true,
+        // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
+        // resolution (480p $0.015, 720p $0.025, 1080p $0.06). Handler is locked
+        // to 720p; revisit if/when the registry supports tiered pricing.
         cost: [
-            // Token formula: (height × width × FPS × duration) / 1024
             {
                 date: COST_START_DATE,
-                completionVideoTokens: perMillion(1.0), // per 1M tokens
+                completionVideoSeconds: 0.025, // per sec at 720p
             },
         ],
         price: [
             {
                 date: COST_START_DATE,
-                completionVideoTokens: perMillion(1.5), // per 1M tokens
+                completionVideoSeconds: 0.0375, // per sec at 720p
             },
         ],
         description:
-            "Seedance Pro-Fast - BytePlus video generation (better prompt adherence)",
+            "Seedance Pro-Fast - Text/image-to-video (720p, better prompt adherence)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],

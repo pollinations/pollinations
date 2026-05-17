@@ -36,7 +36,6 @@ vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
 
 import { syncImageEnvironment } from "../../src/image/handler.ts";
 import {
-    callSeedream5API,
     callSeedreamAPI,
     callSeedreamProAPI,
 } from "../../src/image/models/seedreamModel.ts";
@@ -49,7 +48,7 @@ const makeProgress = () => ({
 });
 
 const baseParams: ImageParams = {
-    model: "seedream5",
+    model: "seedream",
     width: 1024,
     height: 1024,
     seed: 42,
@@ -65,7 +64,10 @@ const baseParams: ImageParams = {
     duration: 0,
 };
 
-describe("seedreamModel - Seedream 5.0 Lite", () => {
+// Note: seedream5 now routes through Replicate via seedream5ReplicateModel.ts.
+// These tests cover only the BytePlus-backed legacy models (seedream 4.0 and
+// seedream-pro 4.5) that still live in seedreamModel.ts.
+describe("seedreamModel - legacy BytePlus variants", () => {
     beforeEach(() => {
         syncImageEnvironment({
             ...env,
@@ -73,23 +75,6 @@ describe("seedreamModel - Seedream 5.0 Lite", () => {
         } as CloudflareBindings);
         lastFetchUrl = "";
         lastFetchBody = {};
-    });
-
-    it("sends correct model version for seedream5", async () => {
-        await callSeedream5API(
-            "test prompt",
-            baseParams,
-            makeProgress() as any,
-            "req-1",
-        );
-
-        expect(lastFetchUrl).toBe(
-            "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations",
-        );
-        expect(lastFetchBody.model).toBe("seedream-5-0-260128");
-        expect(lastFetchBody.prompt).toBe("test prompt");
-        expect(lastFetchBody.size).toBe("1920x1920"); // scaled up to meet 3686400 minPixels
-        expect(lastFetchBody.seed).toBe(42);
     });
 
     it("sends correct model version for legacy seedream (4.0)", async () => {
@@ -101,6 +86,9 @@ describe("seedreamModel - Seedream 5.0 Lite", () => {
             "req-2",
         );
 
+        expect(lastFetchUrl).toBe(
+            "https://ark.ap-southeast.bytepluses.com/api/v3/images/generations",
+        );
         expect(lastFetchBody.model).toBe("seedream-4-0-250828");
     });
 
@@ -114,45 +102,6 @@ describe("seedreamModel - Seedream 5.0 Lite", () => {
         );
 
         expect(lastFetchBody.model).toBe("seedream-4-5-251128");
-    });
-
-    it("passes image references for image-to-image", async () => {
-        const params: ImageParams = {
-            ...baseParams,
-            image: ["https://example.com/ref1.jpg"],
-        };
-
-        await callSeedream5API(
-            "edit this",
-            params,
-            makeProgress() as any,
-            "req-4",
-        );
-
-        expect(lastFetchBody.image).toBe("data:image/jpeg;base64,dGVzdA==");
-    });
-
-    it("does not send image field when no images provided", async () => {
-        await callSeedream5API(
-            "test prompt",
-            baseParams,
-            makeProgress() as any,
-            "req-5",
-        );
-
-        expect(lastFetchBody.image).toBeUndefined();
-    });
-
-    it("returns correct tracking data with actualModel", async () => {
-        const result = await callSeedream5API(
-            "test prompt",
-            baseParams,
-            makeProgress() as any,
-            "req-6",
-        );
-
-        expect(result.trackingData?.actualModel).toBe("seedream5");
-        expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
     });
 
     it("returns seedream as actualModel for legacy 4.0", async () => {

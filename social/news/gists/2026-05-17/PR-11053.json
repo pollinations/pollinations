@@ -1,0 +1,35 @@
+{
+  "pr_number": 11053,
+  "title": "Add Generador de Cmics - V2 to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11053",
+  "merged_at": "2026-05-17T16:12:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Generador de Cmics - V2](https://proyectodescartes.org/IATools/127_Generador_de_comics-V2/) to image\n- Genera cómics a partir de texto, guiones o imágenes, personaliza paneles y exporta resultados con Generador de Cmics - V2.\n\nFixes #9118",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Panel by panel",
+    "blurb": "The community just dropped Generador de Cómics V2 into the greenhouse. Turn your text and scripts into custom comic panels without touching a pencil.",
+    "summary": "Added 'Generador de Cómics - V2' to the community apps showcase, a tool for generating and customizing comic panels from text, scripts, or images.",
+    "impact": "Creators can now discover and use this Spanish-language comic generation tool directly from the Pollinations app directory.",
+    "keywords": [
+      "community",
+      "apps",
+      "comics",
+      "showcase",
+      "generative-art"
+    ],
+    "visual_concept": "The bee mascot acting as a comic book artist. Drawing comic panels on a drafting table. The robot companion holding up a finished comic page. Comic book elements mixed with cozy pixel art.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, drawing a pixelated comic book page on a wooden drafting table. A chunky retro robot with a CRT monitor head stands nearby, holding up a finished comic panel glowing with soft lime green (#ecf874). Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11053.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot wearing a tiny painter's beret, drawing a pixelated comic book page on a wooden drafting table. A chunky retro robot with a CRT monitor head stands nearby, holding up a finished comic panel glowing with soft lime green (#ecf874). Soft pastel lavender and cream gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T16:13:16.933487+00:00",
+  "app_name": "Generador de Cmics - V2",
+  "app_url": "https://proyectodescartes.org/IATools/127_Generador_de_comics-V2/"
+}

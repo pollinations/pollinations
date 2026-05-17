@@ -1,0 +1,35 @@
+{
+  "pr_number": 11032,
+  "title": "Add Kalos Master to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/11032",
+  "merged_at": "2026-05-17T07:19:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Kalos Master](https://kalos-master.vercel.app) to image\n- Kalos Master is an AI-powered garment design studio that converts imagination into detailed garment visuals in seconds without requiring design skills or software.\n\nFixes #10939",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Haute couture for the hive",
+    "blurb": "Kalos Master just landed in the community showcase. It's an AI garment design studio that turns your fashion ideas into pixels before you can even thread a needle.",
+    "summary": "Added Kalos Master, an AI-powered garment design studio that generates detailed clothing visuals, to the community apps showcase.",
+    "impact": "Creators can now discover Kalos Master in the ecosystem to instantly generate fashion concepts without needing traditional design software.",
+    "keywords": [
+      "community",
+      "app",
+      "fashion",
+      "design",
+      "image-generation"
+    ],
+    "visual_concept": "The PR introduces an AI garment design app. Key symbols: fashion, tailoring, digital clothing, design studio. Characters: Polly the Bee acting as a tailor/designer, interacting with digital fabrics or a glowing screen showing a dress.",
+    "image_prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tailor's measuring tape scarf, hovering next to a retro computer monitor displaying a beautiful pixel-art dress. A chunky Monitor Robot companion holds up a glowing digital fabric swatch. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/gists/2026-05-17/PR-11032.jpg",
+    "prompt": "Cozy pixel art scene of Polly the bee mascot wearing a tiny tailor's measuring tape scarf, hovering next to a retro computer monitor displaying a beautiful pixel-art dress. A chunky Monitor Robot companion holds up a glowing digital fabric swatch. Soft lime green (#ecf874) and lavender gradient background. Warm lighting, lo-fi 8-bit aesthetic like Stardew Valley. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-05-17T07:20:01.590735+00:00",
+  "app_name": "Kalos Master",
+  "app_url": "https://kalos-master.vercel.app"
+}

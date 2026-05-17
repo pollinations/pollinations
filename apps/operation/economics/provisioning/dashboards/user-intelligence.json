@@ -2262,6 +2262,394 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 111,
+      "type": "table",
+      "title": "Risky Users — High Payment Failures",
+      "description": "Users with the most failed payment attempts in the time range, joined to d1_user (ban status, tier, github) and the latest scoring_snapshot (trust score, account age). Sort by fraudulent_attempts to find carders, by attempted_amount_usd to find big bets, or by failed_attempts for raw volume. Click the github_username to open the profile.",
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 106
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D457"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "github_username"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View on GitHub",
+                    "url": "https://github.com/${__value.text}",
+                    "targetBlank": true
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "banned"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "BANNED": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "BANNED"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "active": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "active"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "fraudulent_attempts"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "orange",
+                      "value": 5
+                    },
+                    {
+                      "color": "red",
+                      "value": 10
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed_attempts"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 5
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "attempted_amount_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "orange",
+                      "value": 200
+                    },
+                    {
+                      "color": "red",
+                      "value": 1000
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "trust_score"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 25
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 50
+                    },
+                    {
+                      "color": "green",
+                      "value": 75
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pollinations_age_days"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 7
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 30
+                    },
+                    {
+                      "color": "green",
+                      "value": 90
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "github_age_days"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 90
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 365
+                    },
+                    {
+                      "color": "green",
+                      "value": 1095
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "last_failure_at"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "fraudulent_attempts"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D457"
+          },
+          "format": 1,
+          "rawSql": "WITH\n  failed_payments AS (\n    SELECT\n      user_id,\n      customer_email,\n      count() AS failed_attempts,\n      countIf(JSONExtractString(payload, 'data', 'object', 'last_payment_error', 'decline_code') = 'fraudulent') AS fraudulent_attempts,\n      round(sum(amount_cents) / 100.0, 2) AS attempted_amount_usd,\n      max(timestamp) AS last_failure_at\n    FROM stripe_event\n    WHERE timestamp >= $__fromTime AND timestamp < $__toTime\n      AND event_type = 'payment_intent.payment_failed'\n      AND livemode = 1\n      AND user_id != ''\n    GROUP BY user_id, customer_email\n    HAVING failed_attempts >= 2\n  ),\n  latest_users AS (\n    SELECT id, github_username, email, tier, banned\n    FROM d1_user\n    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n  ),\n  latest_scores AS (\n    SELECT\n      user_id,\n      argMax(trust_score, timestamp)            AS trust_score,\n      argMax(total_score, timestamp)            AS total_score,\n      argMax(github_age_days, timestamp)        AS github_age_days,\n      argMax(pollinations_age_days, timestamp)  AS pollinations_age_days\n    FROM scoring_snapshot\n    GROUP BY user_id\n  )\nSELECT\n  coalesce(nullIf(u.github_username, ''), '(no github)') AS github_username,\n  coalesce(nullIf(u.email, ''), f.customer_email) AS email,\n  u.tier AS tier,\n  if(u.banned = 1, 'BANNED', 'active') AS banned,\n  f.failed_attempts,\n  f.fraudulent_attempts,\n  f.attempted_amount_usd,\n  coalesce(s.trust_score, 100) AS trust_score,\n  round(coalesce(s.total_score, 0), 1) AS total_score,\n  coalesce(s.github_age_days, 0)       AS github_age_days,\n  coalesce(s.pollinations_age_days, 0) AS pollinations_age_days,\n  f.last_failure_at\nFROM failed_payments f\nLEFT JOIN latest_users  u ON f.user_id = u.id\nLEFT JOIN latest_scores s ON f.user_id = s.user_id\nORDER BY f.fraudulent_attempts DESC, f.failed_attempts DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "schemaVersion": 40,

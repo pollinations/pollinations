@@ -1,6 +1,6 @@
 # 🔆 App Greenhouse
 
-> **770** community apps powered by [pollinations.ai](https://pollinations.ai)
+> **771** community apps powered by [pollinations.ai](https://pollinations.ai)
 
 🐝 **Buzz** = 100+ requests/24h · 🏵️ **Pollen** = Sign in with Pollinations · 🫧 **Fresh** = Added in the last 30 days
 
@@ -44,6 +44,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
+| [🎨 imggenpro](https://imggengpt.pro/) | Create and enhance. | [@ramankamboj300](https://github.com/ramankamboj300) |  | 🫧 |
 | [🎨 AI Image Generator](https://unique-chebakia-44dbdc.netlify.app/) | Generate images with AI Image Generator. | [@CryptoRepublic](https://github.com/CryptoRepublic) |  | 🫧 |
 | [🖼️ Famous quotes](https://juanrivera126.github.io/Famous-quotes/) | A web application that generates artistic posters with famous quotes, using the [Pollinations](https://pollinations.ai/) APIs. Users can specify an author or receive a random quote. The application us | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🫧 |
 | [🧠 Cognitive Engine - AI-powered economic analysis -](https://www.anansebi.com/) | Perform AI-powered economic analysis using Cognitive Engine - AI-powered economic analysis - (Motor Cognitivo). | [@iagoinacio](https://github.com/iagoinacio) |  | 🫧 |
@@ -53,7 +54,6 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🖼️ Dark Pictures](https://www.dark.pictures) | Create dark-themed images with Dark Pictures, a web-based platform offering tools to transform ordinary visuals into moody, dramatic compositions. | [@andikpbw](https://github.com/andikpbw) |  | 🫧 |
 | [🎨 AI Image Studio](https://home.liukun.com/Projects/ImgStudio/) | AI Image Studio is a full-pipeline AI image generation and refinement workbench powered by Pollinations.ai. It integrates the Pollinations REST API as the primary text-to-image engine, featuring autom | [@iBubble](https://github.com/iBubble) |  | 🫧 |
 | [🖼️ AI Image Generator](https://play.google.com/store/apps/details?id=com.monu.aiimagegenerator) | Generate high-quality images from text prompts on Android with AI Image Generator using the Pollinations AI API. | [@monu9898](https://github.com/monu9898) |  | 🫧 |
-| [🪶 X spinoff](https://tweet-composition-and-publication-x.netlify.app/) | Adds AI features to X via X spinoff. | [@nnafis-007](https://github.com/nnafis-007) |  | 🫧 |
 
 ---
 
@@ -72,7 +72,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧑‍🎨 Pollinations Avatar Gen](https://github.com/Nidelon/pollinations-avatar-gen) | An extension for SillyTavern that generates character avatars based on their text descriptions using the Pollinations.ai API. Everything is done at the click of a button. | [@Nidelon](https://github.com/Nidelon) |  | 🐝 |
 | [🎨 Reimagine](https://play.google.com/store/apps/details?id=com.ismafly.reimagine) | Transform photos into AI-generated artwork using Pollinations.ai. Upload photos, choose a style, and get AI-generated results. | [@ismailazdad](https://github.com/ismailazdad) |  | 🐝 |
 
-<details><summary>Show all 186 apps</summary>
+<details><summary>Show all 187 apps</summary>
 
 | App | Description | Author | ⭐ | |
 |-----|-------------|--------|---:|---|
@@ -130,6 +130,7 @@ Users pay with their own balance — developers pay $0. [Learn more →](../BRIN
 | [🧠 Personic](https://github.com/AlanSynn/personic) | Generate structured AI personas and matching images from brief action prompts. | [@AlanSynn](https://github.com/AlanSynn) | 1 |  |
 | [🎨 SpecAI](https://specai.pages.dev) | Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds. | [@spectre365](https://github.com/spectre365) | 1 |  |
 | [🎨 Inkly AI](https://inkly-ai.vercel.app/) | Generate images from text or transform images via image-to-image, view your gallery, and download generated files. | [@Auspicious14](https://github.com/Auspicious14) | 1 |  |
+| [🎨 imggenpro](https://imggengpt.pro/) | Create and enhance. | [@ramankamboj300](https://github.com/ramankamboj300) |  | 🫧 |
 | [🎨 AI Image Generator](https://unique-chebakia-44dbdc.netlify.app/) | Generate images with AI Image Generator. | [@CryptoRepublic](https://github.com/CryptoRepublic) |  | 🫧 |
 | [🖼️ Famous quotes](https://juanrivera126.github.io/Famous-quotes/) | A web application that generates artistic posters with famous quotes, using the [Pollinations](https://pollinations.ai/) APIs. Users can specify an author or receive a random quote. The application us | [@Juanrivera126](https://github.com/Juanrivera126) |  | 🫧 |
 | [🎨 PolyDreamer](https://polydreamer.amitinfotech.net/) | Generate images and videos from text prompts using Polinations AI with PolyDreamer. Connect your own API key or use the free tier. | [@amitpatole](https://github.com/amitpatole) |  | 🫧 |
